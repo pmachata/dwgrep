@@ -321,8 +321,13 @@ public:
   virtual bool
   match (value const &val)
   {
-    assert (! "patx_nodep_hasattr::match");
-    abort ();
+    if (auto g = dynamic_cast <subgraph const *> (&val))
+      {
+	Dwarf_Die die = g->focus ();
+	return dwarf_hasattr_integrate (&die, m_attr);
+      }
+    else
+      return false;
   }
 };
 
@@ -402,13 +407,10 @@ main(int argc, char *argv[])
   {
     {
       auto x1 = std::make_shared <patx_nodep_tag> (DW_TAG_subprogram);
-      /*
       auto x2 = std::make_shared <patx_nodep_hasattr> (DW_AT_declaration);
       auto x3 = std::make_shared <patx_nodep_not> (x2);
       auto x4 = std::make_shared <patx_nodep_and> (x1, x3);
       x0->append (x4);
-      */
-      x0->append (x1);
     }
     /*
     x0->append (std::make_shared <patx_edgep_child> ());
