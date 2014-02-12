@@ -1,0 +1,335 @@
+-*-org-*-
+
+* THEORY
+** Computation
+   dwgrep tries to match a sub-graph of a Dwarf graph that fulfills a
+   condition expressed by a pattern expression.
+
+   The input to a pattern expression is a working set of so far
+   matched sub-graphs.  The expression is applied to a working set,
+   and transforms it.  It can extend, reduce, or just generally
+   transform sub-graphs in the working set, can remove them, if they
+   don't fulfill a certain condition, etc.
+
+   Each sub-graph in a working set has a focus, which is one of the
+   nodes in the sub-graph.  Node predicates are applied to this node.
+   Edge predicates extend the graph from the focus.  The usual case
+   probably will be that sub-graphs are actually paths through the
+   universe graph, and the focus of each gradually built path will be
+   its endpoint.
+
+   XXX why not have more foci in a sub-graph?
+
+*** stuff
+   The computation takes place in steps of traversal and filtering.
+
+   Both steps actually filter, but traversal extends paths in working
+   set as well.  Filtering takes the paths present in a working set,
+   and removes those whose foci don't satisfy given predicate.
+   Traversal takes the paths in a working set, and tries to extends
+   each by following from the focus further along all paths that
+   satisfy a predicate.  The paths that can't be extended are removed.
+
+   Pure filtering is represented as a node in FSM, traversal is
+   represented as an edge.  Thus $child* doesn't eventually remove all
+   paths (because sooner or later we'll run out of levels of nesting),
+   but will extend the set of paths under consideration to include
+   full subtrees as well.
+
+   The initial working set is composed of a set of all nodes with
+   empty paths attached.
+
+** Toplevel expression (TOPX)
+*** TOPX ::= PATX EXPR?
+    XXX The intention here is that as soon as we devolve to values,
+    there's no comming back to selecting stuff and playing with
+    graphs.  I'm not sure that this doesn't discard possibly useful
+    use-cases.  E.g. this:
+
+	: A B (C, D) E
+
+    ... with the semantics of composing a tuple (A B C E, A B D E).
+
+** Pattern expressions (PATX)
+   These are generally composed of a series of predicates interleaved
+   with some operators.  E.g. "X Y Z" is a pattern expression with
+   three apparent predicates.  The grammar below distinguishes between
+   node predicates and edge predicates, but really those are
+   syntactically fairly similar, and probably will be handled the same
+   by the actual syntax analyser.  Only later will we figure out which
+   are which, introduce the implicit $child etc.
+
+*** PATX ::= PATX "&"? NODEP ("<" | ">")? -- sub-graph filtering
+    Note that two consecutive NODEP's imply an EDGEP of $child between
+    them.
+
+    - &NODEP denotes focus of a sub-graph.  (&X Y) yields sub-graphs
+      that match (X Y), but X is the focus point of each selected
+      sub-graph, and serves as point at which further sub-graph
+      expansion is done.  By default, the last predicate is the one
+      focused.  Thus (X Y) Z means something like X → Y → Z, but (&X
+      Y) Z means something like Z → X ← Y.
+
+      - ((&A B) &C D) E:   B ← A → C → D plus an edge C → E
+      - (&(&A B) C D) E:   B ← A → C → D plus an edge A → E
+      - ((&A C D) &B) E:   B ← A → C → D plus an edge B → E
+
+   - < and > -- join left and join right.  In X Y, if for a given
+     match of X there are several possible matches of Y, the result is
+     a set of all X-Y paths that match.  For X < Y, the result is a
+     single sub-graph with a common X forking out to all the Y
+     matches.  Similarly X > Y means to join all X-Y's with matching
+     Y's together into a single graph.
+
+*** PATX ::= PATX EDGEP -- sub-graph expansion
+*** PATX ::= ID "=" PATX -- name binding
+    Marks sub-graphs selected by EXPR with identifier ID.  ID becomes
+    a hidden result of the overall expression and can be referenced in
+    following expressions by $ID.
+
+*** PATX ::= PATX "*" | PATX "+" | PATX "?" -- regex-like iteration
+*** PATX ::= "(" PATX ")" -- subexpressions
+    For precedence, kinda.  X (Y Z) still has to be evaluated left to
+    right, so that we know what the input of Y should be.  But
+    grouping is important in cases like X (Y | Z), X (Y, Z) etc.
+
+*** PATX ::= "{" PATX "}" -- new universe
+    Builds a new universe graph out of sub-graphs matched by EXPR.
+    The sub-graphs are merged into a single graph, and that is treated
+    as a new universe.
+
+    New working set constitutes each node in the new universe taken
+    separately (as when the computation starts, except not whole
+    .debug_info, but only the new universe is selected).
+
+*** PATX ::= PATX₁ "[" PATX₂ "]" -- sub-graph trimming
+    This is generalized array access.
+
+    In a working set that PATX₁ yields, consider each subgraph
+    separately and match with PATX₂.  Each application of PATX₂ yields
+    zero or more subgraphs (or other values).  The result of the
+    overall expression is then a working set containing all these
+    subgraphs.
+
+    If PATX₂ yields an integer, that behaves as array access in
+    Python: X[n] for n>0 selects n-th node from the start (counting
+    from 0), n<0 selects n-th node from the end (counting from -1).
+
+    XXX how does this work with non-linear paths?
+
+    If there is a concern that PATX₂ selects more than one sub-graph,
+    one can e.g. only the first match by doing PATX₁[PATX₂[ 0 ]].
+    Note that this is no special syntax.  PATX₂ is applied to each
+    sub-graph in turn, then [ 0 ] is applied to result of that.
+
+    To convert the selected sub-graph of X to a bunch of nodes, one
+    would do X[.].  Again, this is no special syntax.  Each sub-graph
+    selected by X is taken, and [.] matches each node.  The resulting
+    nodes are united together.  The selected nodes are taken in
+    isolation, they are not bound by paths anymore.  They are however
+    still picked from the same larger universe that X was picked from.
+
+*** PATX ::= PATX "[" EXPR₁ ":" EXPR₂ "]" -- sub-graph trimming
+    Selects a slice of the sub-graph, like in Python.
+    XXX how does this work with non-linear paths?
+
+    Note that to select a sub-path matching two PATX's (i.e.
+    PATX₁[PATX₂:PATX₃]) one can istead use PATX₁[PATX₂ _* PATX₃].
+
+*** PATX ::= PATX ";" PATX -- expression chaining
+    X (Y ; Z) means the same thing as two independent expressions X Y
+    and X Z evaluated one after another.  The working set that both Y
+    and Z are applied to is whatever is the result of X.
+
+*** PATX ::= "~" PATX -- complement relative to universe
+    XXX And how about PATX | PATX, PATX & PATX?
+*** PATX ::= ""
+*** PATX ::= PATX EXPR
+
+** Predicates (PRED)
+   There are two types of predicates: node predicates (NODEP) and edge
+   predicates (EDGEP).
+
+   - NODEP: These take each sub-graph in a working set and match its
+     focus node.  If the predicate doesn't hold, the sub-graph is
+     removed from working set.
+
+   - EDGEP: These take each sub-graph in a working set, and try to
+     match edges going out from the focus node.  The considered
+     sub-graph is removed from the working set, and replaced with zero
+     or more larger graphs, obtained by extending the considered
+     sub-graph with an edge matching this predicate.
+
+*** PRED ::= PRED "&&" PRED | PRED "||" PRED | "!" PRED -- logicals
+*** NODEP ::= EXPR "==" EXPR | EXPR "!=" EXPR
+    XXX how about <, <=, >, >=
+
+*** NODEP ::= EXPR₁ "=~" EXPR₂ | EXPR₁ "!~" EXPR₂
+    Regular expression matching.  EXPR₂ is expected to be a string
+    interpreted as a regular expression.  If that matches EXPR₁, the
+    predicate holds.
+
+*** NODEP ::= "." -- any node
+*** NODEP ::= ID -- match a node with tag DW_TAG_<ID>
+    If ID already is DW_TAG_something, don't prepend more.
+
+*** NODEP ::= "?" "@" ID | "?" "DW_AT_"ID -- match nodes with DW_AT_<ID>
+    - XXX Should this also fail if the form is DW_FORM_flag and the
+      value is 0?
+
+*** EDGEP ::= "_" -- any edge
+*** EDGEP ::= "$child" | "$parent" -- matches edges between a DIE and its children
+*** EDGEP ::= "$next" | "$prev" -- matches edges between a DIE and its siblings
+*** EDGEP ::= "@" ID | "DW_AT_" ID -- matches DW_AT_attribute with DW_FORM_ref*
+
+** Expressions (EXPR)
+   These take sub-graphs and replace them with a value.  The
+   resulting values can be graphs, sequences (of other values),
+   strings, integers, possibly floats.
+
+*** $@attr or $DW_AT_attr -- value of DW_AT_attr
+*** #@attr or #DW_AT_attr -- form of DW_AT_attr
+*** $tag -- tag of focus node
+*** EXPR ::= PATX "," (PATX ",")* PATX -- sequence composition
+    The result of X (Y, Z) is value of a sequence type, whose first
+    element contains the result of X Y, and the second element the
+    result of X Z.
+
+    XXX is this an EXPR or a PATX?
+
+
+* Josh Stone's nontrivial-types script
+
+  : ((subprogram && ! ?@declaration
+  :   && !($@decl_file =~ "^/usr/" && $@decl_file !~ "^/usr/src/debug"))
+  :  formal_parameter
+  :  $@type ((const_type || volatile_type || typedef) $@type)*
+  :  (structure_type || class_type))
+  : ([0]$@decl_file, [0]$@decl_line, [0]$@name, [1]$@name)
+
+* Old work
+** Josh Stone's nontrivial-types script
+
+subprogram[!@declaration]/formal_parameter/(follow::@type[@type==const_type or @type==volatile_type or @type==typedef])[@type==structure_type or @type==class_type]
+
+A=(subprogram && ! @declaration) / formal_parameter / @type / ((const_type || volatile_type || typedef) ? @type)* / structure_type || class_type
+
+We can't simply write this:
+
+   ... / @type* / structure_type || class_type
+
+as that would follow through pointer_type, pointer_to_member and
+reference as well, and that's exactly what we are trying not to do.
+
+How about this?
+
+A=(subprogram && ! @declaration) / formal_parameter / (@type / const_type || volatile_type || typedef)* / structure_type || class_type
+
+This considers following through @type in current context, but only if
+the rest of the expression matches.  If it does, @type is followed.
+The closure means this may be applied several times.
+
+Note that the overall expression works the same way: it considers
+nodes that match (subprogram && ! @declaration), but only if the rest
+of the expression matches.
+
+Hmm, this doesn't actually work, the above in fact means, match @type,
+then follow ahead and match const_type in one of the children, doesn't
+it?  It appears we need more than just / as a separator.  The problem
+is that @type here serves instead of a /, but the syntax makes it
+unobvious.
+
+  [subprogram && ! @declaration] $child [formal_parameter] @type ([const_type || volatile_type || typedef] @type)* [structure_type || class_type]
+
+$child etc. are really predicates as well, except over edges, not
+nodes.  So we can drop the [] and the above example becomes:
+
+  (subprogram && ! ?@declaration) $child formal_parameter $@type ((const_type || volatile_type || typedef) $@type)* (structure_type || class_type)
+
+Node and edge predicates alternate, so the tool can tell if one of
+them is omitted and supply a default.  That would be "." for nodes
+and $child for edges:
+
+  (subprogram && ! ?@declaration) formal_parameter $@type ((const_type || volatile_type || typedef) $@type)* (structure_type || class_type)
+
+Now we would like to print out file name, line number, function name
+and argument name.
+
+  ((subprogram && ! ?@declaration) formal_parameter $@type ((const_type || volatile_type || typedef) $@type)* (structure_type || class_type))
+	([0]$@decl_file, [0]$@decl_line, [0]$@name, [1]$@name)
+
+So this returns 4-tuples looking probably something along the lines of:
+  ("/usr/lib64/glib-2.0/include/garray.h", 15, "get_action", "name")
+
+It would be relatively easy to format this in a simple Python, C or
+C++ wrapper, but we could possibly also roll our own.  This is
+approximation of Josh's 300-odd line nontrivial-param.c:
+
+  "%s:%s: note: in function `%s', parameter `%s' type is not trivial" \
+	% (((subprogram && ! ?@declaration) formal_parameter
+	    $@type ((const_type || volatile_type || typedef) $@type)*
+	    (structure_type || class_type))
+	   ([0]$@decl_file, [0]$@decl_line, [0]$@name, [1]$@name))
+
+... which would yield and, probably, display a set of strings
+formatted from the selected tuples.  To filter out functions from
+system headers, we decorate the first predicate like this:
+
+  "%s:%s: note: in function `%s', parameter `%s' type is not trivial" \
+	% (((subprogram && ! ?@declaration
+	     && ! ($@decl_file =~ m|^/usr/| && $@decl_file !~ m|/usr/src/debug|))
+	    formal_parameter
+	    $@type ((const_type || volatile_type || typedef) $@type)*
+	    (structure_type || class_type))
+	   ([0]$@decl_file, [0]$@decl_line, [0]$@name, [1]$@name))
+
+== childless DIE's:
+
+~{. . [0]}
+
+== subtree of a DIE:
+
+  some_tag $child*
+  0xdeadbeef $child*
+
+How to display results?
+
+== check_die_decl_call:
+
+^/**/*[(@decl_column and !@decl_line) or (@decl_line and !@decl_file) or (@decl_file and !@decl_line)]
+^/**/*[(@call_column and !@call_line) or (@call_line and !@call_file) or (@call_file and !@call_line)]
+
+
+== check_die_line_info:
+
+((//subprogram) | (//inlined_subroutine) | (//entry_point) | (//lexical_block)
+ | (//label) | (//with_stmt) | (//try_block) | (//catch_block))
+/ (@entry_pc | @low_pc | @ranges)
+
+--> This gives us a set of addresses to check, if dwgrep is smart
+    enough to understand the (@entry_pc | @low_pc | @ranges) bit.  It
+    as well might.  It's written in selector context, not in predicate
+    context, so we are interested in value.  Value of each of these is
+    some range (though one-address range in the former two cases).
+
+--> The next step then is to check whether each of these addresses is
+    covered by .dwarf_line.  Dunno if we can have these sorts of
+    expressions for them as well.
+
+
+== check_duplicate_DW_tag_variable
+
+--> check for two full DW_TAG_variable DIEs with the same DW_AT_name
+    value
+
+//variable[@declaration]
+
+== check_linkage_external_die.cc
+
+(SHT_DYNSYM | SHT_SYMTAB)/*[@type==STT_OBJECT or @type==STT_FUNC][@name != ""]
+
+
+== experiments
+
+@name==blah
+@name~=/.*blah/
