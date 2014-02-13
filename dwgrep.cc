@@ -58,6 +58,14 @@ main(int argc, char *argv[])
     x0->append (std::make_shared <patx_edgep_child> ());
     x0->append (std::make_shared <patx_nodep_tag> (DW_TAG_formal_parameter));
     x0->append (std::make_shared <patx_edgep_attr> (DW_AT_type));
+    {
+      auto x1 = std::make_shared <patx_nodep_tag> (DW_TAG_structure_type);
+      auto x2 = std::make_shared <patx_nodep_tag> (DW_TAG_class_type);
+      auto x3 = std::make_shared <patx_nodep_tag> (DW_TAG_union_type);
+      auto x4 = std::make_shared <patx_nodep_or> (x1, x2);
+      auto x5 = std::make_shared <patx_nodep_or> (x3, x4);
+      x0->append (x5);
+    }
   }
 
   assert (argc == 2);
