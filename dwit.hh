@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2009, 2010, 2011, 2012 Red Hat, Inc.
+   Copyright (C) 2009, 2010, 2011, 2012, 2014 Red Hat, Inc.
    This file is part of dwlocstat.
 
    This file is free software; you can redistribute it and/or modify
@@ -26,14 +26,17 @@
    the GNU Lesser General Public License along with this program.  If
    not, see <http://www.gnu.org/licenses/>.  */
 
-#ifndef ALL_DIES_IT_H
-#define ALL_DIES_IT_H
+#ifndef DWIT_H
+#define DWIT_H
 
 #include <vector>
 #include <stdexcept>
 #include <cassert>
 #include <algorithm>
-#include <elfutils/libdw.h>
+
+#include <libdw.h>
+#include <dwarf.h>
+
 
 class cu_iterator
   : public std::iterator<std::input_iterator_tag, Dwarf_Die *>
@@ -354,4 +357,4 @@ public:
   }
 };
 
-#endif /* ALL_DIES_IT_H */
+#endif /* DWIT_H */

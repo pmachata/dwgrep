@@ -18,7 +18,9 @@
    universe graph, and the focus of each gradually built path will be
    its endpoint.
 
-   XXX why not have more foci in a sub-graph?
+   XXX why not have more foci in a sub-graph?  If we allow merging,
+   how will ((X < Y) Z) behave if there's only one focus?  This can be
+   rewritten as (X < Y Z), but e.g. ((X < Y) (A, B)) is more awkward.
 
 *** stuff
    The computation takes place in steps of traversal and filtering.
