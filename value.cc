@@ -26,6 +26,12 @@ dieref::offset () const
   return m_offset;
 }
 
+bool
+dieref::operator< (dieref const &other) const
+{
+  return m_offset < other.m_offset;
+}
+
 
 subgraph::subgraph (std::shared_ptr <Dwarf> dw)
   : m_dw (dw)
@@ -47,6 +53,18 @@ subgraph::focus () const
 {
   assert (m_dies.size () > 0);
   return m_dies.back ().die (m_dw);
+}
+
+std::vector <dieref>::const_iterator
+subgraph::begin ()
+{
+  return std::begin (m_dies);
+}
+
+std::vector <dieref>::const_iterator
+subgraph::end ()
+{
+  return std::end (m_dies);
 }
 
 std::string

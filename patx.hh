@@ -27,8 +27,13 @@ public:
 class patx_repeat
   : public patx
 {
+  std::shared_ptr <patx> m_patx;
   size_t m_min;
   size_t m_max;
+
+public:
+  patx_repeat (std::shared_ptr <patx> patx, size_t min, size_t max);
+  virtual std::unique_ptr <wset> evaluate (std::unique_ptr <wset> &&ws);
 };
 
 

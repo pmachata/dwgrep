@@ -24,6 +24,8 @@ public:
 
   Dwarf_Die die (std::shared_ptr <Dwarf> &dw) const;
   Dwarf_Off offset () const;
+
+  bool operator< (dieref const &other) const;
 };
 
 
@@ -44,6 +46,9 @@ public:
 
   void add (dieref const &d);
   Dwarf_Die focus () const;
+
+  std::vector <dieref>::const_iterator begin ();
+  std::vector <dieref>::const_iterator end ();
 
   virtual std::string format () const;
 };

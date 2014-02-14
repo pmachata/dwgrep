@@ -1,5 +1,6 @@
 #include <iostream>
 #include <cassert>
+#include <set>
 
 #include "patx.hh"
 #include "dwpp.hh"
@@ -18,6 +19,80 @@ patx_group::evaluate (std::unique_ptr <wset> &&ws)
     tmp = pat->evaluate (std::move (tmp));
 
   return std::move (tmp);
+}
+
+
+patx_repeat::patx_repeat (std::shared_ptr <patx> patx, size_t min, size_t max)
+  : m_patx (patx)
+  , m_min (min)
+  , m_max (max)
+{}
+
+std::unique_ptr <wset>
+patx_repeat::evaluate (std::unique_ptr <wset> &&ws)
+{
+  // First, pass it through the minimum required number of iterations.
+  for (size_t i = 0; i < m_min; ++i)
+    ws = m_patx->evaluate (std::move (ws));
+
+  // Next, we iterate until we either hit the upper bound, or until
+  // the list of subgraphs in the working set stops growing (i.e. we
+  // reached the fixed point).  To detect the latter, we store graphs
+  // separately in a set.
+
+  auto cmp = [] (std::unique_ptr <subgraph> const &a,
+		 std::unique_ptr <subgraph> const &b)
+    {
+      std::vector <dieref> da {a->begin (), a->end ()};
+      std::vector <dieref> db {b->begin (), b->end ()};
+      return da < db;
+    };
+
+  std::set <std::unique_ptr <subgraph>, decltype (cmp)> sgs {cmp};
+  std::vector <std::unique_ptr <value> > rest;
+
+  auto split = [&sgs, &rest] (std::unique_ptr <wset> &&result)
+    {
+      for (auto &val: *result)
+	if (auto sg = dynamic_cast <subgraph *> (&*val))
+	  {
+	    val.release ();
+	    std::unique_ptr <subgraph> np (sg);
+	    sgs.emplace (std::move (np));
+	  }
+	else
+	  rest.emplace_back (std::move (val));
+    };
+
+  split (std::move (ws));
+
+  size_t sz = sgs.size ();
+  for (size_t i = m_min; i < m_max; ++i)
+    {
+      std::cout << "iteration " << i << ": " << sz << " elements\n";
+      auto tmp = std::unique_ptr <wset> {new wset {}};
+      for (auto &val: sgs)
+	tmp->add (std::unique_ptr <subgraph> {new subgraph {*val}});
+
+      split (m_patx->evaluate (std::move (tmp)));
+      size_t sz2 = sgs.size ();
+      if (sz == sz2)
+	break;
+      sz = sz2;
+    }
+
+  // Finally, merge into one wset again.
+  auto ret = std::unique_ptr <wset> {new wset {}};
+  for (auto &val: rest)
+    ret->add (std::move (val));
+  for (auto &val: sgs)
+    {
+      // val is constant in this context :-/
+      auto tmp = std::unique_ptr <subgraph> (new subgraph {*val});
+      ret->add (std::move (tmp));
+    }
+
+  return std::move (ret);
 }
 
 

@@ -59,6 +59,19 @@ main(int argc, char *argv[])
     x0->append (std::make_shared <patx_nodep_tag> (DW_TAG_formal_parameter));
     x0->append (std::make_shared <patx_edgep_attr> (DW_AT_type));
     {
+      auto y0 = std::make_shared <patx_group> ();
+      auto x1 = std::make_shared <patx_nodep_tag> (DW_TAG_const_type);
+      auto x2 = std::make_shared <patx_nodep_tag> (DW_TAG_volatile_type);
+      auto x3 = std::make_shared <patx_nodep_tag> (DW_TAG_typedef);
+      auto x4 = std::make_shared <patx_nodep_or> (x1, x2);
+      auto x5 = std::make_shared <patx_nodep_or> (x3, x4);
+      y0->append (x5);
+      y0->append (std::make_shared <patx_edgep_attr> (DW_AT_type));
+
+      auto y1 = std::make_shared <patx_repeat> (y0, 1, SIZE_MAX);
+      x0->append (y1);
+    }
+    {
       auto x1 = std::make_shared <patx_nodep_tag> (DW_TAG_structure_type);
       auto x2 = std::make_shared <patx_nodep_tag> (DW_TAG_class_type);
       auto x3 = std::make_shared <patx_nodep_tag> (DW_TAG_union_type);
