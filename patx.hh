@@ -14,10 +14,10 @@ public:
 class patx_group
   : public patx
 {
-  std::vector <std::shared_ptr <patx> > m_exprs;
+  std::vector <std::unique_ptr <patx> > m_exprs;
 
 public:
-  void append (std::shared_ptr <patx> expr);
+  void append (std::unique_ptr <patx> &&expr);
   virtual std::unique_ptr <wset> evaluate (std::unique_ptr <wset> &&ws);
 };
 
@@ -27,12 +27,12 @@ public:
 class patx_repeat
   : public patx
 {
-  std::shared_ptr <patx> m_patx;
+  std::unique_ptr <patx> m_patx;
   size_t m_min;
   size_t m_max;
 
 public:
-  patx_repeat (std::shared_ptr <patx> patx, size_t min, size_t max);
+  patx_repeat (std::unique_ptr <patx> &&patx, size_t min, size_t max);
   virtual std::unique_ptr <wset> evaluate (std::unique_ptr <wset> &&ws);
 };
 
@@ -78,9 +78,9 @@ public:
 class patx_nodep_not
   : public patx_nodep
 {
-  std::shared_ptr <patx_nodep> m_op;
+  std::unique_ptr <patx_nodep> m_op;
 public:
-  explicit patx_nodep_not (std::shared_ptr <patx_nodep> op);
+  explicit patx_nodep_not (std::unique_ptr <patx_nodep> &&op);
   virtual bool match (value const &val);
 };
 
@@ -88,12 +88,12 @@ public:
 class patx_nodep_and
   : public patx_nodep
 {
-  std::shared_ptr <patx_nodep> m_lhs;
-  std::shared_ptr <patx_nodep> m_rhs;
+  std::unique_ptr <patx_nodep> m_lhs;
+  std::unique_ptr <patx_nodep> m_rhs;
 
 public:
-  patx_nodep_and (std::shared_ptr <patx_nodep> lhs,
-		  std::shared_ptr <patx_nodep> rhs);
+  patx_nodep_and (std::unique_ptr <patx_nodep> &&lhs,
+		  std::unique_ptr <patx_nodep> &&rhs);
 
   virtual bool match (value const &val);
 };
@@ -102,12 +102,12 @@ public:
 class patx_nodep_or
   : public patx_nodep
 {
-  std::shared_ptr <patx_nodep> m_lhs;
-  std::shared_ptr <patx_nodep> m_rhs;
+  std::unique_ptr <patx_nodep> m_lhs;
+  std::unique_ptr <patx_nodep> m_rhs;
 
 public:
-  patx_nodep_or (std::shared_ptr <patx_nodep> lhs,
-		 std::shared_ptr <patx_nodep> rhs);
+  patx_nodep_or (std::unique_ptr <patx_nodep> &&lhs,
+		 std::unique_ptr <patx_nodep> &&rhs);
 
   virtual bool match (value const &val);
 };

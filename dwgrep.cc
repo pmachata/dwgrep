@@ -46,45 +46,65 @@ main(int argc, char *argv[])
 {
   elf_version (EV_CURRENT);
 
-  auto x0 = std::make_shared <patx_group> ();
+  auto x0 = std::unique_ptr <patx_group> {new patx_group {}};
   {
     {
-      auto x1 = std::make_shared <patx_nodep_tag> (DW_TAG_subprogram);
-      auto x2 = std::make_shared <patx_nodep_hasattr> (DW_AT_declaration);
-      auto x3 = std::make_shared <patx_nodep_not> (x2);
-      auto x4 = std::make_shared <patx_nodep_and> (x1, x3);
-      x0->append (x4);
+      auto x1 = std::unique_ptr <patx_nodep_tag>
+	{new patx_nodep_tag {DW_TAG_subprogram}};
+      auto x2 = std::unique_ptr <patx_nodep_hasattr>
+	{new patx_nodep_hasattr {DW_AT_declaration}};
+      auto x3 = std::unique_ptr <patx_nodep_not>
+	{new patx_nodep_not {std::move (x2)}};
+      auto x4 = std::unique_ptr <patx_nodep_and>
+	{new patx_nodep_and {std::move (x1), std::move (x3)}};
+      x0->append (std::move (x4));
     }
-    x0->append (std::make_shared <patx_edgep_child> ());
-    x0->append (std::make_shared <patx_nodep_tag> (DW_TAG_formal_parameter));
-    x0->append (std::make_shared <patx_edgep_attr> (DW_AT_type));
+    x0->append (std::unique_ptr <patx_edgep_child>
+		{new patx_edgep_child {}});
+    x0->append (std::unique_ptr <patx_nodep_tag>
+		(new patx_nodep_tag {DW_TAG_formal_parameter}));
+    x0->append (std::unique_ptr <patx_edgep_attr>
+		(new patx_edgep_attr {DW_AT_type}));
     {
-      auto y0 = std::make_shared <patx_group> ();
-      auto x1 = std::make_shared <patx_nodep_tag> (DW_TAG_const_type);
-      auto x2 = std::make_shared <patx_nodep_tag> (DW_TAG_volatile_type);
-      auto x3 = std::make_shared <patx_nodep_tag> (DW_TAG_typedef);
-      auto x4 = std::make_shared <patx_nodep_or> (x1, x2);
-      auto x5 = std::make_shared <patx_nodep_or> (x3, x4);
-      y0->append (x5);
-      y0->append (std::make_shared <patx_edgep_attr> (DW_AT_type));
+      auto y0 = std::unique_ptr <patx_group>
+	{new patx_group {}};
+      auto x1 = std::unique_ptr <patx_nodep_tag>
+	{new patx_nodep_tag {DW_TAG_const_type}};
+      auto x2 = std::unique_ptr <patx_nodep_tag>
+	{new patx_nodep_tag {DW_TAG_volatile_type}};
+      auto x3 = std::unique_ptr <patx_nodep_tag>
+	{new patx_nodep_tag {DW_TAG_typedef}};
+      auto x4 = std::unique_ptr <patx_nodep_or>
+	{new patx_nodep_or {std::move (x1), std::move (x2)}};
+      auto x5 = std::unique_ptr <patx_nodep_or>
+	{new patx_nodep_or {std::move (x3), std::move (x4)}};
+      y0->append (std::move (x5));
+      y0->append (std::unique_ptr <patx_edgep_attr>
+		  {new patx_edgep_attr {DW_AT_type}});
 
-      auto y1 = std::make_shared <patx_repeat> (y0, 1, SIZE_MAX);
-      x0->append (y1);
+      auto y1 = std::unique_ptr <patx_repeat>
+	{new patx_repeat {std::move (y0), 0, SIZE_MAX}};
+      x0->append (std::move (y1));
     }
     {
-      auto x1 = std::make_shared <patx_nodep_tag> (DW_TAG_structure_type);
-      auto x2 = std::make_shared <patx_nodep_tag> (DW_TAG_class_type);
-      auto x3 = std::make_shared <patx_nodep_tag> (DW_TAG_union_type);
-      auto x4 = std::make_shared <patx_nodep_or> (x1, x2);
-      auto x5 = std::make_shared <patx_nodep_or> (x3, x4);
-      x0->append (x5);
+      auto x1 = std::unique_ptr <patx_nodep_tag>
+	{new patx_nodep_tag {DW_TAG_structure_type}};
+      auto x2 = std::unique_ptr <patx_nodep_tag>
+	{new patx_nodep_tag {DW_TAG_class_type}};
+      auto x3 = std::unique_ptr <patx_nodep_tag>
+	{new patx_nodep_tag {DW_TAG_union_type}};
+      auto x4 = std::unique_ptr <patx_nodep_or>
+	{new patx_nodep_or {std::move (x1), std::move (x2)}};
+      auto x5 = std::unique_ptr <patx_nodep_or>
+	{new patx_nodep_or {std::move (x3), std::move (x4)}};
+      x0->append (std::move (x5));
     }
   }
 
   assert (argc == 2);
   auto dw = open_dwarf (argv[1]);
 
-  auto ws = std::unique_ptr <wset> (new wset (wset::initial (dw)));
+  auto ws = std::unique_ptr <wset> {new wset {wset::initial (dw)}};
   ws = x0->evaluate (std::move (ws));
 
   std::cout << "Result set has " << ws->size () << " elements." << std::endl;

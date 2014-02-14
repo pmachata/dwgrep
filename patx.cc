@@ -6,9 +6,9 @@
 #include "dwpp.hh"
 
 void
-patx_group::append (std::shared_ptr <patx> expr)
+patx_group::append (std::unique_ptr <patx> &&expr)
 {
-  m_exprs.push_back (expr);
+  m_exprs.push_back (std::move (expr));
 }
 
 std::unique_ptr <wset>
@@ -22,8 +22,8 @@ patx_group::evaluate (std::unique_ptr <wset> &&ws)
 }
 
 
-patx_repeat::patx_repeat (std::shared_ptr <patx> patx, size_t min, size_t max)
-  : m_patx (patx)
+patx_repeat::patx_repeat (std::unique_ptr <patx> &&patx, size_t min, size_t max)
+  : m_patx (std::move (patx))
   , m_min (min)
   , m_max (max)
 {}
@@ -153,8 +153,8 @@ patx_nodep_hasattr::match (value const &val)
 }
 
 
-patx_nodep_not::patx_nodep_not (std::shared_ptr <patx_nodep> op)
-  : m_op (op)
+patx_nodep_not::patx_nodep_not (std::unique_ptr <patx_nodep> &&op)
+  : m_op (std::move (op))
 {}
 
 bool
@@ -164,10 +164,10 @@ patx_nodep_not::match (value const &val)
 }
 
 
-patx_nodep_and::patx_nodep_and (std::shared_ptr <patx_nodep> lhs,
-				std::shared_ptr <patx_nodep> rhs)
-  : m_lhs (lhs)
-  , m_rhs (rhs)
+patx_nodep_and::patx_nodep_and (std::unique_ptr <patx_nodep> &&lhs,
+				std::unique_ptr <patx_nodep> &&rhs)
+  : m_lhs (std::move (lhs))
+  , m_rhs (std::move (rhs))
 {}
 
 bool
@@ -177,10 +177,10 @@ patx_nodep_and::match (value const &val)
 }
 
 
-patx_nodep_or::patx_nodep_or (std::shared_ptr <patx_nodep> lhs,
-			      std::shared_ptr <patx_nodep> rhs)
-  : m_lhs (lhs)
-  , m_rhs (rhs)
+patx_nodep_or::patx_nodep_or (std::unique_ptr <patx_nodep> &&lhs,
+			      std::unique_ptr <patx_nodep> &&rhs)
+  : m_lhs (std::move (lhs))
+  , m_rhs (std::move (rhs))
 {}
 
 bool
