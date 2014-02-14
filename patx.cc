@@ -11,20 +11,20 @@ patx_group::append (std::shared_ptr <patx> expr)
 }
 
 std::unique_ptr <wset>
-patx_group::evaluate (std::unique_ptr <wset> &ws)
+patx_group::evaluate (std::unique_ptr <wset> &&ws)
 {
   std::unique_ptr <wset> tmp (std::move (ws));
   for (auto &pat: m_exprs)
-    tmp = pat->evaluate (tmp);
+    tmp = pat->evaluate (std::move (tmp));
 
   return std::move (tmp);
 }
 
 
 std::unique_ptr <wset>
-patx_nodep::evaluate (std::unique_ptr <wset> &ws)
+patx_nodep::evaluate (std::unique_ptr <wset> &&ws)
 {
-  auto ret = std::unique_ptr <wset> (new wset ());
+  auto ret = std::unique_ptr <wset> {new wset {}};
   for (auto &val: *ws)
     if (match (*val))
       ret->add (std::move (val));
@@ -116,9 +116,9 @@ patx_nodep_or::match (value const &val)
 
 
 std::unique_ptr <wset>
-patx_edgep_child::evaluate (std::unique_ptr <wset> &ws)
+patx_edgep_child::evaluate (std::unique_ptr <wset> &&ws)
 {
-  auto ret = std::unique_ptr <wset> (new wset ());
+  auto ret = std::unique_ptr <wset> {new wset {}};
   for (auto &val: *ws)
     if (auto sg = dynamic_cast <subgraph const *> (&*val))
       {
@@ -129,7 +129,7 @@ patx_edgep_child::evaluate (std::unique_ptr <wset> &ws)
 
 	    do
 	      {
-		auto ng = std::unique_ptr <subgraph> (new subgraph (*sg));
+		auto ng = std::unique_ptr <subgraph> {new subgraph {*sg}};
 		ng->add (dieref (&die));
 		ret->add (std::move (ng));
 	      }
@@ -145,9 +145,9 @@ patx_edgep_attr::patx_edgep_attr (int attr)
 {}
 
 std::unique_ptr <wset>
-patx_edgep_attr::evaluate (std::unique_ptr <wset> &ws)
+patx_edgep_attr::evaluate (std::unique_ptr <wset> &&ws)
 {
-  auto ret = std::unique_ptr <wset> (new wset ());
+  auto ret = std::unique_ptr <wset> {new wset {}};
   for (auto &val: *ws)
     if (auto sg = dynamic_cast <subgraph const *> (&*val))
       {
@@ -160,7 +160,7 @@ patx_edgep_attr::evaluate (std::unique_ptr <wset> &ws)
 	    // underlying Dwarf is broken.  So just ignore it all.
 	    && dwarf_formref_die (&at, &die) != NULL)
 	  {
-	    auto ng = std::unique_ptr <subgraph> (new subgraph (*sg));
+	    auto ng = std::unique_ptr <subgraph> {new subgraph {*sg}};
 	    ng->add (dieref (&die));
 	    ret->add (std::move (ng));
 	  }

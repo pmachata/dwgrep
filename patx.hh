@@ -8,7 +8,7 @@
 class patx
 {
 public:
-  virtual std::unique_ptr <wset> evaluate (std::unique_ptr <wset> &ws) = 0;
+  virtual std::unique_ptr <wset> evaluate (std::unique_ptr <wset> &&ws) = 0;
 };
 
 class patx_group
@@ -18,7 +18,7 @@ class patx_group
 
 public:
   void append (std::shared_ptr <patx> expr);
-  virtual std::unique_ptr <wset> evaluate (std::unique_ptr <wset> &ws);
+  virtual std::unique_ptr <wset> evaluate (std::unique_ptr <wset> &&ws);
 };
 
 
@@ -38,7 +38,7 @@ class patx_nodep
 public:
   // Node predicate keeps only those values in working set that match
   // the predicate.
-  virtual std::unique_ptr <wset> evaluate (std::unique_ptr <wset> &ws);
+  virtual std::unique_ptr <wset> evaluate (std::unique_ptr <wset> &&ws);
   virtual bool match (value const &val) = 0;
 };
 
@@ -112,7 +112,7 @@ class patx_edgep_child
   : public patx
 {
 public:
-  virtual std::unique_ptr <wset> evaluate (std::unique_ptr <wset> &ws);
+  virtual std::unique_ptr <wset> evaluate (std::unique_ptr <wset> &&ws);
 };
 
 
@@ -122,7 +122,7 @@ class patx_edgep_attr
   int const m_attr;
 public:
   explicit patx_edgep_attr (int attr);
-  virtual std::unique_ptr <wset> evaluate (std::unique_ptr <wset> &ws);
+  virtual std::unique_ptr <wset> evaluate (std::unique_ptr <wset> &&ws);
 };
 
 #endif /* _PATX_H_ */

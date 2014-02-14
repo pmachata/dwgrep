@@ -72,7 +72,7 @@ main(int argc, char *argv[])
   auto dw = open_dwarf (argv[1]);
 
   auto ws = std::unique_ptr <wset> (new wset (wset::initial (dw)));
-  ws = x0->evaluate (ws);
+  ws = x0->evaluate (std::move (ws));
 
   std::cout << "Result set has " << ws->size () << " elements." << std::endl;
   for (auto const &val: *ws)
