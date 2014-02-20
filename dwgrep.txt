@@ -116,7 +116,7 @@
    But that's not very useful--we want to know the exact context where
    this happens!  Hence:
 
-** ID := EXPR — name binding
+** -> ID — name binding
 
    This can be used to remember a value, before further functions
    transform it.  The binding is remembered and carried along with a
@@ -131,7 +131,7 @@
    We can use binding and recall together to get names of the
    functions with formal parameters of structure types:
 
-   : A := (?subprogram && ! ?@declaration) / ?formal_parameter
+   : (?subprogram && ! ?@declaration) -> A / ?formal_parameter
    : $@type ?structure_type $A $@name
 
    So that's more useful.
@@ -153,7 +153,7 @@
    We can use this tool to remove const_type, volatile_type and
    typedef layers from out potential structure:
 
-   : A := (?subprogram && ! ?@declaration) / ?formal_parameter
+   : (?subprogram && ! ?@declaration) -> A / ?formal_parameter
    : $@type ((?const_type || ?volatile_type || ?typedef) $@type)*
    : ?structure_type $A $@name
 
@@ -174,7 +174,7 @@
 
 ** EXPR → “(” EXPR₁ “)”
 
-** EXPR → “{” EXPR₁ “}” | “{” “}” — sequence capture
+** EXPR → “{” EXPR₁ “}” | “{” “}” — subexpression capture
 
    This takes all the values that EXPR₁ yields, and returns them in a
    single sequence.  So each working set element is converted into a
@@ -214,9 +214,9 @@
 
 ** EXPR → PRED₁ — filtering
 
-** EXPR → ID “:=” EXPR₁ | “$”ID — binding, recall
+** EXPR → “->” ID | “$”ID — binding, recall
 
-   The identifier together with current value is attached a working
+   The identifier together with current value is attached to a working
    set element.  When a value of the element is replaced with another
    one, the attached bindings are left intact.  For purposes of
    pruning duplicate working set elements, attached bindings are
@@ -224,12 +224,12 @@
    each value.
 
    - This can be used to emulate for loops, kind of:
-     : i := {1, 2, 3, 4} j := {1, 2, 3, 4} (mul $i, $j) ($i > $j)
+     : {1, 2, 3, 4}->i {1, 2, 3, 4}->j ($i > $j) {$i, $j} mul
      ... this should return:
      : 2, 3, 4, 6, 8, 12
 
      Possibly imperative-style loops work as well:
-     : A := 1 (A := (add $A, 1))*
+     : 1 -> A ({$A, 1} add -> A)*
      That's fairly disgusting and I'm not entirely sure whether and
      how exactly it works.
 
@@ -337,24 +337,25 @@
 
 ** PRED → EXPR₁ “==” EXPR₂ | EXPR₁ “!=” EXPR₂ — equivalence
 
+   EXPR₁ and EXPR₂ are evaluated in subexpression context and act if
+   they were in subexpression capture.  XXX really?
+
 ** PRED → EXPR₁ “<” EXPR₂ | EXPR₁ “>” EXPR₂ | EXPR₁ “<=” EXPR₂ | EXPR₁ “>=” EXPR₂ — comparison
+
+   EXPR₁ and EXPR₂ are evaluated in subexpression context and act if
+   they were in subexpression capture.  XXX really?
 
 ** PRED → EXPR₁ “=~” EXPR₂ | EXPR₁ “!~” EXPR₂ — regex matching
 
-   - EXPR₁ is a string to be match by regular expression at EXPR₂.
+   EXPR₁ is a string to be match by regular expression at EXPR₂.
+   EXPR₁ and EXPR₂ are evaluated in subexpression context and act if
+   they were in subexpression capture.  XXX really?
 
 ** PRED → “if” EXPR₁ — subexpression conditional
 
-   The elements for which EXPR₁ yields at least one value are kept,
-   others are rejected.
+   This is exactly equivalent to ({EXPR₁} != {}).
 
-   Unlike direct pipeline formation, EXPR₁ is evaluated as
-   subexpression.  Effects of traversal and filtering are kept locally
-   and thrown away after EXPR₁ is evaluated.
-
-   The input to EXPR₁ is the same as the input of the overall PRED.
-
-   : (if !/) # keep childless DIE's only
+   : (! if /) # keep childless DIE's only
 
 ** PRED → “.show” | “.dump” — debugging
 
@@ -368,27 +369,37 @@
 * Representing non-.debug_info information
 
 ** @decl_file
+
    The value is represented as actual string including path.
 
 ** @stmt_list
-   The value is a line table.  We model this as a bunch of nodes with
-   attributes.  The nodes are of type line_table, and each has these
-   attributes: @address, @op_index, @file, @line, @column, @is_stmt,
-   @basic_block, @end_sequence, @prologue_end, @epilogue_begin, @isa,
+
+   $@stmt_list yields a number of pseudo-DIE's of type
+   line_table_entry.  Each has the following attributes: @address,
+   @op_index, @file, @line, @column, @is_stmt, @basic_block,
+   @end_sequence, @prologue_end, @epilogue_begin, @isa,
    @discriminator.
 
-** XXX location expressions?
-  - probably a list of instructions
-  - possibly a means of evaluating?
+** @location
+
+   $@location yields a number of pseudo-DIE's of type
+   location_list_entry.  Each has the following attrubets: @address,
+   and @ops.
+
+   $@ops yields a number of pseudo-DIE's of type location_list_op.
+   Each has the following attributes: @atom (which contains opcode),
+   and possibly @number or also @number2 (with operands).
+
+   - XXX possibly a means of evaluating?
 
 ** ELF symbols
 
 * Examples
-** Josh Stone's nontrivial-types script
+** Josh Stone's nontrivial-parameters script
 
-   : A := (?subprogram && ! ?@declaration
-   :       && !($@decl_file =~ "^/usr/" && $@decl_file !~ "^/usr/src/debug"))
-   : / B := ?formal_parameter
+   : (?subprogram && ! ?@declaration
+   :  && !($@decl_file =~ "^/usr/" && $@decl_file !~ "^/usr/src/debug")) -> A
+   : / ?formal_parameter -> B
    : $@type ((const_type || volatile_type || typedef) $@type)*
    : (?structure_type || ?class_type)
    : {"%{ $A $@decl_file %}:%{ $A $@decl_line %}: note: in function ",
@@ -424,24 +435,35 @@
 
 ** check_die_line_info:
 
-   : A := (?subprogram || ?inline_subroutine || ?entry_point || ?lexical_block
-   :       || ?label || ?with_stmt || ?try_block || ?catch_block)
-   : B := ($@entry_pc, $@low_pc, $@ranges)
+   : (?subprogram || ?inline_subroutine || ?entry_point || ?lexical_block
+   :  || ?label || ?with_stmt || ?try_block || ?catch_block) -> A
+   : ($@entry_pc, $@low_pc, $@ranges) -> B
    : /parent* ^
    : ({$@stmt_list ($A == $@address)} == {})
    : "Address %{$B%} referenced from %{$A%} not found in line table."
 
-* Mark's stuff
 ** contains DW_OP_fbreg && ! @frame_base
+   : (! ?@frame_base) if ($@location $@ops $@atom == DW_OP_fbreg)
 
 ** uses register based operators
+   : if ($@location $@ops (($@atom >= DW_OP_reg0 && $@atom <= DW_OP_regx)
+   :                       || $@atom == DW_OP_bregx))
 
 ** whether it uses a deref operator
+   : if ($@location $@ops $@atom
+   :     if (-> A {DW_OP_deref, DW_OP_xderef, DW_OP_deref_size,
+   :               DW_OP_xderef_size, DW_OP_GNU_deref_type} $A == $_))
 
 ** contains DW_OP_call_frame_cfa && $@low_pc == 0
+   : $@low_pc == 0 && if ($@location $@ops $@atom == DW_OP_call_frame_cfa)
 
 ** is an empty location expression
+   : ! if $@location
+
 ** location expression ends with implicit_value or stack_value
+   : if ($@location $@ops (({$pos, 1} add) == :length)
+   :     ($@atom == DW_OP_implicit_value || $@atom == DW_OP_stack_value))
+
 * Old work
 == check_duplicate_DW_tag_variable
 
