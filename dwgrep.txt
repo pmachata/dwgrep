@@ -1,11 +1,12 @@
 -*-org-*-
 * Computation
 
-  Dwgrep is tool and an associated language for expressing
-  computations done on a Dwarf graph.  Conceptually expressions of
-  this language form a pipeline of functions.  The Dwarf graph under
-  consideration flows through this pipeline, and whatever comes out
-  of the other end is the result of the computation.
+  Dwgrep is tool and an associated language for expressing queries
+  done on a Dwarf graph.  Conceptually expressions of this language
+  form a pipeline of functions.  The Dwarf graph under consideration
+  flows through this pipeline, modified by each function of the
+  overall expression, and whatever comes out of the other end is the
+  result of the query.
 
   We call what flows through the dwgrep expression a /working set/.
   The elements of this set can by any of the following:
@@ -17,11 +18,11 @@
   Initial working set contains all DIE's in a given Dwarf graph (and
   then some).
 
-  Each function takes a working set on input, and is applied to each
-  element of this input working set.  On the output, each application
-  produces zero or more values, which are collected, and form the
-  output working set.  So functions work as generalized filters that
-  drop, mutate, or expand elements of working set.
+  Each function takes a working set element on input, and produces
+  zero or more elements on the output.  The functions are applied to
+  each element of the working set, and the output is collected to form
+  a new working set.  So functions work as generalized filters that
+  drop, change, or add new elements to working set.
 
   Functions in dwgrep expressions generally come in one of the
   following flavors:
@@ -41,25 +42,27 @@
 
 * Introduction to the dwgrep language
 
-** ?ID — a predicate that holds for DIE's whose tag is DW_TAG_ID
+** ?ID — Filtering DIE's by tag
 
-   To list all subprograms, one would use the following
+   The predicate "?ID" holds for DIE's whose tag is DW_TAG_ID.  For
+   example, to list all subprograms, one would use the following
    expression:
 
    : ?subprogram
 
-** ?@ID — a predicate that holds for DIE's with an attribute DW_AT_ID
+** ?@ID — Filtering DIE's by attribute
 ** PRED₁ && PRED₂, PRED₁ || PRED₂, !PRED — the usual logical connectives
 
-   To list all subprograms that are not pure declarations, one would
-   use the following:
+   "?@ID" is a predicate that holds for DIE's with an attribute
+   DW_AT_ID.  To list all subprograms that are not pure declarations,
+   one would use the following expression:
 
    : ?subprogram && ! ?@declaration
 
 ** (EXPR) — we can parenthesize for clarity or precedence
 ** / — child traversal
 
-   This function replaces every DIE with all its children.  Childless
+   Function "/" replaces every DIE with all its children.  Childless
    DIE's are thus dropped.  To get at the formal arguments of the
    subprograms from the previous example, one might say:
 
@@ -69,8 +72,8 @@
 
    In dwgrep, pipelines are formed by simply placing each function
    next to each other.  This can be seen in the previous example
-   already: we placed / directly after the predicate.  Well, this
-   principle holds universally.
+   already: we placed / directly after the predicate.  This principle
+   holds universally.
 
    E.g. if we want to make sure that we really get only the formal
    parameter nodes in the above example, we might say this:
@@ -81,45 +84,43 @@
 
    : ?subprogram (! ?@declaration) / ?formal_parameter
 
-   ... but that's probably not very clear.
+   ... but that's perhaps less clear.
 
-** $@x — value of attribute DW_AT_x
+** $@ID — value of attribute DW_AT_ID
 
-   This is the firet example of a function that can produces
-   something else than Dwarf DIE's.  E.g. we could obtain names of
-   the formal parameters selected above:
+   This is the firet example of a function that can produces something
+   else than Dwarf DIE's.  This will yield whatever value the
+   attribute has--a number, a string, a DIE, or a sequence.  E.g. we
+   could obtain names of the formal parameters selected above:
 
    : (?subprogram && ! ?@declaration) / ?formal_parameter $@name
 
    The result would be a set of strings with names of all formal
    parameters in the program.  That's not very useful (yet), but
-   there's another use of this same feature:
-
-** $@x — attribute edge traversal
-
-   For reference attributes, the value of $@x (e.g. $@type) is the
-   referenced DIE.  Hence in this case, $@x encodes traversal.  For
-   example, we could get to types of formal parameters thus:
+   there's another use of this same feature: for attributes with
+   reference form, we get the effect of traversing over the edge
+   rooted at given attribute.  For example, we could get formal
+   parameter types thus:
 
    : (?subprogram && ! ?@declaration) / ?formal_parameter $@type
 
-   ... which is much more useful.  We might use this to discover
-   whether there are formal parameters that have structure types, and
-   would therefore incur a potentially expensive copy when the
-   function is called:
+   ... which is a bit more useful.  We might use this to discover
+   whether some formal parameters have structure types, and would
+   therefore incur a potentially expensive copy when the subprogram is
+   invoked:
 
    : (?subprogram && ! ?@declaration) / ?formal_parameter
    : $@type ?structure_type
 
-   So that will let us know whether that is the case.  But that's not
-   very useful--we want to know the exact context where this happens!
-   Hence:
+   So that will let us know whether there are any offenders like that.
+   But that's not very useful--we want to know the exact context where
+   this happens!  Hence:
 
 ** ID := EXPR — name binding
 
    This can be used to remember a value, before further functions
    transform it.  The binding is remembered and carried along with a
-   value, and survives value transformation unchanged.  Later on we
+   value, and survives value transformations unchanged.  Later on we
    can recall the value by saying:
 
 ** $ID — value recall
@@ -142,156 +143,191 @@
    Enter iterators:
 
 ** EXPR*, EXPR+, EXPR? — expression iteration
+
    - EXPR* leaves the input set unchanged, then adds to that the
      result of one application of EXPR, then of another, etc.  It
      works similarly to * in regular expressions.
-   - EXPR+ is exactly like EXPR EXPR*
-   - EXPR? is like EXPR*, but EXPR is only applied once
+   - EXPR+ is exactly like EXPR EXPR*.
+   - EXPR? is like EXPR*, but applies at most once.
 
    We can use this tool to remove const_type, volatile_type and
-   typedef peels from out potential structure:
+   typedef layers from out potential structure:
 
    : A := (?subprogram && ! ?@declaration) / ?formal_parameter
    : $@type ((?const_type || ?volatile_type || ?typedef) $@type)*
    : ?structure_type $A $@name
+
+   So this was a small sampler of the language.  In the next section,
+   all of it will be introduced in a semi-formal, but rather terse
+   format.
 
 
 * Overview of dwgrep language
 
 ** EXPR → EXPR₁ EXPR₂ … — pipeline formation
 
-   - If an EXPR returns a list of values, it's as if it returned all
-     the constituent elements individually.  If you wish to get an
-     actual list of values instead, check out {}.
-   - The rationale behind this rule is the behavior that we want "/"
-     to have.
+   The constituent EXPR's may yield more than one output value.  A new
+   working set is formed by gathering all these returned values.  If
+   you wish to get an actual list of values instead, see below for {}
+   operator, which captures the resulting values and wraps them in a
+   sequence.
 
 ** EXPR → “(” EXPR₁ “)”
 
+** EXPR → “{” EXPR₁ “}” | “{” “}” — sequence capture
+
+   This takes all the values that EXPR₁ yields, and returns them in a
+   single sequence.  So each working set element is converted into a
+   list of values that EXPR₁ yielded.
+
+   XXX doesn't this mean we'll get a whole bunch of empty lists in
+   some contexts?
+
+   - "{}" by itself is a notation of an empty list.
+
+   : {/}    # list of immediate children
+   : {/*}   # list of all descendants
+
 ** EXPR → EXPR₁ “*” | EXPR₁ “+” | EXPR₁ “?” — iteration
 
-** EXPR → “:@” ID | “$@”ID — attribute access
+** EXPR → “$@”ID | “:@”ID — attribute access
+
+   - $@ID yields a value of DW_AT_ID.  This can be a string, a number,
+     a sequence, or another DIE.  In the latter case, $@ID is
+     effectively a graph traversal.
 
    - :@ID yields DW_AT_ID itself, as an attribute object.  See below
      for property access to see what this can be used for.
-   - $@ID yields a value of DW_AT_ID.  This can be a string, a
-     number, a sequence, or another DIE.  In the latter case, $@ID is
-     effectively a graph traversal.
 
 ** EXPR → “/” | “/parent” | “/next” | “/prev” — traversal
 
-** EXPR → EXPR₁ “,” EXPR₂ … — sequence constructor
+** EXPR → EXPR₁ “,” EXPR₂ … — fork
 
-   - This evaluates all constituent EXPR's with the same input and
-     returns a sequence of results.  Note that returned sequences are
-     normally all merged together (see the rule at pipeline
-     formation).  See operator {} if you want to get actual
-     sequences.
+   Fork evaluates all constituent EXPR's with the same input.  In then
+   yields all values that each EXPR yields.  Thus for each working set
+   element on input, this may produce several elements on output--zero
+   or more for each constituent expression.
 
-** EXPR → “{” EXPR₁ “}” | “{” “}” — sequence quoting
+   If you want to get actual sequences out of this, use operator {}.
 
-   - This takes the result of EXPR₁ and returns it as a sequence
-     that's not expanded into individual values.
-   - "{1, 2, 3}" stands for a list with three values, 1, 2 and 3.
-   - "{/}" stands for list of immediate children
-   - "{/*}" stands for list of all descendants
-   - "{}" stands for empty list
+   : {1, 2, 3}   # a list with three values, 1, 2 and 3.
 
 ** EXPR → PRED₁ — filtering
 
-** EXPR → ID “:=” EXPR₁ — binding
+** EXPR → ID “:=” EXPR₁ | “$”ID — binding, recall
 
-   - The identifier together with current value is attached to a
-     dictionary, which is stored with a working set element.  For
-     purposes of pruning duplicate working set elements, attached
-     bindings are considered as well.
+   The identifier together with current value is attached a working
+   set element.  When a value of the element is replaced with another
+   one, the attached bindings are left intact.  For purposes of
+   pruning duplicate working set elements, attached bindings are
+   considered as well.  They thus serve as contextual information for
+   each value.
+
    - This can be used to emulate for loops, kind of:
      : i := {1, 2, 3, 4} j := {1, 2, 3, 4} (mul $i, $j) ($i > $j)
      ... this should return:
      : 2, 3, 4, 6, 8, 12
-   - Possibly imperative-style loops work as well:
+
+     Possibly imperative-style loops work as well:
      : A := 1 (A := (add $A, 1))*
      That's fairly disgusting and I'm not entirely sure whether and
      how exactly it works.
-   - XXX how do we unbind, forget a name?  E.g. if we want to allow
-     merging of final values and the name is not important anymore.
 
-** EXPR → “$” ID — recall
+   - XXX how do we unbind, forget a name?
 
 ** EXPR → “$_” — identity function
 
 ** EXPR → “$pos” — position of element in sequence or working set
 
-** EXPR → “[” EXPR₁ “]” — ??? sugar for ($pos == (EXPR₁))???
+   This is useful for picking values out of sequences.  We might
+   consider a syntactic sugar for this:
+   - EXPR → “[” EXPR₁ “]” — sugar for ($pos == (EXPR₁))???
+   - another possibility is to have PRED → “[” EXPR₁ “]” instead of
+     current PRED → “if” “(” EXPR₁ “)”.
 
-** EXPR → “add” EXPR₁ | “sub” EXPR₁ | “mul” EXPR₁ | “div” EXPR₁ | “mod” EXPR₁ — math
+** EXPR → “add” | “sub” | “mul” | “div” | “mod” — math
 
    - We already use +, * and /, but math shouldn't be useful very
      often anyway, so it's done in this roundabout way.  Possibly use
      this for gt, ge, lt, le, eq, ne as well?
-   - EXPR₁ yields a sequence of values, which are processed as if the
-     operation corresponding to the instruction was between every two
-     of them.  E.g. (add 1, 2, 3) results in 6, (sub 1, 2, 3) in -4.
-   - If EXPR₁ returns a list of free-standing values instead of a
-     quoted sequence, the behavior is the same.  So (add 1, 2, 3) is
-     the same as (add {1, 2, 3}), is the same as (add (1, 2, 3)).
-   - If you wish to process sequences in your working set, do
-     e.g. (add $_).
-   - XXX Hmm, but this doesn't need any special notation.  "add" is a
-     function.  It adds whatever comes to input, and produces single
-     value as result.  So (1, 2, 3) add, just like anything in this
-     language.
+
+   - These are functions like any others.  They take whatever's on
+     their input, and do math on it.  Note therefore that they behave
+     as suffix operators.
+
+   - Typically, input element would be a list.  If it isn't, it's as
+     if it was a list containing that one element.  The following
+     table summarizes the behavior of thees functions:
+
+     |------------+----------+-------------|
+     | input list | function | result      |
+     |------------+----------+-------------|
+     | {}         | add,sub  | 0           |
+     | {}         | mul      | 1           |
+     | {A}        | add,mul  | A           |
+     | {A}        | sub      | -A          |
+     | {A, B}     | any      | A op B      |
+     | {A, B, C}  | any      | A op B op C |
+     |------------+----------+-------------|
+
+     Undefined operations simply produce no result.
 
 ** EXPR → “concat” EXPR₁ — sequence processing
 
 ** EXPR → “"” (string literal) “"” | (“0x”|“0”|“”)[1-9][0-9]* — literals
 
-   - String literals will probably provide some form of value
-     interpolation, so that one could say, e.g.:
-     : A := X Y Z "blah blah %{$A%}"
-     %{ and %} would probably enclose an EXPR that's evaluated on the
-     input value to the string itself.  The we wouldn't need the
-     string-formatting operator.
-   - "%{ $_ %}" converts anything to a string, but we might have %s
-     to save on typing.
+   String literals allow expression interpolation:
+
+   - %{ and %} enclose an EXPR that's evaluated as usual, and whose
+     input is whatever's the input to the string literal itself.  The
+     result is converted to a string and embedded in the string
+     template.
+   - %s stands for %{ $_ %}
+   - %% stands for a single %
 
 ** EXPR → “:” ID — value property access
+
    - This yields various values according to the type of input
      element:
 
      |------+------------+---------------------------------------------|
      | type | key        | meaning                                     |
      |------+------------+---------------------------------------------|
-     | DIE  | type       | "DIE"                                       |
+     | DIE  | type       | string "DIE"                                |
      | DIE  | tag        | integer value of tag                        |
      | DIE  | children   | sequence of DIE's.  Same as simply "/".     |
      | DIE  | attributes | sequence of AT's                            |
      | DIE  | offset     | integer denoting offset of DIE in file      |
      | DIE  | @ID        | like :attributes ($_ == DW_AT_ID)           |
      |------+------------+---------------------------------------------|
-     | AT   | type       | "AT"                                        |
+     | AT   | type       | string "AT"                                 |
      | AT   | name       | integer value of attribute name             |
      | AT   | form       | integer value of form                       |
      | AT   | value      | attribute value (can be DIE, SEQ, INT, STR) |
      | AT   | offset     | integer denoting offset of AT in file       |
      |------+------------+---------------------------------------------|
-     | SEQ  | type       | "SEQ"                                       |
+     | SEQ  | type       | string "SEQ"                                |
      | SEQ  | length     | length of sequence                          |
      |------+------------+---------------------------------------------|
-     | STR  | type       | "STR"                                       |
+     | STR  | type       | string "STR"                                |
      | STR  | length     | length of string                            |
      |------+------------+---------------------------------------------|
-     | INT  | type       | "INT"                                       |
+     | INT  | type       | string "INT"                                |
      |------+------------+---------------------------------------------|
+
+** PRED → “(” PRED₁ “)”
 
 ** PRED → “^” — root node predicate
 
-   - Note that this is a predicate.  It is true on a root node, false
-     otherwise.
+   Note that this is a predicate.  It is true on a root node, false
+   otherwise.
+
    - (/parent* ^) -- finds a root node of current node
-   - XXX possibly shorten this as "$^"?
-   - XXX how about "universe"--set of all nodes?  Do we need to
-     encode this as (/parent* ^ /*)?
+     - XXX possibly shorten this as "$^"?
+   - XXX how about "universe"--set of all nodes?  Do we need to encode
+     this as (/parent* ^ /*)?  That wouldn't yield everything anyway
+     (it would expand to all DIE's in CU's of which we have at least
+     one node.  It would also not include non-.debug_info nodes.)
 
 ** PRED → “?”ID — tag predicate
 
@@ -307,22 +343,27 @@
 
    - EXPR₁ is a string to be match by regular expression at EXPR₂.
 
-** PRED → “if” “(” EXPR₁ “)”
+** PRED → “if” EXPR₁ — subexpression conditional
 
-   - Unlike direct pipeline formation, EXPR₁ is evaluated as
-     subexpression, and effects of traversal and filtering are kept
-     locally and thrown away after EXPR₁ is evaluated.
-   - Input of EXPR₁ is the same as input of the overall PRED.
-   - The elements for which EXPR₁ evaluates to non-empty set are
-     kept, others are rejected.
+   The elements for which EXPR₁ yields at least one value are kept,
+   others are rejected.
+
+   Unlike direct pipeline formation, EXPR₁ is evaluated as
+   subexpression.  Effects of traversal and filtering are kept locally
+   and thrown away after EXPR₁ is evaluated.
+
+   The input to EXPR₁ is the same as the input of the overall PRED.
+
+   : (if !/) # keep childless DIE's only
 
 ** PRED → “.show” | “.dump” — debugging
 
-   - both predicates always succeed, and print elements that they are
-     tested on.
-     - .show shows only the value
-     - .dump shows debugging information as well--fuller output,
-       attached values, that sort of thing
+   Both predicates always succeed, and print elements that they are
+   tested on.
+
+   - .show shows only the value
+   - .dump shows debugging information as well--fuller output,
+     attached values, that sort of thing
 
 * Representing non-.debug_info information
 
@@ -350,8 +391,8 @@
    : / B := ?formal_parameter
    : $@type ((const_type || volatile_type || typedef) $@type)*
    : (?structure_type || ?class_type)
-   : (add "%{ $A $@decl_file %}:%{ $A $@decl_line %}: note: in function ",
-   :      "`%{ $A $@name }%', parameter `%{ $B $@name %}' type is not trivial")
+   : {"%{ $A $@decl_file %}:%{ $A $@decl_line %}: note: in function ",
+   :  "`%{ $A $@name }%', parameter `%{ $B $@name %}' type is not trivial"} concat
 
    - In XQuery, it is:
 
@@ -388,11 +429,7 @@
    : B := ($@entry_pc, $@low_pc, $@ranges)
    : /parent* ^
    : ({$@stmt_list ($A == $@address)} == {})
-   : ("Address %s referenced form %s not found in line table." % {$B; $A})
-
-** childless DIE's:
-   : if (!/)
-   ... at least I think ;)
+   : "Address %{$B%} referenced from %{$A%} not found in line table."
 
 * Mark's stuff
 ** contains DW_OP_fbreg && ! @frame_base
