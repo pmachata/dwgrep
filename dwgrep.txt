@@ -1,324 +1,411 @@
 -*-org-*-
+* Computation
 
-* THEORY
-** Computation
-   dwgrep tries to match a sub-graph of a Dwarf graph that fulfills a
-   condition expressed by a pattern expression.
+  Dwgrep is tool and an associated language for expressing
+  computations done on a Dwarf graph.  Conceptually expressions of
+  this language form a pipeline of functions.  The Dwarf graph under
+  consideration flows through this pipeline, and whatever comes out
+  of the other end is the result of the computation.
 
-   The input to a pattern expression is a working set of so far
-   matched sub-graphs.  The expression is applied to a working set,
-   and transforms it.  It can extend, reduce, or just generally
-   transform sub-graphs in the working set, can remove them, if they
-   don't fulfill a certain condition, etc.
+  We call what flows through the dwgrep expression a /working set/.
+  The elements of this set can by any of the following:
 
-   Each sub-graph in a working set has a focus, which is one of the
-   nodes in the sub-graph.  Node predicates are applied to this node.
-   Edge predicates extend the graph from the focus.  The usual case
-   probably will be that sub-graphs are actually paths through the
-   universe graph, and the focus of each gradually built path will be
-   its endpoint.
+  - Dwarf DIE's
+  - integers, strings
+  - sequences of other values
 
-   XXX why not have more foci in a sub-graph?  If we allow merging,
-   how will ((X < Y) Z) behave if there's only one focus?  This can be
-   rewritten as (X < Y Z), but e.g. ((X < Y) (A, B)) is more awkward.
+  Initial working set contains all DIE's in a given Dwarf graph (and
+  then some).
 
-*** stuff
-   The computation takes place in steps of traversal and filtering.
+  Each function takes a working set on input, and is applied to each
+  element of this input working set.  On the output, each application
+  produces zero or more values, which are collected, and form the
+  output working set.  So functions work as generalized filters that
+  drop, mutate, or expand elements of working set.
 
-   Both steps actually filter, but traversal extends paths in working
-   set as well.  Filtering takes the paths present in a working set,
-   and removes those whose foci don't satisfy given predicate.
-   Traversal takes the paths in a working set, and tries to extends
-   each by following from the focus further along all paths that
-   satisfy a predicate.  The paths that can't be extended are removed.
+  Functions in dwgrep expressions generally come in one of the
+  following flavors:
 
-   Pure filtering is represented as a node in FSM, traversal is
-   represented as an edge.  Thus $child* doesn't eventually remove all
-   paths (because sooner or later we'll run out of levels of nesting),
-   but will extend the set of paths under consideration to include
-   full subtrees as well.
+  - predicates (keep elements for which the predicate holds, drop
+    others)
+  - traversals (replace one DIE with another (or a set thereof))
+  - producers (replace Dwarf DIE's with values of other types)
 
-   The initial working set is composed of a set of all nodes with
-   empty paths attached.
+  In following, examples are generally written as follows:
 
-** Toplevel expression (TOPX)
-*** TOPX ::= PATX EXPR?
-    XXX The intention here is that as soon as we devolve to values,
-    there's no comming back to selecting stuff and playing with
-    graphs.  I'm not sure that this doesn't discard possibly useful
-    use-cases.  E.g. this:
+  : blah blah lorem ipsum stuff
 
-	: A B (C, D) E
-
-    ... with the semantics of composing a tuple (A B C E, A B D E).
-
-** Pattern expressions (PATX)
-   These are generally composed of a series of predicates interleaved
-   with some operators.  E.g. "X Y Z" is a pattern expression with
-   three apparent predicates.  The grammar below distinguishes between
-   node predicates and edge predicates, but really those are
-   syntactically fairly similar, and probably will be handled the same
-   by the actual syntax analyser.  Only later will we figure out which
-   are which, introduce the implicit $child etc.
-
-*** PATX ::= PATX "&"? NODEP ("<" | ">")? -- sub-graph filtering
-    Note that two consecutive NODEP's imply an EDGEP of $child between
-    them.
-
-    - &NODEP denotes focus of a sub-graph.  (&X Y) yields sub-graphs
-      that match (X Y), but X is the focus point of each selected
-      sub-graph, and serves as point at which further sub-graph
-      expansion is done.  By default, the last predicate is the one
-      focused.  Thus (X Y) Z means something like X → Y → Z, but (&X
-      Y) Z means something like Z → X ← Y.
-
-      - ((&A B) &C D) E:   B ← A → C → D plus an edge C → E
-      - (&(&A B) C D) E:   B ← A → C → D plus an edge A → E
-      - ((&A C D) &B) E:   B ← A → C → D plus an edge B → E
-
-   - < and > -- join left and join right.  In X Y, if for a given
-     match of X there are several possible matches of Y, the result is
-     a set of all X-Y paths that match.  For X < Y, the result is a
-     single sub-graph with a common X forking out to all the Y
-     matches.  Similarly X > Y means to join all X-Y's with matching
-     Y's together into a single graph.
-
-*** PATX ::= PATX EDGEP -- sub-graph expansion
-*** PATX ::= ID "=" PATX -- name binding
-    Marks sub-graphs selected by EXPR with identifier ID.  ID becomes
-    a hidden result of the overall expression and can be referenced in
-    following expressions by $ID.
-
-*** PATX ::= PATX "*" | PATX "+" | PATX "?" -- regex-like iteration
-*** PATX ::= "(" PATX ")" -- subexpressions
-    For precedence, kinda.  X (Y Z) still has to be evaluated left to
-    right, so that we know what the input of Y should be.  But
-    grouping is important in cases like X (Y | Z), X (Y, Z) etc.
-
-*** PATX ::= "{" PATX "}" -- new universe
-    Builds a new universe graph out of sub-graphs matched by EXPR.
-    The sub-graphs are merged into a single graph, and that is treated
-    as a new universe.
-
-    New working set constitutes each node in the new universe taken
-    separately (as when the computation starts, except not whole
-    .debug_info, but only the new universe is selected).
-
-*** PATX ::= PATX₁ "[" PATX₂ "]" -- sub-graph trimming
-    This is generalized array access.
-
-    In a working set that PATX₁ yields, consider each subgraph
-    separately and match with PATX₂.  Each application of PATX₂ yields
-    zero or more subgraphs (or other values).  The result of the
-    overall expression is then a working set containing all these
-    subgraphs.
-
-    If PATX₂ yields an integer, that behaves as array access in
-    Python: X[n] for n>0 selects n-th node from the start (counting
-    from 0), n<0 selects n-th node from the end (counting from -1).
-
-    XXX how does this work with non-linear paths?
-
-    If there is a concern that PATX₂ selects more than one sub-graph,
-    one can e.g. only the first match by doing PATX₁[PATX₂[ 0 ]].
-    Note that this is no special syntax.  PATX₂ is applied to each
-    sub-graph in turn, then [ 0 ] is applied to result of that.
-
-    To convert the selected sub-graph of X to a bunch of nodes, one
-    would do X[.].  Again, this is no special syntax.  Each sub-graph
-    selected by X is taken, and [.] matches each node.  The resulting
-    nodes are united together.  The selected nodes are taken in
-    isolation, they are not bound by paths anymore.  They are however
-    still picked from the same larger universe that X was picked from.
-
-*** PATX ::= PATX "[" EXPR₁ ":" EXPR₂ "]" -- sub-graph trimming
-    Selects a slice of the sub-graph, like in Python.
-    XXX how does this work with non-linear paths?
-
-    Note that to select a sub-path matching two PATX's (i.e.
-    PATX₁[PATX₂:PATX₃]) one can istead use PATX₁[PATX₂ _* PATX₃].
-
-*** PATX ::= PATX ";" PATX -- expression chaining
-    X (Y ; Z) means the same thing as two independent expressions X Y
-    and X Z evaluated one after another.  The working set that both Y
-    and Z are applied to is whatever is the result of X.
-
-*** PATX ::= "~" PATX -- complement relative to universe
-    XXX And how about PATX | PATX, PATX & PATX?
-*** PATX ::= ""
-*** PATX ::= PATX EXPR
-
-** Predicates (PRED)
-   There are two types of predicates: node predicates (NODEP) and edge
-   predicates (EDGEP).
-
-   - NODEP: These take each sub-graph in a working set and match its
-     focus node.  If the predicate doesn't hold, the sub-graph is
-     removed from working set.
-
-   - EDGEP: These take each sub-graph in a working set, and try to
-     match edges going out from the focus node.  The considered
-     sub-graph is removed from the working set, and replaced with zero
-     or more larger graphs, obtained by extending the considered
-     sub-graph with an edge matching this predicate.
-
-*** PRED ::= PRED "&&" PRED | PRED "||" PRED | "!" PRED -- logicals
-*** NODEP ::= EXPR "==" EXPR | EXPR "!=" EXPR
-    XXX how about <, <=, >, >=
-
-*** NODEP ::= EXPR₁ "=~" EXPR₂ | EXPR₁ "!~" EXPR₂
-    Regular expression matching.  EXPR₂ is expected to be a string
-    interpreted as a regular expression.  If that matches EXPR₁, the
-    predicate holds.
-
-*** NODEP ::= "." -- any node
-*** NODEP ::= ID -- match a node with tag DW_TAG_<ID>
-    If ID already is DW_TAG_something, don't prepend more.
-
-*** NODEP ::= "?" "@" ID | "?" "DW_AT_"ID -- match nodes with DW_AT_<ID>
-    - XXX Should this also fail if the form is DW_FORM_flag and the
-      value is 0?
-
-*** EDGEP ::= "_" -- any edge
-*** EDGEP ::= "$child" | "$parent" -- matches edges between a DIE and its children
-*** EDGEP ::= "$next" | "$prev" -- matches edges between a DIE and its siblings
-*** EDGEP ::= "@" ID | "DW_AT_" ID -- matches DW_AT_attribute with DW_FORM_ref*
-
-** Expressions (EXPR)
-   These take sub-graphs and replace them with a value.  The
-   resulting values can be graphs, sequences (of other values),
-   strings, integers, possibly floats.
-
-*** $@attr or $DW_AT_attr -- value of DW_AT_attr
-*** #@attr or #DW_AT_attr -- form of DW_AT_attr
-*** $tag -- tag of focus node
-*** EXPR ::= PATX "," (PATX ",")* PATX -- sequence composition
-    The result of X (Y, Z) is value of a sequence type, whose first
-    element contains the result of X Y, and the second element the
-    result of X Z.
-
-    XXX is this an EXPR or a PATX?
+  The initial colon is not part of the example, but an artifact of
+  Emacs org mode.
 
 
-* Josh Stone's nontrivial-types script
+* Introduction to the dwgrep language
 
-  : ((subprogram && ! ?@declaration
-  :   && !($@decl_file =~ "^/usr/" && $@decl_file !~ "^/usr/src/debug"))
-  :  formal_parameter
-  :  $@type ((const_type || volatile_type || typedef) $@type)*
-  :  (structure_type || class_type))
-  : ([0]$@decl_file, [0]$@decl_line, [0]$@name, [1]$@name)
+** ?ID — a predicate that holds for DIE's whose tag is DW_TAG_ID
 
-* Old work
+   To list all subprograms, one would use the following
+   expression:
+
+   : ?subprogram
+
+** ?@ID — a predicate that holds for DIE's with an attribute DW_AT_ID
+** PRED₁ && PRED₂, PRED₁ || PRED₂, !PRED — the usual logical connectives
+
+   To list all subprograms that are not pure declarations, one would
+   use the following:
+
+   : ?subprogram && ! ?@declaration
+
+** (EXPR) — we can parenthesize for clarity or precedence
+** / — child traversal
+
+   This function replaces every DIE with all its children.  Childless
+   DIE's are thus dropped.  To get at the formal arguments of the
+   subprograms from the previous example, one might say:
+
+   : (?subprogram && ! ?@declaration) /
+
+** EXPR₁ EXPR₂ … — pipeline formation
+
+   In dwgrep, pipelines are formed by simply placing each function
+   next to each other.  This can be seen in the previous example
+   already: we placed / directly after the predicate.  Well, this
+   principle holds universally.
+
+   E.g. if we want to make sure that we really get only the formal
+   parameter nodes in the above example, we might say this:
+
+   : (?subprogram && ! ?@declaration) / ?formal_parameter
+
+   Knowing this, we might also rewrite this example as follows:
+
+   : ?subprogram (! ?@declaration) / ?formal_parameter
+
+   ... but that's probably not very clear.
+
+** $@x — value of attribute DW_AT_x
+
+   This is the firet example of a function that can produces
+   something else than Dwarf DIE's.  E.g. we could obtain names of
+   the formal parameters selected above:
+
+   : (?subprogram && ! ?@declaration) / ?formal_parameter $@name
+
+   The result would be a set of strings with names of all formal
+   parameters in the program.  That's not very useful (yet), but
+   there's another use of this same feature:
+
+** $@x — attribute edge traversal
+
+   For reference attributes, the value of $@x (e.g. $@type) is the
+   referenced DIE.  Hence in this case, $@x encodes traversal.  For
+   example, we could get to types of formal parameters thus:
+
+   : (?subprogram && ! ?@declaration) / ?formal_parameter $@type
+
+   ... which is much more useful.  We might use this to discover
+   whether there are formal parameters that have structure types, and
+   would therefore incur a potentially expensive copy when the
+   function is called:
+
+   : (?subprogram && ! ?@declaration) / ?formal_parameter
+   : $@type ?structure_type
+
+   So that will let us know whether that is the case.  But that's not
+   very useful--we want to know the exact context where this happens!
+   Hence:
+
+** ID := EXPR — name binding
+
+   This can be used to remember a value, before further functions
+   transform it.  The binding is remembered and carried along with a
+   value, and survives value transformation unchanged.  Later on we
+   can recall the value by saying:
+
+** $ID — value recall
+
+   This is again a function, but a degenerate one: it replaces any
+   input argument with the previously-remembered value.
+
+   We can use binding and recall together to get names of the
+   functions with formal parameters of structure types:
+
+   : A := (?subprogram && ! ?@declaration) / ?formal_parameter
+   : $@type ?structure_type $A $@name
+
+   So that's more useful.
+
+   But this still shows only functions that take structure arguments
+   directly.  But what if they take const arguments?  Or if they take
+   a typedef that evaluates to a structure?  For these cases we need
+   to keep peeling the fluff until we get to the interesting DIE's.
+   Enter iterators:
+
+** EXPR*, EXPR+, EXPR? — expression iteration
+   - EXPR* leaves the input set unchanged, then adds to that the
+     result of one application of EXPR, then of another, etc.  It
+     works similarly to * in regular expressions.
+   - EXPR+ is exactly like EXPR EXPR*
+   - EXPR? is like EXPR*, but EXPR is only applied once
+
+   We can use this tool to remove const_type, volatile_type and
+   typedef peels from out potential structure:
+
+   : A := (?subprogram && ! ?@declaration) / ?formal_parameter
+   : $@type ((?const_type || ?volatile_type || ?typedef) $@type)*
+   : ?structure_type $A $@name
+
+
+* Overview of dwgrep language
+
+** EXPR → EXPR₁ EXPR₂ … — pipeline formation
+
+   - If an EXPR returns a list of values, it's as if it returned all
+     the constituent elements individually.  If you wish to get an
+     actual list of values instead, check out {}.
+   - The rationale behind this rule is the behavior that we want "/"
+     to have.
+
+** EXPR → “(” EXPR₁ “)”
+
+** EXPR → EXPR₁ “*” | EXPR₁ “+” | EXPR₁ “?” — iteration
+
+** EXPR → “:@” ID | “$@”ID — attribute access
+
+   - :@ID yields DW_AT_ID itself, as an attribute object.  See below
+     for property access to see what this can be used for.
+   - $@ID yields a value of DW_AT_ID.  This can be a string, a
+     number, a sequence, or another DIE.  In the latter case, $@ID is
+     effectively a graph traversal.
+
+** EXPR → “/” | “/parent” | “/next” | “/prev” — traversal
+
+** EXPR → EXPR₁ “,” EXPR₂ … — sequence constructor
+
+   - This evaluates all constituent EXPR's with the same input and
+     returns a sequence of results.  Note that returned sequences are
+     normally all merged together (see the rule at pipeline
+     formation).  See operator {} if you want to get actual
+     sequences.
+
+** EXPR → “{” EXPR₁ “}” | “{” “}” — sequence quoting
+
+   - This takes the result of EXPR₁ and returns it as a sequence
+     that's not expanded into individual values.
+   - "{1, 2, 3}" stands for a list with three values, 1, 2 and 3.
+   - "{/}" stands for list of immediate children
+   - "{/*}" stands for list of all descendants
+   - "{}" stands for empty list
+
+** EXPR → PRED₁ — filtering
+
+** EXPR → ID “:=” EXPR₁ — binding
+
+   - The identifier together with current value is attached to a
+     dictionary, which is stored with a working set element.  For
+     purposes of pruning duplicate working set elements, attached
+     bindings are considered as well.
+   - This can be used to emulate for loops, kind of:
+     : i := {1, 2, 3, 4} j := {1, 2, 3, 4} (mul $i, $j) ($i > $j)
+     ... this should return:
+     : 2, 3, 4, 6, 8, 12
+   - Possibly imperative-style loops work as well:
+     : A := 1 (A := (add $A, 1))*
+     That's fairly disgusting and I'm not entirely sure whether and
+     how exactly it works.
+   - XXX how do we unbind, forget a name?  E.g. if we want to allow
+     merging of final values and the name is not important anymore.
+
+** EXPR → “$” ID — recall
+
+** EXPR → “$_” — identity function
+
+** EXPR → “$pos” — position of element in sequence or working set
+
+** EXPR → “[” EXPR₁ “]” — ??? sugar for ($pos == (EXPR₁))???
+
+** EXPR → “add” EXPR₁ | “sub” EXPR₁ | “mul” EXPR₁ | “div” EXPR₁ | “mod” EXPR₁ — math
+
+   - We already use +, * and /, but math shouldn't be useful very
+     often anyway, so it's done in this roundabout way.  Possibly use
+     this for gt, ge, lt, le, eq, ne as well?
+   - EXPR₁ yields a sequence of values, which are processed as if the
+     operation corresponding to the instruction was between every two
+     of them.  E.g. (add 1, 2, 3) results in 6, (sub 1, 2, 3) in -4.
+   - If EXPR₁ returns a list of free-standing values instead of a
+     quoted sequence, the behavior is the same.  So (add 1, 2, 3) is
+     the same as (add {1, 2, 3}), is the same as (add (1, 2, 3)).
+   - If you wish to process sequences in your working set, do
+     e.g. (add $_).
+   - XXX Hmm, but this doesn't need any special notation.  "add" is a
+     function.  It adds whatever comes to input, and produces single
+     value as result.  So (1, 2, 3) add, just like anything in this
+     language.
+
+** EXPR → “concat” EXPR₁ — sequence processing
+
+** EXPR → “"” (string literal) “"” | (“0x”|“0”|“”)[1-9][0-9]* — literals
+
+   - String literals will probably provide some form of value
+     interpolation, so that one could say, e.g.:
+     : A := X Y Z "blah blah %{$A%}"
+     %{ and %} would probably enclose an EXPR that's evaluated on the
+     input value to the string itself.  The we wouldn't need the
+     string-formatting operator.
+   - "%{ $_ %}" converts anything to a string, but we might have %s
+     to save on typing.
+
+** EXPR → “:” ID — value property access
+   - This yields various values according to the type of input
+     element:
+
+     |------+------------+---------------------------------------------|
+     | type | key        | meaning                                     |
+     |------+------------+---------------------------------------------|
+     | DIE  | type       | "DIE"                                       |
+     | DIE  | tag        | integer value of tag                        |
+     | DIE  | children   | sequence of DIE's.  Same as simply "/".     |
+     | DIE  | attributes | sequence of AT's                            |
+     | DIE  | offset     | integer denoting offset of DIE in file      |
+     | DIE  | @ID        | like :attributes ($_ == DW_AT_ID)           |
+     |------+------------+---------------------------------------------|
+     | AT   | type       | "AT"                                        |
+     | AT   | name       | integer value of attribute name             |
+     | AT   | form       | integer value of form                       |
+     | AT   | value      | attribute value (can be DIE, SEQ, INT, STR) |
+     | AT   | offset     | integer denoting offset of AT in file       |
+     |------+------------+---------------------------------------------|
+     | SEQ  | type       | "SEQ"                                       |
+     | SEQ  | length     | length of sequence                          |
+     |------+------------+---------------------------------------------|
+     | STR  | type       | "STR"                                       |
+     | STR  | length     | length of string                            |
+     |------+------------+---------------------------------------------|
+     | INT  | type       | "INT"                                       |
+     |------+------------+---------------------------------------------|
+
+** PRED → “^” — root node predicate
+
+   - Note that this is a predicate.  It is true on a root node, false
+     otherwise.
+   - (/parent* ^) -- finds a root node of current node
+   - XXX possibly shorten this as "$^"?
+   - XXX how about "universe"--set of all nodes?  Do we need to
+     encode this as (/parent* ^ /*)?
+
+** PRED → “?”ID — tag predicate
+
+** PRED → “?@”ID — attribute presence predicate
+
+** PRED → PRED₁ “&&” PRED₂ | PRED₁ “||” PRED₂ | “!” PRED₁ — logical connectives
+
+** PRED → EXPR₁ “==” EXPR₂ | EXPR₁ “!=” EXPR₂ — equivalence
+
+** PRED → EXPR₁ “<” EXPR₂ | EXPR₁ “>” EXPR₂ | EXPR₁ “<=” EXPR₂ | EXPR₁ “>=” EXPR₂ — comparison
+
+** PRED → EXPR₁ “=~” EXPR₂ | EXPR₁ “!~” EXPR₂ — regex matching
+
+   - EXPR₁ is a string to be match by regular expression at EXPR₂.
+
+** PRED → “if” “(” EXPR₁ “)”
+
+   - Unlike direct pipeline formation, EXPR₁ is evaluated as
+     subexpression, and effects of traversal and filtering are kept
+     locally and thrown away after EXPR₁ is evaluated.
+   - Input of EXPR₁ is the same as input of the overall PRED.
+   - The elements for which EXPR₁ evaluates to non-empty set are
+     kept, others are rejected.
+
+** PRED → “.show” | “.dump” — debugging
+
+   - both predicates always succeed, and print elements that they are
+     tested on.
+     - .show shows only the value
+     - .dump shows debugging information as well--fuller output,
+       attached values, that sort of thing
+
+* Representing non-.debug_info information
+
+** @decl_file
+   The value is represented as actual string including path.
+
+** @stmt_list
+   The value is a line table.  We model this as a bunch of nodes with
+   attributes.  The nodes are of type line_table, and each has these
+   attributes: @address, @op_index, @file, @line, @column, @is_stmt,
+   @basic_block, @end_sequence, @prologue_end, @epilogue_begin, @isa,
+   @discriminator.
+
+** XXX location expressions?
+  - probably a list of instructions
+  - possibly a means of evaluating?
+
+** ELF symbols
+
+* Examples
 ** Josh Stone's nontrivial-types script
 
-subprogram[!@declaration]/formal_parameter/(follow::@type[@type==const_type or @type==volatile_type or @type==typedef])[@type==structure_type or @type==class_type]
+   : A := (?subprogram && ! ?@declaration
+   :       && !($@decl_file =~ "^/usr/" && $@decl_file !~ "^/usr/src/debug"))
+   : / B := ?formal_parameter
+   : $@type ((const_type || volatile_type || typedef) $@type)*
+   : (?structure_type || ?class_type)
+   : (add "%{ $A $@decl_file %}:%{ $A $@decl_line %}: note: in function ",
+   :      "`%{ $A $@name }%', parameter `%{ $B $@name %}' type is not trivial")
 
-A=(subprogram && ! @declaration) / formal_parameter / @type / ((const_type || volatile_type || typedef) ? @type)* / structure_type || class_type
+   - In XQuery, it is:
 
-We can't simply write this:
+   : declare function local:cvPeeledType($root, $node) {
+   :     let $T := $root//*[@id = $node/at_type] return
+   :     if ($T/name() = "tag_const_type"
+   :         or $T/name() = "tag_volatile_type"
+   :         or $T/name() = "tag_typedef")
+   :     then local:cvPeeledType($root, $T)
+   :     else $T
+   : };
+   :
+   : doc ("xxxxx.xml")//tag_subprogram/
+   : (let $A := tag_formal_parameter
+   :  let $T := local:cvPeeledType(/, $A)
+   :  return if ($T/name() = "tag_structure_type")
+   :         then concat ($A/../at_name/text(), ": type of parameter ",
+   :                      $A/at_name/text(), " is not trivial.")
+   : 	else ())
 
-   ... / @type* / structure_type || class_type
+** check_die_decl_call:
 
-as that would follow through pointer_type, pointer_to_member and
-reference as well, and that's exactly what we are trying not to do.
+   : ( (?@decl_column && !?@decl_line) "%s has decl_column, but NOT decl_line"
+   : , (?decl_line && !?@decl_file) "%s has decl_line, but NOT decl_file"
+   : , (?@decl_file && !?@decl_line) "%s has decl_file, but NOT decl_line"
+   : , (?call_column && !?call_line) "%s has call_column, but NOT call_line"
+   : , (?call_line && !?call_file) "%s has call_line, but NOT call_file"
+   : , (?call_file && !?call_line) "%s has call_file, but NOT call_line" )
 
-How about this?
+** check_die_line_info:
 
-A=(subprogram && ! @declaration) / formal_parameter / (@type / const_type || volatile_type || typedef)* / structure_type || class_type
+   : A := (?subprogram || ?inline_subroutine || ?entry_point || ?lexical_block
+   :       || ?label || ?with_stmt || ?try_block || ?catch_block)
+   : B := ($@entry_pc, $@low_pc, $@ranges)
+   : /parent* ^
+   : ({$@stmt_list ($A == $@address)} == {})
+   : ("Address %s referenced form %s not found in line table." % {$B; $A})
 
-This considers following through @type in current context, but only if
-the rest of the expression matches.  If it does, @type is followed.
-The closure means this may be applied several times.
+** childless DIE's:
+   : if (!/)
+   ... at least I think ;)
 
-Note that the overall expression works the same way: it considers
-nodes that match (subprogram && ! @declaration), but only if the rest
-of the expression matches.
+* Mark's stuff
+** contains DW_OP_fbreg && ! @frame_base
 
-Hmm, this doesn't actually work, the above in fact means, match @type,
-then follow ahead and match const_type in one of the children, doesn't
-it?  It appears we need more than just / as a separator.  The problem
-is that @type here serves instead of a /, but the syntax makes it
-unobvious.
+** uses register based operators
 
-  [subprogram && ! @declaration] $child [formal_parameter] @type ([const_type || volatile_type || typedef] @type)* [structure_type || class_type]
+** whether it uses a deref operator
 
-$child etc. are really predicates as well, except over edges, not
-nodes.  So we can drop the [] and the above example becomes:
+** contains DW_OP_call_frame_cfa && $@low_pc == 0
 
-  (subprogram && ! ?@declaration) $child formal_parameter $@type ((const_type || volatile_type || typedef) $@type)* (structure_type || class_type)
-
-Node and edge predicates alternate, so the tool can tell if one of
-them is omitted and supply a default.  That would be "." for nodes
-and $child for edges:
-
-  (subprogram && ! ?@declaration) formal_parameter $@type ((const_type || volatile_type || typedef) $@type)* (structure_type || class_type)
-
-Now we would like to print out file name, line number, function name
-and argument name.
-
-  ((subprogram && ! ?@declaration) formal_parameter $@type ((const_type || volatile_type || typedef) $@type)* (structure_type || class_type))
-	([0]$@decl_file, [0]$@decl_line, [0]$@name, [1]$@name)
-
-So this returns 4-tuples looking probably something along the lines of:
-  ("/usr/lib64/glib-2.0/include/garray.h", 15, "get_action", "name")
-
-It would be relatively easy to format this in a simple Python, C or
-C++ wrapper, but we could possibly also roll our own.  This is
-approximation of Josh's 300-odd line nontrivial-param.c:
-
-  "%s:%s: note: in function `%s', parameter `%s' type is not trivial" \
-	% (((subprogram && ! ?@declaration) formal_parameter
-	    $@type ((const_type || volatile_type || typedef) $@type)*
-	    (structure_type || class_type))
-	   ([0]$@decl_file, [0]$@decl_line, [0]$@name, [1]$@name))
-
-... which would yield and, probably, display a set of strings
-formatted from the selected tuples.  To filter out functions from
-system headers, we decorate the first predicate like this:
-
-  "%s:%s: note: in function `%s', parameter `%s' type is not trivial" \
-	% (((subprogram && ! ?@declaration
-	     && ! ($@decl_file =~ m|^/usr/| && $@decl_file !~ m|/usr/src/debug|))
-	    formal_parameter
-	    $@type ((const_type || volatile_type || typedef) $@type)*
-	    (structure_type || class_type))
-	   ([0]$@decl_file, [0]$@decl_line, [0]$@name, [1]$@name))
-
-== childless DIE's:
-
-~{. . [0]}
-
-== subtree of a DIE:
-
-  some_tag $child*
-  0xdeadbeef $child*
-
-How to display results?
-
-== check_die_decl_call:
-
-^/**/*[(@decl_column and !@decl_line) or (@decl_line and !@decl_file) or (@decl_file and !@decl_line)]
-^/**/*[(@call_column and !@call_line) or (@call_line and !@call_file) or (@call_file and !@call_line)]
-
-
-== check_die_line_info:
-
-((//subprogram) | (//inlined_subroutine) | (//entry_point) | (//lexical_block)
- | (//label) | (//with_stmt) | (//try_block) | (//catch_block))
-/ (@entry_pc | @low_pc | @ranges)
-
---> This gives us a set of addresses to check, if dwgrep is smart
-    enough to understand the (@entry_pc | @low_pc | @ranges) bit.  It
-    as well might.  It's written in selector context, not in predicate
-    context, so we are interested in value.  Value of each of these is
-    some range (though one-address range in the former two cases).
-
---> The next step then is to check whether each of these addresses is
-    covered by .dwarf_line.  Dunno if we can have these sorts of
-    expressions for them as well.
-
-
+** is an empty location expression
+** location expression ends with implicit_value or stack_value
+* Old work
 == check_duplicate_DW_tag_variable
 
 --> check for two full DW_TAG_variable DIEs with the same DW_AT_name
@@ -329,9 +416,3 @@ How to display results?
 == check_linkage_external_die.cc
 
 (SHT_DYNSYM | SHT_SYMTAB)/*[@type==STT_OBJECT or @type==STT_FUNC][@name != ""]
-
-
-== experiments
-
-@name==blah
-@name~=/.*blah/
