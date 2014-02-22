@@ -1,36 +1,42 @@
 -*-org-*-
 * Computation
 
-  Dwgrep is tool and an associated language for expressing queries
-  done on a Dwarf graph.  Conceptually expressions of this language
-  form a pipeline of functions.  The Dwarf graph under consideration
-  flows through this pipeline, modified by each function of the
-  overall expression, and whatever comes out of the other end is the
-  result of the query.
+  Dwgrep is tool and an associated language for querying Dwarf graphs.
+  Conceptually, expressions of this language are a pipeline of
+  functions.  The Dwarf graph under consideration flows through this
+  pipeline, modified by each function of the overall expression, and
+  whatever comes out of the other end is the result of the query.
 
   We call what flows through the dwgrep expression a /working set/.
-  The elements of this set can by any of the following:
+  Initial working set contains all DIE's in a given Dwarf graph.  As
+  the working set is transformed, its elements can be more than just
+  DIE's--they can be of any of the following types:
 
   - Dwarf DIE's
   - integers, strings
   - sequences of other values
 
-  Initial working set contains all DIE's in a given Dwarf graph (and
-  then some).
+  Each function takes on input an element of the working set, and
+  produces zero or more values on the output.  Note that producing
+  several values is different from producing a single value of type
+  sequence.  When a function is applied on a working set element, the
+  following can happen:
 
-  Each function takes a working set element on input, and produces
-  zero or more elements on the output.  The functions are applied to
-  each element of the working set, and the output is collected to form
-  a new working set.  So functions work as generalized filters that
-  drop, change, or add new elements to working set.
+  - that element is removed (if a function doesn't return any value)
+  - the value stored at that element is changed for another
+  - that element is "forked", replaced with several elements, each
+    with one value that the function produced
 
-  Functions in dwgrep expressions generally come in one of the
-  following flavors:
+  There is a subtle difference between values and elements that will
+  be clarified later.  For now you can think of the two as synonyms.
 
-  - predicates (keep elements for which the predicate holds, drop
-    others)
-  - traversals (replace one DIE with another (or a set thereof))
-  - producers (replace Dwarf DIE's with values of other types)
+  When dwgrep expression is evaluated, the functions in the expression
+  are applied to each element of the working set, and the output is
+  collected to form a new working set.  The whole scheme is thus
+  reminiscent of shell pipeline, except you have richer variety of
+  types instead of lines.
+
+* Introduction to the dwgrep language
 
   In following, examples are generally written as follows:
 
@@ -39,13 +45,12 @@
   The initial colon is not part of the example, but an artifact of
   Emacs org mode.
 
-
-* Introduction to the dwgrep language
-
 ** ?ID — Filtering DIE's by tag
 
-   The predicate "?ID" holds for DIE's whose tag is DW_TAG_ID.  For
-   example, to list all subprograms, one would use the following
+   The predicate "?ID" holds for DIE's whose tag is DW_TAG_ID.  This
+   functions returns its input element, if it has the given tag.
+
+   For example, to list all subprograms, one would use the following
    expression:
 
    : ?subprogram
@@ -62,9 +67,12 @@
 ** (EXPR) — we can parenthesize for clarity or precedence
 ** / — child traversal
 
-   Function "/" replaces every DIE with all its children.  Childless
-   DIE's are thus dropped.  To get at the formal arguments of the
-   subprograms from the previous example, one might say:
+   Function "/" produces children DIE's of a given DIE.  If applied on
+   a childless DIE or on a value that's not DIE at all, it produces
+   nothing, and such elements are thus dropped.
+
+   To get at the formal arguments of the subprograms from the previous
+   example, one might say:
 
    : (?subprogram && ! ?@declaration) /
 
@@ -88,7 +96,7 @@
 
 ** $@ID — value of attribute DW_AT_ID
 
-   This is the firet example of a function that can produces something
+   This is the first example of a function that can produces something
    else than Dwarf DIE's.  This will yield whatever value the
    attribute has--a number, a string, a DIE, or a sequence.  E.g. we
    could obtain names of the formal parameters selected above:
@@ -113,28 +121,22 @@
    : $@type ?structure_type
 
    So that will let us know whether there are any offenders like that.
-   But that's not very useful--we want to know the exact context where
-   this happens!  Hence:
+   But that's not what we need.  We would like to know about the
+   subprograms themselves, that have this property!  Hence:
 
-** -> ID — name binding
+** if EXPR — sub-expression predicate
 
-   This can be used to remember a value, before further functions
-   transform it.  The binding is remembered and carried along with a
-   value, and survives value transformations unchanged.  Later on we
-   can recall the value by saying:
+   This predicate holds for elements, for which EXPR produces at least
+   a single value.  The input to EXPR is the same working set that is
+   the input to the overall predicate, but EXPR itself is evaluated in
+   what we call sub-expression context: what happens in EXPR, stays in
+   EXPR, and we only care whether at least a single value comes out of
+   there.
 
-** $ID — value recall
+   With this, we can reformulate our query a bit:
 
-   This is again a function, but a degenerate one: it replaces any
-   input argument with the previously-remembered value.
-
-   We can use binding and recall together to get names of the
-   functions with formal parameters of structure types:
-
-   : (?subprogram && ! ?@declaration) -> A / ?formal_parameter
-   : $@type ?structure_type $A $@name
-
-   So that's more useful.
+   : (?subprogram && ! ?@declaration)
+   : if (/ ?formal_parameter $@type ?structure_type)
 
    But this still shows only functions that take structure arguments
    directly.  But what if they take const arguments?  Or if they take
@@ -144,7 +146,7 @@
 
 ** EXPR*, EXPR+, EXPR? — expression iteration
 
-   - EXPR* leaves the input set unchanged, then adds to that the
+   - EXPR* leaves the working set unchanged, then adds to that the
      result of one application of EXPR, then of another, etc.  It
      works similarly to * in regular expressions.
    - EXPR+ is exactly like EXPR EXPR*.
@@ -153,9 +155,10 @@
    We can use this tool to remove const_type, volatile_type and
    typedef layers from out potential structure:
 
-   : (?subprogram && ! ?@declaration) -> A / ?formal_parameter
-   : $@type ((?const_type || ?volatile_type || ?typedef) $@type)*
-   : ?structure_type $A $@name
+   : (?subprogram && ! ?@declaration)
+   : if (/ ?formal_parameter $@type
+   :     ((?const_type || ?volatile_type || ?typedef) $@type)*
+   :     ?structure_type)
 
    So this was a small sampler of the language.  In the next section,
    all of it will be introduced in a semi-formal, but rather terse
@@ -174,7 +177,7 @@
 
 ** EXPR → “(” EXPR₁ “)”
 
-** EXPR → “{” EXPR₁ “}” | “{” “}” — subexpression capture
+** EXPR → “{” EXPR₁ “}” | “{” “}” — sub-expression capture
 
    This takes all the values that EXPR₁ yields, and returns them in a
    single sequence.  So each working set element is converted into a
@@ -217,11 +220,16 @@
 ** EXPR → “->” ID | “$”ID — binding, recall
 
    The identifier together with current value is attached to a working
-   set element.  When a value of the element is replaced with another
-   one, the attached bindings are left intact.  For purposes of
-   pruning duplicate working set elements, attached bindings are
-   considered as well.  They thus serve as contextual information for
-   each value.
+   set element.  This is where working set elements differ from
+   values: a working set element contains a value _and_ a set of
+   bindings.  The value inside the element may change, but the
+   bindings stay intact.
+
+   For purposes of pruning duplicate working set elements, attached
+   bindings are considered as well.  It is thus possible to have the
+   same value in the set in many copies, each with a different set of
+   bindings attached.  In this sense, the bindings serve as contextual
+   information for each value.
 
    - This can be used to emulate for loops, kind of:
      : {1, 2, 3, 4}->i {1, 2, 3, 4}->j ($i > $j) {$i, $j} mul
@@ -241,7 +249,7 @@
 
    This is useful for picking values out of sequences.  We might
    consider a syntactic sugar for this:
-   - EXPR → “[” EXPR₁ “]” — sugar for ($pos == (EXPR₁))???
+   - EXPR → “[” EXPR₁ “]” — sugar for ($pos == (EXPR₁)) XXX
    - another possibility is to have PRED → “[” EXPR₁ “]” instead of
      current PRED → “if” “(” EXPR₁ “)”.
 
@@ -251,7 +259,7 @@
      often anyway, so it's done in this roundabout way.  Possibly use
      this for gt, ge, lt, le, eq, ne as well?
 
-   - These are functions like any others.  They take whatever's on
+   - These are functions like any others.  They take whatever is on
      their input, and do math on it.  Note therefore that they behave
      as suffix operators.
 
@@ -272,14 +280,14 @@
 
      Undefined operations simply produce no result.
 
-** EXPR → “concat” EXPR₁ — sequence processing
+** EXPR → “concat” — sequence processing
 
 ** EXPR → “"” (string literal) “"” | (“0x”|“0”|“”)[1-9][0-9]* — literals
 
    String literals allow expression interpolation:
 
    - %{ and %} enclose an EXPR that's evaluated as usual, and whose
-     input is whatever's the input to the string literal itself.  The
+     input is whatever is the input to the string literal itself.  The
      result is converted to a string and embedded in the string
      template.
    - %s stands for %{ $_ %}
@@ -295,8 +303,8 @@
      |------+------------+---------------------------------------------|
      | DIE  | type       | string "DIE"                                |
      | DIE  | tag        | integer value of tag                        |
-     | DIE  | children   | sequence of DIE's.  Same as simply "/".     |
-     | DIE  | attributes | sequence of AT's                            |
+     | DIE  | children   | multivalue of DIE's.  Same as simply "/".   |
+     | DIE  | attributes | multivalue of AT's                          |
      | DIE  | offset     | integer denoting offset of DIE in file      |
      | DIE  | @ID        | like :attributes ($_ == DW_AT_ID)           |
      |------+------------+---------------------------------------------|
@@ -315,19 +323,22 @@
      | INT  | type       | string "INT"                                |
      |------+------------+---------------------------------------------|
 
+** EXPR → “;” — universe (XXX)
+
+   Yields all nodes.  This operator is implicit at the beginning of
+   the full dwgrep expression.
+
 ** PRED → “(” PRED₁ “)”
 
 ** PRED → “^” — root node predicate
+
+   This is exactly equivalent to (! if /parent).
 
    Note that this is a predicate.  It is true on a root node, false
    otherwise.
 
    - (/parent* ^) -- finds a root node of current node
      - XXX possibly shorten this as "$^"?
-   - XXX how about "universe"--set of all nodes?  Do we need to encode
-     this as (/parent* ^ /*)?  That wouldn't yield everything anyway
-     (it would expand to all DIE's in CU's of which we have at least
-     one node.  It would also not include non-.debug_info nodes.)
 
 ** PRED → “?”ID — tag predicate
 
@@ -337,21 +348,21 @@
 
 ** PRED → EXPR₁ “==” EXPR₂ | EXPR₁ “!=” EXPR₂ — equivalence
 
-   EXPR₁ and EXPR₂ are evaluated in subexpression context and act if
-   they were in subexpression capture.  XXX really?
+   EXPR₁ and EXPR₂ are evaluated in sub-expression context and act if
+   they were in sub-expression capture.  XXX really?
 
 ** PRED → EXPR₁ “<” EXPR₂ | EXPR₁ “>” EXPR₂ | EXPR₁ “<=” EXPR₂ | EXPR₁ “>=” EXPR₂ — comparison
 
-   EXPR₁ and EXPR₂ are evaluated in subexpression context and act if
-   they were in subexpression capture.  XXX really?
+   EXPR₁ and EXPR₂ are evaluated in sub-expression context and act if
+   they were in sub-expression capture.  XXX really?
 
 ** PRED → EXPR₁ “=~” EXPR₂ | EXPR₁ “!~” EXPR₂ — regex matching
 
    EXPR₁ is a string to be match by regular expression at EXPR₂.
-   EXPR₁ and EXPR₂ are evaluated in subexpression context and act if
-   they were in subexpression capture.  XXX really?
+   EXPR₁ and EXPR₂ are evaluated in sub-expression context and act if
+   they were in sub-expression capture.  XXX really?
 
-** PRED → “if” EXPR₁ — subexpression conditional
+** PRED → “if” EXPR₁ — sub-expression predicate
 
    This is exactly equivalent to ({EXPR₁} != {}).
 
@@ -365,6 +376,7 @@
    - .show shows only the value
    - .dump shows debugging information as well--fuller output,
      attached values, that sort of thing
+
 
 * Representing non-.debug_info information
 
@@ -383,7 +395,7 @@
 ** @location
 
    $@location yields a number of pseudo-DIE's of type
-   location_list_entry.  Each has the following attrubets: @address,
+   location_list_entry.  Each has the following attributes: @address,
    and @ops.
 
    $@ops yields a number of pseudo-DIE's of type location_list_op.
@@ -423,6 +435,24 @@
    :         then concat ($A/../at_name/text(), ": type of parameter ",
    :                      $A/at_name/text(), " is not trivial.")
    : 	else ())
+
+   - Or some Python wrapper thing?
+
+   : import re
+   : for val in (dwg.filt (has_tag ("subprogram") & ~has_at ("declaration")
+   :                       & lambda e: (re.match ("^/usr/.*", e.at ("decl_file"))
+   :                                    and not re.match ("^/usr/src/debug.*",
+   :                                                      e.at ("decl_file"))))
+   :             .bind ("A")
+   :             .children .filt (has_tag ("formal_parameter"))
+   :             .bind ("B")
+   :             .at ("type") .iterate (has_tag ("const_type") | has_tag ("volatile_type")
+   :                                   | has_tag ("typedef")] .at ("type"))
+   :             .filt (has_tag ("structure_type") | has_tag ("class_type")):
+   :     A = val.binding ("A")
+   :     B = val.binding ("B")
+   :     print "%s: %s: note: in function %s, parameter %s type is not trivial" \
+   :         % (A.at ("decl_file"), A.at ("decl_line"), A.at ("name"), B.at ("name"))
 
 ** check_die_decl_call:
 
