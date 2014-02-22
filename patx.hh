@@ -18,7 +18,7 @@ class patx_group
 
 public:
   void append (std::unique_ptr <patx> &&expr);
-  virtual std::unique_ptr <wset> evaluate (std::unique_ptr <wset> &&ws);
+  std::unique_ptr <wset> evaluate (std::unique_ptr <wset> &&ws) override;
 };
 
 
@@ -33,7 +33,7 @@ class patx_repeat
 
 public:
   patx_repeat (std::unique_ptr <patx> &&patx, size_t min, size_t max);
-  virtual std::unique_ptr <wset> evaluate (std::unique_ptr <wset> &&ws);
+  std::unique_ptr <wset> evaluate (std::unique_ptr <wset> &&ws) override;
 };
 
 
@@ -43,7 +43,7 @@ class patx_nodep
 public:
   // Node predicate keeps only those values in working set that match
   // the predicate.
-  virtual std::unique_ptr <wset> evaluate (std::unique_ptr <wset> &&ws);
+  std::unique_ptr <wset> evaluate (std::unique_ptr <wset> &&ws) final override;
   virtual bool match (value const &val) = 0;
 };
 
@@ -51,7 +51,7 @@ public:
 class patx_nodep_any
   : public patx_nodep
 {
-  virtual bool match (value const &val);
+  bool match (value const &val) override;
 };
 
 
@@ -61,7 +61,7 @@ class patx_nodep_tag
   int const m_tag;
 public:
   explicit patx_nodep_tag (int tag);
-  virtual bool match (value const &val);
+  bool match (value const &val) override;
 };
 
 
@@ -71,7 +71,7 @@ class patx_nodep_hasattr
   int const m_attr;
 public:
   explicit patx_nodep_hasattr (int attr);
-  virtual bool match (value const &val);
+  bool match (value const &val) override;
 };
 
 
@@ -81,7 +81,7 @@ class patx_nodep_not
   std::unique_ptr <patx_nodep> m_op;
 public:
   explicit patx_nodep_not (std::unique_ptr <patx_nodep> &&op);
-  virtual bool match (value const &val);
+  bool match (value const &val) override;
 };
 
 
@@ -95,7 +95,7 @@ public:
   patx_nodep_and (std::unique_ptr <patx_nodep> &&lhs,
 		  std::unique_ptr <patx_nodep> &&rhs);
 
-  virtual bool match (value const &val);
+  bool match (value const &val) override;
 };
 
 
@@ -109,7 +109,7 @@ public:
   patx_nodep_or (std::unique_ptr <patx_nodep> &&lhs,
 		 std::unique_ptr <patx_nodep> &&rhs);
 
-  virtual bool match (value const &val);
+  bool match (value const &val) override;
 };
 
 
@@ -117,7 +117,7 @@ class patx_edgep_child
   : public patx
 {
 public:
-  virtual std::unique_ptr <wset> evaluate (std::unique_ptr <wset> &&ws);
+  std::unique_ptr <wset> evaluate (std::unique_ptr <wset> &&ws) override;
 };
 
 
@@ -127,7 +127,7 @@ class patx_edgep_attr
   int const m_attr;
 public:
   explicit patx_edgep_attr (int attr);
-  virtual std::unique_ptr <wset> evaluate (std::unique_ptr <wset> &&ws);
+  std::unique_ptr <wset> evaluate (std::unique_ptr <wset> &&ws) override;
 };
 
 #endif /* _PATX_H_ */

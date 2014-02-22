@@ -8,7 +8,7 @@ wset::initial (std::shared_ptr <Dwarf> &dw)
   for (all_dies_iterator it {&*dw}; it != all_dies_iterator::end (); ++it)
     {
       Dwarf_Die *die = *it;
-      auto val = std::unique_ptr <subgraph> (new subgraph (dw));
+      auto val = std::unique_ptr <nodeset> (new nodeset (dw));
       val->add (dieref (die));
       ws.add (std::move (val));
     }

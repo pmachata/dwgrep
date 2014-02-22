@@ -40,24 +40,24 @@ patx_repeat::evaluate (std::unique_ptr <wset> &&ws)
   // reached the fixed point).  To detect the latter, we store graphs
   // separately in a set.
 
-  auto cmp = [] (std::unique_ptr <subgraph> const &a,
-		 std::unique_ptr <subgraph> const &b)
+  auto cmp = [] (std::unique_ptr <nodeset> const &a,
+		 std::unique_ptr <nodeset> const &b)
     {
       std::vector <dieref> da {a->begin (), a->end ()};
       std::vector <dieref> db {b->begin (), b->end ()};
       return da < db;
     };
 
-  std::set <std::unique_ptr <subgraph>, decltype (cmp)> sgs {cmp};
+  std::set <std::unique_ptr <nodeset>, decltype (cmp)> sgs {cmp};
   std::vector <std::unique_ptr <value> > rest;
 
   auto split = [&sgs, &rest] (std::unique_ptr <wset> &&result)
     {
       for (auto &val: *result)
-	if (auto sg = dynamic_cast <subgraph *> (&*val))
+	if (auto sg = dynamic_cast <nodeset *> (&*val))
 	  {
 	    val.release ();
-	    std::unique_ptr <subgraph> np (sg);
+	    std::unique_ptr <nodeset> np (sg);
 	    sgs.emplace (std::move (np));
 	  }
 	else
@@ -72,7 +72,7 @@ patx_repeat::evaluate (std::unique_ptr <wset> &&ws)
       std::cout << "iteration " << i << ": " << sz << " elements\n";
       auto tmp = std::unique_ptr <wset> {new wset {}};
       for (auto &val: sgs)
-	tmp->add (std::unique_ptr <subgraph> {new subgraph {*val}});
+	tmp->add (std::unique_ptr <nodeset> {new nodeset {*val}});
 
       split (m_patx->evaluate (std::move (tmp)));
       size_t sz2 = sgs.size ();
@@ -88,7 +88,7 @@ patx_repeat::evaluate (std::unique_ptr <wset> &&ws)
   for (auto &val: sgs)
     {
       // val is constant in this context :-/
-      auto tmp = std::unique_ptr <subgraph> (new subgraph {*val});
+      auto tmp = std::unique_ptr <nodeset> (new nodeset {*val});
       ret->add (std::move (tmp));
     }
 
@@ -121,7 +121,7 @@ patx_nodep_tag::patx_nodep_tag (int tag)
 bool
 patx_nodep_tag::match (value const &val)
 {
-  if (auto g = dynamic_cast <subgraph const *> (&val))
+  if (auto g = dynamic_cast <nodeset const *> (&val))
     {
       Dwarf_Die die = g->focus ();
       /*
@@ -143,7 +143,7 @@ patx_nodep_hasattr::patx_nodep_hasattr (int attr)
 bool
 patx_nodep_hasattr::match (value const &val)
 {
-  if (auto g = dynamic_cast <subgraph const *> (&val))
+  if (auto g = dynamic_cast <nodeset const *> (&val))
     {
       Dwarf_Die die = g->focus ();
       return dwarf_hasattr_integrate (&die, m_attr);
@@ -195,7 +195,7 @@ patx_edgep_child::evaluate (std::unique_ptr <wset> &&ws)
 {
   auto ret = std::unique_ptr <wset> {new wset {}};
   for (auto &val: *ws)
-    if (auto sg = dynamic_cast <subgraph const *> (&*val))
+    if (auto sg = dynamic_cast <nodeset const *> (&*val))
       {
 	Dwarf_Die die = sg->focus ();
 	if (dwarf_haschildren (&die))
@@ -204,7 +204,7 @@ patx_edgep_child::evaluate (std::unique_ptr <wset> &&ws)
 
 	    do
 	      {
-		auto ng = std::unique_ptr <subgraph> {new subgraph {*sg}};
+		auto ng = std::unique_ptr <nodeset> {new nodeset {*sg}};
 		ng->add (dieref (&die));
 		ret->add (std::move (ng));
 	      }
@@ -224,7 +224,7 @@ patx_edgep_attr::evaluate (std::unique_ptr <wset> &&ws)
 {
   auto ret = std::unique_ptr <wset> {new wset {}};
   for (auto &val: *ws)
-    if (auto sg = dynamic_cast <subgraph const *> (&*val))
+    if (auto sg = dynamic_cast <nodeset const *> (&*val))
       {
 	Dwarf_Die die = sg->focus ();
 	Dwarf_Attribute at;
@@ -235,7 +235,7 @@ patx_edgep_attr::evaluate (std::unique_ptr <wset> &&ws)
 	    // underlying Dwarf is broken.  So just ignore it all.
 	    && dwarf_formref_die (&at, &die) != NULL)
 	  {
-	    auto ng = std::unique_ptr <subgraph> {new subgraph {*sg}};
+	    auto ng = std::unique_ptr <nodeset> {new nodeset {*sg}};
 	    ng->add (dieref (&die));
 	    ret->add (std::move (ng));
 	  }

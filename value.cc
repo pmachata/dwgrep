@@ -33,42 +33,42 @@ dieref::operator< (dieref const &other) const
 }
 
 
-subgraph::subgraph (std::shared_ptr <Dwarf> dw)
+nodeset::nodeset (std::shared_ptr <Dwarf> dw)
   : m_dw (dw)
 {}
 
-subgraph::subgraph (subgraph &&other)
+nodeset::nodeset (nodeset &&other)
   : m_dw (std::move (other.m_dw))
   , m_dies (std::move (other.m_dies))
 {}
 
 void
-subgraph::add (dieref const &d)
+nodeset::add (dieref const &d)
 {
   m_dies.push_back (d);
 }
 
 Dwarf_Die
-subgraph::focus () const
+nodeset::focus () const
 {
   assert (m_dies.size () > 0);
   return m_dies.back ().die (m_dw);
 }
 
 std::vector <dieref>::const_iterator
-subgraph::begin ()
+nodeset::begin ()
 {
   return std::begin (m_dies);
 }
 
 std::vector <dieref>::const_iterator
-subgraph::end ()
+nodeset::end ()
 {
   return std::end (m_dies);
 }
 
 std::string
-subgraph::format () const
+nodeset::format () const
 {
   std::stringstream ss;
   ss << "{" << std::hex;

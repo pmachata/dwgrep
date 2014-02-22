@@ -32,17 +32,17 @@ public:
 // XXX Currently this is just a path.  Possibly we can extend to a
 // full subgraph eventually.  We don't therefore track focus at all,
 // it's always implicitly the last node.
-class subgraph
+class nodeset
   : public value
 {
   mutable std::shared_ptr <Dwarf> m_dw;
   std::vector <dieref> m_dies;
 
 public:
-  explicit subgraph (std::shared_ptr <Dwarf> dw);
+  explicit nodeset (std::shared_ptr <Dwarf> dw);
 
-  subgraph (subgraph const &other) = default;
-  subgraph (subgraph &&other);
+  nodeset (nodeset const &other) = default;
+  nodeset (nodeset &&other);
 
   void add (dieref const &d);
   Dwarf_Die focus () const;
