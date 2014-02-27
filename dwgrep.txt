@@ -17,24 +17,28 @@
   - sequences of other values
 
   Each function takes on input an element of the working set, and
-  produces zero or more values on the output.  Note that producing
-  several values is different from producing a single value of type
-  sequence.  When a function is applied on a working set element, the
-  following can happen:
+  produces zero or more elements on the output.  Note that producing
+  several elements is different from producing an element that holds a
+  single value of type sequence.  When a function is applied on a
+  working set element, the following can happen:
 
-  - that element is removed (if a function doesn't return any value)
-  - the value stored at that element is changed for another
-  - that element is "forked", replaced with several elements, each
-    with one value that the function produced
-
-  There is a subtle difference between values and elements that will
-  be clarified later.  For now you can think of the two as synonyms.
+  - that element is removed (if a function doesn't yield anything)
+  - the element is changed for another
+  - that element is "forked", replaced with several elements
 
   When dwgrep expression is evaluated, the functions in the expression
   are applied to each element of the working set, and the output is
   collected to form a new working set.  The whole scheme is thus
   reminiscent of shell pipeline, except you have richer variety of
   types instead of lines.
+
+  There is a subtle difference between values and elements: elements
+  contain /stacks/ of values.  Functions in the pipeline manipulate
+  these stacks.  Each stack represents computation context.  If an
+  element is removed from a working set, that means that the
+  computation stopped making sense: some assertion didn't hold, or an
+  attribute was expected that was not available.  Such computations
+  are discarded.
 
 * Introduction to the dwgrep language
 
@@ -45,104 +49,135 @@
   The initial colon is not part of the example, but an artifact of
   Emacs org mode.
 
-** ?ID — Filtering DIE's by tag
+** ?ID — DIE tag assertion
 
-   The predicate "?ID" holds for DIE's whose tag is DW_TAG_ID.  This
-   functions returns its input element, if it has the given tag.
+   The assertion "?ID" takes the value at top of stack (TOS).  If what
+   is there is not a DIE, or it's a DIE whose tag is not DW_TAG_ID,
+   this function yields nothing.  Otherwise it yields the input stack
+   unchanged.
 
    For example, to list all subprograms, one would use the following
    expression:
 
    : ?subprogram
 
-** ?@ID — Filtering DIE's by attribute
-** PRED₁ && PRED₂, PRED₁ || PRED₂, !PRED — the usual logical connectives
+** ?@ID, !@ID — Attribute presence/absence assertion
+** EXPR₁ EXPR₂ … — concatenation
 
-   "?@ID" is a predicate that holds for DIE's with an attribute
-   DW_AT_ID.  To list all subprograms that are not pure declarations,
-   one would use the following expression:
+   "?@ID" holds if TOS is a DIE with DW_AT_ID.
 
-   : ?subprogram && ! ?@declaration
+   In dwgrep, function pipelines are formed by simply placing
+   functions next to each other.  The stacks that the left function
+   produces becomes an input of the right function.  For assertions,
+   this happens to work as a logical and.
 
-** (EXPR) — we can parenthesize for clarity or precedence
-** / — child traversal
+   For example, this is how we can get a list of all subprograms that
+   are pure declarations:
 
-   Function "/" produces children DIE's of a given DIE.  If applied on
-   a childless DIE or on a value that's not DIE at all, it produces
-   nothing, and such elements are thus dropped.
+   : ?subprogram ?@declaration
 
-   To get at the formal arguments of the subprograms from the previous
-   example, one might say:
+   Similarly, to get subprograms that are _not_ pure declarations, we
+   say:
 
-   : (?subprogram && ! ?@declaration) /
+   : ?subprogram !@declaration
 
-** EXPR₁ EXPR₂ … — pipeline formation
+** child — child traversal
 
-   In dwgrep, pipelines are formed by simply placing each function
-   next to each other.  This can be seen in the previous example
-   already: we placed / directly after the predicate.  This principle
-   holds universally.
+   This function drops the DIE at TOS, and produces a set of stacks,
+   each with one child pushed to TOS.  If applied on a childless DIE
+   or on a value that's not a DIE at all, it produces nothing, and
+   such computations are thus dropped.  To get at the formal arguments
+   of the subprograms from the previous example, one might say:
 
-   E.g. if we want to make sure that we really get only the formal
-   parameter nodes in the above example, we might say this:
+   : ?subprogram !@declaration child
 
-   : (?subprogram && ! ?@declaration) / ?formal_parameter
+   If we want to make sure these children are actually formal
+   parameters:
 
-   Knowing this, we might also rewrite this example as follows:
+   : ?subprogram !@declaration child ?formal_parameter
 
-   : ?subprogram (! ?@declaration) / ?formal_parameter
-
-   ... but that's perhaps less clear.
-
-** $@ID — value of attribute DW_AT_ID
+** @ID — value of attribute DW_AT_ID
 
    This is the first example of a function that can produces something
-   else than Dwarf DIE's.  This will yield whatever value the
-   attribute has--a number, a string, a DIE, or a sequence.  E.g. we
-   could obtain names of the formal parameters selected above:
+   else than Dwarf DIE's.  This will replace the DIE at TOS with a
+   value of the attribute of that DIE.  E.g. we could obtain names of
+   the formal parameters selected above:
 
-   : (?subprogram && ! ?@declaration) / ?formal_parameter $@name
+   : ?subprogram !@declaration child ?formal_parameter @name
 
    The result would be a set of strings with names of all formal
-   parameters in the program.  That's not very useful (yet), but
-   there's another use of this same feature: for attributes with
-   reference form, we get the effect of traversing over the edge
-   rooted at given attribute.  For example, we could get formal
-   parameter types thus:
+   parameters in the program.  That's not very useful, as that's just
+   lists a bunch of names.
 
-   : (?subprogram && ! ?@declaration) / ?formal_parameter $@type
+   But there's another use of this same feature: for attributes with
+   reference form, we get the effect of traversing over the edge
+   rooted at given attribute.  For example, we could get types of
+   formal parameters thus:
+
+   : ?subprogram !@declaration child ?formal_parameter @type
 
    ... which is a bit more useful.  We might use this to discover
    whether some formal parameters have structure types, and would
    therefore incur a potentially expensive copy when the subprogram is
    invoked:
 
-   : (?subprogram && ! ?@declaration) / ?formal_parameter
-   : $@type ?structure_type
+   : ?subprogram !@declaration child ?formal_parameter @type ?structure_type
 
    So that will let us know whether there are any offenders like that.
-   But that's not what we need.  We would like to know about the
-   subprograms themselves, that have this property!  Hence:
+   That's closer to being interesting, but now quite what we need
+   either.  We would like to know about the subprograms themselves,
+   that have this property!  Hence:
 
-** if EXPR — sub-expression predicate
+** ?{EXPR}, !{EXPR} — Sub-expression assertions
 
-   This predicate holds for elements, for which EXPR produces at least
-   a single value.  The input to EXPR is the same working set that is
-   the input to the overall predicate, but EXPR itself is evaluated in
-   what we call sub-expression context: what happens in EXPR, stays in
-   EXPR, and we only care whether at least a single value comes out of
-   there.
+   Some dwgrep expressions are evaluated in what we call a
+   sub-expression context.  What happens in sub-expression context,
+   stays there--the stack effects of sub-expression computation never
+   leak back to working set.
 
-   With this, we can reformulate our query a bit:
+   The ?{} expression is one such case.  It asserts that EXPR produces
+   at least one element.  We can use it to get to DIE's that have
+   arguments that are structures:
 
-   : (?subprogram && ! ?@declaration)
-   : if (/ ?formal_parameter $@type ?structure_type)
+   : ?subprogram !@declaration ?{child ?formal_parameter @type ?structure_type}
 
-   But this still shows only functions that take structure arguments
-   directly.  But what if they take const arguments?  Or if they take
-   a typedef that evaluates to a structure?  For these cases we need
-   to keep peeling the fluff until we get to the interesting DIE's.
-   Enter iterators:
+   This asks whether, after going to types of children that are formal
+   parameters, we get a structure.  Because the initial two assertions
+   have no stack effects anyway, we might say the same thing thus:
+
+   : ?{?subprogram !@declaration child ?formal_parameter @type ?structure_type}
+
+   The other sub-expression assertion, !{}, holds if EXPR produces no
+   values at all.  We don't need that, but we could use it to reword
+   the query thus:
+
+   : ?subprogram !{?@declaration}
+   : ?{child ?formal_parameter @type ?structure_type}
+
+   If a DIE is a pure declaration, the expression ?@declaration yields
+   unchanged incoming stack.  But !{} only holds for expressions that
+   yield nothing at all, thus such DIE's are rejected.
+
+   But there's more than DW_TAG_structure_type, we care about
+   DW_TAG_class_type as well!  We can express and fine simply by
+   juxtaposing the assertions, but we would like a way of expressing
+   or as well!
+
+** EXPR, EXPR — alternative
+
+   This expression evaluates all constituent EXPR's with the same
+   input, and then yields all values that each EXPR yields.  If the
+   expressions are assertions, this happens to behave exactly like a
+   logical or.  So:
+
+   : ?subprogram !@declaration
+   : ?{child ?formal_parameter @type (?structure_type, ?class_type)}
+
+   So this is fine, but it still shows only functions that take
+   structure (or class) arguments directly.  But what if they take a
+   const argument?  Or if they take a typedef that evaluates to a
+   structure?  For these cases we need to keep peeling the fluff until
+   we get to the interesting DIE's.  Enter iterators:
 
 ** EXPR*, EXPR+, EXPR? — expression iteration
 
@@ -155,230 +190,245 @@
    We can use this tool to remove const_type, volatile_type and
    typedef layers from out potential structure:
 
-   : (?subprogram && ! ?@declaration)
-   : if (/ ?formal_parameter $@type
-   :     ((?const_type || ?volatile_type || ?typedef) $@type)*
-   :     ?structure_type)
+   : ?subprogram !@declaration
+   : ?{child ?formal_parameter
+   :   @type ((?const_type, ?volatile_type, ?typedef) @type)*
+   :   (?structure_type, ?class_type)}
 
-   So this was a small sampler of the language.  In the next section,
-   all of it will be introduced in a semi-formal, but rather terse
-   format.
+   So this was a small sampler of the language.  In the following
+   sections, all of it will be introduced in a semi-formal, but rather
+   terse format.
+
+* Stack maintenance
+
+  A stack of values is maintained for each computation context (in
+  fact the stack is that context).  Various expressions treat the
+  stack in various ways.  In particular
+
+  - initially the stack is composed of a single value of type DIE
+
+  - assertions inspect the stack, but do not change it.  They can
+    however abort the computation
+
+  - stack manipulation words are used for explicit reordering of stack
+    elements:
+
+    |------+---------+-----------|
+    | op   | before  | after     |
+    |------+---------+-----------|
+    | dup  | A B C D | A B C D D |
+    | over | A B C D | A B C D C |
+    | swap | A B C D | A B D C   |
+    | rot  | A B C D | A C D B   |
+    | drop | A B C D | A B C     |
+    |------+---------+-----------|
+
+  - literals push a new value on stack
+    - integers (1, 0x20, -7)
+    - strings ("Ahoj!")
+    - sequences ([1, 2, 3])
+
+  - forms that consume DIE values (e.g. child, @at) are called
+    traversal forms.  These replace top of stack with the produced
+    value.
+
+  - operator assertions pop some values from the stack and test
+    whether some condition holds for them.  E.g. eq, ne, etc. test top
+    two elements (which are popped) for equality.
+
+  - other operators behave like traversal forms in that they pop some
+    and push some.  E.g. add, sub do arithmetic on top two elements
+    (which are popped) and then push result again.
+
+  Stacks have limited capacity.  XXX my current thinking is to have a
+  default limit of 4 slots, and allow to increase it via a command
+  line argument.  This limit should make sure that unbounded
+  computation is quickly detected.  Stack overflow is a hard error,
+  and results in abort of dwgrep itself--the offending computation is
+  not silently discarded.
 
 
 * Overview of dwgrep language
 
-** EXPR → EXPR₁ EXPR₂ … — pipeline formation
+** EXPR → EXPR₁ EXPR₂ — concatenation
 
    The constituent EXPR's may yield more than one output value.  A new
    working set is formed by gathering all these returned values.  If
-   you wish to get an actual list of values instead, see below for {}
+   you wish to get an actual list of values instead, see below for []
    operator, which captures the resulting values and wraps them in a
    sequence.
 
-** EXPR → “(” EXPR₁ “)”
+** EXPR → “(” EXPR₁ “)” — grouping, precedence
 
-** EXPR → “{” EXPR₁ “}” | “{” “}” — sub-expression capture
+** EXPR → “swap” | “dup” | “over” | “rot” | “drop” — forth stack words
 
-   This takes all the values that EXPR₁ yields, and returns them in a
-   single sequence.  So each working set element is converted into a
-   list of values that EXPR₁ yielded.
+** EXPR → “?@”ID | “!@”ID — attribute presence/absence assertions
 
-   XXX doesn't this mean we'll get a whole bunch of empty lists in
-   some contexts?
+   - XXX presence might not be necessary.  Just attempt to access the
+     attribute, that's assertion enough.
 
-   - "{}" by itself is a notation of an empty list.
+   - !@at is equivalent to {@at} {} eq
 
-   : {/}    # list of immediate children
-   : {/*}   # list of all descendants
+** EXPR → “.@”ID | “@”ID | “/@”ID — attribute access
+
+   - .@ID is a traversal form that produces a single value of type
+     Attribute (if the DIE on TOS has that attribute)
+
+   - @ID is exactly equivalent to .@ID .value
+
+   - /@ID is equivalent to:
+     : .@ID {.form [DW_FORM_ref1, DW_FORM_ref2, …] eq} @ID
+     I.e. it's a value access that asserts that the value is an edge
+     in Dwarf graph.
+
+** EXPR → “child” | “parent” | “next” | “prev” — DIE tree traversal
+
+   These traversal forms replace a DIE on TOS with, respectively, its
+   child DIE(s), its parent DIE, next sibling, and previous sibling.
+
+** EXPR → “[” EXPR₁ “]” | “[” “]” — sub-expression capture
+
+   This is a literal form that gathers what EXPR₁ yields and pushes a
+   sequence with those elements.  The following thus happens to
+   produce a list of values:
+
+   : [1, 2, 3]        # produces a list with elements 1, 2 and 3
+   : [child]          # list of immediate children
+   : [child*]         # list of all descendants
+
+   [] is a literal that produces an empty list.
+
+** EXPR → “?{” EXPR₁ “}” | “!{” EXPR₁ “}” — sub-expression assertions
+
+   - the first form is exactly [ EXPR₁ ] [] ne
+   - the second is exactly [ EXPR₁ ] [] eq
+
+   : !{child}       # keep leaf DIE's only
+
+** EXPR → “spread” | “spread2” — spread
+
+   - spread pops a list from the stack, and yields all its elements.
+
+   - spread2 expands to:
+     : spread swap spread ?{.rank swap drop over .rank eq} swap
+
+     So it takes two lists from the stack, and produces stacks that
+     have those two elements replaced with individual elements from
+     those lists that correspond to each other.  For example:
+     : A B [C₁, C₂, C₃] [D₁, D₂, D₃]
+
+     ... would be replaced with three stacks:
+     : (A B C₁ D₁, A B C₂ D₂, A B C₃ D₃)
+
+   - we could also have spread3 with the meaning of:
+     : spread2 rot spread ?{over .rank swap drop .rank eq} rot rot
+
+** EXPR → “all{” EXPR₁ “}” — universal quantifier
+
+   - This expands to {[spread {EXPR₁}] .length swap .length ==}
+   - I.e. it expects a list on TOS.  This list is spread into
+     individual computations.  Only if each computation yields a value
+     does the overall predicate succeed.  The list on TOS is kept.
 
 ** EXPR → EXPR₁ “*” | EXPR₁ “+” | EXPR₁ “?” — iteration
 
-** EXPR → “$@”ID | “:@”ID — attribute access
+** EXPR → EXPR₁ “,” EXPR₂ … — alternate
 
-   - $@ID yields a value of DW_AT_ID.  This can be a string, a number,
-     a sequence, or another DIE.  In the latter case, $@ID is
-     effectively a graph traversal.
+   EXPR yields all the values that EXPR₁ and EXPR₂ yield.  In practice
+   this can be used as logical or, or to construct literal lists.
 
-   - :@ID yields DW_AT_ID itself, as an attribute object.  See below
-     for property access to see what this can be used for.
+** EXPR → “first” | “second” | “third” | “last” — rank assertion
 
-** EXPR → “/” | “/parent” | “/next” | “/prev” — traversal
+   Assertion on rank of tested element within expression that
+   generated it.  If an expression generates elements X, Y, and Z on
+   top of existing stack A B C, three stacks come out: A B C X, A B C
+   Y, and A B C Z.  "first" would be true in context of A B C X, etc.
 
-** EXPR → EXPR₁ “,” EXPR₂ … — fork
+   To get a given element when a list is on TOS, one would do e.g.
+   : spread last
 
-   Fork evaluates all constituent EXPR's with the same input.  In then
-   yields all values that each EXPR yields.  Thus for each working set
-   element on input, this may produce several elements on output--zero
-   or more for each constituent expression.
+** EXPR → “add” | “sub” | “mul” | “div” | “mod” — arithmetic
 
-   If you want to get actual sequences out of this, use operator {}.
+   - Two elements are popped: A and B, with A the original TOS, and "A
+     op B" is pushed again.
 
-   : {1, 2, 3}   # a list with three values, 1, 2 and 3.
+   - Undefined operations (such as division by zero) simply abort the
+     computation in question.
 
-** EXPR → PRED₁ — filtering
+   - XXX how to sum a list?
 
-** EXPR → “->” ID | “$”ID — binding, recall
+** EXPR → “eq” | “ne” | “gt” | “ge” | “lt” | “le” — comparison assertions
 
-   The identifier together with current value is attached to a working
-   set element.  This is where working set elements differ from
-   values: a working set element contains a value _and_ a set of
-   bindings.  The value inside the element may change, but the
-   bindings stay intact.
+** EXPR → “match” — regex assertion
 
-   For purposes of pruning duplicate working set elements, attached
-   bindings are considered as well.  It is thus possible to have the
-   same value in the set in many copies, each with a different set of
-   bindings attached.  In this sense, the bindings serve as contextual
-   information for each value.
+   This produces nothing when applied to non-string values.  Use "%s"
+   to convert other value types to string.
 
-   - This can be used to emulate for loops, kind of:
-     : {1, 2, 3, 4}->i {1, 2, 3, 4}->j ($i > $j) {$i, $j} mul
-     ... this should return:
-     : 2, 3, 4, 6, 8, 12
+   This is similar to "eq", except asserts that TOS (which is a string
+   with a regular expression) matches the value below TOS.
 
-     Possibly imperative-style loops work as well:
-     : 1 -> A ({$A, 1} add -> A)*
-     That's fairly disgusting and I'm not entirely sure whether and
-     how exactly it works.
-
-   - XXX how do we unbind, forget a name?
-
-** EXPR → “$_” — identity function
-
-** EXPR → “$pos” — position of element in sequence or working set
-
-   This is useful for picking values out of sequences.  We might
-   consider a syntactic sugar for this:
-   - EXPR → “[” EXPR₁ “]” — sugar for ($pos == (EXPR₁)) XXX
-   - another possibility is to have PRED → “[” EXPR₁ “]” instead of
-     current PRED → “if” “(” EXPR₁ “)”.
-
-** EXPR → “add” | “sub” | “mul” | “div” | “mod” — math
-
-   - We already use +, * and /, but math shouldn't be useful very
-     often anyway, so it's done in this roundabout way.  Possibly use
-     this for gt, ge, lt, le, eq, ne as well?
-
-   - These are functions like any others.  They take whatever is on
-     their input, and do math on it.  Note therefore that they behave
-     as suffix operators.
-
-   - Typically, input element would be a list.  If it isn't, it's as
-     if it was a list containing that one element.  The following
-     table summarizes the behavior of thees functions:
-
-     |------------+----------+-------------|
-     | input list | function | result      |
-     |------------+----------+-------------|
-     | {}         | add,sub  | 0           |
-     | {}         | mul      | 1           |
-     | {A}        | add,mul  | A           |
-     | {A}        | sub      | -A          |
-     | {A, B}     | any      | A op B      |
-     | {A, B, C}  | any      | A op B op C |
-     |------------+----------+-------------|
-
-     Undefined operations simply produce no result.
-
-** EXPR → “concat” — sequence processing
-
+** EXPR → “concat” — concatenate lists or strings
 ** EXPR → “"” (string literal) “"” | (“0x”|“0”|“”)[1-9][0-9]* — literals
 
    String literals allow expression interpolation:
 
-   - %{ and %} enclose an EXPR that's evaluated as usual, and whose
-     input is whatever is the input to the string literal itself.  The
-     result is converted to a string and embedded in the string
-     template.
-   - %s stands for %{ $_ %}
+   - %{ and %} enclose an EXPR that's evaluated in sub-expression
+     context, and whose input is whatever is the input to the string
+     literal itself.  TOS is then converted to a string and embedded
+     in the string template.
+   - %s stands for %{ %}
    - %% stands for a single %
 
-** EXPR → “:” ID — value property access
+** EXPR → “.”ID — value property access
 
-   - This yields various values according to the type of input
+   - These yields various values according to the type of input
      element:
 
-     |------+------------+---------------------------------------------|
-     | type | key        | meaning                                     |
-     |------+------------+---------------------------------------------|
-     | DIE  | type       | string "DIE"                                |
-     | DIE  | tag        | integer value of tag                        |
-     | DIE  | children   | multivalue of DIE's.  Same as simply "/".   |
-     | DIE  | attributes | multivalue of AT's                          |
-     | DIE  | offset     | integer denoting offset of DIE in file      |
-     | DIE  | @ID        | like :attributes ($_ == DW_AT_ID)           |
-     |------+------------+---------------------------------------------|
-     | AT   | type       | string "AT"                                 |
-     | AT   | name       | integer value of attribute name             |
-     | AT   | form       | integer value of form                       |
-     | AT   | value      | attribute value (can be DIE, SEQ, INT, STR) |
-     | AT   | offset     | integer denoting offset of AT in file       |
-     |------+------------+---------------------------------------------|
-     | SEQ  | type       | string "SEQ"                                |
-     | SEQ  | length     | length of sequence                          |
-     |------+------------+---------------------------------------------|
-     | STR  | type       | string "STR"                                |
-     | STR  | length     | length of string                            |
-     |------+------------+---------------------------------------------|
-     | INT  | type       | string "INT"                                |
-     |------+------------+---------------------------------------------|
+     |------+------------+--------------------------------------------------|
+     | type | ID         | meaning                                          |
+     |------+------------+--------------------------------------------------|
+     | any  | rank       | rank of element within producing expression      |
+     |------+------------+--------------------------------------------------|
+     | DIE  | type       | string "DIE"                                     |
+     | DIE  | tag        | integer value of tag                             |
+     | DIE  | children   | yields children of DIE.  Same as simply "child". |
+     | DIE  | attributes | yields Attribute objects of DIE                  |
+     | DIE  | offset     | integer denoting offset of DIE in file           |
+     | DIE  | @ID        | like .attributes DW_AT_ID eq                     |
+     |------+------------+--------------------------------------------------|
+     | AT   | type       | string "AT"                                      |
+     | AT   | name       | integer value of attribute name                  |
+     | AT   | form       | integer value of form                            |
+     | AT   | value      | attribute value (can be DIE, SEQ, INT, STR)      |
+     | AT   | offset     | integer denoting offset of AT in file            |
+     |------+------------+--------------------------------------------------|
+     | SEQ  | type       | string "SEQ"                                     |
+     | SEQ  | length     | length of sequence                               |
+     |------+------------+--------------------------------------------------|
+     | STR  | type       | string "STR"                                     |
+     | STR  | length     | length of string                                 |
+     |------+------------+--------------------------------------------------|
+     | INT  | type       | string "INT"                                     |
+     |------+------------+--------------------------------------------------|
 
-** EXPR → “;” — universe (XXX)
+** EXPR → “^” — root node assertion
 
-   Yields all nodes.  This operator is implicit at the beginning of
-   the full dwgrep expression.
+   Exactly equivalent to !{parent}.
 
-** PRED → “(” PRED₁ “)”
+   : parent* ^        # finds a root node of node on TOS
 
-** PRED → “^” — root node predicate
+** EXPR → “\dump” — debug assertion
 
-   This is exactly equivalent to (! if /parent).
+   Always succeeds, but as a side effect prints some information about
+   the computation in whose context it appeared.
 
-   Note that this is a predicate.  It is true on a root node, false
-   otherwise.
+** EXPR → XXX universe
 
-   - (/parent* ^) -- finds a root node of current node
-     - XXX possibly shorten this as "$^"?
-
-** PRED → “?”ID — tag predicate
-
-** PRED → “?@”ID — attribute presence predicate
-
-** PRED → PRED₁ “&&” PRED₂ | PRED₁ “||” PRED₂ | “!” PRED₁ — logical connectives
-
-** PRED → EXPR₁ “==” EXPR₂ | EXPR₁ “!=” EXPR₂ — equivalence
-
-   EXPR₁ and EXPR₂ are evaluated in sub-expression context and act if
-   they were in sub-expression capture.  XXX really?
-
-** PRED → EXPR₁ “<” EXPR₂ | EXPR₁ “>” EXPR₂ | EXPR₁ “<=” EXPR₂ | EXPR₁ “>=” EXPR₂ — comparison
-
-   EXPR₁ and EXPR₂ are evaluated in sub-expression context and act if
-   they were in sub-expression capture.  XXX really?
-
-** PRED → EXPR₁ “=~” EXPR₂ | EXPR₁ “!~” EXPR₂ — regex matching
-
-   EXPR₁ is a string to be match by regular expression at EXPR₂.
-   EXPR₁ and EXPR₂ are evaluated in sub-expression context and act if
-   they were in sub-expression capture.  XXX really?
-
-** PRED → “if” EXPR₁ — sub-expression predicate
-
-   This is exactly equivalent to ({EXPR₁} != {}).
-
-   : (! if /) # keep childless DIE's only
-
-** PRED → “.show” | “.dump” — debugging
-
-   Both predicates always succeed, and print elements that they are
-   tested on.
-
-   - .show shows only the value
-   - .dump shows debugging information as well--fuller output,
-     attached values, that sort of thing
+   Should produce all DIE's of Dwarf file again.  This operator is
+   implicit at the beginning of the full dwgrep expression.
 
 
-* Representing non-.debug_info information
+* Representing non-DIE information
 
 ** @decl_file
 
@@ -424,13 +474,15 @@
 * Examples
 ** Josh Stone's nontrivial-parameters script
 
-   : (?subprogram && ! ?@declaration
-   :  && !($@decl_file =~ "^/usr/" && $@decl_file !~ "^/usr/src/debug")) -> A
-   : / ?formal_parameter -> B
-   : $@type ((const_type || volatile_type || typedef) $@type)*
-   : (?structure_type || ?class_type)
-   : {"%{ $A $@decl_file %}:%{ $A $@decl_line %}: note: in function ",
-   :  "`%{ $A $@name }%', parameter `%{ $B $@name %}' type is not trivial"} concat
+   - stack machine
+
+   : ?subprogram !@declaration
+   : {@decl_file {"^/usr/" match} !{"^/usr/src/debug" match}}
+   : dup child ?formal_parameter
+   : {@type ((?const_type, ?volatile_type, ?typedef) @type)*
+   :  (?structure_type, ?class_type)} swap
+   : "%{ @decl_file %}: %{ @decl_line %}: note: in function \
+   : `%{ @name %}', parameter `%{ swap @name %}' type is not trivial"
 
    - In XQuery, it is:
 
@@ -471,59 +523,58 @@
 
 ** check_die_decl_call:
 
-   : ( (?@decl_column && !?@decl_line) "%s has decl_column, but NOT decl_line"
-   : , (?decl_line && !?@decl_file) "%s has decl_line, but NOT decl_file"
-   : , (?@decl_file && !?@decl_line) "%s has decl_file, but NOT decl_line"
-   : , (?call_column && !?call_line) "%s has call_column, but NOT call_line"
-   : , (?call_line && !?call_file) "%s has call_line, but NOT call_file"
-   : , (?call_file && !?call_line) "%s has call_file, but NOT call_line" )
+   : ( ?@decl_column !@decl_line "%s has decl_column, but NOT decl_line"
+   : , etc.)
 
 ** check_die_line_info:
 
-   : (?subprogram || ?inline_subroutine || ?entry_point || ?lexical_block
-   :  || ?label || ?with_stmt || ?try_block || ?catch_block) -> A
-   : ($@entry_pc, $@low_pc, $@ranges) -> B
-   : /parent* ^
-   : ({$@stmt_list ($A == $@address)} == {})
-   : "Address %{$B%} referenced from %{$A%} not found in line table."
+   : dup (?subprogram, ?inline_subroutine, ?entry_point, ?lexical_block,
+   :      ?label, ?with_stmt, ?try_block, ?catch_block)
+   : (@entry_pc, @low_pc, @ranges)
+   : swap parent* ^
+   : !{@stmt_list @address eq} swap
+   : "Address %s referenced from %s not found in line table."
 
 ** contains DW_OP_fbreg && ! @frame_base
-   : (! ?@frame_base) if ($@location $@ops $@atom == DW_OP_fbreg)
+
+   : !@frame_base dup @location @ops @atom DW_OP_fbreg eq
 
 ** uses register based operators
-   : if ($@location $@ops (($@atom >= DW_OP_reg0 && $@atom <= DW_OP_regx)
-   :                       || $@atom == DW_OP_bregx))
+
+   : dup @location @ops @atom (DW_OP_bregx eq, dup DW_OP_reg0 ge DW_OP_regx le)
 
 ** whether it uses a deref operator
-   : if ($@location $@ops $@atom
-   :     if (-> A {DW_OP_deref, DW_OP_xderef, DW_OP_deref_size,
-   :               DW_OP_xderef_size, DW_OP_GNU_deref_type} $A == $_))
+
+   : dup @location @ops @atom (DW_OP_deref, DW_OP_xderef, DW_OP_deref_size,
+   :                           DW_OP_xderef_size, DW_OP_GNU_deref_type) eq
 
 ** contains DW_OP_call_frame_cfa && $@low_pc == 0
-   : $@low_pc == 0 && if ($@location $@ops $@atom == DW_OP_call_frame_cfa)
+
+   : dup @low_pc 0 eq dup @location @ops @atom DW_OP_call_frame_cfa eq
 
 ** is an empty location expression
-   : ! if $@location
+
+   : !{$@location}
 
 ** location expression ends with implicit_value or stack_value
-   : if ($@location $@ops (({$pos, 1} add) == :length)
-   :     ($@atom == DW_OP_implicit_value || $@atom == DW_OP_stack_value))
+
+   : dup @location @ops last @atom (DW_OP_implicit_value, DW_OP_stack_value) eq
+
 ** types inconsistent between instance and specification
    - http://gcc.gnu.org/bugzilla/show_bug.cgi?id=43053
 
-   : ?subprogram ?@specification -> A / ?formal_parameter -> P
-   : $A $@specification / ?formal_parameter
-   : if ($pos == $P $pos) if ($@type != $P $@type)
+   : ?subprogram dup @specification child ?formal_parameter
+   : swap child ?formal_parameter
+   : {$pos swap $pos eq} {$@type swap $@type ne}
 
-   XXX This ended up fairly awkward.  Maybe a zip-operator would help.
+   XXX could improve using spread2
 
 ** duplicat DW_TAG_const_type
    - http://gcc.gnu.org/bugzilla/show_bug.cgi?id=56740
 
-   : (?const_type, ?volatile_type, ?restrict_type) -> A
-   : /parent* /* (?const_type, ?volatile_type, ?restrict_type)
-   : if (!= $A) if (:tag == $A :tag) if ($@type == $A $@type)
-
+   : (?const_type, ?volatile_type, ?restrict_type)
+   : dup parent* child* (?const_type, ?volatile_type, ?restrict_type)
+   : {ne} {.tag swap .tag eq} {@type swap @type eq}
 
 
 * Old work
