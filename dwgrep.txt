@@ -1,11 +1,11 @@
 -*-org-*-
 * Computation
 
-  Dwgrep is tool and an associated language for querying Dwarf graphs.
-  Conceptually, expressions of this language are a pipeline of
-  functions.  The Dwarf graph under consideration flows through this
-  pipeline, modified by each function of the overall expression, and
-  whatever comes out of the other end is the result of the query.
+  Dwgrep is a tool and an associated language for querying Dwarf
+  graphs.  Conceptually, expressions of this language are a pipeline
+  of functions.  The Dwarf graph under consideration flows through
+  this pipeline, modified by each function of the overall expression,
+  and whatever comes out of the other end is the result of the query.
 
   We call what flows through the dwgrep expression a /working set/.
   Initial working set contains all DIE's in a given Dwarf graph.  As
@@ -404,7 +404,22 @@
 
    - XXX possibly a means of evaluating?
 
-** ELF symbols
+** XXX ELF symbols
+** XXX Dwarf CU version -- an artificial attribute?
+   - https://stackoverflow.com/questions/16169864
+** XXX abbreviation section?  (libdw doesn't have interfaces for this)
+   - note that one can look for attribute form by saying :@at :form
+   - would a link from a DIE to its abbreviation be useful?
+** XXX integrating aadr2line
+   - low_pc and high_pc should be convertible to symbol name on
+     request (possibly manually by cross-matching with ELF symtabs).
+** XXX .debug_frame, .eh_frame
+   - do we need an overarching "theory" for both of these
+   - also, there's fair amount of tables around here.  Does it make
+     sense to understand them as first-class citizen of some sort?
+     Currently we understand there are values, every value has some
+     properties, and some values have attributes.
+** XXX .debug_macro
 
 * Examples
 ** Josh Stone's nontrivial-parameters script
@@ -493,6 +508,23 @@
 ** location expression ends with implicit_value or stack_value
    : if ($@location $@ops (({$pos, 1} add) == :length)
    :     ($@atom == DW_OP_implicit_value || $@atom == DW_OP_stack_value))
+** types inconsistent between instance and specification
+   - http://gcc.gnu.org/bugzilla/show_bug.cgi?id=43053
+
+   : ?subprogram ?@specification -> A / ?formal_parameter -> P
+   : $A $@specification / ?formal_parameter
+   : if ($pos == $P $pos) if ($@type != $P $@type)
+
+   XXX This ended up fairly awkward.  Maybe a zip-operator would help.
+
+** duplicat DW_TAG_const_type
+   - http://gcc.gnu.org/bugzilla/show_bug.cgi?id=56740
+
+   : (?const_type, ?volatile_type, ?restrict_type) -> A
+   : /parent* /* (?const_type, ?volatile_type, ?restrict_type)
+   : if (!= $A) if (:tag == $A :tag) if ($@type == $A $@type)
+
+
 
 * Old work
 == check_duplicate_DW_tag_variable
