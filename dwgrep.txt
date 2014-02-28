@@ -264,10 +264,17 @@
 
 ** EXPR → “?@”ID | “!@”ID — attribute presence/absence assertions
 
-   - XXX presence might not be necessary.  Just attempt to access the
-     attribute, that's assertion enough.
+   - Apart from asserting attribute presence explicitly, one can
+     simply access the attribute value.  If an attribute like that is
+     not available at all, computation is aborted.
 
-   - !@at is equivalent to {@at} {} eq
+   - Attributes with forms DW_FORM_flag are handled specially.  If
+     such attribute is present, but it has a value of false (0), it is
+     treated as if it were absent.  Similarly when asserting absence
+     of attribute with such form: if it has a value of 0, absence is
+     asserted even though the attribute is present.
+
+   - !@at is equivalent to !{@at}
 
 ** EXPR → “.@”ID | “@”ID | “/@”ID — attribute access
 
@@ -289,8 +296,8 @@
 ** EXPR → “[” EXPR₁ “]” | “[” “]” — sub-expression capture
 
    This is a literal form that gathers what EXPR₁ yields and pushes a
-   sequence with those elements.  The following thus happens to
-   produce a list of values:
+   sequence with those elements.  It can be used for constructing a
+   sequence literal:
 
    : [1, 2, 3]        # produces a list with elements 1, 2 and 3
    : [child]          # list of immediate children
@@ -325,7 +332,7 @@
 
 ** EXPR → “all{” EXPR₁ “}” — universal quantifier
 
-   - This expands to {[spread {EXPR₁}] .length swap .length ==}
+   - This expands to {[spread {EXPR₁}] .length swap .length eq}
    - I.e. it expects a list on TOS.  This list is spread into
      individual computations.  Only if each computation yields a value
      does the overall predicate succeed.  The list on TOS is kept.
@@ -436,7 +443,7 @@
 
 ** @stmt_list
 
-   $@stmt_list yields a number of pseudo-DIE's of type
+   @stmt_list yields a number of pseudo-DIE's of type
    line_table_entry.  Each has the following attributes: @address,
    @op_index, @file, @line, @column, @is_stmt, @basic_block,
    @end_sequence, @prologue_end, @epilogue_begin, @isa,
@@ -444,11 +451,11 @@
 
 ** @location
 
-   $@location yields a number of pseudo-DIE's of type
+   @location yields a number of pseudo-DIE's of type
    location_list_entry.  Each has the following attributes: @address,
    and @ops.
 
-   $@ops yields a number of pseudo-DIE's of type location_list_op.
+   @ops yields a number of pseudo-DIE's of type location_list_op.
    Each has the following attributes: @atom (which contains opcode),
    and possibly @number or also @number2 (with operands).
 
@@ -554,7 +561,7 @@
 
 ** is an empty location expression
 
-   : !{$@location}
+   : ?@location !{@location}
 
 ** location expression ends with implicit_value or stack_value
 
@@ -565,7 +572,7 @@
 
    : ?subprogram dup @specification child ?formal_parameter
    : swap child ?formal_parameter
-   : {$pos swap $pos eq} {$@type swap $@type ne}
+   : {.pos swap .pos eq} {@type swap @type ne}
 
    XXX could improve using spread2
 
