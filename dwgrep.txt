@@ -309,7 +309,9 @@
     : [child]          # list of immediate children
     : [child*]         # list of all descendants
 
-    [] is a literal that produces an empty list.
+    [] is a literal that produces an empty list.  It is exactly
+    equivalent to (among others):
+    : [ 0 1 eq ]
 
 *** EXPR → “spread” — pop a list, yield all its elements
 *** EXPR → “.”ID — value property access
@@ -649,12 +651,12 @@
 
 ** whether it uses a deref operator
 
-   : dup @location @ops @atom (DW_OP_deref, DW_OP_xderef, DW_OP_deref_size,
-   :                           DW_OP_xderef_size, DW_OP_GNU_deref_type) eq
+   : ?{dup @location @ops @atom (DW_OP_deref, DW_OP_xderef, DW_OP_deref_size,
+   :                             DW_OP_xderef_size, DW_OP_GNU_deref_type) eq}
 
 ** contains DW_OP_call_frame_cfa && $@low_pc == 0
 
-   : dup @low_pc 0 eq dup @location @ops @atom DW_OP_call_frame_cfa eq
+   : ?{@low_pc 0 eq} ?{dup @location @ops @atom DW_OP_call_frame_cfa eq}
 
 ** is an empty location expression
 
@@ -662,7 +664,7 @@
 
 ** location expression ends with implicit_value or stack_value
 
-   : dup @location @ops last @atom (DW_OP_implicit_value, DW_OP_stack_value) eq
+   : ?{dup @location @ops last @atom (DW_OP_implicit_value, DW_OP_stack_value) eq}
 
 ** types inconsistent between instance and specification
    - http://gcc.gnu.org/bugzilla/show_bug.cgi?id=43053
