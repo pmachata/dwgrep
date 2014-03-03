@@ -297,7 +297,7 @@
 
 *** EXPR → “(” EXPR₁ “)” — grouping, precedence
 
-*** EXPR → “swap” | “dup” | “over” | “rot” | “drop” — forth stack words
+*** EXPR → “swap” | “dup” | “over” | “rot” | “drop” — stack shuffling
 
 *** EXPR → “[” EXPR₁ “]” | “[” “]” — sub-expression capture
 
@@ -413,6 +413,14 @@
 
    (Note that the fact that these operators can be derived from above,
    or from one another, doesn't mean they actually are.)
+
+*** EXPR → “?”ID | “!”ID — DIE tag assertion
+
+    - ?ID is exactly equivalent to:
+      : ?{.tag DW_TAG_ID eq}
+    - !ID is exactly equivalent to:
+      : ?{.tag DW_TAG_ID ne}
+    - Note that either form fails when applied to a non-DIE value.
 
 *** EXPR → “?@”ID | “!@”ID — attribute presence/absence assertions
 
