@@ -188,9 +188,9 @@
    yield nothing at all, thus such DIE's are rejected.
 
    But there's more than DW_TAG_structure_type, we care about
-   DW_TAG_class_type as well!  We can express and fine simply by
+   DW_TAG_class_type as well!  We can express "and" easily simply by
    juxtaposing the assertions, but we would like a way of expressing
-   or as well!
+   "or" as well!
 
 ** EXPR, EXPR — alternative paths
 
