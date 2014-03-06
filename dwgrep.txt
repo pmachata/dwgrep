@@ -135,7 +135,7 @@
    : ?subprogram !@declaration child ?formal_parameter @name
 
    The result would be a set of strings with names of all formal
-   parameters in the program.  That's not very useful, as that's just
+   parameters in the program.  That's not very useful, as that just
    lists a bunch of names.
 
    But there's another use of this same feature: for attributes with
@@ -217,7 +217,7 @@
    - EXPR? is like EXPR*, but applies at most once.
 
    We can use this tool to remove const_type, volatile_type and
-   typedef layers from out potential structure:
+   typedef layers from our potential structure:
 
    : ?subprogram !@declaration
    : ?{child ?formal_parameter
@@ -235,9 +235,6 @@
   stack in various ways.  In particular
 
   - initially the stack is composed of a single value of type DIE
-
-  - assertions inspect the stack, but do not change it.  They can
-    however abort the computation
 
   - stack manipulation words are used for explicit reordering of stack
     elements:
@@ -313,7 +310,7 @@
     equivalent to (among others):
     : [ 0 1 eq ]
 
-*** EXPR → “spread” — pop a list, yield all its elements
+*** EXPR → “each” — pop a list, yield all its elements
 *** EXPR → “.”ID — value property access
 
     - This yields various values according to the type of input
@@ -345,6 +342,11 @@
       |------+------------+--------------------------------------------------|
       | INT  | type       | string "INT"                                     |
       |------+------------+--------------------------------------------------|
+
+    - XXX it seems like these should be simply words.  Why use
+      .children instead of child?  Why use .attributes instead of
+      attribute?  (Which should exist.)  Similarly for type, tag,
+      offset, value, name, etc.  "name" might actually be "tag".
 
 *** EXPR → EXPR₁ “*” | EXPR₁ “+” | EXPR₁ “?” — iteration
 *** EXPR → EXPR₁ “,” EXPR₂ … — alternate
@@ -470,7 +472,7 @@
       : dup parent child eq swap drop
       : .rank 1 add swap parent child ?{.rank rot eq} swap drop
       The first line is necessary to make sure that .rank later refers
-      to order in children array, not to e.g. an array spread etc.
+      to order in children array, not to e.g. a result of ([XYZ] each).
 
     - prev can be defined in manner similar to next.
 
@@ -484,10 +486,10 @@
     - Examples:
       : !{child}       # keep leaf DIE's only
 
-*** EXPR → “spread2” — deep spread
+*** EXPR → “each2” — deep each
 
-    - spread2 is exactly equivalent to:
-      : spread swap spread ?{.rank swap drop over .rank eq} swap
+    - each2 is exactly equivalent to:
+      : each swap each ?{.rank swap drop over .rank eq} swap
 
       So it takes two lists from the stack, and produces stacks that
       have those two elements replaced with individual elements from
@@ -497,17 +499,18 @@
       ... would be replaced with three stacks:
       : (A B C₁ D₁, A B C₂ D₂, A B C₃ D₃)
 
-    - we could also have spread3 with the meaning of:
-      : spread2 rot spread ?{over .rank swap drop .rank eq} rot rot
+    - we could also have each3 with the meaning of:
+      : each2 rot each ?{over .rank swap drop .rank eq} rot rot
 
 *** EXPR → “all{” EXPR₁ “}” — universal quantifier
 
     - This is exactly equivalent to:
-      : {[spread {EXPR₁}] .length swap .length eq}
+      : ?{[each {EXPR₁}] .length swap .length eq}
 
-    - I.e. it expects a list on TOS.  This list is spread into
-      individual computations.  Only if each computation yields a value
-      does the overall predicate succeed.  The list on TOS is kept.
+    - I.e. it expects a list on TOS.  This list is forked into
+      individual computations by "each".  Only if each of these
+      computations yields a value does the overall predicate succeed.
+      The list on TOS is kept.
 
 *** EXPR → “first” | “second” | “third” | “last” — rank assertion
 
@@ -517,7 +520,7 @@
     Y, and A B C Z.  "first" would be true in context of A B C X, etc.
 
     To get a given element when a list is on TOS, one would do e.g.
-    : spread last
+    : each last
 
     - first is exactly equivalent to:
       : ?{.rank 0 eq}
@@ -651,11 +654,11 @@
 
 ** contains DW_OP_fbreg && ! @frame_base
 
-   : !@frame_base dup @location @ops @atom DW_OP_fbreg eq
+   : !@frame_base ?{@location @ops @atom DW_OP_fbreg eq}
 
 ** uses register based operators
 
-   : dup @location @ops @atom (DW_OP_bregx eq, dup DW_OP_reg0 ge DW_OP_regx le)
+   : ?{@location @ops @atom (DW_OP_bregx eq, ?{DW_OP_reg0 ge} ?{DW_OP_regx le})}
 
 ** whether it uses a deref operator
 
@@ -681,7 +684,7 @@
    : swap child ?formal_parameter
    : {.pos swap .pos eq} {@type swap @type ne}
 
-   XXX could improve using spread2
+   XXX could improve using each2
 
 ** duplicat DW_TAG_const_type
    - http://gcc.gnu.org/bugzilla/show_bug.cgi?id=56740
@@ -705,6 +708,13 @@
     transformed stack.
 
     Or maybe EXPR → “<” NUM “>”, which XXX
+
+** find any attribute with value "blah"
+
+   : ?{.attributes ?{.form (DW_FORM_string, DW_FORM_strp) eq} .value "blah" eq}
+
+   - very likely even simply:
+   : ?{.attributes .value "blah" eq}
 
 
 * Old work
