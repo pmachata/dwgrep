@@ -395,6 +395,9 @@
 
     - %s stands for %( %)
 
+    - possibly have integer formatters like %d, %u, %x, etc. if one
+      wants to override the default thing for any reason.
+
     - %% stands for a single %
 
     The resulting string is pushed to stack after all interpolations
@@ -453,7 +456,7 @@
       : .@ID .value
 
     - /@ID is equivalent to:
-      : .@ID {.form (DW_FORM_ref1, DW_FORM_ref2, …) eq} @ID
+      : @ID ?{.type "DIE" eq}
       I.e. it's a value access that asserts that the value is an edge
       in Dwarf graph.
 
@@ -505,7 +508,7 @@
 *** EXPR → “all{” EXPR₁ “}” — universal quantifier
 
     - This is exactly equivalent to:
-      : ?{[each {EXPR₁}] .length swap .length eq}
+      : ?{[each ?{EXPR₁}] .length swap .length eq}
 
     - I.e. it expects a list on TOS.  This list is forked into
       individual computations by "each".  Only if each of these
@@ -528,6 +531,8 @@
 
     - last is exactly equivalent to:
       : ?{.length 1 sub swap .rank rot eq}
+      XXX really?  Why would .length be always applicable in this
+      context?
 
 *** EXPR → “^” — root node assertion
 
@@ -554,30 +559,36 @@
 ** @location
 
    @location yields a number of pseudo-DIE's of type
-   location_list_entry.  Each has the following attributes: @address,
-   and @ops.
+   location_list_entry.  Each has an attribute: @address.
 
-   @ops yields a number of pseudo-DIE's of type location_list_op.
-   Each has the following attributes: @atom (which contains opcode),
-   and possibly @number or also @number2 (with operands).
+   The children of location_list_entry are pseudo-DIE's of type
+   location_list_op.  Each has the following attributes: @atom (which
+   contains opcode), and possibly @number or also @number2 (with
+   operands).
 
    - XXX possibly a means of evaluating?
 
 ** XXX ELF symbols
+
 ** XXX Dwarf CU version -- an artificial attribute?
    - https://stackoverflow.com/questions/16169864
+
 ** XXX abbreviation section?  (libdw doesn't have interfaces for this)
-   - note that one can look for attribute form by saying :@at :form
+   - note that one can look for attribute form by saying .@at .form
    - would a link from a DIE to its abbreviation be useful?
+
 ** XXX integrating aadr2line
    - low_pc and high_pc should be convertible to symbol name on
      request (possibly manually by cross-matching with ELF symtabs).
+
 ** XXX .debug_frame, .eh_frame
-   - do we need an overarching "theory" for both of these
-   - also, there's fair amount of tables around here.  Does it make
-     sense to understand them as first-class citizen of some sort?
-     Currently we understand there are values, every value has some
-     properties, and some values have attributes.
+   - do we need an overarching "theory" for both of these?
+   - also, there's fair amount of tables around here (symbol tables,
+     line tables, ...).  Does it make sense to understand them as
+     first-class citizen of some sort?  Currently we understand there
+     are values, every value has some properties, and some values have
+     attributes.
+
 ** XXX .debug_macro
 
 * Examples
@@ -654,20 +665,21 @@
 
 ** contains DW_OP_fbreg && ! @frame_base
 
-   : !@frame_base ?{@location @ops @atom DW_OP_fbreg eq}
+   : !@frame_base ?{@location child @atom DW_OP_fbreg eq}
 
 ** uses register based operators
 
-   : ?{@location @ops @atom (DW_OP_bregx eq, ?{DW_OP_reg0 ge} ?{DW_OP_regx le})}
+   : ?{@location child @atom
+   :   (DW_OP_bregx eq, ?{DW_OP_reg0 ge} ?{DW_OP_regx le})}
 
 ** whether it uses a deref operator
 
-   : ?{dup @location @ops @atom (DW_OP_deref, DW_OP_xderef, DW_OP_deref_size,
-   :                             DW_OP_xderef_size, DW_OP_GNU_deref_type) eq}
+   : ?{dup @location child @atom (DW_OP_deref, DW_OP_xderef, DW_OP_deref_size,
+   :                              DW_OP_xderef_size, DW_OP_GNU_deref_type) eq}
 
 ** contains DW_OP_call_frame_cfa && $@low_pc == 0
 
-   : ?{@low_pc 0 eq} ?{dup @location @ops @atom DW_OP_call_frame_cfa eq}
+   : ?{@low_pc 0 eq} ?{dup @location child @atom DW_OP_call_frame_cfa eq}
 
 ** is an empty location expression
 
@@ -675,16 +687,19 @@
 
 ** location expression ends with implicit_value or stack_value
 
-   : ?{dup @location @ops last @atom (DW_OP_implicit_value, DW_OP_stack_value) eq}
+   : ?{dup @location child last @atom
+   :   (DW_OP_implicit_value, DW_OP_stack_value) eq}
 
 ** types inconsistent between instance and specification
    - http://gcc.gnu.org/bugzilla/show_bug.cgi?id=43053
 
    : ?subprogram dup @specification child ?formal_parameter
    : swap child ?formal_parameter
-   : {.pos swap .pos eq} {@type swap @type ne}
+   : ?{.pos swap .pos eq} ?{@type swap @type ne}
 
-   XXX could improve using each2
+   - if we have each2:
+   : ?subprogram [@specification child ?formal_parameter]
+   : [swap child ?formal_parameter] each2 ?{@type swap @type ne}
 
 ** duplicat DW_TAG_const_type
    - http://gcc.gnu.org/bugzilla/show_bug.cgi?id=56740
@@ -693,13 +708,11 @@
    : dup parent* child* (?const_type, ?volatile_type, ?restrict_type)
    : {.offset swap .offset ne} {.tag swap .tag eq} {@type swap @type eq}
 
-   XXX if we had scoping instead of dup/drop, would that be better?
+   - XXX <> for vertical arrays?
 
    : (?const_type, ?volatile_type, ?restrict_type);
    : parent* child* (?cons_type, ?volatile_type, ?restrict_type)
    : {<.offset, .offset> ne} {<.tag, .tag> eq} {<@type, @type> eq}
-
-   XXX <> for vertical arrays?
 
 *** EXPR → “<” EXPR₁ “,” EXPR₂ … “>” — stack transformation
 
