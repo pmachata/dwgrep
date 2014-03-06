@@ -153,7 +153,7 @@
    : ?subprogram !@declaration child ?formal_parameter @type ?structure_type
 
    So that will let us know whether there are any offenders like that.
-   That's closer to being interesting, but now quite what we need
+   That's closer to being interesting, but not quite what we need
    either.  We would like to know about the subprograms themselves,
    that have this property!  Hence:
 
