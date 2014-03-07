@@ -3,12 +3,17 @@ TARGETS = dwgrep parser
 DIRS = .
 
 ALLSOURCES = $(foreach dir,$(DIRS),					   \
-		$(wildcard $(dir)/*.cc $(dir)/*.hh $(dir)/*.c $(dir)/*.h)  \
-			   $(dir)/*.l $(dir)/*.y)			   \
+		$(wildcard $(dir)/*.cc $(dir)/*.hh $(dir)/*.c $(dir)/*.h   \
+			   $(dir)/*.ll $(dir)/*.yy)			   \
+		)							   \
 	     Makefile
 
 CCSOURCES = $(filter %.cc,$(ALLSOURCES))
-DEPFILES = $(patsubst %.cc,%.cc-dep,$(CCSOURCES))
+YYSOURCES = $(filter %.yy,$(ALLSOURCES))
+LLSOURCES = $(filter %.ll,$(ALLSOURCES))
+DEPFILES := $(patsubst %.ll,%.cc-dep,$(LLSOURCES))
+DEPFILES := $(DEPFILES) $(patsubst %.yy,%.cc-dep,$(YYSOURCES))
+DEPFILES := $(DEPFILES) $(patsubst %.cc,%.cc-dep,$(CCSOURCES))
 
 YACC = bison
 
@@ -20,10 +25,12 @@ dwgrep: override LDFLAGS += -ldw -lelf
 dwgrep: dwgrep.o value.o patx.o wset.o
 parser: parser.o lexer.o tree.o
 
+parser.cc: lexer.hh
+
 %.hh %.cc: %.yy
 	$(YACC) -d -o $(<:%.yy=%.cc) $<
 
-%.cc: %.ll
+%.hh %.cc: %.ll
 	$(LEX) $<
 
 -include $(DEPFILES)
