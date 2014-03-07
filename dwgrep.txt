@@ -31,6 +31,7 @@
   ... which looks for DIE's that have DW_AT_decl_column, but don't
   have DW_AT_decl_line.
 
+
 * Computation
 
   Conceptually, dwgrep expressions form a pipeline of functions.  The
@@ -229,6 +230,7 @@
    sections, all of it will be introduced in a semi-formal, but rather
    terse format.
 
+
 * Stack maintenance
 
   A stack of values is maintained for each computation context (in
@@ -236,24 +238,6 @@
   stack in various ways.  In particular
 
   - initially the stack is composed of a single value of type DIE
-
-  - stack manipulation words are used for explicit reordering of stack
-    elements:
-
-    |------+---------+-----------|
-    | op   | before  | after     |
-    |------+---------+-----------|
-    | dup  | A B C D | A B C D D |
-    | over | A B C D | A B C D C |
-    | swap | A B C D | A B D C   |
-    | rot  | A B C D | A C D B   |
-    | drop | A B C D | A B C     |
-    |------+---------+-----------|
-
-    Realistically, most of what end users should write will be an
-    occasional dup, possibly a swap.  Drop shouldn't be needed (that's
-    what sub-expressions are for), and the deep stack manipulation
-    should be unnecessary as well.
 
   - literals push a new value on stack
     - integers (1, 0x20, -7)
@@ -263,7 +247,12 @@
   - assertions inspect TOS (or several values on TOS), test the
     condition, and either leave the stack unchanged, or abort the
     computation.  They do not pop.  This includes ?@at, !@at, ?tag,
-    !tag, ?{}, !{}, all{}, eq, ne, gt, match, etc.
+    !tag, ?{}, !{}, ?all{}, ?eq, !eq, ?gt, ?match, etc.  All
+    assertions start either with a ? (if it's positive assertion), or
+    with a ! (if it's negative assertion).
+
+  - stack shuffling operators (swap, drop, dup, ...) reorder values on
+    stack
 
   - all other forms pop top elements of the stack, and replace with
     produced values.  This includes traversal forms (@at, .@at, child,
@@ -283,268 +272,324 @@
 
 * Overview of dwgrep language
 
-** Core operators
-
-*** EXPR → EXPR₁ EXPR₂ — concatenation
+** EXPR → EXPR₁ EXPR₂ — concatenate
 
-    The constituent EXPR's may yield more than one output value.  A new
-    working set is formed by gathering all these returned values.  If
-    you wish to get an actual list of values instead, see below for []
-    operator, which captures the resulting values and wraps them in a
-    sequence.
-
-*** EXPR → “(” EXPR₁ “)” — grouping, precedence
+   The constituent EXPR's may yield more than one output value.  A new
+   working set is formed by gathering all these returned values.  If
+   you wish to get an actual list of values instead, see below for []
+   operator, which captures the resulting values and wraps them in a
+   sequence.
 
-*** EXPR → “swap” | “dup” | “over” | “rot” | “drop” — stack shuffling
+** EXPR → EXPR₁ “,” EXPR₂ … — alternate
 
-*** EXPR → “[” EXPR₁ “]” | “[” “]” — sub-expression capture
+   EXPR yields all the values that EXPR₁ and EXPR₂ yield.  In practice
+   this can be used as logical or, or to construct literal lists.
 
-    This is a literal form that gathers what EXPR₁ yields and pushes a
-    sequence with those elements.  It can be used for constructing a
-    sequence literal:
+** EXPR → EXPR₁ “*” | EXPR₁ “+” | EXPR₁ “?” — iterate
 
-    : [1, 2, 3]        # produces a list with elements 1, 2 and 3
-    : [child]          # list of immediate children
-    : [child*]         # list of all descendants
+** EXPR → “"” (string literal) “"” | (“0x”|“0”|“”)[1-9][0-9]* — literals
 
-    [] is a literal that produces an empty list.  It is exactly
-    equivalent to (among others):
-    : [ 0 1 eq ]
+   String literals allow expression interpolation:
 
-*** EXPR → “each” — pop a list, yield all its elements
-*** EXPR → “.”ID — value property access
+   - %( and %) enclose an EXPR that's evaluated in plain context, and
+     whose input is whatever is the input to the string literal
+     itself.  TOS is then popped, converted to a string and embedded
+     in the string template.
 
-    - This yields various values according to the type of input
-      element:
+   - %{ EXPR %} is like %( EXPR %), but it's evaluated in
+     sub-expression context.  TOS of resulting stack is still
+     inspected for value to interpolate.
 
-      |------+------------+--------------------------------------------------|
-      | type | ID         | meaning                                          |
-      |------+------------+--------------------------------------------------|
-      | any  | rank       | rank of element within producing expression      |
-      |------+------------+--------------------------------------------------|
-      | DIE  | type       | string "DIE"                                     |
-      | DIE  | tag        | integer value of tag                             |
-      | DIE  | children   | yields children of DIE.  Same as simply "child". |
-      | DIE  | attributes | yields all Attribute objects of DIE              |
-      | DIE  | offset     | integer denoting offset of DIE in file           |
-      | DIE  | @ID        | like .attributes DW_AT_ID eq                     |
-      |------+------------+--------------------------------------------------|
-      | AT   | type       | string "AT"                                      |
-      | AT   | name       | integer value of attribute name                  |
-      | AT   | form       | integer value of form                            |
-      | AT   | value      | attribute value (can be DIE, SEQ, INT, STR)      |
-      | AT   | offset     | integer denoting offset of AT in file            |
-      |------+------------+--------------------------------------------------|
-      | SEQ  | type       | string "SEQ"                                     |
-      | SEQ  | length     | length of sequence                               |
-      |------+------------+--------------------------------------------------|
-      | STR  | type       | string "STR"                                     |
-      | STR  | length     | length of string                                 |
-      |------+------------+--------------------------------------------------|
-      | INT  | type       | string "INT"                                     |
-      |------+------------+--------------------------------------------------|
+   - %s stands for %( %)
 
-    - XXX it seems like these should be simply words.  Why use
-      .children instead of child?  Why use .attributes instead of
-      attribute?  (Which should exist.)  Similarly for type, tag,
-      offset, value, name, etc.  "name" might actually be "tag".
+   - possibly have integer formatters like %d, %u, %x, etc. if one
+     wants to override the default thing for any reason.
 
-*** EXPR → EXPR₁ “*” | EXPR₁ “+” | EXPR₁ “?” — iteration
-*** EXPR → EXPR₁ “,” EXPR₂ … — alternate
+   - %% stands for a single %
 
-    EXPR yields all the values that EXPR₁ and EXPR₂ yield.  In practice
-    this can be used as logical or, or to construct literal lists.
+   The resulting string is pushed to stack after all interpolations
+   are processed one after another.
 
-*** EXPR → “add” | “sub” | “mul” | “div” | “mod” — arithmetic
+** EXPR → “U” — universe
 
-    - Two elements are popped: A and B, with B the original TOS, and "A
-      op B" is pushed again.
+   This is a literal form that stands for every DIE (and pseudo-DIE)
+   in Dwarf graph.  Because it is literal, it adds a DIE to the
+   stack.
 
-    - Undefined operations (such as division by zero) simply abort the
-      computation in question.
+   This operator is implicit at the beginning of the full dwgrep
+   expression.
 
-    - XXX how to sum a list?
+** EXPR → “(” EXPR₁ “)” — grouping, precedence
 
-*** EXPR → “eq” | “ne” | “gt” | “ge” | “lt” | “le” — comparison assertions
+** EXPR → “[” EXPR₁ “]” | “[” “]” — sub-expression capture
 
-    - Two elements are inspected: TOS and one below that (B and A,
-      respectively).  The assertion holds if A op B is true.  Comparing
-      values of different types is not defined, and such assertions
-      fail as well.
+   This is a literal form that gathers what EXPR₁ yields and pushes a
+   sequence with those elements.  It can be used for constructing a
+   sequence literal:
 
-*** EXPR → “match” — regex assertion
+   : [1, 2, 3]        # produces a list with elements 1, 2 and 3
+   : [child]          # list of immediate children
+   : [child*]         # list of all descendants
 
-    This produces nothing when applied to non-string values.  Use "%s"
-    to convert other value types to string.
+   [] is a literal that produces an empty list.  It is exactly
+   equivalent to (among others):
+   : [ 0 1 ?eq ]
 
-    This is similar to "eq", except asserts that TOS (which is a string
-    with a regular expression) matches the value below TOS.
+** EXPR → “?{” EXPR₁ “}” | “!{” EXPR₁ “}” — sub-expression assertions
 
-*** EXPR → “concat” — concatenate lists or strings
-*** EXPR → “"” (string literal) “"” | (“0x”|“0”|“”)[1-9][0-9]* — literals
+   - ?{ EXPR₁ } is exactly equivalent to:
+     : [ EXPR₁ ] [] !eq drop drop
+   - !{ EXPR₁ } is exactly equivalent to:
+     : [ EXPR₁ ] [] ?eq drop drop
 
-    String literals allow expression interpolation:
+   - Examples:
+     : !{child}       # keep leaf DIE's only
 
-    - %( and %) enclose an EXPR that's evaluated in plain context, and
-      whose input is whatever is the input to the string literal
-      itself.  TOS is then popped, converted to a string and embedded
-      in the string template.
+** EXPR → (“?all{” | “!all{”) EXPR₁ “}” — quantifier assertion
 
-    - %{ EXPR %} is like %( EXPR %), but it's evaluated in
-      sub-expression context.  TOS of resulting stack is still
-      inspected for value to interpolate.
+   - ?all{EXPR₁} is exactly equivalent to:
+     : ?{[each ?{EXPR₁}] length swap length ?eq}
+   - !all{EXPR₁} is exactly equivalent to:
+     : ?{[each ?{EXPR₁}] length swap length !eq}
 
-    - %s stands for %( %)
+   - I.e. it expects a list on TOS.  This list is forked into
+     individual computations by "each".  For ?all, only if each of
+     these computations yields a value does the overall predicate
+     succeed.  For !all, only if at least one fails does the overall
+     predicate succeed.  The list on TOS is kept.
 
-    - possibly have integer formatters like %d, %u, %x, etc. if one
-      wants to override the default thing for any reason.
+** EXPR → “if” | “else” — conditionals
 
-    - %% stands for a single %
+   - "if" pops TOS.  If it's an empty list, it fails.  It is exactly:
+     : ?{[] !eq} drop
 
-    The resulting string is pushed to stack after all interpolations
-    are processed one after another.
+   - "else" pops TOS.  Unless it's an empty list, it fails.  It is
+     exactly:
+     : ?{[] ?eq} drop
 
-*** EXPR → “\dump” — debug assertion
+   The way these two are used is as follows:
+   : [ condition ] (if stuff stuff stuff, else stuff stuff stuff)
 
-    Always succeeds, but as a side effect prints some information about
-    the computation in whose context it appeared.
+   If-elseif-else trees can be composed thus:
+   : [ condition ] (if stuff, else [ cond2 ] (if stuff2, else stuff3))
 
-*** EXPR → “U” — universe
+** EXPR → “swap” | “dup” | “over” | “rot” | “drop” — stack shuffling
 
-    This is a literal form that stands for every DIE (and pseudo-DIE)
-    in Dwarf graph.  Because it is literal, it adds a DIE to the
-    stack.
+   These words reorder elements on stack according to the following
+   schemes:
 
-    This operator is implicit at the beginning of the full dwgrep
-    expression.
+   |------+---------+-----------|
+   | op   | before  | after     |
+   |------+---------+-----------|
+   | dup  | A B C D | A B C D D |
+   | over | A B C D | A B C D C |
+   | swap | A B C D | A B D C   |
+   | rot  | A B C D | A C D B   |
+   | drop | A B C D | A B C     |
+   |------+---------+-----------|
 
+   Realistically, most of what end users should write will be an
+   occasional dup, possibly a swap.  Drop shouldn't be needed (that's
+   what sub-expressions are for), and the deep stack manipulation
+   should be unnecessary as well.  But they are present for
+   completeness' sake.
 
-** Derived operators
+** EXPR → “each” | “each2” — pop a list, yield all its elements
 
-   (Note that the fact that these operators can be derived from above,
-   or from one another, doesn't mean they actually are.)
+   - "each" pops a list, and for each element yield a stack with that
+     element pushed on top.
 
-*** EXPR → “?”ID | “!”ID — DIE tag assertion
+   - "each2" is exactly equivalent to:
+     : each swap each ?{rank swap rank ?eq} swap
 
-    - ?ID is exactly equivalent to:
-      : ?{.tag DW_TAG_ID eq}
-    - !ID is exactly equivalent to:
-      : ?{.tag DW_TAG_ID ne}
-    - Note that either form fails when applied to a non-DIE value.
+     So it takes two lists from the stack, and produces stacks that
+     have those two elements replaced with individual elements from
+     those lists that correspond to each other.  For example:
+     : A B [C₁, C₂, C₃] [D₁, D₂, D₃]
 
-*** EXPR → “?@”ID | “!@”ID — attribute presence/absence assertions
+     ... would be replaced with three stacks:
+     : (A B C₁ D₁, A B C₂ D₂, A B C₃ D₃)
 
-    - Apart from asserting attribute presence explicitly, one can
-      simply access the attribute value.  If an attribute like that is
-      not available at all, computation is aborted.
+   - we could also have each3 with the meaning of:
+     : each2 rot each ?{over rank swap drop rank ?eq} rot rot
 
-    - Attributes with forms DW_FORM_flag are handled specially.  If
-      such attribute is present, but it has a value of false (0), it is
-      treated as if it were absent.  Similarly when asserting absence
-      of attribute with such form: if it has a value of 0, absence is
-      asserted even though the attribute is present.
+** EXPR → “child” | “attribute” | “parent” | “next” | “prev” — traversal
 
-    - ?@at is exactly equivalent to:
-      : ?{.@at (?{!{.form DW_FORM_flag ne}, ?{.value 0 ne}})}
+   - "child" pops DIE on TOS and yields one stack for each child,
+     with that child pushed to TOS.
 
-    - !@at is exactly equivalent to:
-      : ?{!{.@at}, .@at ?{.form DW_FORM_flag eq} ?{.value 0 eq}}
+   - "attribute" does the same with attributes instead of children
 
-*** EXPR → “.@”ID | “@”ID | “/@”ID — attribute access
+   - parent is exactly equivalent to:
+     : U ?{child ?eq} swap drop
 
-    - .@ID is a traversal form that produces a single value of type
-      Attribute (if the DIE on TOS has that attribute).  It is exactly
-      equivalent to:
-      : .attributes ?{.name DW_AT_ID eq}
+   - next is exactly equivalent to:
+     : dup parent child ?eq swap drop
+     : rank 1 add swap parent child ?{rank rot ?eq} swap drop
+     The first line is necessary to make sure that rank later refers
+     to order in children array, not to e.g. a result of ([XYZ] each).
 
-    - @ID is exactly equivalent to:
-      : .@ID .value
+   - prev can be defined in manner similar to next.
 
-    - /@ID is equivalent to:
-      : @ID ?{.type "DIE" eq}
-      I.e. it's a value access that asserts that the value is an edge
-      in Dwarf graph.
+** EXPR → “?root” | “!root” — root node assertion
 
-*** EXPR → “child” | “parent” | “next” | “prev” — DIE tree traversal
+   - !root is exactly equivalent to:
+     : ?{parent}
+   - ?root is exactly equivalent to:
+     : ?{type T_DIE ?eq} !{parent}
 
-    These traversal forms replace a DIE on TOS with, respectively, its
-    child DIE(s), its parent DIE, next sibling, and previous sibling.
+   - Examples:
+     : parent* ?root        # finds a root node of node on TOS
 
-    - child is exactly equivalent to:
-      : .children
+** EXPR → “.@”ID | “@”ID | “/@”ID — attribute access
 
-    - parent is exactly equivalent to:
-      : U ?{child eq} swap drop
+   - .@ID is a traversal form that produces a single value of type
+     Attribute (if the DIE on TOS has that attribute).  It is exactly
+     equivalent to:
+     : attribute ?{name DW_AT_ID ?eq}
 
-    - next is exactly equivalent to:
-      : dup parent child eq swap drop
-      : .rank 1 add swap parent child ?{.rank rot eq} swap drop
-      The first line is necessary to make sure that .rank later refers
-      to order in children array, not to e.g. a result of ([XYZ] each).
+   - @ID is exactly equivalent to:
+     : .@ID value
 
-    - prev can be defined in manner similar to next.
+   - /@ID is equivalent to:
+     : @ID ?{type T_DIE ?eq}
+     I.e. it's a value access that asserts that the value is an edge
+     in Dwarf graph.
 
-*** EXPR → “?{” EXPR₁ “}” | “!{” EXPR₁ “}” — sub-expression assertions
+** EXPR → “offset” | “name” | “tag” | “form” | “value” — Dwarf tree introspection
 
-    - ?{ EXPR₁ } is exactly equivalent to:
-      : [ EXPR₁ ] [] ne drop drop
-    - !{ EXPR₁ } is exactly equivalent to:
-      : [ EXPR₁ ] [] eq drop drop
+   - "offset" pops DIE or Attribute on TOS and pushes a value
+     representing offset of the object in Dwarf file.
 
-    - Examples:
-      : !{child}       # keep leaf DIE's only
+   - "name" pops DIE or Attribute on TOS and pushes a value
+     representing, respectively, a tag or attribute name.
 
-*** EXPR → “each2” — deep each
+   - "tag" is like "name", but only valid for DIE's.
 
-    - each2 is exactly equivalent to:
-      : each swap each ?{.rank swap drop over .rank eq} swap
+   - "form" pops Attribute on TOS and pushes back a value
+     representing its form.
 
-      So it takes two lists from the stack, and produces stacks that
-      have those two elements replaced with individual elements from
-      those lists that correspond to each other.  For example:
-      : A B [C₁, C₂, C₃] [D₁, D₂, D₃]
+   - "value" pops Attribute on TOS and yields one stack for each
+     value associated with this Attribute, with that value pushed to
+     TOS.  Typically this would yield a single stack with a string or
+     integer on top, but it may yield e.g. several pseudo-DIEs for
+     things like @stmt_list.
 
-      ... would be replaced with three stacks:
-      : (A B C₁ D₁, A B C₂ D₂, A B C₃ D₃)
+** EXPR → “?”ID | “!”ID — DIE tag assertion
 
-    - we could also have each3 with the meaning of:
-      : each2 rot each ?{over .rank swap drop .rank eq} rot rot
+   - ?ID is exactly equivalent to:
+     : ?{.tag DW_TAG_ID ?eq}
+   - !ID is exactly equivalent to:
+     : ?{.tag DW_TAG_ID !eq}
+   - Note that either form fails when applied to a non-DIE value.
 
-*** EXPR → “all{” EXPR₁ “}” — universal quantifier
+** EXPR → “?@”ID | “!@”ID — attribute presence/absence assertions
 
-    - This is exactly equivalent to:
-      : ?{[each ?{EXPR₁}] .length swap .length eq}
+   - If the value on TOS is a DIE, these forms assert that they have
+     (don't have) an attribute with a given name.
 
-    - I.e. it expects a list on TOS.  This list is forked into
-      individual computations by "each".  Only if each of these
-      computations yields a value does the overall predicate succeed.
-      The list on TOS is kept.
+     - Instead of using "?@ID", one can also simply access the
+       attribute value with "@ID".  If such attribute is not
+       available, that computation is aborted.
 
-*** EXPR → “first” | “second” | “third” | “last” — rank assertion
+     - Attributes with forms DW_FORM_flag are handled specially.  If
+       such attribute is present, but it has a value of false (0), it is
+       treated as if it were absent.  Similarly when asserting absence
+       of attribute with such form: if it has a value of 0, absence is
+       asserted even though the attribute is present.
 
-    Assertion on rank of tested element within expression that
-    generated it.  If an expression generates elements X, Y, and Z on
-    top of existing stack A B C, three stacks come out: A B C X, A B C
-    Y, and A B C Z.  "first" would be true in context of A B C X, etc.
+     - If a DIE is on TOS, ?@at is exactly equivalent to:
+       : ?{.@at (?{!{form DW_FORM_flag !eq}, ?{value 0 !eq}})}
 
-    To get a given element when a list is on TOS, one would do e.g.
-    : each last
+     - If a DIE is on TOS, !@at is exactly equivalent to:
+       : ?{!{.@at}, .@at ?{form DW_FORM_flag ?eq} ?{value 0 ?eq}}
 
-    - first is exactly equivalent to:
-      : ?{.rank 0 eq}
-      (and similarly for second, third, ...)
+   - If the value on TOS is an Attribute, these forms assert that the
+     attribute has a given name.
 
-    - last is exactly equivalent to:
-      : ?{.length 1 sub swap .rank rot eq}
-      XXX really?  Why would .length be always applicable in this
-      context?
+** EXPR → “type” — TOS introspection
 
-*** EXPR → “^” — root node assertion
+   This produces an integer value suitable for comparison with the
+   following constants:
 
-    - Exactly equivalent to:
-      : !{parent}
-    - Examples:
-      : parent* ^        # finds a root node of node on TOS
+   - T_DIE — for Dwarf_Die objects
+   - T_AT — for Dwarf_Attribute objects
+   - T_SEQ — for sequence objects
+   - T_STR — for string objects
+   - T_INT — for integer objects
+
+** EXPR → “rank” | “range” — rank of element within producing expression
+
+   Each function numbers elements that it produces, and stores number
+   of each element along with the element.  That number is called
+   "rank".  "range" likewise contains count of values produced.
+
+** EXPR → “?first” | “?second” | “?third” | “?last” — rank assertion
+
+   (And corresponding ! forms.)
+
+   Assertion on rank of tested element within expression that
+   generated it.  If an expression generates elements X, Y, and Z on
+   top of existing stack A B C, three stacks come out: A B C X, A B C
+   Y, and A B C Z.  "?first" would be true in context of A B C X,
+   etc.
+
+   - ?first is exactly equivalent to:
+     : ?{rank 0 ?eq}
+     (and similarly for ?second, ?third, ...)
+
+   - ?last is exactly equivalent to:
+     : ?{range 1 sub swap rank ?eq}
+
+   - Examples:
+     : each ?last	# get last element of a list on TOS
+
+** EXPR → “add” | “sub” | “mul” | “div” | “mod” — arithmetic
+
+   - Two elements are popped: A and B, with B the original TOS, and "A
+     op B" is pushed again.
+
+   - Undefined operations (such as division by zero) simply abort the
+     computation in question.
+
+   - XXX how to sum a list?
+
+** EXPR → (“?”|“!”)(“eq”|“ne”|“gt”|“ge”|“lt”|“le”) — comparison assertions
+
+   - Two elements are inspected: TOS and one below that (B and A,
+     respectively).  The assertion holds if A op B is true.  Comparing
+     values of different types is not defined, and such assertions
+     fail as well.
+
+   - Note that there is both !eq and ?ne, !lt and ?ge, etc.  These
+     are mostly for symmetry--the assertions need "?" to denote that
+     they are assertions, so why not have "!" forms as well.  For !eq
+     it even makes a good sense.
+
+   - Certain integer values have enum-like characteristics.  These
+     include those produced by "tag", "name", "form", those produced
+     by access to certain attributes (such as @language), and
+     constants (e.g. DW_AT_name, DW_TAG_class_type, etc.).  For these
+     values, dwgrep remembers their domain.  If two values are
+     compared, both have a domain assigned, and those domains differ,
+     a warning is produced, because that's likely a flaw in the
+     expression.
+
+** EXPR → (“?”|“!”)“match” — regex assertion
+
+   This produces nothing when applied to non-string values.  Use "%s"
+   to convert other value types to string.
+
+   This is similar to “?eq” and “!eq”, except asserts that TOS (which
+   is a string with a regular expression) matches the value below
+   TOS.
+
+** EXPR → “concat” | “length” — operations on lists and strings
+
+** EXPR → “\dump” — debug assertion
+
+   Always succeeds, but as a side effect prints some information about
+   the computation in whose context it appeared.
 
 
 * Representing non-DIE information
@@ -573,7 +618,15 @@
 
    - XXX possibly a means of evaluating?
 
-** XXX ELF symbols
+** ELF symbols
+
+   Each symbol table entry (in SHT_SYMTAB, SHT_DYNSYM and minisymtab)
+   is represented by a pseudo-DIE of type DW_TAG_symbol.  It has the
+   following attributes: @value, @size, @type, @bind, @visibility,
+   @name, and @index.
+
+   Instead of @index we'd like to have a @section which links to a
+   pseudo-DIE representing a section.
 
 ** XXX Dwarf CU version -- an artificial attribute?
    - https://stackoverflow.com/questions/16169864
@@ -595,6 +648,7 @@
      attributes.
 
 ** XXX .debug_macro
+
 
 * Examples
 ** Josh Stone's nontrivial-parameters script
@@ -664,27 +718,27 @@
    : dup (?subprogram, ?inline_subroutine, ?entry_point, ?lexical_block,
    :      ?label, ?with_stmt, ?try_block, ?catch_block)
    : (@entry_pc, @low_pc, @ranges)
-   : swap parent* ^
-   : !{@stmt_list @address eq} swap
+   : swap parent* ?root
+   : !{@stmt_list @address ?eq} swap
    : "Address %s referenced from %s not found in line table."
 
 ** contains DW_OP_fbreg && ! @frame_base
 
-   : !@frame_base ?{@location child @atom DW_OP_fbreg eq}
+   : !@frame_base ?{@location child @atom DW_OP_fbreg ?eq}
 
 ** uses register based operators
 
    : ?{@location child @atom
-   :   (DW_OP_bregx eq, ?{DW_OP_reg0 ge} ?{DW_OP_regx le})}
+   :   (DW_OP_bregx ?eq, ?{DW_OP_reg0 ge} ?{DW_OP_regx le})}
 
 ** whether it uses a deref operator
 
    : ?{dup @location child @atom (DW_OP_deref, DW_OP_xderef, DW_OP_deref_size,
-   :                              DW_OP_xderef_size, DW_OP_GNU_deref_type) eq}
+   :                              DW_OP_xderef_size, DW_OP_GNU_deref_type) ?eq}
 
 ** contains DW_OP_call_frame_cfa && $@low_pc == 0
 
-   : ?{@low_pc 0 eq} ?{dup @location child @atom DW_OP_call_frame_cfa eq}
+   : ?{@low_pc 0 ?eq} ?{dup @location child @atom DW_OP_call_frame_cfa ?eq}
 
 ** is an empty location expression
 
@@ -692,32 +746,32 @@
 
 ** location expression ends with implicit_value or stack_value
 
-   : ?{dup @location child last @atom
-   :   (DW_OP_implicit_value, DW_OP_stack_value) eq}
+   : ?{dup @location child ?last @atom
+   :   (DW_OP_implicit_value, DW_OP_stack_value) ?eq}
 
 ** types inconsistent between instance and specification
    - http://gcc.gnu.org/bugzilla/show_bug.cgi?id=43053
 
    : ?subprogram dup @specification child ?formal_parameter
    : swap child ?formal_parameter
-   : ?{.pos swap .pos eq} ?{@type swap @type ne}
+   : ?{.pos swap .pos ?eq} ?{@type swap @type !eq}
 
    - if we have each2:
    : ?subprogram [@specification child ?formal_parameter]
-   : [swap child ?formal_parameter] each2 ?{@type swap @type ne}
+   : [swap child ?formal_parameter] each2 ?{@type swap @type !eq}
 
 ** duplicat DW_TAG_const_type
    - http://gcc.gnu.org/bugzilla/show_bug.cgi?id=56740
 
    : (?const_type, ?volatile_type, ?restrict_type)
    : dup parent* child* (?const_type, ?volatile_type, ?restrict_type)
-   : {.offset swap .offset ne} {.tag swap .tag eq} {@type swap @type eq}
+   : {.offset swap .offset !eq} {.tag swap .tag ?eq} {@type swap @type ?eq}
 
    - XXX <> for vertical arrays?
 
    : (?const_type, ?volatile_type, ?restrict_type)
    : dup parent* child* (?const_type, ?volatile_type, ?restrict_type)
-   : {<.offset, .offset> ne} {<.tag, .tag> eq} {<@type, @type> eq}
+   : {<.offset, .offset> !eq} {<.tag, .tag> ?eq} {<@type, @type> ?eq}
 
 *** EXPR → “<” EXPR₁ “,” EXPR₂ … “>” — stack transformation
 
@@ -729,19 +783,36 @@
 
 ** find any attribute with value "blah"
 
-   : ?{.attributes ?{.form (DW_FORM_string, DW_FORM_strp) eq} .value "blah" eq}
-
-   - very likely even simply:
-   : ?{.attributes .value "blah" eq}
+   : ?{.attributes .value "blah" ?eq}
 
 ** check_duplicate_DW_tag_variable.cc
    Check for two full DW_TAG_variable DIEs with the same DW_AT_name
    value.
 
-   : ?variable U ?variable lt ?{@name swap @name eq}
+   : ?variable U ?variable lt ?{@name swap @name ?eq}
 
-* Old work
+** check_linkage_external_die.cc
 
+   : ?symbol ?{@type (STT_OBJECT, STT_FUNC) ?eq} ?{@name "" !eq}
+   : U ?@linkage_name [!{@linkage_name swap @name ?eq}]
+   :
+   : ((if !@declaration !@const_value
+   :   (!structure_type !enumeration_type !union_type, ?@name)
+   :   "%s has linkage_name attribute that's not in symtab,\
+   :   but is not marked as declaration"),
+   :
+   :  (else [swap @binding STB_LOCAL !eq]
+   :   (if !@declaration ?@external
+   :    "%s has linkage_name attribute,\
+   :    but the corresponding symbol is local"),
+   :   (else !@external
+   :    "%s has linkage_name attribute, but no external attribute")))
 
-== check_linkage_external_die.cc
-(SHT_DYNSYM | SHT_SYMTAB)/*[@type==STT_OBJECT or @type==STT_FUNC][@name != ""]
+   This is still 1:10 vs. dwarflint C++ (i.e., say 1:20 if we had to
+   explore the DIE tree by hand), but fairly involved.
+
+   The interpreter would need to notice the ?symbol nodes are used as
+   a sort of global variable for cross-referencing, otherwise this
+   would lead to an ugly combinatorial explosion of states.  Noticing
+   that we look at the bottom slot and cross-reference @name with
+   @linkage_name should be possible.
