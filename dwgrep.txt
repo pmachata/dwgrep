@@ -4,7 +4,7 @@
   Dwgrep is a tool and an associated language for querying Dwarf
   graphs.  You can think of dwgrep expressions as instructions
   describing a path through a graph, with assertions about the type of
-  nodes on the way.
+  nodes along the way.
 
   The paths that dwgrep expressions describe are rather abstract, and
   apart from Dwarf DIE's and Attributes, they include integers and
@@ -60,13 +60,14 @@
   types instead of lines.
 
   There is a subtle difference between values and elements: elements
-  contain /stacks/ of values.  Functions in the pipeline manipulate
-  these stacks.  If an element is removed from a working set, that
-  means that the computation stopped making sense: some assertion
-  didn't hold, or an attribute was expected that was not available.
-  Such computations are discarded.  On the contrary, a function can
-  produce several stacks, which means that several possible paths
-  forward exist.  The values on stack provide a context to the result.
+  contain /stacks/ of values.  Functions in the pipeline consume one
+  stack on input, and produce zero or more stacks on output.  If
+  nothing is produced, that means that the computation stopped making
+  sense: some assertion didn't hold, or an attribute was expected that
+  was not available.  Such element is removed from the working set.
+  On the contrary, a function can produce several stacks, which means
+  that several possible paths forward exist.  The values on stack
+  provide a context to the result.
 
 
 * Introduction to the dwgrep language
@@ -408,10 +409,14 @@
     Always succeeds, but as a side effect prints some information about
     the computation in whose context it appeared.
 
-*** EXPR → XXX universe
+*** EXPR → “U” — universe
 
-    Should produce all DIE's of Dwarf file again.  This operator is
-    implicit at the beginning of the full dwgrep expression.
+    This is a literal form that stands for every DIE (and pseudo-DIE)
+    in Dwarf graph.  Because it is literal, it adds a DIE to the
+    stack.
+
+    This operator is implicit at the beginning of the full dwgrep
+    expression.
 
 
 ** Derived operators
@@ -468,8 +473,8 @@
     - child is exactly equivalent to:
       : .children
 
-    - parent is exactly equivalent to (XXX $universe):
-      : $universe ?{child eq} swap drop
+    - parent is exactly equivalent to:
+      : U ?{child eq} swap drop
 
     - next is exactly equivalent to:
       : dup parent child eq swap drop
@@ -482,9 +487,9 @@
 *** EXPR → “?{” EXPR₁ “}” | “!{” EXPR₁ “}” — sub-expression assertions
 
     - ?{ EXPR₁ } is exactly equivalent to:
-      : [ EXPR₁ ] [] ne
+      : [ EXPR₁ ] [] ne drop drop
     - !{ EXPR₁ } is exactly equivalent to:
-      : [ EXPR₁ ] [] eq
+      : [ EXPR₁ ] [] eq drop drop
 
     - Examples:
       : !{child}       # keep leaf DIE's only
@@ -544,9 +549,9 @@
 
 * Representing non-DIE information
 
-** @decl_file
+** @decl_file — represented as actual string including path
 
-   The value is represented as actual string including path.
+** @MIPS_linkage_name — translated to @linkage_name automatically
 
 ** @stmt_list
 
@@ -710,8 +715,8 @@
 
    - XXX <> for vertical arrays?
 
-   : (?const_type, ?volatile_type, ?restrict_type);
-   : parent* child* (?cons_type, ?volatile_type, ?restrict_type)
+   : (?const_type, ?volatile_type, ?restrict_type)
+   : dup parent* child* (?const_type, ?volatile_type, ?restrict_type)
    : {<.offset, .offset> ne} {<.tag, .tag> eq} {<@type, @type> eq}
 
 *** EXPR → “<” EXPR₁ “,” EXPR₂ … “>” — stack transformation
@@ -729,15 +734,14 @@
    - very likely even simply:
    : ?{.attributes .value "blah" eq}
 
+** check_duplicate_DW_tag_variable.cc
+   Check for two full DW_TAG_variable DIEs with the same DW_AT_name
+   value.
+
+   : ?variable U ?variable lt ?{@name swap @name eq}
 
 * Old work
-== check_duplicate_DW_tag_variable
 
---> check for two full DW_TAG_variable DIEs with the same DW_AT_name
-    value
-
-//variable[@declaration]
 
 == check_linkage_external_die.cc
-
 (SHT_DYNSYM | SHT_SYMTAB)/*[@type==STT_OBJECT or @type==STT_FUNC][@name != ""]
