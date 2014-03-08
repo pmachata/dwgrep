@@ -425,7 +425,7 @@
 
    - next is exactly equivalent to:
      : dup parent child ?eq swap drop
-     : rank 1 add swap parent child ?{rank rot ?eq} swap drop
+     : dup rank 1 add swap parent child ?{rank rot ?eq} swap drop
      The first line is necessary to make sure that rank later refers
      to order in children array, not to e.g. a result of ([XYZ] each).
 
@@ -478,9 +478,9 @@
 ** EXPR → “?”ID | “!”ID — DIE tag assertion
 
    - ?ID is exactly equivalent to:
-     : ?{.tag DW_TAG_ID ?eq}
+     : ?{tag DW_TAG_ID ?eq}
    - !ID is exactly equivalent to:
-     : ?{.tag DW_TAG_ID !eq}
+     : ?{tag DW_TAG_ID !eq}
    - Note that either form fails when applied to a non-DIE value.
 
 ** EXPR → “?@”ID | “!@”ID — attribute presence/absence assertions
@@ -632,7 +632,7 @@
    - https://stackoverflow.com/questions/16169864
 
 ** XXX abbreviation section?  (libdw doesn't have interfaces for this)
-   - note that one can look for attribute form by saying .@at .form
+   - note that one can look for attribute form by saying .@at form
    - would a link from a DIE to its abbreviation be useful?
 
 ** XXX integrating aadr2line
@@ -656,18 +656,20 @@
    - stack machine
 
    : ?subprogram !@declaration
-   : {@decl_file {"^/usr/" match} !{"^/usr/src/debug" match}}
+   : ?{@decl_file ?{"^/usr/" match} !{"^/usr/src/debug" match}}
    : dup child ?formal_parameter
-   : {@type ((?const_type, ?volatile_type, ?typedef) @type)*
-   :  (?structure_type, ?class_type)} swap
+   : ?{@type ((?const_type, ?volatile_type, ?typedef) @type)*
+   :   (?structure_type, ?class_type)} swap
    : "%{ @decl_file %}: %{ @decl_line %}: note: in function \
    : `%( @name %)', parameter `%{ @name %}' type is not trivial"
 
+   - another alternative for stack machine
+
    : ?formal_parameter
-   : {@type ((?const_type, ?volatile_type, ?typedef) @type)*
-   :  (?structure_type, ?class_type)}
+   : ?{@type ((?const_type, ?volatile_type, ?typedef) @type)*
+   :   (?structure_type, ?class_type)}
    : dup parent ?subprogram !@declaration
-   : {@decl_file {"^/usr/" match} !{"^/usr/src/debug" match}}
+   : ?{@decl_file ?{"^/usr/" match} !{"^/usr/src/debug" match}}
    : "%{ @decl_file %}: %{ @decl_line %}: note: in function \
    : `%( @name %)', parameter `%{ @name %}' type is not trivial"
 
@@ -754,7 +756,7 @@
 
    : ?subprogram dup @specification child ?formal_parameter
    : swap child ?formal_parameter
-   : ?{.pos swap .pos ?eq} ?{@type swap @type !eq}
+   : ?{rank swap rank ?eq} ?{@type swap @type !eq}
 
    - if we have each2:
    : ?subprogram [@specification child ?formal_parameter]
@@ -765,13 +767,13 @@
 
    : (?const_type, ?volatile_type, ?restrict_type)
    : dup parent* child* (?const_type, ?volatile_type, ?restrict_type)
-   : {.offset swap .offset !eq} {.tag swap .tag ?eq} {@type swap @type ?eq}
+   : ?{offset swap offset !eq} ?{tag swap tag ?eq} ?{@type swap @type ?eq}
 
    - XXX <> for vertical arrays?
 
    : (?const_type, ?volatile_type, ?restrict_type)
    : dup parent* child* (?const_type, ?volatile_type, ?restrict_type)
-   : {<.offset, .offset> !eq} {<.tag, .tag> ?eq} {<@type, @type> ?eq}
+   : ?{<offset, offset> !eq} ?{<tag, tag> ?eq} ?{<@type, @type> ?eq}
 
 *** EXPR → “<” EXPR₁ “,” EXPR₂ … “>” — stack transformation
 
@@ -783,7 +785,7 @@
 
 ** find any attribute with value "blah"
 
-   : ?{.attributes .value "blah" ?eq}
+   : attribute ?{value "blah" ?eq}
 
 ** check_duplicate_DW_tag_variable.cc
    Check for two full DW_TAG_variable DIEs with the same DW_AT_name
