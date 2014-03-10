@@ -258,16 +258,11 @@
     produced values.  This includes traversal forms (@at, .@at, child,
     parent, etc.) and operators (sub, add, etc.).
 
-  Stacks have limited capacity.  XXX my current thinking is to have a
-  default limit of 4 slots, and allow to increase it via a command
-  line argument.  This limit should make sure that unbounded
-  computation is quickly detected.  Stack overflow is a hard error,
-  and results in abort of dwgrep itself--the offending computation is
-  not silently discarded.
-
-  Deep(er) stacks may be useful for deeply embedded ?{} and !{} forms,
-  but are unlikely to be useful directly, as there are no stack
-  manipulation words to get at the levels beyond top three items.
+  dwgrep expressions make it possible to determine stack size
+  statically.  In practice I expect most expressions to run in two,
+  three slots.  Deep(er) stacks are unlikely to be useful, as there
+  are no stack manipulation words to get at the levels beyond top
+  three items.
 
 
 * Overview of dwgrep language
@@ -285,7 +280,14 @@
    EXPR yields all the values that EXPR₁ and EXPR₂ yield.  In practice
    this can be used as logical or, or to construct literal lists.
 
+   All constituent EXPR's shall have the same overall stack effect
+   (the number of slots pushed - number of slots popped will be the
+   same for each branch).
+
 ** EXPR → EXPR₁ “*” | EXPR₁ “+” | EXPR₁ “?” — iterate
+
+   EXPR₁ shall have a neutral stack effect (number of slots pushed
+   equals number of slots popped).
 
 ** EXPR → “"” (string literal) “"” | (“0x”|“0”|“”)[1-9][0-9]* — literals
 
@@ -543,6 +545,7 @@
 
    - Examples:
      : each ?last	# get last element of a list on TOS
+     : [each !first] swap each first   # split a list into head:rest
 
 ** EXPR → “add” | “sub” | “mul” | “div” | “mod” — arithmetic
 
