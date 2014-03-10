@@ -2,34 +2,43 @@
 * Introduction
 
   Dwgrep is a tool and an associated language for querying Dwarf
-  graphs.  You can think of dwgrep expressions as instructions
-  describing a path through a graph, with assertions about the type of
-  nodes along the way.
+  (debuginfo) graphs.  If you want to find out more about Dwarf, you
+  may check out the following links.  But you can also pretend that
+  Dwarf is like XML, except nodes are called DIE's.  That, and
+  perusing the output of eu-readelf -winfo, should be enough to get
+  you started.
 
-  The paths that dwgrep expressions describe are rather abstract, and
-  apart from Dwarf DIE's and Attributes, they include integers and
-  strings, and sequences of any of these types.  There are also means
-  of expressing sub-conditions, i.e. assertions that such and such
-  node (or value) is acceptable if another expression can match (or
-  can't match) a different path through the graph.
+    http://www.dwarfstd.org/doc/Debugging%20using%20DWARF.pdf
+    http://dwarfstd.org/Download.php
+
+  You can think of dwgrep expressions as instructions describing a
+  path through a graph, with assertions about the type of nodes along
+  the way: that a node is of given type, that it has a given
+  attribute, etc.  There are also means of expressing sub-conditions,
+  i.e. assertions that a given node is acceptable if a separate
+  expression matches (or doesn't match) a different path through the
+  graph.
+
+  Apart from Dwarf objects (DIE's and Attributes), dwgrep expressions
+  can work with integers, strings, and sequences of other objects.
 
   In particular, a simple expression in dwgrep might look like this:
 
   : ?subprogram child ?formal_parameter @name
 
   Which (ignoring the initial colon that's part of meta-syntax) says:
-  show me values of DW_AT_name of DW_TAG_formal_parameter nodes that
-  are children of DW_TAG_subprogram nodes.  Reading forward, you get
-  list of instructions to a matcher: accept all DW_TAG_subprogram's,
-  look at its children, accept those that are DW_TAG_formal_parameter,
-  take value of attribute DW_AT_name.
+  show me values of attribute DW_AT_name of DW_TAG_formal_parameter
+  nodes that are children of DW_TAG_subprogram nodes.  Reading
+  forward, you get list of instructions to a matcher: accept all
+  DW_TAG_subprogram's, look at their children, accept those that are
+  DW_TAG_formal_parameter, take value of attribute DW_AT_name.
 
   Another example comes from dwarflint:
 
   : ?@decl_column !@decl_line
 
   ... which looks for DIE's that have DW_AT_decl_column, but don't
-  have DW_AT_decl_line.
+  have DW_AT_decl_line--a semantic violation that is worth reporting.
 
 
 * Computation
