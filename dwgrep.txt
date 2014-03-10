@@ -225,7 +225,7 @@
      result of one application of EXPR, then of another, etc.  It
      works similarly to * in regular expressions.
    - EXPR+ is exactly like EXPR EXPR*.
-   - EXPR? is like EXPR*, but applies at most once.
+   - EXPR? is the same as (, EXPR) — it /may/ apply once
 
    We can use this tool to remove const_type, volatile_type and
    typedef layers from our potential structure:
@@ -252,6 +252,7 @@
     - integers (1, 0x20, -7)
     - strings ("Ahoj!")
     - sequences ([1, 2, 3])
+    - constants (DW_AT_name, DW_FORM_ref_addr, ...)
 
   - assertions inspect TOS (or several values on TOS), test the
     condition, and either leave the stack unchanged, or abort the
@@ -583,9 +584,13 @@
      by access to certain attributes (such as @language), and
      constants (e.g. DW_AT_name, DW_TAG_class_type, etc.).  For these
      values, dwgrep remembers their domain.  If two values are
-     compared, both have a domain assigned, and those domains differ,
-     a warning is produced, because that's likely a flaw in the
-     expression.
+     compared such that both have a domain assigned, and those domains
+     differ, a warning is produced, because that's likely a flaw in
+     the expression.
+
+   - Examples:
+     : A B swap? ?lt drop    # "max" -- keep the greater number on stack
+     : A B swap? ?gt drop    # "min"
 
 ** EXPR → (“?”|“!”)“match” — regex assertion
 
