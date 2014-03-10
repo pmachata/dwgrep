@@ -313,7 +313,7 @@
 ** EXPR → “U” — universe
 
    This is a literal form that stands for every DIE (and pseudo-DIE)
-   in Dwarf graph.  Because it is literal, it adds a DIE to the
+   in Dwarf graph.  Because it is a literal, it adds a DIE to the
    stack.
 
    This operator is implicit at the beginning of the full dwgrep
@@ -791,7 +791,10 @@
    Check for two full DW_TAG_variable DIEs with the same DW_AT_name
    value.
 
-   : ?variable U ?variable lt ?{@name swap @name ?eq}
+   : dup child ?variable swap child ?variable ?lt ?{@name swap @name ?eq}
+
+   - Or:
+     : ?variable dup parent child ?variable ?lt ?{@name swap @name ?eq}
 
 ** check_linkage_external_die.cc
 
