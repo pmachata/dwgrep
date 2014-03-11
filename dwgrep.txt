@@ -235,9 +235,130 @@
    :   @type ((?const_type, ?volatile_type, ?typedef) @type)*
    :   (?structure_type, ?class_type)}
 
-   So this was a small sampler of the language.  In the following
-   sections, all of it will be introduced in a semi-formal, but rather
-   terse format.
+   Next on, we would like to write a message:
+
+** Literals, Strings, Formatting
+
+   dwgrep understands roughly C-like string literals, using \ as an
+   escape character.  Hello world looks like this in dwgrep:
+
+   : "Hello world!"
+
+   This is an example of a string literal.  Literals in dwgrep add
+   themselves to the stack.  There are many literals in dwgrep--apart
+   from strings and usual numeric literals, dwgrep knows about all the
+   named Dwarf constants--e.g. DW_AT_name, DW_TAG_array_type,
+   DW_FORM_flag, etc. are all valid dwgrep forms.
+
+   Like C printf, string literals in dwgrep allow formatting
+   directives.  To write a nice error message for our running example,
+   we could do for example:
+
+   : ?subprogram !@declaration
+   : ?{child ?formal_parameter
+   :   @type ((?const_type, ?volatile_type, ?typedef) @type)*
+   :   (?structure_type, ?class_type)}
+   : "%s: type of one of the parameters has non-trivial type."
+
+   When dwgrep sees a string with formatting directives, it converts
+   it into a function.  That function pops one parameter for each %s,
+   interpolates them all, and then pushes the result to stack.
+   Consequently, to convert anything to a string in dwgrep, you would
+   just say:
+
+   : "%s"
+
+   The output that our running example above gives would print
+   something like this:
+
+   :  DIE .debug_info@0x420: type of one of the parameters is not trivial.
+
+   We would like to improve on that a bit.  We'd like to mention which
+   parameter it is, and we'd like to tell the user the name of the
+   function, not just a DIE offset.  We'll address both.
+
+** +word — stack preservation
+
+   For dwgrep words that pop one or more top elements of the stack,
+   prefixing them with + makes them not pop and just add their result.
+   We can use this to keep two DIE's on stack in our in-progress
+   script: the subprogram itself as well as the struct argument.
+
+   : ?subprogram !@declaration +child ?formal_parameter
+   : ?{@type ((?const_type, ?volatile_type, ?typedef) @type)*
+   :   (?structure_type, ?class_type)}
+   : "Parameter %s of %s has non-trivial type."
+
+   So that's nice, but notice how we needed to change the message to
+   reflect order of values on stack.  For these reasons, dwgrep has a
+   suite of stack-shuffling words from Forth:
+
+** Stack shuffling
+
+   - "dup" duplicates top element of stack.  Usually you can get the
+     same effect by prefixing the following form by +.
+
+   - "swap" swaps top two stack elements.
+
+   Apart from these two, dwgrep includes over rot and drop.  See below
+   for their definition.  With swap, we can get our message in the
+   right order:
+
+   : ?subprogram !@declaration +child ?formal_parameter
+   : ?{@type ((?const_type, ?volatile_type, ?typedef) @type)*
+   :   (?structure_type, ?class_type)} swap
+   : "%s: Parameter %s has non-trivial type."
+
+   And now we can also transform each stack slot to its name, so that
+   the message doesn't mention unfamiliar loci, but names:
+
+   : ?subprogram !@declaration +child ?formal_parameter
+   : ?{@type ((?const_type, ?volatile_type, ?typedef) @type)*
+   :   (?structure_type, ?class_type)} @name swap @name
+   : "%s: Parameter %s has non-trivial type."
+
+   Now the idiom "X swap X" is very common in dwgrep expressions.
+   Typically you would use it to tie DIE's from two sets together.
+   E.g. in dwarflint, there's a check that there one scope doesn't
+   contain two variables of the same name.  You can implement the
+   check thus:
+
+   : dup child ?variable swap child ?variable !eq ?{@name swap @name ?eq}
+
+   We get the same "X swap X" idiom, and twice!  Clearly this is
+   useful relatively often, so dwgrep has a syntax for this:
+
+** N / EXPR — pathset exploration
+
+   This form applies EXPR to the top N stack elements, with N a
+   compile-time constant with value greater than 0.  With this tool,
+   we can rephrase the above check like this:
+
+   : dup 2/(child ?variable) !eq ?{2/@name ?eq}
+
+   Which is much better.  We can also use it to improve our
+   non-trivial parameters script (but not much, we'll still need to
+   swap):
+
+   : ?subprogram !@declaration +child ?formal_parameter
+   : ?{@type ((?const_type, ?volatile_type, ?typedef) @type)*
+   :   (?structure_type, ?class_type)} 2/@name swap
+   : "%s: Parameter %s has non-trivial type."
+
+   Ideally we'd also include source code coordinates for the function
+   name.  dwgrep formatters have a tool for this: you can enclose
+   arbitrary expressions between %( and %).  They are executed in
+   plain context and TOS is then popped and embedded in the template:
+
+   : ?subprogram !@declaration +child ?formal_parameter
+   : ?{@type ((?const_type, ?volatile_type, ?typedef) @type)*
+   :   (?structure_type, ?class_type)} swap
+   : "%( +@decl_file %): %( +@decl_line %): note: in function \
+   : `%( @name %)', parameter `%( @name %)' type is not trivial."
+
+   So, that's it.  This was a quick tour through the interesting parts
+   of dwgrep language.  In the following sections, all of it will be
+   introduced in a semi-formal, but rather terse format.
 
 
 * Stack maintenance
@@ -300,11 +421,10 @@
 
 ** EXPR → NUM “/” EXPR₁ — pathset exploration
 
-   This form applies EXPR₁ to the top NUM stack elements.  NUM is a
-   compile-time constant with value greater than 0.  The effect is as
-   if the topmost NUM elements were removed from stack and remembered
-   as X₁ to Xₙ, with Xₙ the original TOS.  Then X₁ is pushed, and
-   EXPR₁ executed.  Then X₂ is pushed, and EXPR₁ executed again.  Etc.
+   The effect is as if the topmost NUM elements were removed from
+   stack and remembered as X₁ to Xₙ, with Xₙ the original TOS.  Then
+   X₁ is pushed, and EXPR₁ executed.  Then X₂ is pushed, and EXPR₁
+   executed again.  Etc.
 
    (This semantics were chosen to make the operator widely applicable,
    but the particular problem that this addresses is simultaneous
@@ -329,7 +449,7 @@
    EXPR₁ shall have a stack effect of +n,-n (number of slots pushed
    equals number of slots popped).
 
-** EXPR → “"” (string literal) “"” | (“0x”|“0”|“”)[1-9][0-9]* — literals
+** EXPR → “+”?“"” (string literal) “"” | (“0x”|“0”|“”)[1-9][0-9]* — literals
 
    String literals allow expression interpolation:
 
@@ -338,16 +458,18 @@
      itself.  TOS is then popped, converted to a string and embedded
      in the string template.
 
-   - %{ EXPR %} is like %( EXPR %), but it's evaluated in
-     sub-expression context.  TOS of resulting stack is still
-     inspected for value to interpolate.
-
    - %s stands for %( %)
 
    - possibly have integer formatters like %d, %u, %x, etc. if one
      wants to override the default thing for any reason.
 
    - %% stands for a single %
+
+   - if the literal is prefixed with +, then it's exactly equivalent
+     to the following:
+     : [EXPR] each
+     i.e. the interpolation is done in a sub-expression context and
+     the result is pushed onto unmodified stack.
 
    The resulting string is pushed to stack after all interpolations
    are processed one after another.
@@ -726,8 +848,8 @@
    : +child ?formal_parameter
    : ?{@type ((?const_type, ?volatile_type, ?typedef) @type)*
    :   (?structure_type, ?class_type)} swap
-   : "%{ @decl_file %}: %{ @decl_line %}: note: in function \
-   : `%( @name %)', parameter `%{ @name %}' type is not trivial"
+   : "%( +@decl_file %): %( +@decl_line %): note: in function \
+   : `%( @name %)', parameter `%( @name %)' type is not trivial"
 
    - What the following XQuery really does:
 
