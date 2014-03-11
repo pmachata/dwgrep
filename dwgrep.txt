@@ -248,12 +248,6 @@
 
   - initially the stack is composed of a single value of type DIE
 
-  - literals push a new value on stack
-    - integers (1, 0x20, -7)
-    - strings ("Ahoj!")
-    - sequences ([1, 2, 3])
-    - constants (DW_AT_name, DW_FORM_ref_addr, ...)
-
   - assertions inspect TOS (or several values on TOS), test the
     condition, and either leave the stack unchanged, or abort the
     computation.  They do not pop.  This includes ?@at, !@at, ?tag,
@@ -262,11 +256,21 @@
     with a ! (if it's negative assertion).
 
   - stack shuffling operators (swap, drop, dup, ...) reorder values on
-    stack
+    the stack
 
-  - all other forms pop top elements of the stack, and replace with
-    produced values.  This includes traversal forms (@at, .@at, child,
+  - literals push a new value on stack
+    - integers (1, 0x20, -7)
+    - strings ("Ahoj!")
+    - sequences ([1, 2, 3])
+    - constants (DW_AT_name, DW_FORM_ref_addr, ...)
+
+  - all other forms are called functions.  They pop TOS (possibly
+    several times) and push another value depending on those values
+    that were popped.  This includes traversal forms (@at, child,
     parent, etc.) and operators (sub, add, etc.).
+
+  - if a function is preceded with a "+", it doesn't pop, only pushes
+    the result.
 
   dwgrep expressions make it possible to determine stack size
   statically.  In practice I expect most expressions to run in two,
@@ -294,9 +298,35 @@
    (the number of slots pushed - number of slots popped will be the
    same for each branch).
 
+** EXPR → NUM “/” EXPR₁ — pathset exploration
+
+   This form applies EXPR₁ to the top NUM stack elements.  NUM is a
+   compile-time constant with value greater than 0.  The effect is as
+   if the topmost NUM elements were removed from stack and remembered
+   as X₁ to Xₙ, with Xₙ the original TOS.  Then X₁ is pushed, and
+   EXPR₁ executed.  Then X₂ is pushed, and EXPR₁ executed again.  Etc.
+
+   (This semantics were chosen to make the operator widely applicable,
+   but the particular problem that this addresses is simultaneous
+   exploration of several paths, and we may revert to semantics where
+   the only stack effects allowed (apart from nothing at all) are a
+   single pop followed by a single push.)
+
+   The idiom whereby an operator is applied, values swapped, and the
+   same operator is applied again, comes up very often.  Clearly there
+   should be syntax for it.
+
+   - Compare names of two DIE's on TOS:
+     : ?{@name swap @name ?eq}
+     : ?{2/@name ?eq}
+
+   - Follow the same traversal instructions for two DIE's on TOS:
+     : child ?formal_parameter swap child ?formal_parameter
+     : 2/(child ?formal_parameter)
+
 ** EXPR → EXPR₁ “*” | EXPR₁ “+” | EXPR₁ “?” — iterate
 
-   EXPR₁ shall have a neutral stack effect (number of slots pushed
+   EXPR₁ shall have a stack effect of +n,-n (number of slots pushed
    equals number of slots popped).
 
 ** EXPR → “"” (string literal) “"” | (“0x”|“0”|“”)[1-9][0-9]* — literals
@@ -322,14 +352,30 @@
    The resulting string is pushed to stack after all interpolations
    are processed one after another.
 
-** EXPR → “U” — universe
+** EXPR → “+”?(“universe” | “section” | “unit”)
 
-   This is a literal form that stands for every DIE (and pseudo-DIE)
-   in Dwarf graph.  Because it is a literal, it adds a DIE to the
-   stack.
+   - "universe" stands for every DIE (and pseudo-DIE) in Dwarf graph.
+     Note that for consistency, it drops TOS even though it
+     technically doesn't need it for anything.  Use +universe if you
+     want to keep TOS.
 
-   This operator is implicit at the beginning of the full dwgrep
-   expression.
+     (+universe) is implicit at the beginning of the full dwgrep
+     expression.
+
+   - "section" is similar, but selects only DIE's (or pseudo-DIE's)
+     that come from the same section as value on TOS -- e.g. from
+     .debug_info, from symbol table, etc.
+
+   - "unit" selects objects belonging to the same logical unit.  This
+     may mean a CU, a current line table, etc.
+
+   - XXX We might need "unit" to mean "the CU that we came from" and
+     something else to mean "local set of entities".
+   - XXX consider similar forms .info, .line, for explicitly choosing
+     the domain we wish to operate on.
+
+   - A general note about + forms: +EXPR is exactly equivalent to:
+     : [EXPR] each
 
 ** EXPR → “(” EXPR₁ “)” — grouping, precedence
 
@@ -360,9 +406,9 @@
 ** EXPR → (“?all{” | “!all{”) EXPR₁ “}” — quantifier assertion
 
    - ?all{EXPR₁} is exactly equivalent to:
-     : ?{[each ?{EXPR₁}] length swap length ?eq}
+     : ?{[each ?{EXPR₁}] 2/length ?eq}
    - !all{EXPR₁} is exactly equivalent to:
-     : ?{[each ?{EXPR₁}] length swap length !eq}
+     : ?{[each ?{EXPR₁}] 2/length !eq}
 
    - I.e. it expects a list on TOS.  This list is forked into
      individual computations by "each".  For ?all, only if each of
@@ -373,11 +419,16 @@
 ** EXPR → “if” | “else” — conditionals
 
    - "if" pops TOS.  If it's an empty list, it fails.  It is exactly:
-     : ?{[] !eq} drop
+     : !empty drop
 
    - "else" pops TOS.  Unless it's an empty list, it fails.  It is
      exactly:
-     : ?{[] ?eq} drop
+     : ?empty drop
+
+   - Note there is no +if.  It would behave as assertion (if doesn't
+     push anything, but +if wouldn't pop anything either)--i.e. it
+     would check whether array is empty.  There's ?empty and !empty
+     for that.
 
    The way these two are used is as follows:
    : [ condition ] (if stuff stuff stuff, else stuff stuff stuff)
@@ -406,13 +457,13 @@
    should be unnecessary as well.  But they are present for
    completeness' sake.
 
-** EXPR → “each” | “each2” — pop a list, yield all its elements
+** EXPR → “+”?(“each” | “each2”) — pop a list, yield all its elements
 
    - "each" pops a list, and for each element yield a stack with that
-     element pushed on top.
+     element pushed on top.  "+each" does the same, but doesn't pop.
 
    - "each2" is exactly equivalent to:
-     : each swap each ?{rank swap rank ?eq} swap
+     : 2/each ?{2/pos ?eq}
 
      So it takes two lists from the stack, and produces stacks that
      have those two elements replaced with individual elements from
@@ -423,9 +474,9 @@
      : (A B C₁ D₁, A B C₂ D₂, A B C₃ D₃)
 
    - we could also have each3 with the meaning of:
-     : each2 rot each ?{over rank swap drop rank ?eq} rot rot
+     : 3/each ?{3/pos ?eq drop ?eq}
 
-** EXPR → “child” | “attribute” | “parent” | “next” | “prev” — traversal
+** EXPR → “+”?(“child” | “attribute” | “parent” | “next” | “prev”) — traversal
 
    - "child" pops DIE on TOS and yields one stack for each child,
      with that child pushed to TOS.
@@ -433,12 +484,14 @@
    - "attribute" does the same with attributes instead of children
 
    - parent is exactly equivalent to:
-     : U ?{child ?eq} swap drop
+     : +universe ?{child ?eq} swap drop
+     Note that in case of imported units, "parent" may return more
+     than one DIE!  (XXX This doesn't seem desirable?)
 
    - next is exactly equivalent to:
      : dup parent child ?eq swap drop
-     : dup rank 1 add swap parent child ?{rank rot ?eq} swap drop
-     The first line is necessary to make sure that rank later refers
+     : dup pos 1 add swap parent child ?{pos rot ?eq} swap drop
+     The first line is necessary to make sure that pos later refers
      to order in children array, not to e.g. a result of ([XYZ] each).
 
    - prev can be defined in manner similar to next.
@@ -453,22 +506,15 @@
    - Examples:
      : parent* ?root        # finds a root node of node on TOS
 
-** EXPR → “.@”ID | “@”ID | “/@”ID — attribute access
+** EXPR → “+”?“@”ID — attribute value
 
-   - .@ID is a traversal form that produces a single value of type
-     Attribute (if the DIE on TOS has that attribute).  It is exactly
-     equivalent to:
-     : attribute ?{name DW_AT_ID ?eq}
+   This function pops a DIE off TOS and pushes a value of its
+   attribute DW_AT_ID.  If you want to access the attribute object
+   itself instead, use:
 
-   - @ID is exactly equivalent to:
-     : .@ID value
+   : attribute ?@ID
 
-   - /@ID is equivalent to:
-     : @ID ?{type T_DIE ?eq}
-     I.e. it's a value access that asserts that the value is an edge
-     in Dwarf graph.
-
-** EXPR → “offset” | “name” | “tag” | “form” | “value” — Dwarf tree introspection
+** EXPR → “+”?(“offset”|“name”|“tag”|“form”|“value”) — Dwarf tree introspection
 
    - "offset" pops DIE or Attribute on TOS and pushes a value
      representing offset of the object in Dwarf file.
@@ -510,16 +556,10 @@
        of attribute with such form: if it has a value of 0, absence is
        asserted even though the attribute is present.
 
-     - If a DIE is on TOS, ?@at is exactly equivalent to:
-       : ?{.@at (?{!{form DW_FORM_flag !eq}, ?{value 0 !eq}})}
-
-     - If a DIE is on TOS, !@at is exactly equivalent to:
-       : ?{!{.@at}, .@at ?{form DW_FORM_flag ?eq} ?{value 0 ?eq}}
-
    - If the value on TOS is an Attribute, these forms assert that the
      attribute has a given name.
 
-** EXPR → “type” — TOS introspection
+** EXPR → “+”?“type” — TOS introspection
 
    This produces an integer value suitable for comparison with the
    following constants:
@@ -530,34 +570,34 @@
    - T_STR — for string objects
    - T_INT — for integer objects
 
-** EXPR → “rank” | “range” — rank of element within producing expression
+** EXPR → “+”?(“pos” | “count”) — pos of element within producing expression
 
    Each function numbers elements that it produces, and stores number
-   of each element along with the element.  That number is called
-   "rank".  "range" likewise contains count of values produced.
+   of each element along with the element.  That number can be
+   recalled by saying "pos".  "count" the contains count of values
+   produced.
 
-** EXPR → “?first” | “?second” | “?third” | “?last” — rank assertion
+** EXPR → “?first” | “?second” | “?third” | “?last” — position assertion
 
    (And corresponding ! forms.)
 
-   Assertion on rank of tested element within expression that
+   Assertion on position of tested element within expression that
    generated it.  If an expression generates elements X, Y, and Z on
    top of existing stack A B C, three stacks come out: A B C X, A B C
-   Y, and A B C Z.  "?first" would be true in context of A B C X,
-   etc.
+   Y, and A B C Z.  "?first" would be true in context of A B C X, etc.
 
    - ?first is exactly equivalent to:
-     : ?{rank 0 ?eq}
+     : ?{pos 0 ?eq}
      (and similarly for ?second, ?third, ...)
 
    - ?last is exactly equivalent to:
-     : ?{range 1 sub swap rank ?eq}
+     : ?{+count 1 sub swap pos ?eq}
 
    - Examples:
      : each ?last	# get last element of a list on TOS
      : [each !first] swap each first   # split a list into head:rest
 
-** EXPR → “add” | “sub” | “mul” | “div” | “mod” — arithmetic
+** EXPR → “+”?(“add” | “sub” | “mul” | “div” | “mod”) — arithmetic
 
    - Two elements are popped: A and B, with B the original TOS, and "A
      op B" is pushed again.
@@ -592,7 +632,7 @@
      : A B swap? ?lt drop    # "max" -- keep the greater number on stack
      : A B swap? ?gt drop    # "min"
 
-** EXPR → (“?”|“!”)“match” — regex assertion
+** EXPR → (“?”|“!”)(“match” | “find”) — regex assertion
 
    This produces nothing when applied to non-string values.  Use "%s"
    to convert other value types to string.
@@ -601,9 +641,19 @@
    is a string with a regular expression) matches the value below
    TOS.
 
-** EXPR → “concat” | “length” — operations on lists and strings
+   - "match" does a full-string match
+   - "find" looks for an occurrence
 
-** EXPR → “\dump” — debug assertion
+** EXPR → “+”?(“concat” | “length”) — operations on lists and strings
+
+** EXPR → (“?”|“!”)“empty” — list/string emptiness assertion
+
+   - ?empty is exactly equivalent to:
+     : ?{[] ?eq}
+   - !empty is exactly equivalent to:
+     : ?{[] !eq}
+
+** EXPR → “?dump” — debug assertion
 
    Always succeeds, but as a side effect prints some information about
    the computation in whose context it appeared.
@@ -649,7 +699,8 @@
    - https://stackoverflow.com/questions/16169864
 
 ** XXX abbreviation section?  (libdw doesn't have interfaces for this)
-   - note that one can look for attribute form by saying .@at form
+   - note that one can look for attribute form by saying (attribute
+     ?@at form)
    - would a link from a DIE to its abbreviation be useful?
 
 ** XXX integrating aadr2line
@@ -670,27 +721,23 @@
 * Examples
 ** Josh Stone's nontrivial-parameters script
 
-   - stack machine
-
    : ?subprogram !@declaration
    : ?{@decl_file ?{"^/usr/" match} !{"^/usr/src/debug" match}}
-   : dup child ?formal_parameter
+   : +child ?formal_parameter
    : ?{@type ((?const_type, ?volatile_type, ?typedef) @type)*
    :   (?structure_type, ?class_type)} swap
    : "%{ @decl_file %}: %{ @decl_line %}: note: in function \
    : `%( @name %)', parameter `%{ @name %}' type is not trivial"
 
-   - another alternative for stack machine
+   - What the following XQuery really does:
 
-   : ?formal_parameter
+   : ?subprogram !@declaration +child ?formal_parameter
    : ?{@type ((?const_type, ?volatile_type, ?typedef) @type)*
-   :   (?structure_type, ?class_type)}
-   : dup parent ?subprogram !@declaration
-   : ?{@decl_file ?{"^/usr/" match} !{"^/usr/src/debug" match}}
-   : "%{ @decl_file %}: %{ @decl_line %}: note: in function \
-   : `%( @name %)', parameter `%{ @name %}' type is not trivial"
+   :   (?structure_type, ?class_type)} 2/@name swap
+   : "%s: type of parameter %s is not trivial."
 
-   - In XQuery, it is:
+   - In XQuery, it is actually not horrible, except for having to
+     write the closure by hand:
 
    : declare function local:cvPeeledType($root, $node) {
    :     let $T := $root//*[@id = $node/at_type] return
@@ -701,42 +748,27 @@
    :     else $T
    : };
    :
-   : doc ("xxxxx.xml")//tag_subprogram/
-   : (let $A := tag_formal_parameter
-   :  let $T := local:cvPeeledType(/, $A)
-   :  return if ($T/name() = "tag_structure_type")
-   :         then concat ($A/../at_name/text(), ": type of parameter ",
-   :                      $A/at_name/text(), " is not trivial.")
-   : 	else ())
-
-   - Or some Python wrapper thing?
-
-   : import re
-   : for val in (dwg.filt (has_tag ("subprogram") & ~has_at ("declaration")
-   :                       & lambda e: (re.match ("^/usr/.*", e.at ("decl_file"))
-   :                                    and not re.match ("^/usr/src/debug.*",
-   :                                                      e.at ("decl_file"))))
-   :             .bind ("A")
-   :             .children .filt (has_tag ("formal_parameter"))
-   :             .bind ("B")
-   :             .at ("type") .iterate (has_tag ("const_type") | has_tag ("volatile_type")
-   :                                   | has_tag ("typedef")] .at ("type"))
-   :             .filt (has_tag ("structure_type") | has_tag ("class_type")):
-   :     A = val.binding ("A")
-   :     B = val.binding ("B")
-   :     print "%s: %s: note: in function %s, parameter %s type is not trivial" \
-   :         % (A.at ("decl_file"), A.at ("decl_line"), A.at ("name"), B.at ("name"))
+   : //tag_subprogram/tag_formal_parameter/
+   : (let $T := local:cvPeeledType(/, .)/name()
+   :  where $T = "tag_structure_type"
+   :  return concat (../at_name/text(), ": type of parameter ",
+   :                 $A/at_name/text(), " is not trivial.")
 
 ** check_die_decl_call:
 
    : ( ?@decl_column !@decl_line "%s has decl_column, but NOT decl_line"
    : , etc.)
 
+   - XQuery:
+
+   : //at_decl_column[not(../at_decl_line)]/
+   : concat(../@id, ": has decl_column, but NOT decl_line")
+
 ** check_die_line_info:
 
-   : dup (?subprogram, ?inline_subroutine, ?entry_point, ?lexical_block,
-   :      ?label, ?with_stmt, ?try_block, ?catch_block)
-   : (@entry_pc, @low_pc, @ranges)
+   : (?subprogram, ?inline_subroutine, ?entry_point, ?lexical_block,
+   :  ?label, ?with_stmt, ?try_block, ?catch_block)
+   : dup (@entry_pc, @low_pc, @ranges)
    : swap parent* ?root
    : !{@stmt_list @address ?eq} swap
    : "Address %s referenced from %s not found in line table."
@@ -745,78 +777,97 @@
 
    : !@frame_base ?{@location child @atom DW_OP_fbreg ?eq}
 
+   - XQuery:
+
+   : //at_location[loc_expr/loc_op/@op = "fbreg"][not(../../at_frame_base)]
+
 ** uses register based operators
 
-   : ?{@location child @atom
-   :   (DW_OP_bregx ?eq, ?{DW_OP_reg0 ge} ?{DW_OP_regx le})}
+   : ?{@location @atom (DW_OP_bregx ?eq, ?{DW_OP_reg0 ?ge} ?{DW_OP_regx ?le})}
+
+   : ?{@location @atom "%s" "_b?reg" find}
 
 ** whether it uses a deref operator
 
-   : ?{dup @location child @atom (DW_OP_deref, DW_OP_xderef, DW_OP_deref_size,
-   :                              DW_OP_xderef_size, DW_OP_GNU_deref_type) ?eq}
+   : ?{@location @atom (DW_OP_deref, DW_OP_xderef, DW_OP_deref_size,
+   :                    DW_OP_xderef_size, DW_OP_GNU_deref_type) ?eq}
+
+   : ?{@location @atom "%s" "deref" ?find}
+
+   - XQuery:
+
+   : //.[at_location//loc_op/(.[@op="deref_size" or @op="deref" or @op="xderef"
+   :                            or @op="xderef_size" or @op="GNU_deref_type])]
+
+   : //.[at_location//loc_op[contains(@op, "deref")]]
 
 ** contains DW_OP_call_frame_cfa && $@low_pc == 0
 
-   : ?{@low_pc 0 ?eq} ?{dup @location child @atom DW_OP_call_frame_cfa ?eq}
+   : ?{@low_pc 0 ?eq} ?{@frame_base @atom DW_OP_call_frame_cfa ?eq}
+
+   - XQuery (note this matches @low_pc as text, not as number):
+
+   : //.[at_low_pc/text() = "0x0"][at_frame_base//@op = "call_frame_cfa"]
 
 ** is an empty location expression
 
    : ?@location !{@location}
 
+   - XQuery:
+
+   : //at_location[loc_expr[not(loc_op)]]
+
 ** location expression ends with implicit_value or stack_value
 
-   : ?{dup @location child ?last @atom
-   :   (DW_OP_implicit_value, DW_OP_stack_value) ?eq}
+   : ?{@location ?last @atom (DW_OP_implicit_value, DW_OP_stack_value) ?eq}
+
+   - XQuery:
+
+   : //.[at_location//.[last()]/
+   :     (.[@op = "implicit_value" or @op = "stack_value"])]
 
 ** types inconsistent between instance and specification
    - http://gcc.gnu.org/bugzilla/show_bug.cgi?id=43053
 
-   : ?subprogram dup @specification child ?formal_parameter
-   : swap child ?formal_parameter
-   : ?{rank swap rank ?eq} ?{@type swap @type !eq}
+   : ?subprogram +@specification 2/(child ?formal_parameter)
+   : ?{2/pos ?eq} ?{2/@type !eq}
 
-   - if we have each2:
-   : ?subprogram [@specification child ?formal_parameter]
-   : [swap child ?formal_parameter] each2 ?{@type swap @type !eq}
+   - XQuery:
+
+   : for $x at $pos in //tag_subprogram[at_specification]/tag_formal_parameter
+   : return //.[@id=$x/../at_specification/text()]/tag_formal_parameter
+   :        [position() = $pos] [at_type/text() != $x/at_type/text()]
 
 ** duplicat DW_TAG_const_type
    - http://gcc.gnu.org/bugzilla/show_bug.cgi?id=56740
 
-   : (?const_type, ?volatile_type, ?restrict_type)
-   : dup parent* child* (?const_type, ?volatile_type, ?restrict_type)
-   : ?{offset swap offset !eq} ?{tag swap tag ?eq} ?{@type swap @type ?eq}
+   : +unit 2/(?const_type, ?volatile_type, ?restrict_type)
+   : ?{2/offset !eq} ?{2/tag ?eq} ?{2/@type ?eq}
 
-   - XXX <> for vertical arrays?
+   - XQuery:
 
-   : (?const_type, ?volatile_type, ?restrict_type)
-   : dup parent* child* (?const_type, ?volatile_type, ?restrict_type)
-   : ?{<offset, offset> !eq} ?{<tag, tag> ?eq} ?{<@type, @type> ?eq}
-
-*** EXPR → “<” EXPR₁ “,” EXPR₂ … “>” — stack transformation
-
-    This would apply EXPR₁ with TOS, EXPR₂ with one below TOS, etc.
-    It then gathers TOS's of these transformed The result would be a
-    transformed stack.
-
-    Or maybe EXPR → “<” NUM “>”, which XXX
+   : for $x in (//tag_const_type | //tag_volatile_type | //tag_restrict_type)
+   : return (//tag_const_type | //tag_volatile_type | //tag_restrict_type)
+   : [@id != $x/@id][name() = $x/name()][at_type/text() = $x/at_type/text()]
 
 ** find any attribute with value "blah"
 
    : attribute ?{value "blah" ?eq}
 
+   - XQuery:
+
+   : //.[text()="blah"]
+
 ** check_duplicate_DW_tag_variable.cc
    Check for two full DW_TAG_variable DIEs with the same DW_AT_name
    value.
 
-   : dup child ?variable swap child ?variable ?lt ?{@name swap @name ?eq}
-
-   - Or:
-     : ?variable dup parent child ?variable ?lt ?{@name swap @name ?eq}
+   : dup 2/(child ?variable) ?lt ?{2/@name ?eq}
 
 ** check_linkage_external_die.cc
 
    : ?symbol ?{@type (STT_OBJECT, STT_FUNC) ?eq} ?{@name "" !eq}
-   : U ?@linkage_name [!{@linkage_name swap @name ?eq}]
+   : +universe ?@linkage_name [!{@linkage_name swap @name ?eq}]
    :
    : ((if !@declaration !@const_value
    :   (!structure_type !enumeration_type !union_type, ?@name)
@@ -838,3 +889,25 @@
    would lead to an ugly combinatorial explosion of states.  Noticing
    that we look at the bottom slot and cross-reference @name with
    @linkage_name should be possible.
+
+** CU A imports two PU's B and C, and both import the same third PU
+
+   : ?root dup dup 2/(CU ?imported_unit @import) ?lt
+   : [2/(unit ?imported_unit @import) ?eq] each ?first
+   : "PU %s is imported by PU's %s and %s, which are both imported by %s"
+
+   - What the following XQuery really does:
+
+   : ?root ?{dup 2/(unit ?imported_unit @import) ?lt
+   :             2/(unit ?imported_unit @import) ?eq}
+
+   - XQuery:
+
+   : for $u in //.[../name() = "debug_info"]
+   : for $a in $u//tag_imported_unit
+   : for $b in $u//tag_imported_unit
+   : let $c := //.[@id=$a/at_import/text()]
+   : let $d := //.[@id=$b/at_import/text()]
+   : where $a/@id < $b/@id and $c//tag_imported_unit/at_import/text()
+   :                         = $d//tag_imported_unit/at_import/text()
+   : return $u
