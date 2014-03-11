@@ -23,9 +23,14 @@ all: $(TARGETS)
 dwgrep: override LDFLAGS += -ldw -lelf
 
 dwgrep: dwgrep.o value.o patx.o wset.o
-parser: parser.o lexer.o tree.o
+parser: parser.o lexer.o tree.o cst.o dwcst.o
 
 parser.cc: lexer.hh
+
+dwcst.o: known-dwarf.h
+known-dwarf.h: known-dwarf.awk /usr/include/dwarf.h
+	gawk -f $^ > $@.new
+	mv -f $@.new $@
 
 %.hh %.cc: %.yy
 	$(YACC) -d -o $(<:%.yy=%.cc) $<

@@ -25,8 +25,8 @@ tree::tree (tree const &other)
 {
   switch (argtype[(int) m_tt])
     {
-    case tree_arity_v::INT:
-      m_u.ival = other.m_u.ival;
+    case tree_arity_v::CONST:
+      m_u.cval = new cst {*other.m_u.cval};
       break;
 
     case tree_arity_v::STR:
@@ -44,10 +44,14 @@ tree::~tree ()
 {
   switch (argtype[(int) m_tt])
     {
-    case tree_arity_v::INT:
     case tree_arity_v::NULLARY:
     case tree_arity_v::UNARY:
     case tree_arity_v::BINARY:
+      break;
+
+    case tree_arity_v::CONST:
+      delete m_u.cval;
+      m_u.cval = nullptr;
       break;
 
     case tree_arity_v::STR:
@@ -107,8 +111,10 @@ tree::dump (std::ostream &o) const
 
   switch (argtype[(int) m_tt])
     {
-    case tree_arity_v::INT:
-      o << "<" << m_u.ival << ">";
+    case tree_arity_v::CONST:
+      o << "<";
+      m_u.cval->dom ()->format (*m_u.cval, o);
+      o << ">";
       break;
 
     case tree_arity_v::STR:

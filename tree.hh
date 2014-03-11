@@ -1,5 +1,6 @@
 #include <vector>
 #include <string>
+#include "cst.hh"
 
 enum class tree_arity_v
   {
@@ -7,7 +8,7 @@ enum class tree_arity_v
     UNARY,
     BINARY,
     STR,
-    INT,
+    CONST,
   };
 
 #define TREE_TYPES				\
@@ -26,7 +27,7 @@ enum class tree_arity_v
   TREE_TYPE (TAG_A_NO, STR)			\
   TREE_TYPE (AT_A_YES, STR)			\
   TREE_TYPE (AT_A_NO, STR)			\
-  TREE_TYPE (INT, INT)				\
+  TREE_TYPE (CONST, CONST)			\
   TREE_TYPE (PIPE, BINARY)			\
   TREE_TYPE (STR, STR)				\
   TREE_TYPE (AR_ADD, NULLARY)			\
@@ -73,8 +74,8 @@ struct tree
   std::vector <tree> m_children;
 
   union {
-    long int ival;
     std::string *sval;
+    cst *cval;
   } m_u;
 
   tree ();
@@ -130,12 +131,12 @@ struct tree
 
   template <tree_type TT>
   static tree *
-  create_int (long v)
+  create_int (cst c)
   {
-    static_assert (tree_arity <TT>::value == tree_arity_v::INT,
+    static_assert (tree_arity <TT>::value == tree_arity_v::CONST,
 		   "Wrong tree arity.");
     auto t = new tree {TT};
-    t->m_u.ival = v;
+    t->m_u.cval = new cst {c};
     return t;
   }
 

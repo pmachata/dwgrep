@@ -3,6 +3,7 @@
 #include <iostream>
 
 #include "lexer.hh"
+#include "cst.hh"
 
   void
   yyerror (std::unique_ptr <tree> &t, char const *s)
@@ -29,7 +30,7 @@
 
 %token TOK_ASTERISK TOK_PLUS TOK_QMARK TOK_CARET TOK_COMMA
 
-%token TOK_DW_AT_ID TOK_DW_TAG_ID TOK_DW_FORM_ID TOK_DW_OP_ID TOK_DW_ATE_ID
+%token TOK_CONSTANT
 
 %token TOK_WORD_ADD TOK_WORD_SUB TOK_WORD_MUL TOK_WORD_DIV TOK_WORD_MOD
 %token TOK_WORD_EQ TOK_WORD_NE TOK_WORD_LT TOK_WORD_GT TOK_WORD_LE TOK_WORD_GE
@@ -50,7 +51,7 @@
 
 %type <t> StatementList Statement
 %type <str> TOK_LIT_INT TOK_LIT_STR
-%type <str> TOK_DW_AT_ID TOK_DW_TAG_ID TOK_DW_FORM_ID TOK_DW_OP_ID TOK_DW_ATE_ID
+%type <str> TOK_CONSTANT
 %type <str> TOK_DOT_WORD TOK_AT_WORD TOK_DOT_AT_WORD TOK_SLASH_AT_WORD
 %type <str> TOK_QMARK_WORD TOK_BANG_WORD TOK_QMARK_AT_WORD TOK_BANG_AT_WORD
 %%
@@ -71,6 +72,8 @@ StatementList:
 Statement:
   TOK_LPAREN StatementList TOK_RPAREN
   { $$ = $2; }
+
+  | Statement TOK_COMMA Statement StatementList
 
   | TOK_QMARK_LBRACE StatementList TOK_RBRACE
   { $$ = tree::create_unary <tree_type::SUBX_A_ANY> ($2); }
@@ -97,7 +100,12 @@ Statement:
     long int val = strtol ($1, &endptr, 0);
     if (*endptr != '\0')
       std::cerr << $1 << " is not a valid string literal\n";
-    $$ = tree::create_int <tree_type::INT> (val);
+    $$ = tree::create_int <tree_type::CONST> (cst (val, &untyped_cst_dom));
+  }
+
+  | TOK_CONSTANT
+  {
+    $$ = tree::create_int <tree_type::CONST> (cst::parse ($1));
   }
 
   | TOK_LIT_STR
@@ -186,14 +194,47 @@ Statement:
 
 %%
 
-int
-main(int argc, char *argv[])
+void
+test (std::string parse, std::string expect)
 {
-  yy_scan_string ("17 \"blah\" ?{next}");
+  yy_scan_string (parse.c_str ());
   std::unique_ptr <tree> t;
-  yyparse (t);
+  if (yyparse (t) == 0)
+    {
+      std::ostringstream ss;
+      t->dump (ss);
+      if (ss.str () != expect)
+	{
+	  std::cerr << "bad parse: «" << parse << "»" << std::endl;
+	  std::cerr << "   result: «" << ss.str () << "»" << std::endl;
+	  std::cerr << "   expect: «" << expect << "»" << std::endl;
+	}
+    }
+  else
+    std::cerr << "can't parse: «" << parse << "»" << std::endl;
+}
 
-  t->dump (std::cerr);
-  std::cerr << std::endl;
+int
+main (int argc, char *argv[])
+{
+  test ("17", "(CONST<17>)");
+  test ("\"string\"", "(STR<\"string\">)");
+  test ("DW_AT_name", "(CONST<DW_AT_name>)");
+  test ("child", "(TR_CHILD)");
+  test ("prev", "(TR_PREV)");
+  test ("parent", "(TR_PARENT)");
+  test ("next", "(TR_NEXT)");
+
+  if (argc > 1)
+    {
+      yy_scan_string (argv[1]);
+      std::unique_ptr <tree> t;
+      if (yyparse (t) == 0)
+	{
+	  t->dump (std::cerr);
+	  std::cerr << std::endl;
+	}
+    }
+
   return 0;
 }

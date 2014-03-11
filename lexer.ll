@@ -33,12 +33,6 @@ DEC [0-9]
 "^" return TOK_CARET;
 "," return TOK_COMMA;
 
-"DW_AT_"{ID} return pass_string (yylval, TOK_DW_AT_ID);
-"DW_TAG_"{ID} return pass_string (yylval, TOK_DW_TAG_ID);
-"DW_FORM_"{ID} return pass_string (yylval, TOK_DW_FORM_ID);
-"DW_OP_"{ID} return pass_string (yylval, TOK_DW_OP_ID);
-"DW_ATE_"{ID} return pass_string (yylval, TOK_DW_ATE_ID); // XXX and more
-
 "add" return TOK_WORD_ADD;
 "sub" return TOK_WORD_SUB;
 "mul" return TOK_WORD_MUL;
@@ -65,6 +59,8 @@ DEC [0-9]
 "over" return TOK_WORD_OVER;
 "rot" return TOK_WORD_ROT;
 "drop" return TOK_WORD_DROP;
+
+{ID} return pass_string (yylval, TOK_CONSTANT);
 
 "."{ID} return pass_string (yylval, TOK_DOT_WORD, 1);
 "@"{ID} return pass_string (yylval, TOK_AT_WORD, 1);
