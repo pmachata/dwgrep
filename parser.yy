@@ -6,7 +6,7 @@
 #include "cst.hh"
 
   void
-  yyerror (std::unique_ptr <tree> &t, char const *s)
+  yyerror (std::unique_ptr <tree> &t, yyscan_t lex, char const *s)
   {
     fprintf (stderr, "%s\n", s);
   }
@@ -73,6 +73,8 @@ struct strlit
 %pure-parser
 %error-verbose
 %parse-param { std::unique_ptr <tree> &ret }
+%parse-param { void *yyscanner }
+%lex-param { yyscanner }
 
 %token TOK_LPAREN TOK_RPAREN TOK_LBRACKET TOK_RBRACKET
 

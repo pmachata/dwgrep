@@ -12,13 +12,17 @@ static unsigned tests = 0, failed = 0;
 void
 test (std::string parse, std::string expect)
 {
+  yyscan_t sc;
+  if (yylex_init (&sc) != 0)
+    throw std::runtime_error ("can't init lexer");
+
   ++tests;
-  yy_scan_string (parse.c_str ());
+  yy_scan_string (parse.c_str (), sc);
   std::unique_ptr <tree> t;
   int result = -1;
   try
     {
-      result = yyparse (t);
+      result = yyparse (t, sc);
     }
   catch (std::runtime_error const &e)
     {
@@ -299,9 +303,13 @@ main (int argc, char *argv[])
 
   if (argc > 1)
     {
-      yy_scan_string (argv[1]);
+      yyscan_t sc;
+      if (yylex_init (&sc) != 0)
+	throw std::runtime_error ("can't init lexer");
+
+      yy_scan_string (argv[1], sc);
       std::unique_ptr <tree> t;
-      if (yyparse (t) == 0)
+      if (yyparse (t, sc) == 0)
 	{
 	  t->dump (std::cerr);
 	  std::cerr << std::endl;

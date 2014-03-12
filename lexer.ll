@@ -2,7 +2,8 @@
 #include <iostream>
 #include "parser.hh"
 
-  static yytokentype pass_string (YYSTYPE *yylval, yytokentype toktype,
+  static yytokentype pass_string (yyscan_t yyscanner,
+				  YYSTYPE *yylval, yytokentype toktype,
 				  size_t ignore = 0);
 %}
 
@@ -11,6 +12,8 @@
 %option yylineno
 %option outfile="lexer.cc" header-file="lexer.hh"
 %option noyywrap nounput batch noinput
+
+%option reentrant
 
 ID  [_a-zA-Z][_a-zA-Z0-9]*
 HEX [a-fA-F0-9]
@@ -113,20 +116,20 @@ OCT [0-7]
 "?root" return TOK_QMARK_ROOT;
 "!root" return TOK_BANG_ROOT;
 
-{ID} return pass_string (yylval, TOK_CONSTANT);
+{ID} return pass_string (yyscanner, yylval, TOK_CONSTANT);
 
-"@"{ID} return pass_string (yylval, TOK_AT_WORD, 1);
-"+@"{ID} return pass_string (yylval, TOK_PLUS_AT_WORD, 2);
-"?@"{ID} return pass_string (yylval, TOK_QMARK_AT_WORD, 2);
-"!@"{ID} return pass_string (yylval, TOK_BANG_AT_WORD, 2);
-"?"{ID} return pass_string (yylval, TOK_QMARK_WORD, 1);
-"!"{ID} return pass_string (yylval, TOK_BANG_WORD, 1);
+"@"{ID} return pass_string (yyscanner, yylval, TOK_AT_WORD, 1);
+"+@"{ID} return pass_string (yyscanner, yylval, TOK_PLUS_AT_WORD, 2);
+"?@"{ID} return pass_string (yyscanner, yylval, TOK_QMARK_AT_WORD, 2);
+"!@"{ID} return pass_string (yyscanner, yylval, TOK_BANG_AT_WORD, 2);
+"?"{ID} return pass_string (yyscanner, yylval, TOK_QMARK_WORD, 1);
+"!"{ID} return pass_string (yyscanner, yylval, TOK_BANG_WORD, 1);
 
-\"(\\.|[^\\\"])*\" return pass_string (yylval, TOK_LIT_STR);
+\"(\\.|[^\\\"])*\" return pass_string (yyscanner, yylval, TOK_LIT_STR);
 
 0[xX]{HEX}+ |
 0{OCT}+     |
-{DEC}+      return pass_string (yylval, TOK_LIT_INT);
+{DEC}+      return pass_string (yyscanner, yylval, TOK_LIT_INT);
 
 [ \t\n]+ // Skip.
 
@@ -139,9 +142,10 @@ OCT [0-7]
 %%
 
 yytokentype
-pass_string (YYSTYPE *yylval, yytokentype toktype, size_t ignore)
+pass_string (yyscan_t sc, YYSTYPE *val, yytokentype toktype, size_t ignore)
 {
-  assert (yyleng >= 0 && size_t (yyleng) >= ignore);
-  yylval->s = strlit { yyget_text () + ignore, size_t (yyleng - ignore) };
+  int len = yyget_leng (sc);
+  assert (len >= 0 && size_t (len) >= ignore);
+  val->s = strlit { yyget_text (sc) + ignore, size_t (len - ignore) };
   return toktype;
 }
