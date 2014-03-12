@@ -96,7 +96,7 @@ dwarf_form_value (std::string str)
 #undef ONE_KNOWN_DW_FORM
 #undef ONE_KNOWN_DW_FORM_DESC
 
-    throw std::runtime_error (std::string ("Unknown attribute: ") + str);
+    throw std::runtime_error (std::string ("Unknown form value: ") + str);
 }
 
 

@@ -77,20 +77,6 @@ tree::swap (tree &other)
 }
 
 tree *
-tree::create_pipe (tree *t1, tree *t2)
-{
-  if (t1 == nullptr)
-    {
-      assert (t2 != nullptr);
-      return t2;
-    }
-  else if (t2 == nullptr)
-    return t1;
-  else
-    return tree::create_binary <tree_type::PIPE> (t1, t2);
-}
-
-tree *
 tree::create_neg (tree *t)
 {
   return tree::create_unary <tree_type::PRED_NOT> (t);
@@ -113,6 +99,20 @@ tree::take_child (tree *t)
 {
   m_children.push_back (*t);
   delete t;
+}
+
+void
+tree::take_child_front (tree *t)
+{
+  m_children.insert (m_children.begin (), *t);
+  delete t;
+}
+
+void
+tree::append_pipe (tree *t)
+{
+  m_children.insert (m_children.end (),
+		     t->m_children.begin (), t->m_children.end ());
 }
 
 void

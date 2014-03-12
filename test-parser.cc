@@ -15,7 +15,21 @@ test (std::string parse, std::string expect)
   ++tests;
   yy_scan_string (parse.c_str ());
   std::unique_ptr <tree> t;
-  if (yyparse (t) == 0)
+  int result = -1;
+  try
+    {
+      result = yyparse (t);
+    }
+  catch (std::runtime_error const &e)
+    {
+      std::cerr << "std::runtime_error: " << e.what () << std::endl;
+    }
+  catch (...)
+    {
+      std::cerr << "some exception thrown" << std::endl;
+    }
+
+  if (result == 0)
     {
       std::ostringstream ss;
       t->dump (ss);
@@ -26,6 +40,7 @@ test (std::string parse, std::string expect)
 	  std::cerr << "   expect: «" << expect << "»" << std::endl;
 	  ++failed;
 	}
+      return;
     }
   else
     {
@@ -188,6 +203,76 @@ main (int argc, char *argv[])
 
   ALL_KNOWN_DW_TAG;
 #undef ONE_KNOWN_DW_TAG
+
+  test ("child*", "(CLOSE_STAR (F_CHILD))");
+  test ("child+", "(CLOSE_PLUS (F_CHILD))");
+  test ("child?", "(MAYBE (F_CHILD))");
+  test ("swap*", "(CLOSE_STAR (SHF_SWAP))");
+  test ("swap+", "(CLOSE_PLUS (SHF_SWAP))");
+  test ("swap?", "(MAYBE (SHF_SWAP))");
+
+  test ("child next",
+	"(PIPE (F_CHILD) (F_NEXT))");
+  test ("child next*",
+	"(PIPE (F_CHILD) (CLOSE_STAR (F_NEXT)))");
+  test ("child* next",
+	"(PIPE (CLOSE_STAR (F_CHILD)) (F_NEXT))");
+  test ("child+ next",
+	"(PIPE (CLOSE_PLUS (F_CHILD)) (F_NEXT))");
+  test ("child +next",
+	"(PIPE (F_CHILD) (NODROP (F_NEXT)))");
+  test ("child+ +next",
+	"(PIPE (CLOSE_PLUS (F_CHILD)) (NODROP (F_NEXT)))");
+
+  test ("dup swap child",
+	"(PIPE (SHF_DUP) (SHF_SWAP) (F_CHILD))");
+  test ("dup swap child next",
+	"(PIPE (SHF_DUP) (SHF_SWAP) (F_CHILD) (F_NEXT))");
+
+  test ("2/child",
+	"(TRANSFORM (CONST<2>) (F_CHILD))");
+  test ("2/child next",
+	"(PIPE (TRANSFORM (CONST<2>) (F_CHILD)) (F_NEXT))");
+  test ("2/(child next)",
+	"(TRANSFORM (CONST<2>) (PIPE (F_CHILD) (F_NEXT)))");
+  test ("2/child 2/next",
+	"(PIPE (TRANSFORM (CONST<2>) (F_CHILD)) (TRANSFORM (CONST<2>) (F_NEXT)))");
+
+  test ("(child next)",
+	"(PIPE (F_CHILD) (F_NEXT))");
+  test ("((child next))",
+	"(PIPE (F_CHILD) (F_NEXT))");
+  test ("(child (next))",
+	"(PIPE (F_CHILD) (F_NEXT))");
+  test ("(dup) swap child next",
+	"(PIPE (SHF_DUP) (SHF_SWAP) (F_CHILD) (F_NEXT))");
+  test ("dup (swap) child next",
+	"(PIPE (SHF_DUP) (SHF_SWAP) (F_CHILD) (F_NEXT))");
+  test ("dup swap (child) next",
+	"(PIPE (SHF_DUP) (SHF_SWAP) (F_CHILD) (F_NEXT))");
+  test ("dup swap child (next)",
+	"(PIPE (SHF_DUP) (SHF_SWAP) (F_CHILD) (F_NEXT))");
+  test ("dup (swap (child (next)))",
+	"(PIPE (SHF_DUP) (SHF_SWAP) (F_CHILD) (F_NEXT))");
+  test ("((((dup) swap) child) next)",
+	"(PIPE (SHF_DUP) (SHF_SWAP) (F_CHILD) (F_NEXT))");
+  test ("((((dup) swap)) (child next))",
+	"(PIPE (SHF_DUP) (SHF_SWAP) (F_CHILD) (F_NEXT))");
+
+  test ("dup, over",
+	"(ALT (SHF_DUP) (SHF_OVER))");
+  test ("dup, over, +child",
+	"(ALT (SHF_DUP) (SHF_OVER) (NODROP (F_CHILD)))");
+  test ("swap,",
+	"(ALT (SHF_SWAP) (NOP))");
+  test ("swap dup, over",
+	"(ALT (PIPE (SHF_SWAP) (SHF_DUP)) (SHF_OVER))");
+  test ("swap dup, over next, parent dup",
+	"(ALT (PIPE (SHF_SWAP) (SHF_DUP)) (PIPE (SHF_OVER) (F_NEXT)) "
+	"(PIPE (F_PARENT) (SHF_DUP)))");
+  test ("(swap dup, (over next, (parent dup)))",
+	"(ALT (PIPE (SHF_SWAP) (SHF_DUP)) (PIPE (SHF_OVER) (F_NEXT)) "
+	"(PIPE (F_PARENT) (SHF_DUP)))");
 
   std::cerr << tests << " tests total, " << failed << " failures.\n";
 

@@ -37,13 +37,33 @@
     auto u = tree::create_assert (t);
 
     auto v = tree::create_nullary <tree_type::SHF_DROP> ();
-    return tree::create_pipe (u, v);
+    return tree::create_pipe <tree_type::PIPE> (u, v);
   }
+
+  cst
+  parse_int (strlit str)
+  {
+    char *endptr = NULL;
+    long int val = strtol (str.buf, &endptr, 0);
+    assert (endptr >= str.buf);
+    if (size_t (endptr - str.buf) != str.len)
+      {
+        std::string tmp (str.buf, str.len);
+        std::cerr << tmp << " is not a valid integer literal\n";
+      }
+    return cst (val, &untyped_cst_dom);
+   }
 %}
 
 %code requires {
 #include <memory>
 #include "tree.hh"
+
+struct strlit
+{
+  const char *buf;
+  size_t len;
+};
 }
 
 %code top {
@@ -59,7 +79,7 @@
 %token TOK_QMARK_LBRACE TOK_BANG_LBRACE TOK_RBRACE
 %token TOK_QMARK_ALL_LBRACE TOK_BANG_ALL_LBRACE
 
-%token TOK_ASTERISK TOK_PLUS TOK_QMARK TOK_CARET TOK_COMMA
+%token TOK_ASTERISK TOK_PLUS TOK_QMARK TOK_CARET TOK_COMMA TOK_SLASH
 
 %token TOK_ADD TOK_SUB TOK_MUL TOK_DIV TOK_MOD
 %token TOK_PARENT TOK_CHILD TOK_ATTRIBUTE TOK_PREV
@@ -90,53 +110,68 @@
 
 %union {
   tree *t;
-  const char *str;
+  strlit s;
  }
 
-%type <t> StatementList Statement
-%type <str> TOK_LIT_INT TOK_LIT_STR
-%type <str> TOK_CONSTANT
-%type <str> TOK_AT_WORD TOK_PLUS_AT_WORD TOK_QMARK_AT_WORD TOK_BANG_AT_WORD
-%type <str> TOK_QMARK_WORD TOK_BANG_WORD
+%type <t> Program AltList StatementList Statement
+%type <s> TOK_LIT_INT TOK_LIT_STR
+%type <s> TOK_CONSTANT
+%type <s> TOK_AT_WORD TOK_PLUS_AT_WORD TOK_QMARK_AT_WORD TOK_BANG_AT_WORD
+%type <s> TOK_QMARK_WORD TOK_BANG_WORD
 %%
 
-Query: StatementList TOK_EOF
+Query: Program TOK_EOF
   {
     t.reset ($1);
     YYACCEPT;
   }
+
+Program: AltList
+
+AltList:
+   StatementList
+   {
+     $$ = $1;
+   }
+
+   | StatementList TOK_COMMA AltList
+   {
+     if ($3 == nullptr)
+       $3 = tree::create_nullary <tree_type::NOP> ();
+     $$ = tree::create_pipe <tree_type::ALT> ($1, $3);
+   }
 
 StatementList:
   /* eps. */
   { $$ = nullptr; }
 
   | Statement StatementList
-  { $$ = tree::create_pipe ($1, $2); }
+  {
+    $$ = tree::create_pipe <tree_type::PIPE> ($1, $2);
+  }
 
 Statement:
-  TOK_LPAREN StatementList TOK_RPAREN
+  TOK_LPAREN Program TOK_RPAREN
   { $$ = $2; }
 
-  | Statement TOK_COMMA Statement StatementList
-
-  | TOK_QMARK_LBRACE StatementList TOK_RBRACE
+  | TOK_QMARK_LBRACE Program TOK_RBRACE
   {
     auto t = tree::create_unary <tree_type::PRED_SUBX_ANY> ($2);
     $$ = tree::create_assert (t);
   }
-  | TOK_BANG_LBRACE StatementList TOK_RBRACE
+  | TOK_BANG_LBRACE Program TOK_RBRACE
   {
     auto t = tree::create_unary <tree_type::PRED_SUBX_ALL> ($2);
     auto u = tree::create_neg (t);
     $$ = tree::create_assert (u);
   }
 
-  | TOK_QMARK_ALL_LBRACE StatementList TOK_RBRACE
+  | TOK_QMARK_ALL_LBRACE Program TOK_RBRACE
   {
     auto t = tree::create_unary <tree_type::PRED_SUBX_ALL> ($2);
     $$ = tree::create_assert (t);
   }
-  | TOK_BANG_ALL_LBRACE StatementList TOK_RBRACE
+  | TOK_BANG_ALL_LBRACE Program TOK_RBRACE
   {
     auto t = tree::create_unary <tree_type::PRED_SUBX_ANY> ($2);
     auto u = tree::create_neg (t);
@@ -153,22 +188,26 @@ Statement:
   | Statement TOK_QMARK
   { $$ = tree::create_unary <tree_type::MAYBE> ($1); }
 
-  | TOK_LIT_INT
+  | TOK_LIT_INT TOK_SLASH Statement
   {
-    char *endptr = NULL;
-    long int val = strtol ($1, &endptr, 0);
-    if (*endptr != '\0')
-      std::cerr << $1 << " is not a valid string literal\n";
-    $$ = tree::create_const <tree_type::CONST> (cst (val, &untyped_cst_dom));
+    auto t = tree::create_const <tree_type::CONST> (parse_int ($1));
+    $$ = tree::create_binary <tree_type::TRANSFORM> (t, $3);
   }
+
+  | TOK_LIT_INT
+  { $$ = tree::create_const <tree_type::CONST> (parse_int ($1)); }
 
   | TOK_CONSTANT
   {
-    $$ = tree::create_const <tree_type::CONST> (cst::parse ($1));
+    std::string str {$1.buf, $1.len};
+    $$ = tree::create_const <tree_type::CONST> (cst::parse (str));
   }
 
   | TOK_LIT_STR
-  { $$ = tree::create_str <tree_type::STR> ($1); }
+  {
+    std::string str {$1.buf, $1.len};
+    $$ = tree::create_str <tree_type::STR> (str);
+  }
 
 
   | TOK_ADD
@@ -343,32 +382,40 @@ Statement:
 
 
   | TOK_AT_WORD
-  { $$ = tree::create_const <tree_type::ATVAL> (cst::parse_attr ($1)); }
+  {
+    std::string str {$1.buf, $1.len};
+    $$ = tree::create_const <tree_type::ATVAL> (cst::parse_attr (str));
+  }
   | TOK_PLUS_AT_WORD
   {
-    auto t = tree::create_const <tree_type::ATVAL> (cst::parse_attr ($1));
+    std::string str {$1.buf, $1.len};
+    auto t = tree::create_const <tree_type::ATVAL> (cst::parse_attr (str));
     $$ = tree::create_nodrop (t);
   }
   | TOK_QMARK_AT_WORD
   {
-    auto t = tree::create_const <tree_type::PRED_AT> (cst::parse_attr ($1));
+    std::string str {$1.buf, $1.len};
+    auto t = tree::create_const <tree_type::PRED_AT> (cst::parse_attr (str));
     $$ = tree::create_assert (t);
   }
   | TOK_BANG_AT_WORD
   {
-    auto t = tree::create_const <tree_type::PRED_AT> (cst::parse_attr ($1));
+    std::string str {$1.buf, $1.len};
+    auto t = tree::create_const <tree_type::PRED_AT> (cst::parse_attr (str));
     auto u = tree::create_neg (t);
     $$ = tree::create_assert (u);
   }
 
   | TOK_QMARK_WORD
   {
-    auto t = tree::create_const <tree_type::PRED_TAG> (cst::parse_tag ($1));
+    std::string str {$1.buf, $1.len};
+    auto t = tree::create_const <tree_type::PRED_TAG> (cst::parse_tag (str));
     $$ = tree::create_assert (t);
   }
   | TOK_BANG_WORD
   {
-    auto t = tree::create_const <tree_type::PRED_TAG> (cst::parse_tag ($1));
+    std::string str {$1.buf, $1.len};
+    auto t = tree::create_const <tree_type::PRED_TAG> (cst::parse_tag (str));
     auto u = tree::create_neg (t);
     $$ = tree::create_assert (u);
   }

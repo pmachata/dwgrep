@@ -34,6 +34,7 @@ OCT [0-7]
 "+" return TOK_PLUS;
 "?" return TOK_QMARK;
 "," return TOK_COMMA;
+"/" return TOK_SLASH;
 
 "swap" return TOK_SWAP;
 "dup" return TOK_DUP;
@@ -134,6 +135,7 @@ OCT [0-7]
 yytokentype
 pass_string (YYSTYPE *yylval, yytokentype toktype, size_t ignore)
 {
-  yylval->str = yyget_text () + ignore;
+  assert (yyleng >= 0 && size_t (yyleng) >= ignore);
+  yylval->s = strlit { yyget_text () + ignore, size_t (yyleng - ignore) };
   return toktype;
 }

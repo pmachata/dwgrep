@@ -42,6 +42,7 @@ enum class tree_arity_v
   TREE_TYPE (MAYBE, UNARY)			\
   TREE_TYPE (NODROP, UNARY)			\
   TREE_TYPE (PIPE, BINARY)			\
+  TREE_TYPE (TRANSFORM, BINARY)			\
   TREE_TYPE (PRED_AT, CONST)			\
   TREE_TYPE (PRED_EMPTY, NULLARY)		\
   TREE_TYPE (PRED_EQ, NULLARY)			\
@@ -63,6 +64,8 @@ enum class tree_arity_v
   TREE_TYPE (SHF_ROT, NULLARY)			\
   TREE_TYPE (SHF_SWAP, NULLARY)			\
   TREE_TYPE (STR, STR)				\
+  TREE_TYPE (ALT, BINARY)			\
+  TREE_TYPE (NOP, NULLARY)			\
 
 enum class tree_type
   {
@@ -131,7 +134,7 @@ struct tree
 
   template <tree_type TT>
   static tree *
-  create_str (const char *s)
+  create_str (std::string s)
   {
     static_assert (tree_arity <TT>::value == tree_arity_v::STR,
 		   "Wrong tree arity.");
@@ -151,12 +154,48 @@ struct tree
     return t;
   }
 
-  static tree *create_pipe (tree *t1, tree *t2);
+  template <tree_type TT>
+  static tree *
+  create_pipe (tree *t1, tree *t2)
+  {
+    bool pipe1 = t1 != nullptr && t1->m_tt == TT;
+    bool pipe2 = t2 != nullptr && t2->m_tt == TT;
+
+    if (pipe1 && pipe2)
+      {
+	t1->append_pipe (t2);
+	return t1;
+      }
+    else if (pipe1 && t2 != nullptr)
+      {
+	t1->take_child (t2);
+	return t1;
+      }
+    else if (pipe2)
+      {
+	t2->take_child_front (t1);
+	return t2;
+      }
+
+    if (t1 == nullptr)
+      {
+	assert (t2 != nullptr);
+	return t2;
+      }
+    else if (t2 == nullptr)
+      return t1;
+    else
+      return tree::create_binary <TT> (t1, t2);
+  }
+
   static tree *create_neg (tree *t1);
   static tree *create_assert (tree *t1);
   static tree *create_nodrop (tree *t1);
 
   void take_child (tree *t);
+  void take_child_front (tree *t);
+  void append_pipe (tree *t);
+
   void dump (std::ostream &o) const;
 };
 
