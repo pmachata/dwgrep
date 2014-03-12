@@ -89,9 +89,9 @@ tree::create_assert (tree *t)
 }
 
 tree *
-tree::create_nodrop (tree *t)
+tree::create_protect (tree *t)
 {
-  return tree::create_unary <tree_type::NODROP> (t);
+  return tree::create_unary <tree_type::PROTECT> (t);
 }
 
 void

@@ -15,8 +15,10 @@ enum class tree_arity_v
   };
 
 #define TREE_TYPES				\
+  TREE_TYPE (ALT, BINARY)			\
   TREE_TYPE (ASSERT, UNARY)			\
   TREE_TYPE (ATVAL, CONST)			\
+  TREE_TYPE (CAPTURE, UNARY)			\
   TREE_TYPE (CLOSE_PLUS, UNARY)			\
   TREE_TYPE (CLOSE_STAR, UNARY)			\
   TREE_TYPE (CONST, CONST)			\
@@ -40,9 +42,8 @@ enum class tree_arity_v
   TREE_TYPE (F_TYPE, NULLARY)			\
   TREE_TYPE (F_VALUE, NULLARY)			\
   TREE_TYPE (MAYBE, UNARY)			\
-  TREE_TYPE (NODROP, UNARY)			\
+  TREE_TYPE (NOP, NULLARY)			\
   TREE_TYPE (PIPE, BINARY)			\
-  TREE_TYPE (TRANSFORM, BINARY)			\
   TREE_TYPE (PRED_AT, CONST)			\
   TREE_TYPE (PRED_EMPTY, NULLARY)		\
   TREE_TYPE (PRED_EQ, NULLARY)			\
@@ -58,15 +59,15 @@ enum class tree_arity_v
   TREE_TYPE (PRED_SUBX_ALL, UNARY)		\
   TREE_TYPE (PRED_SUBX_ANY, UNARY)		\
   TREE_TYPE (PRED_TAG, CONST)			\
+  TREE_TYPE (PROTECT, UNARY)			\
   TREE_TYPE (SHF_DROP, NULLARY)			\
   TREE_TYPE (SHF_DUP, NULLARY)			\
   TREE_TYPE (SHF_OVER, NULLARY)			\
   TREE_TYPE (SHF_ROT, NULLARY)			\
   TREE_TYPE (SHF_SWAP, NULLARY)			\
   TREE_TYPE (STR, STR)				\
-  TREE_TYPE (ALT, BINARY)			\
-  TREE_TYPE (NOP, NULLARY)			\
-  TREE_TYPE (CAPTURE, UNARY)			\
+  TREE_TYPE (FORMAT, NULLARY)			\
+  TREE_TYPE (TRANSFORM, BINARY)			\
 
 enum class tree_type
   {
@@ -191,7 +192,7 @@ struct tree
 
   static tree *create_neg (tree *t1);
   static tree *create_assert (tree *t1);
-  static tree *create_nodrop (tree *t1);
+  static tree *create_protect (tree *t1);
 
   void take_child (tree *t);
   void take_child_front (tree *t);

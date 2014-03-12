@@ -168,29 +168,29 @@ main (int argc, char *argv[])
   test ("count", "(F_COUNT)");
   test ("each", "(EACH)");
 
-  test ("+add", "(NODROP (F_ADD))");
-  test ("+sub", "(NODROP (F_SUB))");
-  test ("+mul", "(NODROP (F_MUL))");
-  test ("+div", "(NODROP (F_DIV))");
-  test ("+mod", "(NODROP (F_MOD))");
-  test ("+parent", "(NODROP (F_PARENT))");
-  test ("+child", "(NODROP (F_CHILD))");
-  test ("+attribute", "(NODROP (F_ATTRIBUTE))");
-  test ("+prev", "(NODROP (F_PREV))");
-  test ("+next", "(NODROP (F_NEXT))");
-  test ("+type", "(NODROP (F_TYPE))");
-  test ("+offset", "(NODROP (F_OFFSET))");
-  test ("+name", "(NODROP (F_NAME))");
-  test ("+tag", "(NODROP (F_TAG))");
-  test ("+form", "(NODROP (F_FORM))");
-  test ("+value", "(NODROP (F_VALUE))");
-  test ("+pos", "(NODROP (F_POS))");
-  test ("+count", "(NODROP (F_COUNT))");
-  test ("+each", "(NODROP (EACH))");
+  test ("+add", "(PROTECT (F_ADD))");
+  test ("+sub", "(PROTECT (F_SUB))");
+  test ("+mul", "(PROTECT (F_MUL))");
+  test ("+div", "(PROTECT (F_DIV))");
+  test ("+mod", "(PROTECT (F_MOD))");
+  test ("+parent", "(PROTECT (F_PARENT))");
+  test ("+child", "(PROTECT (F_CHILD))");
+  test ("+attribute", "(PROTECT (F_ATTRIBUTE))");
+  test ("+prev", "(PROTECT (F_PREV))");
+  test ("+next", "(PROTECT (F_NEXT))");
+  test ("+type", "(PROTECT (F_TYPE))");
+  test ("+offset", "(PROTECT (F_OFFSET))");
+  test ("+name", "(PROTECT (F_NAME))");
+  test ("+tag", "(PROTECT (F_TAG))");
+  test ("+form", "(PROTECT (F_FORM))");
+  test ("+value", "(PROTECT (F_VALUE))");
+  test ("+pos", "(PROTECT (F_POS))");
+  test ("+count", "(PROTECT (F_COUNT))");
+  test ("+each", "(PROTECT (EACH))");
 
 #define ONE_KNOWN_DW_AT(NAME, CODE)				\
   test ("@"#NAME, "(ATVAL<" #CODE ">)");			\
-  test ("+@"#NAME, "(NODROP (ATVAL<" #CODE ">))");		\
+  test ("+@"#NAME, "(PROTECT (ATVAL<" #CODE ">))");		\
   test ("?@"#NAME, "(ASSERT (PRED_AT<" #CODE ">))");		\
   test ("!@"#NAME, "(ASSERT (PRED_NOT (PRED_AT<" #CODE ">)))");
 
@@ -220,9 +220,9 @@ main (int argc, char *argv[])
   test ("child+ next",
 	"(PIPE (CLOSE_PLUS (F_CHILD)) (F_NEXT))");
   test ("child +next",
-	"(PIPE (F_CHILD) (NODROP (F_NEXT)))");
+	"(PIPE (F_CHILD) (PROTECT (F_NEXT)))");
   test ("child+ +next",
-	"(PIPE (CLOSE_PLUS (F_CHILD)) (NODROP (F_NEXT)))");
+	"(PIPE (CLOSE_PLUS (F_CHILD)) (PROTECT (F_NEXT)))");
 
   test ("dup swap child",
 	"(PIPE (SHF_DUP) (SHF_SWAP) (F_CHILD))");
@@ -262,7 +262,7 @@ main (int argc, char *argv[])
   test ("dup, over",
 	"(ALT (SHF_DUP) (SHF_OVER))");
   test ("dup, over, +child",
-	"(ALT (SHF_DUP) (SHF_OVER) (NODROP (F_CHILD)))");
+	"(ALT (SHF_DUP) (SHF_OVER) (PROTECT (F_CHILD)))");
   test ("swap,",
 	"(ALT (SHF_SWAP) (NOP))");
   test ("swap dup, over",
