@@ -1,4 +1,4 @@
-/* Parts of this file were taken from eu-readelf.
+/* Parts of this file were adapted from eu-readelf.
    Copyright (C) 1999-2014 Red Hat, Inc.
 
    This file is free software; you can redistribute it and/or modify
@@ -26,7 +26,7 @@ dwarf_tag_string (unsigned int tag)
 {
   switch (tag)
     {
-#define ONE_KNOWN_DW_TAG(NAME, CODE) case CODE: return #NAME;
+#define ONE_KNOWN_DW_TAG(NAME, CODE) case CODE: return #CODE;
       ALL_KNOWN_DW_TAG
 #undef ONE_KNOWN_DW_TAG
     default:
@@ -37,7 +37,10 @@ dwarf_tag_string (unsigned int tag)
 static unsigned int
 dwarf_tag_value (std::string str)
 {
-#define ONE_KNOWN_DW_TAG(NAME, CODE) if (str == #NAME) return CODE;
+  // XXX: This is very crude implementation, but I very much doubt
+  // parsing performance will be any kind of bottleneck ever, so just
+  // do the simplest thing that works.
+#define ONE_KNOWN_DW_TAG(NAME, CODE) if (str == #CODE) return CODE;
   ALL_KNOWN_DW_TAG
 #undef ONE_KNOWN_DW_TAG
 
@@ -50,7 +53,7 @@ dwarf_attr_string (unsigned int attrnum)
 {
   switch (attrnum)
     {
-#define ONE_KNOWN_DW_AT(NAME, CODE) case CODE: return "DW_AT_" #NAME;
+#define ONE_KNOWN_DW_AT(NAME, CODE) case CODE: return #CODE;
       ALL_KNOWN_DW_AT
 #undef ONE_KNOWN_DW_AT
     default:
@@ -61,7 +64,7 @@ dwarf_attr_string (unsigned int attrnum)
 static unsigned int
 dwarf_attr_value (std::string str)
 {
-#define ONE_KNOWN_DW_AT(NAME, CODE) if (str == "DW_AT_" #NAME) return CODE;
+#define ONE_KNOWN_DW_AT(NAME, CODE) if (str == #CODE) return CODE;
   ALL_KNOWN_DW_AT
 #undef ONE_KNOWN_DW_AT
 
@@ -75,7 +78,7 @@ dwarf_form_string (unsigned int form)
   switch (form)
     {
 #define ONE_KNOWN_DW_FORM_DESC(NAME, CODE, DESC) ONE_KNOWN_DW_FORM (NAME, CODE)
-#define ONE_KNOWN_DW_FORM(NAME, CODE) case CODE: return #NAME;
+#define ONE_KNOWN_DW_FORM(NAME, CODE) case CODE: return #CODE;
       ALL_KNOWN_DW_FORM
 #undef ONE_KNOWN_DW_FORM
 #undef ONE_KNOWN_DW_FORM_DESC
@@ -87,6 +90,11 @@ dwarf_form_string (unsigned int form)
 static unsigned int
 dwarf_form_value (std::string str)
 {
+#define ONE_KNOWN_DW_FORM_DESC(NAME, CODE, DESC) ONE_KNOWN_DW_FORM (NAME, CODE)
+#define ONE_KNOWN_DW_FORM(NAME, CODE) if (str == #CODE) return CODE;
+      ALL_KNOWN_DW_FORM
+#undef ONE_KNOWN_DW_FORM
+#undef ONE_KNOWN_DW_FORM_DESC
 
     throw std::runtime_error (std::string ("Unknown attribute: ") + str);
 }
@@ -97,7 +105,7 @@ dwarf_lang_string (unsigned int lang)
 {
   switch (lang)
     {
-#define ONE_KNOWN_DW_LANG_DESC(NAME, CODE, DESC) case CODE: return #NAME;
+#define ONE_KNOWN_DW_LANG_DESC(NAME, CODE, DESC) case CODE: return #CODE;
       ALL_KNOWN_DW_LANG
 #undef ONE_KNOWN_DW_LANG_DESC
     default:
@@ -108,6 +116,10 @@ dwarf_lang_string (unsigned int lang)
 static unsigned int
 dwarf_lang_value (std::string str)
 {
+#define ONE_KNOWN_DW_LANG_DESC(NAME, CODE, DESC) if (str == #CODE) return CODE;
+      ALL_KNOWN_DW_LANG
+#undef ONE_KNOWN_DW_LANG_DESC
+
   throw std::runtime_error (std::string ("Unknown lang: ") + str);
 }
 
@@ -117,7 +129,7 @@ dwarf_inline_string (unsigned int code)
 {
   switch (code)
     {
-#define ONE_KNOWN_DW_INL(NAME, CODE) case CODE: return #NAME;
+#define ONE_KNOWN_DW_INL(NAME, CODE) case CODE: return #CODE;
       ALL_KNOWN_DW_INL
 #undef ONE_KNOWN_DW_INL
     default:
@@ -128,7 +140,10 @@ dwarf_inline_string (unsigned int code)
 static unsigned int
 dwarf_inline_value (std::string str)
 {
-  throw std::runtime_error (std::string ("Unknown code: ") + str);
+#define ONE_KNOWN_DW_INL(NAME, CODE) if (str == #CODE) return CODE;
+      ALL_KNOWN_DW_INL
+#undef ONE_KNOWN_DW_INL
+  throw std::runtime_error (std::string ("Unknown inline: ") + str);
 }
 
 
@@ -137,7 +152,7 @@ dwarf_encoding_string (unsigned int code)
 {
   switch (code)
     {
-#define ONE_KNOWN_DW_ATE(NAME, CODE) case CODE: return #NAME;
+#define ONE_KNOWN_DW_ATE(NAME, CODE) case CODE: return #CODE;
       ALL_KNOWN_DW_ATE
 #undef ONE_KNOWN_DW_ATE
     default:
@@ -148,7 +163,11 @@ dwarf_encoding_string (unsigned int code)
 static unsigned int
 dwarf_encoding_value (std::string str)
 {
-  throw std::runtime_error (std::string ("Unknown code: ") + str);
+#define ONE_KNOWN_DW_ATE(NAME, CODE) if (str == #CODE) return CODE;
+      ALL_KNOWN_DW_ATE
+#undef ONE_KNOWN_DW_ATE
+
+  throw std::runtime_error (std::string ("Unknown encoding: ") + str);
 }
 
 
@@ -157,7 +176,7 @@ dwarf_access_string (unsigned int code)
 {
   switch (code)
     {
-#define ONE_KNOWN_DW_ACCESS(NAME, CODE) case CODE: return #NAME;
+#define ONE_KNOWN_DW_ACCESS(NAME, CODE) case CODE: return #CODE;
       ALL_KNOWN_DW_ACCESS
 #undef ONE_KNOWN_DW_ACCESS
     default:
@@ -168,7 +187,11 @@ dwarf_access_string (unsigned int code)
 static unsigned int
 dwarf_access_value (std::string str)
 {
-  throw std::runtime_error (std::string ("Unknown code: ") + str);
+#define ONE_KNOWN_DW_ACCESS(NAME, CODE) if (str == #CODE) return CODE;
+      ALL_KNOWN_DW_ACCESS
+#undef ONE_KNOWN_DW_ACCESS
+
+  throw std::runtime_error (std::string ("Unknown access: ") + str);
 }
 
 
@@ -177,7 +200,7 @@ dwarf_visibility_string (unsigned int code)
 {
   switch (code)
     {
-#define ONE_KNOWN_DW_VIS(NAME, CODE) case CODE: return #NAME;
+#define ONE_KNOWN_DW_VIS(NAME, CODE) case CODE: return #CODE;
       ALL_KNOWN_DW_VIS
 #undef ONE_KNOWN_DW_VIS
     default:
@@ -188,7 +211,11 @@ dwarf_visibility_string (unsigned int code)
 static unsigned int
 dwarf_visibility_value (std::string str)
 {
-  throw std::runtime_error (std::string ("Unknown code: ") + str);
+#define ONE_KNOWN_DW_VIS(NAME, CODE) if (str == #CODE) return CODE;
+      ALL_KNOWN_DW_VIS
+#undef ONE_KNOWN_DW_VIS
+
+  throw std::runtime_error (std::string ("Unknown visibility: ") + str);
 }
 
 
@@ -197,7 +224,7 @@ dwarf_virtuality_string (unsigned int code)
 {
   switch (code)
     {
-#define ONE_KNOWN_DW_VIRTUALITY(NAME, CODE) case CODE: return #NAME;
+#define ONE_KNOWN_DW_VIRTUALITY(NAME, CODE) case CODE: return #CODE;
       ALL_KNOWN_DW_VIRTUALITY
 #undef ONE_KNOWN_DW_VIRTUALITY
     default:
@@ -208,7 +235,11 @@ dwarf_virtuality_string (unsigned int code)
 static unsigned int
 dwarf_virtuality_value (std::string str)
 {
-  throw std::runtime_error (std::string ("Unknown code: ") + str);
+#define ONE_KNOWN_DW_VIRTUALITY(NAME, CODE) if (str == #CODE) return CODE;
+      ALL_KNOWN_DW_VIRTUALITY
+#undef ONE_KNOWN_DW_VIRTUALITY
+
+  throw std::runtime_error (std::string ("Unknown virtuality: ") + str);
 }
 
 
@@ -217,7 +248,7 @@ dwarf_identifier_case_string (unsigned int code)
 {
   switch (code)
     {
-#define ONE_KNOWN_DW_ID(NAME, CODE) case CODE: return #NAME;
+#define ONE_KNOWN_DW_ID(NAME, CODE) case CODE: return #CODE;
       ALL_KNOWN_DW_ID
 #undef ONE_KNOWN_DW_ID
     default:
@@ -228,7 +259,11 @@ dwarf_identifier_case_string (unsigned int code)
 static unsigned int
 dwarf_identifier_case_value (std::string str)
 {
-  throw std::runtime_error (std::string ("Unknown code: ") + str);
+#define ONE_KNOWN_DW_ID(NAME, CODE) if (str == #CODE) return CODE;
+      ALL_KNOWN_DW_ID
+#undef ONE_KNOWN_DW_ID
+
+  throw std::runtime_error (std::string ("Unknown identifier case: ") + str);
 }
 
 
@@ -237,7 +272,7 @@ dwarf_calling_convention_string (unsigned int code)
 {
   switch (code)
     {
-#define ONE_KNOWN_DW_CC(NAME, CODE) case CODE: return #NAME;
+#define ONE_KNOWN_DW_CC(NAME, CODE) case CODE: return #CODE;
       ALL_KNOWN_DW_CC
 #undef ONE_KNOWN_DW_CC
     default:
@@ -248,7 +283,11 @@ dwarf_calling_convention_string (unsigned int code)
 static unsigned int
 dwarf_calling_convention_value (std::string str)
 {
-  throw std::runtime_error (std::string ("Unknown code: ") + str);
+#define ONE_KNOWN_DW_CC(NAME, CODE) if (str == #CODE) return CODE;
+      ALL_KNOWN_DW_CC
+#undef ONE_KNOWN_DW_CC
+
+  throw std::runtime_error (std::string ("Unknown calling convention: ") + str);
 }
 
 
@@ -257,7 +296,7 @@ dwarf_ordering_string (unsigned int code)
 {
   switch (code)
     {
-#define ONE_KNOWN_DW_ORD(NAME, CODE) case CODE: return #NAME;
+#define ONE_KNOWN_DW_ORD(NAME, CODE) case CODE: return #CODE;
       ALL_KNOWN_DW_ORD
 #undef ONE_KNOWN_DW_ORD
     default:
@@ -268,7 +307,11 @@ dwarf_ordering_string (unsigned int code)
 static unsigned int
 dwarf_ordering_value (std::string str)
 {
-  throw std::runtime_error (std::string ("Unknown code: ") + str);
+#define ONE_KNOWN_DW_ORD(NAME, CODE) if (str == #CODE) return CODE;
+      ALL_KNOWN_DW_ORD
+#undef ONE_KNOWN_DW_ORD
+
+  throw std::runtime_error (std::string ("Unknown ordering: ") + str);
 }
 
 
@@ -277,7 +320,7 @@ dwarf_discr_list_string (unsigned int code)
 {
   switch (code)
     {
-#define ONE_KNOWN_DW_DSC(NAME, CODE) case CODE: return #NAME;
+#define ONE_KNOWN_DW_DSC(NAME, CODE) case CODE: return #CODE;
       ALL_KNOWN_DW_DSC
 #undef ONE_KNOWN_DW_DSC
     default:
@@ -288,7 +331,11 @@ dwarf_discr_list_string (unsigned int code)
 static unsigned int
 dwarf_discr_list_value (std::string str)
 {
-  throw std::runtime_error (std::string ("Unknown code: ") + str);
+#define ONE_KNOWN_DW_DSC(NAME, CODE) if (str == #CODE) return CODE;
+      ALL_KNOWN_DW_DSC
+#undef ONE_KNOWN_DW_DSC
+
+  throw std::runtime_error (std::string ("Unknown discr list: ") + str);
 }
 
 
@@ -298,7 +345,7 @@ dwarf_locexpr_opcode_string (unsigned int code)
   switch (code)
     {
 #define ONE_KNOWN_DW_OP_DESC(NAME, CODE, DESC) ONE_KNOWN_DW_OP (NAME, CODE)
-#define ONE_KNOWN_DW_OP(NAME, CODE) case CODE: return #NAME;
+#define ONE_KNOWN_DW_OP(NAME, CODE) case CODE: return #CODE;
       ALL_KNOWN_DW_OP
 #undef ONE_KNOWN_DW_OP
 #undef ONE_KNOWN_DW_OP_DESC
@@ -310,7 +357,13 @@ dwarf_locexpr_opcode_string (unsigned int code)
 static unsigned int
 dwarf_locexpr_opcode_value (std::string str)
 {
-  throw std::runtime_error (std::string ("Unknown code: ") + str);
+#define ONE_KNOWN_DW_OP_DESC(NAME, CODE, DESC) ONE_KNOWN_DW_OP (NAME, CODE)
+#define ONE_KNOWN_DW_OP(NAME, CODE) if (str == #CODE) return CODE;
+      ALL_KNOWN_DW_OP
+#undef ONE_KNOWN_DW_OP
+#undef ONE_KNOWN_DW_OP_DESC
+
+  throw std::runtime_error (std::string ("Unknown locexpr opcode: ") + str);
 }
 
 
@@ -536,4 +589,16 @@ cst::parse (std::string str)
 #undef STARTSWITH
 
   throw std::runtime_error (std::string ("Unknown constant: ") + str);
+}
+
+cst
+cst::parse_attr (std::string str)
+{
+  return parse ("DW_AT_" + str);
+}
+
+cst
+cst::parse_tag (std::string str)
+{
+  return parse ("DW_TAG_" + str);
 }

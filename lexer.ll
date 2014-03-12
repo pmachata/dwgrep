@@ -22,15 +22,16 @@ DEC [0-9]
 ")" return TOK_RPAREN;
 "[" return TOK_LBRACKET;
 "]" return TOK_RBRACKET;
+
 "?{" return TOK_QMARK_LBRACE;
 "!{" return TOK_BANG_LBRACE;
-"all{" return TOK_ALL_LBRACE;
+"?all{" return TOK_QMARK_ALL_LBRACE;
+"!all{" return TOK_BANG_ALL_LBRACE;
 "}" return TOK_RBRACE;
 
 "*" return TOK_ASTERISK;
 "+" return TOK_PLUS;
 "?" return TOK_QMARK;
-"^" return TOK_CARET;
 "," return TOK_COMMA;
 
 "add" return TOK_WORD_ADD;
@@ -39,15 +40,28 @@ DEC [0-9]
 "div" return TOK_WORD_DIV;
 "mod" return TOK_WORD_MOD;
 
-"eq" return TOK_WORD_EQ;
-"ne" return TOK_WORD_NE;
-"lt" return TOK_WORD_LT;
-"gt" return TOK_WORD_GT;
-"le" return TOK_WORD_LE;
-"ge" return TOK_WORD_GE;
-"match" return TOK_WORD_MATCH;
+"?eq" return TOK_QMARK_EQ;
+"!eq" return TOK_BANG_EQ;
+"?ne" return TOK_QMARK_NE;
+"!ne" return TOK_BANG_NE;
+"?lt" return TOK_QMARK_LT;
+"!lt" return TOK_BANG_LT;
+"?gt" return TOK_QMARK_GT;
+"!gt" return TOK_BANG_GT;
+"?le" return TOK_QMARK_LE;
+"!le" return TOK_BANG_LE;
+"?ge" return TOK_QMARK_GE;
+"!ge" return TOK_BANG_GE;
 
-"spread" return TOK_WORD_SPREAD;
+"?match" return TOK_QMARK_MATCH;
+"!match" return TOK_BANG_MATCH;
+"?find" return TOK_QMARK_FIND;
+"!find" return TOK_BANG_FIND;
+
+"?root" return TOK_QMARK_ROOT;
+"!root" return TOK_BANG_ROOT;
+
+"each" return TOK_WORD_EACH;
 
 "child" return TOK_WORD_CHILD;
 "parent" return TOK_WORD_PARENT;
@@ -62,10 +76,7 @@ DEC [0-9]
 
 {ID} return pass_string (yylval, TOK_CONSTANT);
 
-"."{ID} return pass_string (yylval, TOK_DOT_WORD, 1);
 "@"{ID} return pass_string (yylval, TOK_AT_WORD, 1);
-".@"{ID} return pass_string (yylval, TOK_DOT_AT_WORD, 2);
-"/@"{ID} return pass_string (yylval, TOK_SLASH_AT_WORD, 2);
 "?"{ID} return pass_string (yylval, TOK_QMARK_WORD, 1);
 "!"{ID} return pass_string (yylval, TOK_BANG_WORD, 1);
 "?@"{ID} return pass_string (yylval, TOK_QMARK_AT_WORD, 2);

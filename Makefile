@@ -23,7 +23,7 @@ all: $(TARGETS)
 dwgrep: override LDFLAGS += -ldw -lelf
 
 dwgrep: dwgrep.o value.o patx.o wset.o
-parser: parser.o lexer.o tree.o cst.o dwcst.o
+parser: parser.o lexer.o tree.o cst.o dwcst.o test-parser.o
 
 parser.cc: lexer.hh
 

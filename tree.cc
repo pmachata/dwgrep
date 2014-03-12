@@ -90,6 +90,12 @@ tree::create_pipe (tree *t1, tree *t2)
     return tree::create_binary <tree_type::PIPE> (t1, t2);
 }
 
+tree *
+tree::create_neg (tree *t)
+{
+  return tree::create_unary <tree_type::OP_NOT> (t);
+}
+
 void
 tree::take_child (tree *t)
 {

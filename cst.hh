@@ -42,7 +42,14 @@ public:
     return m_value;
   }
 
+  // Parse constant.
   static cst parse (std::string str);
+
+  // Parse attribute reference.
+  static cst parse_attr (std::string str);
+
+  // Parse tag reference.
+  static cst parse_tag (std::string str);
 };
 
 #endif /* _CST_H_ */

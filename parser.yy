@@ -26,20 +26,25 @@
 %parse-param { std::unique_ptr <tree> &t }
 
 %token TOK_LPAREN TOK_RPAREN TOK_LBRACKET TOK_RBRACKET
-%token TOK_QMARK_LBRACE TOK_BANG_LBRACE TOK_ALL_LBRACE TOK_RBRACE
+
+%token TOK_QMARK_LBRACE TOK_BANG_LBRACE TOK_RBRACE
+%token TOK_QMARK_ALL_LBRACE TOK_BANG_ALL_LBRACE
 
 %token TOK_ASTERISK TOK_PLUS TOK_QMARK TOK_CARET TOK_COMMA
 
 %token TOK_CONSTANT
 
 %token TOK_WORD_ADD TOK_WORD_SUB TOK_WORD_MUL TOK_WORD_DIV TOK_WORD_MOD
-%token TOK_WORD_EQ TOK_WORD_NE TOK_WORD_LT TOK_WORD_GT TOK_WORD_LE TOK_WORD_GE
-%token TOK_WORD_MATCH TOK_WORD_SPREAD
+%token TOK_QMARK_EQ TOK_QMARK_NE TOK_QMARK_LT TOK_QMARK_GT TOK_QMARK_LE
+%token TOK_QMARK_GE TOK_QMARK_MATCH TOK_QMARK_FIND TOK_QMARK_ROOT
+%token TOK_BANG_EQ TOK_BANG_NE TOK_BANG_LT TOK_BANG_GT TOK_BANG_LE
+%token TOK_BANG_GE TOK_BANG_MATCH TOK_BANG_FIND TOK_BANG_ROOT
+%token TOK_WORD_EACH
 %token TOK_WORD_CHILD TOK_WORD_PARENT TOK_WORD_NEXT TOK_WORD_PREV
 %token TOK_WORD_SWAP TOK_WORD_DUP TOK_WORD_OVER TOK_WORD_ROT TOK_WORD_DROP
 
-%token TOK_DOT_WORD TOK_AT_WORD TOK_DOT_AT_WORD
-%token TOK_SLASH_AT_WORD TOK_QMARK_WORD TOK_BANG_WORD
+%token TOK_AT_WORD
+%token TOK_QMARK_WORD TOK_BANG_WORD
 %token TOK_QMARK_AT_WORD TOK_BANG_AT_WORD
 
 %token TOK_LIT_STR TOK_LIT_INT TOK_EOF
@@ -52,7 +57,7 @@
 %type <t> StatementList Statement
 %type <str> TOK_LIT_INT TOK_LIT_STR
 %type <str> TOK_CONSTANT
-%type <str> TOK_DOT_WORD TOK_AT_WORD TOK_DOT_AT_WORD TOK_SLASH_AT_WORD
+%type <str> TOK_AT_WORD
 %type <str> TOK_QMARK_WORD TOK_BANG_WORD TOK_QMARK_AT_WORD TOK_BANG_AT_WORD
 %%
 
@@ -76,13 +81,14 @@ Statement:
   | Statement TOK_COMMA Statement StatementList
 
   | TOK_QMARK_LBRACE StatementList TOK_RBRACE
-  { $$ = tree::create_unary <tree_type::SUBX_A_ANY> ($2); }
-
+  { $$ = tree::create_unary <tree_type::SUBX_ANY> ($2); }
   | TOK_BANG_LBRACE StatementList TOK_RBRACE
-  { $$ = tree::create_unary <tree_type::SUBX_A_NONE> ($2); }
+  { $$ = tree::create_neg (tree::create_unary <tree_type::SUBX_ALL> ($2)); }
 
-  | TOK_ALL_LBRACE StatementList TOK_RBRACE
-  { $$ = tree::create_unary <tree_type::SUBX_A_ALL> ($2); }
+  | TOK_QMARK_ALL_LBRACE StatementList TOK_RBRACE
+  { $$ = tree::create_unary <tree_type::SUBX_ALL> ($2); }
+  | TOK_BANG_ALL_LBRACE StatementList TOK_RBRACE
+  { $$ = tree::create_neg (tree::create_unary <tree_type::SUBX_ANY> ($2)); }
 
   // XXX precedence.  X Y* must mean X (Y*)
   | Statement TOK_ASTERISK
@@ -100,16 +106,17 @@ Statement:
     long int val = strtol ($1, &endptr, 0);
     if (*endptr != '\0')
       std::cerr << $1 << " is not a valid string literal\n";
-    $$ = tree::create_int <tree_type::CONST> (cst (val, &untyped_cst_dom));
+    $$ = tree::create_const <tree_type::CONST> (cst (val, &untyped_cst_dom));
   }
 
   | TOK_CONSTANT
   {
-    $$ = tree::create_int <tree_type::CONST> (cst::parse ($1));
+    $$ = tree::create_const <tree_type::CONST> (cst::parse ($1));
   }
 
   | TOK_LIT_STR
   { $$ = tree::create_str <tree_type::STR> ($1); }
+
 
   | TOK_WORD_ADD
   { $$ = tree::create_nullary <tree_type::AR_ADD> (); }
@@ -126,6 +133,7 @@ Statement:
   | TOK_WORD_MOD
   { $$ = tree::create_nullary <tree_type::AR_MOD> (); }
 
+
   | TOK_WORD_SWAP
   { $$ = tree::create_nullary <tree_type::SHF_SWAP> (); }
 
@@ -141,26 +149,46 @@ Statement:
   | TOK_WORD_DROP
   { $$ = tree::create_nullary <tree_type::SHF_DROP> (); }
 
-  | TOK_WORD_EQ
+
+  | TOK_QMARK_EQ
   { $$ = tree::create_nullary <tree_type::CMP_EQ> (); }
+  | TOK_BANG_EQ
+  { $$ = tree::create_neg (tree::create_nullary <tree_type::CMP_EQ> ()); }
 
-  | TOK_WORD_NE
+  | TOK_QMARK_NE
   { $$ = tree::create_nullary <tree_type::CMP_NE> (); }
+  | TOK_BANG_NE
+  { $$ = tree::create_neg (tree::create_nullary <tree_type::CMP_NE> ()); }
 
-  | TOK_WORD_LT
+  | TOK_QMARK_LT
   { $$ = tree::create_nullary <tree_type::CMP_LT> (); }
+  | TOK_BANG_LT
+  { $$ = tree::create_neg (tree::create_nullary <tree_type::CMP_LT> ()); }
 
-  | TOK_WORD_GT
+  | TOK_QMARK_GT
   { $$ = tree::create_nullary <tree_type::CMP_GT> (); }
+  | TOK_BANG_GT
+  { $$ = tree::create_neg (tree::create_nullary <tree_type::CMP_GT> ()); }
 
-  | TOK_WORD_LE
+  | TOK_QMARK_LE
   { $$ = tree::create_nullary <tree_type::CMP_LE> (); }
+  | TOK_BANG_LE
+  { $$ = tree::create_neg (tree::create_nullary <tree_type::CMP_LE> ()); }
 
-  | TOK_WORD_GE
+  | TOK_QMARK_GE
   { $$ = tree::create_nullary <tree_type::CMP_GE> (); }
+  | TOK_BANG_GE
+  { $$ = tree::create_neg (tree::create_nullary <tree_type::CMP_GE> ()); }
 
-  | TOK_WORD_MATCH
-  { $$ = tree::create_nullary <tree_type::CMP_MATCH> (); }
+  | TOK_QMARK_MATCH
+  { $$ = tree::create_nullary <tree_type::STR_MATCH> (); }
+  | TOK_BANG_MATCH
+  { $$ = tree::create_neg (tree::create_nullary <tree_type::STR_MATCH> ()); }
+
+  | TOK_QMARK_FIND
+  { $$ = tree::create_nullary <tree_type::STR_FIND> (); }
+  | TOK_BANG_FIND
+  { $$ = tree::create_neg (tree::create_nullary <tree_type::STR_FIND> ()); }
 
   | TOK_WORD_PARENT
   { $$ = tree::create_nullary <tree_type::TR_PARENT> (); }
@@ -174,67 +202,25 @@ Statement:
   | TOK_WORD_NEXT
   { $$ = tree::create_nullary <tree_type::TR_NEXT> (); }
 
-  | TOK_WORD_SPREAD
-  { $$ = tree::create_nullary <tree_type::SPREAD> (); }
+  | TOK_WORD_EACH
+  { $$ = tree::create_nullary <tree_type::EACH> (); }
 
   | TOK_AT_WORD
-  { $$ = tree::create_str <tree_type::ATVAL> ($1); }
-
-  | TOK_DOT_WORD
-  { $$ = tree::create_str <tree_type::PROPREF> ($1); }
-
-  | TOK_DOT_AT_WORD
-  { $$ = tree::create_str <tree_type::ATREF> ($1); }
+  { $$ = tree::create_const <tree_type::ATVAL> (cst::parse_attr ($1)); }
+  | TOK_QMARK_AT_WORD
+  { $$ = tree::create_const <tree_type::AT_ASSERT> (cst::parse_attr ($1)); }
+  | TOK_BANG_AT_WORD
+  {
+    auto t = tree::create_const <tree_type::AT_ASSERT> (cst::parse_attr ($1));
+    $$ = tree::create_neg (t);
+  }
 
   | TOK_QMARK_WORD
-  { $$ = tree::create_str <tree_type::TAG_A_YES> ($1); }
-
+  { $$ = tree::create_const <tree_type::TAG_ASSERT> (cst::parse_tag ($1)); }
   | TOK_BANG_WORD
-  { $$ = tree::create_str <tree_type::TAG_A_NO> ($1); }
+  {
+    auto t = tree::create_const <tree_type::TAG_ASSERT> (cst::parse_tag ($1));
+    $$ = tree::create_neg (t);
+  }
 
 %%
-
-void
-test (std::string parse, std::string expect)
-{
-  yy_scan_string (parse.c_str ());
-  std::unique_ptr <tree> t;
-  if (yyparse (t) == 0)
-    {
-      std::ostringstream ss;
-      t->dump (ss);
-      if (ss.str () != expect)
-	{
-	  std::cerr << "bad parse: «" << parse << "»" << std::endl;
-	  std::cerr << "   result: «" << ss.str () << "»" << std::endl;
-	  std::cerr << "   expect: «" << expect << "»" << std::endl;
-	}
-    }
-  else
-    std::cerr << "can't parse: «" << parse << "»" << std::endl;
-}
-
-int
-main (int argc, char *argv[])
-{
-  test ("17", "(CONST<17>)");
-  test ("\"string\"", "(STR<\"string\">)");
-  test ("DW_AT_name", "(CONST<DW_AT_name>)");
-  test ("child", "(TR_CHILD)");
-  test ("prev", "(TR_PREV)");
-  test ("parent", "(TR_PARENT)");
-  test ("next", "(TR_NEXT)");
-
-  if (argc > 1)
-    {
-      yy_scan_string (argv[1]);
-      std::unique_ptr <tree> t;
-      if (yyparse (t) == 0)
-	{
-	  t->dump (std::cerr);
-	  std::cerr << std::endl;
-	}
-    }
-
-  return 0;
-}
