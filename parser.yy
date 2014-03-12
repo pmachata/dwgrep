@@ -127,6 +127,11 @@ Query: Program TOK_EOF
   }
 
 Program: AltList
+  {
+    if ($1 == nullptr)
+      $1 = tree::create_nullary <tree_type::NOP> ();
+    $$ = $1;
+  }
 
 AltList:
    StatementList
@@ -136,6 +141,8 @@ AltList:
 
    | StatementList TOK_COMMA AltList
    {
+     if ($1 == nullptr)
+       $1 = tree::create_nullary <tree_type::NOP> ();
      if ($3 == nullptr)
        $3 = tree::create_nullary <tree_type::NOP> ();
      $$ = tree::create_pipe <tree_type::ALT> ($1, $3);
@@ -176,6 +183,11 @@ Statement:
     auto t = tree::create_unary <tree_type::PRED_SUBX_ANY> ($2);
     auto u = tree::create_neg (t);
     $$ = tree::create_assert (u);
+  }
+
+  | TOK_LBRACKET Program TOK_RBRACKET
+  {
+    $$ = tree::create_unary <tree_type::CAPTURE> ($2);
   }
 
   // XXX precedence.  X Y* must mean X (Y*)

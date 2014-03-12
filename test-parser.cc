@@ -273,6 +273,21 @@ main (int argc, char *argv[])
   test ("(swap dup, (over next, (parent dup)))",
 	"(ALT (PIPE (SHF_SWAP) (SHF_DUP)) (PIPE (SHF_OVER) (F_NEXT)) "
 	"(PIPE (F_PARENT) (SHF_DUP)))");
+  test ("2/next, 2/prev",
+	"(ALT (TRANSFORM (CONST<2>) (F_NEXT)) (TRANSFORM (CONST<2>) (F_PREV)))");
+  test ("next, prev*",
+	"(ALT (F_NEXT) (CLOSE_STAR (F_PREV)))");
+
+  test ("[]",
+	"(CAPTURE (NOP))");
+  test ("[child]",
+	"(CAPTURE (F_CHILD))");
+  test ("[,]",
+	"(CAPTURE (ALT (NOP) (NOP)))");
+  test ("[,,]",
+	"(CAPTURE (ALT (NOP) (NOP) (NOP)))");
+  test ("[1,,2,]",
+	"(CAPTURE (ALT (CONST<1>) (NOP) (CONST<2>) (NOP)))");
 
   std::cerr << tests << " tests total, " << failed << " failures.\n";
 

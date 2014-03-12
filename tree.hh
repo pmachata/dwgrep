@@ -66,6 +66,7 @@ enum class tree_arity_v
   TREE_TYPE (STR, STR)				\
   TREE_TYPE (ALT, BINARY)			\
   TREE_TYPE (NOP, NULLARY)			\
+  TREE_TYPE (CAPTURE, UNARY)			\
 
 enum class tree_type
   {
@@ -171,7 +172,7 @@ struct tree
 	t1->take_child (t2);
 	return t1;
       }
-    else if (pipe2)
+    else if (pipe2 && t1 != nullptr)
       {
 	t2->take_child_front (t1);
 	return t2;
