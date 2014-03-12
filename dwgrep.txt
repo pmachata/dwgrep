@@ -258,7 +258,7 @@
    : ?{child ?formal_parameter
    :   @type ((?const_type, ?volatile_type, ?typedef) @type)*
    :   (?structure_type, ?class_type)}
-   : "%s: type of one of the parameters has non-trivial type."
+   : "%s: one of the parameters has non-trivial type."
 
    When dwgrep sees a string with formatting directives, it converts
    it into a function.  That function pops one parameter for each %s,
@@ -579,15 +579,15 @@
    should be unnecessary as well.  But they are present for
    completeness' sake.
 
-** EXPR → “+”?(“each” | “each2”) — pop a list, yield all its elements
+** EXPR → “+”?“each” — pop a list, yield all its elements
 
    - "each" pops a list, and for each element yield a stack with that
      element pushed on top.  "+each" does the same, but doesn't pop.
 
-   - "each2" is exactly equivalent to:
+   - To zip contents of two top lists near TOS, do:
      : 2/each ?{2/pos ?eq}
 
-     So it takes two lists from the stack, and produces stacks that
+     This takes two lists from the stack, and produces stacks that
      have those two elements replaced with individual elements from
      those lists that correspond to each other.  For example:
      : A B [C₁, C₂, C₃] [D₁, D₂, D₃]
@@ -595,8 +595,8 @@
      ... would be replaced with three stacks:
      : (A B C₁ D₁, A B C₂ D₂, A B C₃ D₃)
 
-   - we could also have each3 with the meaning of:
-     : 3/each ?{3/pos ?eq drop ?eq}
+   - Similarly for deeper, three-level zip:
+     : 3/each ?{3/pos 2/?eq}
 
 ** EXPR → “+”?(“child” | “attribute” | “parent” | “next” | “prev”) — traversal
 
