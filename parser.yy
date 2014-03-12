@@ -72,7 +72,7 @@ struct strlit
 
 %pure-parser
 %error-verbose
-%parse-param { std::unique_ptr <tree> &t }
+%parse-param { std::unique_ptr <tree> &ret }
 
 %token TOK_LPAREN TOK_RPAREN TOK_LBRACKET TOK_RBRACKET
 
@@ -106,6 +106,9 @@ struct strlit
 
 %token TOK_CONSTANT TOK_LIT_STR TOK_LIT_INT
 
+%token TOK_UNIVERSE TOK_SECTION TOK_UNIT
+%token TOK_PLUS_UNIVERSE TOK_PLUS_SECTION TOK_PLUS_UNIT
+
 %token TOK_EOF
 
 %union {
@@ -122,7 +125,7 @@ struct strlit
 
 Query: Program TOK_EOF
   {
-    t.reset ($1);
+    ret.reset ($1);
     YYACCEPT;
   }
 
@@ -320,6 +323,31 @@ Statement:
   { $$ = tree::create_nullary <tree_type::EACH> (); }
   | TOK_PLUS_EACH
   { $$ = tree::create_protect (tree::create_nullary <tree_type::EACH> ()); }
+
+
+  | TOK_UNIVERSE
+  { $$ = tree::create_nullary <tree_type::SEL_UNIVERSE> (); }
+  | TOK_PLUS_UNIVERSE
+  {
+    auto t = tree::create_nullary <tree_type::SEL_UNIVERSE> ();
+    $$ = tree::create_protect (t);
+  }
+
+  | TOK_SECTION
+  { $$ = tree::create_nullary <tree_type::SEL_SECTION> (); }
+  | TOK_PLUS_SECTION
+  {
+    auto t = tree::create_nullary <tree_type::SEL_SECTION> ();
+    $$ = tree::create_protect (t);
+  }
+
+  | TOK_UNIT
+  { $$ = tree::create_nullary <tree_type::SEL_UNIT> (); }
+  | TOK_PLUS_UNIT
+  {
+    auto t = tree::create_nullary <tree_type::SEL_UNIT> ();
+    $$ = tree::create_protect (t);
+  }
 
 
   | TOK_SWAP

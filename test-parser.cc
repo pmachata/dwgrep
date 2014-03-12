@@ -167,6 +167,9 @@ main (int argc, char *argv[])
   test ("pos", "(F_POS)");
   test ("count", "(F_COUNT)");
   test ("each", "(EACH)");
+  test ("universe", "(SEL_UNIVERSE)");
+  test ("section", "(SEL_SECTION)");
+  test ("unit", "(SEL_UNIT)");
 
   test ("+add", "(PROTECT (F_ADD))");
   test ("+sub", "(PROTECT (F_SUB))");
@@ -187,6 +190,9 @@ main (int argc, char *argv[])
   test ("+pos", "(PROTECT (F_POS))");
   test ("+count", "(PROTECT (F_COUNT))");
   test ("+each", "(PROTECT (EACH))");
+  test ("+universe", "(PROTECT (SEL_UNIVERSE))");
+  test ("+section", "(PROTECT (SEL_SECTION))");
+  test ("+unit", "(PROTECT (SEL_UNIT))");
 
 #define ONE_KNOWN_DW_AT(NAME, CODE)				\
   test ("@"#NAME, "(ATVAL<" #CODE ">)");			\

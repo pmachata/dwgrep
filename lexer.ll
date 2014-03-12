@@ -63,6 +63,9 @@ OCT [0-7]
 "pos" return TOK_POS;
 "count" return TOK_COUNT;
 "each" return TOK_EACH;
+"universe" return TOK_UNIVERSE;
+"section" return TOK_SECTION;
+"unit" return TOK_UNIT;
 
 "+add" return TOK_PLUS_ADD;
 "+sub" return TOK_PLUS_SUB;
@@ -83,6 +86,9 @@ OCT [0-7]
 "+pos" return TOK_PLUS_POS;
 "+count" return TOK_PLUS_COUNT;
 "+each" return TOK_PLUS_EACH;
+"+universe" return TOK_PLUS_UNIVERSE;
+"+section" return TOK_PLUS_SECTION;
+"+unit" return TOK_PLUS_UNIT;
 
 "?eq" return TOK_QMARK_EQ;
 "!eq" return TOK_BANG_EQ;

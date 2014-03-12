@@ -68,6 +68,9 @@ enum class tree_arity_v
   TREE_TYPE (STR, STR)				\
   TREE_TYPE (FORMAT, NULLARY)			\
   TREE_TYPE (TRANSFORM, BINARY)			\
+  TREE_TYPE (SEL_UNIVERSE, NULLARY)		\
+  TREE_TYPE (SEL_SECTION, NULLARY)		\
+  TREE_TYPE (SEL_UNIT, NULLARY)			\
 
 enum class tree_type
   {
