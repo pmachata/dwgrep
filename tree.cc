@@ -102,6 +102,12 @@ tree::create_assert (tree *t)
   return tree::create_unary <tree_type::ASSERT> (t);
 }
 
+tree *
+tree::create_nodrop (tree *t)
+{
+  return tree::create_unary <tree_type::NODROP> (t);
+}
+
 void
 tree::take_child (tree *t)
 {

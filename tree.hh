@@ -15,18 +15,32 @@ enum class tree_arity_v
   };
 
 #define TREE_TYPES				\
-  TREE_TYPE (ARITH_ADD, NULLARY)		\
-  TREE_TYPE (ARITH_DIV, NULLARY)		\
-  TREE_TYPE (ARITH_MOD, NULLARY)		\
-  TREE_TYPE (ARITH_MUL, NULLARY)		\
-  TREE_TYPE (ARITH_SUB, NULLARY)		\
   TREE_TYPE (ASSERT, UNARY)			\
   TREE_TYPE (ATVAL, CONST)			\
   TREE_TYPE (CLOSE_PLUS, UNARY)			\
   TREE_TYPE (CLOSE_STAR, UNARY)			\
   TREE_TYPE (CONST, CONST)			\
   TREE_TYPE (EACH, NULLARY)			\
+  TREE_TYPE (F_ADD, NULLARY)			\
+  TREE_TYPE (F_ATTRIBUTE, NULLARY)		\
+  TREE_TYPE (F_CHILD, NULLARY)			\
+  TREE_TYPE (F_COUNT, NULLARY)			\
+  TREE_TYPE (F_DIV, NULLARY)			\
+  TREE_TYPE (F_FORM, NULLARY)			\
+  TREE_TYPE (F_MOD, NULLARY)			\
+  TREE_TYPE (F_MUL, NULLARY)			\
+  TREE_TYPE (F_NAME, NULLARY)			\
+  TREE_TYPE (F_NEXT, NULLARY)			\
+  TREE_TYPE (F_OFFSET, NULLARY)			\
+  TREE_TYPE (F_PARENT, NULLARY)			\
+  TREE_TYPE (F_POS, NULLARY)			\
+  TREE_TYPE (F_PREV, NULLARY)			\
+  TREE_TYPE (F_SUB, NULLARY)			\
+  TREE_TYPE (F_TAG, NULLARY)			\
+  TREE_TYPE (F_TYPE, NULLARY)			\
+  TREE_TYPE (F_VALUE, NULLARY)			\
   TREE_TYPE (MAYBE, UNARY)			\
+  TREE_TYPE (NODROP, UNARY)			\
   TREE_TYPE (PIPE, BINARY)			\
   TREE_TYPE (PRED_AT, CONST)			\
   TREE_TYPE (PRED_EMPTY, NULLARY)		\
@@ -39,20 +53,16 @@ enum class tree_arity_v
   TREE_TYPE (PRED_MATCH, NULLARY)		\
   TREE_TYPE (PRED_NE, NULLARY)			\
   TREE_TYPE (PRED_NOT, UNARY)			\
+  TREE_TYPE (PRED_ROOT, NULLARY)		\
   TREE_TYPE (PRED_SUBX_ALL, UNARY)		\
   TREE_TYPE (PRED_SUBX_ANY, UNARY)		\
   TREE_TYPE (PRED_TAG, CONST)			\
   TREE_TYPE (SHF_DROP, NULLARY)			\
   TREE_TYPE (SHF_DUP, NULLARY)			\
-  TREE_TYPE (SHF_IF, NULLARY)			\
   TREE_TYPE (SHF_OVER, NULLARY)			\
   TREE_TYPE (SHF_ROT, NULLARY)			\
   TREE_TYPE (SHF_SWAP, NULLARY)			\
   TREE_TYPE (STR, STR)				\
-  TREE_TYPE (TR_CHILD, NULLARY)			\
-  TREE_TYPE (TR_NEXT, NULLARY)			\
-  TREE_TYPE (TR_PARENT, NULLARY)		\
-  TREE_TYPE (TR_PREV, NULLARY)			\
 
 enum class tree_type
   {
@@ -144,6 +154,7 @@ struct tree
   static tree *create_pipe (tree *t1, tree *t2);
   static tree *create_neg (tree *t1);
   static tree *create_assert (tree *t1);
+  static tree *create_nodrop (tree *t1);
 
   void take_child (tree *t);
   void dump (std::ostream &o) const;

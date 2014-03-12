@@ -25,6 +25,20 @@
     auto u = tree::create_neg (tree::create_nullary <TT> ());
     return tree::create_assert (u);
   }
+
+  tree *
+  ifelse (yytokentype tt)
+  {
+    auto t = tree::create_nullary <tree_type::PRED_EMPTY> ();
+    if (tt == TOK_IF)
+      t = tree::create_neg (t);
+    else
+      assert (tt == TOK_ELSE);
+    auto u = tree::create_assert (t);
+
+    auto v = tree::create_nullary <tree_type::SHF_DROP> ();
+    return tree::create_pipe (u, v);
+  }
 %}
 
 %code requires {
@@ -47,10 +61,16 @@
 
 %token TOK_ASTERISK TOK_PLUS TOK_QMARK TOK_CARET TOK_COMMA
 
-%token TOK_CONSTANT
-
 %token TOK_ADD TOK_SUB TOK_MUL TOK_DIV TOK_MOD
-%token TOK_EACH TOK_CHILD TOK_PARENT TOK_NEXT TOK_PREV
+%token TOK_PARENT TOK_CHILD TOK_ATTRIBUTE TOK_PREV
+%token TOK_NEXT TOK_TYPE TOK_OFFSET TOK_NAME TOK_TAG
+%token TOK_FORM TOK_VALUE TOK_POS TOK_COUNT TOK_EACH
+
+%token TOK_PLUS_ADD TOK_PLUS_SUB TOK_PLUS_MUL TOK_PLUS_DIV TOK_PLUS_MOD
+%token TOK_PLUS_PARENT TOK_PLUS_CHILD TOK_PLUS_ATTRIBUTE TOK_PLUS_PREV
+%token TOK_PLUS_NEXT TOK_PLUS_TYPE TOK_PLUS_OFFSET TOK_PLUS_NAME TOK_PLUS_TAG
+%token TOK_PLUS_FORM TOK_PLUS_VALUE TOK_PLUS_POS TOK_PLUS_COUNT TOK_PLUS_EACH
+
 %token TOK_SWAP TOK_DUP TOK_OVER TOK_ROT TOK_DROP TOK_IF TOK_ELSE
 
 %token TOK_QMARK_EQ TOK_QMARK_NE TOK_QMARK_LT TOK_QMARK_GT TOK_QMARK_LE
@@ -61,11 +81,12 @@
 %token TOK_BANG_GE TOK_BANG_MATCH TOK_BANG_FIND TOK_BANG_EMPTY
 %token TOK_BANG_ROOT
 
-%token TOK_QMARK_WORD TOK_QMARK_AT_WORD
-%token TOK_BANG_WORD TOK_BANG_AT_WORD
-%token TOK_AT_WORD
+%token TOK_AT_WORD TOK_PLUS_AT_WORD TOK_QMARK_AT_WORD TOK_BANG_AT_WORD
+%token TOK_QMARK_WORD TOK_BANG_WORD
 
-%token TOK_LIT_STR TOK_LIT_INT TOK_EOF
+%token TOK_CONSTANT TOK_LIT_STR TOK_LIT_INT
+
+%token TOK_EOF
 
 %union {
   tree *t;
@@ -75,8 +96,8 @@
 %type <t> StatementList Statement
 %type <str> TOK_LIT_INT TOK_LIT_STR
 %type <str> TOK_CONSTANT
-%type <str> TOK_AT_WORD
-%type <str> TOK_QMARK_WORD TOK_BANG_WORD TOK_QMARK_AT_WORD TOK_BANG_AT_WORD
+%type <str> TOK_AT_WORD TOK_PLUS_AT_WORD TOK_QMARK_AT_WORD TOK_BANG_AT_WORD
+%type <str> TOK_QMARK_WORD TOK_BANG_WORD
 %%
 
 Query: StatementList TOK_EOF
@@ -151,19 +172,103 @@ Statement:
 
 
   | TOK_ADD
-  { $$ = tree::create_nullary <tree_type::ARITH_ADD> (); }
+  { $$ = tree::create_nullary <tree_type::F_ADD> (); }
+  | TOK_PLUS_ADD
+  { $$ = tree::create_nodrop (tree::create_nullary <tree_type::F_ADD> ()); }
 
   | TOK_SUB
-  { $$ = tree::create_nullary <tree_type::ARITH_SUB> (); }
+  { $$ = tree::create_nullary <tree_type::F_SUB> (); }
+  | TOK_PLUS_SUB
+  { $$ = tree::create_nodrop (tree::create_nullary <tree_type::F_SUB> ()); }
 
   | TOK_MUL
-  { $$ = tree::create_nullary <tree_type::ARITH_MUL> (); }
+  { $$ = tree::create_nullary <tree_type::F_MUL> (); }
+  | TOK_PLUS_MUL
+  { $$ = tree::create_nodrop (tree::create_nullary <tree_type::F_MUL> ()); }
 
   | TOK_DIV
-  { $$ = tree::create_nullary <tree_type::ARITH_DIV> (); }
+  { $$ = tree::create_nullary <tree_type::F_DIV> (); }
+  | TOK_PLUS_DIV
+  { $$ = tree::create_nodrop (tree::create_nullary <tree_type::F_DIV> ()); }
 
   | TOK_MOD
-  { $$ = tree::create_nullary <tree_type::ARITH_MOD> (); }
+  { $$ = tree::create_nullary <tree_type::F_MOD> (); }
+  | TOK_PLUS_MOD
+  { $$ = tree::create_nodrop (tree::create_nullary <tree_type::F_MOD> ()); }
+
+  | TOK_PARENT
+  { $$ = tree::create_nullary <tree_type::F_PARENT> (); }
+  | TOK_PLUS_PARENT
+  { $$ = tree::create_nodrop (tree::create_nullary <tree_type::F_PARENT> ()); }
+
+  | TOK_CHILD
+  { $$ = tree::create_nullary <tree_type::F_CHILD> (); }
+  | TOK_PLUS_CHILD
+  { $$ = tree::create_nodrop (tree::create_nullary <tree_type::F_CHILD> ()); }
+
+  | TOK_ATTRIBUTE
+  { $$ = tree::create_nullary <tree_type::F_ATTRIBUTE> (); }
+  | TOK_PLUS_ATTRIBUTE
+  {
+    auto t = tree::create_nullary <tree_type::F_ATTRIBUTE> ();
+    $$ = tree::create_nodrop (t);
+  }
+
+  | TOK_PREV
+  { $$ = tree::create_nullary <tree_type::F_PREV> (); }
+  | TOK_PLUS_PREV
+  { $$ = tree::create_nodrop (tree::create_nullary <tree_type::F_PREV> ()); }
+
+  | TOK_NEXT
+  { $$ = tree::create_nullary <tree_type::F_NEXT> (); }
+  | TOK_PLUS_NEXT
+  { $$ = tree::create_nodrop (tree::create_nullary <tree_type::F_NEXT> ()); }
+
+  | TOK_TYPE
+  { $$ = tree::create_nullary <tree_type::F_TYPE> (); }
+  | TOK_PLUS_TYPE
+  { $$ = tree::create_nodrop (tree::create_nullary <tree_type::F_TYPE> ()); }
+
+  | TOK_NAME
+  { $$ = tree::create_nullary <tree_type::F_NAME> (); }
+  | TOK_PLUS_NAME
+  { $$ = tree::create_nodrop (tree::create_nullary <tree_type::F_NAME> ()); }
+
+  | TOK_TAG
+  { $$ = tree::create_nullary <tree_type::F_TAG> (); }
+  | TOK_PLUS_TAG
+  { $$ = tree::create_nodrop (tree::create_nullary <tree_type::F_TAG> ()); }
+
+  | TOK_FORM
+  { $$ = tree::create_nullary <tree_type::F_FORM> (); }
+  | TOK_PLUS_FORM
+  { $$ = tree::create_nodrop (tree::create_nullary <tree_type::F_FORM> ()); }
+
+  | TOK_VALUE
+  { $$ = tree::create_nullary <tree_type::F_VALUE> (); }
+  | TOK_PLUS_VALUE
+  { $$ = tree::create_nodrop (tree::create_nullary <tree_type::F_VALUE> ()); }
+
+  | TOK_OFFSET
+  { $$ = tree::create_nullary <tree_type::F_OFFSET> (); }
+  | TOK_PLUS_OFFSET
+  { $$ = tree::create_nodrop (tree::create_nullary <tree_type::F_OFFSET> ()); }
+
+
+  | TOK_POS
+  { $$ = tree::create_nullary <tree_type::F_POS> (); }
+  | TOK_PLUS_POS
+  { $$ = tree::create_nodrop (tree::create_nullary <tree_type::F_POS> ()); }
+
+  | TOK_COUNT
+  { $$ = tree::create_nullary <tree_type::F_COUNT> (); }
+  | TOK_PLUS_COUNT
+  { $$ = tree::create_nodrop (tree::create_nullary <tree_type::F_COUNT> ()); }
+
+  | TOK_EACH
+  { $$ = tree::create_nullary <tree_type::EACH> (); }
+  | TOK_PLUS_EACH
+  { $$ = tree::create_nodrop (tree::create_nullary <tree_type::EACH> ()); }
 
 
   | TOK_SWAP
@@ -180,11 +285,6 @@ Statement:
 
   | TOK_DROP
   { $$ = tree::create_nullary <tree_type::SHF_DROP> (); }
-
-  | TOK_IF
-  { $$ = tree::create_nullary <tree_type::SHF_IF> (); }
-  | TOK_ELSE
-  { $$ = tree::create_neg (tree::create_nullary <tree_type::SHF_IF> ()); }
 
   | TOK_QMARK_EQ
   { $$ = positive_assert <tree_type::PRED_EQ> (); }
@@ -226,25 +326,29 @@ Statement:
   | TOK_BANG_FIND
   { $$ = negative_assert <tree_type::PRED_FIND> (); }
 
+  | TOK_QMARK_EMPTY
+  { $$ = positive_assert <tree_type::PRED_EMPTY> (); }
+  | TOK_BANG_EMPTY
+  { $$ = negative_assert <tree_type::PRED_EMPTY> (); }
 
-  | TOK_PARENT
-  { $$ = tree::create_nullary <tree_type::TR_PARENT> (); }
+  | TOK_QMARK_ROOT
+  { $$ = positive_assert <tree_type::PRED_ROOT> (); }
+  | TOK_BANG_ROOT
+  { $$ = negative_assert <tree_type::PRED_ROOT> (); }
 
-  | TOK_CHILD
-  { $$ = tree::create_nullary <tree_type::TR_CHILD> (); }
-
-  | TOK_PREV
-  { $$ = tree::create_nullary <tree_type::TR_PREV> (); }
-
-  | TOK_NEXT
-  { $$ = tree::create_nullary <tree_type::TR_NEXT> (); }
-
-  | TOK_EACH
-  { $$ = tree::create_nullary <tree_type::EACH> (); }
+  | TOK_IF
+  { $$ = ifelse (TOK_IF); }
+  | TOK_ELSE
+  { $$ = ifelse (TOK_ELSE); }
 
 
   | TOK_AT_WORD
   { $$ = tree::create_const <tree_type::ATVAL> (cst::parse_attr ($1)); }
+  | TOK_PLUS_AT_WORD
+  {
+    auto t = tree::create_const <tree_type::ATVAL> (cst::parse_attr ($1));
+    $$ = tree::create_nodrop (t);
+  }
   | TOK_QMARK_AT_WORD
   {
     auto t = tree::create_const <tree_type::PRED_AT> (cst::parse_attr ($1));

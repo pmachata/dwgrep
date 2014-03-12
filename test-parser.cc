@@ -99,21 +99,18 @@ main (int argc, char *argv[])
 #undef ONE_KNOWN_DW_OP_DESC
 
   test ("17", "(CONST<17>)");
-  test ("\"string\"", "(STR<\"string\">)");
+  test ("0x17", "(CONST<23>)");
+  test ("017", "(CONST<15>)");
 
-  test ("add", "(ARITH_ADD)");
-  test ("sub", "(ARITH_SUB)");
-  test ("mul", "(ARITH_MUL)");
-  test ("div", "(ARITH_DIV)");
-  test ("mod", "(ARITH_MOD)");
+  test ("\"string\"", "(STR<\"string\">)");
 
   test ("swap", "(SHF_SWAP)");
   test ("dup", "(SHF_DUP)");
   test ("over", "(SHF_OVER)");
   test ("rot", "(SHF_ROT)");
   test ("drop", "(SHF_DROP)");
-  test ("if", "(SHF_IF)");
-  test ("else", "(PRED_NOT (SHF_IF))");
+  test ("if", "(PIPE (ASSERT (PRED_NOT (PRED_EMPTY))) (SHF_DROP))");
+  test ("else", "(PIPE (ASSERT (PRED_EMPTY)) (SHF_DROP))");
 
   test ("?eq", "(ASSERT (PRED_EQ))");
   test ("!eq", "(ASSERT (PRED_NOT (PRED_EQ)))");
@@ -133,14 +130,52 @@ main (int argc, char *argv[])
   test ("?find", "(ASSERT (PRED_FIND))");
   test ("!find", "(ASSERT (PRED_NOT (PRED_FIND)))");
 
-  test ("parent", "(TR_PARENT)");
-  test ("child", "(TR_CHILD)");
-  test ("prev", "(TR_PREV)");
-  test ("next", "(TR_NEXT)");
+  test ("?root", "(ASSERT (PRED_ROOT))");
+  test ("!root", "(ASSERT (PRED_NOT (PRED_ROOT)))");
+
+  test ("add", "(F_ADD)");
+  test ("sub", "(F_SUB)");
+  test ("mul", "(F_MUL)");
+  test ("div", "(F_DIV)");
+  test ("mod", "(F_MOD)");
+  test ("parent", "(F_PARENT)");
+  test ("child", "(F_CHILD)");
+  test ("attribute", "(F_ATTRIBUTE)");
+  test ("prev", "(F_PREV)");
+  test ("next", "(F_NEXT)");
+  test ("type", "(F_TYPE)");
+  test ("offset", "(F_OFFSET)");
+  test ("name", "(F_NAME)");
+  test ("tag", "(F_TAG)");
+  test ("form", "(F_FORM)");
+  test ("value", "(F_VALUE)");
+  test ("pos", "(F_POS)");
+  test ("count", "(F_COUNT)");
   test ("each", "(EACH)");
+
+  test ("+add", "(NODROP (F_ADD))");
+  test ("+sub", "(NODROP (F_SUB))");
+  test ("+mul", "(NODROP (F_MUL))");
+  test ("+div", "(NODROP (F_DIV))");
+  test ("+mod", "(NODROP (F_MOD))");
+  test ("+parent", "(NODROP (F_PARENT))");
+  test ("+child", "(NODROP (F_CHILD))");
+  test ("+attribute", "(NODROP (F_ATTRIBUTE))");
+  test ("+prev", "(NODROP (F_PREV))");
+  test ("+next", "(NODROP (F_NEXT))");
+  test ("+type", "(NODROP (F_TYPE))");
+  test ("+offset", "(NODROP (F_OFFSET))");
+  test ("+name", "(NODROP (F_NAME))");
+  test ("+tag", "(NODROP (F_TAG))");
+  test ("+form", "(NODROP (F_FORM))");
+  test ("+value", "(NODROP (F_VALUE))");
+  test ("+pos", "(NODROP (F_POS))");
+  test ("+count", "(NODROP (F_COUNT))");
+  test ("+each", "(NODROP (EACH))");
 
 #define ONE_KNOWN_DW_AT(NAME, CODE)				\
   test ("@"#NAME, "(ATVAL<" #CODE ">)");			\
+  test ("+@"#NAME, "(NODROP (ATVAL<" #CODE ">))");		\
   test ("?@"#NAME, "(ASSERT (PRED_AT<" #CODE ">))");		\
   test ("!@"#NAME, "(ASSERT (PRED_NOT (PRED_AT<" #CODE ">)))");
 
