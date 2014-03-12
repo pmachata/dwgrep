@@ -93,7 +93,13 @@ tree::create_pipe (tree *t1, tree *t2)
 tree *
 tree::create_neg (tree *t)
 {
-  return tree::create_unary <tree_type::OP_NOT> (t);
+  return tree::create_unary <tree_type::PRED_NOT> (t);
+}
+
+tree *
+tree::create_assert (tree *t)
+{
+  return tree::create_unary <tree_type::ASSERT> (t);
 }
 
 void

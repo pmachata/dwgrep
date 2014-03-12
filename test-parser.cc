@@ -101,35 +101,37 @@ main (int argc, char *argv[])
   test ("17", "(CONST<17>)");
   test ("\"string\"", "(STR<\"string\">)");
 
-  test ("add", "(AR_ADD)");
-  test ("sub", "(AR_SUB)");
-  test ("mul", "(AR_MUL)");
-  test ("div", "(AR_DIV)");
-  test ("mod", "(AR_MOD)");
+  test ("add", "(ARITH_ADD)");
+  test ("sub", "(ARITH_SUB)");
+  test ("mul", "(ARITH_MUL)");
+  test ("div", "(ARITH_DIV)");
+  test ("mod", "(ARITH_MOD)");
 
   test ("swap", "(SHF_SWAP)");
   test ("dup", "(SHF_DUP)");
   test ("over", "(SHF_OVER)");
   test ("rot", "(SHF_ROT)");
   test ("drop", "(SHF_DROP)");
+  test ("if", "(SHF_IF)");
+  test ("else", "(PRED_NOT (SHF_IF))");
 
-  test ("?eq", "(CMP_EQ)");
-  test ("!eq", "(OP_NOT (CMP_EQ))");
-  test ("?ne", "(CMP_NE)");
-  test ("!ne", "(OP_NOT (CMP_NE))");
-  test ("?lt", "(CMP_LT)");
-  test ("!lt", "(OP_NOT (CMP_LT))");
-  test ("?gt", "(CMP_GT)");
-  test ("!gt", "(OP_NOT (CMP_GT))");
-  test ("?le", "(CMP_LE)");
-  test ("!le", "(OP_NOT (CMP_LE))");
-  test ("?ge", "(CMP_GE)");
-  test ("!ge", "(OP_NOT (CMP_GE))");
+  test ("?eq", "(ASSERT (PRED_EQ))");
+  test ("!eq", "(ASSERT (PRED_NOT (PRED_EQ)))");
+  test ("?ne", "(ASSERT (PRED_NE))");
+  test ("!ne", "(ASSERT (PRED_NOT (PRED_NE)))");
+  test ("?lt", "(ASSERT (PRED_LT))");
+  test ("!lt", "(ASSERT (PRED_NOT (PRED_LT)))");
+  test ("?gt", "(ASSERT (PRED_GT))");
+  test ("!gt", "(ASSERT (PRED_NOT (PRED_GT)))");
+  test ("?le", "(ASSERT (PRED_LE))");
+  test ("!le", "(ASSERT (PRED_NOT (PRED_LE)))");
+  test ("?ge", "(ASSERT (PRED_GE))");
+  test ("!ge", "(ASSERT (PRED_NOT (PRED_GE)))");
 
-  test ("?match", "(STR_MATCH)");
-  test ("!match", "(OP_NOT (STR_MATCH))");
-  test ("?find", "(STR_FIND)");
-  test ("!find", "(OP_NOT (STR_FIND))");
+  test ("?match", "(ASSERT (PRED_MATCH))");
+  test ("!match", "(ASSERT (PRED_NOT (PRED_MATCH)))");
+  test ("?find", "(ASSERT (PRED_FIND))");
+  test ("!find", "(ASSERT (PRED_NOT (PRED_FIND)))");
 
   test ("parent", "(TR_PARENT)");
   test ("child", "(TR_CHILD)");
@@ -139,15 +141,15 @@ main (int argc, char *argv[])
 
 #define ONE_KNOWN_DW_AT(NAME, CODE)				\
   test ("@"#NAME, "(ATVAL<" #CODE ">)");			\
-  test ("?@"#NAME, "(AT_ASSERT<" #CODE ">)");			\
-  test ("!@"#NAME, "(OP_NOT (AT_ASSERT<" #CODE ">))");
+  test ("?@"#NAME, "(ASSERT (PRED_AT<" #CODE ">))");		\
+  test ("!@"#NAME, "(ASSERT (PRED_NOT (PRED_AT<" #CODE ">)))");
 
   ALL_KNOWN_DW_AT;
 #undef ONE_KNOWN_DW_AT
 
 #define ONE_KNOWN_DW_TAG(NAME, CODE)				\
-  test ("?"#NAME, "(TAG_ASSERT<" #CODE ">)");			\
-  test ("!"#NAME, "(OP_NOT (TAG_ASSERT<" #CODE ">))");
+  test ("?"#NAME, "(ASSERT (PRED_TAG<" #CODE ">))");		\
+  test ("!"#NAME, "(ASSERT (PRED_NOT (PRED_TAG<" #CODE ">)))");
 
   ALL_KNOWN_DW_TAG;
 #undef ONE_KNOWN_DW_TAG

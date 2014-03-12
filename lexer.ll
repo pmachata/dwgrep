@@ -15,6 +15,7 @@
 ID  [_a-zA-Z][_a-zA-Z0-9]*
 HEX [a-fA-F0-9]
 DEC [0-9]
+OCT [0-7]
 
 %%
 
@@ -34,11 +35,19 @@ DEC [0-9]
 "?" return TOK_QMARK;
 "," return TOK_COMMA;
 
-"add" return TOK_WORD_ADD;
-"sub" return TOK_WORD_SUB;
-"mul" return TOK_WORD_MUL;
-"div" return TOK_WORD_DIV;
-"mod" return TOK_WORD_MOD;
+"swap" return TOK_SWAP;
+"dup" return TOK_DUP;
+"over" return TOK_OVER;
+"rot" return TOK_ROT;
+"drop" return TOK_DROP;
+"if" return TOK_IF;
+"else" return TOK_ELSE;
+
+"add" return TOK_ADD;
+"sub" return TOK_SUB;
+"mul" return TOK_MUL;
+"div" return TOK_DIV;
+"mod" return TOK_MOD;
 
 "?eq" return TOK_QMARK_EQ;
 "!eq" return TOK_BANG_EQ;
@@ -57,22 +66,18 @@ DEC [0-9]
 "!match" return TOK_BANG_MATCH;
 "?find" return TOK_QMARK_FIND;
 "!find" return TOK_BANG_FIND;
+"?empty" return TOK_QMARK_EMPTY;
+"!empty" return TOK_BANG_EMPTY;
 
 "?root" return TOK_QMARK_ROOT;
 "!root" return TOK_BANG_ROOT;
 
-"each" return TOK_WORD_EACH;
+"each" return TOK_EACH;
 
-"child" return TOK_WORD_CHILD;
-"parent" return TOK_WORD_PARENT;
-"next" return TOK_WORD_NEXT;
-"prev" return TOK_WORD_PREV;
-
-"swap" return TOK_WORD_SWAP;
-"dup" return TOK_WORD_DUP;
-"over" return TOK_WORD_OVER;
-"rot" return TOK_WORD_ROT;
-"drop" return TOK_WORD_DROP;
+"child" return TOK_CHILD;
+"parent" return TOK_PARENT;
+"next" return TOK_NEXT;
+"prev" return TOK_PREV;
 
 {ID} return pass_string (yylval, TOK_CONSTANT);
 
@@ -85,6 +90,7 @@ DEC [0-9]
 \"(\\.|[^\\\"])*\" return pass_string (yylval, TOK_LIT_STR);
 
 0[xX]{HEX}+ |
+0{OCT}+     |
 {DEC}+      return pass_string (yylval, TOK_LIT_INT);
 
 [ \t\n]+ // Skip.
