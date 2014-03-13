@@ -50,8 +50,8 @@ test (std::string parse, std::string expect)
     }
 }
 
-int
-main (int argc, char *argv[])
+void
+do_tests ()
 {
 #define ONE_KNOWN_DW_TAG(NAME, CODE) test (#CODE, "(CONST<" #CODE ">)");
   ALL_KNOWN_DW_TAG;
@@ -118,7 +118,7 @@ main (int argc, char *argv[])
   test ("0x17", "(CONST<23>)");
   test ("017", "(CONST<15>)");
 
-  test ("\"string\"", "(STR<\"string\">)");
+  test ("\"string\"", "(FORMAT (STR<string>))");
 
   test ("swap", "(SHF_SWAP)");
   test ("dup", "(SHF_DUP)");
@@ -296,14 +296,24 @@ main (int argc, char *argv[])
   test ("[1,,2,]",
 	"(CAPTURE (ALT (CONST<1>) (NOP) (CONST<2>) (NOP)))");
 
-  std::cerr << tests << " tests total, " << failed << " failures.\n";
+  test ("\"a%{ \")%{ [@name] %}(\" %}b\"",
+	"(FORMAT (STR<a>) (FORMAT (STR<)>)"
+	" (CAPTURE (ATVAL<DW_AT_name>)) (STR<(>)) (STR<b>))");
 
+  std::cerr << tests << " tests total, " << failed << " failures.\n";
+}
+
+int
+main (int argc, char *argv[])
+{
   if (argc > 1)
     {
       tree t = parse_string (argv[1]);
       t.dump (std::cerr);
       std::cerr << std::endl;
     }
+  else
+    do_tests ();
 
   return 0;
 }

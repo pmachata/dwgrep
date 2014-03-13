@@ -5,6 +5,8 @@
   static yytokentype pass_string (yyscan_t yyscanner,
 				  YYSTYPE *yylval, yytokentype toktype,
 				  size_t ignore = 0);
+
+  static char parse_esc_num (char const *str, int len, int ignore, int base);
 %}
 
 %option 8bit bison-bridge
@@ -19,6 +21,9 @@ ID  [_a-zA-Z][_a-zA-Z0-9]*
 HEX [a-fA-F0-9]
 DEC [0-9]
 OCT [0-7]
+
+%x STRING
+%x STRING_EMBEDDED
 
 %%
 
@@ -125,7 +130,114 @@ OCT [0-7]
 "?"{ID} return pass_string (yyscanner, yylval, TOK_QMARK_WORD, 1);
 "!"{ID} return pass_string (yyscanner, yylval, TOK_BANG_WORD, 1);
 
-\"(\\.|[^\\\"])*\" return pass_string (yyscanner, yylval, TOK_LIT_STR);
+"\"" {
+  BEGIN STRING;
+  yylval->f = new fmtlit {};
+}
+
+<STRING>"\\"[0-3]{OCT}?{OCT}? {
+  yylval->f->str += parse_esc_num (yyget_text (yyscanner),
+				   yyget_leng (yyscanner), 1, 8);
+  BEGIN STRING;
+}
+
+<STRING>"\\x"{HEX}{HEX} {
+  yylval->f->str += parse_esc_num (yyget_text (yyscanner),
+				   yyget_leng (yyscanner), 2, 16);
+  BEGIN STRING;
+}
+
+<STRING>"\\". {
+  switch (yyget_text (yyscanner)[1])
+    {
+    case 'a': yylval->f->str += '\a'; break;
+    case 'b': yylval->f->str += '\b'; break;
+    case 'e': yylval->f->str += '\e'; break;
+    case 't': yylval->f->str += '\t'; break;
+    case 'n': yylval->f->str += '\n'; break;
+    case 'v': yylval->f->str += '\v'; break;
+    case 'f': yylval->f->str += '\f'; break;
+    case 'r': yylval->f->str += '\r'; break;
+    case '\n': break; // Ignore the newline.
+
+    default:
+      yylval->f->str += yyget_text (yyscanner)[1];
+      break;
+    }
+
+  BEGIN STRING;
+}
+
+<STRING>"\"" {
+  BEGIN INITIAL;
+
+  fmtlit *f = yylval->f;
+  f->flush_str ();
+  yylval->t = new tree {f->t};
+  delete f;
+
+  return TOK_LIT_STR;
+}
+
+<STRING>"%%" yylval->f->str += '%';
+
+<STRING>"%{" {
+  yylval->f->flush_str ();
+  BEGIN STRING_EMBEDDED;
+}
+
+<STRING>. {
+  yylval->f->str += *yyget_text (yyscanner);
+}
+
+<STRING_EMBEDDED>[\(\[\{] {
+  yylval->f->str += *yyget_text (yyscanner);
+  if (! yylval->f->in_string)
+    ++yylval->f->level;
+}
+
+<STRING_EMBEDDED>[\)\]\}] {
+  yylval->f->str += *yyget_text (yyscanner);
+  if (! yylval->f->in_string)
+    if (yylval->f->level-- == 0)
+      throw std::runtime_error
+	("too many closing parentheses in embedded expression");
+}
+
+<STRING_EMBEDDED>"\\\"" {
+  yylval->f->str += "\\\"";
+}
+
+<STRING_EMBEDDED>"\"" {
+  yylval->f->in_string = ! yylval->f->in_string;
+  yylval->f->str += '"';
+}
+
+<STRING_EMBEDDED>"%{" {
+  yylval->f->in_string = false;
+  yylval->f->str += "%{";
+  ++yylval->f->level;
+}
+
+<STRING_EMBEDDED>"%}" {
+  yylval->f->in_string = true;
+  if (yylval->f->level-- == 0)
+    {
+      yylval->f->t.push_back (parse_string (yylval->f->yank_str ()));
+      BEGIN STRING;
+    }
+  else
+    yylval->f->str += "%}";
+}
+
+<STRING_EMBEDDED>. {
+  yylval->f->str += *yyget_text (yyscanner);
+}
+
+<STRING_EMBEDDED><<EOF>> {
+  throw std::runtime_error
+    ("too few closing parentheses in embedded expression");
+}
 
 0[xX]{HEX}+ |
 0{OCT}+     |
@@ -148,4 +260,27 @@ pass_string (yyscan_t sc, YYSTYPE *val, yytokentype toktype, size_t ignore)
   assert (len >= 0 && size_t (len) >= ignore);
   val->s = strlit { yyget_text (sc) + ignore, size_t (len - ignore) };
   return toktype;
+}
+
+char
+parse_esc_num (char const *str, int len, int ignore, int base)
+{
+  assert (ignore < len);
+  str += ignore;
+  len -= ignore;
+
+  char buf[len + 1];
+  memcpy (buf, str, len);
+  buf[len] = 0;
+
+  char *endptr = nullptr;
+  unsigned long int i = strtoul (buf, &endptr, base);
+  assert (endptr >= buf);
+
+  if (endptr - buf != len)
+    throw std::runtime_error
+      (std::string ("Invalid escape: `") + buf + "'");
+
+  assert (i <= 255);
+  return (char) (unsigned char) i;
 }

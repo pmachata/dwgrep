@@ -201,6 +201,12 @@ struct tree
   void take_child_front (tree *t);
   void append_pipe (tree *t);
 
+  void
+  push_back (tree t)
+  {
+    m_children.push_back (t);
+  }
+
   void dump (std::ostream &o) const;
 };
 

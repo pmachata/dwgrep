@@ -49,7 +49,8 @@
     if (size_t (endptr - str.buf) != str.len)
       {
         std::string tmp (str.buf, str.len);
-        std::cerr << tmp << " is not a valid integer literal\n";
+	throw std::runtime_error
+	  (std::string ("Invalid integer literal: `") + tmp + "'");
       }
     return cst (val, &untyped_cst_dom);
    }
@@ -64,6 +65,37 @@ struct strlit
   const char *buf;
   size_t len;
 };
+
+// A helper structure that the lexer uses when parsing string
+// literals.
+struct fmtlit
+{
+  std::string str;
+  tree t;
+  size_t level;
+  bool in_string;
+
+  fmtlit ()
+    : t { tree_type::FORMAT }
+    , level { 0 }
+    , in_string { false }
+  {}
+
+  void
+  flush_str ()
+  {
+    t.take_child (tree::create_str <tree_type::STR> (str));
+    str = "";
+  }
+
+  std::string
+  yank_str ()
+  {
+    std::string tmp = str;
+    str = "";
+    return tmp;
+  }
+};
 }
 
 %code top {
@@ -72,6 +104,7 @@ struct strlit
 
 %code provides {
   tree parse_string (std::string str);
+  tree parse_string (char const *begin, char const *end);
 }
 
 %pure-parser
@@ -120,13 +153,16 @@ struct strlit
 %union {
   tree *t;
   strlit s;
+  fmtlit *f;
  }
 
 %type <t> Program AltList StatementList Statement
-%type <s> TOK_LIT_INT TOK_LIT_STR
+%type <s> TOK_LIT_INT
 %type <s> TOK_CONSTANT
 %type <s> TOK_AT_WORD TOK_PLUS_AT_WORD TOK_QMARK_AT_WORD TOK_BANG_AT_WORD
 %type <s> TOK_QMARK_WORD TOK_BANG_WORD
+%type <t> TOK_LIT_STR
+
 %%
 
 Query: Program TOK_EOF
@@ -226,8 +262,11 @@ Statement:
 
   | TOK_LIT_STR
   {
-    std::string str {$1.buf, $1.len};
-    $$ = tree::create_str <tree_type::STR> (str);
+    // For string literals, we get back a tree_type::FMT node with
+    // children that are a mix of tree_type::STR (which are actual
+    // literals) and other node types with the embedded programs.
+    // That comes directly from lexer, just return it.
+    $$ = $1;
   }
 
 
@@ -470,15 +509,13 @@ Statement:
 
 struct lexer
 {
-  std::string &m_str;
   yyscan_t m_sc;
 
-  explicit lexer (std::string &str)
-    : m_str (str)
+  explicit lexer (char const *begin, char const *end)
   {
     if (yylex_init (&m_sc) != 0)
       throw std::runtime_error ("Can't init lexer.");
-    yy_scan_bytes (str.c_str (), str.length (), m_sc);
+    yy_scan_bytes (begin, end - begin, m_sc);
   }
 
   ~lexer ()
@@ -492,7 +529,14 @@ struct lexer
 tree
 parse_string (std::string str)
 {
-  lexer lex (str);
+  char const *buf = str.c_str ();
+  return parse_string (buf, buf + str.length ());
+}
+
+tree
+parse_string (char const *begin, char const *end)
+{
+  lexer lex (begin, end);
   std::unique_ptr <tree> t;
   if (yyparse (t, lex.m_sc) == 0)
     return *t;
