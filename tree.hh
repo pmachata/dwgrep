@@ -16,6 +16,7 @@ enum class tree_arity_v
 
 #define TREE_TYPES				\
   TREE_TYPE (ALT, BINARY)			\
+  TREE_TYPE (CAT, BINARY)			\
   TREE_TYPE (ASSERT, UNARY)			\
   TREE_TYPE (ATVAL, CONST)			\
   TREE_TYPE (CAPTURE, UNARY)			\
@@ -43,7 +44,6 @@ enum class tree_arity_v
   TREE_TYPE (F_VALUE, NULLARY)			\
   TREE_TYPE (MAYBE, UNARY)			\
   TREE_TYPE (NOP, NULLARY)			\
-  TREE_TYPE (PIPE, BINARY)			\
   TREE_TYPE (PRED_AT, CONST)			\
   TREE_TYPE (PRED_EMPTY, NULLARY)		\
   TREE_TYPE (PRED_EQ, NULLARY)			\
@@ -161,22 +161,22 @@ struct tree
 
   template <tree_type TT>
   static tree *
-  create_pipe (tree *t1, tree *t2)
+  create_cat (tree *t1, tree *t2)
   {
-    bool pipe1 = t1 != nullptr && t1->m_tt == TT;
-    bool pipe2 = t2 != nullptr && t2->m_tt == TT;
+    bool cat1 = t1 != nullptr && t1->m_tt == TT;
+    bool cat2 = t2 != nullptr && t2->m_tt == TT;
 
-    if (pipe1 && pipe2)
+    if (cat1 && cat2)
       {
-	t1->append_pipe (t2);
+	t1->append_cat (t2);
 	return t1;
       }
-    else if (pipe1 && t2 != nullptr)
+    else if (cat1 && t2 != nullptr)
       {
 	t1->take_child (t2);
 	return t1;
       }
-    else if (pipe2 && t1 != nullptr)
+    else if (cat2 && t1 != nullptr)
       {
 	t2->take_child_front (t1);
 	return t2;
@@ -199,7 +199,7 @@ struct tree
 
   void take_child (tree *t);
   void take_child_front (tree *t);
-  void append_pipe (tree *t);
+  void append_cat (tree *t);
 
   void
   push_back (tree t)

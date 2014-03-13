@@ -37,7 +37,7 @@
     auto u = tree::create_assert (t);
 
     auto v = tree::create_nullary <tree_type::SHF_DROP> ();
-    return tree::create_pipe <tree_type::PIPE> (u, v);
+    return tree::create_cat <tree_type::CAT> (u, v);
   }
 
   cst
@@ -196,7 +196,7 @@ AltList:
        $1 = tree::create_nullary <tree_type::NOP> ();
      if ($3 == nullptr)
        $3 = tree::create_nullary <tree_type::NOP> ();
-     $$ = tree::create_pipe <tree_type::ALT> ($1, $3);
+     $$ = tree::create_cat <tree_type::ALT> ($1, $3);
    }
 
 StatementList:
@@ -205,7 +205,7 @@ StatementList:
 
   | Statement StatementList
   {
-    $$ = tree::create_pipe <tree_type::PIPE> ($1, $2);
+    $$ = tree::create_cat <tree_type::CAT> ($1, $2);
   }
 
 Statement:
@@ -555,6 +555,6 @@ parse_query (std::string str)
   tree *t = new tree { parse_string (str) };
   tree *u = tree::create_nullary <tree_type::SEL_UNIVERSE> ();
   auto v = std::unique_ptr <tree>
-    { tree::create_pipe <tree_type::PIPE> (u, t) };
+    { tree::create_cat <tree_type::CAT> (u, t) };
   return *v;
 }

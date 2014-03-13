@@ -126,8 +126,8 @@ do_tests ()
   test ("over", "(SHF_OVER)");
   test ("rot", "(SHF_ROT)");
   test ("drop", "(SHF_DROP)");
-  test ("if", "(PIPE (ASSERT (PRED_NOT (PRED_EMPTY))) (SHF_DROP))");
-  test ("else", "(PIPE (ASSERT (PRED_EMPTY)) (SHF_DROP))");
+  test ("if", "(CAT (ASSERT (PRED_NOT (PRED_EMPTY))) (SHF_DROP))");
+  test ("else", "(CAT (ASSERT (PRED_EMPTY)) (SHF_DROP))");
 
   test ("?eq", "(ASSERT (PRED_EQ))");
   test ("!eq", "(ASSERT (PRED_NOT (PRED_EQ)))");
@@ -220,52 +220,52 @@ do_tests ()
   test ("swap?", "(MAYBE (SHF_SWAP))");
 
   test ("child next",
-	"(PIPE (F_CHILD) (F_NEXT))");
+	"(CAT (F_CHILD) (F_NEXT))");
   test ("child next*",
-	"(PIPE (F_CHILD) (CLOSE_STAR (F_NEXT)))");
+	"(CAT (F_CHILD) (CLOSE_STAR (F_NEXT)))");
   test ("child* next",
-	"(PIPE (CLOSE_STAR (F_CHILD)) (F_NEXT))");
+	"(CAT (CLOSE_STAR (F_CHILD)) (F_NEXT))");
   test ("child+ next",
-	"(PIPE (CLOSE_PLUS (F_CHILD)) (F_NEXT))");
+	"(CAT (CLOSE_PLUS (F_CHILD)) (F_NEXT))");
   test ("child +next",
-	"(PIPE (F_CHILD) (PROTECT (F_NEXT)))");
+	"(CAT (F_CHILD) (PROTECT (F_NEXT)))");
   test ("child+ +next",
-	"(PIPE (CLOSE_PLUS (F_CHILD)) (PROTECT (F_NEXT)))");
+	"(CAT (CLOSE_PLUS (F_CHILD)) (PROTECT (F_NEXT)))");
 
   test ("dup swap child",
-	"(PIPE (SHF_DUP) (SHF_SWAP) (F_CHILD))");
+	"(CAT (SHF_DUP) (SHF_SWAP) (F_CHILD))");
   test ("dup swap child next",
-	"(PIPE (SHF_DUP) (SHF_SWAP) (F_CHILD) (F_NEXT))");
+	"(CAT (SHF_DUP) (SHF_SWAP) (F_CHILD) (F_NEXT))");
 
   test ("2/child",
 	"(TRANSFORM (CONST<2>) (F_CHILD))");
   test ("2/child next",
-	"(PIPE (TRANSFORM (CONST<2>) (F_CHILD)) (F_NEXT))");
+	"(CAT (TRANSFORM (CONST<2>) (F_CHILD)) (F_NEXT))");
   test ("2/(child next)",
-	"(TRANSFORM (CONST<2>) (PIPE (F_CHILD) (F_NEXT)))");
+	"(TRANSFORM (CONST<2>) (CAT (F_CHILD) (F_NEXT)))");
   test ("2/child 2/next",
-	"(PIPE (TRANSFORM (CONST<2>) (F_CHILD)) (TRANSFORM (CONST<2>) (F_NEXT)))");
+	"(CAT (TRANSFORM (CONST<2>) (F_CHILD)) (TRANSFORM (CONST<2>) (F_NEXT)))");
 
   test ("(child next)",
-	"(PIPE (F_CHILD) (F_NEXT))");
+	"(CAT (F_CHILD) (F_NEXT))");
   test ("((child next))",
-	"(PIPE (F_CHILD) (F_NEXT))");
+	"(CAT (F_CHILD) (F_NEXT))");
   test ("(child (next))",
-	"(PIPE (F_CHILD) (F_NEXT))");
+	"(CAT (F_CHILD) (F_NEXT))");
   test ("(dup) swap child next",
-	"(PIPE (SHF_DUP) (SHF_SWAP) (F_CHILD) (F_NEXT))");
+	"(CAT (SHF_DUP) (SHF_SWAP) (F_CHILD) (F_NEXT))");
   test ("dup (swap) child next",
-	"(PIPE (SHF_DUP) (SHF_SWAP) (F_CHILD) (F_NEXT))");
+	"(CAT (SHF_DUP) (SHF_SWAP) (F_CHILD) (F_NEXT))");
   test ("dup swap (child) next",
-	"(PIPE (SHF_DUP) (SHF_SWAP) (F_CHILD) (F_NEXT))");
+	"(CAT (SHF_DUP) (SHF_SWAP) (F_CHILD) (F_NEXT))");
   test ("dup swap child (next)",
-	"(PIPE (SHF_DUP) (SHF_SWAP) (F_CHILD) (F_NEXT))");
+	"(CAT (SHF_DUP) (SHF_SWAP) (F_CHILD) (F_NEXT))");
   test ("dup (swap (child (next)))",
-	"(PIPE (SHF_DUP) (SHF_SWAP) (F_CHILD) (F_NEXT))");
+	"(CAT (SHF_DUP) (SHF_SWAP) (F_CHILD) (F_NEXT))");
   test ("((((dup) swap) child) next)",
-	"(PIPE (SHF_DUP) (SHF_SWAP) (F_CHILD) (F_NEXT))");
+	"(CAT (SHF_DUP) (SHF_SWAP) (F_CHILD) (F_NEXT))");
   test ("((((dup) swap)) (child next))",
-	"(PIPE (SHF_DUP) (SHF_SWAP) (F_CHILD) (F_NEXT))");
+	"(CAT (SHF_DUP) (SHF_SWAP) (F_CHILD) (F_NEXT))");
 
   test ("dup, over",
 	"(ALT (SHF_DUP) (SHF_OVER))");
@@ -274,13 +274,13 @@ do_tests ()
   test ("swap,",
 	"(ALT (SHF_SWAP) (NOP))");
   test ("swap dup, over",
-	"(ALT (PIPE (SHF_SWAP) (SHF_DUP)) (SHF_OVER))");
+	"(ALT (CAT (SHF_SWAP) (SHF_DUP)) (SHF_OVER))");
   test ("swap dup, over next, parent dup",
-	"(ALT (PIPE (SHF_SWAP) (SHF_DUP)) (PIPE (SHF_OVER) (F_NEXT)) "
-	"(PIPE (F_PARENT) (SHF_DUP)))");
+	"(ALT (CAT (SHF_SWAP) (SHF_DUP)) (CAT (SHF_OVER) (F_NEXT)) "
+	"(CAT (F_PARENT) (SHF_DUP)))");
   test ("(swap dup, (over next, (parent dup)))",
-	"(ALT (PIPE (SHF_SWAP) (SHF_DUP)) (PIPE (SHF_OVER) (F_NEXT)) "
-	"(PIPE (F_PARENT) (SHF_DUP)))");
+	"(ALT (CAT (SHF_SWAP) (SHF_DUP)) (CAT (SHF_OVER) (F_NEXT)) "
+	"(CAT (F_PARENT) (SHF_DUP)))");
   test ("2/next, 2/prev",
 	"(ALT (TRANSFORM (CONST<2>) (F_NEXT)) (TRANSFORM (CONST<2>) (F_PREV)))");
   test ("next, prev*",
@@ -303,9 +303,9 @@ do_tests ()
   test ("\"abc%sdef\"",
 	"(FORMAT (STR<abc>) (NOP) (STR<def>))");
 
-  test ("?root", "(PIPE (SEL_UNIVERSE) (ASSERT (PRED_ROOT)))", &parse_query);
+  test ("?root", "(CAT (SEL_UNIVERSE) (ASSERT (PRED_ROOT)))", &parse_query);
   test ("?compile_unit !root",
-	"(PIPE (SEL_UNIVERSE) (ASSERT (PRED_TAG<DW_TAG_compile_unit>))"
+	"(CAT (SEL_UNIVERSE) (ASSERT (PRED_TAG<DW_TAG_compile_unit>))"
 	" (ASSERT (PRED_NOT (PRED_ROOT))))", &parse_query);
 
   std::cerr << tests << " tests total, " << failed << " failures.\n";

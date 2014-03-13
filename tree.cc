@@ -109,7 +109,7 @@ tree::take_child_front (tree *t)
 }
 
 void
-tree::append_pipe (tree *t)
+tree::append_cat (tree *t)
 {
   m_children.insert (m_children.end (),
 		     t->m_children.begin (), t->m_children.end ());
