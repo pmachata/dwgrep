@@ -186,6 +186,11 @@ OCT [0-7]
   BEGIN STRING_EMBEDDED;
 }
 
+<STRING>"%s" {
+  yylval->f->flush_str ();
+  yylval->f->t.push_back (parse_string (""));
+}
+
 <STRING>. {
   yylval->f->str += *yyget_text (yyscanner);
 }

@@ -299,6 +299,8 @@ do_tests ()
   test ("\"a%{ \")%{ [@name] %}(\" %}b\"",
 	"(FORMAT (STR<a>) (FORMAT (STR<)>)"
 	" (CAPTURE (ATVAL<DW_AT_name>)) (STR<(>)) (STR<b>))");
+  test ("\"abc%sdef\"",
+	"(FORMAT (STR<abc>) (NOP) (STR<def>))");
 
   std::cerr << tests << " tests total, " << failed << " failures.\n";
 }
