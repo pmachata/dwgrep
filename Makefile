@@ -1,4 +1,4 @@
-TARGETS = dwgrep parser
+TARGETS = dwgrep test-parser
 
 DIRS = .
 
@@ -18,12 +18,14 @@ DEPFILES := $(DEPFILES) $(patsubst %.cc,%.cc-dep,$(CCSOURCES))
 YACC = bison
 
 all: $(TARGETS)
+check: test-parser
+	./test-parser
 
 %.cc-dep $(TARGETS): override CXXFLAGS := -g3 -Wall -std=c++11 -I /usr/include/elfutils/
 dwgrep: override LDFLAGS += -ldw -lelf
 
-dwgrep: dwgrep.o value.o patx.o wset.o
-parser: parser.o lexer.o tree.o cst.o dwcst.o test-parser.o
+dwgrep: dwgrep.o parser.o lexer.o tree.o cst.o dwcst.o
+test-parser: test-parser.o parser.o lexer.o tree.o cst.o dwcst.o
 
 parser.cc: lexer.hh
 

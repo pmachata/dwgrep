@@ -309,6 +309,7 @@ do_tests ()
 	" (ASSERT (PRED_NOT (PRED_ROOT))))", &parse_query);
 
   std::cerr << tests << " tests total, " << failed << " failures.\n";
+  assert (failed == 0);
 }
 
 int
