@@ -70,6 +70,10 @@ struct strlit
 #include "parser.hh"
 }
 
+%code provides {
+  tree parse_string (std::string str);
+}
+
 %pure-parser
 %error-verbose
 %parse-param { std::unique_ptr <tree> &ret }
@@ -463,3 +467,34 @@ Statement:
   }
 
 %%
+
+struct lexer
+{
+  std::string &m_str;
+  yyscan_t m_sc;
+
+  explicit lexer (std::string &str)
+    : m_str (str)
+  {
+    if (yylex_init (&m_sc) != 0)
+      throw std::runtime_error ("Can't init lexer.");
+    yy_scan_bytes (str.c_str (), str.length (), m_sc);
+  }
+
+  ~lexer ()
+  {
+    yylex_destroy (m_sc);
+  }
+
+  lexer (lexer const &that) = delete;
+};
+
+tree
+parse_string (std::string str)
+{
+  lexer lex (str);
+  std::unique_ptr <tree> t;
+  if (yyparse (t, lex.m_sc) == 0)
+    return *t;
+  throw std::runtime_error ("syntax error");
+}

@@ -9,46 +9,43 @@
 #include "known-dwarf.h"
 
 static unsigned tests = 0, failed = 0;
+
+void
+fail (std::string parse)
+{
+  std::cerr << "can't parse: «" << parse << "»" << std::endl;
+  ++failed;
+}
+
 void
 test (std::string parse, std::string expect)
 {
-  yyscan_t sc;
-  if (yylex_init (&sc) != 0)
-    throw std::runtime_error ("can't init lexer");
-
   ++tests;
-  yy_scan_string (parse.c_str (), sc);
-  std::unique_ptr <tree> t;
-  int result = -1;
+  tree t;
   try
     {
-      result = yyparse (t, sc);
+      t = parse_string (parse);
     }
   catch (std::runtime_error const &e)
     {
       std::cerr << "std::runtime_error: " << e.what () << std::endl;
+      fail (parse);
+      return;
     }
   catch (...)
     {
       std::cerr << "some exception thrown" << std::endl;
-    }
-
-  if (result == 0)
-    {
-      std::ostringstream ss;
-      t->dump (ss);
-      if (ss.str () != expect)
-	{
-	  std::cerr << "bad parse: «" << parse << "»" << std::endl;
-	  std::cerr << "   result: «" << ss.str () << "»" << std::endl;
-	  std::cerr << "   expect: «" << expect << "»" << std::endl;
-	  ++failed;
-	}
+      fail (parse);
       return;
     }
-  else
+
+  std::ostringstream ss;
+  t.dump (ss);
+  if (ss.str () != expect)
     {
-      std::cerr << "can't parse: «" << parse << "»" << std::endl;
+      std::cerr << "bad parse: «" << parse << "»" << std::endl;
+      std::cerr << "   result: «" << ss.str () << "»" << std::endl;
+      std::cerr << "   expect: «" << expect << "»" << std::endl;
       ++failed;
     }
 }
@@ -303,17 +300,9 @@ main (int argc, char *argv[])
 
   if (argc > 1)
     {
-      yyscan_t sc;
-      if (yylex_init (&sc) != 0)
-	throw std::runtime_error ("can't init lexer");
-
-      yy_scan_string (argv[1], sc);
-      std::unique_ptr <tree> t;
-      if (yyparse (t, sc) == 0)
-	{
-	  t->dump (std::cerr);
-	  std::cerr << std::endl;
-	}
+      tree t = parse_string (argv[1]);
+      t.dump (std::cerr);
+      std::cerr << std::endl;
     }
 
   return 0;
