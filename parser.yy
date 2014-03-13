@@ -103,6 +103,12 @@ struct fmtlit
 }
 
 %code provides {
+  // This is top-level parser entry point.  Initial "universe" is
+  // implied.
+  tree parse_query (std::string str);
+
+  // These two are for sub-expression parsing.  They don't add initial
+  // "universe".
   tree parse_string (std::string str);
   tree parse_string (char const *begin, char const *end);
 }
@@ -541,4 +547,14 @@ parse_string (char const *begin, char const *end)
   if (yyparse (t, lex.m_sc) == 0)
     return *t;
   throw std::runtime_error ("syntax error");
+}
+
+tree
+parse_query (std::string str)
+{
+  tree *t = new tree { parse_string (str) };
+  tree *u = tree::create_nullary <tree_type::SEL_UNIVERSE> ();
+  auto v = std::unique_ptr <tree>
+    { tree::create_pipe <tree_type::PIPE> (u, t) };
+  return *v;
 }

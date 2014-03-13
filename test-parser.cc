@@ -18,13 +18,14 @@ fail (std::string parse)
 }
 
 void
-test (std::string parse, std::string expect)
+test (std::string parse, std::string expect,
+      tree (*parser) (std::string) = &parse_string)
 {
   ++tests;
   tree t;
   try
     {
-      t = parse_string (parse);
+      t = parser (parse);
     }
   catch (std::runtime_error const &e)
     {
@@ -302,6 +303,11 @@ do_tests ()
   test ("\"abc%sdef\"",
 	"(FORMAT (STR<abc>) (NOP) (STR<def>))");
 
+  test ("?root", "(PIPE (SEL_UNIVERSE) (ASSERT (PRED_ROOT)))", &parse_query);
+  test ("?compile_unit !root",
+	"(PIPE (SEL_UNIVERSE) (ASSERT (PRED_TAG<DW_TAG_compile_unit>))"
+	" (ASSERT (PRED_NOT (PRED_ROOT))))", &parse_query);
+
   std::cerr << tests << " tests total, " << failed << " failures.\n";
 }
 
@@ -310,7 +316,7 @@ main (int argc, char *argv[])
 {
   if (argc > 1)
     {
-      tree t = parse_string (argv[1]);
+      tree t = parse_query (argv[1]);
       t.dump (std::cerr);
       std::cerr << std::endl;
     }
