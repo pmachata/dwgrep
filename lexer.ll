@@ -132,7 +132,12 @@ OCT [0-7]
 
 "\"" {
   BEGIN STRING;
-  yylval->f = new fmtlit {};
+  yylval->f = new fmtlit {false};
+}
+
+"+\"" {
+  BEGIN STRING;
+  yylval->f = new fmtlit {true};
 }
 
 <STRING>"\\"[0-3]{OCT}?{OCT}? {
@@ -173,7 +178,11 @@ OCT [0-7]
 
   fmtlit *f = yylval->f;
   f->flush_str ();
+
   yylval->t = new tree {f->t};
+  if (f->protect)
+    yylval->t = tree::create_protect (yylval->t);
+
   delete f;
 
   return TOK_LIT_STR;

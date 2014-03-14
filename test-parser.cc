@@ -302,6 +302,8 @@ do_tests ()
 	" (CAPTURE (F_ATVAL<DW_AT_name>)) (STR<(>)) (STR<b>))");
   test ("\"abc%sdef\"",
 	"(FORMAT (STR<abc>) (NOP) (STR<def>))");
+  test ("+\"foo\"",
+	"(PROTECT (FORMAT (STR<foo>)))");
 
   test ("?root",
 	"(CAT (PROTECT (SEL_UNIVERSE)) (ASSERT (PRED_ROOT)))", &parse_query);

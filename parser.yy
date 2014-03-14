@@ -74,11 +74,13 @@ struct fmtlit
   tree t;
   size_t level;
   bool in_string;
+  bool protect;
 
-  fmtlit ()
+  explicit fmtlit (bool a_protect)
     : t { tree_type::FORMAT }
     , level { 0 }
     , in_string { false }
+    , protect { a_protect }
   {}
 
   void
