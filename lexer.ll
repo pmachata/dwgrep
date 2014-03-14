@@ -181,7 +181,7 @@ OCT [0-7]
 
 <STRING>"%%" yylval->f->str += '%';
 
-<STRING>"%{" {
+<STRING>"%(" {
   yylval->f->flush_str ();
   BEGIN STRING_EMBEDDED;
 }
@@ -218,13 +218,13 @@ OCT [0-7]
   yylval->f->str += '"';
 }
 
-<STRING_EMBEDDED>"%{" {
+<STRING_EMBEDDED>"%(" {
   yylval->f->in_string = false;
-  yylval->f->str += "%{";
+  yylval->f->str += "%(";
   ++yylval->f->level;
 }
 
-<STRING_EMBEDDED>"%}" {
+<STRING_EMBEDDED>"%)" {
   yylval->f->in_string = true;
   if (yylval->f->level-- == 0)
     {
@@ -232,7 +232,7 @@ OCT [0-7]
       BEGIN STRING;
     }
   else
-    yylval->f->str += "%}";
+    yylval->f->str += "%)";
 }
 
 <STRING_EMBEDDED>. {

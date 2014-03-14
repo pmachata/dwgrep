@@ -297,7 +297,7 @@ do_tests ()
   test ("[1,,2,]",
 	"(CAPTURE (ALT (CONST<1>) (NOP) (CONST<2>) (NOP)))");
 
-  test ("\"a%{ \")%{ [@name] %}(\" %}b\"",
+  test ("\"a%( \")%( [@name] %)(\" %)b\"",
 	"(FORMAT (STR<a>) (FORMAT (STR<)>)"
 	" (CAPTURE (F_ATVAL<DW_AT_name>)) (STR<(>)) (STR<b>))");
   test ("\"abc%sdef\"",
