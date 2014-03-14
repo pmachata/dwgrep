@@ -168,7 +168,7 @@ do_tests ()
   test ("value", "(F_VALUE)");
   test ("pos", "(F_POS)");
   test ("count", "(F_COUNT)");
-  test ("each", "(EACH)");
+  test ("each", "(F_EACH)");
   test ("universe", "(SEL_UNIVERSE)");
   test ("section", "(SEL_SECTION)");
   test ("unit", "(SEL_UNIT)");
@@ -191,7 +191,7 @@ do_tests ()
   test ("+value", "(PROTECT (F_VALUE))");
   test ("+pos", "(PROTECT (F_POS))");
   test ("+count", "(PROTECT (F_COUNT))");
-  test ("+each", "(PROTECT (EACH))");
+  test ("+each", "(PROTECT (F_EACH))");
   test ("+universe", "(PROTECT (SEL_UNIVERSE))");
   test ("+section", "(PROTECT (SEL_SECTION))");
   test ("+unit", "(PROTECT (SEL_UNIT))");

@@ -371,9 +371,9 @@ Statement:
   { $$ = tree::create_protect (tree::create_nullary <tree_type::F_COUNT> ()); }
 
   | TOK_EACH
-  { $$ = tree::create_nullary <tree_type::EACH> (); }
+  { $$ = tree::create_nullary <tree_type::F_EACH> (); }
   | TOK_PLUS_EACH
-  { $$ = tree::create_protect (tree::create_nullary <tree_type::EACH> ()); }
+  { $$ = tree::create_protect (tree::create_nullary <tree_type::F_EACH> ()); }
 
 
   | TOK_UNIVERSE
