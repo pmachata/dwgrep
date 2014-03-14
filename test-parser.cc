@@ -19,36 +19,71 @@ fail (std::string parse)
 
 void
 test (std::string parse, std::string expect,
-      tree (*parser) (std::string) = &parse_string)
+      bool full, std::string expect_exc)
 {
   ++tests;
   tree t;
   try
     {
-      t = parser (parse);
+      if (full)
+	{
+	  t = parse_query (parse);
+	  t.check ();
+	}
+      else
+	t = parse_string (parse);
     }
   catch (std::runtime_error const &e)
     {
-      std::cerr << "std::runtime_error: " << e.what () << std::endl;
-      fail (parse);
+      if (expect_exc == ""
+	  || std::string (e.what ()).find (expect_exc) == std::string::npos)
+	{
+	  std::cerr << "wrong exception thrown" << std::endl;
+	  std::cerr << "std::runtime_error: " << e.what () << std::endl;
+	  fail (parse);
+	}
       return;
     }
   catch (...)
     {
-      std::cerr << "some exception thrown" << std::endl;
+      if (expect_exc != "")
+	std::cerr << "wrong exception thrown" << std::endl;
+      else
+	std::cerr << "some exception thrown" << std::endl;
       fail (parse);
       return;
     }
 
   std::ostringstream ss;
   t.dump (ss);
-  if (ss.str () != expect)
+  if (ss.str () != expect || expect_exc != "")
     {
       std::cerr << "bad parse: «" << parse << "»" << std::endl;
       std::cerr << "   result: «" << ss.str () << "»" << std::endl;
-      std::cerr << "   expect: «" << expect << "»" << std::endl;
+      if (expect_exc != "")
+	std::cerr << "   expect: exception «" << expect_exc << "»" << std::endl;
+      else
+	std::cerr << "   expect: «" << expect << "»" << std::endl;
       ++failed;
     }
+}
+
+void
+test (std::string parse, std::string expect)
+{
+  return test (parse, expect, false, "");
+}
+
+void
+ftest (std::string parse, std::string expect)
+{
+  return test (parse, expect, true, "");
+}
+
+void
+ftestx (std::string parse, std::string expect_exc)
+{
+  return test (parse, "", true, expect_exc);
 }
 
 void
@@ -306,10 +341,26 @@ do_tests ()
 	"(PROTECT (FORMAT (STR<foo>)))");
 
   ftest ("?root",
-	 "(CAT (SEL_UNIVERSE) (ASSERT (PRED_ROOT)))", &parse_query);
+	 "(CAT (SEL_UNIVERSE) (ASSERT (PRED_ROOT)))");
   ftest ("?compile_unit !root",
 	 "(CAT (SEL_UNIVERSE) (ASSERT (PRED_TAG<DW_TAG_compile_unit>))"
-	 " (ASSERT (PRED_NOT (PRED_ROOT))))", &parse_query);
+	 " (ASSERT (PRED_NOT (PRED_ROOT))))");
+
+  ftest (",", "(CAT (SEL_UNIVERSE) (ALT (NOP) (NOP)))");
+  ftest ("dup (swap,)",
+	 "(CAT (SEL_UNIVERSE) (SHF_DUP) (ALT (SHF_SWAP) (NOP)))");
+  ftest ("dup (,swap)",
+	 "(CAT (SEL_UNIVERSE) (SHF_DUP) (ALT (NOP) (SHF_SWAP)))");
+  ftest ("(drop,drop)",
+	 "(CAT (SEL_UNIVERSE) (ALT (SHF_DROP) (SHF_DROP)))");
+  ftestx ("(,drop)", "unbalanced");
+  ftest ("(,drop 1)",
+	 "(CAT (SEL_UNIVERSE) (ALT (NOP) (CAT (SHF_DROP) (CONST<1>))))");
+  ftest ("(drop 1,)",
+	 "(CAT (SEL_UNIVERSE) (ALT (CAT (SHF_DROP) (CONST<1>)) (NOP)))");
+  ftest ("drop \"foo\"",
+	 "(CAT (SEL_UNIVERSE) (SHF_DROP) (FORMAT (STR<foo>)))");
+  ftestx ("drop \"%s\"", "underrun");
 
   std::cerr << tests << " tests total, " << failed << " failures.\n";
   assert (failed == 0);

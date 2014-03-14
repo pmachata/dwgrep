@@ -276,6 +276,7 @@ struct tree
   }
 
   void dump (std::ostream &o) const;
+  void check () const;
 };
 
 #endif /* _TREE_H_ */

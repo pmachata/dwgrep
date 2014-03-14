@@ -49,6 +49,7 @@ main(int argc, char *argv[])
   assert (argc == 3);
 
   tree t = parse_query (argv[2]);
+  t.check ();
   t.dump (std::cout);
   std::cout << std::endl;
 
