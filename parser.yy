@@ -553,7 +553,8 @@ tree
 parse_query (std::string str)
 {
   tree *t = new tree { parse_string (str) };
-  tree *u = tree::create_nullary <tree_type::SEL_UNIVERSE> ();
+  tree *u = tree::create_protect
+    (tree::create_nullary <tree_type::SEL_UNIVERSE> ());
   auto v = std::unique_ptr <tree>
     { tree::create_cat <tree_type::CAT> (u, t) };
   return *v;

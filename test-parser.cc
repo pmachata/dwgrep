@@ -303,9 +303,10 @@ do_tests ()
   test ("\"abc%sdef\"",
 	"(FORMAT (STR<abc>) (NOP) (STR<def>))");
 
-  test ("?root", "(CAT (SEL_UNIVERSE) (ASSERT (PRED_ROOT)))", &parse_query);
+  test ("?root",
+	"(CAT (PROTECT (SEL_UNIVERSE)) (ASSERT (PRED_ROOT)))", &parse_query);
   test ("?compile_unit !root",
-	"(CAT (SEL_UNIVERSE) (ASSERT (PRED_TAG<DW_TAG_compile_unit>))"
+	"(CAT (PROTECT (SEL_UNIVERSE)) (ASSERT (PRED_TAG<DW_TAG_compile_unit>))"
 	" (ASSERT (PRED_NOT (PRED_ROOT))))", &parse_query);
 
   std::cerr << tests << " tests total, " << failed << " failures.\n";
