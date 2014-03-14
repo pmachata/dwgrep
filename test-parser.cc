@@ -197,8 +197,8 @@ do_tests ()
   test ("+unit", "(PROTECT (SEL_UNIT))");
 
 #define ONE_KNOWN_DW_AT(NAME, CODE)				\
-  test ("@"#NAME, "(ATVAL<" #CODE ">)");			\
-  test ("+@"#NAME, "(PROTECT (ATVAL<" #CODE ">))");		\
+  test ("@"#NAME, "(F_ATVAL<" #CODE ">)");			\
+  test ("+@"#NAME, "(PROTECT (F_ATVAL<" #CODE ">))");		\
   test ("?@"#NAME, "(ASSERT (PRED_AT<" #CODE ">))");		\
   test ("!@"#NAME, "(ASSERT (PRED_NOT (PRED_AT<" #CODE ">)))");
 
@@ -299,7 +299,7 @@ do_tests ()
 
   test ("\"a%{ \")%{ [@name] %}(\" %}b\"",
 	"(FORMAT (STR<a>) (FORMAT (STR<)>)"
-	" (CAPTURE (ATVAL<DW_AT_name>)) (STR<(>)) (STR<b>))");
+	" (CAPTURE (F_ATVAL<DW_AT_name>)) (STR<(>)) (STR<b>))");
   test ("\"abc%sdef\"",
 	"(FORMAT (STR<abc>) (NOP) (STR<def>))");
 

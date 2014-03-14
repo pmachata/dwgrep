@@ -475,12 +475,12 @@ Statement:
   | TOK_AT_WORD
   {
     std::string str {$1.buf, $1.len};
-    $$ = tree::create_const <tree_type::ATVAL> (cst::parse_attr (str));
+    $$ = tree::create_const <tree_type::F_ATVAL> (cst::parse_attr (str));
   }
   | TOK_PLUS_AT_WORD
   {
     std::string str {$1.buf, $1.len};
-    auto t = tree::create_const <tree_type::ATVAL> (cst::parse_attr (str));
+    auto t = tree::create_const <tree_type::F_ATVAL> (cst::parse_attr (str));
     $$ = tree::create_protect (t);
   }
   | TOK_QMARK_AT_WORD

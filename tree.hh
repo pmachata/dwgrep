@@ -90,7 +90,7 @@ enum class tree_arity_v
   TREE_TYPE (CONST, CONST)			\
   TREE_TYPE (STR, STR)				\
   TREE_TYPE (FORMAT, NULLARY)			\
-  TREE_TYPE (ATVAL, CONST)			\
+  TREE_TYPE (F_ATVAL, CONST)			\
   TREE_TYPE (F_ADD, NULLARY)			\
   TREE_TYPE (F_SUB, NULLARY)			\
   TREE_TYPE (F_MUL, NULLARY)			\
