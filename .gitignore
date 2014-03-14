@@ -1,3 +1,9 @@
 *-dep
 *.o
 dwgrep
+test-parser
+parser.cc
+parser.hh
+lexer.cc
+lexer.hh
+known-dwarf.h
