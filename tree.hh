@@ -5,6 +5,17 @@
 #include <string>
 #include "cst.hh"
 
+// These constants describe how a tree is allowed to be constructed.
+// It's mostly present to make sure we don't inadvertently construct
+// e.g. a CONST tree with no associated constant.
+//
+// NULLARY, UNARY, BINARY -- a tree that's constructed over zero, one
+// or two sub-trees.  Often that's the only number of sub-trees that
+// makes sense for given tree type, but CAT and ALT can hold arbitrary
+// number of sub-trees, they are just constructed from two.  FORMAT is
+// NULLARY, but holds any number of sub-trees as well.
+//
+// STR, CONST -- A tree that holds a constant, has no children.
 enum class tree_arity_v
   {
     NULLARY,
@@ -14,35 +25,53 @@ enum class tree_arity_v
     CONST,
   };
 
+// CAT -- A node for holding concatenation (X Y Z).
+// ALT -- A node for holding alternation (X, Y, Z).
+// CAPTURE -- For holding [X].
+//
+// TRANSFORM -- For holding NUM/X.  The first child is a constant
+// representing application depth, the second is the X.
+//
+// PROTECT -- For holding +X.
+//
+// NOP -- For holding a no-op that comes up in "%s" and (,X).
+//
+// CLOSE_STAR, CLOSE_PLUS, MAYBE -- For holding X*, X+, X?.  X is the
+// only child of these nodes.
+//
+// ASSERT -- All assertions (such as ?some_tag) are modeled using an
+// ASSERT node, whose only child is a predicate node expressing the
+// asserted condition (such as PRED_TAG).  Negative assertions are
+// modeled using PRED_NOT.  In particular, IF is expanded into (!empty
+// drop), ELSE into (?empty drop).
+//
+// PRED_SUBX_ALL, PRED_SUBX_ANY -- For holding ?all{X} and ?{X}.
+// !all{X} and !{} are modeled using PRED_NOT.
+//
+// CONST -- For holding named constants and integer literals.
+//
+// STR -- For holding string literals.  Actual string literals are
+// translated to FORMAT.
+//
+// FORMAT -- The literal parts of the format string are stored as
+// children of type STR.  Other computation is stored as children of
+// other types.
+//
+// F_ADD, F_SUB, etc. -- For holding corresponding function words.
+// SEL_UNIVERSE, SEL_SECTION, SEL_UNIT -- Likewise.
+// SHF_SWAP, SWP_DUP -- Stack shuffling words.
+
 #define TREE_TYPES				\
-  TREE_TYPE (ALT, BINARY)			\
   TREE_TYPE (CAT, BINARY)			\
-  TREE_TYPE (ASSERT, UNARY)			\
-  TREE_TYPE (ATVAL, CONST)			\
+  TREE_TYPE (ALT, BINARY)			\
   TREE_TYPE (CAPTURE, UNARY)			\
+  TREE_TYPE (TRANSFORM, BINARY)			\
+  TREE_TYPE (PROTECT, UNARY)			\
+  TREE_TYPE (NOP, NULLARY)			\
   TREE_TYPE (CLOSE_PLUS, UNARY)			\
   TREE_TYPE (CLOSE_STAR, UNARY)			\
-  TREE_TYPE (CONST, CONST)			\
-  TREE_TYPE (F_ADD, NULLARY)			\
-  TREE_TYPE (F_ATTRIBUTE, NULLARY)		\
-  TREE_TYPE (F_CHILD, NULLARY)			\
-  TREE_TYPE (F_COUNT, NULLARY)			\
-  TREE_TYPE (F_DIV, NULLARY)			\
-  TREE_TYPE (F_FORM, NULLARY)			\
-  TREE_TYPE (F_MOD, NULLARY)			\
-  TREE_TYPE (F_MUL, NULLARY)			\
-  TREE_TYPE (F_NAME, NULLARY)			\
-  TREE_TYPE (F_NEXT, NULLARY)			\
-  TREE_TYPE (F_OFFSET, NULLARY)			\
-  TREE_TYPE (F_PARENT, NULLARY)			\
-  TREE_TYPE (F_POS, NULLARY)			\
-  TREE_TYPE (F_PREV, NULLARY)			\
-  TREE_TYPE (F_SUB, NULLARY)			\
-  TREE_TYPE (F_TAG, NULLARY)			\
-  TREE_TYPE (F_TYPE, NULLARY)			\
-  TREE_TYPE (F_VALUE, NULLARY)			\
   TREE_TYPE (MAYBE, UNARY)			\
-  TREE_TYPE (NOP, NULLARY)			\
+  TREE_TYPE (ASSERT, UNARY)			\
   TREE_TYPE (PRED_AT, CONST)			\
   TREE_TYPE (PRED_EMPTY, NULLARY)		\
   TREE_TYPE (PRED_EQ, NULLARY)			\
@@ -58,19 +87,37 @@ enum class tree_arity_v
   TREE_TYPE (PRED_SUBX_ALL, UNARY)		\
   TREE_TYPE (PRED_SUBX_ANY, UNARY)		\
   TREE_TYPE (PRED_TAG, CONST)			\
-  TREE_TYPE (PROTECT, UNARY)			\
-  TREE_TYPE (SHF_DROP, NULLARY)			\
+  TREE_TYPE (CONST, CONST)			\
+  TREE_TYPE (STR, STR)				\
+  TREE_TYPE (FORMAT, NULLARY)			\
+  TREE_TYPE (ATVAL, CONST)			\
+  TREE_TYPE (F_ADD, NULLARY)			\
+  TREE_TYPE (F_SUB, NULLARY)			\
+  TREE_TYPE (F_MUL, NULLARY)			\
+  TREE_TYPE (F_DIV, NULLARY)			\
+  TREE_TYPE (F_MOD, NULLARY)			\
+  TREE_TYPE (F_PARENT, NULLARY)			\
+  TREE_TYPE (F_CHILD, NULLARY)			\
+  TREE_TYPE (F_ATTRIBUTE, NULLARY)		\
+  TREE_TYPE (F_PREV, NULLARY)			\
+  TREE_TYPE (F_NEXT, NULLARY)			\
+  TREE_TYPE (F_TYPE, NULLARY)			\
+  TREE_TYPE (F_OFFSET, NULLARY)			\
+  TREE_TYPE (F_NAME, NULLARY)			\
+  TREE_TYPE (F_TAG, NULLARY)			\
+  TREE_TYPE (F_FORM, NULLARY)			\
+  TREE_TYPE (F_VALUE, NULLARY)			\
+  TREE_TYPE (F_POS, NULLARY)			\
+  TREE_TYPE (F_COUNT, NULLARY)			\
   TREE_TYPE (F_EACH, NULLARY)			\
+  TREE_TYPE (SEL_SECTION, NULLARY)		\
+  TREE_TYPE (SEL_UNIT, NULLARY)			\
+  TREE_TYPE (SEL_UNIVERSE, NULLARY)		\
+  TREE_TYPE (SHF_SWAP, NULLARY)			\
   TREE_TYPE (SHF_DUP, NULLARY)			\
   TREE_TYPE (SHF_OVER, NULLARY)			\
   TREE_TYPE (SHF_ROT, NULLARY)			\
-  TREE_TYPE (SHF_SWAP, NULLARY)			\
-  TREE_TYPE (STR, STR)				\
-  TREE_TYPE (FORMAT, NULLARY)			\
-  TREE_TYPE (TRANSFORM, BINARY)			\
-  TREE_TYPE (SEL_UNIVERSE, NULLARY)		\
-  TREE_TYPE (SEL_SECTION, NULLARY)		\
-  TREE_TYPE (SEL_UNIT, NULLARY)			\
+  TREE_TYPE (SHF_DROP, NULLARY)			\
 
 enum class tree_type
   {
@@ -87,6 +134,10 @@ template <tree_type TT> class tree_arity;
 TREE_TYPES
 #undef TREE_TYPE
 
+// This is for communication between lexical and syntactic analyzers
+// and the rest of the world.  It uses naked pointers all over the
+// place, as in %union that lexer and parser use, we can't hold
+// full-fledged classes.
 struct tree
 {
   tree_type m_tt;
@@ -159,6 +210,12 @@ struct tree
     return t;
   }
 
+  // Creates either a CAT or an ALT node.
+  //
+  // It is smart in that it transforms CAT's of CAT's into one
+  // overarching CAT, and appends or prepends other nodes to an
+  // existing CAT if possible.  It also knows to ignore a nullptr
+  // tree.
   template <tree_type TT>
   static tree *
   create_cat (tree *t1, tree *t2)
@@ -197,8 +254,14 @@ struct tree
   static tree *create_assert (tree *t1);
   static tree *create_protect (tree *t1);
 
+  // push_back (*T) and delete T.
   void take_child (tree *t);
+
+  // push_front (*T) and delete T.
   void take_child_front (tree *t);
+
+  // Takes a tree T, which is a CAT or an ALT, and appends all
+  // children therein.  It then deletes T.
   void append_cat (tree *t);
 
   void
