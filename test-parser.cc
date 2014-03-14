@@ -169,7 +169,7 @@ do_tests ()
   test ("pos", "(F_POS)");
   test ("count", "(F_COUNT)");
   test ("each", "(F_EACH)");
-  test ("universe", "(SEL_UNIVERSE)");
+  test ("universe", "(CAT (SHF_DROP) (SEL_UNIVERSE))");
   test ("section", "(SEL_SECTION)");
   test ("unit", "(SEL_UNIT)");
 
@@ -192,7 +192,7 @@ do_tests ()
   test ("+pos", "(PROTECT (F_POS))");
   test ("+count", "(PROTECT (F_COUNT))");
   test ("+each", "(PROTECT (F_EACH))");
-  test ("+universe", "(PROTECT (SEL_UNIVERSE))");
+  test ("+universe", "(SEL_UNIVERSE)");
   test ("+section", "(PROTECT (SEL_SECTION))");
   test ("+unit", "(PROTECT (SEL_UNIT))");
 
@@ -305,11 +305,11 @@ do_tests ()
   test ("+\"foo\"",
 	"(PROTECT (FORMAT (STR<foo>)))");
 
-  test ("?root",
-	"(CAT (PROTECT (SEL_UNIVERSE)) (ASSERT (PRED_ROOT)))", &parse_query);
-  test ("?compile_unit !root",
-	"(CAT (PROTECT (SEL_UNIVERSE)) (ASSERT (PRED_TAG<DW_TAG_compile_unit>))"
-	" (ASSERT (PRED_NOT (PRED_ROOT))))", &parse_query);
+  ftest ("?root",
+	 "(CAT (SEL_UNIVERSE) (ASSERT (PRED_ROOT)))", &parse_query);
+  ftest ("?compile_unit !root",
+	 "(CAT (SEL_UNIVERSE) (ASSERT (PRED_TAG<DW_TAG_compile_unit>))"
+	 " (ASSERT (PRED_NOT (PRED_ROOT))))", &parse_query);
 
   std::cerr << tests << " tests total, " << failed << " failures.\n";
   assert (failed == 0);

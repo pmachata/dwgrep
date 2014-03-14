@@ -58,7 +58,12 @@ enum class tree_arity_v
 // other types.
 //
 // F_ADD, F_SUB, etc. -- For holding corresponding function words.
-// SEL_UNIVERSE, SEL_SECTION, SEL_UNIT -- Likewise.
+//
+// SEL_UNIVERSE, SEL_SECTION, SEL_UNIT -- Likewise.  But note that
+// SEL_UNIVERSE does NOT actually POP.  Plain "universe" is translated
+// as "SHF_DROP SEL_UNIVERSE", and "+universe" is translated as mere
+// "SEL_UNIVERSE".
+//
 // SHF_SWAP, SWP_DUP -- Stack shuffling words.
 
 #define TREE_TYPES				\

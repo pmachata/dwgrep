@@ -379,11 +379,14 @@ Statement:
 
 
   | TOK_UNIVERSE
-  { $$ = tree::create_nullary <tree_type::SEL_UNIVERSE> (); }
+  {
+    auto t = tree::create_nullary <tree_type::SHF_DROP> ();
+    auto u = tree::create_nullary <tree_type::SEL_UNIVERSE> ();
+    $$ = tree::create_cat <tree_type::CAT> (t, u);
+  }
   | TOK_PLUS_UNIVERSE
   {
-    auto t = tree::create_nullary <tree_type::SEL_UNIVERSE> ();
-    $$ = tree::create_protect (t);
+    $$ = tree::create_nullary <tree_type::SEL_UNIVERSE> ();
   }
 
   | TOK_SECTION
@@ -554,10 +557,9 @@ parse_string (char const *begin, char const *end)
 tree
 parse_query (std::string str)
 {
-  tree *t = new tree { parse_string (str) };
-  tree *u = tree::create_protect
-    (tree::create_nullary <tree_type::SEL_UNIVERSE> ());
+  auto t = new tree { parse_string ("+universe") };
+  auto u = new tree { parse_string (str) };
   auto v = std::unique_ptr <tree>
-    { tree::create_cat <tree_type::CAT> (u, t) };
+    { tree::create_cat <tree_type::CAT> (t, u) };
   return *v;
 }
