@@ -515,6 +515,11 @@
    equivalent to (among others):
    : [ 0 1 ?eq ]
 
+   - over is exactly equivalent to:
+     : [ drop ] each
+   - dup is exactly equivalent to (among others):
+     : [ 1 drop ] each
+
 ** EXPR → “?{” EXPR₁ “}” | “!{” EXPR₁ “}” — sub-expression assertions
 
    - ?{ EXPR₁ } is exactly equivalent to:

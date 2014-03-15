@@ -14,6 +14,7 @@ LLSOURCES = $(filter %.ll,$(ALLSOURCES))
 DEPFILES := $(patsubst %.ll,%.cc-dep,$(LLSOURCES))
 DEPFILES := $(DEPFILES) $(patsubst %.yy,%.cc-dep,$(YYSOURCES))
 DEPFILES := $(DEPFILES) $(patsubst %.cc,%.cc-dep,$(CCSOURCES))
+CXXOPTFLAGS = -O2
 
 YACC = bison
 
@@ -21,11 +22,13 @@ all: $(TARGETS)
 check: test-parser
 	./test-parser
 
-%.cc-dep $(TARGETS): override CXXFLAGS := -g3 -Wall -std=c++11 -I /usr/include/elfutils/
+%.cc-dep $(TARGETS): override CXXFLAGS = -g3 $(CXXOPTFLAGS) -Wall -std=c++11 -I /usr/include/elfutils/
 dwgrep: override LDFLAGS += -ldw -lelf
 
-dwgrep: dwgrep.o parser.o lexer.o tree.o cst.o dwcst.o
+dwgrep: dwgrep.o parser.o lexer.o tree.o cst.o dwcst.o op.o value.o build.o
 test-parser: test-parser.o parser.o lexer.o tree.o cst.o dwcst.o
+
+test-parser.o: CXXOPTFLAGS = -O0
 
 parser.cc: lexer.hh
 

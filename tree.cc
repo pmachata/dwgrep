@@ -16,6 +16,7 @@ namespace
 
 tree::tree ()
   : m_tt (static_cast <tree_type> (-1))
+  , m_stkslot (-1)
 {}
 
 tree::tree (tree_type tt)
@@ -159,18 +160,21 @@ tree::dump (std::ostream &o) const
 
 namespace
 {
-  struct stack_state
+  struct stack_depth
   {
     unsigned emts;
+    unsigned max;
 
-    stack_state ()
+    stack_depth ()
       : emts (0)
+      , max (0)
     {}
 
     void
     push (unsigned u)
     {
-      emts += u;
+      if ((emts += u) > max)
+	max = emts;
     }
 
     void
@@ -182,63 +186,71 @@ namespace
     }
 
     void
-    project (int delta)
+    project (int delta, unsigned new_max)
     {
       if (delta > 0)
 	push (delta);
       else
 	pop (-delta);
+      if (new_max > max)
+	max = new_max;
     }
 
     bool
-    operator!= (stack_state that) const
+    operator!= (stack_depth that) const
     {
       return emts != that.emts;
     }
 
     int
-    operator- (stack_state that) const
+    operator- (stack_depth that) const
     {
       return emts - that.emts;
     }
   };
 
   std::ostream &
-  operator<< (std::ostream &o, stack_state se)
+  operator<< (std::ostream &o, stack_depth se)
   {
     return o << '<' << se.emts << '>';
   }
 
-  stack_state
-  check_tree (tree const &t, stack_state se)
+  stack_depth
+  check_tree (tree &t, stack_depth se)
   {
     switch (t.m_tt)
       {
       case tree_type::CAT:
-	for (auto const &t1: t.m_children)
+	assert (t.m_children.size () >= 2);
+	for (auto &t1: t.m_children)
 	  se = check_tree (t1, se);
 	break;
 
       case tree_type::ALT:
 	{
+	  assert (t.m_children.size () >= 2);
 	  int delta = INT_MAX;
+	  unsigned max = 0;
 
-	  for (auto const &t1: t.m_children)
-	    if (delta == INT_MAX)
-	      delta = check_tree (t1, se) - se;
-	    else if (delta != check_tree (t1, se) - se)
-	      throw std::runtime_error ("unbalanced stack effects");
+	  for (auto &t1: t.m_children)
+	    {
+	      stack_depth sd1 = check_tree (t1, se);
+	      max = std::max (sd1.max, max);
+	      if (delta == INT_MAX)
+		delta = sd1 - se;
+	      else if (delta != sd1 - se)
+		throw std::runtime_error ("unbalanced stack effects");
+	    }
 
 	  assert (delta != INT_MAX);
-	  se.project (delta);
-
+	  se.project (delta, max);
 	  break;
 	}
 
       case tree_type::CAPTURE:
 	{
 	  assert (t.m_children.size () == 1);
-	  stack_state se1 = check_tree (t.m_children[0], se);
+	  stack_depth se1 = check_tree (t.m_children[0], se);
 	  // We must be able to pop an element from the resulting
 	  // stack.
 	  se1.pop (1);
@@ -255,11 +267,13 @@ namespace
 
 	  uint64_t depth = t.m_children[0].m_u.cval->value ();
 	  se.pop (depth);
-	  int delta = check_tree (t.m_children[1], se) - se;
+	  stack_depth sd1 = check_tree (t.m_children[1], se);
+	  unsigned max = sd1.max - sd1.emts;
+	  int delta = sd1 - se;
 	  for (uint64_t i = 0; i < depth; ++i)
 	    {
 	      se.push (1);
-	      se.project (delta);
+	      se.project (delta, se.emts + delta + max);
 	    }
 	  break;
 	}
@@ -299,7 +313,7 @@ namespace
 	break;
 
       case tree_type::FORMAT:
-	for (auto const &t1: t.m_children)
+	for (auto &t1: t.m_children)
 	  if (t1.m_tt != tree_type::STR)
 	    {
 	      se = check_tree (t1, se);
@@ -401,12 +415,103 @@ namespace
 	break;
       }
 
+    t.m_stkslot = se.emts - 1;
     return se;
   }
 }
 
-void
-tree::check () const
+#if 0
+namespace
 {
-  check_tree (*this, stack_state ());
+  struct stack_refs
+  {
+    std::vector <varindex_t> m_freelist;
+
+  public:
+    std::vector <varindex_t> stk;
+
+    void
+    push ()
+    {
+      if (! m_freelist.empty ())
+	{
+	  stk.push_back (m_freelist.back ());
+	  m_freelist.pop_back ();
+	}
+      else
+	{
+	  varindex_t nv = varindex_t (stk.size ());
+	  if (size_t (nv) != stk.size ())
+	    throw std::runtime_error ("stack too deep");
+	  stk.push_back (nv);
+	}
+    }
+
+    void
+    drop ()
+    {
+      assert (stk.size () > 0);
+      m_freelist.push_back (stk.back ());
+      stk.pop_back ();
+    }
+
+    void
+    swap ()
+    {
+      std::swap (stk[stk.size () - 2], stk[stk.size () - 1]);
+    }
+  };
+
+  std::ostream &
+  operator<< (std::ostream &o, stack_refs const &sr)
+  {
+    o << "<";
+    bool seen = false;
+    for (auto idx: sr.stk)
+      {
+	o << (seen ? ";x" : "x") << (int)idx;
+	seen = true;
+      }
+    return o << ">";
+  }
+
+  unsigned level = 0;
+
+  stack_refs
+  resolve_operands (tree &t, stack_refs sr)
+  {
+    for (unsigned i = 0; i < level; ++i)
+      std::cout << " ";
+    ++level;
+    std::cout << sr << " ";
+    t.dump (std::cout);
+    std::cout << std::endl;
+
+    switch (t.m_tt)
+      {
+      case tree_type::CAT:
+	for (auto &t1: t.m_children)
+	  sr = resolve_operands (t1, sr);
+	break;
+
+      case tree_type::SEL_UNIVERSE:
+	sr.push ();
+	break;
+      }
+
+    --level;
+    for (unsigned i = 0; i < level; ++i)
+      std::cout << " ";
+    std::cout << sr;
+    std::cout << std::endl;
+
+    return sr;
+  }
+}
+#endif
+
+size_t
+tree::determine_stack_effects ()
+{
+  return check_tree (*this, stack_depth ()).max;
 }

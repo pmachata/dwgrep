@@ -28,7 +28,7 @@ test (std::string parse, std::string expect,
       if (full)
 	{
 	  t = parse_query (parse);
-	  t.check ();
+	  t.determine_stack_effects ();
 	}
       else
 	t = parse_string (parse);
@@ -362,7 +362,7 @@ do_tests ()
 	 "(CAT (SEL_UNIVERSE) (SHF_DROP) (FORMAT (STR<foo>)))");
   ftestx ("drop \"%s\"", "underrun");
 
-  std::cerr << tests << " tests total, " << failed << " failures.\n";
+  std::cerr << tests << " tests total, " << failed << " failures." << std::endl;
   assert (failed == 0);
 }
 

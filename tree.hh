@@ -4,6 +4,7 @@
 #include <vector>
 #include <string>
 #include "cst.hh"
+#include "op.hh"
 
 // These constants describe how a tree is allowed to be constructed.
 // It's mostly present to make sure we don't inadvertently construct
@@ -153,6 +154,16 @@ struct tree
     cst *cval;
   } m_u;
 
+  // -1 if not initialized, otherwise which slot the result of this
+  // operation should go to.
+  ssize_t m_stkslot;
+
+  size_t slot () const
+  {
+    assert (m_stkslot >= 0);
+    return size_t (m_stkslot);
+  }
+
   tree ();
   explicit tree (tree_type tt);
   tree (tree const &other);
@@ -276,7 +287,17 @@ struct tree
   }
 
   void dump (std::ostream &o) const;
-  void check () const;
+
+  // This initializes STKSLOT that a result of each operation should
+  // go to.  It returns answers the maximum stack size necessary for
+  // the computation.  As it works through the AST, it checks a number
+  // of invariants, such as number of children, stack underruns, etc.
+  size_t determine_stack_effects ();
+
+  // Produce program suitable for interpretation.  Implemented in
+  // build.cc.
+  std::unique_ptr <op> build () const;
+  std::unique_ptr <pred> build_pred () const;
 };
 
 #endif /* _TREE_H_ */

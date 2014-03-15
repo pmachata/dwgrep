@@ -48,12 +48,29 @@ main(int argc, char *argv[])
 
   assert (argc == 3);
 
-  tree t = parse_query (argv[2]);
-  t.check ();
-  t.dump (std::cout);
-  std::cout << std::endl;
+  std::unique_ptr <op> program;
+  size_t stk_depth;
+  size_t tgt_slot;
+  {
+    tree t = parse_query (argv[2]);
+    stk_depth = t.determine_stack_effects ();
+    tgt_slot = t.m_stkslot;
+    t.dump (std::cout);
+    std::cout << std::endl;
+    program = t.build ();
+  }
 
   auto dw = open_dwarf (argv[1]);
+
+  std::unique_ptr <stack> stk { new stack { stk_depth } };
+  auto yielder = program->get_yielder (dw);
+  while (std::unique_ptr <stack> result = yielder->yield (*stk, stk_depth))
+    {
+      auto const &value = result->get_slot (tgt_slot);
+      std::cout << value.format () << std::endl;
+    }
+
+  std::cout << std::endl;
 
   return 0;
 }
