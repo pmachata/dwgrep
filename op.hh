@@ -293,6 +293,7 @@ class pred_tag
 public:
   pred_tag (int tag, size_t idx)
     : m_tag (tag)
+    , m_idx (idx)
   {}
 
   virtual pred_result result (std::shared_ptr <Dwarf> &dw,
