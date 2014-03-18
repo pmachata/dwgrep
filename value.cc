@@ -40,6 +40,15 @@ v_die::clone () const
   return std::unique_ptr <value> (new v_die { m_offset });
 }
 
+pred_result
+v_die::lt (value const &that) const
+{
+  if (auto at2 = dynamic_cast <v_die const *> (&that))
+    return pred_result (m_offset < at2->m_offset);
+  else
+    return pred_result::fail;
+}
+
 
 v_at::v_at (Dwarf_Off offset, int atname)
   : m_dieoffset (offset)
@@ -66,6 +75,13 @@ v_at::clone () const
   return std::unique_ptr <value> (new v_at { m_dieoffset, m_atname });
 }
 
+pred_result
+v_at::lt (value const &that) const
+{
+  std::cerr << "Comparison of v_at values is not supported\n";
+  return pred_result::fail;
+}
+
 
 std::string
 v_int::format () const
@@ -85,6 +101,21 @@ std::string
 v_str::format () const
 {
   return m_str;
+}
+
+std::unique_ptr <value>
+v_str::clone () const
+{
+  return std::unique_ptr <value> { new v_str { m_str.c_str () } };
+}
+
+pred_result
+v_str::lt (value const &that) const
+{
+  if (auto s2 = dynamic_cast <v_str const *> (&that))
+    return pred_result (m_str < s2->m_str);
+  else
+    return pred_result::fail;
 }
 
 

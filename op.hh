@@ -113,9 +113,56 @@ class op_assert
   : public op
 {
   std::unique_ptr <pred> m_pred;
+
 public:
   explicit op_assert (std::unique_ptr <pred> p)
     : m_pred (std::move (p))
+  {}
+
+  virtual std::unique_ptr <yielder> get_yielder
+	(std::shared_ptr <Dwarf> &dw) const override;
+};
+
+class op_f_atval
+  : public op
+{
+  int m_name;
+  size_t m_idx;
+
+public:
+  op_f_atval (int name, size_t idx)
+    : m_name (name)
+    , m_idx (idx)
+  {}
+
+  virtual std::unique_ptr <yielder> get_yielder
+	(std::shared_ptr <Dwarf> &dw) const override;
+};
+
+class op_format
+  : public op
+{
+  std::string m_str;
+  size_t m_idx;
+
+public:
+  op_format (std::string lit, size_t idx)
+    : m_str (lit)
+    , m_idx (idx)
+  {}
+
+  virtual std::unique_ptr <yielder> get_yielder
+	(std::shared_ptr <Dwarf> &dw) const override;
+};
+
+class op_drop
+  : public op
+{
+  size_t m_idx;
+
+public:
+  explicit op_drop (size_t idx)
+    : m_idx (idx)
   {}
 
   virtual std::unique_ptr <yielder> get_yielder
@@ -129,7 +176,6 @@ class op_protect;
 class op_close; //+, *, ?
 class op_const;
 class op_str;
-class op_format;
 class op_atval;
 class op_f_add;
 class op_f_sub;
@@ -138,7 +184,6 @@ class op_f_div;
 class op_f_mod;
 class op_f_parent;
 class op_f_child;
-class op_f_attribute;
 class op_f_prev;
 class op_f_next;
 class op_f_type;
@@ -153,51 +198,11 @@ class op_f_each;
 class op_sel_section;
 class op_sel_unit;
 
-enum class pred_result
-  {
-    no = false,
-    yes = true,
-    fail,
-  };
-
-inline pred_result
-operator! (pred_result other)
-{
-  switch (other)
-    {
-    case pred_result::no:
-      return pred_result::yes;
-    case pred_result::yes:
-      return pred_result::no;
-    case pred_result::fail:
-      return pred_result::fail;
-    }
-  abort ();
-}
-
-inline pred_result
-operator&& (pred_result a, pred_result b)
-{
-  if (a == pred_result::fail || b == pred_result::fail)
-    return pred_result::fail;
-  else
-    return bool (a) && bool (b) ? pred_result::yes : pred_result::no;
-}
-
-inline pred_result
-operator|| (pred_result a, pred_result b)
-{
-  if (a == pred_result::fail || b == pred_result::fail)
-    return pred_result::fail;
-  else
-    return bool (a) || bool (b) ? pred_result::yes : pred_result::no;
-}
-
 class pred
 {
 public:
   virtual pred_result result (std::shared_ptr <Dwarf> &dw,
-			      stack const &stk) const = 0;
+			      stack const &stk, size_t stksz) const = 0;
 };
 
 class pred_not
@@ -211,9 +216,10 @@ public:
   {}
 
   virtual pred_result
-  result (std::shared_ptr <Dwarf> &dw, stack const &stk) const override
+  result (std::shared_ptr <Dwarf> &dw,
+	  stack const &stk, size_t stksz) const override
   {
-    return ! m_a->result (dw, stk);
+    return ! m_a->result (dw, stk, stksz);
   }
 };
 
@@ -230,9 +236,10 @@ public:
   {}
 
   virtual pred_result
-  result (std::shared_ptr <Dwarf> &dw, stack const &stk) const override
+  result (std::shared_ptr <Dwarf> &dw,
+	  stack const &stk, size_t stksz) const override
   {
-    return m_a->result (dw, stk) && m_b->result (dw, stk);
+    return m_a->result (dw, stk, stksz) && m_b->result (dw, stk, stksz);
   }
 };
 
@@ -249,9 +256,10 @@ public:
   {}
 
   virtual pred_result
-  result (std::shared_ptr <Dwarf> &dw, stack const &stk) const override
+  result (std::shared_ptr <Dwarf> &dw,
+	  stack const &stk, size_t stksz) const override
   {
-    return m_a->result (dw, stk) || m_b->result (dw, stk);
+    return m_a->result (dw, stk, stksz) || m_b->result (dw, stk, stksz);
   }
 };
 
@@ -268,7 +276,7 @@ public:
   {}
 
   virtual pred_result result (std::shared_ptr <Dwarf> &dw,
-			      stack const &stk) const override;
+			      stack const &stk, size_t stksz) const override;
 };
 
 // Mainly useful as a placeholder predicate for those OP's where we
@@ -278,7 +286,8 @@ class pred_true
 {
 public:
   virtual pred_result
-  result (std::shared_ptr <Dwarf> &dw, stack const &stk) const override
+  result (std::shared_ptr <Dwarf> &dw,
+	  stack const &stk, size_t stksz) const override
   {
     return pred_result (true);
   }
@@ -297,18 +306,89 @@ public:
   {}
 
   virtual pred_result result (std::shared_ptr <Dwarf> &dw,
-			      stack const &stk) const override;
+			      stack const &stk, size_t stksz) const override;
 };
 
-class pred_eq;
-class pred_ne;
-class pred_gt;
-class pred_ge;
-class pred_lt;
-class pred_le;
+class pred_binary
+  : public pred
+{
+  size_t m_idx_a;
+  size_t m_idx_b;
+
+public:
+  pred_binary (size_t idx_a, size_t idx_b)
+    : m_idx_a (idx_a)
+    , m_idx_b (idx_b)
+  {}
+
+  value const &get_a (stack const &stk) const;
+  value const &get_b (stack const &stk) const;
+};
+
+class pred_unary
+  : public pred
+{
+  size_t m_idx_a;
+
+public:
+  explicit pred_unary (size_t idx_a)
+    : m_idx_a (idx_a)
+  {}
+
+  value const &get_a (stack const &stk) const;
+};
+
+class pred_eq
+  : public pred_binary
+{
+public:
+  using pred_binary::pred_binary;
+  virtual pred_result result (std::shared_ptr <Dwarf> &dw,
+			      stack const &stk, size_t stksz) const override;
+};
+
+class pred_lt
+  : public pred_binary
+{
+public:
+  using pred_binary::pred_binary;
+  virtual pred_result result (std::shared_ptr <Dwarf> &dw,
+			      stack const &stk, size_t stksz) const override;
+};
+
+class pred_gt
+  : public pred_binary
+{
+public:
+  using pred_binary::pred_binary;
+  virtual pred_result result (std::shared_ptr <Dwarf> &dw,
+			      stack const &stk, size_t stksz) const override;
+};
+
+class pred_root
+  : public pred_unary
+{
+public:
+  using pred_unary::pred_unary;
+  virtual pred_result result (std::shared_ptr <Dwarf> &dw,
+			      stack const &stk, size_t stksz) const override;
+};
+
+class pred_subx_any
+  : public pred
+{
+  std::unique_ptr <op> m_op;
+
+public:
+  explicit pred_subx_any (std::unique_ptr <op> op)
+    : m_op (std::move (op))
+  {}
+  virtual pred_result result (std::shared_ptr <Dwarf> &dw,
+			      stack const &stk, size_t stksz) const override;
+};
+
 class pred_find;
 class pred_match;
 class pred_empty;
-class pred_root;
 
 #endif /* _OP_H_ */

@@ -7,12 +7,54 @@
 
 #include <elfutils/libdw.h>
 
+enum class pred_result
+  {
+    no = false,
+    yes = true,
+    fail,
+  };
+
+inline pred_result
+operator! (pred_result other)
+{
+  switch (other)
+    {
+    case pred_result::no:
+      return pred_result::yes;
+    case pred_result::yes:
+      return pred_result::no;
+    case pred_result::fail:
+      return pred_result::fail;
+    }
+  abort ();
+}
+
+inline pred_result
+operator&& (pred_result a, pred_result b)
+{
+  if (a == pred_result::fail || b == pred_result::fail)
+    return pred_result::fail;
+  else
+    return bool (a) && bool (b) ? pred_result::yes : pred_result::no;
+}
+
+inline pred_result
+operator|| (pred_result a, pred_result b)
+{
+  if (a == pred_result::fail || b == pred_result::fail)
+    return pred_result::fail;
+  else
+    return bool (a) || bool (b) ? pred_result::yes : pred_result::no;
+}
+
+
 class value
 {
 public:
   virtual ~value () {}
   virtual std::string format () const = 0;
   virtual std::unique_ptr <value> clone () const = 0;
+  virtual pred_result lt (value const &that) const = 0;
 };
 
 
@@ -30,6 +72,7 @@ public:
 
   virtual std::string format () const override;
   virtual std::unique_ptr <value> clone () const override;
+  virtual pred_result lt (value const &that) const override;
 };
 
 
@@ -45,6 +88,7 @@ public:
 
   virtual std::string format () const override;
   virtual std::unique_ptr <value> clone () const override;
+  virtual pred_result lt (value const &that) const override;
 };
 
 
@@ -82,7 +126,13 @@ class v_str
   std::string m_str;
 
 public:
+  explicit v_str (char const *str)
+    : m_str (str)
+  {}
+
   virtual std::string format () const;
+  virtual std::unique_ptr <value> clone () const;
+  virtual pred_result lt (value const &that) const;
 };
 
 

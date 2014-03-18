@@ -449,6 +449,9 @@
    EXPR₁ shall have a stack effect of +n,-n (number of slots pushed
    equals number of slots popped).
 
+   - Example: explicit for loop
+     : 0 (1 add ?{10 ?lt})*
+
 ** EXPR → “+”?“"” (string literal) “"” | (“0x”|“0”|“”)[1-9][0-9]* — literals
 
    String literals allow expression interpolation:

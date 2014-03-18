@@ -299,11 +299,13 @@ namespace
       case tree_type::ASSERT:
 	{
 	  assert (t.m_children.size () == 1);
-	  int delta = check_tree (t.m_children[0], se) - se;
+	  auto se2 = check_tree (t.m_children[0], se);
+	  se.max = std::max (se2.max, se.max);
+
 	  // Asserts ought to have no stack effect whatsoever.  That
 	  // holds for the likes of ?{} as well, as these are
 	  // evaluated is sub-expression context.
-	  assert (delta == 0);
+	  assert (se2 - se == 0);
 	  break;
 	}
 
@@ -373,8 +375,9 @@ namespace
 	break;
 
       case tree_type::SHF_DROP:
+	t.m_stkslot = se.emts - 1;
 	se.pop (1);
-	break;
+	return se;
 
       // STR should be handled specially in FORMAT.
       case tree_type::STR:
@@ -404,15 +407,21 @@ namespace
 	break;
 
       case tree_type::PRED_NOT:
-	assert (t.m_children.size () == 1);
-	check_tree (t.m_children[0], se);
-	break;
+	{
+	  assert (t.m_children.size () == 1);
+	  auto se2 = check_tree (t.m_children[0], se);
+	  se.max = std::max (se2.max, se.max);
+	  break;
+	}
 
       case tree_type::PRED_SUBX_ALL:
       case tree_type::PRED_SUBX_ANY:
-	assert (t.m_children.size () == 1);
-	check_tree (t.m_children[0], se);
-	break;
+	{
+	  assert (t.m_children.size () == 1);
+	  auto se2 = check_tree (t.m_children[0], se);
+	  se.max = std::max (se2.max, se.max);
+	  break;
+	}
       }
 
     t.m_stkslot = se.emts - 1;
