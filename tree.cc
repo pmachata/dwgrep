@@ -30,7 +30,7 @@ tree::tree (tree const &other)
   switch (argtype[(int) m_tt])
     {
     case tree_arity_v::CONST:
-      m_u.cval = new cst {*other.m_u.cval};
+      m_u.cval = new constant {*other.m_u.cval};
       break;
 
     case tree_arity_v::STR:
@@ -263,7 +263,7 @@ namespace
 	{
 	  assert (t.m_children.size () == 2);
 	  assert (t.m_children[0].m_tt == tree_type::CONST);
-	  assert (t.m_children[0].m_u.cval->dom () == &untyped_cst_dom);
+	  assert (t.m_children[0].m_u.cval->dom () == &untyped_constant_dom);
 
 	  uint64_t depth = t.m_children[0].m_u.cval->value ();
 	  se.pop (depth);

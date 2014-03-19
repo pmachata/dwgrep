@@ -19,7 +19,7 @@
 #include <iostream>
 
 #include "known-dwarf.h"
-#include "cst.hh"
+#include "constant.hh"
 
 static const char *
 dwarf_tag_string (unsigned int tag)
@@ -395,10 +395,10 @@ string_or_unknown (const char *known, unsigned int code,
 }
 
 static struct
-  : public cst_dom
+  : public constant_dom
 {
   virtual void
-  format (cst c, std::ostream &o) const
+  format (constant c, std::ostream &o) const
   {
     int tag = c.value ();
     const char *ret = dwarf_tag_string (tag);
@@ -407,10 +407,10 @@ static struct
 } dw_tag_dom;
 
 static struct
-  : public cst_dom
+  : public constant_dom
 {
   virtual void
-  format (cst c, std::ostream &o) const
+  format (constant c, std::ostream &o) const
   {
     unsigned int attr = c.value ();
     const char *ret = dwarf_attr_string (attr);
@@ -419,10 +419,10 @@ static struct
 } dw_attr_dom;
 
 static struct
-  : public cst_dom
+  : public constant_dom
 {
   virtual void
-  format (cst c, std::ostream &o) const
+  format (constant c, std::ostream &o) const
   {
     unsigned int form = c.value ();
     const char *ret = dwarf_form_string (form);
@@ -431,10 +431,10 @@ static struct
 } dw_form_dom;
 
 static struct
-  : public cst_dom
+  : public constant_dom
 {
   virtual void
-  format (cst c, std::ostream &o) const
+  format (constant c, std::ostream &o) const
   {
     unsigned int lang = c.value ();
     const char *ret = dwarf_lang_string (lang);
@@ -443,10 +443,10 @@ static struct
 } dw_lang_dom;
 
 static struct
-  : public cst_dom
+  : public constant_dom
 {
   virtual void
-  format (cst c, std::ostream &o) const
+  format (constant c, std::ostream &o) const
   {
     unsigned int code = c.value ();
     const char *ret = dwarf_inline_string (code);
@@ -455,10 +455,10 @@ static struct
 } dw_inline_dom;
 
 static struct
-  : public cst_dom
+  : public constant_dom
 {
   virtual void
-  format (cst c, std::ostream &o) const
+  format (constant c, std::ostream &o) const
   {
     unsigned int code = c.value ();
     const char *ret = dwarf_encoding_string (code);
@@ -467,10 +467,10 @@ static struct
 }  dw_encoding_dom;
 
 static struct
-  : public cst_dom
+  : public constant_dom
 {
   virtual void
-  format (cst c, std::ostream &o) const
+  format (constant c, std::ostream &o) const
   {
     unsigned int code = c.value ();
     const char *ret = dwarf_access_string (code);
@@ -479,10 +479,10 @@ static struct
 } dw_access_dom;
 
 static struct
-  : public cst_dom
+  : public constant_dom
 {
   virtual void
-  format (cst c, std::ostream &o) const
+  format (constant c, std::ostream &o) const
   {
     unsigned int code = c.value ();
     const char *ret = dwarf_visibility_string (code);
@@ -491,10 +491,10 @@ static struct
 } dw_visibility_dom;
 
 static struct
-  : public cst_dom
+  : public constant_dom
 {
   virtual void
-  format (cst c, std::ostream &o) const
+  format (constant c, std::ostream &o) const
   {
     unsigned int code = c.value ();
     const char *ret = dwarf_virtuality_string (code);
@@ -503,10 +503,10 @@ static struct
 } dw_virtuality_dom;
 
 static struct
-  : public cst_dom
+  : public constant_dom
 {
   virtual void
-  format (cst c, std::ostream &o) const
+  format (constant c, std::ostream &o) const
   {
     unsigned int code = c.value ();
     const char *ret = dwarf_identifier_case_string (code);
@@ -515,10 +515,10 @@ static struct
 } dw_identifier_case_dom;
 
 static struct
-  : public cst_dom
+  : public constant_dom
 {
   virtual void
-  format (cst c, std::ostream &o) const
+  format (constant c, std::ostream &o) const
   {
     unsigned int code = c.value ();
     const char *ret = dwarf_calling_convention_string (code);
@@ -527,10 +527,10 @@ static struct
 } dw_calling_convention_dom;
 
 static struct
-  : public cst_dom
+  : public constant_dom
 {
   virtual void
-  format (cst c, std::ostream &o) const
+  format (constant c, std::ostream &o) const
   {
     unsigned int code = c.value ();
     const char *ret = dwarf_ordering_string (code);
@@ -539,10 +539,10 @@ static struct
 } dw_ordering_dom;
 
 static struct
-  : public cst_dom
+  : public constant_dom
 {
   virtual void
-  format (cst c, std::ostream &o) const
+  format (constant c, std::ostream &o) const
   {
     unsigned int code = c.value ();
     const char *ret = dwarf_discr_list_string (code);
@@ -551,10 +551,10 @@ static struct
 } dw_discr_list_dom;
 
 static struct
-  : public cst_dom
+  : public constant_dom
 {
   virtual void
-  format (cst c, std::ostream &o) const
+  format (constant c, std::ostream &o) const
   {
     unsigned int code = c.value ();
     const char *ret = dwarf_locexpr_opcode_string (code);
@@ -562,13 +562,13 @@ static struct
   }
 } dw_locexpr_opcode_dom;
 
-cst
-cst::parse (std::string str)
+constant
+constant::parse (std::string str)
 {
 #define STARTSWITH(PREFIX) (str.substr (0, sizeof (PREFIX) - 1) == PREFIX)
 #define HANDLE(PREFIX, KEY)					\
   if (STARTSWITH (PREFIX))					\
-    return cst (dwarf_##KEY##_value (str), &dw_##KEY##_dom)
+    return constant (dwarf_##KEY##_value (str), &dw_##KEY##_dom)
 
   HANDLE ("DW_TAG_", tag);
   HANDLE ("DW_AT_", attr);
@@ -591,14 +591,14 @@ cst::parse (std::string str)
   throw std::runtime_error (std::string ("Unknown constant: ") + str);
 }
 
-cst
-cst::parse_attr (std::string str)
+constant
+constant::parse_attr (std::string str)
 {
   return parse ("DW_AT_" + str);
 }
 
-cst
-cst::parse_tag (std::string str)
+constant
+constant::parse_tag (std::string str)
 {
   return parse ("DW_TAG_" + str);
 }

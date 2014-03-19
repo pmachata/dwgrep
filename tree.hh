@@ -3,7 +3,8 @@
 
 #include <vector>
 #include <string>
-#include "cst.hh"
+
+#include "constant.hh"
 #include "op.hh"
 
 // These constants describe how a tree is allowed to be constructed.
@@ -151,7 +152,7 @@ struct tree
 
   union {
     std::string *sval;
-    cst *cval;
+    constant *cval;
   } m_u;
 
   // -1 if not initialized, otherwise which slot the result of this
@@ -217,12 +218,12 @@ struct tree
 
   template <tree_type TT>
   static tree *
-  create_const (cst c)
+  create_const (constant c)
   {
     static_assert (tree_arity <TT>::value == tree_arity_v::CONST,
 		   "Wrong tree arity.");
     auto t = new tree {TT};
-    t->m_u.cval = new cst {c};
+    t->m_u.cval = new constant {c};
     return t;
   }
 

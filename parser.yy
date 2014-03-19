@@ -3,7 +3,7 @@
 #include <iostream>
 
 #include "lexer.hh"
-#include "cst.hh"
+#include "constant.hh"
 
   void
   yyerror (std::unique_ptr <tree> &t, yyscan_t lex, char const *s)
@@ -40,7 +40,7 @@
     return tree::create_cat <tree_type::CAT> (u, v);
   }
 
-  cst
+  constant
   parse_int (strlit str)
   {
     char *endptr = NULL;
@@ -52,7 +52,7 @@
 	throw std::runtime_error
 	  (std::string ("Invalid integer literal: `") + tmp + "'");
       }
-    return cst (val, &untyped_cst_dom);
+    return constant (val, &untyped_constant_dom);
    }
 %}
 
@@ -265,7 +265,7 @@ Statement:
   | TOK_CONSTANT
   {
     std::string str {$1.buf, $1.len};
-    $$ = tree::create_const <tree_type::CONST> (cst::parse (str));
+    $$ = tree::create_const <tree_type::CONST> (constant::parse (str));
   }
 
   | TOK_LIT_STR
@@ -480,24 +480,27 @@ Statement:
   | TOK_AT_WORD
   {
     std::string str {$1.buf, $1.len};
-    $$ = tree::create_const <tree_type::F_ATVAL> (cst::parse_attr (str));
+    $$ = tree::create_const <tree_type::F_ATVAL> (constant::parse_attr (str));
   }
   | TOK_PLUS_AT_WORD
   {
     std::string str {$1.buf, $1.len};
-    auto t = tree::create_const <tree_type::F_ATVAL> (cst::parse_attr (str));
+    auto t = tree::create_const <tree_type::F_ATVAL>
+      (constant::parse_attr (str));
     $$ = tree::create_protect (t);
   }
   | TOK_QMARK_AT_WORD
   {
     std::string str {$1.buf, $1.len};
-    auto t = tree::create_const <tree_type::PRED_AT> (cst::parse_attr (str));
+    auto t = tree::create_const <tree_type::PRED_AT>
+      (constant::parse_attr (str));
     $$ = tree::create_assert (t);
   }
   | TOK_BANG_AT_WORD
   {
     std::string str {$1.buf, $1.len};
-    auto t = tree::create_const <tree_type::PRED_AT> (cst::parse_attr (str));
+    auto t = tree::create_const <tree_type::PRED_AT>
+      (constant::parse_attr (str));
     auto u = tree::create_neg (t);
     $$ = tree::create_assert (u);
   }
@@ -505,13 +508,15 @@ Statement:
   | TOK_QMARK_WORD
   {
     std::string str {$1.buf, $1.len};
-    auto t = tree::create_const <tree_type::PRED_TAG> (cst::parse_tag (str));
+    auto t = tree::create_const <tree_type::PRED_TAG>
+      (constant::parse_tag (str));
     $$ = tree::create_assert (t);
   }
   | TOK_BANG_WORD
   {
     std::string str {$1.buf, $1.len};
-    auto t = tree::create_const <tree_type::PRED_TAG> (cst::parse_tag (str));
+    auto t = tree::create_const <tree_type::PRED_TAG>
+      (constant::parse_tag (str));
     auto u = tree::create_neg (t);
     $$ = tree::create_assert (u);
   }

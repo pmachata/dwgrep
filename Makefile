@@ -25,8 +25,8 @@ check: test-parser
 %.cc-dep $(TARGETS): override CXXFLAGS = -g3 $(CXXOPTFLAGS) -Wall -std=c++11 -I /usr/include/elfutils/
 dwgrep: override LDFLAGS += -ldw -lelf
 
-dwgrep: dwgrep.o parser.o lexer.o tree.o cst.o dwcst.o op.o value.o build.o
-test-parser: test-parser.o parser.o lexer.o tree.o cst.o dwcst.o
+dwgrep: dwgrep.o parser.o lexer.o tree.o constant.o dwcst.o op.o value.o build.o
+test-parser: test-parser.o parser.o lexer.o tree.o constant.o dwcst.o
 
 test-parser.o: CXXOPTFLAGS = -O0
 
