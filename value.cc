@@ -1,5 +1,6 @@
 #include <sstream>
 #include <cassert>
+#include <limits>
 
 #include <boost/format.hpp>
 
@@ -84,9 +85,60 @@ v_at::lt (value const &that) const
 
 
 std::string
-v_int::format () const
+v_sint::format () const
 {
   return str (boost::format ("%d") % m_val);
+}
+
+std::unique_ptr <value>
+v_sint::clone () const
+{
+  return std::unique_ptr <value> { new v_sint { m_val } };
+}
+
+pred_result
+v_sint::lt (value const &that) const
+{
+  if (auto v = dynamic_cast <v_sint const *> (&that))
+    return pred_result (m_val < v->m_val);
+  else if (dynamic_cast <v_uint const *> (&that))
+    {
+      if (m_val < 0)
+	return pred_result::yes;
+      v_uint v2 { uint64_t (m_val) };
+      return v2.lt (that);
+    }
+  else
+    return pred_result::fail;
+}
+
+
+std::string
+v_uint::format () const
+{
+  return str (boost::format ("%u") % m_val);
+}
+
+std::unique_ptr <value>
+v_uint::clone () const
+{
+  return std::unique_ptr <value> { new v_uint { m_val } };
+}
+
+pred_result
+v_uint::lt (value const &that) const
+{
+  if (auto v = dynamic_cast <v_uint const *> (&that))
+    return pred_result (m_val < v->m_val);
+  else if (dynamic_cast <v_sint const *> (&that))
+    {
+      if (m_val > std::numeric_limits <int64_t>::max ())
+	return pred_result::yes;
+      v_sint v2 { int64_t (m_val) };
+      return v2.lt (that);
+    }
+  else
+    return pred_result::fail;
 }
 
 

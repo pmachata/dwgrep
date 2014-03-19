@@ -100,13 +100,31 @@ public:
 };
 
 
-class v_int
+class v_sint
   : public value
 {
-  long m_val;
+  int64_t m_val;
 
 public:
-  virtual std::string format () const;
+  explicit v_sint (int64_t val) : m_val (val) {}
+
+  virtual std::string format () const override;
+  virtual std::unique_ptr <value> clone () const override;
+  virtual pred_result lt (value const &that) const override;
+};
+
+
+class v_uint
+  : public value
+{
+  uint64_t m_val;
+
+public:
+  explicit v_uint (uint64_t val) : m_val (val) {}
+
+  virtual std::string format () const override;
+  virtual std::unique_ptr <value> clone () const override;
+  virtual pred_result lt (value const &that) const override;
 };
 
 
@@ -116,7 +134,7 @@ class v_flt
   double m_val;
 
 public:
-  virtual std::string format () const;
+  virtual std::string format () const override;
 };
 
 
@@ -130,9 +148,9 @@ public:
     : m_str (str)
   {}
 
-  virtual std::string format () const;
-  virtual std::unique_ptr <value> clone () const;
-  virtual pred_result lt (value const &that) const;
+  virtual std::string format () const override;
+  virtual std::unique_ptr <value> clone () const override;
+  virtual pred_result lt (value const &that) const override;
 };
 
 

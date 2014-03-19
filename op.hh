@@ -169,6 +169,22 @@ public:
 	(std::shared_ptr <Dwarf> &dw) const override;
 };
 
+class op_const
+  : public op
+{
+  std::unique_ptr <value> m_val;
+  size_t m_idx;
+
+public:
+  op_const (std::unique_ptr <value> val, size_t idx)
+    : m_val (std::move (val))
+    , m_idx (idx)
+  {}
+
+  virtual std::unique_ptr <yielder> get_yielder
+	(std::shared_ptr <Dwarf> &dw) const override;
+};
+
 class op_alt;
 class op_capture;
 class op_transform;

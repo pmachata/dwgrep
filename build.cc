@@ -164,6 +164,14 @@ tree::build () const
     case tree_type::SHF_DROP:
       return std::unique_ptr <op> { new op_drop { slot () } };
 
+    case tree_type::CONST:
+      {
+	auto val = std::unique_ptr <value>
+	  { new v_uint { m_u.cval->value () } };
+	return std::unique_ptr <op>
+	  { new op_const { std::move (val), slot () } };
+      }
+
     case tree_type::PRED_TAG:
     case tree_type::ALT:
     case tree_type::CAPTURE:
@@ -172,7 +180,6 @@ tree::build () const
     case tree_type::CLOSE_PLUS:
     case tree_type::CLOSE_STAR:
     case tree_type::MAYBE:
-    case tree_type::CONST:
     case tree_type::STR:
     case tree_type::F_ADD:
     case tree_type::F_SUB:

@@ -1,5 +1,6 @@
 #include "op.hh"
 #include "dwit.hh"
+#include "dwpp.hh"
 #include <iostream>
 
 std::unique_ptr <yielder>
@@ -191,23 +192,96 @@ op_f_atval::get_yielder (std::shared_ptr <Dwarf> &dw) const
 		case DW_FORM_GNU_strp_alt:
 		  {
 		    const char *str = dwarf_formstring (&attr);
-		    if (str != nullptr)
-		      nv = std::unique_ptr <value> { new v_str { str } };
+		    if (str == nullptr)
+		      throw_libdw ();
+		    nv = std::unique_ptr <value> { new v_str { str } };
 		    break;
 		  }
+
+		case DW_FORM_sdata:
+		  {
+		  data_signed:
+		    Dwarf_Sword sval;
+		    if (dwarf_formsdata (&attr, &sval) != 0)
+		      throw_libdw ();
+		    nv = std::unique_ptr <value> { new v_sint { sval } };
+		    break;
+		  }
+
+		case DW_FORM_udata:
+		  {
+		  data_unsigned:
+		    Dwarf_Word uval;
+		    if (dwarf_formudata (&attr, &uval) != 0)
+		      throw_libdw ();
+		    nv = std::unique_ptr <value> { new v_uint { uval } };
+		    break;
+		  }
+
+		case DW_FORM_data1:
+		case DW_FORM_data2:
+		case DW_FORM_data4:
+		case DW_FORM_data8:
+		  switch (m_name)
+		    {
+		    case DW_AT_byte_stride:
+		    case DW_AT_bit_stride:
+		      // """Note that the stride can be negative."""
+		    case DW_AT_binary_scale:
+		    case DW_AT_decimal_scale:
+		      goto data_signed;
+
+		    case DW_AT_byte_size:
+		    case DW_AT_bit_size:
+		    case DW_AT_bit_offset:
+		    case DW_AT_data_bit_offset:
+		    case DW_AT_lower_bound:
+		    case DW_AT_upper_bound:
+		    case DW_AT_count:
+		    case DW_AT_allocated:
+		    case DW_AT_associated:
+		    case DW_AT_start_scope:
+		    case DW_AT_digit_count:
+		    case DW_AT_GNU_odr_signature:
+		      goto data_unsigned;
+
+		    case DW_AT_ordering:
+		    case DW_AT_language:
+		    case DW_AT_visibility:
+		    case DW_AT_inline:
+		    case DW_AT_accessibility:
+		    case DW_AT_address_class:
+		    case DW_AT_calling_convention:
+		    case DW_AT_encoding:
+		    case DW_AT_identifier_case:
+		    case DW_AT_virtuality:
+		    case DW_AT_endianity:
+		    case DW_AT_decimal_sign:
+		    case DW_AT_decl_line:
+		    case DW_AT_call_line:
+		    case DW_AT_decl_column:
+		    case DW_AT_call_column:
+		      // XXX these are Dwarf constants and should have
+		      // a domain associated to them.
+		      goto data_unsigned;
+
+		    case DW_AT_discr_value:
+		    case DW_AT_const_value:
+		      // """The number is signed if the tag type for
+		      // the variant part containing this variant is a
+		      // signed type."""
+		      assert (! "signedness of attribute not implemented yet");
+		      abort ();
+		    }
+		  assert (! "signedness of attribute unhandled");
+		  abort ();
 
 		case DW_FORM_addr:
 		case DW_FORM_block2:
 		case DW_FORM_block4:
-		case DW_FORM_data2:
-		case DW_FORM_data4:
-		case DW_FORM_data8:
 		case DW_FORM_block:
 		case DW_FORM_block1:
-		case DW_FORM_data1:
 		case DW_FORM_flag:
-		case DW_FORM_sdata:
-		case DW_FORM_udata:
 		case DW_FORM_ref_addr:
 		case DW_FORM_ref1:
 		case DW_FORM_ref2:
@@ -309,6 +383,39 @@ op_drop::get_yielder (std::shared_ptr <Dwarf> &dw) const
   };
 
   return std::unique_ptr <yielder> { new drop_yielder { m_idx } };
+}
+
+std::unique_ptr <yielder>
+op_const::get_yielder (std::shared_ptr <Dwarf> &dw) const
+{
+  class const_yielder
+    : public yielder
+  {
+    bool done;
+    value const &m_val;
+    size_t m_idx;
+
+  public:
+    const_yielder (value const &val, size_t idx)
+      : done (false)
+      , m_val (val)
+      , m_idx (idx)
+    {}
+
+    virtual std::unique_ptr <stack>
+    yield (stack const &stk, size_t stksz) override
+    {
+      if (done)
+	return nullptr;
+
+      done = true;
+      auto ret = stk.clone (stksz);
+      ret->set_slot (m_idx, m_val.clone ());
+      return ret;
+    }
+  };
+
+  return std::unique_ptr <yielder> { new const_yielder { *m_val, m_idx } };
 }
 
 
