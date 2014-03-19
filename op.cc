@@ -317,6 +317,111 @@ op_f_atval::get_yielder (std::shared_ptr <Dwarf> &dw) const
 }
 
 std::unique_ptr <yielder>
+op_f_child::get_yielder (std::shared_ptr <Dwarf> &dw) const
+{
+  class f_child_yielder
+    : public yielder
+  {
+    bool done;
+    std::shared_ptr <Dwarf> &m_dw;
+    size_t m_idx;
+    Dwarf_Die m_child;
+
+  public:
+    f_child_yielder (std::shared_ptr <Dwarf> &dw, size_t idx)
+      : done (false)
+      , m_dw (dw)
+      , m_idx (idx)
+      , m_child {}
+    {}
+
+    virtual std::unique_ptr <stack>
+    yield (stack const &stk, size_t stksz) override
+    {
+      if (done)
+	{
+	stop:
+	  done = true;
+	  return nullptr;
+	}
+
+      if (m_child.addr == nullptr)
+	{
+	  auto vd = dynamic_cast <v_die const *> (&stk.get_slot (m_idx));
+	  if (vd == nullptr)
+	    goto stop;
+
+	  m_child = vd->die (m_dw);
+	  if (! dwarf_haschildren (&m_child))
+	    goto stop;
+
+	  if (dwarf_child (&m_child, &m_child) != 0)
+	    throw_libdw ();
+	}
+      else
+	switch (dwarf_siblingof (&m_child, &m_child))
+	  {
+	  case -1:
+	    throw_libdw ();
+	  case 1:
+	    // No more siblings.
+	    goto stop;
+	  case 0:
+	    break;
+	  }
+
+      assert (m_child.addr != nullptr);
+      auto ret = stk.clone (stksz);
+      ret->invalidate_slot (m_idx);
+      ret->set_slot (m_idx, std::unique_ptr <value> { new v_die { &m_child } });
+      return ret;
+    }
+  };
+
+  return std::unique_ptr <yielder> { new f_child_yielder { dw, m_idx } };
+}
+
+std::unique_ptr <yielder>
+op_f_offset::get_yielder (std::shared_ptr <Dwarf> &dw) const
+{
+  class f_offset_yielder
+    : public yielder
+  {
+    bool done;
+    std::shared_ptr <Dwarf> &m_dw;
+    size_t m_idx;
+
+  public:
+    f_offset_yielder (std::shared_ptr <Dwarf> &dw, size_t idx)
+      : done (false)
+      , m_dw (dw)
+      , m_idx (idx)
+    {}
+
+    virtual std::unique_ptr <stack>
+    yield (stack const &stk, size_t stksz) override
+    {
+      if (done)
+	return nullptr;
+
+      done = true;
+      if (auto vd = dynamic_cast <v_die const *> (&stk.get_slot (m_idx)))
+	{
+	  auto nv = std::unique_ptr <value> { new v_uint { vd->offset () } };
+	  auto ret = stk.clone (stksz);
+	  ret->invalidate_slot (m_idx);
+	  ret->set_slot (m_idx, std::move (nv));
+	  return ret;
+	}
+
+      return nullptr;
+    }
+  };
+
+  return std::unique_ptr <yielder> { new f_offset_yielder { dw, m_idx } };
+}
+
+std::unique_ptr <yielder>
 op_format::get_yielder (std::shared_ptr <Dwarf> &dw) const
 {
   class format_yielder
@@ -367,7 +472,6 @@ op_drop::get_yielder (std::shared_ptr <Dwarf> &dw) const
       : done (false)
       , m_idx (idx)
     {}
-
 
     virtual std::unique_ptr <stack>
     yield (stack const &stk, size_t stksz) override

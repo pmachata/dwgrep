@@ -139,6 +139,34 @@ public:
 	(std::shared_ptr <Dwarf> &dw) const override;
 };
 
+class op_f_child
+  : public op
+{
+  size_t m_idx;
+
+public:
+  explicit op_f_child (size_t idx)
+    : m_idx (idx)
+  {}
+
+  virtual std::unique_ptr <yielder> get_yielder
+	(std::shared_ptr <Dwarf> &dw) const override;
+};
+
+class op_f_offset
+  : public op
+{
+  size_t m_idx;
+
+public:
+  explicit op_f_offset (size_t idx)
+    : m_idx (idx)
+  {}
+
+  virtual std::unique_ptr <yielder> get_yielder
+	(std::shared_ptr <Dwarf> &dw) const override;
+};
+
 class op_format
   : public op
 {
@@ -199,11 +227,9 @@ class op_f_mul;
 class op_f_div;
 class op_f_mod;
 class op_f_parent;
-class op_f_child;
 class op_f_prev;
 class op_f_next;
 class op_f_type;
-class op_f_offset;
 class op_f_name;
 class op_f_tag;
 class op_f_form;

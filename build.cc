@@ -150,6 +150,12 @@ tree::build () const
       return std::unique_ptr <op>
 	{ new op_f_atval { int (m_u.cval->value ()), slot () } };
 
+    case tree_type::F_CHILD:
+      return std::unique_ptr <op> { new op_f_child { slot () } };
+
+    case tree_type::F_OFFSET:
+      return std::unique_ptr <op> { new op_f_offset { slot () } };
+
     case tree_type::FORMAT:
       if (m_children.size () != 1
 	  || m_children.front ().m_tt != tree_type::STR)
@@ -187,12 +193,10 @@ tree::build () const
     case tree_type::F_DIV:
     case tree_type::F_MOD:
     case tree_type::F_PARENT:
-    case tree_type::F_CHILD:
     case tree_type::F_ATTRIBUTE:
     case tree_type::F_PREV:
     case tree_type::F_NEXT:
     case tree_type::F_TYPE:
-    case tree_type::F_OFFSET:
     case tree_type::F_NAME:
     case tree_type::F_TAG:
     case tree_type::F_FORM:
