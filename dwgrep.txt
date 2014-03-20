@@ -319,9 +319,8 @@
 
    Now the idiom "X swap X" is very common in dwgrep expressions.
    Typically you would use it to tie DIE's from two sets together.
-   E.g. in dwarflint, there's a check that there one scope doesn't
-   contain two variables of the same name.  You can implement the
-   check thus:
+   E.g. in dwarflint, there's a check that a scope doesn't contain two
+   variables of the same name.  You can implement the check thus:
 
    : dup child ?variable swap child ?variable !eq ?{@name swap @name ?eq}
 
@@ -993,6 +992,8 @@
    value.
 
    : dup 2/(child ?variable) ?lt ?{2/@name ?eq}
+
+   : dup next+ 2/?variable ?{2/@name ?eq}
 
 ** check_linkage_external_die.cc
 
