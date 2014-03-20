@@ -10,37 +10,37 @@ std::default_delete <valfile>::operator() (valfile *ptr) const
 }
 
 void
-valueref_cst::show (std::ostream &o) const
+value_behavior <constant>::show (constant const&cst, std::ostream &o)
 {
-  o << m_cst;
-}
-
-slot_type
-valueref_cst::set_slot (valfile_slot &slt) const
-{
-  new (&slt.cst) constant { m_cst };
-  return slot_type::CST;
+  o << cst;
 }
 
 void
-valueref_str::show (std::ostream &o) const
+value_behavior <constant>::move_to_slot (constant &&cst, size_t i, valfile &vf)
 {
-  o << m_str;
-}
-
-slot_type
-valueref_str::set_slot (valfile_slot &slt) const
-{
-  new (&slt.str) std::string { m_str };
-  return slot_type::STR;
+  vf.set_slot (i, std::move (cst));
 }
 
 void
-valueref_seq::show (std::ostream &o) const
+value_behavior <std::string>::show (std::string const &str, std::ostream &o)
+{
+  o << str;
+}
+
+void
+value_behavior <std::string>::move_to_slot (std::string &&str,
+					    size_t i, valfile &vf)
+{
+  vf.set_slot (i, std::move (str));
+}
+
+void
+value_behavior <value_vector_t>::show (value_vector_t const &vv,
+				       std::ostream &o)
 {
   o << "[";
   bool seen = false;
-  for (auto const &v: m_seq)
+  for (auto const &v: vv)
     {
       if (seen)
 	o << ", ";
@@ -50,20 +50,13 @@ valueref_seq::show (std::ostream &o) const
   o << "]";
 }
 
-slot_type
-valueref_seq::set_slot (valfile_slot &slt) const
+void
+value_behavior <value_vector_t>::move_to_slot (value_vector_t &&vv,
+					       size_t i, valfile &vf)
 {
-  value_vector_t copy;
-  for (auto const &v: m_seq)
-    // XXX could we avoid this copy?  Ideally we would just move
-    // things in from the outside.  Maybe have instead of valueref a
-    // pure behavior class, and pass the reference from outside.  The
-    // behavior class would be enclosed in either a reference wrapper,
-    // or a value wrapper.
-    copy.push_back (std::unique_ptr <value> { v->clone () });
-  new (&slt.seq) value_vector_t { std::move (copy) };
-  return slot_type::SEQ;
+  vf.set_slot (i, std::move (vv));
 }
+
 
 void
 valfile_slot::destroy (slot_type t)
@@ -172,7 +165,7 @@ valfile::get_slot_seq (size_t i) const
 }
 
 // General accessor for all slot types.
-std::unique_ptr <valueref>
+std::unique_ptr <value_ref>
 valfile::get_slot (size_t i) const
 {
   switch (m_types[i])
@@ -185,15 +178,15 @@ valfile::get_slot (size_t i) const
       abort ();
 
     case slot_type::CST:
-      return std::unique_ptr <valueref>
+      return std::unique_ptr <value_ref>
 	{ new valueref_cst { m_slots[i].cst } };
 
     case slot_type::STR:
-      return std::unique_ptr <valueref>
+      return std::unique_ptr <value_ref>
 	{ new valueref_str { m_slots[i].str } };
 
     case slot_type::SEQ:
-      return std::unique_ptr <valueref>
+      return std::unique_ptr <value_ref>
 	{ new valueref_seq { m_slots[i].seq } };
 
     case slot_type::LOCLIST_ENTRY:
@@ -224,10 +217,33 @@ valfile::invalidate_slot (size_t i)
 }
 
 void
-valfile::set_slot (size_t i, valueref const &sv)
+valfile::set_slot (size_t i, value &&sv)
+{
+  sv.move_to_slot (i, *this);
+}
+
+void
+valfile::set_slot (size_t i, constant &&cst)
 {
   assert (m_types[i] == slot_type::INVALID);
-  m_types[i] = sv.set_slot (m_slots[i]);
+  m_types[i] = slot_type::CST;
+  new (&m_slots[i].cst) constant { cst };
+}
+
+void
+valfile::set_slot (size_t i, std::string &&str)
+{
+  assert (m_types[i] == slot_type::INVALID);
+  m_types[i] = slot_type::STR;
+  new (&m_slots[i].str) std::string { str };
+}
+
+void
+valfile::set_slot (size_t i, value_vector_t &&seq)
+{
+  assert (m_types[i] == slot_type::INVALID);
+  m_types[i] = slot_type::SEQ;
+  new (&m_slots[i].seq) value_vector_t { std::move (seq) };
 }
 
 void
@@ -271,14 +287,14 @@ valfile::const_iterator::operator++ (int)
   return tmp;
 }
 
-std::unique_ptr <valueref>
+std::unique_ptr <value_ref>
 valfile::const_iterator::operator* () const
 {
   assert (m_i != -1);
   return m_seq->get_slot (m_i);
 }
 
-std::unique_ptr <valueref>
+std::unique_ptr <value_ref>
 valfile::const_iterator::operator-> () const
 {
   return **this;
@@ -288,15 +304,15 @@ valfile::const_iterator::operator-> () const
 int main(int argc, char *argv[])
 {
   auto stk = valfile::create (10);
-  stk->set_slot (0, valueref_str { "blah" });
-  stk->set_slot (1, valueref_cst { constant { 17, &untyped_constant_dom } });
+  stk->set_slot (0, value_str { "blah" });
+  stk->set_slot (1, value_cst { constant { 17, &untyped_constant_dom } });
 
   {
     value_vector_t v;
     v.push_back (std::unique_ptr <value> { new value_str { "blah" } });
     v.push_back (std::unique_ptr <value>
 		 { new value_cst { constant { 17, &untyped_constant_dom } } });
-    stk->set_slot (2, valueref_seq { v });
+    stk->set_slot (2, value_seq { std::move (v) });
   }
 
   for (auto it = stk->begin (); it != stk->end (); ++it)

@@ -80,126 +80,107 @@ enum class slot_type: int8_t
 // valfile and valfile_slot.  See valfile_slot::destroy.
 union valfile_slot;
 
-// valueref subclasses implement a view of a certain valfile slot.
-// They are fairly cheap--take one word for vtable and typically
-// another word for reference to underlying value.  valfile::get_slot
-// returns this to represent all possible types through a unified
-// interface.  valfile also has a number of methods for accessing
-// slots by their proper type (see e.g. valfile::get_slot_str), in
-// which case valueref is avoided altogether.
-class valueref
+// value references implement access to a value.  That can be either
+// stored in a valfile slot, or somewhere else.
+class value_ref
 {
 public:
-  virtual ~valueref () {}
+  virtual ~value_ref () {}
   virtual void show (std::ostream &o) const = 0;
-  virtual slot_type set_slot (valfile_slot &slt) const = 0;
 };
 
-// Values are like value references, but they own the memory for the
-// held underlying value.  They are thus suitable for storing in
-// vectors and such.
+// values are like value references, but they carry around memory that
+// they reference.  They can be used to initialize valfile slots.
 class value
-  : public valueref
+  : public value_ref
 {
 public:
-  virtual std::unique_ptr <value> clone () const = 0;
+  virtual void move_to_slot (size_t i, valfile &vf) = 0;
 };
+
+// Specializations of this template implement the same interfaces as
+// class value, but as static functions, and with an argument
+// corresponding to the underlying value type added to the front.
+// value_contr (below) calls into this.
+template <class T>
+class value_behavior;
 
 typedef std::vector <std::unique_ptr <value> > value_vector_t;
 
-// Builder of value subclasses.  VR is the corrsponding valueref
-// subclass, T is the actual underlying type.
-template <class VR, class T>
-class value_holder
-  : public value
+// Value container holds a way of accessing a value.  Either it
+// contains the value itself, or it holds a reference to it, depending
+// on how the template is instantiated.
+template <class T>
+class value_ref_b
+  : public value_ref
 {
-  T m_value;
-  VR m_ref;
+  T const &m_value;
 
 public:
-  value_holder (T const &v)
-    : m_value (v)
-    , m_ref (m_value)
+  explicit value_ref_b (T const &value)
+    : m_value (value)
   {}
-
-  value_holder (value_holder const &that)
-    : m_value (that.m_value)
-    , m_ref (m_value)
-  {}
-
-  value_holder (value_holder &&that)
-    : m_value (std::move (that))
-    , m_ref (m_value)
-  {}
-
-  ~value_holder () = default;
 
   void
   show (std::ostream &o) const override
   {
-    return m_ref.show (o);
+    value_behavior <T>::show (m_value, o);
   }
+};
 
-  slot_type
-  set_slot (valfile_slot &slt) const override
+template <class T>
+class value_b
+  : public value
+{
+  T m_value;
+
+public:
+  explicit value_b (T &&value)
+    : m_value (std::move (value))
+  {}
+
+  void
+  show (std::ostream &o) const override
   {
-    return m_ref.set_slot (slt);
+    value_behavior <T>::show (m_value, o);
   }
 
-  std::unique_ptr <value>
-  clone () const override
+  void
+  move_to_slot (size_t i, valfile &vf) override
   {
-    return std::unique_ptr <value> { new value_holder <VR, T> (*this) };
+    value_behavior <T>::move_to_slot (std::move (m_value), i, vf);
   }
 };
 
-class valueref_cst
-  : public valueref
+template <>
+struct value_behavior <constant>
 {
-  constant const &m_cst;
-
-public:
-  explicit valueref_cst (constant const &cst)
-    : m_cst (cst)
-  {}
-
-  void show (std::ostream &o) const override;
-  slot_type set_slot (valfile_slot &slt) const override;
+  static void show (constant const&cst, std::ostream &o);
+  static void move_to_slot (constant &&cst, size_t i, valfile &vf);
 };
 
-typedef value_holder <valueref_cst, constant> value_cst;
+typedef value_b <constant> value_cst;
+typedef value_ref_b <constant> valueref_cst;
 
-class valueref_str
-  : public valueref
+template <>
+struct value_behavior <std::string>
 {
-  std::string const &m_str;
-
-public:
-  explicit valueref_str (std::string const &str)
-    : m_str (str)
-  {}
-
-  void show (std::ostream &o) const override;
-  slot_type set_slot (valfile_slot &slt) const override;
+  static void show (std::string const &str, std::ostream &o);
+  static void move_to_slot (std::string &&str, size_t i, valfile &vf);
 };
 
-typedef value_holder <valueref_str, std::string> value_str;
+typedef value_b <std::string> value_str;
+typedef value_ref_b <std::string> valueref_str;
 
-class valueref_seq
-  : public valueref
+template <>
+struct value_behavior <value_vector_t>
 {
-  value_vector_t const &m_seq;
-
-public:
-  explicit valueref_seq (value_vector_t const &seq)
-    : m_seq (seq)
-  {}
-
-  void show (std::ostream &o) const override;
-  slot_type set_slot (valfile_slot &slt) const override;
+  static void show (value_vector_t const &vv, std::ostream &o);
+  static void move_to_slot (value_vector_t &&vv, size_t i, valfile &vf);
 };
 
-typedef value_holder <valueref_seq, value_vector_t> value_seq;
+typedef value_b <value_vector_t> value_seq;
+typedef value_ref_b <value_vector_t> valueref_seq;
 
 union valfile_slot
 {
@@ -244,10 +225,14 @@ public:
 
   ~valfile ();
 
-  std::unique_ptr <valueref> get_slot (size_t i) const;
   void invalidate_slot (size_t i);
-  void set_slot (size_t i, valueref const &sv);
 
+  void set_slot (size_t i, value &&sv);
+  void set_slot (size_t i, constant &&cst);
+  void set_slot (size_t i, std::string &&str);
+  void set_slot (size_t i, value_vector_t &&seq);
+
+  std::unique_ptr <value_ref> get_slot (size_t i) const;
   slot_type get_slot_type (size_t i) const;
 
   // Specialized per-type slot accessors.
@@ -257,7 +242,7 @@ public:
 
   class const_iterator
     : public std::iterator <std::input_iterator_tag,
-			    std::unique_ptr <valueref> >
+			    std::unique_ptr <value> >
   {
     friend class valfile;
     valfile const *m_seq;
@@ -294,8 +279,8 @@ public:
     const_iterator &operator++ ();
     const_iterator operator++ (int);
 
-    std::unique_ptr <valueref> operator* () const;
-    std::unique_ptr <valueref> operator-> () const;
+    std::unique_ptr <value_ref> operator* () const;
+    std::unique_ptr <value_ref> operator-> () const;
   };
 
   const_iterator
