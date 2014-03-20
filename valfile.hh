@@ -3,11 +3,9 @@
 
 #include <memory>
 #include <string>
-#include <iostream>
 #include <vector>
 
 #include <elfutils/libdw.h>
-
 #include "constant.hh"
 
 // Value file is a specialized container type that's used for
@@ -19,14 +17,14 @@
 //
 // Types of values stored are determined at runtime as well, though
 // there's a pre-coded set of values that a value file can hold.
-// Slots themselves are allocated statically to fit the largest type
-// that a value file can store.
 //
 // Value file is not a value type.  The whole file is allocated in a
 // single blob on the heap.  Types of slots are stored in a byte array
-// (see enum slot_type) separately from the slots themselves, which
-// allows for denser storage.  Size of a value file is not stored
-// explicitly, but is implicit as a dedicated END slot type.
+// (see enum slot_type) separately from the slots, which allows for
+// denser storage.  Slots themselves are allocated statically to fit
+// the largest type that a value file can store.  Size of a value file
+// is not stored explicitly, but is implicit as a dedicated END slot
+// type.
 //
 // Due to the described storage format, a value file needs to closely
 // cooperate with its slots on their construction and destruction.
@@ -48,12 +46,13 @@ namespace std
   // Because valfile is allocated specially, it needs to be destroyed
   // specially as well.  Using a custom deleter of std::unique_ptr
   // adds one pointer of overhead, which we don't care for.
-  // Specialize instead the default deleter.
+  // Specialize instead the default deleter.  That is OK, because we
+  // only ever store valfile pointer inside one type of unique_ptr.
   template <>
   struct default_delete <valfile>
   {
     void operator() (valfile *ptr) const;
- };
+  };
 }
 
 enum class slot_type: int8_t
@@ -83,11 +82,11 @@ union valfile_slot;
 
 // valueref subclasses implement a view of a certain valfile slot.
 // They are fairly cheap--take one word for vtable and typically
-// another word for reference to underlying value.  Files allow access
-// to each slot by its proper type (see e.g. valfile::get_slot_str),
-// in which case the reference is returned as value type.  They also
-// allow a general access whereby an instance is allocated on the heap
-// and returned wrapped in a unique_ptr.
+// another word for reference to underlying value.  valfile::get_slot
+// returns this to represent all possible types through a unified
+// interface.  valfile also has a number of methods for accessing
+// slots by their proper type (see e.g. valfile::get_slot_str), in
+// which case valueref is avoided altogether.
 class valueref
 {
 public:
@@ -125,6 +124,11 @@ public:
 
   value_holder (value_holder const &that)
     : m_value (that.m_value)
+    , m_ref (m_value)
+  {}
+
+  value_holder (value_holder &&that)
+    : m_value (std::move (that))
     , m_ref (m_value)
   {}
 
@@ -222,145 +226,34 @@ class valfile
   slot_type *m_types;
   valfile_slot m_slots[];
 
-  valfile (slot_type *types, size_t n)
-    : m_types (types)
-  {}
-
   struct allocd_block
   {
     unsigned char *buf;
     slot_type *types;
   };
 
-  static allocd_block
-  alloc (size_t n)
-  {
-    size_t sz1 = offsetof (valfile, m_slots[n]);
-    size_t sz = sz1 + sizeof (slot_type) * (n + 1);
-    unsigned char *buf = new unsigned char[sz];
-    return { buf, reinterpret_cast <slot_type *> (buf + sz1) };
-  }
+  static allocd_block alloc (size_t n);
+
+  explicit valfile (slot_type *types)
+    : m_types (types)
+  {}
 
 public:
-  static std::unique_ptr <valfile>
-  create (size_t n)
-  {
-    allocd_block b = alloc (n);
+  static std::unique_ptr <valfile> create (size_t n);
+  static std::unique_ptr <valfile> copy (valfile const &that, size_t n);
 
-    for (size_t i = 0; i < n; ++i)
-      b.types[i] = slot_type::INVALID;
-    b.types[n] = slot_type::END;
+  ~valfile ();
 
-    return std::unique_ptr <valfile> { new (b.buf) valfile (b.types, n) };
-  }
+  std::unique_ptr <valueref> get_slot (size_t i) const;
+  void invalidate_slot (size_t i);
+  void set_slot (size_t i, valueref const &sv);
 
-  static std::unique_ptr <valfile>
-  copy (valfile const &that, size_t n)
-  {
-    assert (that.m_types[n] == slot_type::END);
-    allocd_block b = alloc (n);
+  slot_type get_slot_type (size_t i) const;
 
-    for (size_t i = 0; i < n + 1; ++i)
-      b.types[i] = that.m_types[i];
-
-    return std::unique_ptr <valfile> { new (b.buf) valfile (b.types, n) };
-  }
-
-  ~valfile ()
-  {
-    for (size_t i = 0; m_types[i] != slot_type::END; ++i)
-      m_slots[i].destroy (m_types[i]);
-    // XXX destroy values in m_slots according to corresponding value
-    // in m_types
-  }
-
-  slot_type
-  get_slot_type (size_t i) const
-  {
-    assert (m_types[i] != slot_type::END);
-    assert (m_types[i] != slot_type::INVALID);
-    return m_types[i];
-  }
-
-  std::string const &
-  get_slot_str (size_t i) const
-  {
-    assert (m_types[i] == slot_type::STR);
-    return m_slots[i].str;
-  }
-
-  constant const &
-  get_slot_cst (size_t i) const
-  {
-    assert (m_types[i] == slot_type::CST);
-    return m_slots[i].cst;
-  }
-
-  value_vector_t const &
-  get_slot_seq (size_t i) const
-  {
-    assert (m_types[i] == slot_type::SEQ);
-    return m_slots[i].seq;
-  }
-
-  // General accessor for all slot types.
-  std::unique_ptr <valueref>
-  get_slot (size_t i) const
-  {
-    switch (m_types[i])
-      {
-      case slot_type::FLT:
-      case slot_type::DIE:
-      case slot_type::ATTRIBUTE:
-      case slot_type::LINE:
-	assert (!"not yet implemented");
-	abort ();
-
-      case slot_type::CST:
-	return std::unique_ptr <valueref>
-	  { new valueref_cst { m_slots[i].cst } };
-
-      case slot_type::STR:
-	return std::unique_ptr <valueref>
-	  { new valueref_str { m_slots[i].str } };
-
-      case slot_type::SEQ:
-	return std::unique_ptr <valueref>
-	  { new valueref_seq { m_slots[i].seq } };
-
-      case slot_type::LOCLIST_ENTRY:
-      case slot_type::LOCLIST_OP:
-	assert (!"not implemented");
-	abort ();
-
-      case slot_type::INVALID:
-	assert (m_types[i] != slot_type::INVALID);
-	abort ();
-
-      case slot_type::END:
-	assert (m_types[i] != slot_type::END);
-	abort ();
-      }
-
-    assert (m_types[i] != m_types[i]);
-    abort ();
-  }
-
-  void
-  invalidate_slot (size_t i)
-  {
-    assert (m_types[i] != slot_type::END);
-    assert (m_types[i] != slot_type::INVALID);
-    m_slots[i].destroy (m_types[i]);
-    m_types[i] = slot_type::INVALID;
-  }
-
-  void
-  set_slot (size_t i, valueref const &sv)
-  {
-    assert (m_types[i] == slot_type::INVALID);
-    m_types[i] = sv.set_slot (m_slots[i]);
-  }
+  // Specialized per-type slot accessors.
+  std::string const &get_slot_str (size_t i) const;
+  constant const &get_slot_cst (size_t i) const;
+  value_vector_t const &get_slot_seq (size_t i) const;
 
   class const_iterator
     : public std::iterator <std::input_iterator_tag,
@@ -370,16 +263,7 @@ public:
     valfile const *m_seq;
     ssize_t m_i;
 
-    void
-    check ()
-    {
-      assert (m_i != -1);
-      while (m_seq->m_types[m_i] == slot_type::INVALID)
-	++m_i;
-
-      if (m_seq->m_types[m_i] == slot_type::END)
-	m_i = -1;
-    }
+    void next ();
 
     explicit const_iterator (valfile const *s)
       : m_seq (s)
@@ -390,7 +274,7 @@ public:
       : m_seq (s)
       , m_i (i)
     {
-      check ();
+      next ();
     }
 
   public:
@@ -404,48 +288,14 @@ public:
       , m_i (that.m_i)
     {}
 
-    bool
-    operator== (const_iterator that) const
-    {
-      return m_seq == that.m_seq
-	&& m_i == that.m_i;
-    }
+    bool operator== (const_iterator that) const;
+    bool operator!= (const_iterator that) const;
 
-    bool
-    operator!= (const_iterator that) const
-    {
-      return !(*this == that);
-    }
+    const_iterator &operator++ ();
+    const_iterator operator++ (int);
 
-    const_iterator &
-    operator++ ()
-    {
-      assert (m_i != -1);
-      ++m_i;
-      check ();
-      return *this;
-    }
-
-    const_iterator
-    operator++ (int)
-    {
-      const_iterator tmp = *this;
-      ++*this;
-      return tmp;
-    }
-
-    std::unique_ptr <valueref>
-    operator* () const
-    {
-      assert (m_i != -1);
-      return m_seq->get_slot (m_i);
-    }
-
-    std::unique_ptr <valueref>
-    operator-> () const
-    {
-      return **this;
-    }
+    std::unique_ptr <valueref> operator* () const;
+    std::unique_ptr <valueref> operator-> () const;
   };
 
   const_iterator
@@ -460,12 +310,5 @@ public:
     return const_iterator (this);
   }
 };
-
-void
-std::default_delete <valfile>::operator() (valfile *ptr) const
-{
-  ptr->~valfile ();
-  delete[] (unsigned char *) ptr;
-}
 
 #endif /* _VALFILE_H_ */

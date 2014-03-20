@@ -1,41 +1,12 @@
+#include <iostream>
+
 #include "valfile.hh"
 
 void
-valfile_slot::destroy (slot_type t)
+std::default_delete <valfile>::operator() (valfile *ptr) const
 {
-  switch (t)
-    {
-    case slot_type::INVALID:
-    case slot_type::FLT:
-    case slot_type::DIE:
-    case slot_type::ATTRIBUTE:
-    case slot_type::LINE:
-      return;
-
-    case slot_type::CST:
-      cst.~constant ();
-      return;
-
-    case slot_type::STR:
-      str.~basic_string ();
-      return;
-
-    case slot_type::SEQ:
-      seq.~vector ();
-      return;
-
-    case slot_type::LOCLIST_ENTRY:
-    case slot_type::LOCLIST_OP:
-      assert (!"not implemented");
-      abort ();
-
-    case slot_type::END:
-      assert (t != slot_type::END);
-      abort ();
-    }
-
-  assert (t != t);
-  abort ();
+  ptr->~valfile ();
+  delete[] (unsigned char *) ptr;
 }
 
 void
@@ -93,6 +64,226 @@ valueref_seq::set_slot (valfile_slot &slt) const
   new (&slt.seq) value_vector_t { std::move (copy) };
   return slot_type::SEQ;
 }
+
+void
+valfile_slot::destroy (slot_type t)
+{
+  switch (t)
+    {
+    case slot_type::INVALID:
+    case slot_type::FLT:
+    case slot_type::DIE:
+    case slot_type::ATTRIBUTE:
+    case slot_type::LINE:
+      return;
+
+    case slot_type::CST:
+      cst.~constant ();
+      return;
+
+    case slot_type::STR:
+      str.~basic_string ();
+      return;
+
+    case slot_type::SEQ:
+      seq.~vector ();
+      return;
+
+    case slot_type::LOCLIST_ENTRY:
+    case slot_type::LOCLIST_OP:
+      assert (!"not implemented");
+      abort ();
+
+    case slot_type::END:
+      assert (t != slot_type::END);
+      abort ();
+    }
+
+  assert (t != t);
+  abort ();
+}
+
+valfile::allocd_block
+valfile::alloc (size_t n)
+{
+  size_t sz1 = offsetof (valfile, m_slots[n]);
+  size_t sz = sz1 + sizeof (slot_type) * (n + 1);
+  unsigned char *buf = new unsigned char[sz];
+  return { buf, reinterpret_cast <slot_type *> (buf + sz1) };
+}
+
+std::unique_ptr <valfile>
+valfile::create (size_t n)
+{
+  allocd_block b = alloc (n);
+
+  for (size_t i = 0; i < n; ++i)
+    b.types[i] = slot_type::INVALID;
+  b.types[n] = slot_type::END;
+
+  return std::unique_ptr <valfile> { new (b.buf) valfile (b.types) };
+}
+
+std::unique_ptr <valfile>
+valfile::copy (valfile const &that, size_t n)
+{
+  assert (that.m_types[n] == slot_type::END);
+  allocd_block b = alloc (n);
+
+  for (size_t i = 0; i < n + 1; ++i)
+    b.types[i] = that.m_types[i];
+
+  return std::unique_ptr <valfile> { new (b.buf) valfile (b.types) };
+}
+
+valfile::~valfile ()
+{
+  for (size_t i = 0; m_types[i] != slot_type::END; ++i)
+    m_slots[i].destroy (m_types[i]);
+}
+
+slot_type
+valfile::get_slot_type (size_t i) const
+{
+  assert (m_types[i] != slot_type::END);
+  assert (m_types[i] != slot_type::INVALID);
+  return m_types[i];
+}
+
+std::string const &
+valfile::get_slot_str (size_t i) const
+{
+  assert (m_types[i] == slot_type::STR);
+  return m_slots[i].str;
+}
+
+constant const &
+valfile::get_slot_cst (size_t i) const
+{
+  assert (m_types[i] == slot_type::CST);
+  return m_slots[i].cst;
+}
+
+value_vector_t const &
+valfile::get_slot_seq (size_t i) const
+{
+  assert (m_types[i] == slot_type::SEQ);
+  return m_slots[i].seq;
+}
+
+// General accessor for all slot types.
+std::unique_ptr <valueref>
+valfile::get_slot (size_t i) const
+{
+  switch (m_types[i])
+    {
+    case slot_type::FLT:
+    case slot_type::DIE:
+    case slot_type::ATTRIBUTE:
+    case slot_type::LINE:
+      assert (!"not yet implemented");
+      abort ();
+
+    case slot_type::CST:
+      return std::unique_ptr <valueref>
+	{ new valueref_cst { m_slots[i].cst } };
+
+    case slot_type::STR:
+      return std::unique_ptr <valueref>
+	{ new valueref_str { m_slots[i].str } };
+
+    case slot_type::SEQ:
+      return std::unique_ptr <valueref>
+	{ new valueref_seq { m_slots[i].seq } };
+
+    case slot_type::LOCLIST_ENTRY:
+    case slot_type::LOCLIST_OP:
+      assert (!"not implemented");
+      abort ();
+
+    case slot_type::INVALID:
+      assert (m_types[i] != slot_type::INVALID);
+      abort ();
+
+    case slot_type::END:
+      assert (m_types[i] != slot_type::END);
+      abort ();
+    }
+
+  assert (m_types[i] != m_types[i]);
+  abort ();
+}
+
+void
+valfile::invalidate_slot (size_t i)
+{
+  assert (m_types[i] != slot_type::END);
+  assert (m_types[i] != slot_type::INVALID);
+  m_slots[i].destroy (m_types[i]);
+  m_types[i] = slot_type::INVALID;
+}
+
+void
+valfile::set_slot (size_t i, valueref const &sv)
+{
+  assert (m_types[i] == slot_type::INVALID);
+  m_types[i] = sv.set_slot (m_slots[i]);
+}
+
+void
+valfile::const_iterator::next ()
+{
+  assert (m_i != -1);
+  while (m_seq->m_types[m_i] == slot_type::INVALID)
+    ++m_i;
+
+  if (m_seq->m_types[m_i] == slot_type::END)
+    m_i = -1;
+}
+
+bool
+valfile::const_iterator::operator== (const_iterator that) const
+{
+  return m_seq == that.m_seq
+    && m_i == that.m_i;
+}
+
+bool
+valfile::const_iterator::operator!= (const_iterator that) const
+{
+  return !(*this == that);
+}
+
+valfile::const_iterator &
+valfile::const_iterator::operator++ ()
+{
+  assert (m_i != -1);
+  ++m_i;
+  next ();
+  return *this;
+}
+
+valfile::const_iterator
+valfile::const_iterator::operator++ (int)
+{
+  const_iterator tmp = *this;
+  ++*this;
+  return tmp;
+}
+
+std::unique_ptr <valueref>
+valfile::const_iterator::operator* () const
+{
+  assert (m_i != -1);
+  return m_seq->get_slot (m_i);
+}
+
+std::unique_ptr <valueref>
+valfile::const_iterator::operator-> () const
+{
+  return **this;
+}
+
 
 int main(int argc, char *argv[])
 {
