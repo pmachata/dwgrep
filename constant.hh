@@ -9,14 +9,14 @@ class constant;
 class constant_dom
 {
 public:
-  virtual void format (constant c, std::ostream &o) const = 0;
+  virtual void show (constant c, std::ostream &o) const = 0;
   virtual ~constant_dom () {}
 };
 
 struct untyped_constant_dom_t
   : public constant_dom
 {
-  virtual void format (constant c, std::ostream &o) const;
+  virtual void show (constant c, std::ostream &o) const;
 };
 
 extern untyped_constant_dom_t const untyped_constant_dom;
@@ -51,5 +51,7 @@ public:
   // Parse tag reference.
   static constant parse_tag (std::string str);
 };
+
+std::ostream &operator<< (std::ostream &o, constant cst);
 
 #endif /* _CST_H_ */
