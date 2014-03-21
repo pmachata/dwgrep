@@ -22,6 +22,12 @@ value_behavior <constant>::move_to_slot (constant &&cst, size_t i, valfile &vf)
   vf.set_slot (i, std::move (cst));
 }
 
+std::unique_ptr <value>
+value_behavior <constant>::clone (constant const&cst)
+{
+  return std::make_unique <value_cst> (constant (cst));
+}
+
 void
 value_behavior <std::string>::show (std::string const &str, std::ostream &o)
 {
@@ -33,6 +39,12 @@ value_behavior <std::string>::move_to_slot (std::string &&str,
 					    size_t i, valfile &vf)
 {
   vf.set_slot (i, std::move (str));
+}
+
+std::unique_ptr <value>
+value_behavior <std::string>::clone (std::string const&cst)
+{
+  return std::make_unique <value_str> (std::string (cst));
 }
 
 void
@@ -56,6 +68,15 @@ value_behavior <value_vector_t>::move_to_slot (value_vector_t &&vv,
 					       size_t i, valfile &vf)
 {
   vf.set_slot (i, std::move (vv));
+}
+
+std::unique_ptr <value>
+value_behavior <value_vector_t>::clone (value_vector_t const&vv)
+{
+  value_vector_t vv2;
+  for (auto const &v: vv)
+    vv2.emplace_back (std::move (v->clone ()));
+  return std::make_unique <value_seq> (std::move (vv2));
 }
 
 
@@ -103,18 +124,19 @@ valfile::alloc (size_t n)
   size_t sz1 = offsetof (valfile, m_slots[n]);
   size_t sz = sz1 + sizeof (slot_type) * (n + 1);
   unsigned char *buf = new unsigned char[sz];
-  return { buf, reinterpret_cast <slot_type *> (buf + sz1) };
+
+  auto types = reinterpret_cast <slot_type *> (buf + sz1);
+  for (size_t i = 0; i < n; ++i)
+    types[i] = slot_type::INVALID;
+  types[n] = slot_type::END;
+
+  return { buf, types };
 }
 
 std::unique_ptr <valfile>
 valfile::create (size_t n)
 {
   allocd_block b = alloc (n);
-
-  for (size_t i = 0; i < n; ++i)
-    b.types[i] = slot_type::INVALID;
-  b.types[n] = slot_type::END;
-
   return std::unique_ptr <valfile> { new (b.buf) valfile (b.types) };
 }
 
@@ -122,12 +144,17 @@ std::unique_ptr <valfile>
 valfile::copy (valfile const &that, size_t n)
 {
   assert (that.m_types[n] == slot_type::END);
+
   allocd_block b = alloc (n);
+  auto copy = std::unique_ptr <valfile> (new (b.buf) valfile (b.types));
 
-  for (size_t i = 0; i < n + 1; ++i)
-    b.types[i] = that.m_types[i];
-
-  return std::unique_ptr <valfile> { new (b.buf) valfile (b.types) };
+  for (size_t i = 0; i < n; ++i)
+    if (that.m_types[i] != slot_type::INVALID)
+      {
+	std::unique_ptr <value> vp = that.get_slot (i)->clone ();
+	copy->set_slot (i, std::move (vp));
+      }
+  return copy;
 }
 
 valfile::~valfile ()
@@ -166,7 +193,7 @@ valfile::get_slot_seq (size_t i) const
 }
 
 // General accessor for all slot types.
-std::unique_ptr <value_ref>
+std::unique_ptr <valueref>
 valfile::get_slot (size_t i) const
 {
   switch (m_types[i])
@@ -218,6 +245,12 @@ void
 valfile::set_slot (size_t i, value &&sv)
 {
   sv.move_to_slot (i, *this);
+}
+
+void
+valfile::set_slot (size_t i, std::unique_ptr <value> vp)
+{
+  vp->move_to_slot (i, *this);
 }
 
 void
@@ -285,14 +318,14 @@ valfile::const_iterator::operator++ (int)
   return tmp;
 }
 
-std::unique_ptr <value_ref>
+std::unique_ptr <valueref>
 valfile::const_iterator::operator* () const
 {
   assert (m_i != -1);
   return m_seq->get_slot (m_i);
 }
 
-std::unique_ptr <value_ref>
+std::unique_ptr <valueref>
 valfile::const_iterator::operator-> () const
 {
   return **this;
@@ -313,13 +346,11 @@ int main(int argc, char *argv[])
     stk->set_slot (2, value_seq { std::move (v) });
   }
 
-  for (auto it = stk->begin (); it != stk->end (); ++it)
+  auto stk2 = valfile::copy (*stk, 10);
+  for (auto it = stk2->begin (); it != stk2->end (); ++it)
     {
       auto v = *it;
       v->show (std::cout);
       std::cout << std::endl;
     }
-
-  //auto stk2 = seq::copy (*stk, 10);
-  //return sizeof (stk);
 }
