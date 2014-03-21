@@ -1,6 +1,7 @@
 #include <iostream>
 
 #include "valfile.hh"
+#include "make_unique.hh"
 
 void
 std::default_delete <valfile>::operator() (valfile *ptr) const
@@ -178,16 +179,13 @@ valfile::get_slot (size_t i) const
       abort ();
 
     case slot_type::CST:
-      return std::unique_ptr <value_ref>
-	{ new valueref_cst { m_slots[i].cst } };
+      return std::make_unique <valueref_cst> (m_slots[i].cst);
 
     case slot_type::STR:
-      return std::unique_ptr <value_ref>
-	{ new valueref_str { m_slots[i].str } };
+      return std::make_unique <valueref_str> (m_slots[i].str);
 
     case slot_type::SEQ:
-      return std::unique_ptr <value_ref>
-	{ new valueref_seq { m_slots[i].seq } };
+      return std::make_unique <valueref_seq> (m_slots[i].seq);
 
     case slot_type::LOCLIST_ENTRY:
     case slot_type::LOCLIST_OP:
@@ -309,9 +307,9 @@ int main(int argc, char *argv[])
 
   {
     value_vector_t v;
-    v.push_back (std::unique_ptr <value> { new value_str { "blah" } });
-    v.push_back (std::unique_ptr <value>
-		 { new value_cst { constant { 17, &untyped_constant_dom } } });
+    v.push_back (std::make_unique <value_str> ("blah"));
+    v.push_back (std::make_unique <value_cst>
+		 (constant { 17, &untyped_constant_dom }));
     stk->set_slot (2, value_seq { std::move (v) });
   }
 
