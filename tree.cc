@@ -134,9 +134,7 @@ tree::dump (std::ostream &o) const
   switch (argtype[(int) m_tt])
     {
     case tree_arity_v::CONST:
-      o << "<";
-      m_u.cval->dom ()->format (*m_u.cval, o);
-      o << ">";
+      o << "<" << *m_u.cval << ">";
       break;
 
     case tree_arity_v::STR:
