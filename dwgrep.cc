@@ -60,7 +60,7 @@ main(int argc, char *argv[])
 
   auto dw = open_dwarf (argv[1]);
 
-  std::unique_ptr <stack> stk { new stack { stk_depth } };
+  auto stk = std::make_unique <stack> (stk_depth);
   auto yielder = program->get_yielder (dw);
   while (std::unique_ptr <stack> result = yielder->yield (*stk, stk_depth))
     {

@@ -1,7 +1,9 @@
+#include <iostream>
+
 #include "op.hh"
 #include "dwit.hh"
 #include "dwpp.hh"
-#include <iostream>
+#include "make_unique.hh"
 
 std::unique_ptr <yielder>
 op_cat::get_yielder (std::shared_ptr <Dwarf> &dw) const
@@ -48,7 +50,7 @@ op_cat::get_yielder (std::shared_ptr <Dwarf> &dw) const
     }
   };
 
-  return std::unique_ptr <yielder> { new cat_yielder { dw, *m_a, *m_b } };
+  return std::make_unique <cat_yielder> (dw, *m_a, *m_b);
 }
 
 std::unique_ptr <yielder>
@@ -80,7 +82,7 @@ op_sel_universe::get_yielder (std::shared_ptr <Dwarf> &dw) const
     }
   };
 
-  return std::unique_ptr <yielder> { new universe_yielder { dw, m_idx } };
+  return std::make_unique <universe_yielder> (dw, m_idx);
 }
 
 std::unique_ptr <yielder>
@@ -105,7 +107,7 @@ op_nop::get_yielder (std::shared_ptr <Dwarf> &dw) const
     }
   };
 
-  return std::unique_ptr <yielder> { new nop_yielder {} };
+  return std::make_unique <nop_yielder> ();
 }
 
 std::unique_ptr <yielder>
@@ -146,7 +148,7 @@ op_assert::get_yielder (std::shared_ptr <Dwarf> &dw) const
     }
   };
 
-  return std::unique_ptr <yielder> { new assert_yielder { dw, *m_pred } };
+  return std::make_unique <assert_yielder> (dw, *m_pred);
 }
 
 
@@ -194,7 +196,7 @@ op_f_atval::get_yielder (std::shared_ptr <Dwarf> &dw) const
 		    const char *str = dwarf_formstring (&attr);
 		    if (str == nullptr)
 		      throw_libdw ();
-		    nv = std::unique_ptr <value> { new v_str { str } };
+		    nv = std::make_unique <v_str> (str);
 		    break;
 		  }
 
@@ -204,7 +206,7 @@ op_f_atval::get_yielder (std::shared_ptr <Dwarf> &dw) const
 		    Dwarf_Sword sval;
 		    if (dwarf_formsdata (&attr, &sval) != 0)
 		      throw_libdw ();
-		    nv = std::unique_ptr <value> { new v_sint { sval } };
+		    nv = std::make_unique <v_sint> (sval);
 		    break;
 		  }
 
@@ -214,7 +216,7 @@ op_f_atval::get_yielder (std::shared_ptr <Dwarf> &dw) const
 		    Dwarf_Word uval;
 		    if (dwarf_formudata (&attr, &uval) != 0)
 		      throw_libdw ();
-		    nv = std::unique_ptr <value> { new v_uint { uval } };
+		    nv = std::make_unique <v_uint> (uval);
 		    break;
 		  }
 
@@ -312,8 +314,7 @@ op_f_atval::get_yielder (std::shared_ptr <Dwarf> &dw) const
     }
   };
 
-  return std::unique_ptr <yielder>
-    { new f_atval_yielder { dw, m_name, m_idx } };
+  return std::make_unique <f_atval_yielder> (dw, m_name, m_idx);
 }
 
 std::unique_ptr <yielder>
@@ -378,7 +379,7 @@ op_f_child::get_yielder (std::shared_ptr <Dwarf> &dw) const
     }
   };
 
-  return std::unique_ptr <yielder> { new f_child_yielder { dw, m_idx } };
+  return std::make_unique <f_child_yielder> (dw, m_idx);
 }
 
 std::unique_ptr <yielder>
@@ -407,7 +408,7 @@ op_f_offset::get_yielder (std::shared_ptr <Dwarf> &dw) const
       done = true;
       if (auto vd = dynamic_cast <v_die const *> (&stk.get_slot (m_idx)))
 	{
-	  auto nv = std::unique_ptr <value> { new v_uint { vd->offset () } };
+	  auto nv = std::make_unique <v_uint> (vd->offset ());
 	  auto ret = stk.clone (stksz);
 	  ret->invalidate_slot (m_idx);
 	  ret->set_slot (m_idx, std::move (nv));
@@ -418,7 +419,7 @@ op_f_offset::get_yielder (std::shared_ptr <Dwarf> &dw) const
     }
   };
 
-  return std::unique_ptr <yielder> { new f_offset_yielder { dw, m_idx } };
+  return std::make_unique <f_offset_yielder> (dw, m_idx);
 }
 
 std::unique_ptr <yielder>
@@ -449,13 +450,13 @@ op_format::get_yielder (std::shared_ptr <Dwarf> &dw) const
 
       done = true;
       auto ret = stk.clone (stksz);
-      auto nv = std::unique_ptr <value> { new v_str { m_lit.c_str () } };
+      auto nv = std::make_unique <v_str> (m_lit.c_str ());
       ret->set_slot (m_idx, std::move (nv));
       return ret;
     }
   };
 
-  return std::unique_ptr <yielder> { new format_yielder { dw, m_str, m_idx } };
+  return std::make_unique <format_yielder> (dw, m_str, m_idx);
 }
 
 std::unique_ptr <yielder>
@@ -486,7 +487,7 @@ op_drop::get_yielder (std::shared_ptr <Dwarf> &dw) const
     }
   };
 
-  return std::unique_ptr <yielder> { new drop_yielder { m_idx } };
+  return std::make_unique <drop_yielder> (m_idx);
 }
 
 std::unique_ptr <yielder>
@@ -519,7 +520,7 @@ op_const::get_yielder (std::shared_ptr <Dwarf> &dw) const
     }
   };
 
-  return std::unique_ptr <yielder> { new const_yielder { *m_val, m_idx } };
+  return std::make_unique <const_yielder> (*m_val, m_idx);
 }
 
 

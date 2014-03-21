@@ -3,7 +3,9 @@
 
 #include <memory>
 #include <cassert>
+
 #include "value.hh"
+#include "make_unique.hh"
 
 class stack
 {
@@ -23,7 +25,7 @@ public:
   std::unique_ptr <stack>
   clone (size_t sz) const
   {
-    std::unique_ptr <stack> ret { new stack { sz } };
+    auto ret = std::make_unique <stack> (sz);
     for (size_t i = 0; i < sz; ++i)
       if (m_slots[i] != nullptr)
 	ret->set_slot (i, std::move (m_slots[i]->clone ()));

@@ -1,5 +1,6 @@
 #include <iostream>
 #include "tree.hh"
+#include "make_unique.hh"
 
 std::unique_ptr <pred>
 tree::build_pred () const
@@ -7,62 +8,41 @@ tree::build_pred () const
   switch (m_tt)
     {
     case tree_type::PRED_TAG:
-      {
-	int val = m_u.cval->value ();
-	return std::unique_ptr <pred> { new pred_tag { val, slot () } };
-      }
+      return std::make_unique <pred_tag> (m_u.cval->value (), slot ());
 
     case tree_type::PRED_AT:
-      {
-	int val = m_u.cval->value ();
-	return std::unique_ptr <pred> { new pred_at { val, slot () } };
-      }
+      return std::make_unique <pred_at> (m_u.cval->value (), slot ());
 
     case tree_type::PRED_NOT:
-      {
-	auto p = m_children.front ().build_pred ();
-	return std::unique_ptr <pred> { new pred_not { std::move (p) } };
-      }
+      return std::make_unique <pred_not> (m_children.front ().build_pred ());
 
     case tree_type::PRED_EQ:
-      return std::unique_ptr <pred> { new pred_eq { slot () - 1, slot () } };
+      return std::make_unique <pred_eq> (slot () - 1, slot ());
 
     case tree_type::PRED_NE:
-      {
-	auto p = std::unique_ptr <pred>
-	  { new pred_eq { slot () - 1, slot () } };
-	return std::unique_ptr <pred> { new pred_not { std::move (p) } };
-      }
+      return std::make_unique <pred_not>
+	(std::make_unique <pred_eq> (slot () - 1, slot ()));
 
     case tree_type::PRED_LT:
-      return std::unique_ptr <pred> { new pred_lt { slot () - 1, slot () } };
+      return std::make_unique <pred_lt> (slot () - 1, slot ());
 
     case tree_type::PRED_GT:
-      return std::unique_ptr <pred> { new pred_gt { slot () - 1, slot () } };
+      return std::make_unique <pred_gt> (slot () - 1, slot ());
 
     case tree_type::PRED_GE:
-      {
-	auto p = std::unique_ptr <pred>
-	  { new pred_lt { slot () - 1, slot () } };
-	return std::unique_ptr <pred> { new pred_not { std::move (p) } };
-      }
+      return std::make_unique <pred_not>
+	(std::make_unique <pred_lt> (slot () - 1, slot ()));
 
     case tree_type::PRED_LE:
-      {
-	auto p = std::unique_ptr <pred>
-	  { new pred_gt { slot () - 1, slot () } };
-	return std::unique_ptr <pred> { new pred_not { std::move (p) } };
-      }
+      return std::make_unique <pred_not>
+	(std::make_unique <pred_gt> (slot () - 1, slot ()));
 
     case tree_type::PRED_ROOT:
-      return std::unique_ptr <pred> { new pred_root { slot () } };
+      return std::make_unique <pred_root> (slot ());
 
     case tree_type::PRED_SUBX_ANY:
-      {
-	assert (m_children.size () == 1);
-	auto p = m_children.front ().build ();
-	return std::unique_ptr <pred> { new pred_subx_any { std::move (p) } };
-      }
+      assert (m_children.size () == 1);
+      return std::make_unique <pred_subx_any> (m_children.front ().build ());
 
     case tree_type::PRED_FIND:
     case tree_type::PRED_MATCH:
@@ -135,26 +115,22 @@ tree::build () const
       }
 
     case tree_type::SEL_UNIVERSE:
-      return std::unique_ptr <op> { new op_sel_universe { slot () } };
+      return std::make_unique <op_sel_universe> (slot ());
 
     case tree_type::NOP:
-      return std::unique_ptr <op> { new op_nop {} };
+      return std::make_unique <op_nop> ();
 
     case tree_type::ASSERT:
-      {
-	auto p = m_children.front ().build_pred ();
-	return std::unique_ptr <op> { new op_assert { std::move (p) } };
-      }
+      return std::make_unique <op_assert> (m_children.front ().build_pred ());
 
     case tree_type::F_ATVAL:
-      return std::unique_ptr <op>
-	{ new op_f_atval { int (m_u.cval->value ()), slot () } };
+      return std::make_unique <op_f_atval> (int (m_u.cval->value ()), slot ());
 
     case tree_type::F_CHILD:
-      return std::unique_ptr <op> { new op_f_child { slot () } };
+      return std::make_unique <op_f_child> (slot ());
 
     case tree_type::F_OFFSET:
-      return std::unique_ptr <op> { new op_f_offset { slot () } };
+      return std::make_unique <op_f_offset> (slot ());
 
     case tree_type::FORMAT:
       if (m_children.size () != 1
@@ -164,18 +140,15 @@ tree::build () const
 	  abort ();
 	}
 
-      return std::unique_ptr <op>
-	{ new op_format { *m_children.front ().m_u.sval, slot () } };
+      return std::make_unique <op_format> (*m_children.front ().m_u.sval, slot ());
 
     case tree_type::SHF_DROP:
-      return std::unique_ptr <op> { new op_drop { slot () } };
+      return std::make_unique <op_drop> (slot ());
 
     case tree_type::CONST:
       {
-	auto val = std::unique_ptr <value>
-	  { new v_uint { m_u.cval->value () } };
-	return std::unique_ptr <op>
-	  { new op_const { std::move (val), slot () } };
+	auto val = std::make_unique <v_uint> (m_u.cval->value ());
+	return std::make_unique <op_const> (std::move (val), slot ());
       }
 
     case tree_type::PRED_TAG:
