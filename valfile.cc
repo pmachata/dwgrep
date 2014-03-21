@@ -163,6 +163,45 @@ valfile::~valfile ()
     m_slots[i].destroy (m_types[i]);
 }
 
+namespace
+{
+  void dontuse ()
+  {
+    static bool seen = false;
+    if (seen)
+      return;
+    seen = true;
+    std::cout << "valfile::size and valfile::capacity are fairly expensive\n"
+	      << "it should be possible to determine these constants statically"
+	      << "\nfor any given dwgrep expression\n";
+  }
+}
+
+size_t
+valfile::size () const
+{
+  dontuse ();
+
+  size_t n = 0;
+  for (size_t i = 0; m_types[i] != slot_type::END; ++i)
+    if (m_types[i] != slot_type::INVALID)
+      ++n;
+
+  return n;
+}
+
+size_t
+valfile::capacity () const
+{
+  dontuse ();
+
+  size_t i = 0;
+  while (m_types[i] != slot_type::END)
+    ++i;
+
+  return i;
+}
+
 slot_type
 valfile::get_slot_type (size_t i) const
 {
@@ -353,4 +392,6 @@ int main(int argc, char *argv[])
       v->show (std::cout);
       std::cout << std::endl;
     }
+  std::cout << "size:     " << stk2->size () << std::endl
+	    << "capacity: " << stk2->capacity () << std::endl;
 }

@@ -244,10 +244,18 @@ public:
 
   ~valfile ();
 
+  // These two calls are for debugging purposes.  If you call them,
+  // they print out a warning message.  You are supposed to not care
+  // about these constants at all, as each operator should know which
+  // slots it operates with, and which slot to put the result in.
+  size_t size () const;
+  size_t capacity () const;
+
   void invalidate_slot (size_t i);
 
   void set_slot (size_t i, value &&sv);
   void set_slot (size_t i, std::unique_ptr <value> sv);
+
   void set_slot (size_t i, constant &&cst);
   void set_slot (size_t i, std::string &&str);
   void set_slot (size_t i, value_vector_t &&seq);
