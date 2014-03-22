@@ -94,12 +94,14 @@ op_nop::get_yielder (std::shared_ptr <Dwarf> &dw) const
     bool done;
 
   public:
-    nop_yielder () : done { false } {}
+    nop_yielder ()
+      : done (false)
+    {}
 
     virtual std::unique_ptr <stack>
     yield (stack const &stk, size_t stksz) override
     {
-      if (!done)
+      if (done)
 	return nullptr;
 
       done = true;
