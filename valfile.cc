@@ -17,7 +17,8 @@ value_behavior <constant>::show (constant const&cst, std::ostream &o)
 }
 
 void
-value_behavior <constant>::move_to_slot (constant &&cst, size_t i, valfile &vf)
+value_behavior <constant>::move_to_slot (constant &&cst,
+					 slot_idx i, valfile &vf)
 {
   vf.set_slot (i, std::move (cst));
 }
@@ -36,7 +37,7 @@ value_behavior <std::string>::show (std::string const &str, std::ostream &o)
 
 void
 value_behavior <std::string>::move_to_slot (std::string &&str,
-					    size_t i, valfile &vf)
+					    slot_idx i, valfile &vf)
 {
   vf.set_slot (i, std::move (str));
 }
@@ -65,7 +66,7 @@ value_behavior <value_vector_t>::show (value_vector_t const &vv,
 
 void
 value_behavior <value_vector_t>::move_to_slot (value_vector_t &&vv,
-					       size_t i, valfile &vf)
+					       slot_idx i, valfile &vf)
 {
   vf.set_slot (i, std::move (vv));
 }
@@ -203,39 +204,46 @@ valfile::capacity () const
 }
 
 slot_type
-valfile::get_slot_type (size_t i) const
+valfile::get_slot_type (slot_idx i) const
 {
-  assert (m_types[i] != slot_type::END);
-  assert (m_types[i] != slot_type::INVALID);
-  return m_types[i];
+  assert (m_types[i.value ()] != slot_type::END);
+  assert (m_types[i.value ()] != slot_type::INVALID);
+  return m_types[i.value ()];
 }
 
 std::string const &
-valfile::get_slot_str (size_t i) const
+valfile::get_slot_str (slot_idx i) const
 {
-  assert (m_types[i] == slot_type::STR);
-  return m_slots[i].str;
+  assert (m_types[i.value ()] == slot_type::STR);
+  return m_slots[i.value ()].str;
 }
 
 constant const &
-valfile::get_slot_cst (size_t i) const
+valfile::get_slot_cst (slot_idx i) const
 {
-  assert (m_types[i] == slot_type::CST);
-  return m_slots[i].cst;
+  assert (m_types[i.value ()] == slot_type::CST);
+  return m_slots[i.value ()].cst;
 }
 
 value_vector_t const &
-valfile::get_slot_seq (size_t i) const
+valfile::get_slot_seq (slot_idx i) const
 {
-  assert (m_types[i] == slot_type::SEQ);
-  return m_slots[i].seq;
+  assert (m_types[i.value ()] == slot_type::SEQ);
+  return m_slots[i.value ()].seq;
+}
+
+Dwarf_Die const &
+valfile::get_slot_die (slot_idx i) const
+{
+  assert (m_types[i.value ()] == slot_type::DIE);
+  return m_slots[i.value ()].die;
 }
 
 // General accessor for all slot types.
 std::unique_ptr <valueref>
-valfile::get_slot (size_t i) const
+valfile::get_slot (slot_idx i) const
 {
-  switch (m_types[i])
+  switch (m_types[i.value ()])
     {
     case slot_type::FLT:
     case slot_type::DIE:
@@ -245,13 +253,13 @@ valfile::get_slot (size_t i) const
       abort ();
 
     case slot_type::CST:
-      return std::make_unique <valueref_cst> (m_slots[i].cst);
+      return std::make_unique <valueref_cst> (m_slots[i.value ()].cst);
 
     case slot_type::STR:
-      return std::make_unique <valueref_str> (m_slots[i].str);
+      return std::make_unique <valueref_str> (m_slots[i.value ()].str);
 
     case slot_type::SEQ:
-      return std::make_unique <valueref_seq> (m_slots[i].seq);
+      return std::make_unique <valueref_seq> (m_slots[i.value ()].seq);
 
     case slot_type::LOCLIST_ENTRY:
     case slot_type::LOCLIST_OP:
@@ -259,61 +267,69 @@ valfile::get_slot (size_t i) const
       abort ();
 
     case slot_type::INVALID:
-      assert (m_types[i] != slot_type::INVALID);
+      assert (m_types[i.value ()] != slot_type::INVALID);
       abort ();
 
     case slot_type::END:
-      assert (m_types[i] != slot_type::END);
+      assert (m_types[i.value ()] != slot_type::END);
       abort ();
     }
 
-  assert (m_types[i] != m_types[i]);
+  assert (m_types[i.value ()] != m_types[i.value ()]);
   abort ();
 }
 
 void
-valfile::invalidate_slot (size_t i)
+valfile::invalidate_slot (slot_idx i)
 {
-  assert (m_types[i] != slot_type::END);
-  assert (m_types[i] != slot_type::INVALID);
-  m_slots[i].destroy (m_types[i]);
-  m_types[i] = slot_type::INVALID;
+  assert (m_types[i.value ()] != slot_type::END);
+  assert (m_types[i.value ()] != slot_type::INVALID);
+  m_slots[i.value ()].destroy (m_types[i.value ()]);
+  m_types[i.value ()] = slot_type::INVALID;
 }
 
 void
-valfile::set_slot (size_t i, value &&sv)
+valfile::set_slot (slot_idx i, value &&sv)
 {
   sv.move_to_slot (i, *this);
 }
 
 void
-valfile::set_slot (size_t i, std::unique_ptr <value> vp)
+valfile::set_slot (slot_idx i, std::unique_ptr <value> vp)
 {
   vp->move_to_slot (i, *this);
 }
 
 void
-valfile::set_slot (size_t i, constant &&cst)
+valfile::set_slot (slot_idx i, constant &&cst)
 {
-  assert (m_types[i] == slot_type::INVALID);
-  m_types[i] = slot_type::CST;
-  new (&m_slots[i].cst) constant { cst };
+  assert (m_types[i.value ()] == slot_type::INVALID);
+  m_types[i.value ()] = slot_type::CST;
+  new (&m_slots[i.value ()].cst) constant { cst };
 }
 
 void
-valfile::set_slot (size_t i, std::string &&str)
+valfile::set_slot (slot_idx i, std::string &&str)
 {
-  assert (m_types[i] == slot_type::INVALID);
-  m_types[i] = slot_type::STR;
-  new (&m_slots[i].str) std::string { str };
+  assert (m_types[i.value ()] == slot_type::INVALID);
+  m_types[i.value ()] = slot_type::STR;
+  new (&m_slots[i.value ()].str) std::string { str };
 }
 
 void
-valfile::set_slot (size_t i, value_vector_t &&seq)
+valfile::set_slot (slot_idx i, value_vector_t &&seq)
 {
-  assert (m_types[i] == slot_type::INVALID);
-  m_types[i] = slot_type::SEQ;
-  new (&m_slots[i].seq) value_vector_t { std::move (seq) };
+  assert (m_types[i.value ()] == slot_type::INVALID);
+  m_types[i.value ()] = slot_type::SEQ;
+  new (&m_slots[i.value ()].seq) value_vector_t { std::move (seq) };
+}
+
+void
+valfile::set_slot (slot_idx i, Dwarf_Die const &die)
+{
+  assert (m_types[i.value ()] == slot_type::INVALID);
+  m_types[i.value ()] = slot_type::DIE;
+  m_slots[i.value ()].die = die;
 }
 
 void
@@ -360,8 +376,8 @@ valfile::const_iterator::operator++ (int)
 std::unique_ptr <valueref>
 valfile::const_iterator::operator* () const
 {
-  assert (m_i != -1);
-  return m_seq->get_slot (m_i);
+  assert (m_i >= 0);
+  return m_seq->get_slot (slot_idx (unsigned (m_i)));
 }
 
 std::unique_ptr <valueref>
@@ -370,19 +386,21 @@ valfile::const_iterator::operator-> () const
   return **this;
 }
 
-
-int main(int argc, char *argv[])
+#if 0
+int
+main(int argc, char *argv[])
 {
   auto stk = valfile::create (10);
-  stk->set_slot (0, value_str { "blah" });
-  stk->set_slot (1, value_cst { constant { 17, &untyped_constant_dom } });
+  stk->set_slot (slot_idx (0), value_str { "blah" });
+  stk->set_slot (slot_idx (1),
+		 value_cst { constant { 17, &untyped_constant_dom } });
 
   {
     value_vector_t v;
     v.push_back (std::make_unique <value_str> ("blah"));
     v.push_back (std::make_unique <value_cst>
 		 (constant { 17, &untyped_constant_dom }));
-    stk->set_slot (2, value_seq { std::move (v) });
+    stk->set_slot (slot_idx (2), value_seq { std::move (v) });
   }
 
   auto stk2 = valfile::copy (*stk, 10);
@@ -392,6 +410,5 @@ int main(int argc, char *argv[])
       v->show (std::cout);
       std::cout << std::endl;
     }
-  std::cout << "size:     " << stk2->size () << std::endl
-	    << "capacity: " << stk2->capacity () << std::endl;
 }
+#endif

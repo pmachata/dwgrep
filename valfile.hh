@@ -90,6 +90,46 @@ class valueref;
 // they reference.  They can be used to initialize valfile slots.
 class value;
 
+// Strongly typed unsigned for representing slot indices.
+class slot_idx
+{
+  unsigned m_value;
+
+public:
+  explicit slot_idx (unsigned value)
+    : m_value (value)
+  {}
+
+  slot_idx (slot_idx const &that)
+    : m_value (that.m_value)
+  {}
+
+  slot_idx
+  operator= (slot_idx that)
+  {
+    m_value = that.m_value;
+    return *this;
+  }
+
+  unsigned
+  value () const
+  {
+    return m_value;
+  }
+
+  bool
+  operator== (slot_idx that) const
+  {
+    return m_value == that.m_value;
+  }
+
+  bool
+  operator!= (slot_idx that) const
+  {
+    return m_value != that.m_value;
+  }
+};
+
 class valueref
 {
 public:
@@ -102,7 +142,7 @@ class value
   : public valueref
 {
 public:
-  virtual void move_to_slot (size_t i, valfile &vf) = 0;
+  virtual void move_to_slot (slot_idx i, valfile &vf) = 0;
 };
 
 // Specializations of this template implement the same interfaces as
@@ -138,7 +178,7 @@ public:
   }
 
   void
-  move_to_slot (size_t i, valfile &vf) override
+  move_to_slot (slot_idx i, valfile &vf) override
   {
     value_behavior <T>::move_to_slot (std::move (m_value), i, vf);
   }
@@ -172,7 +212,7 @@ template <>
 struct value_behavior <constant>
 {
   static void show (constant const &cst, std::ostream &o);
-  static void move_to_slot (constant &&cst, size_t i, valfile &vf);
+  static void move_to_slot (constant &&cst, slot_idx i, valfile &vf);
   static std::unique_ptr <value> clone (constant const &cst);
 };
 
@@ -183,7 +223,7 @@ template <>
 struct value_behavior <std::string>
 {
   static void show (std::string const &str, std::ostream &o);
-  static void move_to_slot (std::string &&str, size_t i, valfile &vf);
+  static void move_to_slot (std::string &&str, slot_idx i, valfile &vf);
   static std::unique_ptr <value> clone (std::string const &str);
 };
 
@@ -194,7 +234,7 @@ template <>
 struct value_behavior <value_vector_t>
 {
   static void show (value_vector_t const &vv, std::ostream &o);
-  static void move_to_slot (value_vector_t &&vv, size_t i, valfile &vf);
+  static void move_to_slot (value_vector_t &&vv, slot_idx i, valfile &vf);
   static std::unique_ptr <value> clone (value_vector_t const &vv);
 };
 
@@ -251,22 +291,27 @@ public:
   size_t size () const;
   size_t capacity () const;
 
-  void invalidate_slot (size_t i);
+  void invalidate_slot (slot_idx i);
 
-  void set_slot (size_t i, value &&sv);
-  void set_slot (size_t i, std::unique_ptr <value> sv);
+  // Polymorphic access to a slot.
+  void set_slot (slot_idx i, value &&sv);
+  void set_slot (slot_idx i, std::unique_ptr <value> sv);
+  std::unique_ptr <valueref> get_slot (slot_idx i) const;
 
-  void set_slot (size_t i, constant &&cst);
-  void set_slot (size_t i, std::string &&str);
-  void set_slot (size_t i, value_vector_t &&seq);
+  // Typed access to a slot.
+  slot_type get_slot_type (slot_idx i) const;
 
-  std::unique_ptr <valueref> get_slot (size_t i) const;
-  slot_type get_slot_type (size_t i) const;
+  void set_slot (slot_idx i, constant &&cst);
+  constant const &get_slot_cst (slot_idx i) const;
 
-  // Specialized per-type slot accessors.
-  std::string const &get_slot_str (size_t i) const;
-  constant const &get_slot_cst (size_t i) const;
-  value_vector_t const &get_slot_seq (size_t i) const;
+  void set_slot (slot_idx i, std::string &&str);
+  std::string const &get_slot_str (slot_idx i) const;
+
+  void set_slot (slot_idx i, value_vector_t &&seq);
+  value_vector_t const &get_slot_seq (slot_idx i) const;
+
+  void set_slot (slot_idx i, Dwarf_Die const &die);
+  Dwarf_Die const &get_slot_die (slot_idx i) const;
 
   class const_iterator
     : public std::iterator <std::input_iterator_tag,
