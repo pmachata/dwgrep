@@ -34,7 +34,7 @@
 #include <cassert>
 #include <algorithm>
 
-#include <libdw.h>
+#include <elfutils/libdw.h>
 #include <dwarf.h>
 
 
