@@ -11,9 +11,47 @@
 
 #include "make_unique.hh"
 
-class expr;
-class que_node;
+// A problem object represents a graph that we want to explore, and
+// any associated caches.
+struct problem
+{
+  typedef std::shared_ptr <problem> ptr;
+};
+
+// Expression classes represent the structure of expression.  The
+// output of a compiled expression is a tree of expr objects.
+// Expression can be instantiated for a particular problem.
+class expr_node;
+
+// Exec nodes represent the structure of expression at runtime.  Each
+// exec node is one coroutine.  Exec nodes are interconnected with
+// queues that manage interchange of data between the coroutines.
 class exec_node;
+
+// Queue nodes hold que objects, and also know about the two
+// expression objects that they are surrounded by.  A queue node thus
+// knows how to transfer control, say, downstream, if, say, an
+// upstream node asks.
+class que_node;
+
+// N.B.: All these classes are very likely internal, possibly with the
+// exception of class problem.  On the outside we want a clear
+// interface like, for example:
+//
+//   class dwgrep_expr_t {
+//       std::unique_ptr <exec_node> m_exec_node;  // but pimpl'd away
+//   public:
+//       explicit dwgrep_expr_t (const char *str); // compile query
+//       explicit dwgrep_expr_t (std::string str); // compile query
+//       something run (problem::ptr p); // run expr on a given problem
+//   };
+//
+// It's not very clear what the "something" should be.  Maybe the
+// output end of the queue, so that the caller can decide whether they
+// want to keep pulling.  The queue returned would have to be a
+// sanitized wrapper that translates valfile's to std::vectors's.  We
+// would still need a separate user-facing set of value interfaces
+// that allow the caller program to inspect obtained values.
 
 namespace
 {
@@ -30,9 +68,6 @@ struct valfile
 {
   typedef std::unique_ptr <valfile> ptr;
 };
-
-class expr;
-class exec_node;
 
 class que
 {
@@ -83,18 +118,13 @@ public:
   }
 };
 
-struct query
-{
-  typedef std::shared_ptr <query> ptr;
-};
-
-class expr
+class expr_node
 {
 public:
-  virtual ~expr () {}
+  virtual ~expr_node () {}
 
   virtual std::pair <std::shared_ptr <exec_node>, std::shared_ptr <exec_node> >
-  build_exec (query::ptr q) = 0;
+  build_exec (problem::ptr q) = 0;
 };
 
 class exec_node
@@ -253,19 +283,20 @@ exec_node::push (valfile::ptr vf)
 }
 
 class expr_cat
-  : public expr
+  : public expr_node
 {
-  std::unique_ptr <expr> m_left;
-  std::unique_ptr <expr> m_right;
+  std::unique_ptr <expr_node> m_left;
+  std::unique_ptr <expr_node> m_right;
 
 public:
-  expr_cat (std::unique_ptr <expr> left, std::unique_ptr <expr> right)
+  expr_cat (std::unique_ptr <expr_node> left,
+	    std::unique_ptr <expr_node> right)
     : m_left (std::move (left))
     , m_right (std::move (right))
   {}
 
   std::pair <std::shared_ptr <exec_node>, std::shared_ptr <exec_node> >
-  build_exec (query::ptr q) override
+  build_exec (problem::ptr q) override
   {
     auto le = m_left->build_exec (q);
     auto re = m_right->build_exec (q);
@@ -277,7 +308,7 @@ public:
 };
 
 class expr_uni
-  : public expr
+  : public expr_node
 {
   struct e
     : public exec_node
@@ -305,7 +336,7 @@ class expr_uni
 
 public:
   std::pair <std::shared_ptr <exec_node>, std::shared_ptr <exec_node> >
-  build_exec (query::ptr q) override
+  build_exec (problem::ptr q) override
   {
     auto ret = std::make_shared <e> ();
     return std::make_pair (ret, ret);
@@ -313,7 +344,7 @@ public:
 };
 
 class expr_dup
-  : public expr
+  : public expr_node
 {
   struct e
     : public exec_node
@@ -338,7 +369,7 @@ class expr_dup
 
 public:
   std::pair <std::shared_ptr <exec_node>, std::shared_ptr <exec_node> >
-  build_exec (query::ptr q) override
+  build_exec (problem::ptr q) override
   {
     auto ret = std::make_shared <e> ();
     return std::make_pair (ret, ret);
@@ -346,7 +377,7 @@ public:
 };
 
 class expr_mul
-  : public expr
+  : public expr_node
 {
   struct e
     : public exec_node
@@ -373,7 +404,7 @@ class expr_mul
 
 public:
   std::pair <std::shared_ptr <exec_node>, std::shared_ptr <exec_node> >
-  build_exec (query::ptr q) override
+  build_exec (problem::ptr q) override
   {
     auto ret = std::make_shared <e> ();
     return std::make_pair (ret, ret);
@@ -381,7 +412,7 @@ public:
 };
 
 class expr_query
-  : public expr
+  : public expr_node
 {
 public:
   class e
@@ -410,9 +441,9 @@ public:
 
       // next () is written in such a way that if the input que is
       // empty, but there's stuff in the output que, we switch right
-      // (downstream).  So we only get here if the first guy in pipeline
-      // got out of what he can produce, which signifies the end of
-      // query.
+      // (downstream).  So we only get here if the first guy in
+      // pipeline got out of what he can produce for the single value
+      // that we put in, which signifies the end of query.
       quit (m_main_ctx);
     }
 
@@ -432,15 +463,15 @@ public:
     }
   };
 
-  std::unique_ptr <expr> m_expr;
+  std::unique_ptr <expr_node> m_expr;
 
 public:
-  explicit expr_query (std::unique_ptr <expr> expr)
+  explicit expr_query (std::unique_ptr <expr_node> expr)
     : m_expr (std::move (expr))
   {}
 
   std::pair <std::shared_ptr <exec_node>, std::shared_ptr <exec_node> >
-  build_exec (query::ptr q) override
+  build_exec (problem::ptr q) override
   {
     auto ee = m_expr->build_exec (q);
     auto qr = std::make_shared <e> ();
@@ -469,8 +500,8 @@ main(int argc, char *argv[])
 
   auto Q = std::make_unique <expr_query> (std::move (C1));
 
-  auto ctx = std::make_shared <query> ();
-  auto E = Q->build_exec (ctx);
+  auto prob = std::make_shared <problem> ();
+  auto E = Q->build_exec (prob);
 
   if (auto q = dynamic_cast <expr_query::e *> (&*E.first))
     q->run ();
