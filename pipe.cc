@@ -7,6 +7,8 @@
 #include <system_error>
 #include <iostream>
 
+#include <valgrind/valgrind.h>
+
 #include "make_unique.hh"
 
 namespace
@@ -161,7 +163,8 @@ class leaf_op
   static size_t const stack_size = 4 * 4096;
   std::unique_ptr <in_que> m_in_que;
   std::unique_ptr <out_que> m_out_que;
-  ucontext m_uc;
+  std::unique_ptr <ucontext> m_uc;
+  int m_vg_stack_id;
 
   static void
   call_operate (leaf_op *self)
@@ -175,10 +178,10 @@ protected:
   next ()
   {
     while (m_in_que->empty () && ! m_out_que->empty ())
-      m_out_que->switch_right (m_uc);
+      m_out_que->switch_right (*m_uc);
 
     if (m_in_que->empty ())
-      m_in_que->switch_left (m_uc);
+      m_in_que->switch_left (*m_uc);
 
     if (m_in_que->empty ())
       {
@@ -194,7 +197,7 @@ protected:
   push (valfile::ptr vf)
   {
     while (m_out_que->full ())
-      m_out_que->switch_right (m_uc);
+      m_out_que->switch_right (*m_uc);
 
     //std::cout << name () << " pushes\n";
     m_out_que->push_back (std::move (vf));
@@ -202,22 +205,16 @@ protected:
 
 public:
   leaf_op ()
-    : m_uc ({})
   {
-    if (getcontext (&m_uc) == -1)
-      throw_system ();
+  }
 
-    void *stack = mmap (0, stack_size, PROT_READ|PROT_WRITE,
-			MAP_ANONYMOUS|MAP_PRIVATE, -1, 0);
-
-    if (stack == MAP_FAILED)
-      throw_system ();
-
-    m_uc.uc_stack.ss_sp = stack;
-    m_uc.uc_stack.ss_size = stack_size;
-    m_uc.uc_stack.ss_flags = 0;
-
-    makecontext (&m_uc, (void (*)()) call_operate, 1, this);
+  ~leaf_op ()
+  {
+    if (m_uc != nullptr)
+      {
+	VALGRIND_STACK_DEREGISTER (m_vg_stack_id);
+	munmap (m_uc->uc_stack.ss_sp, stack_size);
+      }
   }
 
   virtual void operate (query const &q) = 0;
@@ -241,15 +238,37 @@ public:
   void
   activate (ucontext &other)
   {
+    if (m_uc == nullptr)
+      {
+	m_uc = std::make_unique <ucontext> ();
+	if (getcontext (&*m_uc) == -1)
+	  throw_system ();
+
+	void *stack = mmap (0, stack_size, PROT_READ|PROT_WRITE,
+			    MAP_ANONYMOUS|MAP_PRIVATE, -1, 0);
+
+	if (stack == MAP_FAILED)
+	  throw_system ();
+
+	m_vg_stack_id = VALGRIND_STACK_REGISTER
+	  (stack, static_cast <char *> (stack) + stack_size);
+	m_uc->uc_stack.ss_sp = stack;
+	m_uc->uc_stack.ss_size = stack_size;
+	m_uc->uc_stack.ss_flags = 0;
+
+	makecontext (&*m_uc, (void (*)()) call_operate, 1, this);
+      }
+
     //std::cout << "activate " << name () << std::endl;
-    swapcontext (&other, &m_uc);
+    swapcontext (&other, &*m_uc);
   }
 
 protected:
   void
   quit (ucontext &main)
   {
-    swapcontext (&m_uc, &main);
+    assert (m_uc != nullptr);
+    swapcontext (&*m_uc, &main);
   }
 };
 
