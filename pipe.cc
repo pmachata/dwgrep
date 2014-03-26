@@ -131,7 +131,7 @@ class exec_node
 {
   static size_t const stack_size = 4 * 4096;
 
-  std::shared_ptr <que_node> m_in_que;
+  std::weak_ptr <que_node> m_in_que;
   std::shared_ptr <que_node> m_out_que;
 
   std::unique_ptr <ucontext> m_uc;
@@ -141,6 +141,18 @@ class exec_node
   call_operate (exec_node *self)
   {
     self->operate ();
+  }
+
+  // Reading from the in queue can result in context switch.  If that
+  // happened while this object holds shared_ptr reference, that queue
+  // would never get destroyed.  For that reason we unpack the smart
+  // pointer, let it die again, and pass back reference.
+  que_node &
+  get_in_que ()
+  {
+    auto inq = m_in_que.lock ();
+    assert (inq != nullptr);
+    return *inq;
   }
 
 protected:
@@ -179,7 +191,7 @@ public:
   virtual std::string name () const = 0;
 
   void
-  assign_in (std::shared_ptr <que_node> q)
+  assign_in (std::weak_ptr <que_node> q)
   {
     m_in_que = q;
   }
@@ -201,6 +213,9 @@ protected:
   void
   quit (ucontext &main)
   {
+    // Break the circular chain of shared pointers.
+    m_out_que = nullptr;
+
     assert (m_uc != nullptr);
     swapcontext (&*m_uc, &main);
   }
@@ -209,8 +224,18 @@ protected:
 class que_node
 {
   que m_que;
-  std::shared_ptr <exec_node> m_left;
+  std::weak_ptr <exec_node> m_left;
   std::shared_ptr <exec_node> m_right;
+
+  // The rationale for this function is the same as for
+  // exec_node::get_in_que.
+  exec_node &
+  get_left ()
+  {
+    auto l = m_left.lock ();
+    assert (l != nullptr);
+    return *l;
+  }
 
 public:
   que_node (std::shared_ptr <exec_node> left, std::shared_ptr <exec_node> right)
@@ -227,7 +252,7 @@ public:
   void
   switch_left (ucontext &cur)
   {
-    m_left->activate (cur);
+    get_left ().activate (cur);
   }
 
   valfile::ptr
@@ -258,18 +283,19 @@ public:
 valfile::ptr
 exec_node::next ()
 {
-  while (m_in_que->empty () && ! m_out_que->empty ())
+  que_node &inq = get_in_que ();
+  while (inq.empty () && ! m_out_que->empty ())
     m_out_que->switch_right (*m_uc);
 
-  if (m_in_que->empty ())
-    m_in_que->switch_left (*m_uc);
+  if (inq.empty ())
+    inq.switch_left (*m_uc);
 
-  if (m_in_que->empty ())
+  if (inq.empty ())
     // If the in que is still empty, we are done.
     return nullptr;
 
   //std::cout << name () << " pops\n";
-  return m_in_que->pop_front ();
+  return inq.pop_front ();
 }
 
 void
@@ -501,9 +527,8 @@ main(int argc, char *argv[])
   auto Q = std::make_unique <expr_query> (std::move (C1));
 
   auto prob = std::make_shared <problem> ();
-  auto E = Q->build_exec (prob);
-
-  if (auto q = dynamic_cast <expr_query::e *> (&*E.first))
+  auto E = Q->build_exec (prob).first;
+  if (auto q = dynamic_cast <expr_query::e *> (&*E))
     q->run ();
 
   std::cout << "over and out\n";
