@@ -492,8 +492,6 @@ public:
     void
     run ()
     {
-      if (getcontext (&m_main_ctx) == -1)
-	throw_system ();
       activate (m_main_ctx);
       std::cout << "finished running\n";
     }
