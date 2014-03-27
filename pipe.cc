@@ -427,6 +427,66 @@ class expr_node_mul
   : public expr_leaf_node <exec_node_mul>
 {};
 
+class exec_node_query
+  : public exec_node
+{
+  ucontext m_main_ctx;
+
+public:
+  exec_node_query ()
+    : m_main_ctx ({})
+  {}
+
+  void
+  operate () override
+  {
+    push (std::make_unique <valfile> ());
+
+    while (valfile::ptr vf = next ())
+      {
+	std::cout << "[";
+	for (auto v: *vf)
+	  std::cout << " " << v;
+	std::cout << " ]\n";
+      }
+
+    // next () is written in such a way that if the input que is
+    // empty, but there's stuff in the output que, we switch
+    // downstream.  So we only get here if the first guy in pipeline
+    // got out of what he can produce for the single value that we
+    // put in, which signifies the end of query.
+    //
+    // At this point, we need to go downstream through the whole
+    // pipeline, which will result in nullptr being returned to all
+    // the operate's along the way, thus finishing any unfinished
+    // business.  In particular, any weak_ptr's that were converted
+    // to shared_ptr's by lock () need to be closed again, so that
+    // we don't leak.
+    //
+    // operate is called from operate_wrapper, which calls
+    // switch_downstream as well.  This will eventually transfer
+    // control back to us, because exec_node's are connected into a
+    // circle (see the comment above).
+    switch_downstream ();
+
+    // Ok, we got back, now we can quit.
+    quit (m_main_ctx);
+  }
+
+  std::string
+  name () const override
+  {
+    return "query";
+  }
+
+  void
+  run ()
+  {
+    activate (m_main_ctx);
+    std::cout << "finished running\n";
+  }
+};
+
 // Query expression node is the top-level object that holds the whole
 // query.  It produces an exec_node, and ties it to the upstream-most
 // and downstream-most nodes of the overall expression.  Thus the
@@ -435,68 +495,6 @@ class expr_node_mul
 class expr_node_query
   : public expr_node
 {
-public:
-  class e
-    : public exec_node
-  {
-    ucontext m_main_ctx;
-
-  public:
-    e ()
-      : m_main_ctx ({})
-    {
-    }
-
-    void
-    operate () override
-    {
-      push (std::make_unique <valfile> ());
-
-      while (valfile::ptr vf = next ())
-	{
-	  std::cout << "[";
-	  for (auto v: *vf)
-	    std::cout << " " << v;
-	  std::cout << " ]\n";
-	}
-
-      // next () is written in such a way that if the input que is
-      // empty, but there's stuff in the output que, we switch
-      // downstream.  So we only get here if the first guy in pipeline
-      // got out of what he can produce for the single value that we
-      // put in, which signifies the end of query.
-      //
-      // At this point, we need to go downstream through the whole
-      // pipeline, which will result in nullptr being returned to all
-      // the operate's along the way, thus finishing any unfinished
-      // business.  In particular, any weak_ptr's that were converted
-      // to shared_ptr's by lock () need to be closed again, so that
-      // we don't leak.
-      //
-      // operate is called from operate_wrapper, which calls
-      // switch_downstream as well.  This will eventually transfer
-      // control back to us, because exec_node's are connected into a
-      // circle (see the comment above).
-      switch_downstream ();
-
-      // Ok, we got back, now we can quit.
-      quit (m_main_ctx);
-    }
-
-    std::string
-    name () const override
-    {
-      return "query";
-    }
-
-    void
-    run ()
-    {
-      activate (m_main_ctx);
-      std::cout << "finished running\n";
-    }
-  };
-
   std::unique_ptr <expr_node> m_expr;
 
 public:
@@ -508,7 +506,7 @@ public:
   build_exec (problem::ptr q) override
   {
     auto ee = m_expr->build_exec (q);
-    auto qr = std::make_shared <e> ();
+    auto qr = std::make_shared <exec_node_query> ();
     auto lqi = std::make_shared <que_node> (qr, ee.first);
     auto lqo = std::make_shared <que_node> (ee.second, qr);
 
@@ -536,7 +534,7 @@ main(int argc, char *argv[])
 
   auto prob = std::make_shared <problem> ();
   auto E = Q->build_exec (prob).first;
-  if (auto q = dynamic_cast <expr_node_query::e *> (&*E))
+  if (auto q = dynamic_cast <exec_node_query *> (&*E))
     q->run ();
 
   std::cout << "over and out\n";
