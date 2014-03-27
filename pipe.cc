@@ -155,13 +155,13 @@ class exec_node
   int m_vg_stack_id;
 
   static void
-  call_operate (exec_node *self)
+  start (exec_node *self)
   {
-    self->operate_wrapper ();
+    self->call_operate ();
   }
 
-  void
-  operate_wrapper ()
+  virtual void
+  call_operate ()
   {
     operate ();
     std::cout << name () << " done\n";
@@ -191,7 +191,7 @@ public:
     m_uc.uc_stack.ss_size = stack_size;
     m_uc.uc_stack.ss_flags = 0;
 
-    makecontext (&m_uc, (void (*)()) call_operate, 1, this);
+    makecontext (&m_uc, (void (*)()) start, 1, this);
   }
 
   virtual ~exec_node ()
@@ -215,11 +215,12 @@ public:
     m_out_que = q;
   }
 
+  // Transfer context from CUR to this task.
   void
-  activate (ucontext &other)
+  activate (ucontext &cur)
   {
     //std::cout << "activate " << name () << std::endl;
-    swapcontext (&other, &m_uc);
+    swapcontext (&cur, &m_uc);
   }
 
 protected:
@@ -463,8 +464,8 @@ public:
     // to shared_ptr's by lock () need to be closed again, so that
     // we don't leak.
     //
-    // operate is called from operate_wrapper, which calls
-    // switch_downstream as well.  This will eventually transfer
+    // operate is called from call_operate, which in ordinary nodes
+    // calls switch_downstream as well.  This will eventually transfer
     // control back to us, because exec_node's are connected into a
     // circle (see the comment above).
     switch_downstream ();
