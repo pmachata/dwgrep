@@ -131,6 +131,19 @@ public:
   build_exec (problem::ptr q) = 0;
 };
 
+template <class Exec>
+class expr_leaf_node
+  : public expr_node
+{
+public:
+  std::pair <std::shared_ptr <exec_node>, std::shared_ptr <exec_node> >
+  build_exec (problem::ptr q) override
+  {
+    auto ret = std::make_shared <Exec> ();
+    return std::make_pair (ret, ret);
+  }
+};
+
 class exec_node
 {
   static size_t const stack_size = 4 * 4096;
@@ -309,15 +322,15 @@ exec_node::switch_right ()
   m_out_que->switch_right (*m_uc);
 }
 
-class expr_cat
+class expr_node_cat
   : public expr_node
 {
   std::unique_ptr <expr_node> m_left;
   std::unique_ptr <expr_node> m_right;
 
 public:
-  expr_cat (std::unique_ptr <expr_node> left,
-	    std::unique_ptr <expr_node> right)
+  expr_node_cat (std::unique_ptr <expr_node> left,
+		 std::unique_ptr <expr_node> right)
     : m_left (std::move (left))
     , m_right (std::move (right))
   {}
@@ -334,115 +347,91 @@ public:
   }
 };
 
-class expr_uni
-  : public expr_node
+struct exec_node_uni
+  : public exec_node
 {
-  struct e
-    : public exec_node
+  void
+  operate () override
   {
-    void
-    operate () override
-    {
-      while (valfile::ptr vf = next ())
-	{
-	  for (int i = 0; i < 2500; ++i)
-	    {
-	      auto vf2 = std::make_unique <valfile> (*vf);
-	      vf2->push_back (i);
-	      push (std::move (vf2));
-	    }
-	}
-    }
+    while (valfile::ptr vf = next ())
+      {
+	for (int i = 0; i < 250; ++i)
+	  {
+	    auto vf2 = std::make_unique <valfile> (*vf);
+	    vf2->push_back (i);
+	    push (std::move (vf2));
+	  }
+      }
+  }
 
-    std::string
-    name () const override
-    {
-      return "uni";
-    }
-  };
-
-public:
-  std::pair <std::shared_ptr <exec_node>, std::shared_ptr <exec_node> >
-  build_exec (problem::ptr q) override
+  std::string
+  name () const override
   {
-    auto ret = std::make_shared <e> ();
-    return std::make_pair (ret, ret);
+    return "uni";
   }
 };
 
-class expr_dup
-  : public expr_node
+class expr_node_uni
+  : public expr_leaf_node <exec_node_uni>
+{};
+
+struct exec_node_dup
+  : public exec_node
 {
-  struct e
-    : public exec_node
+  void
+  operate () override
   {
-    void
-    operate () override
-    {
-      while (valfile::ptr vf = next ())
-	{
-	  assert (! vf->empty ());
-	  vf->push_back (vf->back ());
-	  push (std::move (vf));
-	}
-    }
+    while (valfile::ptr vf = next ())
+      {
+	assert (! vf->empty ());
+	vf->push_back (vf->back ());
+	push (std::move (vf));
+      }
+  }
 
-    std::string
-    name () const override
-    {
-      return "dup";
-    }
-  };
-
-public:
-  std::pair <std::shared_ptr <exec_node>, std::shared_ptr <exec_node> >
-  build_exec (problem::ptr q) override
+  std::string
+  name () const override
   {
-    auto ret = std::make_shared <e> ();
-    return std::make_pair (ret, ret);
+    return "dup";
   }
 };
 
-class expr_mul
-  : public expr_node
+class expr_node_dup
+  : public expr_leaf_node <exec_node_dup>
+{};
+
+struct exec_node_mul
+  : public exec_node
 {
-  struct e
-    : public exec_node
+  void
+  operate () override
   {
-    void
-    operate () override
-    {
-      while (valfile::ptr vf = next ())
-	{
-	  assert (vf->size () >= 2);
-	  int a = vf->back (); vf->pop_back ();
-	  int b = vf->back (); vf->pop_back ();
-	  vf->push_back (a * b);
-	  push (std::move (vf));
-	}
-    }
+    while (valfile::ptr vf = next ())
+      {
+	assert (vf->size () >= 2);
+	int a = vf->back (); vf->pop_back ();
+	int b = vf->back (); vf->pop_back ();
+	vf->push_back (a * b);
+	push (std::move (vf));
+      }
+  }
 
-    std::string
-    name () const override
-    {
-      return "mul";
-    }
-  };
-
-public:
-  std::pair <std::shared_ptr <exec_node>, std::shared_ptr <exec_node> >
-  build_exec (problem::ptr q) override
+  std::string
+  name () const override
   {
-    auto ret = std::make_shared <e> ();
-    return std::make_pair (ret, ret);
+    return "mul";
   }
 };
+
+class expr_node_mul
+  : public expr_leaf_node <exec_node_mul>
+{};
 
 // Query expression node is the top-level object that holds the whole
 // query.  It produces an exec_node, and ties it to the leftmost and
 // rightmost nodes of the overall expression.  Thus the overall object
 // graph forms a circle of alternating exec_node's and que_node's.
-class expr_query
+class expr_node_query
   : public expr_node
 {
 public:
@@ -512,7 +501,7 @@ public:
   std::unique_ptr <expr_node> m_expr;
 
 public:
-  explicit expr_query (std::unique_ptr <expr_node> expr)
+  explicit expr_node_query (std::unique_ptr <expr_node> expr)
     : m_expr (std::move (expr))
   {}
 
@@ -537,18 +526,18 @@ public:
 int
 main(int argc, char *argv[])
 {
-  auto U = std::make_unique <expr_uni> ();
-  auto D = std::make_unique <expr_dup> ();
-  auto M = std::make_unique <expr_mul> ();
+  auto U = std::make_unique <expr_node_uni> ();
+  auto D = std::make_unique <expr_node_dup> ();
+  auto M = std::make_unique <expr_node_mul> ();
 
-  auto C2 = std::make_unique <expr_cat> (std::move (D), std::move (M));
-  auto C1 = std::make_unique <expr_cat> (std::move (U), std::move (C2));
+  auto C2 = std::make_unique <expr_node_cat> (std::move (D), std::move (M));
+  auto C1 = std::make_unique <expr_node_cat> (std::move (U), std::move (C2));
 
-  auto Q = std::make_unique <expr_query> (std::move (C1));
+  auto Q = std::make_unique <expr_node_query> (std::move (C1));
 
   auto prob = std::make_shared <problem> ();
   auto E = Q->build_exec (prob).first;
-  if (auto q = dynamic_cast <expr_query::e *> (&*E))
+  if (auto q = dynamic_cast <expr_node_query::e *> (&*E))
     q->run ();
 
   std::cout << "over and out\n";
