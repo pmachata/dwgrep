@@ -151,7 +151,7 @@ class exec_node
   std::weak_ptr <que_node> m_in_que;
   std::shared_ptr <que_node> m_out_que;
 
-  std::unique_ptr <ucontext> m_uc;
+  ucontext m_uc;
   int m_vg_stack_id;
 
   static void
@@ -174,9 +174,9 @@ protected:
 
 public:
   exec_node ()
+    : m_uc ({})
   {
-    m_uc = std::make_unique <ucontext> ();
-    if (getcontext (&*m_uc) == -1)
+    if (getcontext (&m_uc) == -1)
       throw_system ();
 
     void *stack = mmap (0, stack_size, PROT_READ|PROT_WRITE,
@@ -187,17 +187,17 @@ public:
 
     m_vg_stack_id = VALGRIND_STACK_REGISTER
       (stack, static_cast <char *> (stack) + stack_size);
-    m_uc->uc_stack.ss_sp = stack;
-    m_uc->uc_stack.ss_size = stack_size;
-    m_uc->uc_stack.ss_flags = 0;
+    m_uc.uc_stack.ss_sp = stack;
+    m_uc.uc_stack.ss_size = stack_size;
+    m_uc.uc_stack.ss_flags = 0;
 
-    makecontext (&*m_uc, (void (*)()) call_operate, 1, this);
+    makecontext (&m_uc, (void (*)()) call_operate, 1, this);
   }
 
   virtual ~exec_node ()
   {
     VALGRIND_STACK_DEREGISTER (m_vg_stack_id);
-    munmap (m_uc->uc_stack.ss_sp, stack_size);
+    munmap (m_uc.uc_stack.ss_sp, stack_size);
   }
 
   virtual void operate () = 0;
@@ -219,7 +219,7 @@ public:
   activate (ucontext &other)
   {
     //std::cout << "activate " << name () << std::endl;
-    swapcontext (&other, &*m_uc);
+    swapcontext (&other, &m_uc);
   }
 
 protected:
@@ -230,8 +230,7 @@ protected:
     // Break the circular chain of shared pointers.
     m_out_que = nullptr;
 
-    assert (m_uc != nullptr);
-    swapcontext (&*m_uc, &main);
+    swapcontext (&m_uc, &main);
   }
 
   void switch_downstream ();
@@ -294,10 +293,10 @@ exec_node::next ()
   assert (inq != nullptr);
 
   while (inq->empty () && ! m_out_que->empty ())
-    m_out_que->switch_downstream (*m_uc);
+    m_out_que->switch_downstream (m_uc);
 
   if (inq->empty ())
-    inq->switch_upstream (*m_uc);
+    inq->switch_upstream (m_uc);
 
   if (inq->empty ())
     // If the in que is still empty, we are done.
@@ -311,7 +310,7 @@ void
 exec_node::push (valfile::ptr vf)
 {
   while (m_out_que->full ())
-    m_out_que->switch_downstream (*m_uc);
+    m_out_que->switch_downstream (m_uc);
 
   //std::cout << name () << " pushes\n";
   m_out_que->push_back (std::move (vf));
@@ -320,7 +319,7 @@ exec_node::push (valfile::ptr vf)
 void
 exec_node::switch_downstream ()
 {
-  m_out_que->switch_downstream (*m_uc);
+  m_out_que->switch_downstream (m_uc);
 }
 
 class expr_node_cat
