@@ -126,7 +126,7 @@ public:
   // This should build an exec_node corresponding to this expr_node.
   // Not every expr_node needs to have an associated exec_node, some
   // nodes will only do an interconnect.  It returns a pair of
-  // leftmost and rightmost exec_node's in the pipeline.
+  // endpoints.
   virtual std::pair <std::shared_ptr <exec_node>, std::shared_ptr <exec_node> >
   build_exec (problem::ptr q) = 0;
 };
@@ -165,7 +165,7 @@ class exec_node
   {
     operate ();
     std::cout << name () << " done\n";
-    switch_right ();
+    switch_downstream ();
   }
 
 protected:
@@ -234,31 +234,32 @@ protected:
     swapcontext (&*m_uc, &main);
   }
 
-  void switch_right ();
+  void switch_downstream ();
 };
 
 class que_node
 {
   que m_que;
-  std::weak_ptr <exec_node> m_left;
-  std::shared_ptr <exec_node> m_right;
+  std::weak_ptr <exec_node> m_upstream;
+  std::shared_ptr <exec_node> m_downstream;
 
 public:
-  que_node (std::shared_ptr <exec_node> left, std::shared_ptr <exec_node> right)
-    : m_left ((assert (left != nullptr), left))
-    , m_right ((assert (right != nullptr), right))
+  que_node (std::shared_ptr <exec_node> upstream,
+	    std::shared_ptr <exec_node> downstream)
+    : m_upstream ((assert (upstream != nullptr), upstream))
+    , m_downstream ((assert (downstream != nullptr), downstream))
   {}
 
   void
-  switch_right (ucontext &cur)
+  switch_upstream (ucontext &cur)
   {
-    m_right->activate (cur);
+    m_upstream.lock ()->activate (cur);
   }
 
   void
-  switch_left (ucontext &cur)
+  switch_downstream (ucontext &cur)
   {
-    m_left.lock ()->activate (cur);
+    m_downstream->activate (cur);
   }
 
   valfile::ptr
@@ -293,10 +294,10 @@ exec_node::next ()
   assert (inq != nullptr);
 
   while (inq->empty () && ! m_out_que->empty ())
-    m_out_que->switch_right (*m_uc);
+    m_out_que->switch_downstream (*m_uc);
 
   if (inq->empty ())
-    inq->switch_left (*m_uc);
+    inq->switch_upstream (*m_uc);
 
   if (inq->empty ())
     // If the in que is still empty, we are done.
@@ -310,36 +311,36 @@ void
 exec_node::push (valfile::ptr vf)
 {
   while (m_out_que->full ())
-    m_out_que->switch_right (*m_uc);
+    m_out_que->switch_downstream (*m_uc);
 
   //std::cout << name () << " pushes\n";
   m_out_que->push_back (std::move (vf));
 }
 
 void
-exec_node::switch_right ()
+exec_node::switch_downstream ()
 {
-  m_out_que->switch_right (*m_uc);
+  m_out_que->switch_downstream (*m_uc);
 }
 
 class expr_node_cat
   : public expr_node
 {
-  std::unique_ptr <expr_node> m_left;
-  std::unique_ptr <expr_node> m_right;
+  std::unique_ptr <expr_node> m_upstream;
+  std::unique_ptr <expr_node> m_downstream;
 
 public:
-  expr_node_cat (std::unique_ptr <expr_node> left,
-		 std::unique_ptr <expr_node> right)
-    : m_left (std::move (left))
-    , m_right (std::move (right))
+  expr_node_cat (std::unique_ptr <expr_node> upstream,
+		 std::unique_ptr <expr_node> downstream)
+    : m_upstream (std::move (upstream))
+    , m_downstream (std::move (downstream))
   {}
 
   std::pair <std::shared_ptr <exec_node>, std::shared_ptr <exec_node> >
   build_exec (problem::ptr q) override
   {
-    auto le = m_left->build_exec (q);
-    auto re = m_right->build_exec (q);
+    auto le = m_upstream->build_exec (q);
+    auto re = m_downstream->build_exec (q);
     auto qe = std::make_shared <que_node> (le.second, re.first);
     le.second->assign_out (qe);
     re.first->assign_in (qe);
@@ -428,9 +429,10 @@ class expr_node_mul
 {};
 
 // Query expression node is the top-level object that holds the whole
-// query.  It produces an exec_node, and ties it to the leftmost and
-// rightmost nodes of the overall expression.  Thus the overall object
-// graph forms a circle of alternating exec_node's and que_node's.
+// query.  It produces an exec_node, and ties it to the upstream-most
+// and downstream-most nodes of the overall expression.  Thus the
+// overall object graph forms a circle of alternating exec_node's and
+// que_node's.
 class expr_node_query
   : public expr_node
 {
@@ -460,10 +462,10 @@ public:
 	}
 
       // next () is written in such a way that if the input que is
-      // empty, but there's stuff in the output que, we switch right
-      // (downstream).  So we only get here if the first guy in
-      // pipeline got out of what he can produce for the single value
-      // that we put in, which signifies the end of query.
+      // empty, but there's stuff in the output que, we switch
+      // downstream.  So we only get here if the first guy in pipeline
+      // got out of what he can produce for the single value that we
+      // put in, which signifies the end of query.
       //
       // At this point, we need to go downstream through the whole
       // pipeline, which will result in nullptr being returned to all
@@ -473,10 +475,10 @@ public:
       // we don't leak.
       //
       // operate is called from operate_wrapper, which calls
-      // switch_right as well.  This will eventually transfer control
-      // back to us, because exec_node's are connected into a circle
-      // (see above comment).
-      switch_right ();
+      // switch_downstream as well.  This will eventually transfer
+      // control back to us, because exec_node's are connected into a
+      // circle (see the comment above).
+      switch_downstream ();
 
       // Ok, we got back, now we can quit.
       quit (m_main_ctx);
