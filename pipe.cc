@@ -140,19 +140,15 @@ class exec_node
   static void
   call_operate (exec_node *self)
   {
-    self->operate ();
+    self->operate_wrapper ();
   }
 
-  // Reading from the in queue can result in context switch.  If that
-  // happened while this object holds shared_ptr reference, that queue
-  // would never get destroyed.  For that reason we unpack the smart
-  // pointer, let it die again, and pass back reference.
-  que_node &
-  get_in_que ()
+  void
+  operate_wrapper ()
   {
-    auto inq = m_in_que.lock ();
-    assert (inq != nullptr);
-    return *inq;
+    operate ();
+    std::cout << name () << " done\n";
+    switch_right ();
   }
 
 protected:
@@ -213,12 +209,15 @@ protected:
   void
   quit (ucontext &main)
   {
+    std::cout << "quitting\n";
     // Break the circular chain of shared pointers.
     m_out_que = nullptr;
 
     assert (m_uc != nullptr);
     swapcontext (&*m_uc, &main);
   }
+
+  void switch_right ();
 };
 
 class que_node
@@ -226,16 +225,6 @@ class que_node
   que m_que;
   std::weak_ptr <exec_node> m_left;
   std::shared_ptr <exec_node> m_right;
-
-  // The rationale for this function is the same as for
-  // exec_node::get_in_que.
-  exec_node &
-  get_left ()
-  {
-    auto l = m_left.lock ();
-    assert (l != nullptr);
-    return *l;
-  }
 
 public:
   que_node (std::shared_ptr <exec_node> left, std::shared_ptr <exec_node> right)
@@ -252,7 +241,7 @@ public:
   void
   switch_left (ucontext &cur)
   {
-    get_left ().activate (cur);
+    m_left.lock ()->activate (cur);
   }
 
   valfile::ptr
@@ -283,19 +272,21 @@ public:
 valfile::ptr
 exec_node::next ()
 {
-  que_node &inq = get_in_que ();
-  while (inq.empty () && ! m_out_que->empty ())
+  auto inq = m_in_que.lock ();
+  assert (inq != nullptr);
+
+  while (inq->empty () && ! m_out_que->empty ())
     m_out_que->switch_right (*m_uc);
 
-  if (inq.empty ())
-    inq.switch_left (*m_uc);
+  if (inq->empty ())
+    inq->switch_left (*m_uc);
 
-  if (inq.empty ())
+  if (inq->empty ())
     // If the in que is still empty, we are done.
     return nullptr;
 
   //std::cout << name () << " pops\n";
-  return inq.pop_front ();
+  return inq->pop_front ();
 }
 
 void
@@ -306,6 +297,12 @@ exec_node::push (valfile::ptr vf)
 
   //std::cout << name () << " pushes\n";
   m_out_que->push_back (std::move (vf));
+}
+
+void
+exec_node::switch_right ()
+{
+  m_out_que->switch_right (*m_uc);
 }
 
 class expr_cat
@@ -470,6 +467,20 @@ public:
       // (downstream).  So we only get here if the first guy in
       // pipeline got out of what he can produce for the single value
       // that we put in, which signifies the end of query.
+      //
+      // At this point, we need to go downstream through the whole
+      // pipeline, which will result in nullptr being returned to all
+      // the operate's along the way, thus finishing any unfinished
+      // business.  In particular, any weak_ptr's that were converted
+      // to shared_ptr's by lock () need to be closed again, so that
+      // we don't leak.
+      //
+      // operate is called from operate_wrapper, which calls
+      // switch_right as well.  This will eventually transfer control
+      // back to us, because exec_node's are connected into a circle.
+      switch_right ();
+
+      // Ok, we got back, now we can quit.
       quit (m_main_ctx);
     }
 
