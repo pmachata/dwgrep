@@ -172,8 +172,15 @@ protected:
   valfile::ptr next ();
   void push (valfile::ptr vf);
 
+  void
+  done ()
+  {
+    // Break the circular chain of shared pointers.
+    m_out_que = nullptr;
+  }
+
 public:
-  exec_node ()
+  exec_node (ucontext *link = nullptr)
     : m_uc ({})
   {
     if (getcontext (&m_uc) == -1)
@@ -190,6 +197,7 @@ public:
     m_uc.uc_stack.ss_sp = stack;
     m_uc.uc_stack.ss_size = stack_size;
     m_uc.uc_stack.ss_flags = 0;
+    m_uc.uc_link = link;
 
     makecontext (&m_uc, (void (*)()) start, 1, this);
   }
@@ -224,16 +232,6 @@ public:
   }
 
 protected:
-  void
-  quit (ucontext &main)
-  {
-    std::cout << "quitting\n";
-    // Break the circular chain of shared pointers.
-    m_out_que = nullptr;
-
-    swapcontext (&m_uc, &main);
-  }
-
   void switch_downstream ();
 };
 
@@ -433,9 +431,17 @@ class exec_node_query
 {
   ucontext m_main_ctx;
 
+  virtual void
+  call_operate ()
+  {
+    operate ();
+    done ();
+  }
+
 public:
   exec_node_query ()
-    : m_main_ctx ({})
+    : exec_node (&m_main_ctx)
+    , m_main_ctx ({})
   {}
 
   void
@@ -470,8 +476,7 @@ public:
     // circle (see the comment above).
     switch_downstream ();
 
-    // Ok, we got back, now we can quit.
-    quit (m_main_ctx);
+    // At this point, we can leave back to call_operate.
   }
 
   std::string
