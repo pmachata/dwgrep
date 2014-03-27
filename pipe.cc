@@ -123,6 +123,10 @@ class expr_node
 public:
   virtual ~expr_node () {}
 
+  // This should build an exec_node corresponding to this expr_node.
+  // Not every expr_node needs to have an associated exec_node, some
+  // nodes will only do an interconnect.  It returns a pair of
+  // leftmost and rightmost exec_node's in the pipeline.
   virtual std::pair <std::shared_ptr <exec_node>, std::shared_ptr <exec_node> >
   build_exec (problem::ptr q) = 0;
 };
@@ -341,7 +345,7 @@ class expr_uni
     {
       while (valfile::ptr vf = next ())
 	{
-	  for (int i = 0; i < 25; ++i)
+	  for (int i = 0; i < 2500; ++i)
 	    {
 	      auto vf2 = std::make_unique <valfile> (*vf);
 	      vf2->push_back (i);
@@ -434,6 +438,10 @@ public:
   }
 };
 
+// Query expression node is the top-level object that holds the whole
+// query.  It produces an exec_node, and ties it to the leftmost and
+// rightmost nodes of the overall expression.  Thus the overall object
+// graph forms a circle of alternating exec_node's and que_node's.
 class expr_query
   : public expr_node
 {
@@ -477,7 +485,8 @@ public:
       //
       // operate is called from operate_wrapper, which calls
       // switch_right as well.  This will eventually transfer control
-      // back to us, because exec_node's are connected into a circle.
+      // back to us, because exec_node's are connected into a circle
+      // (see above comment).
       switch_right ();
 
       // Ok, we got back, now we can quit.
