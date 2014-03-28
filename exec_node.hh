@@ -151,6 +151,7 @@ protected:
   // queue, push() pushes a value to the downstream queue.  Each of
   // those can result in a context switch.  next() returns nullptr if
   // a computation should end, push() instead raises x_quit.
+  bool request_data ();
   valfile::ptr next ();
   void push (valfile::ptr vf);
   exec_node ();
