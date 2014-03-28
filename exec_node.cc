@@ -368,7 +368,7 @@ namespace
 
   // This function returns what a parser would.
   std::unique_ptr <expr_node>
-  build_my_expr ()
+  build_my_expr (std::string const &)
   {
     auto U = std::make_unique <expr_node_uni> ();
     auto D = std::make_unique <expr_node_dup> ();
@@ -385,65 +385,144 @@ namespace
   }
 }
 
-dwgrep_expr_t::result::result (std::shared_ptr <exec_node_query> q)
-  : m_q (q)
+struct dwgrep_expr_t::pimpl
+{
+  std::unique_ptr <expr_node> m_expr;
+
+  explicit pimpl (std::string const &str)
+    : m_expr (wrap_expr (build_my_expr (str)))
+  {}
+};
+
+dwgrep_expr_t::dwgrep_expr_t (std::string const &str)
+  : m_pimpl (std::make_unique <pimpl> (str))
+{}
+
+dwgrep_expr_t::~dwgrep_expr_t ()
+{}
+
+struct dwgrep_expr_t::result::pimpl
+{
+  std::shared_ptr <exec_node_query> m_q;
+  pimpl (std::shared_ptr <exec_node_query> q)
+    : m_q (q)
+  {}
+};
+
+dwgrep_expr_t::result
+dwgrep_expr_t::query (std::shared_ptr <problem> p)
+{
+  auto endpoints = m_pimpl->m_expr->build_exec (p);
+  assert (endpoints.first != nullptr);
+  assert (endpoints.first == endpoints.second);
+  auto q = std::dynamic_pointer_cast <exec_node_query> (endpoints.first);
+  assert (q != nullptr);
+  return result (std::make_unique <result::pimpl> (q));
+}
+
+dwgrep_expr_t::result::result (std::unique_ptr <pimpl> p)
+  : m_pimpl (std::move (p))
 {}
 
 dwgrep_expr_t::result::~result ()
 {
-  m_q->quit ();
+  m_pimpl->m_q->quit ();
 }
 
-bool
-dwgrep_expr_t::result::iterator::done () const
+dwgrep_expr_t::result::result (result &&that)
+  : m_pimpl (std::move (that.m_pimpl))
+{}
+
+struct dwgrep_expr_t::result::iterator::pimpl
 {
-  return m_q == nullptr;
+  std::shared_ptr <exec_node_query> m_q;
+  std::shared_ptr <std::vector <int> > m_vf;
+
+  pimpl () {}
+
+  pimpl (std::shared_ptr <exec_node_query> q)
+    : m_q ((assert (q != nullptr), q))
+  {
+    fetch ();
+  }
+
+  pimpl (pimpl const &other) = default;
+
+  bool
+  done () const
+  {
+    return m_q == nullptr;
+  }
+
+  void
+  fetch ()
+  {
+    assert (! done ());
+    m_vf = nullptr;
+    if (m_q->queue_empty ())
+      {
+	m_q->run ();
+
+	if (m_q->done ())
+	  {
+	    m_q = nullptr;
+	    return;
+	  }
+      }
+
+    m_vf = std::make_shared <std::vector <int> > ();
+    auto res = m_q->next_in_queue ();
+    for (auto const &nv: *res)
+      m_vf->push_back (nv);
+  }
+
+  bool
+  equal (pimpl const &that) const
+  {
+    if (that.m_q == nullptr)
+      return m_q == nullptr;
+    return that.m_q == m_q
+      && that.m_vf == m_vf;
+  }
+};
+
+dwgrep_expr_t::result::iterator
+dwgrep_expr_t::result::begin ()
+{
+  return iterator (std::make_unique <iterator::pimpl> (m_pimpl->m_q));
 }
 
-void
-dwgrep_expr_t::result::iterator::fetch ()
+dwgrep_expr_t::result::iterator
+dwgrep_expr_t::result::end ()
 {
-  assert (! done ());
-  m_vf = nullptr;
-  if (m_q->queue_empty ())
-    {
-      m_q->run ();
-
-      if (m_q->done ())
-	{
-	  m_q = nullptr;
-	  return;
-	}
-    }
-
-  m_vf = std::shared_ptr <valfile> (m_q->next_in_queue ());
+  return iterator ();
 }
 
 dwgrep_expr_t::result::iterator::iterator ()
+  : m_pimpl (std::make_unique <pimpl> ())
 {}
 
-dwgrep_expr_t::result::iterator::iterator (std::shared_ptr <exec_node_query> q)
-  : m_q (q)
-{
-  assert (m_q != nullptr);
-  fetch ();
-}
-
-dwgrep_expr_t::result::iterator::iterator (iterator const &other)
-  : m_q (other.m_q)
-  , m_vf (other.m_vf)
+dwgrep_expr_t::result::iterator::~iterator ()
 {}
 
-std::shared_ptr <valfile>
+dwgrep_expr_t::result::iterator::iterator (iterator const &that)
+  : m_pimpl (std::make_unique <pimpl> (*that.m_pimpl))
+{}
+
+dwgrep_expr_t::result::iterator::iterator (std::unique_ptr <pimpl> p)
+  : m_pimpl (std::move (p))
+{}
+
+std::vector <int>
 dwgrep_expr_t::result::iterator::operator* () const
 {
-  return m_vf;
+  return *m_pimpl->m_vf;
 }
 
 dwgrep_expr_t::result::iterator
 dwgrep_expr_t::result::iterator::operator++ ()
 {
-  fetch ();
+  m_pimpl->fetch ();
   return *this;
 }
 
@@ -458,59 +537,11 @@ dwgrep_expr_t::result::iterator::operator++ (int)
 bool
 dwgrep_expr_t::result::iterator::operator== (iterator that)
 {
-  if (that.m_q == nullptr)
-    return m_q == nullptr;
-  return that.m_q == m_q
-    && that.m_vf == m_vf;
+  return m_pimpl->equal (*that.m_pimpl);
 }
 
 bool
 dwgrep_expr_t::result::iterator::operator!= (iterator that)
 {
   return !(*this == that);
-}
-
-dwgrep_expr_t::dwgrep_expr_t ()
-  : m_expr (wrap_expr (build_my_expr ()))
-{}
-
-dwgrep_expr_t::result
-dwgrep_expr_t::query (std::shared_ptr <problem> p)
-{
-  std::pair <std::shared_ptr <exec_node>,
-	     std::shared_ptr <exec_node> > endpoints = m_expr->build_exec (p);
-  assert (endpoints.first != nullptr);
-  assert (endpoints.first == endpoints.second);
-  auto q = std::dynamic_pointer_cast <exec_node_query> (endpoints.first);
-  assert (q != nullptr);
-  return result (q);
-}
-
-dwgrep_expr_t::result::iterator
-dwgrep_expr_t::result::begin ()
-{
-  return iterator (m_q);
-}
-
-dwgrep_expr_t::result::iterator
-dwgrep_expr_t::result::end ()
-{
-  return iterator ();
-}
-
-int
-main(int argc, char *argv[])
-{
-  dwgrep_expr_t expr;
-
-  for (auto vf: expr.query (std::make_shared <problem> ()))
-    {
-      std::cout << "[";
-      for (auto v: *vf)
-	std::cout << " " << v;
-      std::cout << " ]\n";
-      break;
-    }
-
-  return 0;
 }

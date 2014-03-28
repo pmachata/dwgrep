@@ -2,27 +2,41 @@
 #define _DWGREP_H_
 
 #include <memory>
+#include <vector>
+
+// A problem object represents a graph that we want to explore, and
+// any associated caches.
+struct problem
+{
+  typedef std::shared_ptr <problem> ptr;
+};
 
 class dwgrep_expr_t
 {
-  std::unique_ptr <expr_node> m_expr;
+  class pimpl;
+  std::unique_ptr <pimpl> m_pimpl;
 
 public:
   class result;
 
-  dwgrep_expr_t ();
+  explicit dwgrep_expr_t (std::string const &str);
+  ~dwgrep_expr_t ();
+
   result query (std::shared_ptr <problem> p);
 };
 
-class exec_node_query;
-
 class dwgrep_expr_t::result
 {
-  std::shared_ptr <exec_node_query> m_q;
+  friend class dwgrep_expr_t;
+  class pimpl;
+  std::unique_ptr <pimpl> m_pimpl;
+
+  explicit result (std::unique_ptr <pimpl> p);
 
 public:
-  explicit result (std::shared_ptr <exec_node_query> q);
   ~result ();
+  result (result &&that);
+  result (result const &that) = delete;
 
   class iterator;
   iterator begin ();
@@ -32,19 +46,17 @@ public:
 class dwgrep_expr_t::result::iterator
 {
   friend class dwgrep_expr_t::result;
-  std::shared_ptr <exec_node_query> m_q;
-  std::shared_ptr <valfile> m_vf;
+  class pimpl;
+  std::unique_ptr <pimpl> m_pimpl;
 
-  iterator (std::shared_ptr <exec_node_query> q);
-
-  bool done () const;
-  void fetch ();
+  iterator (std::unique_ptr <pimpl> p);
 
 public:
   iterator ();
   iterator (iterator const &other);
+  ~iterator ();
 
-  std::shared_ptr <valfile> operator* () const;
+  std::vector <int> operator* () const;
 
   iterator operator++ ();
   iterator operator++ (int);

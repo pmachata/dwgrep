@@ -3,15 +3,9 @@
 
 #include <utility>
 #include <memory>
+#include "dwgrep.hh"
 
 class exec_node;
-
-// A problem object represents a graph that we want to explore, and
-// any associated caches.
-struct problem
-{
-  typedef std::shared_ptr <problem> ptr;
-};
 
 // Expression classes represent the structure of expression.  The
 // output of a compiled expression is a tree of expr objects.  An
