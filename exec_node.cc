@@ -349,7 +349,7 @@ namespace
     {}
 
     std::pair <std::shared_ptr <exec_node>, std::shared_ptr <exec_node> >
-    build_exec (problem::ptr q)
+    build_exec (dwgrep_graph::ptr q)
     {
       auto ee = m_expr->build_exec (q);
       auto qr = std::make_shared <exec_node_query> ();
@@ -385,7 +385,7 @@ namespace
   }
 }
 
-struct dwgrep_expr_t::pimpl
+struct dwgrep_expr::pimpl
 {
   std::unique_ptr <expr_node> m_expr;
 
@@ -394,14 +394,14 @@ struct dwgrep_expr_t::pimpl
   {}
 };
 
-dwgrep_expr_t::dwgrep_expr_t (std::string const &str)
+dwgrep_expr::dwgrep_expr (std::string const &str)
   : m_pimpl (std::make_unique <pimpl> (str))
 {}
 
-dwgrep_expr_t::~dwgrep_expr_t ()
+dwgrep_expr::~dwgrep_expr ()
 {}
 
-struct dwgrep_expr_t::result::pimpl
+struct dwgrep_expr::result::pimpl
 {
   std::shared_ptr <exec_node_query> m_q;
   pimpl (std::shared_ptr <exec_node_query> q)
@@ -409,8 +409,8 @@ struct dwgrep_expr_t::result::pimpl
   {}
 };
 
-dwgrep_expr_t::result
-dwgrep_expr_t::query (std::shared_ptr <problem> p)
+dwgrep_expr::result
+dwgrep_expr::query (std::shared_ptr <dwgrep_graph> p)
 {
   auto endpoints = m_pimpl->m_expr->build_exec (p);
   assert (endpoints.first != nullptr);
@@ -420,20 +420,26 @@ dwgrep_expr_t::query (std::shared_ptr <problem> p)
   return result (std::make_unique <result::pimpl> (q));
 }
 
-dwgrep_expr_t::result::result (std::unique_ptr <pimpl> p)
+dwgrep_expr::result
+dwgrep_expr::query (dwgrep_graph p)
+{
+  return query (std::make_shared <dwgrep_graph> (p));
+}
+
+dwgrep_expr::result::result (std::unique_ptr <pimpl> p)
   : m_pimpl (std::move (p))
 {}
 
-dwgrep_expr_t::result::~result ()
+dwgrep_expr::result::~result ()
 {
   m_pimpl->m_q->quit ();
 }
 
-dwgrep_expr_t::result::result (result &&that)
+dwgrep_expr::result::result (result &&that)
   : m_pimpl (std::move (that.m_pimpl))
 {}
 
-struct dwgrep_expr_t::result::iterator::pimpl
+struct dwgrep_expr::result::iterator::pimpl
 {
   std::shared_ptr <exec_node_query> m_q;
   std::shared_ptr <std::vector <int> > m_vf;
@@ -486,48 +492,48 @@ struct dwgrep_expr_t::result::iterator::pimpl
   }
 };
 
-dwgrep_expr_t::result::iterator
-dwgrep_expr_t::result::begin ()
+dwgrep_expr::result::iterator
+dwgrep_expr::result::begin ()
 {
   return iterator (std::make_unique <iterator::pimpl> (m_pimpl->m_q));
 }
 
-dwgrep_expr_t::result::iterator
-dwgrep_expr_t::result::end ()
+dwgrep_expr::result::iterator
+dwgrep_expr::result::end ()
 {
   return iterator ();
 }
 
-dwgrep_expr_t::result::iterator::iterator ()
+dwgrep_expr::result::iterator::iterator ()
   : m_pimpl (std::make_unique <pimpl> ())
 {}
 
-dwgrep_expr_t::result::iterator::~iterator ()
+dwgrep_expr::result::iterator::~iterator ()
 {}
 
-dwgrep_expr_t::result::iterator::iterator (iterator const &that)
+dwgrep_expr::result::iterator::iterator (iterator const &that)
   : m_pimpl (std::make_unique <pimpl> (*that.m_pimpl))
 {}
 
-dwgrep_expr_t::result::iterator::iterator (std::unique_ptr <pimpl> p)
+dwgrep_expr::result::iterator::iterator (std::unique_ptr <pimpl> p)
   : m_pimpl (std::move (p))
 {}
 
 std::vector <int>
-dwgrep_expr_t::result::iterator::operator* () const
+dwgrep_expr::result::iterator::operator* () const
 {
   return *m_pimpl->m_vf;
 }
 
-dwgrep_expr_t::result::iterator
-dwgrep_expr_t::result::iterator::operator++ ()
+dwgrep_expr::result::iterator
+dwgrep_expr::result::iterator::operator++ ()
 {
   m_pimpl->fetch ();
   return *this;
 }
 
-dwgrep_expr_t::result::iterator
-dwgrep_expr_t::result::iterator::operator++ (int)
+dwgrep_expr::result::iterator
+dwgrep_expr::result::iterator::operator++ (int)
 {
   iterator ret = *this;
   ++*this;
@@ -535,13 +541,13 @@ dwgrep_expr_t::result::iterator::operator++ (int)
 }
 
 bool
-dwgrep_expr_t::result::iterator::operator== (iterator that)
+dwgrep_expr::result::iterator::operator== (iterator that)
 {
   return m_pimpl->equal (*that.m_pimpl);
 }
 
 bool
-dwgrep_expr_t::result::iterator::operator!= (iterator that)
+dwgrep_expr::result::iterator::operator!= (iterator that)
 {
   return !(*this == that);
 }

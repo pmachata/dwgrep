@@ -12,30 +12,17 @@
 // queues that manage interchange of data between the coroutines.
 class exec_node;
 
-// Queue nodes hold que objects, and also know about the two
-// exec_node's that they are surrounded by.  A queue node thus knows
-// how to transfer control, say, downstream, if, say, an upstream node
-// asks.
+// Queues are buffers between exec nodes.  Queue nodes hold queues.
 class que_node;
 
-// N.B.: All these classes are very likely internal, possibly with the
-// exception of class problem.  On the outside we want a clear
-// interface like, for example:
-//
-//   class dwgrep_expr_t {
-//       std::unique_ptr <exec_node> m_exec_node;  // but pimpl'd away
-//   public:
-//       explicit dwgrep_expr_t (const char *str); // compile query
-//       explicit dwgrep_expr_t (std::string str); // compile query
-//       something run (problem::ptr p); // run expr on a given problem
-//   };
-//
-// It's not very clear what the "something" should be.  Maybe the
-// output end of the queue, so that the caller can decide whether they
-// want to keep pulling.  The queue returned would have to be a
-// sanitized wrapper that translates valfile's to std::vectors's.  We
-// would still need a separate user-facing set of value interfaces
-// that allow the caller program to inspect obtained values.
+// The whole computation forms a pipeline of exec_node's alternating
+// with que_node's.  The data flows in one direction only, from
+// upstream to downstream.  Each coroutine keeps pulling from the
+// input queue, and after processing pushes to the corresponding
+// output queue.  When input queue is empty, control is switched
+// upstream to get more data.  When output queue is full, control is
+// switched downstream to process the accumulated data.  Tho whole
+// scheme is actually a bit more complicated, but this is the gist.
 
 struct valfile
   : public std::vector <int>
@@ -133,18 +120,19 @@ class exec_node
 
 private:
   // Coroutine start-up.  Used internally by this class only.
-  static void start (exec_node *self);
-  void call_operate ();
+  static void start (exec_node *self);	// ucontext callback
+  void call_operate ();			// operate wrapper
 
 private:
-  // exec_node_query interface:
-  class x_quit {};
-  exec_node (ucontext *link);
-  void switch_downstream ();
-  void mark_chain_quitting ();
-  void cleanup ();
-  void yield (ucontext &other);
-  bool quitting () const;
+  exec_node (ucontext *link);	// switch to LINK after coroutine ends
+
+  void mark_chain_quitting ();	// schedule shutdown
+  bool quitting () const;	// whether shutdown has been scheduled
+  class x_quit {};		// thrown by push to shut down
+  void switch_downstream ();	// for round-robin on shutdown
+  void cleanup ();		// to release memory after shutdown
+
+  void yield (ucontext &other);	// give up control, switch to OTHER
 
 protected:
   // Subclass interface.  next() reads next value from the upstream

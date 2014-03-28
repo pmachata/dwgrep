@@ -4,9 +4,9 @@
 int
 main(int argc, char *argv[])
 {
-  dwgrep_expr_t expr ("uni dup mul");
+  dwgrep_expr expr ("uni dup mul");
 
-  for (auto vf: expr.query (std::make_shared <problem> ()))
+  for (auto vf: expr.query (dwgrep_graph ()))
     {
       std::cout << "[";
       for (auto v: vf)

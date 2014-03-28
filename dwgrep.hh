@@ -4,14 +4,14 @@
 #include <memory>
 #include <vector>
 
-// A problem object represents a graph that we want to explore, and
-// any associated caches.
-struct problem
+// A dwgrep_graph object represents a graph that we want to explore,
+// and any associated caches.
+struct dwgrep_graph
 {
-  typedef std::shared_ptr <problem> ptr;
+  typedef std::shared_ptr <dwgrep_graph> ptr;
 };
 
-class dwgrep_expr_t
+class dwgrep_expr
 {
   class pimpl;
   std::unique_ptr <pimpl> m_pimpl;
@@ -19,15 +19,16 @@ class dwgrep_expr_t
 public:
   class result;
 
-  explicit dwgrep_expr_t (std::string const &str);
-  ~dwgrep_expr_t ();
+  explicit dwgrep_expr (std::string const &str);
+  ~dwgrep_expr ();
 
-  result query (std::shared_ptr <problem> p);
+  result query (std::shared_ptr <dwgrep_graph> p);
+  result query (dwgrep_graph p);
 };
 
-class dwgrep_expr_t::result
+class dwgrep_expr::result
 {
-  friend class dwgrep_expr_t;
+  friend class dwgrep_expr;
   class pimpl;
   std::unique_ptr <pimpl> m_pimpl;
 
@@ -43,9 +44,9 @@ public:
   iterator end ();
 };
 
-class dwgrep_expr_t::result::iterator
+class dwgrep_expr::result::iterator
 {
-  friend class dwgrep_expr_t::result;
+  friend class dwgrep_expr::result;
   class pimpl;
   std::unique_ptr <pimpl> m_pimpl;
 

@@ -12,7 +12,7 @@ expr_node_cat::expr_node_cat (std::unique_ptr <expr_node> left,
 {}
 
 std::pair <std::shared_ptr <exec_node>, std::shared_ptr <exec_node> >
-expr_node_cat::build_exec (problem::ptr q)
+expr_node_cat::build_exec (dwgrep_graph::ptr q)
 {
   auto le = m_left->build_exec (q);
   auto re = m_right->build_exec (q);
@@ -52,7 +52,7 @@ namespace
 
 std::pair <std::shared_ptr <exec_node>,
 	   std::shared_ptr <exec_node> >
-expr_node_uni::build_exec (problem::ptr q)
+expr_node_uni::build_exec (dwgrep_graph::ptr q)
 {
   return build_leaf_exec <exec_node_uni> ();
 }
@@ -83,7 +83,7 @@ namespace
 
 std::pair <std::shared_ptr <exec_node>,
 	   std::shared_ptr <exec_node> >
-expr_node_dup::build_exec (problem::ptr q)
+expr_node_dup::build_exec (dwgrep_graph::ptr q)
 {
   return build_leaf_exec <exec_node_dup> ();
 }
@@ -116,7 +116,7 @@ namespace
 
 std::pair <std::shared_ptr <exec_node>,
 	   std::shared_ptr <exec_node> >
-expr_node_mul::build_exec (problem::ptr q)
+expr_node_mul::build_exec (dwgrep_graph::ptr q)
 {
   return build_leaf_exec <exec_node_mul> ();
 }
