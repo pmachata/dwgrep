@@ -23,19 +23,20 @@ public:
 
   // This should build an exec_node corresponding to this expr_node.
   // Not every expr_node needs to have an associated exec_node, some
-  // nodes will only install some plumbing.  It returns a pair of
-  // endpoints (the upstream-most one and the downstream-most one).
-  virtual std::pair <std::shared_ptr <exec_node>, std::shared_ptr <exec_node> >
-  build_exec (dwgrep_graph::ptr q) = 0;
+  // nodes will only install some plumbing.
+  virtual std::shared_ptr <exec_node>
+  build_exec (std::shared_ptr <exec_node> upstream,
+	      dwgrep_graph::ptr q) = 0;
 };
 
-template <class Exec>
-std::pair <std::shared_ptr <exec_node>, std::shared_ptr <exec_node> >
-build_leaf_exec ()
+class query_expr
 {
-  auto ret = std::make_shared <Exec> ();
-  return std::make_pair (ret, ret);
-}
+  std::unique_ptr <expr_node> m_expr;
+public:
+  explicit query_expr (std::unique_ptr <expr_node> expr);
+
+  std::shared_ptr <exec_node> build_exec (dwgrep_graph::ptr q);
+};
 
 class expr_node_cat
   : public expr_node
@@ -47,33 +48,62 @@ public:
   expr_node_cat (std::unique_ptr <expr_node> left,
 		 std::unique_ptr <expr_node> right);
 
-  std::pair <std::shared_ptr <exec_node>,
-	     std::shared_ptr <exec_node> > build_exec (dwgrep_graph::ptr q)
-    override;
+  std::shared_ptr <exec_node> build_exec (std::shared_ptr <exec_node> upstream,
+					  dwgrep_graph::ptr q) override;
+};
+
+class expr_node_alt
+  : public expr_node
+{
+  std::vector <std::unique_ptr <expr_node> > m_branches;
+
+public:
+  expr_node_alt (std::vector <std::unique_ptr <expr_node> > branches);
+
+  std::shared_ptr <exec_node> build_exec (std::shared_ptr <exec_node> upstream,
+					  dwgrep_graph::ptr q) override;
 };
 
 struct expr_node_uni
   : public expr_node
 {
-  std::pair <std::shared_ptr <exec_node>,
-	     std::shared_ptr <exec_node> > build_exec (dwgrep_graph::ptr q)
-    override;
+  std::shared_ptr <exec_node> build_exec (std::shared_ptr <exec_node> upstream,
+					  dwgrep_graph::ptr q) override;
 };
 
 struct expr_node_dup
   : public expr_node
 {
-  std::pair <std::shared_ptr <exec_node>,
-	     std::shared_ptr <exec_node> > build_exec (dwgrep_graph::ptr q)
-    override;
+  std::shared_ptr <exec_node> build_exec (std::shared_ptr <exec_node> upstream,
+					  dwgrep_graph::ptr q) override;
 };
 
 struct expr_node_mul
   : public expr_node
 {
-  std::pair <std::shared_ptr <exec_node>,
-	     std::shared_ptr <exec_node> > build_exec (dwgrep_graph::ptr q)
-    override;
+  std::shared_ptr <exec_node> build_exec (std::shared_ptr <exec_node> upstream,
+					  dwgrep_graph::ptr q) override;
+};
+
+struct expr_node_add
+  : public expr_node
+{
+  std::shared_ptr <exec_node> build_exec (std::shared_ptr <exec_node> upstream,
+					  dwgrep_graph::ptr q) override;
+};
+
+struct expr_node_odd
+  : public expr_node
+{
+  std::shared_ptr <exec_node> build_exec (std::shared_ptr <exec_node> upstream,
+					  dwgrep_graph::ptr q) override;
+};
+
+struct expr_node_even
+  : public expr_node
+{
+  std::shared_ptr <exec_node> build_exec (std::shared_ptr <exec_node> upstream,
+					  dwgrep_graph::ptr q) override;
 };
 
 #endif /* _EXPR_NODE_H_ */
