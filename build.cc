@@ -145,12 +145,11 @@ tree::build_exec (std::shared_ptr <op> upstream, dwgrep_graph::ptr q,
 					    int (m_u.cval->value ()), slot ());
 
     case tree_type::F_CHILD:
-      //return std::make_unique <op_f_child> (upstream, slot ());
-      assert (! "NIY");
+      return std::make_unique <op_f_child> (upstream, q, maxsize, maxsize,
+					    slot (), slot ());
 
     case tree_type::F_OFFSET:
-      //return std::make_unique <op_f_offset> (slot ());
-      assert (! "NIY");
+      return std::make_unique <op_f_offset> (upstream, slot (), slot ());
 
     case tree_type::FORMAT:
       if (m_children.size () != 1

@@ -94,6 +94,100 @@ op_sel_universe::name () const
 }
 
 
+struct op_f_child::pimpl
+{
+  std::shared_ptr <op> m_upstream;
+  std::shared_ptr <Dwarf> m_dw;
+  valfile::uptr m_vf;
+  Dwarf_Die m_child;
+
+  size_t m_osz;
+  size_t m_nsz;
+  slot_idx m_src;
+  slot_idx m_dst;
+
+  pimpl (std::shared_ptr <op> upstream,
+	 dwgrep_graph::ptr q,
+	 size_t osz, size_t nsz, slot_idx src, slot_idx dst)
+    : m_upstream (upstream)
+    , m_dw (q->dwarf)
+    , m_child {}
+    , m_osz (osz)
+    , m_nsz (nsz)
+    , m_src (src)
+    , m_dst (dst)
+  {}
+
+  valfile::uptr
+  next ()
+  {
+    while (true)
+      {
+	while (m_vf == nullptr)
+	  {
+	    if (auto vf = m_upstream->next ())
+	      {
+		if (vf->get_slot_type (m_src) == slot_type::DIE)
+		  {
+		    Dwarf_Die die = vf->get_slot_die (m_src);
+		    if (dwarf_haschildren (&die))
+		      {
+			if (dwarf_child (&die, &m_child) != 0)
+			  throw_libdw ();
+
+			// We found our guy.
+			m_vf = std::move (vf);
+		      }
+		  }
+	      }
+	    else
+	      return nullptr;
+	  }
+
+	auto ret = valfile::copy (*m_vf, m_osz, m_nsz);
+	if (m_src == m_dst)
+	  ret->invalidate_slot (m_dst);
+	ret->set_slot (m_dst, m_child);
+
+	switch (dwarf_siblingof (&m_child, &m_child))
+	  {
+	  case -1:
+	    throw_libdw ();
+	  case 1:
+	    // No more siblings.
+	    m_vf = nullptr;
+	    break;
+	  case 0:
+	    break;
+	  }
+
+	return ret;
+      }
+  }
+};
+
+op_f_child::op_f_child (std::shared_ptr <op> upstream,
+			dwgrep_graph::ptr q,
+			size_t osz, size_t nsz, slot_idx src, slot_idx dst)
+  : m_pimpl (std::make_unique <pimpl> (upstream, q, osz, nsz, src, dst))
+{}
+
+op_f_child::~op_f_child ()
+{}
+
+valfile::uptr
+op_f_child::next ()
+{
+  return m_pimpl->next ();
+}
+
+std::string
+op_f_child::name () const
+{
+  return "op_f_child";
+}
+
+
 valfile::uptr
 op_nop::next ()
 {
@@ -166,7 +260,7 @@ op_f_atval::next ()
 		  Dwarf_Word uval;
 		  if (dwarf_formudata (&attr, &uval) != 0)
 		    throw_libdw ();
-		  constant cst { uval, &signed_constant_dom };
+		  constant cst { uval, &unsigned_constant_dom };
 		  vf->set_slot (m_idx, std::move (cst));
 		  return vf;
 		}
@@ -263,114 +357,31 @@ op_f_atval::name () const
   return ss.str ();
 }
 
+valfile::uptr
+op_f_offset::next ()
+{
+  while (auto vf = m_upstream->next ())
+    if (vf->get_slot_type (m_src) == slot_type::DIE)
+      // XXX or other types of values that have offset
+      {
+	Dwarf_Die const &die = vf->get_slot_die (m_src);
+	Dwarf_Off off = dwarf_dieoffset ((Dwarf_Die *) &die);
+	constant cst { off, &unsigned_constant_dom };
+	if (m_src == m_dst)
+	  vf->invalidate_slot (m_dst);
+	vf->set_slot (m_dst, std::move (cst));
+	return vf;
+      }
+  return nullptr;
+}
+
+std::string
+op_f_offset::name () const
+{
+  return "f_offset";
+}
+
 /*
-std::unique_ptr <yielder>
-op_f_child::get_yielder (std::unique_ptr <stack> stk, size_t stksz,
-			 std::shared_ptr <Dwarf> &dw) const
-{
-  class f_child_yielder
-    : public yielder
-  {
-    bool done;
-    std::shared_ptr <Dwarf> &m_dw;
-    size_t m_idx;
-    Dwarf_Die m_child;
-
-  public:
-    f_child_yielder (std::shared_ptr <Dwarf> &dw, size_t idx)
-      : done (false)
-      , m_dw (dw)
-      , m_idx (idx)
-      , m_child {}
-    {}
-
-    virtual std::unique_ptr <stack>
-    yield () override
-    {
-      if (done)
-	{
-	stop:
-	  done = true;
-	  return nullptr;
-	}
-
-      if (m_child.addr == nullptr)
-	{
-	  auto vd = dynamic_cast <v_die const *> (&stk.get_slot (m_idx));
-	  if (vd == nullptr)
-	    goto stop;
-
-	  m_child = vd->die (m_dw);
-	  if (! dwarf_haschildren (&m_child))
-	    goto stop;
-
-	  if (dwarf_child (&m_child, &m_child) != 0)
-	    throw_libdw ();
-	}
-      else
-	switch (dwarf_siblingof (&m_child, &m_child))
-	  {
-	  case -1:
-	    throw_libdw ();
-	  case 1:
-	    // No more siblings.
-	    goto stop;
-	  case 0:
-	    break;
-	  }
-
-      assert (m_child.addr != nullptr);
-      auto ret = stk.clone (stksz);
-      ret->invalidate_slot (m_idx);
-      ret->set_slot (m_idx, std::unique_ptr <value> { new v_die { &m_child } });
-      return ret;
-    }
-  };
-
-  return std::make_unique <f_child_yielder> (dw, m_idx);
-}
-
-std::unique_ptr <yielder>
-op_f_offset::get_yielder (std::unique_ptr <stack> stk, size_t stksz,
-			  std::shared_ptr <Dwarf> &dw) const
-{
-  class f_offset_yielder
-    : public yielder
-  {
-    bool done;
-    std::shared_ptr <Dwarf> &m_dw;
-    size_t m_idx;
-
-  public:
-    f_offset_yielder (std::shared_ptr <Dwarf> &dw, size_t idx)
-      : done (false)
-      , m_dw (dw)
-      , m_idx (idx)
-    {}
-
-    virtual std::unique_ptr <stack>
-    yield () override
-    {
-      if (done)
-	return nullptr;
-
-      done = true;
-      if (auto vd = dynamic_cast <v_die const *> (&stk.get_slot (m_idx)))
-	{
-	  auto nv = std::make_unique <v_uint> (vd->offset ());
-	  auto ret = stk.clone (stksz);
-	  ret->invalidate_slot (m_idx);
-	  ret->set_slot (m_idx, std::move (nv));
-	  return ret;
-	}
-
-      return nullptr;
-    }
-  };
-
-  return std::make_unique <f_offset_yielder> (dw, m_idx);
-}
-
 std::unique_ptr <yielder>
 op_format::get_yielder (std::unique_ptr <stack> stk, size_t stksz,
 			std::shared_ptr <Dwarf> &dw) const

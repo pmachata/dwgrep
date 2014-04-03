@@ -54,6 +54,21 @@ public:
   std::string name () const override;
 };
 
+class op_f_child
+  : public op
+{
+  class pimpl;
+  std::unique_ptr <pimpl> m_pimpl;
+
+public:
+  op_f_child (std::shared_ptr <op> upstream,
+	      dwgrep_graph::ptr q,
+	      size_t osz, size_t nsz, slot_idx src, slot_idx dst);
+  ~op_f_child ();
+  valfile::uptr next () override;
+  std::string name () const override;
+};
+
 class op_nop
   : public op
 {
@@ -99,28 +114,18 @@ public:
   std::string name () const override;
 };
 
-class op_f_child
-  : public op
-{
-  size_t m_idx;
-
-public:
-  explicit op_f_child (size_t idx)
-    : m_idx (idx)
-  {}
-
-  valfile::uptr next () override;
-  std::string name () const override;
-};
-
 class op_f_offset
   : public op
 {
-  size_t m_idx;
+  std::shared_ptr <op> m_upstream;
+  slot_idx m_src;
+  slot_idx m_dst;
 
 public:
-  explicit op_f_offset (size_t idx)
-    : m_idx (idx)
+  op_f_offset (std::shared_ptr <op> upstream, slot_idx src, slot_idx dst)
+    : m_upstream (upstream)
+    , m_src (src)
+    , m_dst (dst)
   {}
 
   valfile::uptr next () override;
