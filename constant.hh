@@ -13,13 +13,22 @@ public:
   virtual ~constant_dom () {}
 };
 
-struct untyped_constant_dom_t
+// Two trivial domains for unnamed constants: one for signed, one for
+// unsigned values.
+struct signed_constant_dom_t
   : public constant_dom
 {
   virtual void show (constant c, std::ostream &o) const;
 };
 
-extern untyped_constant_dom_t const untyped_constant_dom;
+struct unsigned_constant_dom_t
+  : public constant_dom
+{
+  virtual void show (constant c, std::ostream &o) const;
+};
+
+extern signed_constant_dom_t const signed_constant_dom;
+extern unsigned_constant_dom_t const unsigned_constant_dom;
 
 class constant
 {

@@ -241,6 +241,17 @@ struct value_behavior <value_vector_t>
 typedef value_b <value_vector_t> value_seq;
 typedef valueref_b <value_vector_t> valueref_seq;
 
+template <>
+struct value_behavior <Dwarf_Die>
+{
+  static void show (Dwarf_Die const &die, std::ostream &o);
+  static void move_to_slot (Dwarf_Die &&die, slot_idx i, valfile &vf);
+  static std::unique_ptr <value> clone (Dwarf_Die const &die);
+};
+
+typedef value_b <Dwarf_Die> value_die;
+typedef valueref_b <Dwarf_Die> valueref_die;
+
 union valfile_slot
 {
   constant cst;
@@ -279,8 +290,13 @@ class valfile
   {}
 
 public:
-  static std::unique_ptr <valfile> create (size_t n);
-  static std::unique_ptr <valfile> copy (valfile const &that, size_t n);
+  typedef std::unique_ptr <valfile> uptr;
+  static uptr create (size_t n);
+
+  // XXX this should also allow an "except" clause--a slot index that
+  // shouldn't be copied.  E.g. when we clone stack for (child), we
+  // don't need to copy the original DIE.
+  static uptr copy (valfile const &that, size_t osize, size_t nsize);
 
   ~valfile ();
 

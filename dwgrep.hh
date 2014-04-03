@@ -4,11 +4,18 @@
 #include <memory>
 #include <vector>
 
+#include <elfutils/libdw.h> // XXX
+
 // A dwgrep_graph object represents a graph that we want to explore,
 // and any associated caches.
 struct dwgrep_graph
 {
   typedef std::shared_ptr <dwgrep_graph> ptr;
+  std::shared_ptr <Dwarf> dwarf;
+
+  dwgrep_graph (std::shared_ptr <Dwarf> d)
+    : dwarf (d)
+  {}
 };
 
 class dwgrep_expr

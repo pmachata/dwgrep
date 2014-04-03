@@ -52,7 +52,7 @@
 	throw std::runtime_error
 	  (std::string ("Invalid integer literal: `") + tmp + "'");
       }
-    return constant (val, &untyped_constant_dom);
+    return constant (val, &unsigned_constant_dom);
    }
 %}
 

@@ -16,6 +16,7 @@
 #include "dwpp.hh"
 #include "tree.hh"
 #include "parser.hh"
+#include "valfile.hh"
 
 namespace
 {
@@ -48,24 +49,19 @@ main(int argc, char *argv[])
 
   assert (argc == 3);
 
-  std::unique_ptr <op> program;
-  size_t stk_depth;
-  {
-    tree t = parse_query (argv[2]);
-    stk_depth = t.determine_stack_effects ();
-    t.dump (std::cout);
-    std::cout << std::endl;
-    program = t.build ();
-  }
+  tree t = parse_query (argv[2]);
+  size_t stk_depth = t.determine_stack_effects ();
+  t.dump (std::cout);
+  std::cout << std::endl;
 
-  auto dw = open_dwarf (argv[1]);
+  auto q = std::make_shared <dwgrep_graph> (open_dwarf (argv[1]));
+  auto program = t.build_exec (nullptr, q, stk_depth);
 
-  auto stk = std::make_unique <stack> (stk_depth);
-  auto yielder = program->get_yielder (dw);
-  while (std::unique_ptr <stack> result = yielder->yield (*stk, stk_depth))
+  while (valfile::uptr result = program->next ())
     {
-      auto const &value = result->get_slot (0);
-      std::cout << value.format () << std::endl;
+      auto value = result->get_slot (slot_idx (0));
+      value->show (std::cout);
+      std::cout << std::endl;
     }
 
   std::cout << std::endl;

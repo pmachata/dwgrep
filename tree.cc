@@ -261,7 +261,7 @@ namespace
 	{
 	  assert (t.m_children.size () == 2);
 	  assert (t.m_children[0].m_tt == tree_type::CONST);
-	  assert (t.m_children[0].m_u.cval->dom () == &untyped_constant_dom);
+	  assert (t.m_children[0].m_u.cval->dom () == &unsigned_constant_dom);
 
 	  uint64_t depth = t.m_children[0].m_u.cval->value ();
 	  se.pop (depth);

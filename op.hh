@@ -4,141 +4,99 @@
 #include <memory>
 #include <cassert>
 
-#include "value.hh"
+//#include "value.hh"
 #include "make_unique.hh"
+#include "dwgrep.hh"
+#include "valfile.hh"
+#include "pred_result.hh"
 
-class stack
-{
-  std::unique_ptr <std::unique_ptr <value> []> m_slots;
-
-public:
-  explicit stack (size_t sz)
-    : m_slots { new std::unique_ptr <value> [sz] }
-  {}
-  ~stack () = default;
-
-  stack (stack const &that) = delete;
-  stack (stack &&that) = delete;
-
-  // Create a new stack by cloning this one.  This one doesn't know
-  // how many slots it holds, so that's communicated by SZ.
-  std::unique_ptr <stack>
-  clone (size_t sz) const
-  {
-    auto ret = std::make_unique <stack> (sz);
-    for (size_t i = 0; i < sz; ++i)
-      if (m_slots[i] != nullptr)
-	ret->set_slot (i, std::move (m_slots[i]->clone ()));
-
-    return std::move (ret);
-  }
-
-  value const &
-  get_slot (size_t i) const
-  {
-    auto const &vp = m_slots[i];
-    assert (vp.get () != nullptr);
-    return *vp;
-  }
-
-  void
-  set_slot (size_t i, std::unique_ptr <value> v)
-  {
-    assert (v.get () != nullptr);
-    m_slots[i].swap (v);
-  }
-
-  void
-  invalidate_slot (size_t i)
-  {
-    auto &vp = m_slots[i];
-    assert (vp.get () != nullptr);
-    vp.release ();
-  }
-};
-
-class yielder
+// Subclasses of class op represent computations.  An op node is
+// typically constructed such that it directly feeds from another op
+// node, called upstream (see tree::build_exec).
+class op
 {
 public:
-  virtual std::unique_ptr <stack> yield (stack const &stk, size_t stksz) = 0;
-  virtual ~yielder () {}
+  virtual ~op () {}
+
+  // Produce next value.
+  virtual valfile::uptr next () = 0;
+  virtual std::string name () const = 0;
 };
 
 // Class pred is for holding predicates.  These don't alter the
 // computations at all.
 class pred;
 
-// Class op is for computation-altering operations.
-class op
+class op_origin
+  : public op
 {
+  bool m_done;
+
 public:
-  virtual ~op () {}
-  virtual std::unique_ptr <yielder> get_yielder
-	(std::shared_ptr <Dwarf> &dw) const = 0;
+  op_origin ();
+
+  valfile::uptr next () override;
+  std::string name () const override;
 };
 
 class op_sel_universe
   : public op
 {
-  size_t m_idx;
-public:
-  explicit op_sel_universe (size_t idx) : m_idx (idx) {}
-  virtual std::unique_ptr <yielder> get_yielder
-	(std::shared_ptr <Dwarf> &dw) const override;
-};
-
-class op_cat
-  : public op
-{
-  std::unique_ptr <op> m_a;
-  std::unique_ptr <op> m_b;
+  class pimpl;
+  std::unique_ptr <pimpl> m_pimpl;
 
 public:
-  op_cat (std::unique_ptr <op> a, std::unique_ptr <op> b)
-    : m_a (std::move (a))
-    , m_b (std::move (b))
-  {}
-
-  virtual std::unique_ptr <yielder> get_yielder
-	(std::shared_ptr <Dwarf> &dw) const override;
+  op_sel_universe (std::shared_ptr <op> upstream,
+		   dwgrep_graph::ptr q,
+		   size_t osz, size_t nsz, slot_idx dst);
+  ~op_sel_universe ();
+  valfile::uptr next () override;
+  std::string name () const override;
 };
 
 class op_nop
   : public op
 {
+  std::shared_ptr <op> m_upstream;
+
 public:
-  virtual std::unique_ptr <yielder> get_yielder
-	(std::shared_ptr <Dwarf> &dw) const override;
+  explicit op_nop (std::shared_ptr <op> upstream) : m_upstream (upstream) {}
+  valfile::uptr next () override;
+  std::string name () const override;
 };
 
 class op_assert
   : public op
 {
+  std::shared_ptr <op> m_upstream;
   std::unique_ptr <pred> m_pred;
 
 public:
-  explicit op_assert (std::unique_ptr <pred> p)
-    : m_pred (std::move (p))
+  op_assert (std::shared_ptr <op> upstream, std::unique_ptr <pred> p)
+    : m_upstream (upstream)
+    , m_pred (std::move (p))
   {}
 
-  virtual std::unique_ptr <yielder> get_yielder
-	(std::shared_ptr <Dwarf> &dw) const override;
+  valfile::uptr next () override;
+  std::string name () const override;
 };
 
 class op_f_atval
   : public op
 {
+  std::shared_ptr <op> m_upstream;
   int m_name;
-  size_t m_idx;
+  slot_idx m_idx;
 
 public:
-  op_f_atval (int name, size_t idx)
-    : m_name (name)
+  op_f_atval (std::shared_ptr <op> upstream, int name, slot_idx idx)
+    : m_upstream (upstream)
+    , m_name (name)
     , m_idx (idx)
   {}
 
-  virtual std::unique_ptr <yielder> get_yielder
-	(std::shared_ptr <Dwarf> &dw) const override;
+  valfile::uptr next () override;
+  std::string name () const override;
 };
 
 class op_f_child
@@ -151,8 +109,8 @@ public:
     : m_idx (idx)
   {}
 
-  virtual std::unique_ptr <yielder> get_yielder
-	(std::shared_ptr <Dwarf> &dw) const override;
+  valfile::uptr next () override;
+  std::string name () const override;
 };
 
 class op_f_offset
@@ -165,8 +123,8 @@ public:
     : m_idx (idx)
   {}
 
-  virtual std::unique_ptr <yielder> get_yielder
-	(std::shared_ptr <Dwarf> &dw) const override;
+  valfile::uptr next () override;
+  std::string name () const override;
 };
 
 class op_format
@@ -181,8 +139,8 @@ public:
     , m_idx (idx)
   {}
 
-  virtual std::unique_ptr <yielder> get_yielder
-	(std::shared_ptr <Dwarf> &dw) const override;
+  valfile::uptr next () override;
+  std::string name () const override;
 };
 
 class op_drop
@@ -195,8 +153,8 @@ public:
     : m_idx (idx)
   {}
 
-  virtual std::unique_ptr <yielder> get_yielder
-	(std::shared_ptr <Dwarf> &dw) const override;
+  valfile::uptr next () override;
+  std::string name () const override;
 };
 
 class op_const
@@ -211,8 +169,8 @@ public:
     , m_idx (idx)
   {}
 
-  virtual std::unique_ptr <yielder> get_yielder
-	(std::shared_ptr <Dwarf> &dw) const override;
+  valfile::uptr next () override;
+  std::string name () const override;
 };
 
 class op_alt;
@@ -245,8 +203,8 @@ class op_sel_unit;
 class pred
 {
 public:
-  virtual pred_result result (std::shared_ptr <Dwarf> &dw,
-			      stack const &stk, size_t stksz) const = 0;
+  virtual pred_result result (valfile &vf) const = 0;
+  virtual std::string name () const = 0;
 };
 
 class pred_not
@@ -255,16 +213,10 @@ class pred_not
   std::unique_ptr <pred> m_a;
 
 public:
-  explicit pred_not (std::unique_ptr <pred> a)
-    : m_a { std::move (a) }
-  {}
+  explicit pred_not (std::unique_ptr <pred> a) : m_a { std::move (a) } {}
 
-  virtual pred_result
-  result (std::shared_ptr <Dwarf> &dw,
-	  stack const &stk, size_t stksz) const override
-  {
-    return ! m_a->result (dw, stk, stksz);
-  }
+  pred_result result (valfile &vf) const override;
+  std::string name () const override;
 };
 
 class pred_and
@@ -279,12 +231,8 @@ public:
     , m_b { std::move (b) }
   {}
 
-  virtual pred_result
-  result (std::shared_ptr <Dwarf> &dw,
-	  stack const &stk, size_t stksz) const override
-  {
-    return m_a->result (dw, stk, stksz) && m_b->result (dw, stk, stksz);
-  }
+  pred_result result (valfile &vf) const override;
+  std::string name () const override;
 };
 
 class pred_or
@@ -299,42 +247,24 @@ public:
     , m_b { std::move (b) }
   {}
 
-  virtual pred_result
-  result (std::shared_ptr <Dwarf> &dw,
-	  stack const &stk, size_t stksz) const override
-  {
-    return m_a->result (dw, stk, stksz) || m_b->result (dw, stk, stksz);
-  }
+  pred_result result (valfile &vf) const override;
+  std::string name () const override;
 };
 
 class pred_at
   : public pred
 {
   int m_atname;
-  size_t m_idx;
+  slot_idx m_idx;
 
 public:
-  explicit pred_at (int atname, size_t idx)
+  pred_at (int atname, slot_idx idx)
     : m_atname (atname)
     , m_idx (idx)
   {}
 
-  virtual pred_result result (std::shared_ptr <Dwarf> &dw,
-			      stack const &stk, size_t stksz) const override;
-};
-
-// Mainly useful as a placeholder predicate for those OP's where we
-// couldn't promote anything.
-class pred_true
-  : public pred
-{
-public:
-  virtual pred_result
-  result (std::shared_ptr <Dwarf> &dw,
-	  stack const &stk, size_t stksz) const override
-  {
-    return pred_result (true);
-  }
+  pred_result result (valfile &vf) const override;
+  std::string name () const override;
 };
 
 class pred_tag
@@ -349,8 +279,8 @@ public:
     , m_idx (idx)
   {}
 
-  virtual pred_result result (std::shared_ptr <Dwarf> &dw,
-			      stack const &stk, size_t stksz) const override;
+  pred_result result (valfile &vf) const override;
+  std::string name () const override;
 };
 
 class pred_binary
@@ -365,8 +295,8 @@ public:
     , m_idx_b (idx_b)
   {}
 
-  value const &get_a (stack const &stk) const;
-  value const &get_b (stack const &stk) const;
+  value const &get_a (valfile &vf) const;
+  value const &get_b (valfile &vf) const;
 };
 
 class pred_unary
@@ -379,7 +309,7 @@ public:
     : m_idx_a (idx_a)
   {}
 
-  value const &get_a (stack const &stk) const;
+  value const &get_a (valfile &vf) const;
 };
 
 class pred_eq
@@ -387,8 +317,9 @@ class pred_eq
 {
 public:
   using pred_binary::pred_binary;
-  virtual pred_result result (std::shared_ptr <Dwarf> &dw,
-			      stack const &stk, size_t stksz) const override;
+
+  pred_result result (valfile &vf) const override;
+  std::string name () const override;
 };
 
 class pred_lt
@@ -396,8 +327,9 @@ class pred_lt
 {
 public:
   using pred_binary::pred_binary;
-  virtual pred_result result (std::shared_ptr <Dwarf> &dw,
-			      stack const &stk, size_t stksz) const override;
+
+  pred_result result (valfile &vf) const override;
+  std::string name () const override;
 };
 
 class pred_gt
@@ -405,8 +337,9 @@ class pred_gt
 {
 public:
   using pred_binary::pred_binary;
-  virtual pred_result result (std::shared_ptr <Dwarf> &dw,
-			      stack const &stk, size_t stksz) const override;
+
+  pred_result result (valfile &vf) const override;
+  std::string name () const override;
 };
 
 class pred_root
@@ -414,8 +347,9 @@ class pred_root
 {
 public:
   using pred_unary::pred_unary;
-  virtual pred_result result (std::shared_ptr <Dwarf> &dw,
-			      stack const &stk, size_t stksz) const override;
+
+  pred_result result (valfile &vf) const override;
+  std::string name () const override;
 };
 
 class pred_subx_any
@@ -427,8 +361,9 @@ public:
   explicit pred_subx_any (std::unique_ptr <op> op)
     : m_op (std::move (op))
   {}
-  virtual pred_result result (std::shared_ptr <Dwarf> &dw,
-			      stack const &stk, size_t stksz) const override;
+
+  pred_result result (valfile &vf) const override;
+  std::string name () const override;
 };
 
 class pred_find;

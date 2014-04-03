@@ -300,9 +300,9 @@
 
    - "swap" swaps top two stack elements.
 
-   Apart from these two, dwgrep includes over rot and drop.  See below
-   for their definition.  With swap, we can get our message in the
-   right order:
+   Apart from these two, dwgrep includes over, rot and drop.  See
+   below for their definition.  With swap, we can get our message in
+   the right order:
 
    : ?subprogram !@declaration +child ?formal_parameter
    : ?{@type ((?const_type, ?volatile_type, ?typedef) @type)*
@@ -418,6 +418,9 @@
    (the number of slots pushed - number of slots popped will be the
    same for each branch).
 
+   - For example, to follow through all edges:
+     : (child, attribute ?{form "%s" "DW_FORM_ref.*" ?match})
+
 ** EXPR → NUM “/” EXPR₁ — pathset exploration
 
    The effect is as if the topmost NUM elements were removed from
@@ -442,6 +445,12 @@
    - Follow the same traversal instructions for two DIE's on TOS:
      : child ?formal_parameter swap child ?formal_parameter
      : 2/(child ?formal_parameter)
+
+   - rot is exactly equivalent to:
+     : 2/swap
+     It is thus easy to achieve deep rotation: top four items are
+     rotated by 3/swap etc.  This relies on the above liberal
+     definition of N/expr.
 
 ** EXPR → EXPR₁ “*” | EXPR₁ “+” | EXPR₁ “?” — iterate
 
@@ -846,6 +855,36 @@
 
 ** XXX .debug_macro
 
+** XXX nested identifier names
+   currently we have to write
+   : ?{@name "a" ?eq} child ?{@name "b" ?eq} child ?{@name "c" ?eq}
+   which works, but is clumsy.  We'd much rather write something much
+   less verbose.  It's not clear what, without cluttering the
+   language.  If there were a library word, say lookup, meaning the
+   following:
+   : ?{0 (?{swap each ?{pos ?eq} @name over ?eq} 1 add rot child rot rot)*
+   :   ?{swap length ?eq}}
+
+   We could use it thus:
+   : ["a", "b", "c"] lookup
+
+   : ["a", "b", "c"] ?{each first swap (?{@name ?eq} <child, next>)* }
+
+   Or:
+   : "a" ::@name "b" ::@name "c" ::@name
+   where ::X would expand to:
+   : ?{swap (X) ?eq} child
+   -- but the final child doesn't work.  It seems the original awkward
+   way of expressing this is the best one after all.
+
+** XXX optional dwarf_attr_integrate
+   - Currently we do that always for @at, ?@at etc.  Maybe it should
+     be configurable.
+
+   - XXX "attribute" function should also consistently yield either
+     only attributes at the DIE itself, or integrated attributes as
+     well.
+
 
 * Examples
 ** Josh Stone's nontrivial-parameters script
@@ -881,7 +920,7 @@
    : (let $T := local:cvPeeledType(/, .)/name()
    :  where $T = "tag_structure_type"
    :  return concat (../at_name/text(), ": type of parameter ",
-   :                 $A/at_name/text(), " is not trivial.")
+   :                 $A/at_name/text(), " is not trivial."))
 
 ** check_die_decl_call:
 
@@ -934,6 +973,10 @@
 
    : ?{@low_pc 0 ?eq} ?{@frame_base @atom DW_OP_call_frame_cfa ?eq}
 
+   - something
+
+   : if (@low_pc == 0 and @frame_base @atom == DW_OP_call_frame_cfa)
+
    - XQuery (note this matches @low_pc as text, not as number):
 
    : //.[at_low_pc/text() = "0x0"][at_frame_base//@op = "call_frame_cfa"]
@@ -942,6 +985,10 @@
 
    : ?@location !{@location}
 
+   - something
+
+   : if (has @location and empty [@location])
+
    - XQuery:
 
    : //at_location[loc_expr[not(loc_op)]]
@@ -949,6 +996,11 @@
 ** location expression ends with implicit_value or stack_value
 
    : ?{@location ?last @atom (DW_OP_implicit_value, DW_OP_stack_value) ?eq}
+
+   - something
+
+   : if (@location, if last, if (@atom == DW_OP_implicit_value
+   :                             or @atom == DW_OP_stack_value))
 
    - XQuery:
 
@@ -960,6 +1012,10 @@
 
    : ?subprogram +@specification 2/(child ?formal_parameter)
    : ?{2/pos ?eq} ?{2/@type !eq}
+
+   - something:
+
+   : if (is subprogram) with @specification 2/(child is formal_parameter)
 
    - XQuery:
 

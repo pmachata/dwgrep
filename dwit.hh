@@ -135,7 +135,7 @@ public:
   }
 };
 
-// Tree flattening iterator.  It pre-order iterates all CUs in given
+// Tree flattening iterator.  It pre-order iterates all DIEs in given
 // dwarf file.
 class all_dies_iterator
   : public std::iterator<std::input_iterator_tag, Dwarf_Die *>

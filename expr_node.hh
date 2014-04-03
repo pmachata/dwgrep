@@ -92,18 +92,65 @@ struct expr_node_add
 					  dwgrep_graph::ptr q) override;
 };
 
-struct expr_node_odd
+enum class pred_result
+  {
+    no = false,
+    yes = true,
+    fail,
+  };
+
+inline pred_result
+operator! (pred_result other)
+{
+  switch (other)
+    {
+    case pred_result::no:
+      return pred_result::yes;
+    case pred_result::yes:
+      return pred_result::no;
+    case pred_result::fail:
+      return pred_result::fail;
+    }
+  abort ();
+}
+
+inline pred_result
+operator&& (pred_result a, pred_result b)
+{
+  if (a == pred_result::fail || b == pred_result::fail)
+    return pred_result::fail;
+  else
+    return bool (a) && bool (b) ? pred_result::yes : pred_result::no;
+}
+
+inline pred_result
+operator|| (pred_result a, pred_result b)
+{
+  if (a == pred_result::fail || b == pred_result::fail)
+    return pred_result::fail;
+  else
+    return bool (a) || bool (b) ? pred_result::yes : pred_result::no;
+}
+
+struct pred
+{
+  pred_result result (valfile::ptr vf) const;
+};
+
+class expr_node_assert
   : public expr_node
 {
+  std::shared_ptr <pred> m_pred;
+
+public:
   std::shared_ptr <exec_node> build_exec (std::shared_ptr <exec_node> upstream,
 					  dwgrep_graph::ptr q) override;
 };
 
-struct expr_node_even
-  : public expr_node
+struct pred_odd
+  : public pred
 {
-  std::shared_ptr <exec_node> build_exec (std::shared_ptr <exec_node> upstream,
-					  dwgrep_graph::ptr q) override;
+  pred_result result (valfile::ptr vf) const;
+  
 };
-
 #endif /* _EXPR_NODE_H_ */

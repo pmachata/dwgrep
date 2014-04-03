@@ -25,6 +25,7 @@ namespace
   std::unique_ptr <expr_node>
   build_my_expr (std::string const &)
   {
+    /*
     auto A = std::make_unique <expr_node_cat>
       (std::make_unique <expr_node_odd> (),
        std::make_unique <expr_node_mul> ());
@@ -41,6 +42,13 @@ namespace
       (std::make_unique <expr_node_uni> (),
        std::make_unique <expr_node_cat>
        (std::make_unique <expr_node_dup> (), std::move (Alt)));
+    */
+    auto U = std::make_unique <expr_node_uni> ();
+    auto D = std::make_unique <expr_node_dup> ();
+    auto M = std::make_unique <expr_node_mul> ();
+
+    auto C2 = std::make_unique <expr_node_cat> (std::move (D), std::move (M));
+    return std::make_unique <expr_node_cat> (std::move (U), std::move (C2));
   }
 
   std::unique_ptr <query_expr>

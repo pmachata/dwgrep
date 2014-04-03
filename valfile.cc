@@ -80,6 +80,25 @@ value_behavior <value_vector_t>::clone (value_vector_t const&vv)
   return std::make_unique <value_seq> (std::move (vv2));
 }
 
+void
+value_behavior <Dwarf_Die>::show (Dwarf_Die const &die, std::ostream &o)
+{
+  o << "[" << std::hex
+    << dwarf_dieoffset ((Dwarf_Die *) &die) << "]";
+}
+
+void
+value_behavior <Dwarf_Die>::move_to_slot (Dwarf_Die &&die,
+					  slot_idx i, valfile &vf)
+{
+  vf.set_slot (i, die);
+}
+
+std::unique_ptr <value>
+value_behavior <Dwarf_Die>::clone (Dwarf_Die const &die)
+{
+  return std::make_unique <value_die> (Dwarf_Die (die));
+}
 
 void
 valfile_slot::destroy (slot_type t)
@@ -142,18 +161,18 @@ valfile::create (size_t n)
 }
 
 std::unique_ptr <valfile>
-valfile::copy (valfile const &that, size_t n)
+valfile::copy (valfile const &that, size_t osize, size_t nsize)
 {
-  assert (that.m_types[n] == slot_type::END);
+  assert (that.m_types[osize] == slot_type::END);
 
-  allocd_block b = alloc (n);
+  allocd_block b = alloc (nsize);
   auto copy = std::unique_ptr <valfile> (new (b.buf) valfile (b.types));
 
-  for (size_t i = 0; i < n; ++i)
+  for (size_t i = 0; i < std::min (osize, nsize); ++i)
     if (that.m_types[i] != slot_type::INVALID)
       {
-	std::unique_ptr <value> vp = that.get_slot (i)->clone ();
-	copy->set_slot (i, std::move (vp));
+	std::unique_ptr <value> vp = that.get_slot (slot_idx (i))->clone ();
+	copy->set_slot (slot_idx (i), std::move (vp));
       }
   return copy;
 }
@@ -246,11 +265,13 @@ valfile::get_slot (slot_idx i) const
   switch (m_types[i.value ()])
     {
     case slot_type::FLT:
-    case slot_type::DIE:
     case slot_type::ATTRIBUTE:
     case slot_type::LINE:
       assert (!"not yet implemented");
       abort ();
+
+    case slot_type::DIE:
+      return std::make_unique <valueref_die> (m_slots[i.value ()].die);
 
     case slot_type::CST:
       return std::make_unique <valueref_cst> (m_slots[i.value ()].cst);

@@ -6,6 +6,7 @@
 
 #include "constant.hh"
 #include "op.hh"
+#include "valfile.hh"
 
 // These constants describe how a tree is allowed to be constructed.
 // It's mostly present to make sure we don't inadvertently construct
@@ -159,10 +160,10 @@ struct tree
   // operation should go to.
   ssize_t m_stkslot;
 
-  size_t slot () const
+  slot_idx slot () const
   {
     assert (m_stkslot >= 0);
-    return size_t (m_stkslot);
+    return slot_idx (m_stkslot);
   }
 
   tree ();
@@ -290,15 +291,30 @@ struct tree
   void dump (std::ostream &o) const;
 
   // This initializes STKSLOT that a result of each operation should
-  // go to.  It returns answers the maximum stack size necessary for
-  // the computation.  As it works through the AST, it checks a number
-  // of invariants, such as number of children, stack underruns, etc.
+  // go to.  It returns the maximum stack size necessary for the
+  // computation.  As it works through the AST, it checks a number of
+  // invariants, such as number of children, stack underruns, etc.
   size_t determine_stack_effects ();
 
   // Produce program suitable for interpretation.  Implemented in
   // build.cc.
-  std::unique_ptr <op> build () const;
   std::unique_ptr <pred> build_pred () const;
+
+  // This should build an exec_node corresponding to this expression.
+  // Implemented in build.cc.
+  //
+  // Not every expression node needs to have an associated exec_node,
+  // some nodes will only install some plumbing (in particular, a CAT
+  // node would only create a series of nested exec's).  UPSTREAM
+  // should be nullptr if this is the toplevel-most expression,
+  // otherwise it should be a valid exec_node.
+  //
+  // XXX Note that the MAXSIZE argument should go away.  This needs to
+  // be set for each producer node by determine_stack_effects, and
+  // should capture stack needs of the following computations.
+  std::shared_ptr <op>
+  build_exec (std::shared_ptr <op> upstream,
+	      dwgrep_graph::ptr q, size_t maxsize) const;
 };
 
 #endif /* _TREE_H_ */

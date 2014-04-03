@@ -2,12 +2,19 @@
 #include "constant.hh"
 
 void
-untyped_constant_dom_t::show (constant c, std::ostream &o) const
+signed_constant_dom_t::show (constant c, std::ostream &o) const
+{
+  o << ((int64_t) c.value ());
+}
+
+void
+unsigned_constant_dom_t::show (constant c, std::ostream &o) const
 {
   o << c.value ();
 }
 
-untyped_constant_dom_t const untyped_constant_dom;
+signed_constant_dom_t const signed_constant_dom;
+unsigned_constant_dom_t const unsigned_constant_dom;
 
 std::ostream &
 operator<< (std::ostream &o, constant cst)
