@@ -394,169 +394,182 @@ string_or_unknown (const char *known, unsigned int code,
   return "???";
 }
 
-static struct
-  : public constant_dom
+namespace
 {
-  virtual void
-  show (constant c, std::ostream &o) const
+  struct unsigned_constant_dom
+    : public constant_dom
   {
-    int tag = c.value ();
+    bool
+    sign () const override
+    {
+      return false;
+    }
+  };
+}
+
+static struct
+  : public unsigned_constant_dom
+{
+  void
+  show (uint64_t v, std::ostream &o) const override
+  {
+    int tag = v;
     const char *ret = dwarf_tag_string (tag);
     o << string_or_unknown (ret, tag, DW_TAG_lo_user, DW_TAG_hi_user, true);
   }
 } dw_tag_dom;
 
 static struct
-  : public constant_dom
+  : public unsigned_constant_dom
 {
   virtual void
-  show (constant c, std::ostream &o) const
+  show (uint64_t v, std::ostream &o) const
   {
-    unsigned int attr = c.value ();
+    unsigned int attr = v;
     const char *ret = dwarf_attr_string (attr);
     o << string_or_unknown (ret, attr, DW_AT_lo_user, DW_AT_hi_user, true);
   }
 } dw_attr_dom;
 
 static struct
-  : public constant_dom
+  : public unsigned_constant_dom
 {
   virtual void
-  show (constant c, std::ostream &o) const
+  show (uint64_t v, std::ostream &o) const
   {
-    unsigned int form = c.value ();
+    unsigned int form = v;
     const char *ret = dwarf_form_string (form);
     o << string_or_unknown (ret, form, 0, 0, true);
   }
 } dw_form_dom;
 
 static struct
-  : public constant_dom
+  : public unsigned_constant_dom
 {
   virtual void
-  show (constant c, std::ostream &o) const
+  show (uint64_t v, std::ostream &o) const
   {
-    unsigned int lang = c.value ();
+    unsigned int lang = v;
     const char *ret = dwarf_lang_string (lang);
     o << string_or_unknown (ret, lang, DW_LANG_lo_user, DW_LANG_hi_user, false);
   }
 } dw_lang_dom;
 
 static struct
-  : public constant_dom
+  : public unsigned_constant_dom
 {
   virtual void
-  show (constant c, std::ostream &o) const
+  show (uint64_t v, std::ostream &o) const
   {
-    unsigned int code = c.value ();
+    unsigned int code = v;
     const char *ret = dwarf_inline_string (code);
     o << string_or_unknown (ret, code, 0, 0, false);
   }
 } dw_inline_dom;
 
 static struct
-  : public constant_dom
+  : public unsigned_constant_dom
 {
   virtual void
-  show (constant c, std::ostream &o) const
+  show (uint64_t v, std::ostream &o) const
   {
-    unsigned int code = c.value ();
+    unsigned int code = v;
     const char *ret = dwarf_encoding_string (code);
     o << string_or_unknown (ret, code, DW_ATE_lo_user, DW_ATE_hi_user,false);
   }
 }  dw_encoding_dom;
 
 static struct
-  : public constant_dom
+  : public unsigned_constant_dom
 {
   virtual void
-  show (constant c, std::ostream &o) const
+  show (uint64_t v, std::ostream &o) const
   {
-    unsigned int code = c.value ();
+    unsigned int code = v;
     const char *ret = dwarf_access_string (code);
     o << string_or_unknown (ret, code, 0, 0, false);
   }
 } dw_access_dom;
 
 static struct
-  : public constant_dom
+  : public unsigned_constant_dom
 {
   virtual void
-  show (constant c, std::ostream &o) const
+  show (uint64_t v, std::ostream &o) const
   {
-    unsigned int code = c.value ();
+    unsigned int code = v;
     const char *ret = dwarf_visibility_string (code);
     o << string_or_unknown (ret, code, 0, 0,false);
   }
 } dw_visibility_dom;
 
 static struct
-  : public constant_dom
+  : public unsigned_constant_dom
 {
   virtual void
-  show (constant c, std::ostream &o) const
+  show (uint64_t v, std::ostream &o) const
   {
-    unsigned int code = c.value ();
+    unsigned int code = v;
     const char *ret = dwarf_virtuality_string (code);
     o << string_or_unknown (ret, code, 0, 0,false);
   }
 } dw_virtuality_dom;
 
 static struct
-  : public constant_dom
+  : public unsigned_constant_dom
 {
   virtual void
-  show (constant c, std::ostream &o) const
+  show (uint64_t v, std::ostream &o) const
   {
-    unsigned int code = c.value ();
+    unsigned int code = v;
     const char *ret = dwarf_identifier_case_string (code);
     o << string_or_unknown (ret, code, 0, 0,false);
   }
 } dw_identifier_case_dom;
 
 static struct
-  : public constant_dom
+  : public unsigned_constant_dom
 {
   virtual void
-  show (constant c, std::ostream &o) const
+  show (uint64_t v, std::ostream &o) const
   {
-    unsigned int code = c.value ();
+    unsigned int code = v;
     const char *ret = dwarf_calling_convention_string (code);
     o << string_or_unknown (ret, code, DW_CC_lo_user, DW_CC_hi_user,false);
   }
 } dw_calling_convention_dom;
 
 static struct
-  : public constant_dom
+  : public unsigned_constant_dom
 {
   virtual void
-  show (constant c, std::ostream &o) const
+  show (uint64_t v, std::ostream &o) const
   {
-    unsigned int code = c.value ();
+    unsigned int code = v;
     const char *ret = dwarf_ordering_string (code);
     o << string_or_unknown (ret, code, 0, 0,false);
   }
 } dw_ordering_dom;
 
 static struct
-  : public constant_dom
+  : public unsigned_constant_dom
 {
   virtual void
-  show (constant c, std::ostream &o) const
+  show (uint64_t v, std::ostream &o) const
   {
-    unsigned int code = c.value ();
+    unsigned int code = v;
     const char *ret = dwarf_discr_list_string (code);
     o << string_or_unknown (ret, code, 0, 0, false);
   }
 } dw_discr_list_dom;
 
 static struct
-  : public constant_dom
+  : public unsigned_constant_dom
 {
   virtual void
-  show (constant c, std::ostream &o) const
+  show (uint64_t v, std::ostream &o) const
   {
-    unsigned int code = c.value ();
+    unsigned int code = v;
     const char *ret = dwarf_locexpr_opcode_string (code);
     o << string_or_unknown (ret, code, DW_OP_lo_user, DW_OP_hi_user,true);
   }

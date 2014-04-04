@@ -4,11 +4,11 @@
 #include <memory>
 #include <string>
 #include <vector>
+#include "make_unique.hh"
 
 #include <elfutils/libdw.h>
 
 #include "constant.hh"
-#include "make_unique.hh"
 
 // Value file is a specialized container type that's used for
 // maintaining stacks of dwgrep values.
@@ -252,6 +252,17 @@ struct value_behavior <Dwarf_Die>
 typedef value_b <Dwarf_Die> value_die;
 typedef valueref_b <Dwarf_Die> valueref_die;
 
+template <>
+struct value_behavior <Dwarf_Attribute>
+{
+  static void show (Dwarf_Attribute const &die, std::ostream &o);
+  static void move_to_slot (Dwarf_Attribute &&die, slot_idx i, valfile &vf);
+  static std::unique_ptr <value> clone (Dwarf_Attribute const &die);
+};
+
+typedef value_b <Dwarf_Attribute> value_attr;
+typedef valueref_b <Dwarf_Attribute> valueref_attr;
+
 union valfile_slot
 {
   constant cst;
@@ -259,7 +270,7 @@ union valfile_slot
   std::string str;
   value_vector_t seq;
   Dwarf_Die die;
-  Dwarf_Attribute at;
+  Dwarf_Attribute attr;
   Dwarf_Line *line;
 
   // Do-nothing ctor and dtor to make it possible to instantiate this
@@ -328,6 +339,9 @@ public:
 
   void set_slot (slot_idx i, Dwarf_Die const &die);
   Dwarf_Die const &get_slot_die (slot_idx i) const;
+
+  void set_slot (slot_idx i, Dwarf_Attribute const &attr);
+  Dwarf_Attribute const &get_slot_attr (slot_idx i) const;
 
   class const_iterator
     : public std::iterator <std::input_iterator_tag,

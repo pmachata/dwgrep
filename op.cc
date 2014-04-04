@@ -451,41 +451,28 @@ op_drop::get_yielder (std::unique_ptr <stack> stk, size_t stksz,
 
   return std::make_unique <drop_yielder> (m_idx);
 }
-
-std::unique_ptr <yielder>
-op_const::get_yielder (std::unique_ptr <stack> stk, size_t stksz,
-		       std::shared_ptr <Dwarf> &dw) const
-{
-  class const_yielder
-    : public yielder
-  {
-    bool done;
-    value const &m_val;
-    size_t m_idx;
-
-  public:
-    const_yielder (value const &val, size_t idx)
-      : done (false)
-      , m_val (val)
-      , m_idx (idx)
-    {}
-
-    virtual std::unique_ptr <stack>
-    yield () override
-    {
-      if (done)
-	return nullptr;
-
-      done = true;
-      auto ret = stk.clone (stksz);
-      ret->set_slot (m_idx, m_val.clone ());
-      return ret;
-    }
-  };
-
-  return std::make_unique <const_yielder> (*m_val, m_idx);
-}
 */
+
+valfile::uptr
+op_const::next ()
+{
+  while (auto vf = m_upstream->next ())
+    {
+      m_val->move_to_slot (m_dst, *vf);
+      return vf;
+    }
+  return nullptr;
+}
+
+std::string
+op_const::name () const
+{
+  std::stringstream ss;
+  ss << "const<";
+  m_val->show (ss);
+  ss << ">";
+  return ss.str ();
+}
 
 
 pred_result
@@ -532,37 +519,95 @@ pred_or::name () const
   return ss.str ();
 }
 
-/*
 pred_result
-pred_at::result (std::shared_ptr <Dwarf> &dw,
-		 stack const &stk, size_t stksz) const
+pred_at::result (valfile &vf) const
 {
-  auto const &var = stk.get_slot (m_idx);
-  if (auto vd = dynamic_cast <v_die const *> (&var))
+  if (vf.get_slot_type (m_idx) == slot_type::DIE)
     {
-      Dwarf_Die die = vd->die (dw);
+      auto &die = const_cast <Dwarf_Die &> (vf.get_slot_die (m_idx));
       return pred_result (dwarf_hasattr_integrate (&die, m_atname) != 0);
     }
-  else if (auto va = dynamic_cast <v_at const *> (&var))
-    return pred_result (va->atname () == m_atname);
+  else if (vf.get_slot_type (m_idx) == slot_type::ATTRIBUTE)
+    {
+      auto &attr = const_cast <Dwarf_Attribute &> (vf.get_slot_attr (m_idx));
+      return pred_result (dwarf_whatattr (&attr) == m_atname);
+    }
   else
     return pred_result::fail;
 }
 
-pred_result
-pred_tag::result (std::shared_ptr <Dwarf> &dw,
-		  stack const &stk, size_t stksz) const
+std::string
+pred_at::name () const
 {
-  auto const &var = stk.get_slot (m_idx);
-  if (auto vd = dynamic_cast <v_die const *> (&var))
+  std::stringstream ss;
+  ss << "pred_at<" << m_atname << ">";
+  return ss.str ();
+}
+
+pred_result
+pred_tag::result (valfile &vf) const
+{
+  if (vf.get_slot_type (m_idx) == slot_type::DIE)
     {
-      Dwarf_Die die = vd->die (dw);
+      auto &die = const_cast <Dwarf_Die &> (vf.get_slot_die (m_idx));
       return pred_result (dwarf_tag (&die) == m_tag);
     }
   else
     return pred_result::fail;
 }
 
+std::string
+pred_tag::name () const
+{
+  std::stringstream ss;
+  ss << "pred_tag<" << m_tag << ">";
+  return ss.str ();
+}
+
+pred_result
+pred_eq::result (valfile &vf) const
+{
+  slot_type st = vf.get_slot_type (m_idx_a);
+  if (st != vf.get_slot_type (m_idx_b))
+    return pred_result::fail;
+
+  switch (st)
+    {
+    case slot_type::END:
+    case slot_type::INVALID:
+      assert (! "invalid slots for comparison");
+      abort ();
+
+    case slot_type::CST:
+      return pred_result
+	(vf.get_slot_cst (m_idx_a) == vf.get_slot_cst (m_idx_b));
+
+    case slot_type::STR:
+      return pred_result
+	(vf.get_slot_str (m_idx_a) == vf.get_slot_str (m_idx_b));
+
+    case slot_type::FLT:
+    case slot_type::SEQ:
+    case slot_type::DIE:
+    case slot_type::ATTRIBUTE:
+    case slot_type::LINE:
+    case slot_type::LOCLIST_ENTRY:
+    case slot_type::LOCLIST_OP:
+      assert (! "NYI");
+      abort ();
+    }
+
+  assert (! "invalid slot type");
+  abort ();
+}
+
+std::string
+pred_eq::name () const
+{
+  return "pred_eq";
+}
+
+/*
 value const &
 pred_binary::get_a (stack const &stk) const
 {

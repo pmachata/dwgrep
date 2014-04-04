@@ -101,6 +101,26 @@ value_behavior <Dwarf_Die>::clone (Dwarf_Die const &die)
 }
 
 void
+value_behavior <Dwarf_Attribute>::show (Dwarf_Attribute const &attr,
+					std::ostream &o)
+{
+  o << "(attribute, NYI)";
+}
+
+void
+value_behavior <Dwarf_Attribute>::move_to_slot (Dwarf_Attribute &&attr,
+						slot_idx i, valfile &vf)
+{
+  vf.set_slot (i, attr);
+}
+
+std::unique_ptr <value>
+value_behavior <Dwarf_Attribute>::clone (Dwarf_Attribute const &attr)
+{
+  return std::make_unique <value_attr> (Dwarf_Attribute (attr));
+}
+
+void
 valfile_slot::destroy (slot_type t)
 {
   switch (t)
@@ -258,6 +278,13 @@ valfile::get_slot_die (slot_idx i) const
   return m_slots[i.value ()].die;
 }
 
+Dwarf_Attribute const &
+valfile::get_slot_attr (slot_idx i) const
+{
+  assert (m_types[i.value ()] == slot_type::ATTRIBUTE);
+  return m_slots[i.value ()].attr;
+}
+
 // General accessor for all slot types.
 std::unique_ptr <valueref>
 valfile::get_slot (slot_idx i) const
@@ -265,13 +292,15 @@ valfile::get_slot (slot_idx i) const
   switch (m_types[i.value ()])
     {
     case slot_type::FLT:
-    case slot_type::ATTRIBUTE:
     case slot_type::LINE:
       assert (!"not yet implemented");
       abort ();
 
     case slot_type::DIE:
       return std::make_unique <valueref_die> (m_slots[i.value ()].die);
+
+    case slot_type::ATTRIBUTE:
+      return std::make_unique <valueref_attr> (m_slots[i.value ()].attr);
 
     case slot_type::CST:
       return std::make_unique <valueref_cst> (m_slots[i.value ()].cst);
@@ -351,6 +380,14 @@ valfile::set_slot (slot_idx i, Dwarf_Die const &die)
   assert (m_types[i.value ()] == slot_type::INVALID);
   m_types[i.value ()] = slot_type::DIE;
   m_slots[i.value ()].die = die;
+}
+
+void
+valfile::set_slot (slot_idx i, Dwarf_Attribute const &attr)
+{
+  assert (m_types[i.value ()] == slot_type::INVALID);
+  m_types[i.value ()] = slot_type::ATTRIBUTE;
+  m_slots[i.value ()].attr = attr;
 }
 
 void

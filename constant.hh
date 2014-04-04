@@ -9,8 +9,9 @@ class constant;
 class constant_dom
 {
 public:
-  virtual void show (constant c, std::ostream &o) const = 0;
   virtual ~constant_dom () {}
+  virtual void show (uint64_t c, std::ostream &o) const = 0;
+  virtual bool sign () const = 0;
 };
 
 // Two trivial domains for unnamed constants: one for signed, one for
@@ -18,13 +19,15 @@ public:
 struct signed_constant_dom_t
   : public constant_dom
 {
-  virtual void show (constant c, std::ostream &o) const;
+  void show (uint64_t a, std::ostream &o) const override;
+  bool sign () const override;
 };
 
 struct unsigned_constant_dom_t
   : public constant_dom
 {
-  virtual void show (constant c, std::ostream &o) const;
+  void show (uint64_t a, std::ostream &o) const override;
+  bool sign () const override;
 };
 
 extern signed_constant_dom_t const signed_constant_dom;
@@ -59,6 +62,10 @@ public:
 
   // Parse tag reference.
   static constant parse_tag (std::string str);
+
+  bool operator< (constant that) const;
+  bool operator== (constant that) const;
+  bool operator!= (constant that) const;
 };
 
 std::ostream &operator<< (std::ostream &o, constant cst);

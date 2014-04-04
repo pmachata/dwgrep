@@ -8,20 +8,17 @@ tree::build_pred () const
   switch (m_tt)
     {
     case tree_type::PRED_TAG:
-      //return std::make_unique <pred_tag> (m_u.cval->value (), slot ());
-      assert (! "NIY");
+      return std::make_unique <pred_tag> (m_u.cval->value (), slot ());
 
     case tree_type::PRED_AT:
-      //return std::make_unique <pred_at> (m_u.cval->value (), slot ());
-      assert (! "NIY");
+      return std::make_unique <pred_at> (m_u.cval->value (), slot ());
 
     case tree_type::PRED_NOT:
-      //return std::make_unique <pred_not> (m_children.front ().build_pred ());
-      assert (! "NIY");
+      return std::make_unique <pred_not> (m_children.front ().build_pred ());
 
     case tree_type::PRED_EQ:
-      //return std::make_unique <pred_eq> (slot () - 1, slot ());
-      assert (! "NIY");
+      return std::make_unique <pred_eq>
+	(slot_idx (slot ().value () - 1), slot ());
 
     case tree_type::PRED_NE:
       //return std::make_unique <pred_not>
@@ -168,9 +165,8 @@ tree::build_exec (std::shared_ptr <op> upstream, dwgrep_graph::ptr q,
 
     case tree_type::CONST:
       {
-	//auto val = std::make_unique <v_uint> (m_u.cval->value ());
-	//return std::make_unique <op_const> (std::move (val), slot ());
-	assert (! "NIY");
+	auto val = std::make_unique <value_cst> (constant (*m_u.cval));
+	return std::make_unique <op_const> (upstream, std::move (val), slot ());
       }
 
     case tree_type::PRED_TAG:

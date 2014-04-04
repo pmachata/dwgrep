@@ -165,13 +165,16 @@ public:
 class op_const
   : public op
 {
+  std::shared_ptr <op> m_upstream;
   std::unique_ptr <value> m_val;
-  size_t m_idx;
+  slot_idx m_dst;
 
 public:
-  op_const (std::unique_ptr <value> val, size_t idx)
-    : m_val (std::move (val))
-    , m_idx (idx)
+  op_const (std::shared_ptr <op> upstream,
+	    std::unique_ptr <value> val, slot_idx dst)
+    : m_upstream (upstream)
+    , m_val (std::move (val))
+    , m_dst (dst)
   {}
 
   valfile::uptr next () override;
@@ -183,7 +186,6 @@ class op_capture;
 class op_transform;
 class op_protect;
 class op_close; //+, *, ?
-class op_const;
 class op_str;
 class op_atval;
 class op_f_add;
@@ -259,11 +261,11 @@ public:
 class pred_at
   : public pred
 {
-  int m_atname;
+  unsigned m_atname;
   slot_idx m_idx;
 
 public:
-  pred_at (int atname, slot_idx idx)
+  pred_at (unsigned atname, slot_idx idx)
     : m_atname (atname)
     , m_idx (idx)
   {}
@@ -276,10 +278,10 @@ class pred_tag
   : public pred
 {
   int m_tag;
-  size_t m_idx;
+  slot_idx m_idx;
 
 public:
-  pred_tag (int tag, size_t idx)
+  pred_tag (int tag, slot_idx idx)
     : m_tag (tag)
     , m_idx (idx)
   {}
@@ -318,21 +320,28 @@ public:
 };
 
 class pred_eq
-  : public pred_binary
+  : public pred
 {
+  slot_idx m_idx_a;
+  slot_idx m_idx_b;
+
 public:
-  using pred_binary::pred_binary;
+  pred_eq (slot_idx idx_a, slot_idx idx_b)
+    : m_idx_a (idx_a)
+    , m_idx_b (idx_b)
+  {}
 
   pred_result result (valfile &vf) const override;
   std::string name () const override;
 };
 
 class pred_lt
-  : public pred_binary
+  : public pred
 {
-public:
-  using pred_binary::pred_binary;
+  slot_idx m_a;
+  slot_idx m_b;
 
+public:
   pred_result result (valfile &vf) const override;
   std::string name () const override;
 };
