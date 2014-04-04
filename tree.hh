@@ -298,7 +298,7 @@ struct tree
 
   // Produce program suitable for interpretation.  Implemented in
   // build.cc.
-  std::unique_ptr <pred> build_pred () const;
+  std::unique_ptr <pred> build_pred (dwgrep_graph::ptr q) const;
 
   // This should build an exec_node corresponding to this expression.
   // Implemented in build.cc.

@@ -128,6 +128,13 @@ public:
   {
     return m_value != that.m_value;
   }
+
+  slot_idx
+  operator- (unsigned value) const
+  {
+    assert (value <= m_value);
+    return slot_idx (m_value - value);
+  }
 };
 
 class valueref

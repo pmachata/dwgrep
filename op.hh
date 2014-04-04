@@ -293,55 +293,33 @@ public:
 class pred_binary
   : public pred
 {
-  size_t m_idx_a;
-  size_t m_idx_b;
-
-public:
-  pred_binary (size_t idx_a, size_t idx_b)
-    : m_idx_a (idx_a)
-    , m_idx_b (idx_b)
-  {}
-
-  value const &get_a (valfile &vf) const;
-  value const &get_b (valfile &vf) const;
-};
-
-class pred_unary
-  : public pred
-{
-  size_t m_idx_a;
-
-public:
-  explicit pred_unary (size_t idx_a)
-    : m_idx_a (idx_a)
-  {}
-
-  value const &get_a (valfile &vf) const;
-};
-
-class pred_eq
-  : public pred
-{
+protected:
   slot_idx m_idx_a;
   slot_idx m_idx_b;
 
 public:
-  pred_eq (slot_idx idx_a, slot_idx idx_b)
+  pred_binary (slot_idx idx_a, slot_idx idx_b)
     : m_idx_a (idx_a)
     , m_idx_b (idx_b)
   {}
+};
+
+class pred_eq
+  : public pred_binary
+{
+public:
+  using pred_binary::pred_binary;
 
   pred_result result (valfile &vf) const override;
   std::string name () const override;
 };
 
 class pred_lt
-  : public pred
+  : public pred_binary
 {
-  slot_idx m_a;
-  slot_idx m_b;
-
 public:
+  using pred_binary::pred_binary;
+
   pred_result result (valfile &vf) const override;
   std::string name () const override;
 };
@@ -357,10 +335,16 @@ public:
 };
 
 class pred_root
-  : public pred_unary
+  : public pred
 {
+  dwgrep_graph::ptr m_q;
+  slot_idx m_idx_a;
+
 public:
-  using pred_unary::pred_unary;
+  pred_root (dwgrep_graph::ptr q, slot_idx idx_a)
+    : m_q (q)
+    , m_idx_a (idx_a)
+  {}
 
   pred_result result (valfile &vf) const override;
   std::string name () const override;

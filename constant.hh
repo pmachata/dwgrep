@@ -64,6 +64,7 @@ public:
   static constant parse_tag (std::string str);
 
   bool operator< (constant that) const;
+  bool operator> (constant that) const;
   bool operator== (constant that) const;
   bool operator!= (constant that) const;
 };

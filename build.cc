@@ -3,7 +3,7 @@
 #include "make_unique.hh"
 
 std::unique_ptr <pred>
-tree::build_pred () const
+tree::build_pred (dwgrep_graph::ptr q) const
 {
   switch (m_tt)
     {
@@ -14,38 +14,31 @@ tree::build_pred () const
       return std::make_unique <pred_at> (m_u.cval->value (), slot ());
 
     case tree_type::PRED_NOT:
-      return std::make_unique <pred_not> (m_children.front ().build_pred ());
+      return std::make_unique <pred_not> (m_children.front ().build_pred (q));
 
     case tree_type::PRED_EQ:
-      return std::make_unique <pred_eq>
-	(slot_idx (slot ().value () - 1), slot ());
+      return std::make_unique <pred_eq> (slot () - 1, slot ());
 
     case tree_type::PRED_NE:
-      //return std::make_unique <pred_not>
-      //(std::make_unique <pred_eq> (slot () - 1, slot ()));
-      assert (! "NIY");
+      return std::make_unique <pred_not>
+	(std::make_unique <pred_eq> (slot_idx (slot ().value () - 1), slot ()));
 
     case tree_type::PRED_LT:
-      //return std::make_unique <pred_lt> (slot () - 1, slot ());
-      assert (! "NIY");
+      return std::make_unique <pred_lt> (slot () - 1, slot ());
 
     case tree_type::PRED_GT:
-      //return std::make_unique <pred_gt> (slot () - 1, slot ());
-      assert (! "NIY");
+      return std::make_unique <pred_gt> (slot () - 1, slot ());
 
     case tree_type::PRED_GE:
-      //return std::make_unique <pred_not>
-      //(std::make_unique <pred_lt> (slot () - 1, slot ()));
-      assert (! "NIY");
+      return std::make_unique <pred_not>
+	(std::make_unique <pred_lt> (slot () - 1, slot ()));
 
     case tree_type::PRED_LE:
-      //return std::make_unique <pred_not>
-      //(std::make_unique <pred_gt> (slot () - 1, slot ()));
-      assert (! "NIY");
+      return std::make_unique <pred_not>
+	(std::make_unique <pred_gt> (slot () - 1, slot ()));
 
     case tree_type::PRED_ROOT:
-      //return std::make_unique <pred_root> (slot ());
-      assert (! "NIY");
+      return std::make_unique <pred_root> (q, slot ());
 
     case tree_type::PRED_SUBX_ANY:
       assert (m_children.size () == 1);
@@ -135,7 +128,7 @@ tree::build_exec (std::shared_ptr <op> upstream, dwgrep_graph::ptr q,
 
     case tree_type::ASSERT:
       return std::make_unique <op_assert> (upstream,
-					   m_children.front ().build_pred ());
+					   m_children.front ().build_pred (q));
 
     case tree_type::F_ATVAL:
       return std::make_unique <op_f_atval> (upstream,
