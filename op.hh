@@ -20,6 +20,7 @@ public:
 
   // Produce next value.
   virtual valfile::uptr next () = 0;
+  virtual void reset () = 0;
   virtual std::string name () const = 0;
 };
 
@@ -30,13 +31,20 @@ class pred;
 class op_origin
   : public op
 {
-  bool m_done;
+  valfile::uptr m_vf;
+  bool m_reset;
 
 public:
-  op_origin ();
+  explicit op_origin (valfile::uptr vf)
+    : m_vf (std::move (vf))
+    , m_reset (false)
+  {}
+
+  void set_next (valfile::uptr vf);
 
   valfile::uptr next () override;
   std::string name () const override;
+  void reset () override;
 };
 
 class op_sel_universe
@@ -52,6 +60,7 @@ public:
   ~op_sel_universe ();
   valfile::uptr next () override;
   std::string name () const override;
+  void reset () override;
 };
 
 class op_f_child
@@ -67,6 +76,7 @@ public:
   ~op_f_child ();
   valfile::uptr next () override;
   std::string name () const override;
+  void reset () override;
 };
 
 class op_nop
@@ -76,8 +86,12 @@ class op_nop
 
 public:
   explicit op_nop (std::shared_ptr <op> upstream) : m_upstream (upstream) {}
+
   valfile::uptr next () override;
   std::string name () const override;
+
+  void reset () override
+  { m_upstream->reset (); }
 };
 
 class op_assert
@@ -94,6 +108,9 @@ public:
 
   valfile::uptr next () override;
   std::string name () const override;
+
+  void reset () override
+  { m_upstream->reset (); }
 };
 
 class op_f_atval
@@ -112,6 +129,9 @@ public:
 
   valfile::uptr next () override;
   std::string name () const override;
+
+  void reset () override
+  { m_upstream->reset (); }
 };
 
 class op_f_offset
@@ -130,6 +150,9 @@ public:
 
   valfile::uptr next () override;
   std::string name () const override;
+
+  void reset () override
+  { m_upstream->reset (); }
 };
 
 class op_format
@@ -146,6 +169,7 @@ public:
 
   valfile::uptr next () override;
   std::string name () const override;
+  void reset () override;
 };
 
 class op_drop
@@ -160,6 +184,7 @@ public:
 
   valfile::uptr next () override;
   std::string name () const override;
+  void reset () override;
 };
 
 class op_const
@@ -179,6 +204,9 @@ public:
 
   valfile::uptr next () override;
   std::string name () const override;
+
+  void reset () override
+  { m_upstream->reset (); }
 };
 
 class op_alt;
@@ -210,8 +238,9 @@ class op_sel_unit;
 class pred
 {
 public:
-  virtual pred_result result (valfile &vf) const = 0;
+  virtual pred_result result (valfile &vf) = 0;
   virtual std::string name () const = 0;
+  virtual void reset () = 0;
 };
 
 class pred_not
@@ -222,8 +251,11 @@ class pred_not
 public:
   explicit pred_not (std::unique_ptr <pred> a) : m_a { std::move (a) } {}
 
-  pred_result result (valfile &vf) const override;
+  pred_result result (valfile &vf) override;
   std::string name () const override;
+
+  void reset () override
+  { m_a->reset (); }
 };
 
 class pred_and
@@ -238,8 +270,14 @@ public:
     , m_b { std::move (b) }
   {}
 
-  pred_result result (valfile &vf) const override;
+  pred_result result (valfile &vf) override;
   std::string name () const override;
+
+  void reset () override
+  {
+    m_a->reset ();
+    m_b->reset ();
+  }
 };
 
 class pred_or
@@ -254,8 +292,14 @@ public:
     , m_b { std::move (b) }
   {}
 
-  pred_result result (valfile &vf) const override;
+  pred_result result (valfile &vf) override;
   std::string name () const override;
+
+  void reset () override
+  {
+    m_a->reset ();
+    m_b->reset ();
+  }
 };
 
 class pred_at
@@ -270,8 +314,9 @@ public:
     , m_idx (idx)
   {}
 
-  pred_result result (valfile &vf) const override;
+  pred_result result (valfile &vf) override;
   std::string name () const override;
+  void reset () override {}
 };
 
 class pred_tag
@@ -286,8 +331,9 @@ public:
     , m_idx (idx)
   {}
 
-  pred_result result (valfile &vf) const override;
+  pred_result result (valfile &vf) override;
   std::string name () const override;
+  void reset () override {}
 };
 
 class pred_binary
@@ -302,6 +348,7 @@ public:
     : m_idx_a (idx_a)
     , m_idx_b (idx_b)
   {}
+  void reset () override {}
 };
 
 class pred_eq
@@ -310,7 +357,7 @@ class pred_eq
 public:
   using pred_binary::pred_binary;
 
-  pred_result result (valfile &vf) const override;
+  pred_result result (valfile &vf) override;
   std::string name () const override;
 };
 
@@ -320,7 +367,7 @@ class pred_lt
 public:
   using pred_binary::pred_binary;
 
-  pred_result result (valfile &vf) const override;
+  pred_result result (valfile &vf) override;
   std::string name () const override;
 };
 
@@ -330,7 +377,7 @@ class pred_gt
 public:
   using pred_binary::pred_binary;
 
-  pred_result result (valfile &vf) const override;
+  pred_result result (valfile &vf) override;
   std::string name () const override;
 };
 
@@ -346,22 +393,32 @@ public:
     , m_idx_a (idx_a)
   {}
 
-  pred_result result (valfile &vf) const override;
+  pred_result result (valfile &vf) override;
   std::string name () const override;
+  void reset () override {}
 };
 
 class pred_subx_any
   : public pred
 {
-  std::unique_ptr <op> m_op;
+  std::shared_ptr <op> m_op;
+  std::shared_ptr <op_origin> m_origin;
+  size_t m_osz;
+  size_t m_nsz;
 
 public:
-  explicit pred_subx_any (std::unique_ptr <op> op)
-    : m_op (std::move (op))
+  pred_subx_any (std::shared_ptr <op> op,
+		 std::shared_ptr <op_origin> origin,
+		 size_t osz, size_t nsz)
+    : m_op (op)
+    , m_origin (origin)
+    , m_osz (osz)
+    , m_nsz (nsz)
   {}
 
-  pred_result result (valfile &vf) const override;
+  pred_result result (valfile &vf) override;
   std::string name () const override;
+  void reset () override;
 };
 
 class pred_find;

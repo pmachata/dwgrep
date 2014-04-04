@@ -298,7 +298,9 @@ struct tree
 
   // Produce program suitable for interpretation.  Implemented in
   // build.cc.
-  std::unique_ptr <pred> build_pred (dwgrep_graph::ptr q) const;
+  //
+  // XXX see below for maxsize.  This should go away.  NIY.
+  std::unique_ptr <pred> build_pred (dwgrep_graph::ptr q, size_t maxsize) const;
 
   // This should build an exec_node corresponding to this expression.
   // Implemented in build.cc.
@@ -311,7 +313,7 @@ struct tree
   //
   // XXX Note that the MAXSIZE argument should go away.  This needs to
   // be set for each producer node by determine_stack_effects, and
-  // should capture stack needs of the following computations.
+  // should capture stack needs of the following computations.  NIY.
   std::shared_ptr <op>
   build_exec (std::shared_ptr <op> upstream,
 	      dwgrep_graph::ptr q, size_t maxsize) const;

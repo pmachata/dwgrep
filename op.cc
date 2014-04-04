@@ -6,23 +6,36 @@
 #include "dwpp.hh"
 #include "make_unique.hh"
 
-op_origin::op_origin ()
-  : m_done (false)
-{}
-
 valfile::uptr
 op_origin::next ()
 {
-  if (m_done)
-    return nullptr;
-  m_done = true;
-  return valfile::create (0);
+  return std::move (m_vf);
 }
 
 std::string
 op_origin::name () const
 {
   return "origin";
+}
+
+void
+op_origin::set_next (valfile::uptr vf)
+{
+  assert (m_vf == nullptr);
+
+  // set_next should have been preceded with a reset() call that
+  // should have percolated all the way here.
+  assert (m_reset);
+  m_reset = false;
+
+  m_vf = std::move (vf);
+}
+
+void
+op_origin::reset ()
+{
+  m_vf = nullptr;
+  m_reset = true;
 }
 
 
@@ -70,6 +83,13 @@ struct op_sel_universe::pimpl
 	m_vf = nullptr;
       }
   }
+
+  void
+  reset ()
+  {
+    m_vf = nullptr;
+    m_upstream->reset ();
+  }
 };
 
 op_sel_universe::op_sel_universe (std::shared_ptr <op> upstream,
@@ -93,6 +113,11 @@ op_sel_universe::name () const
   return "sel_universe";
 }
 
+void
+op_sel_universe::reset ()
+{
+  m_pimpl->reset ();
+}
 
 struct op_f_child::pimpl
 {
@@ -164,6 +189,13 @@ struct op_f_child::pimpl
 	return ret;
       }
   }
+
+  void
+  reset ()
+  {
+    m_vf = nullptr;
+    m_upstream->reset ();
+  }
 };
 
 op_f_child::op_f_child (std::shared_ptr <op> upstream,
@@ -185,6 +217,12 @@ std::string
 op_f_child::name () const
 {
   return "op_f_child";
+}
+
+void
+op_f_child::reset ()
+{
+  m_pimpl->reset ();
 }
 
 
@@ -474,7 +512,7 @@ op_const::name () const
 
 
 pred_result
-pred_not::result (valfile &vf) const
+pred_not::result (valfile &vf)
 {
   return ! m_a->result (vf);
 }
@@ -489,7 +527,7 @@ pred_not::name () const
 
 
 pred_result
-pred_and::result (valfile &vf) const
+pred_and::result (valfile &vf)
 {
   return m_a->result (vf) && m_b->result (vf);
 }
@@ -504,7 +542,7 @@ pred_and::name () const
 
 
 pred_result
-pred_or::result (valfile &vf) const
+pred_or::result (valfile &vf)
 {
   return m_a->result (vf) || m_b->result (vf);
 }
@@ -518,7 +556,7 @@ pred_or::name () const
 }
 
 pred_result
-pred_at::result (valfile &vf) const
+pred_at::result (valfile &vf)
 {
   if (vf.get_slot_type (m_idx) == slot_type::DIE)
     {
@@ -543,7 +581,7 @@ pred_at::name () const
 }
 
 pred_result
-pred_tag::result (valfile &vf) const
+pred_tag::result (valfile &vf)
 {
   if (vf.get_slot_type (m_idx) == slot_type::DIE)
     {
@@ -632,7 +670,7 @@ namespace
 }
 
 pred_result
-pred_eq::result (valfile &vf) const
+pred_eq::result (valfile &vf)
 {
   return comparison_result <cmp_eq> (vf, m_idx_a, m_idx_b);
 }
@@ -644,7 +682,7 @@ pred_eq::name () const
 }
 
 pred_result
-pred_lt::result (valfile &vf) const
+pred_lt::result (valfile &vf)
 {
   return comparison_result <cmp_lt> (vf, m_idx_a, m_idx_b);
 }
@@ -656,7 +694,7 @@ pred_lt::name () const
 }
 
 pred_result
-pred_gt::result (valfile &vf) const
+pred_gt::result (valfile &vf)
 {
   return comparison_result <cmp_gt> (vf, m_idx_a, m_idx_b);
 }
@@ -668,7 +706,7 @@ pred_gt::name () const
 }
 
 pred_result
-pred_root::result (valfile &vf) const
+pred_root::result (valfile &vf)
 {
   // this is very slow.  We should use our parent/prev cache for this.
   // NIY.
@@ -694,14 +732,27 @@ pred_root::name () const
   return "pred_root";
 }
 
-/*
 pred_result
-pred_subx_any::result (std::shared_ptr <Dwarf> &dw,
-		       stack const &stk, size_t stksz) const
+pred_subx_any::result (valfile &vf)
 {
-  if (m_op->get_yielder (stk.clone (stksz), stksz, dw)->yield () != nullptr)
+  m_op->reset ();
+  m_origin->set_next (valfile::copy (vf, m_osz, m_nsz));
+  if (m_op->next () != nullptr)
     return pred_result::yes;
   else
     return pred_result::no;
 }
-*/
+
+std::string
+pred_subx_any::name () const
+{
+  std::stringstream ss;
+  ss << "pred_subx_any<" << m_op->name () << ">";
+  return ss.str ();
+}
+
+void
+pred_subx_any::reset ()
+{
+  m_op->reset ();
+}
