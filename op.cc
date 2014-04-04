@@ -458,7 +458,7 @@ op_const::next ()
 {
   while (auto vf = m_upstream->next ())
     {
-      m_val->move_to_slot (m_dst, *vf);
+      vf->set_slot (m_dst, constant (m_cst));
       return vf;
     }
   return nullptr;
@@ -468,9 +468,7 @@ std::string
 op_const::name () const
 {
   std::stringstream ss;
-  ss << "const<";
-  m_val->show (ss);
-  ss << ">";
+  ss << "const<" << m_cst << ">";
   return ss.str ();
 }
 

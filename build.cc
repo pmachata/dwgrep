@@ -164,12 +164,8 @@ tree::build_exec (std::shared_ptr <op> upstream, dwgrep_graph::ptr q,
       assert (! "NIY");
 
     case tree_type::CONST:
-      {
-	auto val = std::make_unique <value_cst> (constant (*m_u.cval));
-	return std::make_unique <op_const> (upstream, std::move (val), slot ());
-      }
+      return std::make_unique <op_const> (upstream, *m_u.cval, slot ());
 
-    case tree_type::PRED_TAG:
     case tree_type::ALT:
     case tree_type::CAPTURE:
     case tree_type::TRANSFORM:
@@ -206,6 +202,7 @@ tree::build_exec (std::shared_ptr <op> upstream, dwgrep_graph::ptr q,
       std::cerr << std::endl;
       abort ();
 
+    case tree_type::PRED_TAG:
     case tree_type::PRED_AT:
     case tree_type::PRED_EQ:
     case tree_type::PRED_NE:

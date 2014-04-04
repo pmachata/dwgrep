@@ -166,14 +166,14 @@ class op_const
   : public op
 {
   std::shared_ptr <op> m_upstream;
-  std::unique_ptr <value> m_val;
+  constant m_cst;
   slot_idx m_dst;
 
 public:
   op_const (std::shared_ptr <op> upstream,
-	    std::unique_ptr <value> val, slot_idx dst)
+	    constant cst, slot_idx dst)
     : m_upstream (upstream)
-    , m_val (std::move (val))
+    , m_cst (cst)
     , m_dst (dst)
   {}
 
