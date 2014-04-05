@@ -139,19 +139,30 @@ tree::build_exec (std::shared_ptr <op> upstream, dwgrep_graph::ptr q,
 	(upstream, slot (), slot (), int (m_u.cval->value ()));
 
     case tree_type::F_CHILD:
-      return std::make_unique <op_f_child> (upstream, q, maxsize,
+      return std::make_unique <op_f_child> (upstream, maxsize,
 					    slot (), slot ());
+
+    case tree_type::F_ATTRIBUTE:
+      return std::make_unique <op_f_attr> (upstream, maxsize,
+					   slot (), slot ());
 
     case tree_type::F_OFFSET:
       return std::make_unique <op_f_offset> (upstream, slot (), slot ());
 
+    case tree_type::F_NAME:
+      return std::make_unique <op_f_name> (upstream, slot (), slot ());
+
+    case tree_type::F_TAG:
+      return std::make_unique <op_f_tag> (upstream, slot (), slot ());
+
+    case tree_type::F_FORM:
+      return std::make_unique <op_f_form> (upstream, slot (), slot ());
+
     case tree_type::FORMAT:
-      if (m_children.size () != 1
-	  || m_children.front ().m_tt != tree_type::STR)
-	{
-	  assert (! "Format strings not yet supported.");
-	  abort ();
-	}
+      if (m_children.size () == 1
+	  && m_children.front ().m_tt == tree_type::STR)
+	return std::make_unique <op_strlit>
+	  (upstream, *m_children.front ().m_u.sval, slot ());
 
       assert (! "NIY");
       //return std::make_unique <op_format> (*m_children.front ().m_u.sval, slot ());
@@ -177,13 +188,9 @@ tree::build_exec (std::shared_ptr <op> upstream, dwgrep_graph::ptr q,
     case tree_type::F_DIV:
     case tree_type::F_MOD:
     case tree_type::F_PARENT:
-    case tree_type::F_ATTRIBUTE:
     case tree_type::F_PREV:
     case tree_type::F_NEXT:
     case tree_type::F_TYPE:
-    case tree_type::F_NAME:
-    case tree_type::F_TAG:
-    case tree_type::F_FORM:
     case tree_type::F_VALUE:
     case tree_type::F_POS:
     case tree_type::F_COUNT:

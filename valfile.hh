@@ -70,7 +70,7 @@ enum class slot_type: int8_t
 
     // Backend types:
     DIE,
-    ATTRIBUTE,
+    ATTR,
     LINE,
     LOCLIST_ENTRY,
     LOCLIST_OP,

@@ -122,7 +122,6 @@ op_sel_universe::reset ()
 struct op_f_child::pimpl
 {
   std::shared_ptr <op> m_upstream;
-  std::shared_ptr <Dwarf> m_dw;
   valfile::uptr m_vf;
   Dwarf_Die m_child;
 
@@ -131,10 +130,8 @@ struct op_f_child::pimpl
   slot_idx m_dst;
 
   pimpl (std::shared_ptr <op> upstream,
-	 dwgrep_graph::ptr q,
 	 size_t size, slot_idx src, slot_idx dst)
     : m_upstream (upstream)
-    , m_dw (q->dwarf)
     , m_child {}
     , m_size (size)
     , m_src (src)
@@ -197,9 +194,8 @@ struct op_f_child::pimpl
 };
 
 op_f_child::op_f_child (std::shared_ptr <op> upstream,
-			dwgrep_graph::ptr q,
 			size_t size, slot_idx src, slot_idx dst)
-  : m_pimpl (std::make_unique <pimpl> (upstream, q, size, src, dst))
+  : m_pimpl (std::make_unique <pimpl> (upstream, size, src, dst))
 {}
 
 op_f_child::~op_f_child ()
@@ -214,11 +210,101 @@ op_f_child::next ()
 std::string
 op_f_child::name () const
 {
-  return "op_f_child";
+  return "f_child";
 }
 
 void
 op_f_child::reset ()
+{
+  m_pimpl->reset ();
+}
+
+
+struct op_f_attr::pimpl
+{
+  std::shared_ptr <op> m_upstream;
+  Dwarf_Die m_die;
+  valfile::uptr m_vf;
+  attr_iterator m_it;
+
+  size_t m_size;
+  slot_idx m_src;
+  slot_idx m_dst;
+
+  pimpl (std::shared_ptr <op> upstream,
+	 size_t size, slot_idx src, slot_idx dst)
+    : m_upstream (upstream)
+    , m_die {}
+    , m_it (attr_iterator::end ())
+    , m_size (size)
+    , m_src (src)
+    , m_dst (dst)
+  {}
+
+  valfile::uptr
+  next ()
+  {
+    while (true)
+      {
+	while (m_vf == nullptr)
+	  {
+	    if (auto vf = m_upstream->next ())
+	      {
+		if (vf->get_slot_type (m_src) == slot_type::DIE)
+		  {
+		    m_die = vf->get_slot_die (m_src);
+		    m_it = attr_iterator (&m_die);
+		    m_vf = std::move (vf);
+		  }
+	      }
+	    else
+	      return nullptr;
+	  }
+
+	if (m_it != attr_iterator::end ())
+	  {
+	    auto ret = valfile::copy (*m_vf, m_size);
+	    if (m_src == m_dst)
+	      ret->invalidate_slot (m_dst);
+	    ret->set_slot (m_dst, **m_it);
+	    ++m_it;
+	    return ret;
+	  }
+
+	m_vf = nullptr;
+      }
+  }
+
+  void
+  reset ()
+  {
+    m_vf = nullptr;
+    m_upstream->reset ();
+  }
+};
+
+op_f_attr::op_f_attr (std::shared_ptr <op> upstream,
+		      size_t size, slot_idx src, slot_idx dst)
+  : m_pimpl (std::make_unique <pimpl> (upstream, size, src, dst))
+{}
+
+op_f_attr::~op_f_attr ()
+{}
+
+valfile::uptr
+op_f_attr::next ()
+{
+  return m_pimpl->next ();
+}
+
+std::string
+op_f_attr::name () const
+{
+  return "f_attr";
+}
+
+void
+op_f_attr::reset ()
 {
   m_pimpl->reset ();
 }
@@ -255,7 +341,7 @@ op_assert::name () const
 }
 
 valfile::uptr
-dieop_f::next ()
+dwop_f::next ()
 {
   while (auto vf = m_upstream->next ())
     if (vf->get_slot_type (m_src) == slot_type::DIE)
@@ -266,6 +352,15 @@ dieop_f::next ()
 	if (operate (*vf, m_dst, die))
 	  return vf;
       }
+    else if (vf->get_slot_type (m_src) == slot_type::ATTR)
+      {
+	Dwarf_Attribute attr = vf->get_slot_attr (m_src);
+	if (m_src == m_dst)
+	  vf->invalidate_slot (m_dst);
+	if (operate (*vf, m_dst, attr))
+	  return vf;
+      }
+
   return nullptr;
 }
 
@@ -418,6 +513,65 @@ op_f_offset::name () const
   return "f_offset";
 }
 
+namespace
+{
+  bool
+  operate_tag (valfile &vf, slot_idx dst, Dwarf_Die die)
+  {
+    int tag = dwarf_tag (&die);
+    assert (tag >= 0);
+    vf.set_slot (dst, constant { (unsigned) tag, &dw_tag_dom });
+    return true;
+  }
+}
+
+bool
+op_f_name::operate (valfile &vf, slot_idx dst, Dwarf_Die die) const
+{
+  return operate_tag (vf, dst, die);
+}
+
+bool
+op_f_name::operate (valfile &vf, slot_idx dst, Dwarf_Attribute at) const
+{
+  unsigned name = dwarf_whatattr (&at);
+  vf.set_slot (dst, constant { name, &dw_attr_dom });
+  return true;
+}
+
+std::string
+op_f_name::name () const
+{
+  return "f_name";
+}
+
+bool
+op_f_tag::operate (valfile &vf, slot_idx dst, Dwarf_Die die) const
+{
+  return operate_tag (vf, dst, die);
+}
+
+std::string
+op_f_tag::name () const
+{
+  return "f_tag";
+}
+
+bool
+op_f_form::operate (valfile &vf, slot_idx dst, Dwarf_Attribute attr) const
+{
+  unsigned name = dwarf_whatform (&attr);
+  vf.set_slot (dst, constant { name, &dw_form_dom });
+  return true;
+}
+
+std::string
+op_f_form::name () const
+{
+  return "f_form";
+}
+
+
 /*
 std::unique_ptr <yielder>
 op_format::get_yielder (std::unique_ptr <stack> stk, size_t stksz,
@@ -510,6 +664,26 @@ op_const::name () const
 }
 
 
+valfile::uptr
+op_strlit::next ()
+{
+  while (auto vf = m_upstream->next ())
+    {
+      vf->set_slot (m_dst, std::string (m_str));
+      return vf;
+    }
+  return nullptr;
+}
+
+std::string
+op_strlit::name () const
+{
+  std::stringstream ss;
+  ss << "strlit<" << m_str << ">";
+  return ss.str ();
+}
+
+
 pred_result
 pred_not::result (valfile &vf)
 {
@@ -562,7 +736,7 @@ pred_at::result (valfile &vf)
       auto &die = const_cast <Dwarf_Die &> (vf.get_slot_die (m_idx));
       return pred_result (dwarf_hasattr_integrate (&die, m_atname) != 0);
     }
-  else if (vf.get_slot_type (m_idx) == slot_type::ATTRIBUTE)
+  else if (vf.get_slot_type (m_idx) == slot_type::ATTR)
     {
       auto &attr = const_cast <Dwarf_Attribute &> (vf.get_slot_attr (m_idx));
       return pred_result (dwarf_whatattr (&attr) == m_atname);
@@ -625,7 +799,7 @@ namespace
       case slot_type::FLT:
       case slot_type::SEQ:
       case slot_type::DIE:
-      case slot_type::ATTRIBUTE:
+      case slot_type::ATTR:
       case slot_type::LINE:
       case slot_type::LOCLIST_ENTRY:
       case slot_type::LOCLIST_OP:

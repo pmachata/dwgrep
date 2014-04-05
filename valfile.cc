@@ -128,7 +128,7 @@ valfile_slot::destroy (slot_type t)
     case slot_type::INVALID:
     case slot_type::FLT:
     case slot_type::DIE:
-    case slot_type::ATTRIBUTE:
+    case slot_type::ATTR:
     case slot_type::LINE:
       return;
 
@@ -281,7 +281,7 @@ valfile::get_slot_die (slot_idx i) const
 Dwarf_Attribute const &
 valfile::get_slot_attr (slot_idx i) const
 {
-  assert (m_types[i.value ()] == slot_type::ATTRIBUTE);
+  assert (m_types[i.value ()] == slot_type::ATTR);
   return m_slots[i.value ()].attr;
 }
 
@@ -299,7 +299,7 @@ valfile::get_slot (slot_idx i) const
     case slot_type::DIE:
       return std::make_unique <valueref_die> (m_slots[i.value ()].die);
 
-    case slot_type::ATTRIBUTE:
+    case slot_type::ATTR:
       return std::make_unique <valueref_attr> (m_slots[i.value ()].attr);
 
     case slot_type::CST:
@@ -386,7 +386,7 @@ void
 valfile::set_slot (slot_idx i, Dwarf_Attribute const &attr)
 {
   assert (m_types[i.value ()] == slot_type::INVALID);
-  m_types[i.value ()] = slot_type::ATTRIBUTE;
+  m_types[i.value ()] = slot_type::ATTR;
   m_slots[i.value ()].attr = attr;
 }
 
