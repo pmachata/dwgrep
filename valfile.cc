@@ -181,14 +181,14 @@ valfile::create (size_t n)
 }
 
 std::unique_ptr <valfile>
-valfile::copy (valfile const &that, size_t osize, size_t nsize)
+valfile::copy (valfile const &that, size_t size)
 {
-  assert (that.m_types[osize] == slot_type::END);
+  assert (that.m_types[size] == slot_type::END);
 
-  allocd_block b = alloc (nsize);
+  allocd_block b = alloc (size);
   auto copy = std::unique_ptr <valfile> (new (b.buf) valfile (b.types));
 
-  for (size_t i = 0; i < std::min (osize, nsize); ++i)
+  for (size_t i = 0; i < size; ++i)
     if (that.m_types[i] != slot_type::INVALID)
       {
 	std::unique_ptr <value> vp = that.get_slot (slot_idx (i))->clone ();

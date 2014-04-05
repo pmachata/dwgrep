@@ -45,17 +45,15 @@ struct op_sel_universe::pimpl
   std::shared_ptr <Dwarf> m_dw;
   all_dies_iterator m_it;
   valfile::uptr m_vf;
-  size_t m_osz;
-  size_t m_nsz;
+  size_t m_size;
   slot_idx m_dst;
 
   pimpl (std::shared_ptr <op> upstream, dwgrep_graph::ptr q,
-	 size_t osz, size_t nsz, slot_idx dst)
+	 size_t size, slot_idx dst)
     : m_upstream (upstream)
     , m_dw (q->dwarf)
     , m_it (all_dies_iterator::end ())
-    , m_osz (osz)
-    , m_nsz (nsz)
+    , m_size (size)
     , m_dst (dst)
   {}
 
@@ -74,7 +72,7 @@ struct op_sel_universe::pimpl
 
 	if (m_it != all_dies_iterator::end ())
 	  {
-	    auto ret = valfile::copy (*m_vf, m_osz, m_nsz);
+	    auto ret = valfile::copy (*m_vf, m_size);
 	    ret->set_slot (m_dst, **m_it);
 	    ++m_it;
 	    return ret;
@@ -94,8 +92,8 @@ struct op_sel_universe::pimpl
 
 op_sel_universe::op_sel_universe (std::shared_ptr <op> upstream,
 				  dwgrep_graph::ptr q,
-				  size_t osz, size_t nsz, slot_idx dst)
-  : m_pimpl (std::make_unique <pimpl> (upstream, q, osz, nsz, dst))
+				  size_t size, slot_idx dst)
+  : m_pimpl (std::make_unique <pimpl> (upstream, q, size, dst))
 {}
 
 op_sel_universe::~op_sel_universe ()
@@ -126,19 +124,17 @@ struct op_f_child::pimpl
   valfile::uptr m_vf;
   Dwarf_Die m_child;
 
-  size_t m_osz;
-  size_t m_nsz;
+  size_t m_size;
   slot_idx m_src;
   slot_idx m_dst;
 
   pimpl (std::shared_ptr <op> upstream,
 	 dwgrep_graph::ptr q,
-	 size_t osz, size_t nsz, slot_idx src, slot_idx dst)
+	 size_t size, slot_idx src, slot_idx dst)
     : m_upstream (upstream)
     , m_dw (q->dwarf)
     , m_child {}
-    , m_osz (osz)
-    , m_nsz (nsz)
+    , m_size (size)
     , m_src (src)
     , m_dst (dst)
   {}
@@ -169,7 +165,7 @@ struct op_f_child::pimpl
 	      return nullptr;
 	  }
 
-	auto ret = valfile::copy (*m_vf, m_osz, m_nsz);
+	auto ret = valfile::copy (*m_vf, m_size);
 	if (m_src == m_dst)
 	  ret->invalidate_slot (m_dst);
 	ret->set_slot (m_dst, m_child);
@@ -200,8 +196,8 @@ struct op_f_child::pimpl
 
 op_f_child::op_f_child (std::shared_ptr <op> upstream,
 			dwgrep_graph::ptr q,
-			size_t osz, size_t nsz, slot_idx src, slot_idx dst)
-  : m_pimpl (std::make_unique <pimpl> (upstream, q, osz, nsz, src, dst))
+			size_t size, slot_idx src, slot_idx dst)
+  : m_pimpl (std::make_unique <pimpl> (upstream, q, size, src, dst))
 {}
 
 op_f_child::~op_f_child ()
@@ -736,7 +732,7 @@ pred_result
 pred_subx_any::result (valfile &vf)
 {
   m_op->reset ();
-  m_origin->set_next (valfile::copy (vf, m_osz, m_nsz));
+  m_origin->set_next (valfile::copy (vf, m_size));
   if (m_op->next () != nullptr)
     return pred_result::yes;
   else

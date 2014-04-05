@@ -46,7 +46,7 @@ tree::build_pred (dwgrep_graph::ptr q, size_t maxsize) const
 	assert (m_children.size () == 1);
 	auto origin = std::make_shared <op_origin> (nullptr);
 	auto op = m_children.front ().build_exec (origin, q, maxsize);
-	return std::make_unique <pred_subx_any> (op, origin, maxsize, maxsize);
+	return std::make_unique <pred_subx_any> (op, origin, maxsize);
       }
 
     case tree_type::PRED_FIND:
@@ -110,7 +110,7 @@ tree::build_exec (std::shared_ptr <op> upstream, dwgrep_graph::ptr q,
 		  size_t maxsize) const
 {
   if (upstream == nullptr)
-    upstream = std::make_shared <op_origin> (valfile::create (0));
+    upstream = std::make_shared <op_origin> (valfile::create (maxsize));
 
   switch (m_tt)
     {
@@ -125,7 +125,7 @@ tree::build_exec (std::shared_ptr <op> upstream, dwgrep_graph::ptr q,
       // Here we assume that ustream is op_origin.
       assert (std::dynamic_pointer_cast <op_origin> (upstream) != nullptr);
       return std::make_unique <op_sel_universe> (upstream, q,
-						 0, maxsize, slot ());
+						 maxsize, slot ());
 
     case tree_type::NOP:
       return std::make_unique <op_nop> (upstream);
@@ -139,7 +139,7 @@ tree::build_exec (std::shared_ptr <op> upstream, dwgrep_graph::ptr q,
 					    int (m_u.cval->value ()), slot ());
 
     case tree_type::F_CHILD:
-      return std::make_unique <op_f_child> (upstream, q, maxsize, maxsize,
+      return std::make_unique <op_f_child> (upstream, q, maxsize,
 					    slot (), slot ());
 
     case tree_type::F_OFFSET:

@@ -310,11 +310,7 @@ class valfile
 public:
   typedef std::unique_ptr <valfile> uptr;
   static uptr create (size_t n);
-
-  // XXX this should also allow an "except" clause--a slot index that
-  // shouldn't be copied.  E.g. when we clone stack for (child), we
-  // don't need to copy the original DIE.
-  static uptr copy (valfile const &that, size_t osize, size_t nsize);
+  static uptr copy (valfile const &that, size_t size);
 
   ~valfile ();
 

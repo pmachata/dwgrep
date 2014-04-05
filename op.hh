@@ -56,7 +56,7 @@ class op_sel_universe
 public:
   op_sel_universe (std::shared_ptr <op> upstream,
 		   dwgrep_graph::ptr q,
-		   size_t osz, size_t nsz, slot_idx dst);
+		   size_t size, slot_idx dst);
   ~op_sel_universe ();
   valfile::uptr next () override;
   std::string name () const override;
@@ -72,7 +72,7 @@ class op_f_child
 public:
   op_f_child (std::shared_ptr <op> upstream,
 	      dwgrep_graph::ptr q,
-	      size_t osz, size_t nsz, slot_idx src, slot_idx dst);
+	      size_t size, slot_idx src, slot_idx dst);
   ~op_f_child ();
   valfile::uptr next () override;
   std::string name () const override;
@@ -403,17 +403,15 @@ class pred_subx_any
 {
   std::shared_ptr <op> m_op;
   std::shared_ptr <op_origin> m_origin;
-  size_t m_osz;
-  size_t m_nsz;
+  size_t m_size;
 
 public:
   pred_subx_any (std::shared_ptr <op> op,
 		 std::shared_ptr <op_origin> origin,
-		 size_t osz, size_t nsz)
+		 size_t size)
     : m_op (op)
     , m_origin (origin)
-    , m_osz (osz)
-    , m_nsz (nsz)
+    , m_size (size)
   {}
 
   pred_result result (valfile &vf) override;
