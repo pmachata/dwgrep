@@ -16,22 +16,8 @@ public:
 
 // Two trivial domains for unnamed constants: one for signed, one for
 // unsigned values.
-struct signed_constant_dom_t
-  : public constant_dom
-{
-  void show (uint64_t a, std::ostream &o) const override;
-  bool sign () const override;
-};
-
-struct unsigned_constant_dom_t
-  : public constant_dom
-{
-  void show (uint64_t a, std::ostream &o) const override;
-  bool sign () const override;
-};
-
-extern signed_constant_dom_t const signed_constant_dom;
-extern unsigned_constant_dom_t const unsigned_constant_dom;
+extern constant_dom const &signed_constant_dom;
+extern constant_dom const &unsigned_constant_dom;
 
 class constant
 {

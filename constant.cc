@@ -2,33 +2,43 @@
 #include <iostream>
 #include "constant.hh"
 
-void
-signed_constant_dom_t::show (uint64_t v, std::ostream &o) const
+static struct
+  : public constant_dom
 {
-  o << static_cast <int64_t> (v);
-}
+  void
+  show (uint64_t v, std::ostream &o) const override
+  {
+    o << static_cast <int64_t> (v);
+  }
 
-bool
-signed_constant_dom_t::sign () const
+  bool
+  sign () const override
+  {
+    return true;
+  }
+} signed_constant_dom_obj;
+
+constant_dom const &signed_constant_dom = signed_constant_dom_obj;
+
+
+static struct
+  : public constant_dom
 {
-  return true;
-}
+  void
+  show (uint64_t v, std::ostream &o) const override
+  {
+    o << v;
+  }
 
+  bool
+  sign () const override
+  {
+    return false;
+  }
+} unsigned_constant_dom_obj;
 
-void
-unsigned_constant_dom_t::show (uint64_t v, std::ostream &o) const
-{
-  o << v;
-}
+constant_dom const &unsigned_constant_dom = unsigned_constant_dom_obj;
 
-bool
-unsigned_constant_dom_t::sign () const
-{
-  return false;
-}
-
-signed_constant_dom_t const signed_constant_dom;
-unsigned_constant_dom_t const unsigned_constant_dom;
 
 std::ostream &
 operator<< (std::ostream &o, constant cst)

@@ -417,7 +417,10 @@ static struct
     const char *ret = dwarf_tag_string (tag);
     o << string_or_unknown (ret, tag, DW_TAG_lo_user, DW_TAG_hi_user, true);
   }
-} dw_tag_dom;
+} dw_tag_dom_obj;
+
+constant_dom const &dw_tag_dom = dw_tag_dom_obj;
+
 
 static struct
   : public unsigned_constant_dom
@@ -429,7 +432,10 @@ static struct
     const char *ret = dwarf_attr_string (attr);
     o << string_or_unknown (ret, attr, DW_AT_lo_user, DW_AT_hi_user, true);
   }
-} dw_attr_dom;
+} dw_attr_dom_obj;
+
+constant_dom const &dw_attr_dom = dw_attr_dom_obj;
+
 
 static struct
   : public unsigned_constant_dom
@@ -441,7 +447,10 @@ static struct
     const char *ret = dwarf_form_string (form);
     o << string_or_unknown (ret, form, 0, 0, true);
   }
-} dw_form_dom;
+} dw_form_dom_obj;
+
+constant_dom const &dw_form_dom = dw_form_dom_obj;
+
 
 static struct
   : public unsigned_constant_dom
@@ -453,7 +462,10 @@ static struct
     const char *ret = dwarf_lang_string (lang);
     o << string_or_unknown (ret, lang, DW_LANG_lo_user, DW_LANG_hi_user, false);
   }
-} dw_lang_dom;
+} dw_lang_dom_obj;
+
+constant_dom const &dw_lang_dom = dw_lang_dom_obj;
+
 
 static struct
   : public unsigned_constant_dom
@@ -465,7 +477,10 @@ static struct
     const char *ret = dwarf_inline_string (code);
     o << string_or_unknown (ret, code, 0, 0, false);
   }
-} dw_inline_dom;
+} dw_inline_dom_obj;
+
+constant_dom const &dw_inline_dom = dw_inline_dom_obj;
+
 
 static struct
   : public unsigned_constant_dom
@@ -477,7 +492,10 @@ static struct
     const char *ret = dwarf_encoding_string (code);
     o << string_or_unknown (ret, code, DW_ATE_lo_user, DW_ATE_hi_user,false);
   }
-}  dw_encoding_dom;
+} dw_encoding_dom_obj;
+
+constant_dom const &dw_encoding_dom = dw_encoding_dom_obj;
+
 
 static struct
   : public unsigned_constant_dom
@@ -489,7 +507,10 @@ static struct
     const char *ret = dwarf_access_string (code);
     o << string_or_unknown (ret, code, 0, 0, false);
   }
-} dw_access_dom;
+} dw_access_dom_obj;
+
+constant_dom const &dw_access_dom = dw_access_dom_obj;
+
 
 static struct
   : public unsigned_constant_dom
@@ -501,7 +522,10 @@ static struct
     const char *ret = dwarf_visibility_string (code);
     o << string_or_unknown (ret, code, 0, 0,false);
   }
-} dw_visibility_dom;
+} dw_visibility_dom_obj;
+
+constant_dom const &dw_visibility_dom = dw_visibility_dom_obj;
+
 
 static struct
   : public unsigned_constant_dom
@@ -513,7 +537,10 @@ static struct
     const char *ret = dwarf_virtuality_string (code);
     o << string_or_unknown (ret, code, 0, 0,false);
   }
-} dw_virtuality_dom;
+} dw_virtuality_dom_obj;
+
+constant_dom const &dw_virtuality_dom = dw_virtuality_dom_obj;
+
 
 static struct
   : public unsigned_constant_dom
@@ -525,7 +552,10 @@ static struct
     const char *ret = dwarf_identifier_case_string (code);
     o << string_or_unknown (ret, code, 0, 0,false);
   }
-} dw_identifier_case_dom;
+} dw_identifier_case_dom_obj;
+
+constant_dom const &dw_identifier_case_dom = dw_identifier_case_dom_obj;
+
 
 static struct
   : public unsigned_constant_dom
@@ -537,7 +567,10 @@ static struct
     const char *ret = dwarf_calling_convention_string (code);
     o << string_or_unknown (ret, code, DW_CC_lo_user, DW_CC_hi_user,false);
   }
-} dw_calling_convention_dom;
+} dw_calling_convention_dom_obj;
+
+constant_dom const &dw_calling_convention_dom = dw_calling_convention_dom_obj;
+
 
 static struct
   : public unsigned_constant_dom
@@ -549,7 +582,10 @@ static struct
     const char *ret = dwarf_ordering_string (code);
     o << string_or_unknown (ret, code, 0, 0,false);
   }
-} dw_ordering_dom;
+} dw_ordering_dom_obj;
+
+constant_dom const &dw_ordering_dom = dw_ordering_dom_obj;
+
 
 static struct
   : public unsigned_constant_dom
@@ -561,7 +597,10 @@ static struct
     const char *ret = dwarf_discr_list_string (code);
     o << string_or_unknown (ret, code, 0, 0, false);
   }
-} dw_discr_list_dom;
+} dw_discr_list_dom_obj;
+
+constant_dom const &dw_discr_list_dom = dw_discr_list_dom_obj;
+
 
 static struct
   : public unsigned_constant_dom
@@ -573,7 +612,9 @@ static struct
     const char *ret = dwarf_locexpr_opcode_string (code);
     o << string_or_unknown (ret, code, DW_OP_lo_user, DW_OP_hi_user,true);
   }
-} dw_locexpr_opcode_dom;
+} dw_locexpr_opcode_dom_obj;
+
+constant_dom const &dw_locexpr_opcode_dom = dw_locexpr_opcode_dom_obj;
 
 constant
 constant::parse (std::string str)
