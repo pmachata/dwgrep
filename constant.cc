@@ -40,6 +40,27 @@ static struct
 constant_dom const &unsigned_constant_dom = unsigned_constant_dom_obj;
 
 
+static struct
+  : public constant_dom
+{
+  void
+  show (uint64_t v, std::ostream &o) const override
+  {
+    std::ios::fmtflags f {o.flags ()};
+    o << (v > 0 ? "0x" : "") << std::hex << v;
+    o.flags (f);
+  }
+
+  bool
+  sign () const override
+  {
+    return false;
+  }
+} hex_constant_dom_obj;
+
+constant_dom const &hex_constant_dom = hex_constant_dom_obj;
+
+
 std::ostream &
 operator<< (std::ostream &o, constant cst)
 {

@@ -19,6 +19,9 @@ public:
 extern constant_dom const &signed_constant_dom;
 extern constant_dom const &unsigned_constant_dom;
 
+// A domain for hex-formated unsigned values (perhaps addresses).
+extern constant_dom const &hex_constant_dom;
+
 class constant
 {
   uint64_t m_value;

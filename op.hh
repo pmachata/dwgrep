@@ -214,6 +214,16 @@ public:
   bool operate (valfile &vf, slot_idx dst, Dwarf_Attribute attr) const override;
 };
 
+class op_f_value
+  : public dwop_f
+{
+public:
+  using dwop_f::dwop_f;
+
+  std::string name () const override;
+  bool operate (valfile &vf, slot_idx dst, Dwarf_Attribute attr) const override;
+};
+
 class op_format
   : public op
 {
@@ -305,7 +315,6 @@ class op_f_prev;
 class op_f_next;
 class op_f_type;
 class op_f_form;
-class op_f_value;
 class op_f_pos;
 class op_f_count;
 class op_f_each;

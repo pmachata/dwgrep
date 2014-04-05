@@ -616,6 +616,7 @@ static struct
 
 constant_dom const &dw_locexpr_opcode_dom = dw_locexpr_opcode_dom_obj;
 
+
 constant
 constant::parse (std::string str)
 {

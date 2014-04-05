@@ -364,131 +364,197 @@ dwop_f::next ()
   return nullptr;
 }
 
+namespace
+{
+  void
+  atval_unsigned_with_domain (valfile &vf, slot_idx dst, Dwarf_Attribute attr,
+			      constant_dom const &dom)
+  {
+    Dwarf_Word uval;
+    if (dwarf_formudata (&attr, &uval) != 0)
+      throw_libdw ();
+    constant cst { uval, &dom };
+    vf.set_slot (dst, std::move (cst));
+  }
+
+  void
+  at_value (valfile &vf, slot_idx dst, Dwarf_Attribute attr)
+  {
+    switch (dwarf_whatform (&attr))
+      {
+      case DW_FORM_string:
+      case DW_FORM_strp:
+      case DW_FORM_GNU_strp_alt:
+	{
+	  const char *str = dwarf_formstring (&attr);
+	  if (str == nullptr)
+	    throw_libdw ();
+	  vf.set_slot (dst, std::string (str));
+	  return;
+	}
+
+      case DW_FORM_ref_addr:
+      case DW_FORM_ref1:
+      case DW_FORM_ref2:
+      case DW_FORM_ref4:
+      case DW_FORM_ref8:
+      case DW_FORM_ref_udata:
+	{
+	  Dwarf_Die die;
+	  if (dwarf_formref_die (&attr, &die) == nullptr)
+	    throw_libdw ();
+	  vf.set_slot (dst, std::move (die));
+	  return;
+	}
+
+      case DW_FORM_sdata:
+	{
+	data_signed:
+	  Dwarf_Sword sval;
+	  if (dwarf_formsdata (&attr, &sval) != 0)
+	    throw_libdw ();
+	  constant cst { (uint64_t) sval, &signed_constant_dom };
+	  vf.set_slot (dst, std::move (cst));
+	  return;
+	}
+
+      case DW_FORM_udata:
+	{
+	data_unsigned:
+	  atval_unsigned_with_domain (vf, dst, attr, unsigned_constant_dom);
+	  return;
+	}
+
+      case DW_FORM_addr:
+	{
+	  // XXX Eventually we might want to have a dedicated type
+	  // that carries along information necessary for later
+	  // translation into symbol-relative offsets (like what
+	  // readelf does).
+	  Dwarf_Addr addr;
+	  if (dwarf_formaddr (&attr, &addr) != 0)
+	    throw_libdw ();
+	  constant cst { addr, &hex_constant_dom };
+	  vf.set_slot (dst, std::move (cst));
+	  return;
+	}
+
+      case DW_FORM_data1:
+      case DW_FORM_data2:
+      case DW_FORM_data4:
+      case DW_FORM_data8:
+	switch (dwarf_whatattr (&attr))
+	  {
+	  case DW_AT_language:
+	    atval_unsigned_with_domain (vf, dst, attr, dw_lang_dom);
+	    return;
+
+	  case DW_AT_inline:
+	    atval_unsigned_with_domain (vf, dst, attr, dw_inline_dom);
+	    return;
+
+	  case DW_AT_encoding:
+	    atval_unsigned_with_domain (vf, dst, attr, dw_encoding_dom);
+	    return;
+
+	  case DW_AT_accessibility:
+	    atval_unsigned_with_domain (vf, dst, attr, dw_access_dom);
+	    return;
+
+	  case DW_AT_visibility:
+	    atval_unsigned_with_domain (vf, dst, attr, dw_visibility_dom);
+	    return;
+
+	  case DW_AT_virtuality:
+	    atval_unsigned_with_domain (vf, dst, attr, dw_virtuality_dom);
+	    return;
+
+	  case DW_AT_identifier_case:
+	    atval_unsigned_with_domain (vf, dst, attr, dw_identifier_case_dom);
+	    return;
+
+	  case DW_AT_calling_convention:
+	    atval_unsigned_with_domain (vf, dst, attr,
+					dw_calling_convention_dom);
+	    return;
+
+	  case DW_AT_ordering:
+	    atval_unsigned_with_domain (vf, dst, attr, dw_ordering_dom);
+	    return;
+
+	  case DW_AT_byte_stride:
+	  case DW_AT_bit_stride:
+	    // """Note that the stride can be negative."""
+	  case DW_AT_binary_scale:
+	  case DW_AT_decimal_scale:
+	    goto data_signed;
+
+	  case DW_AT_byte_size:
+	  case DW_AT_bit_size:
+	  case DW_AT_bit_offset:
+	  case DW_AT_data_bit_offset:
+	  case DW_AT_lower_bound:
+	  case DW_AT_upper_bound:
+	  case DW_AT_count:
+	  case DW_AT_allocated:
+	  case DW_AT_associated:
+	  case DW_AT_start_scope:
+	  case DW_AT_digit_count:
+	  case DW_AT_GNU_odr_signature:
+	    goto data_unsigned;
+
+	  case DW_AT_address_class:
+	  case DW_AT_endianity:
+	  case DW_AT_decimal_sign:
+	  case DW_AT_decl_line:
+	  case DW_AT_call_line:
+	  case DW_AT_decl_column:
+	  case DW_AT_call_column:
+	    // XXX these are Dwarf constants and should have
+	    // a domain associated to them.
+	    goto data_unsigned;
+
+	  case DW_AT_discr_value:
+	  case DW_AT_const_value:
+	    // ^^^ """The number is signed if the tag type for the
+	    // variant part containing this variant is a signed
+	    // type."""
+	  case DW_AT_decl_file:
+	    assert (! "signedness of attribute not implemented yet");
+	    abort ();
+	  }
+	assert (! "signedness of attribute unhandled");
+	abort ();
+
+      case DW_FORM_block2:
+      case DW_FORM_block4:
+      case DW_FORM_block:
+      case DW_FORM_block1:
+      case DW_FORM_flag:
+      case DW_FORM_indirect:
+      case DW_FORM_sec_offset:
+      case DW_FORM_exprloc:
+      case DW_FORM_flag_present:
+      case DW_FORM_ref_sig8:
+      case DW_FORM_GNU_ref_alt:
+	assert (! "Form unhandled.");
+	abort  ();
+      }
+
+    assert (! "Unhandled DWARF form type.");
+    abort ();
+  }
+}
+
 bool
 op_f_atval::operate (valfile &vf, slot_idx dst, Dwarf_Die die) const
 {
   Dwarf_Attribute attr;
-
   if (dwarf_attr_integrate (&die, m_name, &attr) == nullptr)
     return false;
 
-  switch (dwarf_whatform (&attr))
-    {
-    case DW_FORM_string:
-    case DW_FORM_strp:
-    case DW_FORM_GNU_strp_alt:
-      {
-	const char *str = dwarf_formstring (&attr);
-	if (str == nullptr)
-	  throw_libdw ();
-	vf.set_slot (dst, std::string (str));
-	return true;
-      }
-
-    case DW_FORM_sdata:
-      {
-      data_signed:
-	Dwarf_Sword sval;
-	if (dwarf_formsdata (&attr, &sval) != 0)
-	  throw_libdw ();
-	constant cst { (uint64_t) sval, &signed_constant_dom };
-	vf.set_slot (dst, std::move (cst));
-	return true;
-      }
-
-    case DW_FORM_udata:
-      {
-      data_unsigned:
-	Dwarf_Word uval;
-	if (dwarf_formudata (&attr, &uval) != 0)
-	  throw_libdw ();
-	constant cst { uval, &unsigned_constant_dom };
-	vf.set_slot (dst, std::move (cst));
-	return true;
-      }
-
-    case DW_FORM_data1:
-    case DW_FORM_data2:
-    case DW_FORM_data4:
-    case DW_FORM_data8:
-      switch (m_name)
-	{
-	case DW_AT_byte_stride:
-	case DW_AT_bit_stride:
-	  // """Note that the stride can be negative."""
-	case DW_AT_binary_scale:
-	case DW_AT_decimal_scale:
-	  goto data_signed;
-
-	case DW_AT_byte_size:
-	case DW_AT_bit_size:
-	case DW_AT_bit_offset:
-	case DW_AT_data_bit_offset:
-	case DW_AT_lower_bound:
-	case DW_AT_upper_bound:
-	case DW_AT_count:
-	case DW_AT_allocated:
-	case DW_AT_associated:
-	case DW_AT_start_scope:
-	case DW_AT_digit_count:
-	case DW_AT_GNU_odr_signature:
-	  goto data_unsigned;
-
-	case DW_AT_ordering:
-	case DW_AT_language:
-	case DW_AT_visibility:
-	case DW_AT_inline:
-	case DW_AT_accessibility:
-	case DW_AT_address_class:
-	case DW_AT_calling_convention:
-	case DW_AT_encoding:
-	case DW_AT_identifier_case:
-	case DW_AT_virtuality:
-	case DW_AT_endianity:
-	case DW_AT_decimal_sign:
-	case DW_AT_decl_line:
-	case DW_AT_call_line:
-	case DW_AT_decl_column:
-	case DW_AT_call_column:
-	  // XXX these are Dwarf constants and should have
-	  // a domain associated to them.
-	  goto data_unsigned;
-
-	case DW_AT_discr_value:
-	case DW_AT_const_value:
-	  // """The number is signed if the tag type for
-	  // the variant part containing this variant is a
-	  // signed type."""
-	  assert (! "signedness of attribute not implemented yet");
-	  abort ();
-	}
-      assert (! "signedness of attribute unhandled");
-      abort ();
-
-    case DW_FORM_addr:
-    case DW_FORM_block2:
-    case DW_FORM_block4:
-    case DW_FORM_block:
-    case DW_FORM_block1:
-    case DW_FORM_flag:
-    case DW_FORM_ref_addr:
-    case DW_FORM_ref1:
-    case DW_FORM_ref2:
-    case DW_FORM_ref4:
-    case DW_FORM_ref8:
-    case DW_FORM_ref_udata:
-    case DW_FORM_indirect:
-    case DW_FORM_sec_offset:
-    case DW_FORM_exprloc:
-    case DW_FORM_flag_present:
-    case DW_FORM_ref_sig8:
-    case DW_FORM_GNU_ref_alt:
-      assert (! "Form unhandled.");
-      abort  ();
-    }
-
-  assert (! "Unhandled DWARF form type.");
-  abort ();
+  at_value (vf, dst, attr);
+  return true;
 }
 
 std::string
@@ -571,6 +637,19 @@ op_f_form::name () const
   return "f_form";
 }
 
+
+bool
+op_f_value::operate (valfile &vf, slot_idx dst, Dwarf_Attribute attr) const
+{
+  at_value (vf, dst, attr);
+  return true;
+}
+
+std::string
+op_f_value::name () const
+{
+  return "f_value";
+}
 
 /*
 std::unique_ptr <yielder>
