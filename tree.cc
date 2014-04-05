@@ -2,6 +2,7 @@
 #include <iostream>
 #include <stdexcept>
 #include <climits>
+#include <algorithm>
 
 #include "tree.hh"
 
@@ -160,27 +161,27 @@ namespace
 {
   struct stack_depth
   {
-    unsigned emts;
+    unsigned elts;
     unsigned max;
 
     stack_depth ()
-      : emts (0)
+      : elts (0)
       , max (0)
     {}
 
     void
     push (unsigned u)
     {
-      if ((emts += u) > max)
-	max = emts;
+      if ((elts += u) > max)
+	max = elts;
     }
 
     void
     pop (unsigned u)
     {
-      if (emts < u)
+      if (elts < u)
 	throw std::runtime_error ("stack underrun");
-      emts -= u;
+      elts -= u;
     }
 
     void
@@ -197,20 +198,20 @@ namespace
     bool
     operator!= (stack_depth that) const
     {
-      return emts != that.emts;
+      return elts != that.elts;
     }
 
     int
     operator- (stack_depth that) const
     {
-      return emts - that.emts;
+      return elts - that.elts;
     }
   };
 
   std::ostream &
   operator<< (std::ostream &o, stack_depth se)
   {
-    return o << '<' << se.emts << '>';
+    return o << '<' << se.elts << '>';
   }
 
   stack_depth
@@ -266,12 +267,12 @@ namespace
 	  uint64_t depth = t.m_children[0].m_u.cval->value ();
 	  se.pop (depth);
 	  stack_depth sd1 = check_tree (t.m_children[1], se);
-	  unsigned max = sd1.max - sd1.emts;
+	  unsigned max = sd1.max - sd1.elts;
 	  int delta = sd1 - se;
 	  for (uint64_t i = 0; i < depth; ++i)
 	    {
 	      se.push (1);
-	      se.project (delta, se.emts + delta + max);
+	      se.project (delta, se.elts + delta + max);
 	    }
 	  break;
 	}
@@ -373,7 +374,7 @@ namespace
 	break;
 
       case tree_type::SHF_DROP:
-	t.m_stkslot = se.emts - 1;
+	t.m_stkslot = se.elts - 1;
 	se.pop (1);
 	return se;
 
@@ -422,7 +423,7 @@ namespace
 	}
       }
 
-    t.m_stkslot = se.emts - 1;
+    t.m_stkslot = se.elts - 1;
     return se;
   }
 }
