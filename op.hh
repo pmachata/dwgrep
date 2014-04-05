@@ -113,28 +113,7 @@ public:
   { m_upstream->reset (); }
 };
 
-class op_f_atval
-  : public op
-{
-  std::shared_ptr <op> m_upstream;
-  int m_name;
-  slot_idx m_idx;
-
-public:
-  op_f_atval (std::shared_ptr <op> upstream, int name, slot_idx idx)
-    : m_upstream (upstream)
-    , m_name (name)
-    , m_idx (idx)
-  {}
-
-  valfile::uptr next () override;
-  std::string name () const override;
-
-  void reset () override
-  { m_upstream->reset (); }
-};
-
-class op_f_offset
+class dieop_f
   : public op
 {
   std::shared_ptr <op> m_upstream;
@@ -142,17 +121,45 @@ class op_f_offset
   slot_idx m_dst;
 
 public:
-  op_f_offset (std::shared_ptr <op> upstream, slot_idx src, slot_idx dst)
+  dieop_f (std::shared_ptr <op> upstream, slot_idx src, slot_idx dst)
     : m_upstream (upstream)
     , m_src (src)
     , m_dst (dst)
   {}
 
-  valfile::uptr next () override;
-  std::string name () const override;
+  valfile::uptr next () override final;
 
-  void reset () override
+  void reset () override final
   { m_upstream->reset (); }
+
+  virtual std::string name () const override = 0;
+  virtual bool operate (valfile &vf, slot_idx dst, Dwarf_Die die) const = 0;
+};
+
+class op_f_atval
+  : public dieop_f
+{
+  int m_name;
+
+public:
+  op_f_atval (std::shared_ptr <op> upstream, slot_idx src, slot_idx dst,
+	      int name)
+    : dieop_f (upstream, src, dst)
+    , m_name (name)
+  {}
+
+  std::string name () const override;
+  bool operate (valfile &vf, slot_idx dst, Dwarf_Die die) const override;
+};
+
+class op_f_offset
+  : public dieop_f
+{
+public:
+  using dieop_f::dieop_f;
+
+  std::string name () const override;
+  bool operate (valfile &vf, slot_idx dst, Dwarf_Die die) const override;
 };
 
 class op_format

@@ -135,8 +135,8 @@ tree::build_exec (std::shared_ptr <op> upstream, dwgrep_graph::ptr q,
 	(upstream, m_children.front ().build_pred (q, maxsize));
 
     case tree_type::F_ATVAL:
-      return std::make_unique <op_f_atval> (upstream,
-					    int (m_u.cval->value ()), slot ());
+      return std::make_unique <op_f_atval>
+	(upstream, slot (), slot (), int (m_u.cval->value ()));
 
     case tree_type::F_CHILD:
       return std::make_unique <op_f_child> (upstream, q, maxsize,
