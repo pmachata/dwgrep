@@ -276,6 +276,21 @@ struct value_behavior <attribute_slot>
 typedef value_b <attribute_slot> value_attr;
 typedef valueref_b <attribute_slot> valueref_attr;
 
+
+// |-----------------+-------+--------------------------------|
+// | type            | bytes |                                |
+// |-----------------+-------+--------------------------------|
+// | Dwarf_Die       | 32/16 |                                |
+// | Dwarf_Attribute | 32/24 | 24/16 + 8/8 for DIE offset     |
+// | Dwarf_Line *    | 8/4   | line_table_entry pseudo-DIE    |
+// | ???             |       | location_list_entry pseudo-DIE |
+// | Dwarf_Op        | 32/32 | location_list_op pseudo-DIE    |
+// |-----------------+-------+--------------------------------|
+// | constant        | 16/12 |                                |
+// | flt             | 8/8   |                                |
+// | std::string     | 8/4   |                                |
+// | std::vector     | 24/12 |                                |
+// |-----------------+-------+--------------------------------|
 union valfile_slot
 {
   constant cst;
