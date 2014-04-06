@@ -221,7 +221,7 @@ Statement:
   }
   | TOK_BANG_LBRACE Program TOK_RBRACE
   {
-    auto t = tree::create_unary <tree_type::PRED_SUBX_ALL> ($2);
+    auto t = tree::create_unary <tree_type::PRED_SUBX_ANY> ($2);
     auto u = tree::create_neg (t);
     $$ = tree::create_assert (u);
   }
@@ -233,7 +233,7 @@ Statement:
   }
   | TOK_BANG_ALL_LBRACE Program TOK_RBRACE
   {
-    auto t = tree::create_unary <tree_type::PRED_SUBX_ANY> ($2);
+    auto t = tree::create_unary <tree_type::PRED_SUBX_ALL> ($2);
     auto u = tree::create_neg (t);
     $$ = tree::create_assert (u);
   }
