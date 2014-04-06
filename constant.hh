@@ -22,6 +22,9 @@ extern constant_dom const &unsigned_constant_dom;
 // A domain for hex-formated unsigned values (perhaps addresses).
 extern constant_dom const &hex_constant_dom;
 
+// A domain for boolean-formated unsigned values.
+extern constant_dom const &bool_constant_dom;
+
 extern constant_dom const &column_number_dom;
 extern constant_dom const &line_number_dom;
 

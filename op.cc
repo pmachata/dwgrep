@@ -439,6 +439,17 @@ namespace
 	  return;
 	}
 
+      case DW_FORM_flag:
+      case DW_FORM_flag_present:
+	{
+	  bool flag;
+	  if (dwarf_formflag (&attr, &flag) != 0)
+	    throw_libdw ();
+	  constant cst { static_cast <unsigned> (flag), &bool_constant_dom };
+	  vf.set_slot (dst, std::move (cst));
+	  return;
+	}
+
       case DW_FORM_data1:
       case DW_FORM_data2:
       case DW_FORM_data4:
@@ -541,11 +552,9 @@ namespace
       case DW_FORM_block4:
       case DW_FORM_block:
       case DW_FORM_block1:
-      case DW_FORM_flag:
       case DW_FORM_indirect:
       case DW_FORM_sec_offset:
       case DW_FORM_exprloc:
-      case DW_FORM_flag_present:
       case DW_FORM_ref_sig8:
       case DW_FORM_GNU_ref_alt:
 	assert (! "Form unhandled.");
