@@ -5,7 +5,7 @@
 #include "make_unique.hh"
 
 std::unique_ptr <pred>
-tree::build_pred (dwgrep_graph::ptr q, size_t maxsize) const
+tree::build_pred (dwgrep_graph::sptr q, size_t maxsize) const
 {
   switch (m_tt)
     {
@@ -111,7 +111,7 @@ tree::build_pred (dwgrep_graph::ptr q, size_t maxsize) const
 }
 
 std::shared_ptr <op>
-tree::build_exec (std::shared_ptr <op> upstream, dwgrep_graph::ptr q,
+tree::build_exec (std::shared_ptr <op> upstream, dwgrep_graph::sptr q,
 		  size_t maxsize) const
 {
   if (upstream == nullptr)

@@ -50,7 +50,7 @@ struct op_sel_universe::pimpl
   size_t m_size;
   slot_idx m_dst;
 
-  pimpl (std::shared_ptr <op> upstream, dwgrep_graph::ptr q,
+  pimpl (std::shared_ptr <op> upstream, dwgrep_graph::sptr q,
 	 size_t size, slot_idx dst)
     : m_upstream (upstream)
     , m_dw (q->dwarf)
@@ -93,7 +93,7 @@ struct op_sel_universe::pimpl
 };
 
 op_sel_universe::op_sel_universe (std::shared_ptr <op> upstream,
-				  dwgrep_graph::ptr q,
+				  dwgrep_graph::sptr q,
 				  size_t size, slot_idx dst)
   : m_pimpl (std::make_unique <pimpl> (upstream, q, size, dst))
 {}

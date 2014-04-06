@@ -55,7 +55,7 @@ class op_sel_universe
 
 public:
   op_sel_universe (std::shared_ptr <op> upstream,
-		   dwgrep_graph::ptr q,
+		   dwgrep_graph::sptr q,
 		   size_t size, slot_idx dst);
   ~op_sel_universe ();
   valfile::uptr next () override;
@@ -716,11 +716,11 @@ public:
 class pred_root
   : public pred
 {
-  dwgrep_graph::ptr m_q;
+  dwgrep_graph::sptr m_q;
   slot_idx m_idx_a;
 
 public:
-  pred_root (dwgrep_graph::ptr q, slot_idx idx_a)
+  pred_root (dwgrep_graph::sptr q, slot_idx idx_a)
     : m_q (q)
     , m_idx_a (idx_a)
   {}

@@ -10,7 +10,7 @@
 // and any associated caches.
 struct dwgrep_graph
 {
-  typedef std::shared_ptr <dwgrep_graph> ptr;
+  typedef std::shared_ptr <dwgrep_graph> sptr;
   std::shared_ptr <Dwarf> dwarf;
 
   dwgrep_graph (std::shared_ptr <Dwarf> d)
