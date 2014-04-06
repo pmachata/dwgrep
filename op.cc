@@ -863,6 +863,70 @@ op_strlit::name () const
 }
 
 
+valfile::uptr
+op_tine::next ()
+{
+  if (std::all_of (m_file->begin (), m_file->end (),
+		   [] (valfile::uptr const &ptr) { return ptr == nullptr; }))
+    {
+      if (auto vf = m_upstream->next ())
+	for (auto &ptr: *m_file)
+	  ptr = valfile::copy (*vf, m_size);
+      else
+	return nullptr;
+    }
+
+  return std::move ((*m_file)[m_branch_id]);
+}
+
+void
+op_tine::reset ()
+{
+  for (auto &vf: *m_file)
+    vf = nullptr;
+  m_upstream->reset ();
+}
+
+std::string
+op_tine::name () const
+{
+  return "tine";
+}
+
+
+valfile::uptr
+op_merge::next ()
+{
+  if (m_it == m_ops.end ())
+    return nullptr;
+
+  for (size_t i = 0; i < m_ops.size (); ++i)
+    {
+      if (auto ret = (*m_it)->next ())
+	return ret;
+      if (++m_it == m_ops.end ())
+	m_it = m_ops.begin ();
+    }
+
+  m_it = m_ops.end ();
+  return nullptr;
+}
+
+void
+op_merge::reset ()
+{
+  m_it = m_ops.begin ();
+  for (auto op: m_ops)
+    op->reset ();
+}
+
+std::string
+op_merge::name () const
+{
+  return "merge";
+}
+
+
 pred_result
 pred_not::result (valfile &vf)
 {

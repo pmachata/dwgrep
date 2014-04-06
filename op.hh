@@ -409,7 +409,72 @@ public:
   { m_upstream->reset (); }
 };
 
-class op_alt;
+// Tine is placed at the beginning of each alt expression.  These
+// tines together share a vector of valfiles, called a file, which
+// next() takes data from (each vector element belongs to one tine of
+// the overall alt).
+//
+// A tine yields nullptr if the file slot corresponding to its branch
+// has already been fetched.  It won't refill the file unless all
+// other tines have fetched as well (i.e. the file is empty).  Since
+// the file is shared, it's not important which tine does the re-fill,
+// they will all see the same data.
+//
+// Tine and merge need to cooperate to make sure nullptr's don't get
+// propagated unless there's really nothing left.  Merge knows that
+// the source is drained when all its branches yield nullptr.
+//
+// Thus the way the expression (A (B, C D, E) F) is constructed as:
+//
+//          +- [ Tine 1 ] <-     [ B ]      <-+
+//  [ A ] <-+- [ Tine 2 ] <- [ C ] <- [ D ] <-+- [ Merge ] <- [ F ]
+//          +- [ Tine 3 ] <-     [ E ]      <-+
+class op_tine
+  : public op
+{
+  std::shared_ptr <op> m_upstream;
+  std::shared_ptr <std::vector <valfile::uptr> > m_file;
+  size_t m_branch_id;
+  size_t m_size;
+
+public:
+  op_tine (std::shared_ptr <op> upstream,
+	   std::shared_ptr <std::vector <valfile::uptr> > file,
+	   size_t branch_id, size_t size)
+    : m_upstream (upstream)
+    , m_file (file)
+    , m_branch_id (branch_id)
+    , m_size (size)
+  {
+    assert (m_branch_id < m_file->size ());
+  }
+
+  valfile::uptr next () override;
+  std::string name () const override;
+  void reset () override;
+};
+
+class op_merge
+  : public op
+{
+public:
+  typedef std::vector <std::shared_ptr <op> > opvec_t;
+
+private:
+  opvec_t m_ops;
+  opvec_t::iterator m_it;
+
+public:
+  explicit op_merge (opvec_t ops)
+    : m_ops (ops)
+    , m_it (m_ops.begin ())
+  {}
+
+  valfile::uptr next () override;
+  std::string name () const override;
+  void reset () override;
+};
+
 class op_capture;
 class op_transform;
 class op_protect;
