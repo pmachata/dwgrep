@@ -144,11 +144,21 @@ do_tests ()
   ALL_KNOWN_DW_DSC;
 #undef ONE_KNOWN_DW_DSC
 
+#define ONE_KNOWN_DW_DS(NAME, CODE) test (#CODE, "(CONST<" #CODE ">)");
+  ALL_KNOWN_DW_DS;
+#undef ONE_KNOWN_DW_DS
+
 #define ONE_KNOWN_DW_OP_DESC(NAME, CODE, DESC) ONE_KNOWN_DW_OP (NAME, CODE)
 #define ONE_KNOWN_DW_OP(NAME, CODE) test (#CODE, "(CONST<" #CODE ">)");
   ALL_KNOWN_DW_OP;
 #undef ONE_KNOWN_DW_OP
 #undef ONE_KNOWN_DW_OP_DESC
+
+  test ("DW_ADDR_none", "(CONST<DW_ADDR_none>)");
+
+#define ONE_KNOWN_DW_END(NAME, CODE) test (#CODE, "(CONST<" #CODE ">)");
+  ALL_KNOWN_DW_END;
+#undef ONE_KNOWN_DW_END
 
   test ("17", "(CONST<17>)");
   test ("0x17", "(CONST<23>)");

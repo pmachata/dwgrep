@@ -482,6 +482,28 @@ namespace
 	    atval_unsigned_with_domain (vf, dst, attr, dw_ordering_dom);
 	    return;
 
+	  case DW_AT_decimal_sign:
+	    atval_unsigned_with_domain (vf, dst, attr, dw_decimal_sign_dom);
+	    return;
+
+	  case DW_AT_address_class:
+	    atval_unsigned_with_domain (vf, dst, attr, dw_address_class_dom);
+	    return;
+
+	  case DW_AT_endianity:
+	    atval_unsigned_with_domain (vf, dst, attr, dw_endianity_dom);
+	    return;
+
+	  case DW_AT_decl_line:
+	  case DW_AT_call_line:
+	    atval_unsigned_with_domain (vf, dst, attr, line_number_dom);
+	    return;
+
+	  case DW_AT_decl_column:
+	  case DW_AT_call_column:
+	    atval_unsigned_with_domain (vf, dst, attr, column_number_dom);
+	    return;
+
 	  case DW_AT_byte_stride:
 	  case DW_AT_bit_stride:
 	    // """Note that the stride can be negative."""
@@ -501,17 +523,6 @@ namespace
 	  case DW_AT_start_scope:
 	  case DW_AT_digit_count:
 	  case DW_AT_GNU_odr_signature:
-	    goto data_unsigned;
-
-	  case DW_AT_address_class:
-	  case DW_AT_endianity:
-	  case DW_AT_decimal_sign:
-	  case DW_AT_decl_line:
-	  case DW_AT_call_line:
-	  case DW_AT_decl_column:
-	  case DW_AT_call_column:
-	    // XXX these are Dwarf constants and should have
-	    // a domain associated to them.
 	    goto data_unsigned;
 
 	  case DW_AT_discr_value:
@@ -569,7 +580,7 @@ bool
 op_f_offset::operate (valfile &vf, slot_idx dst, Dwarf_Die die) const
 {
   Dwarf_Off off = dwarf_dieoffset (&die);
-  vf.set_slot (dst, constant { off, &unsigned_constant_dom });
+  vf.set_slot (dst, constant { off, &hex_constant_dom });
   return true;
 }
 

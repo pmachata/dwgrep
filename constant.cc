@@ -21,7 +21,7 @@ static struct
 constant_dom const &signed_constant_dom = signed_constant_dom_obj;
 
 
-static struct
+struct unsigned_constant_dom_t
   : public constant_dom
 {
   void
@@ -35,9 +35,16 @@ static struct
   {
     return false;
   }
-} unsigned_constant_dom_obj;
+};
 
+unsigned_constant_dom_t unsigned_constant_dom_obj;
 constant_dom const &unsigned_constant_dom = unsigned_constant_dom_obj;
+
+unsigned_constant_dom_t column_number_dom_obj;
+constant_dom const &column_number_dom = column_number_dom_obj;
+
+unsigned_constant_dom_t line_number_dom_obj;
+constant_dom const &line_number_dom = line_number_dom_obj;
 
 
 static struct

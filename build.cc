@@ -168,7 +168,6 @@ tree::build_exec (std::shared_ptr <op> upstream, dwgrep_graph::ptr q,
 	  return std::make_unique <op_strlit>
 	    (upstream, *m_children.front ().m_u.sval, slot ());
 
-
 	auto s_origin = std::make_shared <stringer_origin> ();
 	std::shared_ptr <stringer> strgr = s_origin;
 	for (auto const &tree: m_children)

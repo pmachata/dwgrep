@@ -340,6 +340,30 @@ dwarf_discr_list_value (std::string str)
 
 
 static const char *
+dwarf_decimal_sign_string (unsigned int code)
+{
+  switch (code)
+    {
+#define ONE_KNOWN_DW_DS(NAME, CODE) case CODE: return #CODE;
+      ALL_KNOWN_DW_DS
+#undef ONE_KNOWN_DW_DS
+    default:
+      return nullptr;
+    }
+}
+
+static unsigned int
+dwarf_decimal_sign_value (std::string str)
+{
+#define ONE_KNOWN_DW_DS(NAME, CODE) if (str == #CODE) return CODE;
+      ALL_KNOWN_DW_DS
+#undef ONE_KNOWN_DW_DS
+
+  throw std::runtime_error (std::string ("Unknown decimal sign: ") + str);
+}
+
+
+static const char *
 dwarf_locexpr_opcode_string (unsigned int code)
 {
   switch (code)
@@ -364,6 +388,52 @@ dwarf_locexpr_opcode_value (std::string str)
 #undef ONE_KNOWN_DW_OP_DESC
 
   throw std::runtime_error (std::string ("Unknown locexpr opcode: ") + str);
+}
+
+
+static const char *
+dwarf_address_class_string (unsigned int code)
+{
+  switch (code)
+    {
+    case DW_ADDR_none:
+      return "DW_ADDR_none";
+    default:
+      return nullptr;
+    }
+}
+
+static unsigned int
+dwarf_address_class_value (std::string str)
+{
+  if (str == "DW_ADDR_none")
+    return 0;
+
+  throw std::runtime_error (std::string ("Unknown address class: ") + str);
+}
+
+
+static const char *
+dwarf_endianity_string (unsigned int code)
+{
+  switch (code)
+    {
+#define ONE_KNOWN_DW_END(NAME, CODE) case CODE: return #CODE;
+      ALL_KNOWN_DW_END
+#undef ONE_KNOWN_DW_END
+    default:
+      return nullptr;
+    }
+}
+
+static unsigned int
+dwarf_endianity_value (std::string str)
+{
+#define ONE_KNOWN_DW_END(NAME, CODE) if (str == #CODE) return CODE;
+      ALL_KNOWN_DW_END
+#undef ONE_KNOWN_DW_END
+
+  throw std::runtime_error (std::string ("Unknown endianity: ") + str);
 }
 
 
@@ -609,12 +679,57 @@ static struct
   show (uint64_t v, std::ostream &o) const
   {
     unsigned int code = v;
+    const char *ret = dwarf_decimal_sign_string (code);
+    o << string_or_unknown (ret, code, 0, 0, false);
+  }
+} dw_decimal_sign_dom_obj;
+
+constant_dom const &dw_decimal_sign_dom = dw_decimal_sign_dom_obj;
+
+
+static struct
+  : public unsigned_constant_dom
+{
+  virtual void
+  show (uint64_t v, std::ostream &o) const
+  {
+    unsigned int code = v;
     const char *ret = dwarf_locexpr_opcode_string (code);
     o << string_or_unknown (ret, code, DW_OP_lo_user, DW_OP_hi_user,true);
   }
 } dw_locexpr_opcode_dom_obj;
 
 constant_dom const &dw_locexpr_opcode_dom = dw_locexpr_opcode_dom_obj;
+
+
+static struct
+  : public unsigned_constant_dom
+{
+  virtual void
+  show (uint64_t v, std::ostream &o) const
+  {
+    unsigned int code = v;
+    const char *ret = dwarf_address_class_string (code);
+    o << string_or_unknown (ret, code, 0, 0, false);
+  }
+} dw_address_class_dom_obj;
+
+constant_dom const &dw_address_class_dom = dw_address_class_dom_obj;
+
+
+static struct
+  : public unsigned_constant_dom
+{
+  virtual void
+  show (uint64_t v, std::ostream &o) const
+  {
+    unsigned int code = v;
+    const char *ret = dwarf_endianity_string (code);
+    o << string_or_unknown (ret, code, 0, 0, false);
+  }
+} dw_endianity_dom_obj;
+
+constant_dom const &dw_endianity_dom = dw_endianity_dom_obj;
 
 
 constant
@@ -638,7 +753,10 @@ constant::parse (std::string str)
   HANDLE ("DW_CC_", calling_convention);
   HANDLE ("DW_ORD_", ordering);
   HANDLE ("DW_DSC_", discr_list);
+  HANDLE ("DW_DS_", decimal_sign);
   HANDLE ("DW_OP_", locexpr_opcode);
+  HANDLE ("DW_ADDR_", address_class);
+  HANDLE ("DW_END_", endianity);
 
 #undef HANDLE
 #undef STARTSWITH
