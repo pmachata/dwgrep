@@ -539,6 +539,98 @@ namespace
 	      return;
 	    }
 
+	  case DW_AT_const_value:
+	    {
+	      // This might be a DW_TAG_variable, DW_TAG_constant,
+	      // DW_TAG_formal_parameter, DW_TAG_inlined_subroutine,
+	      // DW_TAG_template_value_parameter or DW_TAG_enumerator.
+	      // In the former cases, we need to determine signedness
+	      // by inspecting the @type.
+	      //
+	      // To handle the enumerator, we need to look at @type in
+	      // the parent (DW_TAG_enumeration_type).  We don't have
+	      // access to that at this point.  We will have later,
+	      // when "parent" op is implemented.  For now, just
+	      // consider them unsigned.  NIY.
+
+	      if (dwarf_tag (&die) != DW_TAG_enumerator)
+		{
+		  Dwarf_Die type_die = die;
+		  Dwarf_Attribute at;
+		  while (dwarf_hasattr_integrate (&type_die, DW_AT_type))
+		    {
+		      if (dwarf_attr_integrate (&type_die, DW_AT_type,
+						&at) == nullptr
+			  || dwarf_formref_die (&at, &type_die) == nullptr)
+			throw_libdw ();
+		      int tag = dwarf_tag (&type_die);
+		      if (tag != DW_TAG_const_type
+			  && tag != DW_TAG_volatile_type
+			  && tag != DW_TAG_restrict_type
+			  && tag != DW_TAG_mutable_type
+			  && tag != DW_TAG_typedef
+			  && tag != DW_TAG_subrange_type
+			  && tag != DW_TAG_packed_type)
+			break;
+		    }
+
+		  if (dwarf_tag (&type_die) != DW_TAG_base_type
+		      || ! dwarf_hasattr_integrate (&type_die, DW_AT_encoding))
+		    // Ho hum.  This could be a structure, a pointer,
+		    // or something similarly useless.
+		    goto data_unsigned;
+		  else
+		    {
+		      if (dwarf_attr_integrate (&type_die, DW_AT_encoding,
+						&at) == nullptr)
+			throw_libdw ();
+
+		      Dwarf_Word uval;
+		      if (dwarf_formudata (&at, &uval) != 0)
+			throw_libdw ();
+
+		      switch (uval)
+			{
+			case DW_ATE_signed:
+			case DW_ATE_signed_char:
+			  goto data_signed;
+
+			case DW_ATE_unsigned:
+			case DW_ATE_unsigned_char:
+			case DW_ATE_address:
+			case DW_ATE_boolean:
+			  goto data_unsigned;
+
+			case DW_ATE_float:
+			case DW_ATE_complex_float:
+			case DW_ATE_imaginary_float: // ???
+			  // Encoding floating-point enumerators in
+			  // DW_FORM_data* actually makes sense, but
+			  // for now, NIY.
+			  assert (! "float enumerator unhandled");
+			  abort ();
+
+			case DW_ATE_signed_fixed:
+			case DW_ATE_unsigned_fixed:
+			case DW_ATE_packed_decimal:
+			case DW_ATE_decimal_float:
+			  // OK, gross.
+			  assert (! "weird-float enumerator unhandled");
+			  abort ();
+
+			default:
+			  // There's a couple more that nobody should
+			  // probably put inside DW_FORM_data*.
+			  assert (! "unknown enumerator encoding");
+			  abort ();
+			}
+		    }
+		}
+	      else
+		goto data_signed;
+	    }
+
+
 	  case DW_AT_byte_stride:
 	  case DW_AT_bit_stride:
 	    // """Note that the stride can be negative."""
@@ -550,6 +642,7 @@ namespace
 	  case DW_AT_bit_size:
 	  case DW_AT_bit_offset:
 	  case DW_AT_data_bit_offset:
+	  case DW_AT_data_member_location:
 	  case DW_AT_lower_bound:
 	  case DW_AT_upper_bound:
 	  case DW_AT_count:
@@ -561,7 +654,6 @@ namespace
 	    goto data_unsigned;
 
 	  case DW_AT_discr_value:
-	  case DW_AT_const_value:
 	    // ^^^ """The number is signed if the tag type for the
 	    // variant part containing this variant is a signed
 	    // type."""
