@@ -120,12 +120,7 @@ tree::build_exec (std::shared_ptr <op> upstream, dwgrep_graph::ptr q,
       return upstream;
 
     case tree_type::SEL_UNIVERSE:
-      // XXX the 0 means that the old stack has size of 0.  That is
-      // something that determine_stack_effects should determine.
-      // Here we assume that ustream is op_origin.
-      assert (std::dynamic_pointer_cast <op_origin> (upstream) != nullptr);
-      return std::make_unique <op_sel_universe> (upstream, q,
-						 maxsize, slot ());
+      return std::make_unique <op_sel_universe> (upstream, q, maxsize, slot ());
 
     case tree_type::NOP:
       return std::make_unique <op_nop> (upstream);
@@ -177,9 +172,8 @@ tree::build_exec (std::shared_ptr <op> upstream, dwgrep_graph::ptr q,
 	    {
 	      auto origin2 = std::make_shared <op_origin> (nullptr);
 	      auto op = tree.build_exec (origin2, q, maxsize);
-	      // XXX is tree.slot() the right index?  this is supposed
-	      // to be target slot, where the stringer_op will pick
-	      // the data from.
+	      // N.B.: tree.slot () here is supposed to be destination
+	      // slot, where the stringer_op will pick the data from.
 	      strgr = std::make_shared <stringer_op>
 		(strgr, origin2, op, tree.slot ());
 	    }
