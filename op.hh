@@ -224,6 +224,15 @@ public:
   bool operate (valfile &vf, slot_idx dst, Dwarf_Attribute attr) const override;
 };
 
+// The stringer hieararchy supports op_format, which implements
+// formatting strings.  They are written similarly to op's, except
+// they send along next() a work-in-progress string in addition to
+// valfile::ptr.  The valfile::ptr is in-place mutated by the
+// stringers, and when it gets all the way through, op_format takes
+// whatever's left, and puts the finished string on top.  This scheme
+// is similar to how pred_subx_any is written, except there we never
+// mutate the passed-in valfile.  But here we do, as per the language
+// spec.
 class stringer
 {
 public:
@@ -231,6 +240,10 @@ public:
   virtual void reset () = 0;
 };
 
+// The formatting starts here.  This uses a pattern similar to
+// pred_subx_any, where op_format knows about the origin, passes it a
+// value that it gets, and then lets it percolate through the chain of
+// stringers.
 class stringer_origin
   : public stringer
 {
@@ -248,6 +261,8 @@ public:
   void reset () override;
 };
 
+// A stringer for the literal parts (non-%s, non-%(%)) of the format
+// string.
 class stringer_lit
   : public stringer
 {
@@ -264,6 +279,7 @@ public:
   void reset () override;
 };
 
+// A stringer for operational parts (%s, %(%)) of the format string.
 class stringer_op
   : public stringer
 {
@@ -289,6 +305,7 @@ public:
   void reset () override;
 };
 
+// A top-level format-string node.
 class op_format
   : public op
 {
