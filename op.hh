@@ -134,11 +134,16 @@ class dwop_f
   slot_idx m_src;
   slot_idx m_dst;
 
+protected:
+  dwgrep_graph::sptr m_g;
+
 public:
-  dwop_f (std::shared_ptr <op> upstream, slot_idx src, slot_idx dst)
+  dwop_f (std::shared_ptr <op> upstream, dwgrep_graph::sptr g,
+	  slot_idx src, slot_idx dst)
     : m_upstream (upstream)
     , m_src (src)
     , m_dst (dst)
+    , m_g (g)
   {}
 
   valfile::uptr next () override final;
@@ -153,7 +158,7 @@ public:
   { return false; }
 
   virtual bool operate (valfile &vf, slot_idx dst,
-			Dwarf_Attribute die) const
+			attribute_slot die) const
   { return false; }
 };
 
@@ -163,9 +168,9 @@ class op_f_atval
   int m_name;
 
 public:
-  op_f_atval (std::shared_ptr <op> upstream, slot_idx src, slot_idx dst,
-	      int name)
-    : dwop_f (upstream, src, dst)
+  op_f_atval (std::shared_ptr <op> upstream, dwgrep_graph::sptr g,
+	      slot_idx src, slot_idx dst, int name)
+    : dwop_f (upstream, g, src, dst)
     , m_name (name)
   {}
 
@@ -191,7 +196,7 @@ public:
 
   std::string name () const override;
   bool operate (valfile &vf, slot_idx dst, Dwarf_Die die) const override;
-  bool operate (valfile &vf, slot_idx dst, Dwarf_Attribute die) const override;
+  bool operate (valfile &vf, slot_idx dst, attribute_slot attr) const override;
 };
 
 class op_f_tag
@@ -211,7 +216,7 @@ public:
   using dwop_f::dwop_f;
 
   std::string name () const override;
-  bool operate (valfile &vf, slot_idx dst, Dwarf_Attribute attr) const override;
+  bool operate (valfile &vf, slot_idx dst, attribute_slot attr) const override;
 };
 
 class op_f_value
@@ -221,7 +226,7 @@ public:
   using dwop_f::dwop_f;
 
   std::string name () const override;
-  bool operate (valfile &vf, slot_idx dst, Dwarf_Attribute attr) const override;
+  bool operate (valfile &vf, slot_idx dst, attribute_slot attr) const override;
 };
 
 // The stringer hieararchy supports op_format, which implements

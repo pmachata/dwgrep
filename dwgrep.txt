@@ -823,6 +823,11 @@
 * Representing non-DIE information
 
 ** @decl_file — represented as actual string including path
+   (XXX we ignore mtime and size.  Those aren't stored anyway, but
+   maybe it would be useful to have them so that one can do this sort
+   of querying in the first place--do we have any files where this is
+   stored?  Or after it gets to be stored in general, where this is
+   _not_ stored?)
 
 ** @MIPS_linkage_name — translated to @linkage_name automatically
 

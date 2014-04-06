@@ -101,23 +101,23 @@ value_behavior <Dwarf_Die>::clone (Dwarf_Die const &die)
 }
 
 void
-value_behavior <Dwarf_Attribute>::show (Dwarf_Attribute const &attr,
-					std::ostream &o)
+value_behavior <attribute_slot>::show (attribute_slot const &attr,
+				       std::ostream &o)
 {
   o << "(attribute, NYI)";
 }
 
 void
-value_behavior <Dwarf_Attribute>::move_to_slot (Dwarf_Attribute &&attr,
-						slot_idx i, valfile &vf)
+value_behavior <attribute_slot>::move_to_slot (attribute_slot &&attr,
+					       slot_idx i, valfile &vf)
 {
-  vf.set_slot (i, attr);
+  vf.set_slot (i, std::move (attr));
 }
 
 std::unique_ptr <value>
-value_behavior <Dwarf_Attribute>::clone (Dwarf_Attribute const &attr)
+value_behavior <attribute_slot>::clone (attribute_slot const &attr)
 {
-  return std::make_unique <value_attr> (Dwarf_Attribute (attr));
+  return std::make_unique <value_attr> (attribute_slot (attr));
 }
 
 void
@@ -278,7 +278,7 @@ valfile::get_slot_die (slot_idx i) const
   return m_slots[i.value ()].die;
 }
 
-Dwarf_Attribute const &
+attribute_slot const &
 valfile::get_slot_attr (slot_idx i) const
 {
   assert (m_types[i.value ()] == slot_type::ATTR);
@@ -383,7 +383,7 @@ valfile::set_slot (slot_idx i, Dwarf_Die const &die)
 }
 
 void
-valfile::set_slot (slot_idx i, Dwarf_Attribute const &attr)
+valfile::set_slot (slot_idx i, attribute_slot &&attr)
 {
   assert (m_types[i.value ()] == slot_type::INVALID);
   m_types[i.value ()] = slot_type::ATTR;

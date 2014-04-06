@@ -159,7 +159,7 @@ tree::build_exec (std::shared_ptr <op> upstream, dwgrep_graph::sptr q,
 
     case tree_type::F_ATVAL:
       return std::make_unique <op_f_atval>
-	(upstream, slot (), slot (), int (m_u.cval->value ()));
+	(upstream, q, slot (), slot (), int (m_u.cval->value ()));
 
     case tree_type::F_CHILD:
       return std::make_unique <op_f_child> (upstream, maxsize,
@@ -170,19 +170,19 @@ tree::build_exec (std::shared_ptr <op> upstream, dwgrep_graph::sptr q,
 					   slot (), slot ());
 
     case tree_type::F_OFFSET:
-      return std::make_unique <op_f_offset> (upstream, slot (), slot ());
+      return std::make_unique <op_f_offset> (upstream, q, slot (), slot ());
 
     case tree_type::F_NAME:
-      return std::make_unique <op_f_name> (upstream, slot (), slot ());
+      return std::make_unique <op_f_name> (upstream, q, slot (), slot ());
 
     case tree_type::F_TAG:
-      return std::make_unique <op_f_tag> (upstream, slot (), slot ());
+      return std::make_unique <op_f_tag> (upstream, q, slot (), slot ());
 
     case tree_type::F_FORM:
-      return std::make_unique <op_f_form> (upstream, slot (), slot ());
+      return std::make_unique <op_f_form> (upstream, q, slot (), slot ());
 
     case tree_type::F_VALUE:
-      return std::make_unique <op_f_value> (upstream, slot (), slot ());
+      return std::make_unique <op_f_value> (upstream, q, slot (), slot ());
 
     case tree_type::FORMAT:
       {

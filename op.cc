@@ -266,7 +266,8 @@ struct op_f_attr::pimpl
 	    auto ret = valfile::copy (*m_vf, m_size);
 	    if (m_src == m_dst)
 	      ret->invalidate_slot (m_dst);
-	    ret->set_slot (m_dst, **m_it);
+	    attribute_slot slot {**m_it, dwarf_dieoffset (&m_die)};
+	    ret->set_slot (m_dst, std::move (slot));
 	    ++m_it;
 	    return ret;
 	  }
@@ -354,7 +355,7 @@ dwop_f::next ()
       }
     else if (vf->get_slot_type (m_src) == slot_type::ATTR)
       {
-	Dwarf_Attribute attr = vf->get_slot_attr (m_src);
+	attribute_slot attr = vf->get_slot_attr (m_src);
 	if (m_src == m_dst)
 	  vf->invalidate_slot (m_dst);
 	if (operate (*vf, m_dst, attr))
@@ -378,7 +379,7 @@ namespace
   }
 
   void
-  at_value (valfile &vf, slot_idx dst, Dwarf_Attribute attr)
+  at_value (valfile &vf, slot_idx dst, Dwarf_Attribute attr, Dwarf_Die die)
   {
     switch (dwarf_whatform (&attr))
       {
@@ -515,6 +516,29 @@ namespace
 	    atval_unsigned_with_domain (vf, dst, attr, column_number_dom);
 	    return;
 
+	  case DW_AT_decl_file:
+	    {
+	      Dwarf_Die cudie;
+	      if (dwarf_diecu (&die, &cudie, nullptr, nullptr) == nullptr)
+		throw_libdw ();
+
+	      Dwarf_Files *files;
+	      size_t nfiles;
+	      if (dwarf_getsrcfiles (&cudie, &files, &nfiles) != 0)
+		throw_libdw ();
+
+	      Dwarf_Word uval;
+	      if (dwarf_formudata (&attr, &uval) != 0)
+		throw_libdw ();
+
+	      const char *fn = dwarf_filesrc (files, uval, nullptr, nullptr);
+	      if (fn == nullptr)
+		throw_libdw ();
+
+	      vf.set_slot (dst, std::string (fn));
+	      return;
+	    }
+
 	  case DW_AT_byte_stride:
 	  case DW_AT_bit_stride:
 	    // """Note that the stride can be negative."""
@@ -541,7 +565,6 @@ namespace
 	    // ^^^ """The number is signed if the tag type for the
 	    // variant part containing this variant is a signed
 	    // type."""
-	  case DW_AT_decl_file:
 	    assert (! "signedness of attribute not implemented yet");
 	    abort ();
 	  }
@@ -573,7 +596,7 @@ op_f_atval::operate (valfile &vf, slot_idx dst, Dwarf_Die die) const
   if (dwarf_attr_integrate (&die, m_name, &attr) == nullptr)
     return false;
 
-  at_value (vf, dst, attr);
+  at_value (vf, dst, attr, die);
   return true;
 }
 
@@ -618,9 +641,9 @@ op_f_name::operate (valfile &vf, slot_idx dst, Dwarf_Die die) const
 }
 
 bool
-op_f_name::operate (valfile &vf, slot_idx dst, Dwarf_Attribute at) const
+op_f_name::operate (valfile &vf, slot_idx dst, attribute_slot attr) const
 {
-  unsigned name = dwarf_whatattr (&at);
+  unsigned name = dwarf_whatattr (&attr.attr);
   vf.set_slot (dst, constant { name, &dw_attr_dom });
   return true;
 }
@@ -644,9 +667,9 @@ op_f_tag::name () const
 }
 
 bool
-op_f_form::operate (valfile &vf, slot_idx dst, Dwarf_Attribute attr) const
+op_f_form::operate (valfile &vf, slot_idx dst, attribute_slot attr) const
 {
-  unsigned name = dwarf_whatform (&attr);
+  unsigned name = dwarf_whatform (&attr.attr);
   vf.set_slot (dst, constant { name, &dw_form_dom });
   return true;
 }
@@ -659,9 +682,13 @@ op_f_form::name () const
 
 
 bool
-op_f_value::operate (valfile &vf, slot_idx dst, Dwarf_Attribute attr) const
+op_f_value::operate (valfile &vf, slot_idx dst, attribute_slot attr) const
 {
-  at_value (vf, dst, attr);
+  Dwarf_Die die;
+  if (dwarf_offdie (&*m_g->dwarf, attr.die_off, &die) == nullptr)
+    throw_libdw ();
+
+  at_value (vf, dst, attr.attr, die);
   return true;
 }
 
@@ -1089,7 +1116,8 @@ pred_at::result (valfile &vf)
     }
   else if (vf.get_slot_type (m_idx) == slot_type::ATTR)
     {
-      auto &attr = const_cast <Dwarf_Attribute &> (vf.get_slot_attr (m_idx));
+      auto &attr = const_cast <Dwarf_Attribute &>
+	(vf.get_slot_attr (m_idx).attr);
       return pred_result (dwarf_whatattr (&attr) == m_atname);
     }
   else
