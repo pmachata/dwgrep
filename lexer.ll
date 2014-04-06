@@ -195,6 +195,12 @@ OCT [0-7]
   BEGIN STRING_EMBEDDED;
 }
 
+<STRING>"%{" {
+  std::cerr << "Warning: %{ and %} have no special meaning in a format string.\n"
+	    << "Did you mean %( and %)?\n";
+  yylval->f->str += "%{";
+}
+
 <STRING>"%s" {
   yylval->f->flush_str ();
   yylval->f->t.push_back (parse_string (""));
