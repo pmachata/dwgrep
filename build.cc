@@ -162,17 +162,38 @@ tree::build_exec (std::shared_ptr <op> upstream, dwgrep_graph::ptr q,
       return std::make_unique <op_f_value> (upstream, slot (), slot ());
 
     case tree_type::FORMAT:
-      if (m_children.size () == 1
-	  && m_children.front ().m_tt == tree_type::STR)
-	return std::make_unique <op_strlit>
-	  (upstream, *m_children.front ().m_u.sval, slot ());
+      {
+	if (m_children.size () == 1
+	    && m_children.front ().m_tt == tree_type::STR)
+	  return std::make_unique <op_strlit>
+	    (upstream, *m_children.front ().m_u.sval, slot ());
 
-      assert (! "NIY");
-      //return std::make_unique <op_format> (*m_children.front ().m_u.sval, slot ());
+
+	auto s_origin = std::make_shared <stringer_origin> ();
+	std::shared_ptr <stringer> strgr = s_origin;
+	for (auto const &tree: m_children)
+	  if (tree.m_tt == tree_type::STR)
+	    strgr = std::make_shared <stringer_lit> (strgr, *tree.m_u.sval);
+	  else
+	    {
+	      auto origin2 = std::make_shared <op_origin> (nullptr);
+	      auto op = tree.build_exec (origin2, q, maxsize);
+	      // XXX is tree.slot() the right index?  this is supposed
+	      // to be target slot, where the stringer_op will pick
+	      // the data from.
+	      strgr = std::make_shared <stringer_op>
+		(strgr, origin2, op, tree.slot ());
+	    }
+
+	return std::make_shared <op_format>
+	  (upstream, s_origin, strgr, slot ());
+      }
 
     case tree_type::SHF_DROP:
-      //return std::make_unique <op_drop> (slot ());
-      assert (! "NIY");
+      return std::make_shared <op_drop> (upstream, slot ());
+
+    case tree_type::SHF_DUP:
+      return std::make_shared <op_dup> (upstream, slot () - 1, slot ());
 
     case tree_type::CONST:
       return std::make_unique <op_const> (upstream, *m_u.cval, slot ());
@@ -200,7 +221,6 @@ tree::build_exec (std::shared_ptr <op> upstream, dwgrep_graph::ptr q,
     case tree_type::SEL_SECTION:
     case tree_type::SEL_UNIT:
     case tree_type::SHF_SWAP:
-    case tree_type::SHF_DUP:
     case tree_type::SHF_OVER:
     case tree_type::SHF_ROT:
       std::cerr << "\n\nUNHANDLED:";

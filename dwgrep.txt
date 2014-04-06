@@ -797,6 +797,29 @@
    the computation in whose context it appeared.
 
 
+* Unsettled
+
+  (Not that anything here is really settled!)
+
+** EXPR → (“?”|“!”)(literal) | (“?”|“!”)(named constant) — value assertions
+
+   Since majority of comparisons is ?eq or !eq anyway, and many of
+   those are vs. constants, why not allow asserting a value?  This
+   would be allowed for string literals, numeric literals, or named
+   constants.  Similarly to how ?@at is applicable to a DIE and an
+   ATTR, e.g. ?DW_ATE_unsigned would be applicable to an attribute
+   that is DW_AT_encoding, or other integral value.  ?@at would become
+   syntax sugar for ?DW_AT_at.  ?tag would become syntax sugar for
+   ?DW_TAG_tag.  There would be a logic for allowing each domain its
+   own set of ways to apply itself on a candidate value
+   (e.g. ?DW_ATE_unsigned is not applicable to DIE's, but ?DW_AT_at
+   and ?DW_TAG_tag are).
+
+   The same could be done with string literals.  So asking for a
+   qualified name would become:
+   : ?{@name ?"a"} child ?{@name ?"b"} child ?{@name ?"c"}
+
+
 * Representing non-DIE information
 
 ** @decl_file — represented as actual string including path
@@ -832,6 +855,10 @@
 
    Instead of @index we'd like to have a @section which links to a
    pseudo-DIE representing a section.
+
+   DW_FORM_addr -- maybe we should handle them similarly to
+   readelf...?  Have a domain for addresses, and possibly (unless -N)
+   translate addresses to symbols on output?
 
 ** XXX Dwarf CU version -- an artificial attribute?
    - https://stackoverflow.com/questions/16169864

@@ -651,82 +651,171 @@ op_f_value::name () const
   return "f_value";
 }
 
-/*
-std::unique_ptr <yielder>
-op_format::get_yielder (std::unique_ptr <stack> stk, size_t stksz,
-			std::shared_ptr <Dwarf> &dw) const
+void
+stringer_origin::set_next (valfile::uptr vf)
 {
-  class format_yielder
-    : public yielder
-  {
-    bool done;
-    std::shared_ptr <Dwarf> &m_dw;
-    std::string const &m_lit;
-    size_t m_idx;
+  assert (m_vf == nullptr);
 
-  public:
-    format_yielder (std::shared_ptr <Dwarf> &dw,
-		    std::string const &lit, size_t idx)
-      : done (false)
-      , m_dw (dw)
-      , m_lit (lit)
-      , m_idx (idx)
-    {}
+  // set_next should have been preceded with a reset() call that
+  // should have percolated all the way here.
+  assert (m_reset);
+  m_reset = false;
 
-    virtual std::unique_ptr <stack>
-    yield () override
-    {
-      if (done)
-	return nullptr;
-
-      done = true;
-      auto ret = stk.clone (stksz);
-      auto nv = std::make_unique <v_str> (m_lit.c_str ());
-      ret->set_slot (m_idx, std::move (nv));
-      return ret;
-    }
-  };
-
-  return std::make_unique <format_yielder> (dw, m_str, m_idx);
+  m_vf = std::move (vf);
 }
 
-std::unique_ptr <yielder>
-op_drop::get_yielder (std::unique_ptr <stack> stk, size_t stksz,
-		      std::shared_ptr <Dwarf> &dw) const
+std::pair <valfile::uptr, std::string>
+stringer_origin::next ()
 {
-  class drop_yielder
-    : public yielder
-  {
-    bool done;
-    size_t m_idx;
-
-  public:
-    explicit drop_yielder (size_t idx)
-      : done (false)
-      , m_idx (idx)
-    {}
-
-    virtual std::unique_ptr <stack>
-    yield () override
-    {
-      if (done)
-	return nullptr;
-
-      done = true;
-      auto ret = stk.clone (stksz);
-      ret->invalidate_slot (m_idx);
-      return ret;
-    }
-  };
-
-  return std::make_unique <drop_yielder> (m_idx);
+  return std::make_pair (std::move (m_vf), "");
 }
-*/
+
+void
+stringer_origin::reset ()
+{
+  m_vf = nullptr;
+  m_reset = true;
+}
+
+std::pair <valfile::uptr, std::string>
+stringer_lit::next ()
+{
+  auto up = m_upstream->next ();
+  if (up.first == nullptr)
+    return std::make_pair (nullptr, "");
+  up.second += m_str;
+  return up;
+}
+
+void
+stringer_lit::reset ()
+{
+  m_upstream->reset ();
+}
+
+std::pair <valfile::uptr, std::string>
+stringer_op::next ()
+{
+  while (true)
+    {
+      if (! m_have)
+	{
+	  auto up = m_upstream->next ();
+	  if (up.first == nullptr)
+	    return std::make_pair (nullptr, "");
+
+	  m_op->reset ();
+	  m_origin->set_next (std::move (up.first));
+	  m_str = up.second;
+
+	  m_have = true;
+	}
+
+      if (auto op_vf = m_op->next ())
+	{
+	  std::stringstream ss;
+	  op_vf->get_slot (m_src)->show (ss);
+	  op_vf->invalidate_slot (m_src);
+	  return std::make_pair (std::move (op_vf), m_str + ss.str ());
+	}
+
+      m_have = false;
+    }
+}
+
+void
+stringer_op::reset ()
+{
+  m_have = false;
+  m_op->reset ();
+  m_upstream->reset ();
+}
+
+valfile::uptr
+op_format::next ()
+{
+  while (true)
+    {
+      auto s = m_stringer->next ();
+      if (s.first != nullptr)
+	{
+	  s.first->set_slot (m_dst, std::string (s.second));
+	  return std::move (s.first);
+	}
+
+      if (auto vf = m_upstream->next ())
+	{
+	  m_stringer->reset ();
+	  m_origin->set_next (std::move (vf));
+	}
+      else
+	return nullptr;
+    }
+}
+
+void
+op_format::reset ()
+{
+  m_stringer->reset ();
+  m_upstream->reset ();
+}
+
+std::string
+op_format::name () const
+{
+  return "format";
+}
+
+valfile::uptr
+op_drop::next ()
+{
+  if (auto vf = m_upstream->next ())
+    {
+      vf->invalidate_slot (m_idx);
+      return vf;
+    }
+  return nullptr;
+}
+
+void
+op_drop::reset ()
+{
+  m_upstream->reset ();
+}
+
+std::string
+op_drop::name () const
+{
+  return "drop";
+}
+
+valfile::uptr
+op_dup::next ()
+{
+  if (auto vf = m_upstream->next ())
+    {
+      vf->get_slot (m_src)->clone ()->move_to_slot (m_dst, *vf);
+      return vf;
+    }
+  return nullptr;
+}
+
+void
+op_dup::reset ()
+{
+  m_upstream->reset ();
+}
+
+std::string
+op_dup::name () const
+{
+  return "drop";
+}
 
 valfile::uptr
 op_const::next ()
 {
-  while (auto vf = m_upstream->next ())
+  if (auto vf = m_upstream->next ())
     {
       vf->set_slot (m_dst, constant (m_cst));
       return vf;

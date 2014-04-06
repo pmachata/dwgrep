@@ -362,6 +362,10 @@ do_tests ()
 	 "(CAT (SEL_UNIVERSE) (SHF_DROP) (FORMAT (STR<foo>)))");
   ftestx ("drop \"%s\"", "underrun");
 
+  ftest ("\"%( +offset %): %( @name %)\"",
+	 "(CAT (SEL_UNIVERSE) (FORMAT (STR<>) (PROTECT (F_OFFSET)) "
+	 "(STR<: >) (F_ATVAL<DW_AT_name>) (STR<>)))");
+
   std::cerr << tests << " tests total, " << failed << " failures." << std::endl;
   assert (failed == 0);
 }

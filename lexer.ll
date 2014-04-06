@@ -235,13 +235,16 @@ OCT [0-7]
 
 <STRING_EMBEDDED>"%)" {
   yylval->f->in_string = true;
-  if (yylval->f->level-- == 0)
+  if (yylval->f->level == 0)
     {
       yylval->f->t.push_back (parse_string (yylval->f->yank_str ()));
       BEGIN STRING;
     }
   else
-    yylval->f->str += "%)";
+    {
+      --yylval->f->level;
+      yylval->f->str += "%)";
+    }
 }
 
 <STRING_EMBEDDED>. {

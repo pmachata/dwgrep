@@ -224,16 +224,87 @@ public:
   bool operate (valfile &vf, slot_idx dst, Dwarf_Attribute attr) const override;
 };
 
+class stringer
+{
+public:
+  virtual std::pair <valfile::uptr, std::string> next () = 0;
+  virtual void reset () = 0;
+};
+
+class stringer_origin
+  : public stringer
+{
+  valfile::uptr m_vf;
+  bool m_reset;
+
+public:
+  stringer_origin ()
+    : m_reset (false)
+  {}
+
+  void set_next (valfile::uptr vf);
+
+  std::pair <valfile::uptr, std::string> next () override;
+  void reset () override;
+};
+
+class stringer_lit
+  : public stringer
+{
+  std::shared_ptr <stringer> m_upstream;
+  std::string m_str;
+
+public:
+  stringer_lit (std::shared_ptr <stringer> upstream, std::string str)
+    : m_upstream (std::move (upstream))
+    , m_str (str)
+  {}
+
+  std::pair <valfile::uptr, std::string> next () override;
+  void reset () override;
+};
+
+class stringer_op
+  : public stringer
+{
+  std::shared_ptr <stringer> m_upstream;
+  std::shared_ptr <op_origin> m_origin;
+  std::shared_ptr <op> m_op;
+  std::string m_str;
+  slot_idx m_src;
+  bool m_have;
+
+public:
+  stringer_op (std::shared_ptr <stringer> upstream,
+	       std::shared_ptr <op_origin> origin,
+	       std::shared_ptr <op> op, slot_idx src)
+    : m_upstream (std::move (upstream))
+    , m_origin (origin)
+    , m_op (op)
+    , m_src (src)
+    , m_have (false)
+  {}
+
+  std::pair <valfile::uptr, std::string> next () override;
+  void reset () override;
+};
+
 class op_format
   : public op
 {
-  std::string m_str;
-  size_t m_idx;
+  std::shared_ptr <op> m_upstream;
+  std::shared_ptr <stringer_origin> m_origin;
+  std::shared_ptr <stringer> m_stringer;
+  slot_idx m_dst;
 
 public:
-  op_format (std::string lit, size_t idx)
-    : m_str (lit)
-    , m_idx (idx)
+  op_format (std::shared_ptr <op> upstream,
+	     std::shared_ptr <stringer_origin> origin,
+	     std::shared_ptr <stringer> stringer, slot_idx dst)
+    : m_upstream (upstream)
+    , m_origin (origin)
+    , m_stringer (stringer)
+    , m_dst (dst)
   {}
 
   valfile::uptr next () override;
@@ -244,11 +315,32 @@ public:
 class op_drop
   : public op
 {
-  size_t m_idx;
+  std::shared_ptr <op> m_upstream;
+  slot_idx m_idx;
 
 public:
-  explicit op_drop (size_t idx)
-    : m_idx (idx)
+  explicit op_drop (std::shared_ptr <op> upstream, slot_idx idx)
+    : m_upstream (upstream)
+    , m_idx (idx)
+  {}
+
+  valfile::uptr next () override;
+  std::string name () const override;
+  void reset () override;
+};
+
+class op_dup
+  : public op
+{
+  std::shared_ptr <op> m_upstream;
+  slot_idx m_src;
+  slot_idx m_dst;
+
+public:
+  explicit op_dup (std::shared_ptr <op> upstream, slot_idx src, slot_idx dst)
+    : m_upstream (upstream)
+    , m_src (src)
+    , m_dst (dst)
   {}
 
   valfile::uptr next () override;
