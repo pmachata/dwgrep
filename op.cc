@@ -846,7 +846,7 @@ op_const::name () const
 valfile::uptr
 op_strlit::next ()
 {
-  while (auto vf = m_upstream->next ())
+  if (auto vf = m_upstream->next ())
     {
       vf->set_slot (m_dst, std::string (m_str));
       return vf;
@@ -860,6 +860,24 @@ op_strlit::name () const
   std::stringstream ss;
   ss << "strlit<" << m_str << ">";
   return ss.str ();
+}
+
+
+valfile::uptr
+op_empty_list::next ()
+{
+  if (auto vf = m_upstream->next ())
+    {
+      vf->set_slot (m_dst, value_vector_t ());
+      return vf;
+    }
+  return nullptr;
+}
+
+std::string
+op_empty_list::name () const
+{
+  return "empty_list";
 }
 
 
@@ -924,6 +942,39 @@ std::string
 op_merge::name () const
 {
   return "merge";
+}
+
+
+valfile::uptr
+op_capture::next ()
+{
+  if (auto vf = m_upstream->next ())
+    {
+      m_op->reset ();
+      m_origin->set_next (valfile::copy (*vf, m_size));
+
+      value_vector_t vv;
+      while (auto vf2 = m_op->next ())
+	vv.push_back (vf2->get_slot (m_src)->clone ());
+      vf->set_slot (m_dst, std::move (vv));
+      return vf;
+    }
+  return nullptr;
+}
+
+void
+op_capture::reset ()
+{
+  m_op->reset ();
+  m_upstream->reset ();
+}
+
+std::string
+op_capture::name () const
+{
+  std::stringstream ss;
+  ss << "capture<" << m_op->name () << ">";
+  return ss.str ();
 }
 
 

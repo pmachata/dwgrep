@@ -258,6 +258,13 @@ namespace
 	  break;
 	}
 
+      case tree_type::EMPTY_LIST:
+	{
+	  assert (t.m_children.size () == 0);
+	  se.push (1);
+	  break;
+	}
+
       case tree_type::TRANSFORM:
 	{
 	  assert (t.m_children.size () == 2);

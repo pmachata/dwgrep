@@ -66,6 +66,7 @@ tree::build_pred (dwgrep_graph::ptr q, size_t maxsize) const
     case tree_type::ASSERT:
     case tree_type::ALT:
     case tree_type::CAPTURE:
+    case tree_type::EMPTY_LIST:
     case tree_type::TRANSFORM:
     case tree_type::PROTECT:
     case tree_type::CLOSE_PLUS:
@@ -217,6 +218,17 @@ tree::build_exec (std::shared_ptr <op> upstream, dwgrep_graph::ptr q,
       return std::make_unique <op_const> (upstream, *m_u.cval, slot ());
 
     case tree_type::CAPTURE:
+      {
+	auto origin = std::make_shared <op_origin> (nullptr);
+	auto op = m_children.front ().build_exec (origin, q, maxsize);
+	return std::make_unique <op_capture> (upstream, origin, op, maxsize,
+					      m_children.front ().slot (),
+					      slot ());
+      }
+
+    case tree_type::EMPTY_LIST:
+      return std::make_unique <op_empty_list> (upstream, slot ());
+
     case tree_type::TRANSFORM:
     case tree_type::PROTECT:
     case tree_type::CLOSE_PLUS:

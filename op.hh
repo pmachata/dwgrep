@@ -409,6 +409,25 @@ public:
   { m_upstream->reset (); }
 };
 
+class op_empty_list
+  : public op
+{
+  std::shared_ptr <op> m_upstream;
+  slot_idx m_dst;
+
+public:
+  op_empty_list (std::shared_ptr <op> upstream, slot_idx dst)
+    : m_upstream (upstream)
+    , m_dst (dst)
+  {}
+
+  valfile::uptr next () override;
+  std::string name () const override;
+
+  void reset () override
+  { m_upstream->reset (); }
+};
+
 // Tine is placed at the beginning of each alt expression.  These
 // tines together share a vector of valfiles, called a file, which
 // next() takes data from (each vector element belongs to one tine of
@@ -475,7 +494,36 @@ public:
   void reset () override;
 };
 
-class op_capture;
+class op_capture
+  : public op
+{
+  std::shared_ptr <op> m_upstream;
+  std::shared_ptr <op_origin> m_origin;
+  std::shared_ptr <op> m_op;
+  size_t m_size;
+  slot_idx m_src;
+  slot_idx m_dst;
+
+public:
+  // SRC is the slot where OP leaves the result.  DST is where the
+  // resulting list should be put to.
+  op_capture (std::shared_ptr <op> upstream,
+	      std::shared_ptr <op_origin> origin,
+	      std::shared_ptr <op> op,
+	      size_t size, slot_idx src, slot_idx dst)
+    : m_upstream (upstream)
+    , m_origin (origin)
+    , m_op (op)
+    , m_size (size)
+    , m_src (src)
+    , m_dst (dst)
+  {}
+
+  valfile::uptr next () override;
+  std::string name () const override;
+  void reset () override;
+};
+
 class op_transform;
 class op_protect;
 class op_close; //+, *, ?

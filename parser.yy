@@ -238,6 +238,11 @@ Statement:
     $$ = tree::create_assert (u);
   }
 
+  | TOK_LBRACKET TOK_RBRACKET
+  {
+    $$ = tree::create_nullary <tree_type::EMPTY_LIST> ();
+  }
+
   | TOK_LBRACKET Program TOK_RBRACKET
   {
     $$ = tree::create_unary <tree_type::CAPTURE> ($2);

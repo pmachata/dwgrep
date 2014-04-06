@@ -332,6 +332,8 @@ do_tests ()
 	"(ALT (F_NEXT) (CLOSE_STAR (F_PREV)))");
 
   test ("[]",
+	"(EMPTY_LIST)");
+  test ("[()]",
 	"(CAPTURE (NOP))");
   test ("[child]",
 	"(CAPTURE (F_CHILD))");
