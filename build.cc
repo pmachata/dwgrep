@@ -51,9 +51,11 @@ tree::build_pred (dwgrep_graph::ptr q, size_t maxsize) const
 	return std::make_unique <pred_subx_any> (op, origin, maxsize);
       }
 
+    case tree_type::PRED_EMPTY:
+      return std::make_unique <pred_empty> (slot ());
+
     case tree_type::PRED_FIND:
     case tree_type::PRED_MATCH:
-    case tree_type::PRED_EMPTY:
     case tree_type::PRED_SUBX_ALL:
       std::cerr << "\n\nUNHANDLED:";
       dump (std::cerr);

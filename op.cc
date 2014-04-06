@@ -1223,3 +1223,39 @@ pred_subx_any::reset ()
 {
   m_op->reset ();
 }
+
+pred_result
+pred_empty::result (valfile &vf)
+{
+  switch (vf.get_slot_type (m_idx_a))
+    {
+    case slot_type::END:
+    case slot_type::INVALID:
+      assert (! "pred_empty: invalid predicate slot");
+      abort ();
+
+    case slot_type::CST:
+    case slot_type::FLT:
+    case slot_type::DIE:
+    case slot_type::ATTR:
+    case slot_type::LINE:
+    case slot_type::LOCLIST_ENTRY:
+    case slot_type::LOCLIST_OP:
+      return pred_result::fail;
+
+    case slot_type::STR:
+      return pred_result (vf.get_slot_str (m_idx_a) == "");
+
+    case slot_type::SEQ:
+      return pred_result (vf.get_slot_seq (m_idx_a).empty ());
+    }
+
+  assert (! "pred_empty: unhandled slot type");
+  abort ();
+}
+
+std::string
+pred_empty::name () const
+{
+  return "pred_empty";
+}

@@ -727,8 +727,22 @@ public:
   void reset () override;
 };
 
+class pred_empty
+  : public pred
+{
+  slot_idx m_idx_a;
+
+public:
+  explicit pred_empty (slot_idx idx_a)
+    : m_idx_a (idx_a)
+  {}
+
+  pred_result result (valfile &vf) override;
+  std::string name () const override;
+  void reset () override {}
+};
+
 class pred_find;
 class pred_match;
-class pred_empty;
 
 #endif /* _OP_H_ */
