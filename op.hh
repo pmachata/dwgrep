@@ -524,6 +524,31 @@ public:
   void reset () override;
 };
 
+class op_f_each
+  : public op
+{
+  std::shared_ptr <op> m_upstream;
+  size_t m_size;
+  slot_idx m_src;
+  slot_idx m_dst;
+  valfile::uptr m_vf;
+  size_t m_i;
+
+public:
+  op_f_each (std::shared_ptr <op> upstream,
+	     size_t size, slot_idx src, slot_idx dst)
+    : m_upstream (upstream)
+    , m_size (size)
+    , m_src (src)
+    , m_dst (dst)
+    , m_i (static_cast <size_t> (-1))
+  {}
+
+  valfile::uptr next () override;
+  std::string name () const override;
+  void reset () override;
+};
+
 class op_transform;
 class op_protect;
 class op_close; //+, *, ?
@@ -539,7 +564,6 @@ class op_f_type;
 class op_f_form;
 class op_f_pos;
 class op_f_count;
-class op_f_each;
 class op_sel_section;
 class op_sel_unit;
 

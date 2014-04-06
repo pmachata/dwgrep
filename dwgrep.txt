@@ -529,7 +529,7 @@
    - over is exactly equivalent to:
      : [ drop ] each
    - dup is exactly equivalent to (among others):
-     : [ 1 drop ] each
+     : [ () ] each
 
 ** EXPR → “?{” EXPR₁ “}” | “!{” EXPR₁ “}” — sub-expression assertions
 

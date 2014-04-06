@@ -978,6 +978,54 @@ op_capture::name () const
 }
 
 
+valfile::uptr
+op_f_each::next ()
+{
+  while (true)
+    {
+      while (m_vf == nullptr)
+	{
+	  if (auto vf = m_upstream->next ())
+	    {
+	      if (vf->get_slot_type (m_src) == slot_type::SEQ)
+		{
+		  m_i = 0;
+		  m_vf = std::move (vf);
+		}
+	    }
+	  else
+	    return nullptr;
+	}
+
+      value_vector_t const &vv = m_vf->get_slot_seq (m_src);
+      if (m_i < vv.size ())
+	{
+	  std::unique_ptr <value> v = vv[m_i++]->clone ();
+	  valfile::uptr vf = valfile::copy (*m_vf, m_size);
+	  if (m_src == m_dst)
+	    vf->invalidate_slot (m_dst);
+	  v->move_to_slot (m_dst, *vf);
+	  return vf;
+	}
+
+      m_vf = nullptr;
+    }
+}
+
+void
+op_f_each::reset ()
+{
+  m_vf = nullptr;
+  m_upstream->reset ();
+}
+
+std::string
+op_f_each::name () const
+{
+  return "each";
+}
+
+
 pred_result
 pred_not::result (valfile &vf)
 {
