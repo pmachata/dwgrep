@@ -694,10 +694,26 @@ namespace
 	  }
 	return;
 
+      case DW_FORM_block1:
       case DW_FORM_block2:
       case DW_FORM_block4:
       case DW_FORM_block:
-      case DW_FORM_block1:
+	{
+	  // XXX even for blocks, we need to look at the @type to
+	  // figure out whether there's a better way to represent this
+	  // item.  Some of these might be e.g. floats.  NIY.
+	  Dwarf_Block block;
+	  if (dwarf_formblock (&attr, &block) != 0)
+	    throw_libdw ();
+
+	  value_vector_t vv;
+	  for (Dwarf_Word i = 0; i < block.length; ++i)
+	    vv.push_back (std::make_unique <value_cst>
+			  (constant { block.data[i], &hex_constant_dom }));
+	  vf.set_slot (dst, std::move (vv));
+	  return;
+	}
+
       case DW_FORM_indirect:
       case DW_FORM_sec_offset:
       case DW_FORM_exprloc:
