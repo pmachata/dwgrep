@@ -394,7 +394,7 @@ namespace
     vf.set_slot (dst, std::move (cst));
   }
 
-  bool
+  void
   handle_at_dependent_value (valfile &vf, slot_idx dst,
 			     Dwarf_Attribute attr, Dwarf_Die die)
   {
@@ -402,62 +402,62 @@ namespace
       {
       case DW_AT_language:
 	atval_unsigned_with_domain (vf, dst, attr, dw_lang_dom);
-	return true;
+	return;
 
       case DW_AT_inline:
 	atval_unsigned_with_domain (vf, dst, attr, dw_inline_dom);
-	return true;
+	return;
 
       case DW_AT_encoding:
 	atval_unsigned_with_domain (vf, dst, attr, dw_encoding_dom);
-	return true;
+	return;
 
       case DW_AT_accessibility:
 	atval_unsigned_with_domain (vf, dst, attr, dw_access_dom);
-	return true;
+	return;
 
       case DW_AT_visibility:
 	atval_unsigned_with_domain (vf, dst, attr, dw_visibility_dom);
-	return true;
+	return;
 
       case DW_AT_virtuality:
 	atval_unsigned_with_domain (vf, dst, attr, dw_virtuality_dom);
-	return true;
+	return;
 
       case DW_AT_identifier_case:
 	atval_unsigned_with_domain (vf, dst, attr, dw_identifier_case_dom);
-	return true;
+	return;
 
       case DW_AT_calling_convention:
 	atval_unsigned_with_domain (vf, dst, attr,
 				    dw_calling_convention_dom);
-	return true;
+	return;
 
       case DW_AT_ordering:
 	atval_unsigned_with_domain (vf, dst, attr, dw_ordering_dom);
-	return true;
+	return;
 
       case DW_AT_decimal_sign:
 	atval_unsigned_with_domain (vf, dst, attr, dw_decimal_sign_dom);
-	return true;
+	return;
 
       case DW_AT_address_class:
 	atval_unsigned_with_domain (vf, dst, attr, dw_address_class_dom);
-	return true;
+	return;
 
       case DW_AT_endianity:
 	atval_unsigned_with_domain (vf, dst, attr, dw_endianity_dom);
-	return true;
+	return;
 
       case DW_AT_decl_line:
       case DW_AT_call_line:
 	atval_unsigned_with_domain (vf, dst, attr, line_number_dom);
-	return true;
+	return;
 
       case DW_AT_decl_column:
       case DW_AT_call_column:
 	atval_unsigned_with_domain (vf, dst, attr, column_number_dom);
-	return true;
+	return;
 
       case DW_AT_decl_file:
 	{
@@ -479,7 +479,7 @@ namespace
 	    throw_libdw ();
 
 	  vf.set_slot (dst, std::string (fn));
-	  return true;
+	  return;
 	}
 
       case DW_AT_const_value:
@@ -523,7 +523,7 @@ namespace
 		  // Ho hum.  This could be a structure, a pointer, or
 		  // something similarly useless.
 		  atval_unsigned (vf, dst, attr);
-		  return true;
+		  return;
 		}
 	      else
 		{
@@ -540,14 +540,14 @@ namespace
 		    case DW_ATE_signed:
 		    case DW_ATE_signed_char:
 		      atval_signed (vf, dst, attr);
-		      return true;
+		      return;
 
 		    case DW_ATE_unsigned:
 		    case DW_ATE_unsigned_char:
 		    case DW_ATE_address:
 		    case DW_ATE_boolean:
 		      atval_unsigned (vf, dst, attr);
-		      return true;
+		      return;
 
 		    case DW_ATE_float:
 		    case DW_ATE_complex_float:
@@ -577,7 +577,7 @@ namespace
 	  else
 	    {
 	      atval_signed (vf, dst, attr);
-	      return true;
+	      return;
 	    }
 	}
 
@@ -588,7 +588,7 @@ namespace
       case DW_AT_binary_scale:
       case DW_AT_decimal_scale:
 	atval_signed (vf, dst, attr);
-	return true;
+	return;
 
       case DW_AT_byte_size:
       case DW_AT_bit_size:
@@ -605,7 +605,7 @@ namespace
       case DW_AT_GNU_odr_signature:
 	{
 	  atval_unsigned (vf, dst, attr);
-	  return true;
+	  return;
 	}
 
       case DW_AT_discr_value:
@@ -687,11 +687,7 @@ namespace
       case DW_FORM_data2:
       case DW_FORM_data4:
       case DW_FORM_data8:
-	if (! handle_at_dependent_value (vf, dst, attr, die))
-	  {
-	    assert (! "Couldn't figure out attribute-dependent enconding");
-	    abort ();
-	  }
+	handle_at_dependent_value (vf, dst, attr, die);
 	return;
 
       case DW_FORM_block1:
