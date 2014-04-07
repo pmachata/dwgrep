@@ -460,6 +460,7 @@ namespace
 	return;
 
       case DW_AT_decl_file:
+      case DW_AT_call_file:
 	{
 	  Dwarf_Die cudie;
 	  if (dwarf_diecu (&die, &cudie, nullptr, nullptr) == nullptr)
@@ -580,7 +581,6 @@ namespace
 	      return;
 	    }
 	}
-
 
       case DW_AT_byte_stride:
       case DW_AT_bit_stride:
