@@ -52,6 +52,11 @@ $(TARGETS):
 	$(CXX) $^ -o $@ $(LDFLAGS)
 
 clean:
-	rm -f $(foreach dir,$(DIRS),$(dir)/*.o $(dir)/*.*-dep) $(TARGETS)
+	rm -f $(foreach dir,$(DIRS),$(dir)/*.o $(dir)/*.*-dep) \
+		$(patsubst %.yy,%.cc,$(YYSOURCES)) \
+		$(patsubst %.yy,%.hh,$(YYSOURCES)) \
+		$(patsubst %.ll,%.cc,$(LLSOURCES)) \
+		$(patsubst %.ll,%.hh,$(LLSOURCES)) \
+		$(TARGETS)
 
 .PHONY: all clean
