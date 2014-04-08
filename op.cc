@@ -7,6 +7,7 @@
 #include "dwit.hh"
 #include "dwpp.hh"
 #include "dwcst.hh"
+#include "vfcst.hh"
 
 valfile::uptr
 op_origin::next ()
@@ -616,6 +617,7 @@ namespace
 	abort ();
       }
 
+    std::cerr << dwarf_whatattr (&attr) << std::endl;
     assert (! "signedness of attribute unhandled");
     abort ();
   }
@@ -1225,7 +1227,74 @@ op_f_each::reset ()
 std::string
 op_f_each::name () const
 {
-  return "each";
+  return "f_each";
+}
+
+
+valfile::uptr
+op_f_type::next ()
+{
+  if (auto vf = m_upstream->next ())
+    {
+      slot_type t = vf->get_slot_type (m_src);
+      if (m_src == m_dst)
+	vf->invalidate_slot (m_dst);
+
+      switch (t)
+	{
+	case slot_type::END:
+	case slot_type::INVALID:
+	  assert (! "Invalid slot type.");
+	  abort ();
+
+	case slot_type::CST:
+	  vf->set_slot (m_dst, constant {(int) slot_type_id::T_CONST,
+		&slot_type_dom});
+	  return vf;
+
+	case slot_type::FLT:
+	  vf->set_slot (m_dst, constant {(int) slot_type_id::T_FLOAT,
+		&slot_type_dom});
+	  return vf;
+
+	case slot_type::SEQ:
+	  vf->set_slot (m_dst, constant {(int) slot_type_id::T_SEQ,
+		&slot_type_dom});
+	  return vf;
+
+	case slot_type::STR:
+	  vf->set_slot (m_dst, constant {(int) slot_type_id::T_STR,
+		&slot_type_dom});
+	  return vf;
+
+	case slot_type::DIE:
+	case slot_type::LINE:
+	case slot_type::LOCLIST_ENTRY:
+	case slot_type::LOCLIST_OP:
+	  vf->set_slot (m_dst, constant {(int) slot_type_id::T_NODE,
+		&slot_type_dom});
+	  return vf;
+
+	case slot_type::ATTR:
+	  vf->set_slot (m_dst, constant {(int) slot_type_id::T_ATTR,
+		&slot_type_dom});
+	  return vf;
+	}
+    }
+
+  return nullptr;
+}
+
+void
+op_f_type::reset ()
+{
+  m_upstream->reset ();
+}
+
+std::string
+op_f_type::name () const
+{
+  return "f_type";
 }
 
 

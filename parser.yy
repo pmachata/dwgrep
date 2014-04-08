@@ -4,6 +4,7 @@
 
 #include "lexer.hh"
 #include "constant.hh"
+#include "vfcst.hh"
 
   void
   yyerror (std::unique_ptr <tree> &t, yyscan_t lex, char const *s)
@@ -270,7 +271,31 @@ Statement:
   | TOK_CONSTANT
   {
     std::string str {$1.buf, $1.len};
-    $$ = tree::create_const <tree_type::CONST> (constant::parse (str));
+    if (str.length () > 2 && str[0] == 'T' && str[1] == '_')
+      {
+	if (str == "T_CONST")
+	  $$ = tree::create_const <tree_type::CONST>
+	    (constant ((int) slot_type_id::T_CONST, &slot_type_dom));
+	else if (str == "T_FLOAT")
+	  $$ = tree::create_const <tree_type::CONST>
+	    (constant ((int) slot_type_id::T_FLOAT, &slot_type_dom));
+	else if (str == "T_STR")
+	  $$ = tree::create_const <tree_type::CONST>
+	    (constant ((int) slot_type_id::T_STR, &slot_type_dom));
+	else if (str == "T_SEQ")
+	  $$ = tree::create_const <tree_type::CONST>
+	    (constant ((int) slot_type_id::T_SEQ, &slot_type_dom));
+	else if (str == "T_NODE")
+	  $$ = tree::create_const <tree_type::CONST>
+	    (constant ((int) slot_type_id::T_NODE, &slot_type_dom));
+	else if (str == "T_ATTR")
+	  $$ = tree::create_const <tree_type::CONST>
+	    (constant ((int) slot_type_id::T_ATTR, &slot_type_dom));
+	else
+	  throw std::runtime_error ("Unknown slot type constant.");
+      }
+    else
+      $$ = tree::create_const <tree_type::CONST> (constant::parse (str));
   }
 
   | TOK_LIT_STR

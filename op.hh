@@ -566,6 +566,26 @@ public:
   void reset () override;
 };
 
+class op_f_type
+  : public op
+{
+  std::shared_ptr <op> m_upstream;
+  slot_idx m_src;
+  slot_idx m_dst;
+
+public:
+  op_f_type (std::shared_ptr <op> upstream,
+	     slot_idx src, slot_idx dst)
+    : m_upstream {upstream}
+    , m_src {src}
+    , m_dst {dst}
+  {}
+
+  valfile::uptr next () override;
+  std::string name () const override;
+  void reset () override;
+};
+
 class op_transform;
 class op_protect;
 class op_close; //+, *, ?
@@ -576,7 +596,6 @@ class op_f_div;
 class op_f_mod;
 class op_f_prev;
 class op_f_next;
-class op_f_type;
 class op_f_form;
 class op_f_pos;
 class op_f_count;

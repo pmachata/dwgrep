@@ -237,6 +237,9 @@ tree::build_exec (std::shared_ptr <op> upstream, dwgrep_graph::sptr q,
     case tree_type::F_EACH:
       return std::make_unique <op_f_each> (upstream, maxsize, slot (), slot ());
 
+    case tree_type::F_TYPE:
+      return std::make_unique <op_f_type> (upstream, slot (), slot ());
+
     case tree_type::TRANSFORM:
     case tree_type::PROTECT:
     case tree_type::CLOSE_PLUS:
@@ -249,7 +252,6 @@ tree::build_exec (std::shared_ptr <op> upstream, dwgrep_graph::sptr q,
     case tree_type::F_MOD:
     case tree_type::F_PREV:
     case tree_type::F_NEXT:
-    case tree_type::F_TYPE:
     case tree_type::F_POS:
     case tree_type::F_COUNT:
     case tree_type::SEL_SECTION:

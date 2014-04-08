@@ -3,6 +3,7 @@
 
 #include <cassert>
 #include <iosfwd>
+#include <cstdint>
 
 class constant;
 

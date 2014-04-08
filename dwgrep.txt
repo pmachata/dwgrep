@@ -703,11 +703,12 @@
    This produces an integer value suitable for comparison with the
    following constants:
 
-   - T_DIE — for Dwarf_Die objects
-   - T_AT — for Dwarf_Attribute objects
+   - T_NODE — for Dwarf_Die's, and Dwarf_Line's and other pseude-DIE's
+   - T_ATTR — for Dwarf_Attribute's and other attribute-like pseudos
    - T_SEQ — for sequence objects
    - T_STR — for string objects
-   - T_INT — for integer objects
+   - T_CONST — for integer objects
+   - T_FLOAT — for floats
 
 ** EXPR → “+”?(“pos” | “count”) — pos of element within producing expression
 
