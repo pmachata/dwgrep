@@ -848,8 +848,8 @@ op_f_parent::operate (valfile &vf, slot_idx dst, attribute_slot attr) const
 bool
 op_f_parent::operate (valfile &vf, slot_idx dst, Dwarf_Die die) const
 {
-  Dwarf_Off par_off = m_g->parcache.find (die);
-  if (par_off == parent_cache::none_off)
+  Dwarf_Off par_off = m_g->find_parent (die);
+  if (par_off == dwgrep_graph::none_off)
     return false;
 
   if (dwarf_offdie (&*m_g->dwarf, par_off, &die) == nullptr)
@@ -1425,29 +1425,21 @@ pred_gt::name () const
 }
 
 pred_root::pred_root (dwgrep_graph::sptr g, slot_idx idx_a)
-  : m_idx_a (idx_a)
+  : m_g (g)
+  , m_idx_a (idx_a)
 {
-  for (auto it = cu_iterator { &*g->dwarf }; it != cu_iterator::end (); ++it)
-    m_roots.insert (std::make_pair (parent_cache::UT_INFO,
-				    dwarf_dieoffset (*it)));
 }
 
 pred_result
 pred_root::result (valfile &vf)
 {
   if (vf.get_slot_type (m_idx_a) == slot_type::DIE)
-    {
-      auto &die = const_cast <Dwarf_Die &> (vf.get_slot_die (m_idx_a));
-      Dwarf_Off off = dwarf_dieoffset (&die);
-      if (m_roots.find (std::make_pair (parent_cache::UT_INFO, off))
-	  != m_roots.end ())
-	return pred_result::yes;
-      else
-	return pred_result::no;
-    }
+    return pred_result (m_g->is_root (vf.get_slot_die (m_idx_a)));
+
   else if (vf.get_slot_type (m_idx_a) == slot_type::ATTR)
     // By definition, attributes are never root.
     return pred_result::no;
+
   else
     return pred_result::fail;
 }

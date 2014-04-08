@@ -1,6 +1,8 @@
 #ifndef _DWPP_H_
 #define _DWPP_H_
 
+#include <cassert>
+
 inline void
 throw_libdw (int dwerr = 0)
 {

@@ -4,8 +4,6 @@
 #include <unistd.h>
 #include <getopt.h>
 
-#include <algorithm>
-#include <cassert>
 #include <exception>
 #include <iostream>
 #include <memory>
@@ -19,6 +17,7 @@
 #include "tree.hh"
 #include "parser.hh"
 #include "valfile.hh"
+#include "cache.hh"
 
 namespace
 {
@@ -30,69 +29,43 @@ namespace
   }
 }
 
-void
-parent_cache::recursively_populate_unit (unit_cache_t &uc, Dwarf_Die die,
-					 Dwarf_Off paroff)
+struct dwgrep_graph::pimpl
 {
-  while (true)
-    {
-      Dwarf_Off off = dwarf_dieoffset (&die);
-      uc.push_back (std::make_pair (off, paroff));
+  parent_cache m_parcache;
+  root_cache m_rootcache;
 
-      if (dwarf_haschildren (&die))
-	{
-	  Dwarf_Die child;
-	  if (dwarf_child (&die, &child) != 0)
-	    throw_libdw ();
-	  recursively_populate_unit (uc, child, off);
-	}
+  Dwarf_Off
+  find_parent (Dwarf_Die die)
+  {
+    return m_parcache.find (die);
+  }
 
-      switch (dwarf_siblingof (&die, &die))
-	{
-	case 0:
-	  break;
-	case -1:
-	  throw_libdw ();
-	case 1:
-	  return;
-	}
-    }
-}
+  bool
+  is_root (Dwarf_Die die, Dwarf *dw)
+  {
+    return m_rootcache.is_root (die, dw);
+  }
+};
 
-parent_cache::unit_cache_t
-parent_cache::populate_unit (Dwarf_Die die)
-{
-  unit_cache_t uc;
-  recursively_populate_unit (uc, die, none_off);
-  return uc;
-}
+dwgrep_graph::dwgrep_graph (std::shared_ptr <Dwarf> d)
+  : m_pimpl {std::make_unique <pimpl> ()}
+  , dwarf {d}
+{}
+
+dwgrep_graph::~dwgrep_graph ()
+{}
 
 Dwarf_Off
-parent_cache::find (Dwarf_Die die)
+dwgrep_graph::find_parent (Dwarf_Die die)
 {
-  Dwarf_Die cudie;
-  if (dwarf_diecu (&die, &cudie, nullptr, nullptr) == nullptr)
-    throw_libdw ();
-
-  Dwarf_Off cuoff = dwarf_dieoffset (&cudie);
-  auto key = unit_key { UT_INFO, cuoff };
-  auto it = m_cache.find (key);
-  if (it == m_cache.end ())
-    it = m_cache.insert (std::make_pair (key, populate_unit (cudie))).first;
-
-  Dwarf_Off dieoff = dwarf_dieoffset (&die);
-  auto jt = std::lower_bound
-    (it->second.begin (), it->second.end (), dieoff,
-     [] (std::pair <Dwarf_Off, Dwarf_Off> const &a, Dwarf_Off b)
-     {
-       return a.first < b;
-     });
-
-  assert (jt != it->second.end ());
-  assert (jt->first == dieoff);
-  return jt->second;
+  return m_pimpl->find_parent (die);
 }
 
+bool
+dwgrep_graph::is_root (Dwarf_Die die)
+{
+  return m_pimpl->is_root (die, &*dwarf);
+}
 
 std::shared_ptr <Dwarf>
 open_dwarf (std::string const &fn)
