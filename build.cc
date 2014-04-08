@@ -184,6 +184,9 @@ tree::build_exec (std::shared_ptr <op> upstream, dwgrep_graph::sptr q,
     case tree_type::F_VALUE:
       return std::make_unique <op_f_value> (upstream, q, slot (), slot ());
 
+    case tree_type::F_PARENT:
+      return std::make_unique <op_f_parent> (upstream, q, slot (), slot ());
+
     case tree_type::FORMAT:
       {
 	if (m_children.size () == 1
@@ -244,7 +247,6 @@ tree::build_exec (std::shared_ptr <op> upstream, dwgrep_graph::sptr q,
     case tree_type::F_MUL:
     case tree_type::F_DIV:
     case tree_type::F_MOD:
-    case tree_type::F_PARENT:
     case tree_type::F_PREV:
     case tree_type::F_NEXT:
     case tree_type::F_TYPE:

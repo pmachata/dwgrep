@@ -88,6 +88,7 @@ public:
   op_f_attr (std::shared_ptr <op> upstream,
 	     size_t size, slot_idx src, slot_idx dst);
   ~op_f_attr ();
+
   valfile::uptr next () override;
   std::string name () const override;
   void reset () override;
@@ -227,6 +228,17 @@ public:
 
   std::string name () const override;
   bool operate (valfile &vf, slot_idx dst, attribute_slot attr) const override;
+};
+
+class op_f_parent
+  : public dwop_f
+{
+public:
+  using dwop_f::dwop_f;
+
+  std::string name () const override;
+  bool operate (valfile &vf, slot_idx dst, attribute_slot attr) const override;
+  bool operate (valfile &vf, slot_idx dst, Dwarf_Die die) const override;
 };
 
 // The stringer hieararchy supports op_format, which implements
@@ -562,7 +574,6 @@ class op_f_sub;
 class op_f_mul;
 class op_f_div;
 class op_f_mod;
-class op_f_parent;
 class op_f_prev;
 class op_f_next;
 class op_f_type;

@@ -4,11 +4,12 @@
 #include <unistd.h>
 #include <getopt.h>
 
+#include <algorithm>
 #include <cassert>
 #include <exception>
+#include <iostream>
 #include <memory>
 #include <system_error>
-#include <iostream>
 
 #include <dwarf.h>
 #include <libdw.h>
@@ -28,6 +29,73 @@ namespace
       (std::error_code (errno, std::system_category ()).message ());
   }
 }
+
+enum parent_cache::unit_type: int
+  {
+    UT_INFO,
+  };
+
+void
+parent_cache::recursively_populate_unit (unit_cache_t &uc, Dwarf_Die die,
+					 Dwarf_Off paroff)
+{
+  while (true)
+    {
+      Dwarf_Off off = dwarf_dieoffset (&die);
+      uc.push_back (std::make_pair (off, paroff));
+
+      if (dwarf_haschildren (&die))
+	{
+	  Dwarf_Die child;
+	  if (dwarf_child (&die, &child) != 0)
+	    throw_libdw ();
+	  recursively_populate_unit (uc, child, off);
+	}
+
+      switch (dwarf_siblingof (&die, &die))
+	{
+	case 0:
+	  break;
+	case -1:
+	  throw_libdw ();
+	case 1:
+	  return;
+	}
+    }
+}
+
+parent_cache::unit_cache_t
+parent_cache::populate_unit (Dwarf_Die die)
+{
+  unit_cache_t uc;
+  recursively_populate_unit (uc, die, none_off);
+  return uc;
+}
+
+Dwarf_Off
+parent_cache::find (Dwarf_Die die)
+{
+  Dwarf_Die cudie;
+  if (dwarf_diecu (&die, &cudie, nullptr, nullptr) == nullptr)
+    throw_libdw ();
+
+  Dwarf_Off cuoff = dwarf_dieoffset (&cudie);
+  auto key = unit_key { UT_INFO, cuoff };
+  auto it = m_cache.find (key);
+  if (it == m_cache.end ())
+    it = m_cache.insert (std::make_pair (key, populate_unit (cudie))).first;
+
+  auto jt = std::lower_bound
+    (it->second.begin (), it->second.end (), dwarf_dieoffset (&die),
+     [] (std::pair <Dwarf_Off, Dwarf_Off> const &a, Dwarf_Off b)
+     {
+       return a.first < b;
+     });
+
+  assert (jt != it->second.end ());
+  return jt->second;
+}
+
 
 std::shared_ptr <Dwarf>
 open_dwarf (std::string const &fn)

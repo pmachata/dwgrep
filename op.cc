@@ -833,6 +833,38 @@ op_f_value::name () const
   return "f_value";
 }
 
+
+bool
+op_f_parent::operate (valfile &vf, slot_idx dst, attribute_slot attr) const
+{
+  Dwarf_Die die;
+  if (dwarf_offdie (&*m_g->dwarf, attr.die_off, &die) == nullptr)
+    throw_libdw ();
+
+  vf.set_slot (dst, die);
+  return true;
+}
+
+bool
+op_f_parent::operate (valfile &vf, slot_idx dst, Dwarf_Die die) const
+{
+  Dwarf_Off par_off = m_g->parcache.find (die);
+  if (par_off == parent_cache::none_off)
+    return false;
+
+  if (dwarf_offdie (&*m_g->dwarf, par_off, &die) == nullptr)
+    throw_libdw ();
+  vf.set_slot (dst, die);
+  return true;
+}
+
+std::string
+op_f_parent::name () const
+{
+  return "f_parent";
+}
+
+
 void
 stringer_origin::set_next (valfile::uptr vf)
 {
