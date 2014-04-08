@@ -3,6 +3,7 @@
 
 #include <memory>
 #include <cassert>
+#include <unordered_set>
 
 //#include "value.hh"
 #include "make_unique.hh"
@@ -732,14 +733,21 @@ public:
 class pred_root
   : public pred
 {
-  dwgrep_graph::sptr m_q;
+  struct hash
+  {
+    size_t
+    operator() (std::pair <parent_cache::unit_type, Dwarf_Off> p) const
+    {
+      return std::hash <int> () (p.first)
+	^ std::hash <Dwarf_Off> () (p.second);
+    }
+  };
+  std::unordered_set <std::pair <parent_cache::unit_type, Dwarf_Off>,
+		      hash> m_roots;
   slot_idx m_idx_a;
 
 public:
-  pred_root (dwgrep_graph::sptr q, slot_idx idx_a)
-    : m_q (q)
-    , m_idx_a (idx_a)
-  {}
+  pred_root (dwgrep_graph::sptr g, slot_idx idx_a);
 
   pred_result result (valfile &vf) override;
   std::string name () const override;

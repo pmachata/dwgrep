@@ -1424,23 +1424,30 @@ pred_gt::name () const
   return "pred_gt";
 }
 
+pred_root::pred_root (dwgrep_graph::sptr g, slot_idx idx_a)
+  : m_idx_a (idx_a)
+{
+  for (auto it = cu_iterator { &*g->dwarf }; it != cu_iterator::end (); ++it)
+    m_roots.insert (std::make_pair (parent_cache::UT_INFO,
+				    dwarf_dieoffset (*it)));
+}
+
 pred_result
 pred_root::result (valfile &vf)
 {
-  // this is very slow.  We should use our parent/prev cache for this.
-  // NIY.
   if (vf.get_slot_type (m_idx_a) == slot_type::DIE)
     {
       auto &die = const_cast <Dwarf_Die &> (vf.get_slot_die (m_idx_a));
-      for (auto it = cu_iterator { &*m_q->dwarf };
-	   it != cu_iterator::end (); ++it)
-	{
-	  Dwarf_Die *cudiep = *it;
-	  if (dwarf_dieoffset (&die) == dwarf_dieoffset (cudiep))
-	    return pred_result::yes;
-	}
-      return pred_result::no;
+      Dwarf_Off off = dwarf_dieoffset (&die);
+      if (m_roots.find (std::make_pair (parent_cache::UT_INFO, off))
+	  != m_roots.end ())
+	return pred_result::yes;
+      else
+	return pred_result::no;
     }
+  else if (vf.get_slot_type (m_idx_a) == slot_type::ATTR)
+    // By definition, attributes are never root.
+    return pred_result::no;
   else
     return pred_result::fail;
 }

@@ -30,11 +30,6 @@ namespace
   }
 }
 
-enum parent_cache::unit_type: int
-  {
-    UT_INFO,
-  };
-
 void
 parent_cache::recursively_populate_unit (unit_cache_t &uc, Dwarf_Die die,
 					 Dwarf_Off paroff)
@@ -85,14 +80,16 @@ parent_cache::find (Dwarf_Die die)
   if (it == m_cache.end ())
     it = m_cache.insert (std::make_pair (key, populate_unit (cudie))).first;
 
+  Dwarf_Off dieoff = dwarf_dieoffset (&die);
   auto jt = std::lower_bound
-    (it->second.begin (), it->second.end (), dwarf_dieoffset (&die),
+    (it->second.begin (), it->second.end (), dieoff,
      [] (std::pair <Dwarf_Off, Dwarf_Off> const &a, Dwarf_Off b)
      {
        return a.first < b;
      });
 
   assert (jt != it->second.end ());
+  assert (jt->first == dieoff);
   return jt->second;
 }
 

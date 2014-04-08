@@ -493,7 +493,8 @@
      want to keep TOS.
 
      (+universe) is implicit at the beginning of the full dwgrep
-     expression.
+     expression.  (XXX so it is--but should it be?  Maybe it would be
+     better to allow the user to select what he cares about.)
 
    - "section" is similar, but selects only DIE's (or pseudo-DIE's)
      that come from the same section as value on TOS -- e.g. from

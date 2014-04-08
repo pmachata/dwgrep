@@ -11,9 +11,12 @@ struct parent_cache
 {
   static Dwarf_Off const none_off = (Dwarf_Off) -1;
 
-private:
-  enum unit_type: int;
+  enum unit_type
+    {
+      UT_INFO,
+    };
 
+private:
   struct unit_key
   {
     unit_type ut;
