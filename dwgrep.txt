@@ -831,6 +831,9 @@
    stored?  Or after it gets to be stored in general, where this is
    _not_ stored?)
 
+** @entry_pc constant — convert to full address
+    http://dwarfstd.org/ShowIssue.php?issue=120719.1
+
 ** @MIPS_linkage_name — translated to @linkage_name automatically
 
 ** @stmt_list

@@ -10,38 +10,38 @@ tree::build_pred (dwgrep_graph::sptr q, size_t maxsize) const
   switch (m_tt)
     {
     case tree_type::PRED_TAG:
-      return std::make_unique <pred_tag> (m_u.cval->value (), slot ());
+      return std::make_unique <pred_tag> (m_u.cval->value (), src_a ());
 
     case tree_type::PRED_AT:
-      return std::make_unique <pred_at> (m_u.cval->value (), slot ());
+      return std::make_unique <pred_at> (m_u.cval->value (), src_a ());
 
     case tree_type::PRED_NOT:
       return std::make_unique <pred_not>
 	(m_children.front ().build_pred (q, maxsize));
 
     case tree_type::PRED_EQ:
-      return std::make_unique <pred_eq> (slot () - 1, slot ());
+      return std::make_unique <pred_eq> (src_a (), src_b ());
 
     case tree_type::PRED_NE:
       return std::make_unique <pred_not>
-	(std::make_unique <pred_eq> (slot_idx (slot ().value () - 1), slot ()));
+	(std::make_unique <pred_eq> (src_a (), src_b ()));
 
     case tree_type::PRED_LT:
-      return std::make_unique <pred_lt> (slot () - 1, slot ());
+      return std::make_unique <pred_lt> (src_a (), src_b ());
 
     case tree_type::PRED_GT:
-      return std::make_unique <pred_gt> (slot () - 1, slot ());
+      return std::make_unique <pred_gt> (src_a (), src_b ());
 
     case tree_type::PRED_GE:
       return std::make_unique <pred_not>
-	(std::make_unique <pred_lt> (slot () - 1, slot ()));
+	(std::make_unique <pred_lt> (src_a (), src_b ()));
 
     case tree_type::PRED_LE:
       return std::make_unique <pred_not>
-	(std::make_unique <pred_gt> (slot () - 1, slot ()));
+	(std::make_unique <pred_gt> (src_a (), src_b ()));
 
     case tree_type::PRED_ROOT:
-      return std::make_unique <pred_root> (q, slot ());
+      return std::make_unique <pred_root> (q, src_a ());
 
     case tree_type::PRED_SUBX_ANY:
       {
@@ -52,7 +52,7 @@ tree::build_pred (dwgrep_graph::sptr q, size_t maxsize) const
       }
 
     case tree_type::PRED_EMPTY:
-      return std::make_unique <pred_empty> (slot ());
+      return std::make_unique <pred_empty> (src_a ());
 
     case tree_type::PRED_FIND:
     case tree_type::PRED_MATCH:
@@ -148,7 +148,7 @@ tree::build_exec (std::shared_ptr <op> upstream, dwgrep_graph::sptr q,
       }
 
     case tree_type::SEL_UNIVERSE:
-      return std::make_unique <op_sel_universe> (upstream, q, maxsize, slot ());
+      return std::make_unique <op_sel_universe> (upstream, q, maxsize, dst ());
 
     case tree_type::NOP:
       return std::make_unique <op_nop> (upstream);
@@ -159,40 +159,40 @@ tree::build_exec (std::shared_ptr <op> upstream, dwgrep_graph::sptr q,
 
     case tree_type::F_ATVAL:
       return std::make_unique <op_f_atval>
-	(upstream, q, slot (), slot (), int (m_u.cval->value ()));
+	(upstream, q, src_a (), dst (), int (m_u.cval->value ()));
 
     case tree_type::F_CHILD:
       return std::make_unique <op_f_child> (upstream, maxsize,
-					    slot (), slot ());
+					    src_a (), dst ());
 
     case tree_type::F_ATTRIBUTE:
       return std::make_unique <op_f_attr> (upstream, maxsize,
-					   slot (), slot ());
+					   src_a (), dst ());
 
     case tree_type::F_OFFSET:
-      return std::make_unique <op_f_offset> (upstream, q, slot (), slot ());
+      return std::make_unique <op_f_offset> (upstream, q, src_a (), dst ());
 
     case tree_type::F_NAME:
-      return std::make_unique <op_f_name> (upstream, q, slot (), slot ());
+      return std::make_unique <op_f_name> (upstream, q, src_a (), dst ());
 
     case tree_type::F_TAG:
-      return std::make_unique <op_f_tag> (upstream, q, slot (), slot ());
+      return std::make_unique <op_f_tag> (upstream, q, src_a (), dst ());
 
     case tree_type::F_FORM:
-      return std::make_unique <op_f_form> (upstream, q, slot (), slot ());
+      return std::make_unique <op_f_form> (upstream, q, src_a (), dst ());
 
     case tree_type::F_VALUE:
-      return std::make_unique <op_f_value> (upstream, q, slot (), slot ());
+      return std::make_unique <op_f_value> (upstream, q, src_a (), dst ());
 
     case tree_type::F_PARENT:
-      return std::make_unique <op_f_parent> (upstream, q, slot (), slot ());
+      return std::make_unique <op_f_parent> (upstream, q, src_a (), dst ());
 
     case tree_type::FORMAT:
       {
 	if (m_children.size () == 1
 	    && m_children.front ().m_tt == tree_type::STR)
 	  return std::make_unique <op_strlit>
-	    (upstream, *m_children.front ().m_u.sval, slot ());
+	    (upstream, *m_children.front ().m_u.sval, dst ());
 
 	auto s_origin = std::make_shared <stringer_origin> ();
 	std::shared_ptr <stringer> strgr = s_origin;
@@ -203,45 +203,41 @@ tree::build_exec (std::shared_ptr <op> upstream, dwgrep_graph::sptr q,
 	    {
 	      auto origin2 = std::make_shared <op_origin> (nullptr);
 	      auto op = tree.build_exec (origin2, q, maxsize);
-	      // N.B.: tree.slot () here is supposed to be destination
-	      // slot, where the stringer_op will pick the data from.
 	      strgr = std::make_shared <stringer_op>
-		(strgr, origin2, op, tree.slot ());
+		(strgr, origin2, op, tree.dst ());
 	    }
 
 	return std::make_shared <op_format>
-	  (upstream, s_origin, strgr, slot ());
+	  (upstream, s_origin, strgr, dst ());
       }
 
     case tree_type::SHF_DROP:
-      return std::make_shared <op_drop> (upstream, slot ());
+      return std::make_shared <op_drop> (upstream, dst ());
 
     case tree_type::SHF_DUP:
-      return std::make_shared <op_dup> (upstream, slot () - 1, slot ());
+      return std::make_shared <op_dup> (upstream, src_a (), dst ());
 
     case tree_type::CONST:
-      return std::make_unique <op_const> (upstream, *m_u.cval, slot ());
+      return std::make_unique <op_const> (upstream, *m_u.cval, dst ());
 
     case tree_type::CAPTURE:
       {
 	auto origin = std::make_shared <op_origin> (nullptr);
 	auto op = m_children.front ().build_exec (origin, q, maxsize);
 	return std::make_unique <op_capture> (upstream, origin, op, maxsize,
-					      m_children.front ().slot (),
-					      slot ());
+					      src_a (), dst ());
       }
 
     case tree_type::EMPTY_LIST:
-      return std::make_unique <op_empty_list> (upstream, slot ());
+      return std::make_unique <op_empty_list> (upstream, dst ());
 
     case tree_type::F_EACH:
-      return std::make_unique <op_f_each> (upstream, maxsize, slot (), slot ());
+      return std::make_unique <op_f_each> (upstream, maxsize, src_a (), dst ());
 
     case tree_type::F_TYPE:
-      return std::make_unique <op_f_type> (upstream, slot (), slot ());
+      return std::make_unique <op_f_type> (upstream, src_a (), dst ());
 
     case tree_type::TRANSFORM:
-    case tree_type::PROTECT:
     case tree_type::CLOSE_PLUS:
     case tree_type::CLOSE_STAR:
     case tree_type::MAYBE:
@@ -264,6 +260,7 @@ tree::build_exec (std::shared_ptr <op> upstream, dwgrep_graph::sptr q,
       std::cerr << std::endl;
       abort ();
 
+    case tree_type::PROTECT:
     case tree_type::STR:
     case tree_type::PRED_TAG:
     case tree_type::PRED_AT:

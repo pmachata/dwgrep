@@ -712,11 +712,17 @@ namespace
 	  return;
 	}
 
-      case DW_FORM_indirect:
       case DW_FORM_sec_offset:
       case DW_FORM_exprloc:
       case DW_FORM_ref_sig8:
       case DW_FORM_GNU_ref_alt:
+	std::cerr << "Form unhandled: "
+		  << constant (dwarf_whatform (&attr), &dw_form_dom)
+		  << std::endl;
+	vf.set_slot (dst, std::string ("(form unhandled)"));
+	return;
+
+      case DW_FORM_indirect:
 	assert (! "Form unhandled.");
 	abort  ();
       }

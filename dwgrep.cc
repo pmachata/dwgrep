@@ -157,6 +157,7 @@ main(int argc, char *argv[])
     }
 
   size_t stk_depth = query.determine_stack_effects ();
+  query.simplify ();
   if (! quiet)
     {
       query.dump (std::cerr);

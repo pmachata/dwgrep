@@ -157,14 +157,27 @@ struct tree
     constant *cval;
   } m_u;
 
-  // -1 if not initialized, otherwise which slot the result of this
-  // operation should go to.
-  ssize_t m_stkslot;
+  // -1 if not initialized, otherwise a slot number.
+  ssize_t m_src_a;
+  ssize_t m_src_b;
+  ssize_t m_dst;
 
-  slot_idx slot () const
+  slot_idx src_a () const
   {
-    assert (m_stkslot >= 0);
-    return slot_idx (m_stkslot);
+    assert (m_src_a >= 0);
+    return slot_idx (m_src_a);
+  }
+
+  slot_idx src_b () const
+  {
+    assert (m_src_b >= 0);
+    return slot_idx (m_src_b);
+  }
+
+  slot_idx dst () const
+  {
+    assert (m_dst >= 0);
+    return slot_idx (m_dst);
   }
 
   tree ();
@@ -291,10 +304,16 @@ struct tree
 
   void dump (std::ostream &o) const;
 
-  // This initializes STKSLOT that a result of each operation should
-  // go to.  It returns the maximum stack size necessary for the
+  // Remove unnecessary operations--some stack shuffling can be
+  // eliminated and protect nodes.
+  // XXX this should actually be hidden behind build_exec or what not.
+  void simplify ();
+
+  // This initializes m_src_a and/or m_src_b and/or m_dst of each
+  // operation.  It returns the maximum stack size necessary for the
   // computation.  As it works through the AST, it checks a number of
   // invariants, such as number of children, stack underruns, etc.
+  // XXX this should actually be hidden behind build_exec or what not.
   size_t determine_stack_effects ();
 
   // Produce program suitable for interpretation.  Implemented in
