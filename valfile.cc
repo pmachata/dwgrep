@@ -353,6 +353,7 @@ valfile::set_slot (slot_idx i, std::unique_ptr <value> vp)
 void
 valfile::set_slot (slot_idx i, constant &&cst)
 {
+  assert (m_types[i.value ()] != slot_type::END);
   assert (m_types[i.value ()] == slot_type::INVALID);
   m_types[i.value ()] = slot_type::CST;
   new (&m_slots[i.value ()].cst) constant { cst };
@@ -361,6 +362,7 @@ valfile::set_slot (slot_idx i, constant &&cst)
 void
 valfile::set_slot (slot_idx i, std::string &&str)
 {
+  assert (m_types[i.value ()] != slot_type::END);
   assert (m_types[i.value ()] == slot_type::INVALID);
   m_types[i.value ()] = slot_type::STR;
   new (&m_slots[i.value ()].str) std::string { str };
@@ -369,6 +371,7 @@ valfile::set_slot (slot_idx i, std::string &&str)
 void
 valfile::set_slot (slot_idx i, value_vector_t &&seq)
 {
+  assert (m_types[i.value ()] != slot_type::END);
   assert (m_types[i.value ()] == slot_type::INVALID);
   m_types[i.value ()] = slot_type::SEQ;
   new (&m_slots[i.value ()].seq) value_vector_t { std::move (seq) };
@@ -377,6 +380,7 @@ valfile::set_slot (slot_idx i, value_vector_t &&seq)
 void
 valfile::set_slot (slot_idx i, Dwarf_Die const &die)
 {
+  assert (m_types[i.value ()] != slot_type::END);
   assert (m_types[i.value ()] == slot_type::INVALID);
   m_types[i.value ()] = slot_type::DIE;
   m_slots[i.value ()].die = die;
@@ -385,6 +389,7 @@ valfile::set_slot (slot_idx i, Dwarf_Die const &die)
 void
 valfile::set_slot (slot_idx i, attribute_slot &&attr)
 {
+  assert (m_types[i.value ()] != slot_type::END);
   assert (m_types[i.value ()] == slot_type::INVALID);
   m_types[i.value ()] = slot_type::ATTR;
   m_slots[i.value ()].attr = attr;

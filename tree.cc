@@ -304,12 +304,13 @@ namespace
 	  auto nchildren = t.m_children;
 	  stack_refs sr2 = resolve_operands (nchildren.front (), sr, true);
 	  if (std::all_of (nchildren.begin () + 1, nchildren.end (),
-			   [sr2, sr] (tree &t)
+			   [&sr2, sr] (tree &t)
 			   {
 			     auto sr3 = resolve_operands (t, sr, true);
 			     if (sr3.stk.size () != sr2.stk.size ())
 			       throw std::runtime_error
 				 ("unbalanced stack effects");
+			     sr2.accomodate (sr3);
 			     return sr3 == sr2;
 			   }))
 	    {
@@ -318,12 +319,13 @@ namespace
 	    }
 	  else
 	    {
-	      sr = resolve_operands (t.m_children.front (), sr, false);
+	      sr2 = resolve_operands (t.m_children.front (), sr, false);
 	      std::for_each (t.m_children.begin () + 1, t.m_children.end (),
-			     [sr] (tree &t)
+			     [&sr2, sr] (tree &t)
 			     {
-			       resolve_operands (t, sr, false);
+			       sr2.accomodate (resolve_operands (t, sr, false));
 			     });
+	      sr = sr2;
 	    }
 
 	  break;
