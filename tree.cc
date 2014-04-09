@@ -298,8 +298,9 @@ namespace
 	  assert (t.m_children.size () >= 2);
 
 	  // First try to resolve operands with the assumption that
-	  // all branches have balanced stack effects.  If they don't,
-	  // fall back to conservative approach.
+	  // all branches have the same stack effect.  If they don't,
+	  // fall back to conservative approach.  Reject cases where
+	  // stack effects are unbalanced (e.g. (,dup)).
 
 	  auto nchildren = t.m_children;
 	  stack_refs sr2 = resolve_operands (nchildren.front (), sr, true);
