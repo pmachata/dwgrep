@@ -518,7 +518,6 @@ tree::determine_stack_effects ()
   dump (std::cerr);
   std::cerr << std::endl;
   return ret;
-  //return check_tree (*this, stack_depth ()).max;
 }
 
 void
@@ -532,6 +531,31 @@ tree::simplify ()
 					  return t.m_tt == tree_type::NOP;
 					}),
 			m_children.end ());
+
+      // Promote CAT's in CAT nodes.
+      while (true)
+	{
+	  bool changed = false;
+	  for (size_t i = 0; i < m_children.size (); )
+	    if (m_children[i].m_tt == tree_type::CAT)
+	      {
+		std::vector <tree> nchildren = m_children;
+
+		tree tmp = std::move (nchildren[i]);
+		nchildren.erase (nchildren.begin () + i);
+		nchildren.insert (nchildren.begin () + i,
+				  tmp.m_children.begin (),
+				  tmp.m_children.end ());
+
+		m_children = std::move (nchildren);
+		changed = true;
+	      }
+	    else
+	      ++i;
+
+	  if (! changed)
+	    break;
+	}
     }
 
   // Promote PROTECT's child or CAT's only child.
