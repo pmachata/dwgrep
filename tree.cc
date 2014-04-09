@@ -233,13 +233,18 @@ namespace
     void
     swap ()
     {
+      if (stk.size () < 2)
+	throw std::runtime_error ("stack underrun");
+
       std::swap (stk[stk.size () - 2], stk[stk.size () - 1]);
     }
 
     void
     rot ()
     {
-      assert (stk.size () >= 3);
+      if (stk.size () < 3)
+	throw std::runtime_error ("stack underrun");
+
       ssize_t idx = stk[stk.size () - 3];
       stk.erase (stk.begin () + stk.size () - 3);
       stk.push_back (idx);
@@ -248,14 +253,18 @@ namespace
     ssize_t
     top ()
     {
-      assert (stk.size () >= 1);
+      if (stk.size () < 1)
+	throw std::runtime_error ("stack underrun");
+
       return stk.back ();
     }
 
     ssize_t
     below ()
     {
-      assert (stk.size () >= 2);
+      if (stk.size () < 2)
+	throw std::runtime_error ("stack underrun");
+
       return stk[stk.size () - 2];
     }
   };
