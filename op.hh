@@ -58,6 +58,24 @@ public:
 		   dwgrep_graph::sptr q,
 		   size_t size, slot_idx dst);
   ~op_sel_universe ();
+
+  valfile::uptr next () override;
+  std::string name () const override;
+  void reset () override;
+};
+
+class op_sel_unit
+  : public op
+{
+  class pimpl;
+  std::unique_ptr <pimpl> m_pimpl;
+
+public:
+  op_sel_unit (std::shared_ptr <op> upstream,
+	       dwgrep_graph::sptr q,
+	       size_t size, slot_idx src, slot_idx dst);
+  ~op_sel_unit ();
+
   valfile::uptr next () override;
   std::string name () const override;
   void reset () override;

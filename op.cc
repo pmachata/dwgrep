@@ -108,17 +108,133 @@ op_sel_universe::next ()
   return m_pimpl->next ();
 }
 
+void
+op_sel_universe::reset ()
+{
+  m_pimpl->reset ();
+}
+
 std::string
 op_sel_universe::name () const
 {
   return "sel_universe";
 }
 
+
+struct op_sel_unit::pimpl
+{
+  std::shared_ptr <op> m_upstream;
+  std::shared_ptr <Dwarf> m_dw;
+  valfile::uptr m_vf;
+  size_t m_size;
+  slot_idx m_src;
+  slot_idx m_dst;
+  all_dies_iterator m_it;
+  all_dies_iterator m_end;
+
+  pimpl (std::shared_ptr <op> upstream,
+	 dwgrep_graph::sptr g,
+	 size_t size, slot_idx src, slot_idx dst)
+    : m_upstream (upstream)
+    , m_dw (g->dwarf)
+    , m_size (size)
+    , m_src (src)
+    , m_dst (dst)
+    , m_it (all_dies_iterator::end ())
+    , m_end (all_dies_iterator::end ())
+  {}
+
+  void
+  init_from_die (Dwarf_Die die)
+  {
+    Dwarf_Die cudie;
+    if (dwarf_diecu (&die, &cudie, nullptr, nullptr) == nullptr)
+      throw_libdw ();
+
+    cu_iterator cuit {&*m_dw, cudie};
+    m_it = all_dies_iterator (cuit);
+    m_end = all_dies_iterator (++cuit);
+  }
+
+  valfile::uptr
+  next ()
+  {
+    while (true)
+      {
+	while (m_vf == nullptr)
+	  {
+	    if (auto vf = m_upstream->next ())
+	      {
+		if (vf->get_slot_type (m_src) == slot_type::DIE)
+		  {
+		    init_from_die (vf->get_slot_die (m_src));
+		    m_vf = std::move (vf);
+		  }
+		else if (vf->get_slot_type (m_src) == slot_type::ATTR)
+		  {
+		    auto const &a = vf->get_slot_attr (m_src);
+		    Dwarf_Die die;
+		    if (dwarf_offdie (&*m_dw, a.die_off, &die) == nullptr)
+		      throw_libdw ();
+		    init_from_die (die);
+		    m_vf = std::move (vf);
+		  }
+	      }
+	    else
+	      return nullptr;
+	  }
+
+	if (m_it != m_end)
+	  {
+	    auto ret = valfile::copy (*m_vf, m_size);
+	    if (m_src == m_dst)
+	      ret->invalidate_slot (m_dst);
+	    ret->set_slot (m_dst, **m_it);
+	    ++m_it;
+	    return ret;
+	  }
+
+	m_vf = nullptr;
+	m_it = all_dies_iterator::end ();
+      }
+  }
+
+  void
+  reset ()
+  {
+    m_vf = nullptr;
+    m_it = all_dies_iterator::end ();
+    m_upstream->reset ();
+  }
+};
+
+op_sel_unit::op_sel_unit (std::shared_ptr <op> upstream,
+			  dwgrep_graph::sptr q,
+			  size_t size, slot_idx src, slot_idx dst)
+  : m_pimpl (std::make_unique <pimpl> (upstream, q, size, src, dst))
+{}
+
+op_sel_unit::~op_sel_unit ()
+{}
+
+valfile::uptr
+op_sel_unit::next ()
+{
+  return m_pimpl->next ();
+}
+
 void
-op_sel_universe::reset ()
+op_sel_unit::reset ()
 {
   m_pimpl->reset ();
 }
+
+std::string
+op_sel_unit::name () const
+{
+  return "sel_unit";
+}
+
 
 struct op_f_child::pimpl
 {

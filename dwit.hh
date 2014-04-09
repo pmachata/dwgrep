@@ -37,7 +37,6 @@
 #include <elfutils/libdw.h>
 #include <dwarf.h>
 
-
 class cu_iterator
   : public std::iterator<std::input_iterator_tag, Dwarf_Die *>
 {
@@ -46,7 +45,7 @@ class cu_iterator
   Dwarf_Off m_offset;
   Dwarf_Die m_cudie;
 
-  cu_iterator (Dwarf_Off off)
+  explicit cu_iterator (Dwarf_Off off)
     : m_dw (nullptr)
     , m_offset (off)
     , m_cudie ({})
@@ -82,9 +81,17 @@ public:
   cu_iterator (cu_iterator const &other) = default;
 
   explicit cu_iterator (Dwarf *dw)
-    : m_dw (dw)
-    , m_offset (0)
-    , m_cudie ({})
+    : m_dw {dw}
+    , m_offset {0}
+    , m_cudie {}
+  {
+    move ();
+  }
+
+  cu_iterator (Dwarf *dw, Dwarf_Die cudie)
+    : m_dw {dw}
+    , m_offset {dwarf_dieoffset (&cudie) - dwarf_cuoffset (&cudie)}
+    , m_cudie {}
   {
     move ();
   }
@@ -153,12 +160,14 @@ public:
 
   all_dies_iterator (all_dies_iterator const &other) = default;
 
-  all_dies_iterator (Dwarf *dw)
-    : m_cuit (dw)
-    , m_stack ()
+  explicit all_dies_iterator (Dwarf *dw)
+    : all_dies_iterator (cu_iterator {dw})
+  {}
+
+  explicit all_dies_iterator (cu_iterator const &cuit)
+    : m_cuit (cuit)
     , m_die (**m_cuit)
-  {
-  }
+  {}
 
   static all_dies_iterator
   end ()
