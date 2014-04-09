@@ -1240,6 +1240,9 @@ op_empty_list::name () const
 valfile::uptr
 op_tine::next ()
 {
+  if (*m_done)
+    return nullptr;
+
   if (std::all_of (m_file->begin (), m_file->end (),
 		   [] (valfile::uptr const &ptr) { return ptr == nullptr; }))
     {
@@ -1247,7 +1250,10 @@ op_tine::next ()
 	for (auto &ptr: *m_file)
 	  ptr = valfile::copy (*vf, m_size);
       else
-	return nullptr;
+	{
+	  *m_done = true;
+	  return nullptr;
+	}
     }
 
   return std::move ((*m_file)[m_branch_id]);
@@ -1271,10 +1277,10 @@ op_tine::name () const
 valfile::uptr
 op_merge::next ()
 {
-  if (m_it == m_ops.end ())
+  if (*m_done)
     return nullptr;
 
-  for (size_t i = 0; i < m_ops.size (); ++i)
+  while (! *m_done)
     {
       if (auto ret = (*m_it)->next ())
 	return ret;
@@ -1282,7 +1288,6 @@ op_merge::next ()
 	m_it = m_ops.begin ();
     }
 
-  m_it = m_ops.end ();
   return nullptr;
 }
 
@@ -1562,9 +1567,16 @@ namespace
       case slot_type::STR:
 	return CMP::result (vf.get_slot_str (idx_a), vf.get_slot_str (idx_b));
 
+      case slot_type::DIE:
+	{
+	  Dwarf_Die die_a = vf.get_slot_die (idx_a);
+	  Dwarf_Die die_b = vf.get_slot_die (idx_b);
+	  return CMP::result (dwarf_dieoffset (&die_a),
+			      dwarf_dieoffset (&die_b));
+	}
+
       case slot_type::FLT:
       case slot_type::SEQ:
-      case slot_type::DIE:
       case slot_type::ATTR:
       case slot_type::LINE:
       case slot_type::LOCLIST_ENTRY:

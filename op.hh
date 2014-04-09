@@ -494,8 +494,7 @@ public:
 // they will all see the same data.
 //
 // Tine and merge need to cooperate to make sure nullptr's don't get
-// propagated unless there's really nothing left.  Merge knows that
-// the source is drained when all its branches yield nullptr.
+// propagated unless there's really nothing left.
 //
 // Thus the way the expression (A (B, C D, E) F) is constructed as:
 //
@@ -507,15 +506,18 @@ class op_tine
 {
   std::shared_ptr <op> m_upstream;
   std::shared_ptr <std::vector <valfile::uptr> > m_file;
+  std::shared_ptr <bool> m_done;
   size_t m_branch_id;
   size_t m_size;
 
 public:
   op_tine (std::shared_ptr <op> upstream,
 	   std::shared_ptr <std::vector <valfile::uptr> > file,
+	   std::shared_ptr <bool> done,
 	   size_t branch_id, size_t size)
     : m_upstream (upstream)
     , m_file (file)
+    , m_done (done)
     , m_branch_id (branch_id)
     , m_size (size)
   {
@@ -536,12 +538,16 @@ public:
 private:
   opvec_t m_ops;
   opvec_t::iterator m_it;
+  std::shared_ptr <bool> m_done;
 
 public:
-  explicit op_merge (opvec_t ops)
+  op_merge (opvec_t ops, std::shared_ptr <bool> done)
     : m_ops (ops)
     , m_it (m_ops.begin ())
-  {}
+    , m_done (done)
+  {
+    *m_done = false;
+  }
 
   valfile::uptr next () override;
   std::string name () const override;

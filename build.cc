@@ -126,13 +126,15 @@ tree::build_exec (std::shared_ptr <op> upstream, dwgrep_graph::sptr q,
 
     case tree_type::ALT:
       {
+	auto done = std::make_shared <bool> (false);
+
 	op_merge::opvec_t ops;
 	{
 	  auto f = std::make_shared <std::vector <valfile::uptr> >
 	    (m_children.size ());
 	  for (size_t i = 0; i < m_children.size (); ++i)
-	    ops.push_back (std::make_shared <op_tine> (upstream,
-						       f, i, maxsize));
+	    ops.push_back (std::make_shared <op_tine> (upstream, f, done,
+						       i, maxsize));
 	}
 
 	auto build_branch = [&q, maxsize] (tree const &ch,
@@ -144,7 +146,7 @@ tree::build_exec (std::shared_ptr <op> upstream, dwgrep_graph::sptr q,
 	std::transform (m_children.begin (), m_children.end (),
 			ops.begin (), ops.begin (), build_branch);
 
-	return std::make_shared <op_merge> (ops);
+	return std::make_shared <op_merge> (ops, done);
       }
 
     case tree_type::SEL_UNIVERSE:
