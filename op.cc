@@ -1034,6 +1034,35 @@ op_dup::name () const
   return "drop";
 }
 
+
+valfile::uptr
+op_swap::next ()
+{
+  if (auto vf = m_upstream->next ())
+    {
+      auto tmp = vf->get_slot (m_dst_a)->clone ();
+      vf->invalidate_slot (m_dst_a);
+      vf->get_slot (m_dst_b)->clone ()->move_to_slot (m_dst_a, *vf);
+      vf->invalidate_slot (m_dst_b);
+      tmp->move_to_slot (m_dst_b, *vf);
+      return vf;
+    }
+  return nullptr;
+}
+
+void
+op_swap::reset ()
+{
+  m_upstream->reset ();
+}
+
+std::string
+op_swap::name () const
+{
+  return "swap";
+}
+
+
 valfile::uptr
 op_const::next ()
 {

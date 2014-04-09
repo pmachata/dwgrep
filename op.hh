@@ -371,10 +371,29 @@ class op_dup
   slot_idx m_dst;
 
 public:
-  explicit op_dup (std::shared_ptr <op> upstream, slot_idx src, slot_idx dst)
+  op_dup (std::shared_ptr <op> upstream, slot_idx src, slot_idx dst)
     : m_upstream (upstream)
     , m_src (src)
     , m_dst (dst)
+  {}
+
+  valfile::uptr next () override;
+  std::string name () const override;
+  void reset () override;
+};
+
+class op_swap
+  : public op
+{
+  std::shared_ptr <op> m_upstream;
+  slot_idx m_dst_a;
+  slot_idx m_dst_b;
+
+public:
+  op_swap (std::shared_ptr <op> upstream, slot_idx dst_a, slot_idx dst_b)
+    : m_upstream (upstream)
+    , m_dst_a (dst_a)
+    , m_dst_b (dst_b)
   {}
 
   valfile::uptr next () override;

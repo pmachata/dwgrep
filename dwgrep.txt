@@ -817,6 +817,14 @@
    (e.g. ?DW_ATE_unsigned is not applicable to DIE's, but ?DW_AT_at
    and ?DW_TAG_tag are).
 
+   |-----------------+------------------|
+   | constant family | applicability    |
+   |-----------------+------------------|
+   | DW_TAG_         | DIE, const       |
+   | DW_AT_          | DIE, ATTR, const |
+   | DW_FORM_        | ATTR, const      |
+   |-----------------+------------------|
+
    The same could be done with string literals.  So asking for a
    qualified name would become:
    : ?{@name ?"a"} child ?{@name ?"b"} child ?{@name ?"c"}

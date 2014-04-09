@@ -223,7 +223,8 @@ namespace
     {
       while (i-- > 0)
 	{
-	  assert (stk.size () > 0);
+	  if (stk.size () == 0)
+	    throw std::runtime_error ("stack underrun");
 	  m_freelist.push_back (stk.back ());
 	  stk.pop_back ();
 	}
@@ -273,42 +274,56 @@ namespace
   }
 
   stack_refs
-  resolve_operands (tree &t, stack_refs sr, bool protect = false)
+  resolve_operands (tree &t, stack_refs sr, bool elim_shf,
+		    bool protect = false)
   {
     switch (t.m_tt)
       {
       case tree_type::CAT:
 	for (auto &t1: t.m_children)
-	  sr = resolve_operands (t1, sr);
+	  sr = resolve_operands (t1, sr, elim_shf);
 	break;
 
       case tree_type::ALT:
 	{
 	  assert (t.m_children.size () >= 2);
-	  stack_refs sr2 = resolve_operands (t.m_children.front (), sr);
-	  std::for_each (t.m_children.begin () + 1, t.m_children.end (),
-			 [&sr2, &sr] (tree &t)
-			 {
-			   stack_refs sr3 = resolve_operands (t, sr);
-			   if (sr2.stk.size () != sr3.stk.size ())
-			     throw std::runtime_error
-			       ("unbalanced stack effects");
 
-			   // XXX If the stacks are the same, we can
-			   // eliminate stack shuffling.  If not, we
-			   // keep stack shuffling operations in, and
-			   // don't touch stack_refs.
-			   assert (sr2.stk == sr3.stk);
-			 });
+	  // First try to resolve operands with the assumption that
+	  // all branches have balanced stack effects.  If they don't,
+	  // fall back to conservative approach.
 
-	  sr = sr2;
+	  auto nchildren = t.m_children;
+	  stack_refs sr2 = resolve_operands (nchildren.front (), sr, true);
+	  if (std::all_of (nchildren.begin () + 1, nchildren.end (),
+			   [sr2, sr] (tree &t)
+			   {
+			     auto sr3 = resolve_operands (t, sr, true);
+			     if (sr3.stk.size () != sr2.stk.size ())
+			       throw std::runtime_error
+				 ("unbalanced stack effects");
+			     return sr3 == sr2;
+			   }))
+	    {
+	      t.m_children = std::move (nchildren);
+	      sr = sr2;
+	    }
+	  else
+	    {
+	      sr = resolve_operands (t.m_children.front (), sr, false);
+	      std::for_each (t.m_children.begin () + 1, t.m_children.end (),
+			     [sr] (tree &t)
+			     {
+			       resolve_operands (t, sr, false);
+			     });
+	    }
+
 	  break;
 	}
 
       case tree_type::CAPTURE:
 	{
 	  assert (t.m_children.size () == 1);
-	  auto sr2 = resolve_operands (t.m_children[0], sr);
+	  auto sr2 = resolve_operands (t.m_children[0], sr, true);
 	  t.m_src_a = sr2.top ();
 
 	  sr.accomodate (sr2);
@@ -328,7 +343,7 @@ namespace
 	for (auto &t1: t.m_children)
 	  if (t1.m_tt != tree_type::STR)
 	    {
-	      sr = resolve_operands (t1, sr);
+	      sr = resolve_operands (t1, sr, elim_shf);
 	      sr.drop ();
 	    }
 	sr.push ();
@@ -379,7 +394,7 @@ namespace
 
       case tree_type::PROTECT:
 	assert (t.m_children.size () == 1);
-	sr = resolve_operands (t.m_children[0], sr, true);
+	sr = resolve_operands (t.m_children[0], sr, elim_shf, true);
 	break;
 
       case tree_type::NOP:
@@ -387,11 +402,20 @@ namespace
 
       case tree_type::ASSERT:
 	assert (t.m_children.size () == 1);
-	sr.accomodate (resolve_operands (t.m_children[0], sr));
+	sr.accomodate (resolve_operands (t.m_children[0], sr, elim_shf));
 	break;
 
       case tree_type::SHF_SWAP:
-	sr.swap ();
+	if (elim_shf)
+	  {
+	    t.m_tt = tree_type::NOP;
+	    sr.swap ();
+	  }
+	else
+	  {
+	    t.m_src_a = sr.below ();
+	    t.m_dst = sr.top ();
+	  }
 	break;
 
       case tree_type::SHF_DUP:
@@ -431,7 +455,7 @@ namespace
 	    {
 	      sr.push ();
 	      nchildren.push_back (t.m_children.back ());
-	      sr = resolve_operands (nchildren.back (), sr);
+	      sr = resolve_operands (nchildren.back (), sr, elim_shf);
 	    }
 
 	  t.m_children = nchildren;
@@ -480,14 +504,14 @@ namespace
 
       case tree_type::PRED_NOT:
 	assert (t.m_children.size () == 1);
-	sr.accomodate (resolve_operands (t.m_children[0], sr));
+	sr.accomodate (resolve_operands (t.m_children[0], sr, elim_shf));
 	break;
 
       case tree_type::PRED_SUBX_ALL:
       case tree_type::PRED_SUBX_ANY:
 	{
 	  assert (t.m_children.size () == 1);
-	  sr.accomodate (resolve_operands (t.m_children[0], sr));
+	  sr.accomodate (resolve_operands (t.m_children[0], sr, true));
 	  break;
 	}
       }
@@ -499,7 +523,7 @@ namespace
 size_t
 tree::determine_stack_effects ()
 {
-  size_t ret = resolve_operands (*this, stack_refs {}).max ();
+  size_t ret = resolve_operands (*this, stack_refs {}, true).max ();
   dump (std::cerr);
   std::cerr << std::endl;
   return ret;

@@ -29,6 +29,7 @@ test (std::string parse, std::string expect,
 	{
 	  t = parse_query (parse);
 	  t.determine_stack_effects ();
+	  t.simplify ();
 	}
       else
 	t = parse_string (parse);
@@ -353,30 +354,38 @@ do_tests ()
 	"(PROTECT (FORMAT (STR<foo>)))");
 
   ftest ("?root",
-	 "(CAT (SEL_UNIVERSE) (ASSERT (PRED_ROOT)))");
+	 "(CAT (SEL_UNIVERSE [dst=0;]) (ASSERT (PRED_ROOT [a=0;])))");
   ftest ("?compile_unit !root",
-	 "(CAT (SEL_UNIVERSE) (ASSERT (PRED_TAG<DW_TAG_compile_unit>))"
-	 " (ASSERT (PRED_NOT (PRED_ROOT))))");
+	 "(CAT (SEL_UNIVERSE [dst=0;])"
+	 " (ASSERT (PRED_TAG<DW_TAG_compile_unit> [a=0;]))"
+	 " (ASSERT (PRED_NOT (PRED_ROOT [a=0;]))))");
 
-  ftest (",", "(CAT (SEL_UNIVERSE) (ALT (NOP) (NOP)))");
+  ftest (",", "(CAT (SEL_UNIVERSE [dst=0;]) (ALT (NOP) (NOP)))");
   ftest ("dup (swap,)",
-	 "(CAT (SEL_UNIVERSE) (SHF_DUP) (ALT (SHF_SWAP) (NOP)))");
+	 "(CAT (SEL_UNIVERSE [dst=0;]) (SHF_DUP [a=0;dst=1;])"
+	 " (ALT (SHF_SWAP [a=0;dst=1;]) (NOP)))");
   ftest ("dup (,swap)",
-	 "(CAT (SEL_UNIVERSE) (SHF_DUP) (ALT (NOP) (SHF_SWAP)))");
+	 "(CAT (SEL_UNIVERSE [dst=0;]) (SHF_DUP [a=0;dst=1;])"
+	 " (ALT (NOP) (SHF_SWAP [a=0;dst=1;])))");
   ftest ("(drop,drop)",
-	 "(CAT (SEL_UNIVERSE) (ALT (SHF_DROP) (SHF_DROP)))");
+	 "(CAT (SEL_UNIVERSE [dst=0;])"
+	 " (ALT (SHF_DROP [dst=0;]) (SHF_DROP [dst=0;])))");
   ftestx ("(,drop)", "unbalanced");
   ftest ("(,drop 1)",
-	 "(CAT (SEL_UNIVERSE) (ALT (NOP) (CAT (SHF_DROP) (CONST<1>))))");
+	 "(CAT (SEL_UNIVERSE [dst=0;])"
+	 " (ALT (NOP) (CAT (SHF_DROP [dst=0;]) (CONST<1> [dst=0;]))))");
   ftest ("(drop 1,)",
-	 "(CAT (SEL_UNIVERSE) (ALT (CAT (SHF_DROP) (CONST<1>)) (NOP)))");
+	 "(CAT (SEL_UNIVERSE [dst=0;])"
+	 " (ALT (CAT (SHF_DROP [dst=0;]) (CONST<1> [dst=0;])) (NOP)))");
   ftest ("drop \"foo\"",
-	 "(CAT (SEL_UNIVERSE) (SHF_DROP) (FORMAT (STR<foo>)))");
+	 "(CAT (SEL_UNIVERSE [dst=0;])"
+	 " (SHF_DROP [dst=0;]) (FORMAT [dst=0;] (STR<foo>)))");
   ftestx ("drop \"%s\"", "underrun");
 
   ftest ("\"%( +offset %): %( @name %)\"",
-	 "(CAT (SEL_UNIVERSE) (FORMAT (STR<>) (PROTECT (F_OFFSET)) "
-	 "(STR<: >) (F_ATVAL<DW_AT_name>) (STR<>)))");
+	 "(CAT (SEL_UNIVERSE [dst=0;])"
+	 " (FORMAT [dst=0;] (STR<>) (F_OFFSET [a=0;dst=1;])"
+	 " (STR<: >) (F_ATVAL<DW_AT_name> [a=0;dst=0;]) (STR<>)))");
 
   std::cerr << tests << " tests total, " << failed << " failures." << std::endl;
   assert (failed == 0);

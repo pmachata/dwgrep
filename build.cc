@@ -217,6 +217,9 @@ tree::build_exec (std::shared_ptr <op> upstream, dwgrep_graph::sptr q,
     case tree_type::SHF_DUP:
       return std::make_shared <op_dup> (upstream, src_a (), dst ());
 
+    case tree_type::SHF_SWAP:
+      return std::make_unique <op_swap> (upstream, src_a (), dst ());
+
     case tree_type::CONST:
       return std::make_unique <op_const> (upstream, *m_u.cval, dst ());
 
@@ -237,7 +240,6 @@ tree::build_exec (std::shared_ptr <op> upstream, dwgrep_graph::sptr q,
     case tree_type::F_TYPE:
       return std::make_unique <op_f_type> (upstream, src_a (), dst ());
 
-    case tree_type::TRANSFORM:
     case tree_type::CLOSE_PLUS:
     case tree_type::CLOSE_STAR:
     case tree_type::MAYBE:
@@ -252,7 +254,6 @@ tree::build_exec (std::shared_ptr <op> upstream, dwgrep_graph::sptr q,
     case tree_type::F_COUNT:
     case tree_type::SEL_SECTION:
     case tree_type::SEL_UNIT:
-    case tree_type::SHF_SWAP:
     case tree_type::SHF_OVER:
     case tree_type::SHF_ROT:
       std::cerr << "\n\nUNHANDLED:";
@@ -260,6 +261,7 @@ tree::build_exec (std::shared_ptr <op> upstream, dwgrep_graph::sptr q,
       std::cerr << std::endl;
       abort ();
 
+    case tree_type::TRANSFORM:
     case tree_type::PROTECT:
     case tree_type::STR:
     case tree_type::PRED_TAG:
