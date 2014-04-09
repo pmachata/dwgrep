@@ -421,27 +421,32 @@ namespace
 	break;
 
       case tree_type::TRANSFORM:
-	assert (! "resolve_operands: TRANSFORM unhandled");
-	abort ();
-/*
 	{
 	  assert (t.m_children.size () == 2);
-	  assert (t.m_children[0].m_tt == tree_type::CONST);
-	  assert (t.m_children[0].m_u.cval->dom () == &unsigned_constant_dom);
+	  assert (t.m_children.front ().m_tt == tree_type::CONST);
+	  assert (t.m_children.front ().m_u.cval->dom ()
+		  == &unsigned_constant_dom);
 
-	  uint64_t depth = t.m_children[0].m_u.cval->value ();
-	  se.pop (depth);
-	  stack_depth sd1 = check_tree (t.m_children[1], se);
-	  unsigned max = sd1.max - sd1.elts;
-	  int delta = sd1 - se;
+	  if (t.m_children.back ().m_tt == tree_type::TRANSFORM)
+	    throw std::runtime_error ("directly nested X/ disallowed");
+
+	  // OK, now we translate N/E into N of E's, each operating in
+	  // a different depth.
+	  uint64_t depth = t.m_children.front ().m_u.cval->value ();
+	  sr.drop (depth);
+
+	  std::vector <tree> nchildren;
 	  for (uint64_t i = 0; i < depth; ++i)
 	    {
-	      se.push (1);
-	      se.project (delta, se.elts + delta + max);
+	      sr.push ();
+	      nchildren.push_back (t.m_children.back ());
+	      sr = resolve_operands (nchildren.back (), sr);
 	    }
+
+	  t.m_children = nchildren;
+	  t.m_tt = tree_type::CAT;
 	  break;
 	}
- */
 
       case tree_type::CLOSE_PLUS:
       case tree_type::CLOSE_STAR:
@@ -519,13 +524,15 @@ tree::determine_stack_effects ()
 void
 tree::simplify ()
 {
-  // Drop NOP's in CAT nodes.
   if (m_tt == tree_type::CAT)
-    m_children.erase (std::remove_if (m_children.begin (), m_children.end (),
-				      [] (tree &t) {
-					return t.m_tt == tree_type::NOP;
-				      }),
-		      m_children.end ());
+    {
+      // Drop NOP's in CAT nodes.
+      m_children.erase (std::remove_if (m_children.begin (), m_children.end (),
+					[] (tree &t) {
+					  return t.m_tt == tree_type::NOP;
+					}),
+			m_children.end ());
+    }
 
   // Promote PROTECT's child or CAT's only child.
   if (m_tt == tree_type::PROTECT
