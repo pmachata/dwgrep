@@ -272,18 +272,9 @@ namespace
     return o << ">";
   }
 
-  unsigned level = 0;
-
   stack_refs
   resolve_operands (tree &t, stack_refs sr, bool protect = false)
   {
-    for (unsigned i = 0; i < level; ++i)
-      std::cout << " ";
-    ++level;
-    std::cout << sr << " ";
-    t.dump (std::cout);
-    std::cout << std::endl;
-
     switch (t.m_tt)
       {
       case tree_type::CAT:
@@ -500,12 +491,6 @@ namespace
 	  break;
 	}
       }
-
-    --level;
-    for (unsigned i = 0; i < level; ++i)
-      std::cout << " ";
-    std::cout << sr;
-    std::cout << std::endl;
 
     return sr;
   }
