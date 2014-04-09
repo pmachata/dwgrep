@@ -298,9 +298,12 @@ namespace
 	  assert (t.m_children.size () >= 2);
 
 	  // First try to resolve operands with the assumption that
-	  // all branches have the same stack effect.  If they don't,
-	  // fall back to conservative approach.  Reject cases where
-	  // stack effects are unbalanced (e.g. (,dup)).
+	  // all branches have the same stack effect, i.e. try to
+	  // replace shuffling of stack slots with shuffling of stack
+	  // indices.  If the branches don't have identical effects,
+	  // fall back to conservative approach of preserving stack
+	  // shuffling.  Reject cases where stack effects are
+	  // unbalanced (e.g. (,dup), (,drop) etc.).
 
 	  auto nchildren = t.m_children;
 	  stack_refs sr2 = resolve_operands (nchildren.front (), sr, true);
@@ -356,6 +359,16 @@ namespace
 	  if (t1.m_tt != tree_type::STR)
 	    {
 	      sr = resolve_operands (t1, sr, elim_shf);
+
+	      // Some nodes don't have a destination slot (e.g. NOP,
+	      // ASSERT), but we need somewhere to look for the result
+	      // value.  So if a node otherwise doesn't touch the
+	      // stack, mark TOS at its m_dst.
+	      if (t1.m_dst != -1)
+		assert (t1.m_dst == sr.top ());
+	      else
+		t1.m_dst = sr.top ();
+
 	      sr.drop ();
 	    }
 	sr.push ();
