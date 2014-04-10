@@ -19,7 +19,7 @@ fail (std::string parse)
 
 void
 test (std::string parse, std::string expect,
-      bool full, std::string expect_exc)
+      bool full, std::string expect_exc, bool optimize)
 {
   ++tests;
   tree t;
@@ -29,7 +29,8 @@ test (std::string parse, std::string expect,
 	{
 	  t = parse_query (parse);
 	  t.determine_stack_effects ();
-	  t.simplify ();
+	  if (optimize)
+	    t.simplify ();
 	}
       else
 	t = parse_string (parse);
@@ -72,19 +73,19 @@ test (std::string parse, std::string expect,
 void
 test (std::string parse, std::string expect)
 {
-  return test (parse, expect, false, "");
+  return test (parse, expect, false, "", false);
 }
 
 void
-ftest (std::string parse, std::string expect)
+ftest (std::string parse, std::string expect, bool optimize = false)
 {
-  return test (parse, expect, true, "");
+  return test (parse, expect, true, "", optimize);
 }
 
 void
-ftestx (std::string parse, std::string expect_exc)
+ftestx (std::string parse, std::string expect_exc, bool optimize = false)
 {
-  return test (parse, "", true, expect_exc);
+  return test (parse, "", true, expect_exc, optimize);
 }
 
 void
@@ -355,6 +356,7 @@ do_tests ()
 
   ftest ("?root",
 	 "(CAT (SEL_UNIVERSE [dst=0;]) (ASSERT (PRED_ROOT [a=0;])))");
+
   ftest ("?compile_unit !root",
 	 "(CAT (SEL_UNIVERSE [dst=0;])"
 	 " (ASSERT (PRED_TAG<DW_TAG_compile_unit> [a=0;]))"
@@ -385,13 +387,18 @@ do_tests ()
   ftest ("\"%( +offset %): %( @name %)\"",
 	 "(CAT (SEL_UNIVERSE [dst=0;])"
 	 " (FORMAT [dst=0;] (STR<>) (F_OFFSET [a=0;dst=1;])"
-	 " (STR<: >) (F_ATVAL<DW_AT_name> [a=0;dst=0;]) (STR<>)))");
+	 " (STR<: >) (F_ATVAL<DW_AT_name> [a=0;dst=0;]) (STR<>)))",
+	 true);
 
   ftest ("(?const_type, ?volatile_type, ?restrict_type)",
 	 "(CAT (SEL_UNIVERSE [dst=0;])"
 	 " (ASSERT (PRED_OR (PRED_OR (PRED_TAG<DW_TAG_const_type> [a=0;])"
 	 " (PRED_TAG<DW_TAG_volatile_type> [a=0;]))"
-	 " (PRED_TAG<DW_TAG_restrict_type> [a=0;]))))");
+	 " (PRED_TAG<DW_TAG_restrict_type> [a=0;]))))",
+	 true);
+
+  test ("((1, 2), (3, 4))",
+	"(ALT (CONST<1>) (CONST<2>) (CONST<3>) (CONST<4>))");
 
   std::cerr << tests << " tests total, " << failed << " failures." << std::endl;
   assert (failed == 0);
