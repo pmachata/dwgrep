@@ -1581,7 +1581,7 @@ namespace
       case slot_type::LINE:
       case slot_type::LOCLIST_ENTRY:
       case slot_type::LOCLIST_OP:
-	assert (! "NYI");
+	assert (! "NIY");
 	abort ();
       }
 

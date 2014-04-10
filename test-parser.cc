@@ -387,6 +387,12 @@ do_tests ()
 	 " (FORMAT [dst=0;] (STR<>) (F_OFFSET [a=0;dst=1;])"
 	 " (STR<: >) (F_ATVAL<DW_AT_name> [a=0;dst=0;]) (STR<>)))");
 
+  ftest ("(?const_type, ?volatile_type, ?restrict_type)",
+	 "(CAT (SEL_UNIVERSE [dst=0;])"
+	 " (ASSERT (PRED_OR (PRED_OR (PRED_TAG<DW_TAG_const_type> [a=0;])"
+	 " (PRED_TAG<DW_TAG_volatile_type> [a=0;]))"
+	 " (PRED_TAG<DW_TAG_restrict_type> [a=0;]))))");
+
   std::cerr << tests << " tests total, " << failed << " failures." << std::endl;
   assert (failed == 0);
 }

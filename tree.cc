@@ -539,6 +539,15 @@ namespace
 	  sr.accomodate (resolve_operands (t.m_children[0], sr, true));
 	  break;
 	}
+
+      case tree_type::PRED_AND:
+      case tree_type::PRED_OR:
+	assert (t.m_children.size () == 2);
+	sr.accomodate (resolve_operands (t.m_children[1],
+					 resolve_operands (t.m_children[0], sr,
+							   elim_shf),
+					 elim_shf));
+	break;
       }
 
     return sr;
@@ -596,6 +605,33 @@ tree::simplify ()
   if (m_tt == tree_type::PROTECT
       || (m_tt == tree_type::CAT && m_children.size () == 1))
     *this = m_children.front ();
+
+  // Convert ALT of ASSERTS to an ASSERT of OR.
+  if (m_tt == tree_type::ALT
+      && std::all_of (m_children.begin (), m_children.end (),
+		      [] (tree const &t)
+		      {
+			return t.m_tt == tree_type::ASSERT;
+		      }))
+    {
+      // We convert ALT->(ASSERT->PRED, ASSERT->PRED) to
+      // ASSERT->OR->(PRED, PRED).
+
+      tree t = std::move (m_children[0].m_children[0]);
+      std::for_each (m_children.begin () + 1, m_children.end (),
+		     [&t] (tree &ch)
+		     {
+		       tree t2 { tree_type::PRED_OR };
+		       t2.m_children.push_back (std::move (t));
+		       t2.m_children.push_back (std::move (ch.m_children[0]));
+		       t = std::move (t2);
+		     });
+
+      tree u { tree_type::ASSERT };
+      u.m_children.push_back (std::move (t));
+
+      *this = std::move (u);
+    }
 
   // Recurse.
   for (auto &t: m_children)

@@ -1071,8 +1071,8 @@
 ** duplicat DW_TAG_const_type
    - http://gcc.gnu.org/bugzilla/show_bug.cgi?id=56740
 
-   : +unit 2/(?const_type, ?volatile_type, ?restrict_type)
-   : ?{2/offset !eq} ?{2/tag ?eq} ?{2/@type ?eq}
+   : +unit ?gt 2/(?const_type, ?volatile_type, ?restrict_type)
+   : ?{2/tag ?eq} ?{2/@type ?eq}
 
    - XQuery:
 

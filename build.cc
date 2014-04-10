@@ -19,6 +19,16 @@ tree::build_pred (dwgrep_graph::sptr q, size_t maxsize) const
       return std::make_unique <pred_not>
 	(m_children.front ().build_pred (q, maxsize));
 
+    case tree_type::PRED_OR:
+      return std::make_unique <pred_or>
+	(m_children[0].build_pred (q, maxsize),
+	 m_children[1].build_pred (q, maxsize));
+
+    case tree_type::PRED_AND:
+      return std::make_unique <pred_and>
+	(m_children[0].build_pred (q, maxsize),
+	 m_children[1].build_pred (q, maxsize));
+
     case tree_type::PRED_EQ:
       return std::make_unique <pred_eq> (src_a (), src_b ());
 
@@ -281,6 +291,8 @@ tree::build_exec (std::shared_ptr <op> upstream, dwgrep_graph::sptr q,
     case tree_type::PRED_MATCH:
     case tree_type::PRED_EMPTY:
     case tree_type::PRED_ROOT:
+    case tree_type::PRED_AND:
+    case tree_type::PRED_OR:
     case tree_type::PRED_NOT:
     case tree_type::PRED_SUBX_ALL:
     case tree_type::PRED_SUBX_ANY:
