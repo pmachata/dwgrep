@@ -552,6 +552,63 @@ namespace
 
     return sr;
   }
+
+  ssize_t
+  get_common_slot (tree const &t)
+  {
+    switch (t.m_tt)
+      {
+      case tree_type::PRED_AT:
+      case tree_type::PRED_TAG:
+      case tree_type::PRED_EMPTY:
+      case tree_type::PRED_ROOT:
+	return t.m_src_a;
+
+      case tree_type::PRED_AND:
+      case tree_type::PRED_OR:
+	{
+	  assert (t.m_children.size () == 2);
+	  ssize_t a = get_common_slot (t.m_children[0]);
+	  ssize_t b = get_common_slot (t.m_children[1]);
+	  if (a == -1 || b == -1)
+	    return -1;
+	  return a;
+	}
+
+      case tree_type::PRED_NOT:
+	assert (t.m_children.size () == 1);
+	return get_common_slot (t.m_children[0]);
+
+      case tree_type::PRED_SUBX_ALL: case tree_type::PRED_SUBX_ANY:
+      case tree_type::PRED_FIND: case tree_type::PRED_MATCH:
+      case tree_type::PRED_EQ: case tree_type::PRED_NE: case tree_type::PRED_GT:
+      case tree_type::PRED_GE: case tree_type::PRED_LT: case tree_type::PRED_LE:
+	return -1;
+
+      case tree_type::CAT: case tree_type::ALT: case tree_type::CAPTURE:
+      case tree_type::EMPTY_LIST: case tree_type::TRANSFORM:
+      case tree_type::PROTECT: case tree_type::NOP:
+      case tree_type::CLOSE_PLUS: case tree_type::CLOSE_STAR:
+      case tree_type::MAYBE: case tree_type::ASSERT: case tree_type::CONST:
+      case tree_type::STR: case tree_type::FORMAT: case tree_type::F_ATVAL:
+      case tree_type::F_ADD: case tree_type::F_SUB: case tree_type::F_MUL:
+      case tree_type::F_DIV: case tree_type::F_MOD: case tree_type::F_PARENT:
+      case tree_type::F_CHILD: case tree_type::F_ATTRIBUTE:
+      case tree_type::F_PREV: case tree_type::F_NEXT: case tree_type::F_TYPE:
+      case tree_type::F_OFFSET: case tree_type::F_NAME: case tree_type::F_TAG:
+      case tree_type::F_FORM: case tree_type::F_VALUE: case tree_type::F_POS:
+      case tree_type::F_COUNT: case tree_type::F_EACH:
+      case tree_type::SEL_UNIVERSE: case tree_type::SEL_SECTION:
+      case tree_type::SEL_UNIT: case tree_type::SHF_SWAP:
+      case tree_type::SHF_DUP: case tree_type::SHF_OVER:
+      case tree_type::SHF_ROT: case tree_type::SHF_DROP:
+	assert (! "Should never gete here.");
+	abort ();
+      };
+
+    assert (t.m_tt != t.m_tt);
+    abort ();
+  }
 }
 
 size_t
@@ -566,74 +623,115 @@ tree::determine_stack_effects ()
 void
 tree::simplify ()
 {
-  if (m_tt == tree_type::CAT)
-    {
-      // Drop NOP's in CAT nodes.
-      m_children.erase (std::remove_if (m_children.begin (), m_children.end (),
-					[] (tree &t) {
-					  return t.m_tt == tree_type::NOP;
-					}),
-			m_children.end ());
+  // Promote CAT's in CAT nodes and ALT's in ALT nodes.  Parser does
+  // this already, but other transformations may lead to re-emergence
+  // of this pattern.
+  if (m_tt == tree_type::CAT || m_tt == tree_type::ALT)
+    while (true)
+      {
+	bool changed = false;
+	for (size_t i = 0; i < m_children.size (); )
+	  if (m_children[i].m_tt == m_tt)
+	    {
+	      std::vector <tree> nchildren = m_children;
 
-      // Promote CAT's in CAT nodes.
-      while (true)
-	{
-	  bool changed = false;
-	  for (size_t i = 0; i < m_children.size (); )
-	    if (m_children[i].m_tt == tree_type::CAT)
-	      {
-		std::vector <tree> nchildren = m_children;
+	      tree tmp = std::move (nchildren[i]);
+	      nchildren.erase (nchildren.begin () + i);
+	      nchildren.insert (nchildren.begin () + i,
+				tmp.m_children.begin (),
+				tmp.m_children.end ());
 
-		tree tmp = std::move (nchildren[i]);
-		nchildren.erase (nchildren.begin () + i);
-		nchildren.insert (nchildren.begin () + i,
-				  tmp.m_children.begin (),
-				  tmp.m_children.end ());
+	      m_children = std::move (nchildren);
+	      changed = true;
+	    }
+	  else
+	    ++i;
 
-		m_children = std::move (nchildren);
-		changed = true;
-	      }
-	    else
-	      ++i;
-
-	  if (! changed)
-	    break;
-	}
-    }
+	if (! changed)
+	  break;
+      }
 
   // Promote PROTECT's child or CAT's only child.
   if (m_tt == tree_type::PROTECT
       || (m_tt == tree_type::CAT && m_children.size () == 1))
     *this = m_children.front ();
 
-  // Convert ALT of ASSERTS to an ASSERT of OR.
-  if (m_tt == tree_type::ALT
-      && std::all_of (m_children.begin (), m_children.end (),
-		      [] (tree const &t)
-		      {
-			return t.m_tt == tree_type::ASSERT;
-		      }))
-    {
-      // We convert ALT->(ASSERT->PRED, ASSERT->PRED) to
-      // ASSERT->OR->(PRED, PRED).
-
-      tree t = std::move (m_children[0].m_children[0]);
-      std::for_each (m_children.begin () + 1, m_children.end (),
-		     [&t] (tree &ch)
-		     {
-		       tree t2 { tree_type::PRED_OR };
-		       t2.m_children.push_back (std::move (t));
-		       t2.m_children.push_back (std::move (ch.m_children[0]));
-		       t = std::move (t2);
-		     });
-
-      tree u { tree_type::ASSERT };
-      u.m_children.push_back (std::move (t));
-
-      *this = std::move (u);
-    }
-
   // Recurse.
   for (auto &t: m_children)
     t.simplify ();
+
+  // Convert ALT->(ASSERT->PRED, ASSERT->PRED) to
+  // ASSERT->OR->(PRED, PRED), if all PRED's are on the same slot.
+  if (m_tt == tree_type::ALT
+      && std::all_of (m_children.begin (), m_children.end (),
+		      [] (tree const &t) {
+			return t.m_tt == tree_type::ASSERT;
+		      }))
+    {
+      tree t = std::move (m_children[0].m_children[0]);
+      ssize_t a = get_common_slot (t);
+      if (a != -1
+	  && std::all_of (m_children.begin () + 1, m_children.end (),
+			  [a] (tree &ch) {
+			    return a == get_common_slot (ch.m_children[0]);
+			  }))
+	{
+	  std::for_each (m_children.begin () + 1, m_children.end (),
+			 [&t] (tree &ch) {
+			   tree t2 { tree_type::PRED_OR };
+			   t2.m_children.push_back (std::move (t));
+			   t2.m_children.push_back
+			     (std::move (ch.m_children[0]));
+			   t = std::move (t2);
+			 });
+
+	  tree u { tree_type::ASSERT };
+	  u.m_children.push_back (std::move (t));
+
+	  *this = std::move (u);
+	}
+    }
+
+
+  // Move assertions as close to their producing node as possible.
+  if (m_tt == tree_type::CAT)
+    for (size_t i = 1; i < m_children.size (); ++i)
+      if (m_children[i].m_tt == tree_type::ASSERT)
+	{
+	  ssize_t a = get_common_slot (m_children[i].m_children[0]);
+	  if (a == -1)
+	    continue;
+
+	  for (ssize_t j = i - 1; j >= 0; --j)
+	    if (m_children[j].m_dst == a)
+	      {
+		j += 1;
+		assert (j >= 0);
+		if ((size_t) j == i)
+		  break;
+
+		if (false)
+		  {
+		    std::cout << "assert: ";
+		    m_children[i].dump (std::cout);
+		    std::cout << std::endl;
+		    std::cout << "     p: ";
+		    m_children[j].dump (std::cout);
+		    std::cout << std::endl;
+		  }
+
+		tree t = std::move (m_children[i]);
+		m_children.erase (m_children.begin () + i);
+		m_children.insert (m_children.begin () + j, std::move (t));
+		break;
+	      }
+	}
+
+  if (m_tt == tree_type::CAT)
+    // Drop NOP's in CAT nodes.
+    m_children.erase (std::remove_if (m_children.begin (), m_children.end (),
+				      [] (tree &t) {
+					return t.m_tt == tree_type::NOP;
+				      }),
+		      m_children.end ());
 }
