@@ -656,6 +656,30 @@ tree::simplify ()
       || (m_tt == tree_type::CAT && m_children.size () == 1))
     *this = m_children.front ();
 
+  // Change (DUP[a=A;dst=B;] [...] X[a=B;dst=B;]) to (X[a=A;dst=B] [...]).
+  for (size_t i = 0; i < m_children.size (); ++i)
+    if (m_children[i].m_tt == tree_type::SHF_DUP)
+      for (size_t j = i + 1; j < m_children.size (); ++j)
+	if (m_children[j].m_src_b == -1
+	    && m_children[j].m_src_a == m_children[i].m_dst
+	    && m_children[j].m_dst == m_children[i].m_dst)
+	  {
+	    if (false)
+	      {
+		std::cerr << "dup: ";
+		m_children[i].dump (std::cerr);
+		std::cerr << std::endl;
+		std::cerr << "  x: ";
+		m_children[j].dump (std::cerr);
+		std::cerr << std::endl;
+	      }
+
+	    m_children[j].m_src_a = m_children[i].m_src_a;
+	    m_children[i] = std::move (m_children[j]);
+	    m_children.erase (m_children.begin () + j);
+	    break;
+	  }
+
   // Recurse.
   for (auto &t: m_children)
     t.simplify ();
@@ -712,12 +736,12 @@ tree::simplify ()
 
 		if (false)
 		  {
-		    std::cout << "assert: ";
-		    m_children[i].dump (std::cout);
-		    std::cout << std::endl;
-		    std::cout << "     p: ";
-		    m_children[j].dump (std::cout);
-		    std::cout << std::endl;
+		    std::cerr << "assert: ";
+		    m_children[i].dump (std::cerr);
+		    std::cerr << std::endl;
+		    std::cerr << "     p: ";
+		    m_children[j].dump (std::cerr);
+		    std::cerr << std::endl;
 		  }
 
 		tree t = std::move (m_children[i]);
