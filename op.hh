@@ -55,8 +55,7 @@ class op_sel_universe
 
 public:
   op_sel_universe (std::shared_ptr <op> upstream,
-		   dwgrep_graph::sptr q,
-		   size_t size, slot_idx dst);
+		   dwgrep_graph::sptr q, slot_idx dst);
   ~op_sel_universe ();
 
   valfile::uptr next () override;
@@ -73,7 +72,7 @@ class op_sel_unit
 public:
   op_sel_unit (std::shared_ptr <op> upstream,
 	       dwgrep_graph::sptr q,
-	       size_t size, slot_idx src, slot_idx dst);
+	       slot_idx src, slot_idx dst);
   ~op_sel_unit ();
 
   valfile::uptr next () override;
@@ -89,7 +88,7 @@ class op_f_child
 
 public:
   op_f_child (std::shared_ptr <op> upstream,
-	      size_t size, slot_idx src, slot_idx dst);
+	      slot_idx src, slot_idx dst);
   ~op_f_child ();
   valfile::uptr next () override;
   std::string name () const override;
@@ -104,7 +103,7 @@ class op_f_attr
 
 public:
   op_f_attr (std::shared_ptr <op> upstream,
-	     size_t size, slot_idx src, slot_idx dst);
+	     slot_idx src, slot_idx dst);
   ~op_f_attr ();
 
   valfile::uptr next () override;
@@ -512,18 +511,16 @@ class op_tine
   std::shared_ptr <std::vector <valfile::uptr> > m_file;
   std::shared_ptr <bool> m_done;
   size_t m_branch_id;
-  size_t m_size;
 
 public:
   op_tine (std::shared_ptr <op> upstream,
 	   std::shared_ptr <std::vector <valfile::uptr> > file,
 	   std::shared_ptr <bool> done,
-	   size_t branch_id, size_t size)
+	   size_t branch_id)
     : m_upstream (upstream)
     , m_file (file)
     , m_done (done)
     , m_branch_id (branch_id)
-    , m_size (size)
   {
     assert (m_branch_id < m_file->size ());
   }
@@ -564,7 +561,6 @@ class op_capture
   std::shared_ptr <op> m_upstream;
   std::shared_ptr <op_origin> m_origin;
   std::shared_ptr <op> m_op;
-  size_t m_size;
   slot_idx m_src;
   slot_idx m_dst;
 
@@ -574,11 +570,10 @@ public:
   op_capture (std::shared_ptr <op> upstream,
 	      std::shared_ptr <op_origin> origin,
 	      std::shared_ptr <op> op,
-	      size_t size, slot_idx src, slot_idx dst)
+	      slot_idx src, slot_idx dst)
     : m_upstream (upstream)
     , m_origin (origin)
     , m_op (op)
-    , m_size (size)
     , m_src (src)
     , m_dst (dst)
   {}
@@ -592,7 +587,6 @@ class op_f_each
   : public op
 {
   std::shared_ptr <op> m_upstream;
-  size_t m_size;
   slot_idx m_src;
   slot_idx m_dst;
   valfile::uptr m_vf;
@@ -600,9 +594,8 @@ class op_f_each
 
 public:
   op_f_each (std::shared_ptr <op> upstream,
-	     size_t size, slot_idx src, slot_idx dst)
+	     slot_idx src, slot_idx dst)
     : m_upstream (upstream)
-    , m_size (size)
     , m_src (src)
     , m_dst (dst)
     , m_i (static_cast <size_t> (-1))
@@ -642,8 +635,7 @@ class op_close
 public:
   op_close (std::shared_ptr <op> upstream,
 	    std::shared_ptr <op_origin> origin,
-	    std::shared_ptr <op> op,
-	    size_t size);
+	    std::shared_ptr <op> op);
 
   ~op_close ();
 
@@ -829,15 +821,12 @@ class pred_subx_any
 {
   std::shared_ptr <op> m_op;
   std::shared_ptr <op_origin> m_origin;
-  size_t m_size;
 
 public:
   pred_subx_any (std::shared_ptr <op> op,
-		 std::shared_ptr <op_origin> origin,
-		 size_t size)
+		 std::shared_ptr <op_origin> origin)
     : m_op (op)
     , m_origin (origin)
-    , m_size (size)
   {}
 
   pred_result result (valfile &vf) override;

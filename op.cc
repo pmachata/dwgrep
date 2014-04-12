@@ -49,15 +49,12 @@ struct op_sel_universe::pimpl
   std::shared_ptr <Dwarf> m_dw;
   all_dies_iterator m_it;
   valfile::uptr m_vf;
-  size_t m_size;
   slot_idx m_dst;
 
-  pimpl (std::shared_ptr <op> upstream, dwgrep_graph::sptr q,
-	 size_t size, slot_idx dst)
+  pimpl (std::shared_ptr <op> upstream, dwgrep_graph::sptr q, slot_idx dst)
     : m_upstream (upstream)
     , m_dw (q->dwarf)
     , m_it (all_dies_iterator::end ())
-    , m_size (size)
     , m_dst (dst)
   {}
 
@@ -95,9 +92,8 @@ struct op_sel_universe::pimpl
 };
 
 op_sel_universe::op_sel_universe (std::shared_ptr <op> upstream,
-				  dwgrep_graph::sptr q,
-				  size_t size, slot_idx dst)
-  : m_pimpl (std::make_unique <pimpl> (upstream, q, size, dst))
+				  dwgrep_graph::sptr q, slot_idx dst)
+  : m_pimpl (std::make_unique <pimpl> (upstream, q, dst))
 {}
 
 op_sel_universe::~op_sel_universe ()
@@ -127,18 +123,15 @@ struct op_sel_unit::pimpl
   std::shared_ptr <op> m_upstream;
   std::shared_ptr <Dwarf> m_dw;
   valfile::uptr m_vf;
-  size_t m_size;
   slot_idx m_src;
   slot_idx m_dst;
   all_dies_iterator m_it;
   all_dies_iterator m_end;
 
   pimpl (std::shared_ptr <op> upstream,
-	 dwgrep_graph::sptr g,
-	 size_t size, slot_idx src, slot_idx dst)
+	 dwgrep_graph::sptr g, slot_idx src, slot_idx dst)
     : m_upstream (upstream)
     , m_dw (g->dwarf)
-    , m_size (size)
     , m_src (src)
     , m_dst (dst)
     , m_it (all_dies_iterator::end ())
@@ -208,9 +201,8 @@ struct op_sel_unit::pimpl
 };
 
 op_sel_unit::op_sel_unit (std::shared_ptr <op> upstream,
-			  dwgrep_graph::sptr q,
-			  size_t size, slot_idx src, slot_idx dst)
-  : m_pimpl (std::make_unique <pimpl> (upstream, q, size, src, dst))
+			  dwgrep_graph::sptr q, slot_idx src, slot_idx dst)
+  : m_pimpl (std::make_unique <pimpl> (upstream, q, src, dst))
 {}
 
 op_sel_unit::~op_sel_unit ()
@@ -241,15 +233,12 @@ struct op_f_child::pimpl
   valfile::uptr m_vf;
   Dwarf_Die m_child;
 
-  size_t m_size;
   slot_idx m_src;
   slot_idx m_dst;
 
-  pimpl (std::shared_ptr <op> upstream,
-	 size_t size, slot_idx src, slot_idx dst)
+  pimpl (std::shared_ptr <op> upstream, slot_idx src, slot_idx dst)
     : m_upstream (upstream)
     , m_child {}
-    , m_size (size)
     , m_src (src)
     , m_dst (dst)
   {}
@@ -308,8 +297,8 @@ struct op_f_child::pimpl
 };
 
 op_f_child::op_f_child (std::shared_ptr <op> upstream,
-			size_t size, slot_idx src, slot_idx dst)
-  : m_pimpl (std::make_unique <pimpl> (upstream, size, src, dst))
+			slot_idx src, slot_idx dst)
+  : m_pimpl (std::make_unique <pimpl> (upstream, src, dst))
 {}
 
 op_f_child::~op_f_child ()
@@ -341,16 +330,13 @@ struct op_f_attr::pimpl
   valfile::uptr m_vf;
   attr_iterator m_it;
 
-  size_t m_size;
   slot_idx m_src;
   slot_idx m_dst;
 
-  pimpl (std::shared_ptr <op> upstream,
-	 size_t size, slot_idx src, slot_idx dst)
+  pimpl (std::shared_ptr <op> upstream, slot_idx src, slot_idx dst)
     : m_upstream (upstream)
     , m_die {}
     , m_it (attr_iterator::end ())
-    , m_size (size)
     , m_src (src)
     , m_dst (dst)
   {}
@@ -397,9 +383,8 @@ struct op_f_attr::pimpl
   }
 };
 
-op_f_attr::op_f_attr (std::shared_ptr <op> upstream,
-		      size_t size, slot_idx src, slot_idx dst)
-  : m_pimpl (std::make_unique <pimpl> (upstream, size, src, dst))
+op_f_attr::op_f_attr (std::shared_ptr <op> upstream, slot_idx src, slot_idx dst)
+  : m_pimpl (std::make_unique <pimpl> (upstream, src, dst))
 {}
 
 op_f_attr::~op_f_attr ()
@@ -1420,7 +1405,6 @@ struct op_close::pimpl
   std::shared_ptr <op> m_upstream;
   std::shared_ptr <op_origin> m_origin;
   std::shared_ptr <op> m_op;
-  size_t m_size;
 
   struct vf_lt {
     bool operator() (std::shared_ptr <valfile> const &a,
@@ -1434,12 +1418,10 @@ struct op_close::pimpl
 
   pimpl (std::shared_ptr <op> upstream,
 	 std::shared_ptr <op_origin> origin,
-	 std::shared_ptr <op> op,
-	 size_t size)
+	 std::shared_ptr <op> op)
     : m_upstream {upstream}
     , m_origin {origin}
     , m_op {op}
-    , m_size {size}
   {}
 
   void
@@ -1502,9 +1484,8 @@ struct op_close::pimpl
 
 op_close::op_close (std::shared_ptr <op> upstream,
 		    std::shared_ptr <op_origin> origin,
-		    std::shared_ptr <op> op,
-		    size_t size)
-  : m_pimpl {std::make_unique <pimpl> (upstream, origin, op, size)}
+		    std::shared_ptr <op> op)
+  : m_pimpl {std::make_unique <pimpl> (upstream, origin, op)}
 {}
 
 op_close::~op_close ()
