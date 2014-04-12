@@ -462,97 +462,79 @@ dwop_f::next ()
 
 namespace
 {
-  void
-  atval_unsigned_with_domain (valfile &vf, slot_idx dst, Dwarf_Attribute attr,
-			      constant_dom const &dom)
+  std::unique_ptr <value>
+  atval_unsigned_with_domain (Dwarf_Attribute attr, constant_dom const &dom)
   {
     Dwarf_Word uval;
     if (dwarf_formudata (&attr, &uval) != 0)
       throw_libdw ();
-    constant cst { uval, &dom };
-    vf.set_slot (dst, std::make_unique <value_cst> (cst));
+    return std::make_unique <value_cst> (constant {uval, &dom});
   }
 
-  void
-  atval_unsigned (valfile &vf, slot_idx dst, Dwarf_Attribute attr)
+  std::unique_ptr <value>
+  atval_unsigned (Dwarf_Attribute attr)
   {
-    atval_unsigned_with_domain (vf, dst, attr, unsigned_constant_dom);
+    return atval_unsigned_with_domain (attr, unsigned_constant_dom);
   }
 
-  void
-  atval_signed (valfile &vf, slot_idx dst, Dwarf_Attribute attr)
+  std::unique_ptr <value>
+  atval_signed (Dwarf_Attribute attr)
   {
     Dwarf_Sword sval;
     if (dwarf_formsdata (&attr, &sval) != 0)
       throw_libdw ();
-    constant cst { (uint64_t) sval, &signed_constant_dom };
-    vf.set_slot (dst, std::make_unique <value_cst> (cst));
+    return std::make_unique <value_cst>
+      (constant {(uint64_t) sval, &signed_constant_dom});
   }
 
-  void
-  handle_at_dependent_value (valfile &vf, slot_idx dst,
-			     Dwarf_Attribute attr, Dwarf_Die die)
+  std::unique_ptr <value>
+  handle_at_dependent_value (Dwarf_Attribute attr, Dwarf_Die die)
   {
     switch (dwarf_whatattr (&attr))
       {
       case DW_AT_language:
-	atval_unsigned_with_domain (vf, dst, attr, dw_lang_dom);
-	return;
+	return atval_unsigned_with_domain (attr, dw_lang_dom);
 
       case DW_AT_inline:
-	atval_unsigned_with_domain (vf, dst, attr, dw_inline_dom);
-	return;
+	return atval_unsigned_with_domain (attr, dw_inline_dom);
 
       case DW_AT_encoding:
-	atval_unsigned_with_domain (vf, dst, attr, dw_encoding_dom);
-	return;
+	return atval_unsigned_with_domain (attr, dw_encoding_dom);
 
       case DW_AT_accessibility:
-	atval_unsigned_with_domain (vf, dst, attr, dw_access_dom);
-	return;
+	return atval_unsigned_with_domain (attr, dw_access_dom);
 
       case DW_AT_visibility:
-	atval_unsigned_with_domain (vf, dst, attr, dw_visibility_dom);
-	return;
+	return atval_unsigned_with_domain (attr, dw_visibility_dom);
 
       case DW_AT_virtuality:
-	atval_unsigned_with_domain (vf, dst, attr, dw_virtuality_dom);
-	return;
+	return atval_unsigned_with_domain (attr, dw_virtuality_dom);
 
       case DW_AT_identifier_case:
-	atval_unsigned_with_domain (vf, dst, attr, dw_identifier_case_dom);
-	return;
+	return atval_unsigned_with_domain (attr, dw_identifier_case_dom);
 
       case DW_AT_calling_convention:
-	atval_unsigned_with_domain (vf, dst, attr,
-				    dw_calling_convention_dom);
-	return;
+	return atval_unsigned_with_domain (attr, dw_calling_convention_dom);
 
       case DW_AT_ordering:
-	atval_unsigned_with_domain (vf, dst, attr, dw_ordering_dom);
-	return;
+	return atval_unsigned_with_domain (attr, dw_ordering_dom);
 
       case DW_AT_decimal_sign:
-	atval_unsigned_with_domain (vf, dst, attr, dw_decimal_sign_dom);
-	return;
+	return atval_unsigned_with_domain (attr, dw_decimal_sign_dom);
 
       case DW_AT_address_class:
-	atval_unsigned_with_domain (vf, dst, attr, dw_address_class_dom);
-	return;
+	return atval_unsigned_with_domain (attr, dw_address_class_dom);
 
       case DW_AT_endianity:
-	atval_unsigned_with_domain (vf, dst, attr, dw_endianity_dom);
-	return;
+	return atval_unsigned_with_domain (attr, dw_endianity_dom);
 
       case DW_AT_decl_line:
       case DW_AT_call_line:
-	atval_unsigned_with_domain (vf, dst, attr, line_number_dom);
-	return;
+	return atval_unsigned_with_domain (attr, line_number_dom);
 
       case DW_AT_decl_column:
       case DW_AT_call_column:
-	atval_unsigned_with_domain (vf, dst, attr, column_number_dom);
-	return;
+	return atval_unsigned_with_domain (attr, column_number_dom);
 
       case DW_AT_decl_file:
       case DW_AT_call_file:
@@ -574,8 +556,7 @@ namespace
 	  if (fn == nullptr)
 	    throw_libdw ();
 
-	  vf.set_slot (dst, std::make_unique <value_str> (fn));
-	  return;
+	  return std::make_unique <value_str> (fn);
 	}
 
       case DW_AT_const_value:
@@ -618,8 +599,7 @@ namespace
 		{
 		  // Ho hum.  This could be a structure, a pointer, or
 		  // something similarly useless.
-		  atval_unsigned (vf, dst, attr);
-		  return;
+		  return atval_unsigned (attr);
 		}
 	      else
 		{
@@ -635,15 +615,13 @@ namespace
 		    {
 		    case DW_ATE_signed:
 		    case DW_ATE_signed_char:
-		      atval_signed (vf, dst, attr);
-		      return;
+		      return atval_signed (attr);
 
 		    case DW_ATE_unsigned:
 		    case DW_ATE_unsigned_char:
 		    case DW_ATE_address:
 		    case DW_ATE_boolean:
-		      atval_unsigned (vf, dst, attr);
-		      return;
+		      return atval_unsigned (attr);
 
 		    case DW_ATE_float:
 		    case DW_ATE_complex_float:
@@ -671,10 +649,7 @@ namespace
 		}
 	    }
 	  else
-	    {
-	      atval_signed (vf, dst, attr);
-	      return;
-	    }
+	    return atval_signed (attr);
 	}
 
       case DW_AT_byte_stride:
@@ -682,8 +657,7 @@ namespace
 	// """Note that the stride can be negative."""
       case DW_AT_binary_scale:
       case DW_AT_decimal_scale:
-	atval_signed (vf, dst, attr);
-	return;
+	return atval_signed (attr);
 
       case DW_AT_byte_size:
       case DW_AT_bit_size:
@@ -698,10 +672,7 @@ namespace
       case DW_AT_start_scope:
       case DW_AT_digit_count:
       case DW_AT_GNU_odr_signature:
-	{
-	  atval_unsigned (vf, dst, attr);
-	  return;
-	}
+	return atval_unsigned (attr);
 
       case DW_AT_discr_value:
 	// ^^^ """The number is signed if the tag type for the
@@ -716,8 +687,8 @@ namespace
     abort ();
   }
 
-  void
-  at_value (valfile &vf, slot_idx dst, Dwarf_Attribute attr, Dwarf_Die die)
+  std::unique_ptr <value>
+  at_value (Dwarf_Attribute attr, Dwarf_Die die)
   {
     switch (dwarf_whatform (&attr))
       {
@@ -728,8 +699,7 @@ namespace
 	  const char *str = dwarf_formstring (&attr);
 	  if (str == nullptr)
 	    throw_libdw ();
-	  vf.set_slot (dst, std::make_unique <value_str> (str));
-	  return;
+	  return std::make_unique <value_str> (str);
 	}
 
       case DW_FORM_ref_addr:
@@ -742,17 +712,14 @@ namespace
 	  Dwarf_Die die;
 	  if (dwarf_formref_die (&attr, &die) == nullptr)
 	    throw_libdw ();
-	  vf.set_slot (dst, std::make_unique <value_die> (die));
-	  return;
+	  return std::make_unique <value_die> (die);
 	}
 
       case DW_FORM_sdata:
-	atval_signed (vf, dst, attr);
-	return;
+	return atval_signed (attr);
 
       case DW_FORM_udata:
-	atval_unsigned (vf, dst, attr);
-	return;
+	return atval_unsigned (attr);
 
       case DW_FORM_addr:
 	{
@@ -763,9 +730,8 @@ namespace
 	  Dwarf_Addr addr;
 	  if (dwarf_formaddr (&attr, &addr) != 0)
 	    throw_libdw ();
-	  constant cst { addr, &hex_constant_dom };
-	  vf.set_slot (dst, std::make_unique <value_cst> (cst));
-	  return;
+	  return std::make_unique <value_cst>
+	    (constant {addr, &hex_constant_dom});
 	}
 
       case DW_FORM_flag:
@@ -774,17 +740,15 @@ namespace
 	  bool flag;
 	  if (dwarf_formflag (&attr, &flag) != 0)
 	    throw_libdw ();
-	  constant cst { static_cast <unsigned> (flag), &bool_constant_dom };
-	  vf.set_slot (dst, std::make_unique <value_cst> (cst));
-	  return;
+	  return std::make_unique <value_cst>
+	    (constant {static_cast <unsigned> (flag), &bool_constant_dom});
 	}
 
       case DW_FORM_data1:
       case DW_FORM_data2:
       case DW_FORM_data4:
       case DW_FORM_data8:
-	handle_at_dependent_value (vf, dst, attr, die);
-	return;
+	return handle_at_dependent_value (attr, die);
 
       case DW_FORM_block1:
       case DW_FORM_block2:
@@ -802,8 +766,7 @@ namespace
 	  for (Dwarf_Word i = 0; i < block.length; ++i)
 	    vv.push_back (std::make_unique <value_cst>
 			  (constant { block.data[i], &hex_constant_dom }));
-	  vf.set_slot (dst, std::make_unique <value_seq> (std::move (vv)));
-	  return;
+	  return std::make_unique <value_seq> (std::move (vv));
 	}
 
       case DW_FORM_sec_offset:
@@ -813,8 +776,7 @@ namespace
 	std::cerr << "Form unhandled: "
 		  << constant (dwarf_whatform (&attr), &dw_form_dom)
 		  << std::endl;
-	vf.set_slot (dst, std::make_unique <value_str> ("(form unhandled)"));
-	return;
+	return std::make_unique <value_str> ("(form unhandled)");
 
       case DW_FORM_indirect:
 	assert (! "Form unhandled.");
@@ -833,7 +795,7 @@ op_f_atval::operate (valfile &vf, slot_idx dst, Dwarf_Die die) const
   if (dwarf_attr_integrate (&die, m_name, &attr) == nullptr)
     return false;
 
-  at_value (vf, dst, attr, die);
+  vf.set_slot (dst, at_value (attr, die));
   return true;
 }
 
@@ -933,7 +895,7 @@ op_f_value::operate (valfile &vf, slot_idx dst,
   if (dwarf_offdie (&*m_g->dwarf, paroff, &die) == nullptr)
     throw_libdw ();
 
-  at_value (vf, dst, attr, die);
+  vf.set_slot (dst, at_value (attr, die));
   return true;
 }
 
