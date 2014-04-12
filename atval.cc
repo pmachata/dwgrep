@@ -1,5 +1,7 @@
 #include <iostream>
 #include <dwarf.h>
+#include <memory>
+#include "make_unique.hh"
 
 #include "valfile.hh"
 #include "dwpp.hh"
