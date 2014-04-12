@@ -491,15 +491,15 @@ namespace
       case tree_type::CLOSE_PLUS:
       case tree_type::CLOSE_STAR:
       case tree_type::MAYBE:
-	assert (! "resolve_operands: closures unhandled");
-	abort ();
-/*
-	assert (t.m_children.size () == 1);
-	if (check_tree (t.m_children[0], se) - se != 0)
-	  throw std::runtime_error
-	    ("iteration doesn't have neutral stack effect");
-	break;
- */
+	{
+	  assert (t.m_children.size () == 1);
+	  auto sr2 = resolve_operands (t.m_children[0], sr, elim_shf);
+	  if (sr2.stk.size () != sr.stk.size ())
+	    throw std::runtime_error
+	      ("iteration doesn't have neutral stack effect");
+	  sr = std::move (sr2);
+	  break;
+	}
 
       case tree_type::SHF_DROP:
 	t.m_dst = sr.top ();

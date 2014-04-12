@@ -1,6 +1,7 @@
 #include <iostream>
 #include <sstream>
 #include <memory>
+#include <set>
 #include "make_unique.hh"
 
 #include "op.hh"
@@ -1413,6 +1414,119 @@ op_f_type::name () const
   return "f_type";
 }
 
+
+struct op_close::pimpl
+{
+  std::shared_ptr <op> m_upstream;
+  std::shared_ptr <op_origin> m_origin;
+  std::shared_ptr <op> m_op;
+  size_t m_size;
+
+  struct vf_lt {
+    bool operator() (std::shared_ptr <valfile> const &a,
+		     std::shared_ptr <valfile> const &b) {
+      return *a < *b;
+    }
+  };
+
+  std::set <std::shared_ptr <valfile>, vf_lt> m_seen;
+  std::vector <std::shared_ptr <valfile> > m_vfs;
+
+  pimpl (std::shared_ptr <op> upstream,
+	 std::shared_ptr <op_origin> origin,
+	 std::shared_ptr <op> op,
+	 size_t size)
+    : m_upstream {upstream}
+    , m_origin {origin}
+    , m_op {op}
+    , m_size {size}
+  {}
+
+  void
+  do_reset ()
+  {
+    m_vfs.clear ();
+    m_seen.clear ();
+  }
+
+  void
+  reset ()
+  {
+    do_reset ();
+    m_upstream->reset ();
+  }
+
+  valfile::uptr
+  next ()
+  {
+    while (true)
+      {
+	if (m_vfs.empty ())
+	  {
+	    do_reset ();
+	    if (std::shared_ptr <valfile> vf = m_upstream->next ())
+	      {
+		m_vfs.push_back (vf);
+		m_seen.insert (vf);
+	      }
+	    else
+	      return nullptr;
+	  }
+
+	auto vf = m_vfs.back ();
+	m_vfs.pop_back ();
+
+	m_op->reset ();
+	m_origin->set_next (std::make_unique <valfile> (*vf));
+
+	while (std::shared_ptr <valfile> vf2 = m_op->next ())
+	  if (m_seen.find (vf2) == m_seen.end ())
+	    {
+	      m_vfs.push_back (vf2);
+	      m_seen.insert (vf2);
+	    }
+
+	return std::make_unique <valfile> (*vf);
+      }
+    return nullptr;
+  }
+
+  std::string
+  name () const
+  {
+    std::stringstream ss;
+    ss << "close<" << m_upstream->name () << ">";
+    return ss.str ();
+  }
+};
+
+op_close::op_close (std::shared_ptr <op> upstream,
+		    std::shared_ptr <op_origin> origin,
+		    std::shared_ptr <op> op,
+		    size_t size)
+  : m_pimpl {std::make_unique <pimpl> (upstream, origin, op, size)}
+{}
+
+op_close::~op_close ()
+{}
+
+valfile::uptr
+op_close::next ()
+{
+  return m_pimpl->next ();
+}
+
+void
+op_close::reset ()
+{
+  m_pimpl->reset ();
+}
+
+std::string
+op_close::name () const
+{
+  return m_pimpl->name ();
+}
 
 pred_result
 pred_not::result (valfile &vf)

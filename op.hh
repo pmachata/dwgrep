@@ -633,7 +633,25 @@ public:
   void reset () override;
 };
 
-class op_close; //+, *, ?
+class op_close
+  : public op
+{
+  class pimpl;
+  std::unique_ptr <pimpl> m_pimpl;
+
+public:
+  op_close (std::shared_ptr <op> upstream,
+	    std::shared_ptr <op_origin> origin,
+	    std::shared_ptr <op> op,
+	    size_t size);
+
+  ~op_close ();
+
+  valfile::uptr next () override;
+  std::string name () const override;
+  void reset () override;
+};
+
 class op_f_add;
 class op_f_sub;
 class op_f_mul;

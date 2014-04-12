@@ -257,8 +257,14 @@ tree::build_exec (std::shared_ptr <op> upstream, dwgrep_graph::sptr q,
     case tree_type::F_TYPE:
       return std::make_unique <op_f_type> (upstream, src_a (), dst ());
 
-    case tree_type::CLOSE_PLUS:
     case tree_type::CLOSE_STAR:
+      {
+	auto origin = std::make_shared <op_origin> (nullptr);
+	auto op = m_children.front ().build_exec (origin, q, maxsize);
+	return std::make_unique <op_close> (upstream, origin, op, maxsize);
+      }
+
+    case tree_type::CLOSE_PLUS:
     case tree_type::MAYBE:
     case tree_type::F_ADD:
     case tree_type::F_SUB:
