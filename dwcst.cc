@@ -439,25 +439,26 @@ dwarf_endianity_value (std::string str)
 
 /* Used by all dwarf_foo_name functions.  */
 static const char *
-string_or_unknown (const char *known, unsigned int code,
+string_or_unknown (const char *known, const char *prefix,
+		   unsigned int code,
                    unsigned int lo_user, unsigned int hi_user,
 		   bool print_unknown_num)
 {
-  static char unknown_buf[20];
+  static char unknown_buf[40];
 
   if (known != nullptr)
     return known;
 
   if (lo_user != 0 && code >= lo_user && code <= hi_user)
     {
-      snprintf (unknown_buf, sizeof unknown_buf, "lo_user+%#x",
-		code - lo_user);
+      snprintf (unknown_buf, sizeof unknown_buf, "%slo_user+%#x",
+		prefix, code - lo_user);
       return unknown_buf;
     }
 
   if (print_unknown_num)
     {
-      snprintf (unknown_buf, sizeof unknown_buf, "??? (%#x)", code);
+      snprintf (unknown_buf, sizeof unknown_buf, "%s??? (%#x)", prefix, code);
       return unknown_buf;
     }
 
@@ -477,49 +478,75 @@ namespace
   };
 }
 
-static struct
+static class dw_tag_dom_t
   : public unsigned_constant_dom
 {
+  bool m_short;
+
+public:
+  dw_tag_dom_t (bool shrt)
+    : m_short {shrt}
+  {}
+
   void
   show (uint64_t v, std::ostream &o) const override
   {
     int tag = v;
-    const char *ret = dwarf_tag_string (tag);
-    o << string_or_unknown (ret, tag, DW_TAG_lo_user, DW_TAG_hi_user, true);
+    const char *ret = dwarf_tag_string (tag) + (m_short ? 7 : 0);
+    o << string_or_unknown (ret, "DW_TAG_",
+			    tag, DW_TAG_lo_user, DW_TAG_hi_user, true);
   }
-} dw_tag_dom_obj;
+} dw_tag_dom_obj {false}, dw_tag_short_dom_obj {true};
 
 constant_dom const &dw_tag_dom = dw_tag_dom_obj;
+constant_dom const &dw_tag_short_dom = dw_tag_short_dom_obj;
 
 
-static struct
+static class dw_attr_dom_t
   : public unsigned_constant_dom
 {
+  bool m_short;
+
+public:
+  dw_attr_dom_t (bool shrt)
+    : m_short {shrt}
+  {}
+
   virtual void
   show (uint64_t v, std::ostream &o) const
   {
     unsigned int attr = v;
-    const char *ret = dwarf_attr_string (attr);
-    o << string_or_unknown (ret, attr, DW_AT_lo_user, DW_AT_hi_user, true);
+    const char *ret = dwarf_attr_string (attr) + (m_short ? 6 : 0);
+    o << string_or_unknown (ret, "DW_AT_",
+			    attr, DW_AT_lo_user, DW_AT_hi_user, true);
   }
-} dw_attr_dom_obj;
+} dw_attr_dom_obj {false}, dw_attr_short_dom_obj {true};
 
 constant_dom const &dw_attr_dom = dw_attr_dom_obj;
+constant_dom const &dw_attr_short_dom = dw_attr_short_dom_obj;
 
 
-static struct
+static struct dw_form_dom_t
   : public unsigned_constant_dom
 {
+  bool m_short;
+
+public:
+  dw_form_dom_t (bool shrt)
+    : m_short {shrt}
+  {}
+
   virtual void
   show (uint64_t v, std::ostream &o) const
   {
     unsigned int form = v;
-    const char *ret = dwarf_form_string (form);
-    o << string_or_unknown (ret, form, 0, 0, true);
+    const char *ret = dwarf_form_string (form) + (m_short ? 8 : 0);
+    o << string_or_unknown (ret, "DW_FORM_", form, 0, 0, true);
   }
-} dw_form_dom_obj;
+} dw_form_dom_obj {false}, dw_form_short_dom_obj {true};
 
 constant_dom const &dw_form_dom = dw_form_dom_obj;
+constant_dom const &dw_form_short_dom = dw_form_short_dom_obj;
 
 
 static struct
@@ -530,7 +557,8 @@ static struct
   {
     unsigned int lang = v;
     const char *ret = dwarf_lang_string (lang);
-    o << string_or_unknown (ret, lang, DW_LANG_lo_user, DW_LANG_hi_user, false);
+    o << string_or_unknown (ret, "DW_LANG_",
+			    lang, DW_LANG_lo_user, DW_LANG_hi_user, false);
   }
 } dw_lang_dom_obj;
 
@@ -545,7 +573,7 @@ static struct
   {
     unsigned int code = v;
     const char *ret = dwarf_inline_string (code);
-    o << string_or_unknown (ret, code, 0, 0, false);
+    o << string_or_unknown (ret, "DW_INL_", code, 0, 0, false);
   }
 } dw_inline_dom_obj;
 
@@ -560,7 +588,8 @@ static struct
   {
     unsigned int code = v;
     const char *ret = dwarf_encoding_string (code);
-    o << string_or_unknown (ret, code, DW_ATE_lo_user, DW_ATE_hi_user,false);
+    o << string_or_unknown (ret, "DW_ATE_",
+			    code, DW_ATE_lo_user, DW_ATE_hi_user, false);
   }
 } dw_encoding_dom_obj;
 
@@ -575,7 +604,7 @@ static struct
   {
     unsigned int code = v;
     const char *ret = dwarf_access_string (code);
-    o << string_or_unknown (ret, code, 0, 0, false);
+    o << string_or_unknown (ret, "DW_ACCESS_", code, 0, 0, false);
   }
 } dw_access_dom_obj;
 
@@ -590,7 +619,7 @@ static struct
   {
     unsigned int code = v;
     const char *ret = dwarf_visibility_string (code);
-    o << string_or_unknown (ret, code, 0, 0,false);
+    o << string_or_unknown (ret, "DW_VIS_", code, 0, 0, false);
   }
 } dw_visibility_dom_obj;
 
@@ -605,7 +634,7 @@ static struct
   {
     unsigned int code = v;
     const char *ret = dwarf_virtuality_string (code);
-    o << string_or_unknown (ret, code, 0, 0,false);
+    o << string_or_unknown (ret, "DW_VIRTUALITY_", code, 0, 0, false);
   }
 } dw_virtuality_dom_obj;
 
@@ -620,7 +649,7 @@ static struct
   {
     unsigned int code = v;
     const char *ret = dwarf_identifier_case_string (code);
-    o << string_or_unknown (ret, code, 0, 0,false);
+    o << string_or_unknown (ret, "DW_ID_", code, 0, 0, false);
   }
 } dw_identifier_case_dom_obj;
 
@@ -635,7 +664,8 @@ static struct
   {
     unsigned int code = v;
     const char *ret = dwarf_calling_convention_string (code);
-    o << string_or_unknown (ret, code, DW_CC_lo_user, DW_CC_hi_user,false);
+    o << string_or_unknown (ret, "DW_CC_",
+			    code, DW_CC_lo_user, DW_CC_hi_user, false);
   }
 } dw_calling_convention_dom_obj;
 
@@ -650,7 +680,7 @@ static struct
   {
     unsigned int code = v;
     const char *ret = dwarf_ordering_string (code);
-    o << string_or_unknown (ret, code, 0, 0,false);
+    o << string_or_unknown (ret, "DW_ORD_", code, 0, 0, false);
   }
 } dw_ordering_dom_obj;
 
@@ -665,7 +695,7 @@ static struct
   {
     unsigned int code = v;
     const char *ret = dwarf_discr_list_string (code);
-    o << string_or_unknown (ret, code, 0, 0, false);
+    o << string_or_unknown (ret, "DW_DSC_", code, 0, 0, false);
   }
 } dw_discr_list_dom_obj;
 
@@ -680,7 +710,7 @@ static struct
   {
     unsigned int code = v;
     const char *ret = dwarf_decimal_sign_string (code);
-    o << string_or_unknown (ret, code, 0, 0, false);
+    o << string_or_unknown (ret, "DW_DS_", code, 0, 0, false);
   }
 } dw_decimal_sign_dom_obj;
 
@@ -695,7 +725,8 @@ static struct
   {
     unsigned int code = v;
     const char *ret = dwarf_locexpr_opcode_string (code);
-    o << string_or_unknown (ret, code, DW_OP_lo_user, DW_OP_hi_user,true);
+    o << string_or_unknown (ret, "DW_OP_",
+			    code, DW_OP_lo_user, DW_OP_hi_user, true);
   }
 } dw_locexpr_opcode_dom_obj;
 
@@ -710,7 +741,7 @@ static struct
   {
     unsigned int code = v;
     const char *ret = dwarf_address_class_string (code);
-    o << string_or_unknown (ret, code, 0, 0, false);
+    o << string_or_unknown (ret, "DW_ADDR_", code, 0, 0, false);
   }
 } dw_address_class_dom_obj;
 
@@ -725,7 +756,7 @@ static struct
   {
     unsigned int code = v;
     const char *ret = dwarf_endianity_string (code);
-    o << string_or_unknown (ret, code, 0, 0, false);
+    o << string_or_unknown (ret, "DW_END_", code, 0, 0, false);
   }
 } dw_endianity_dom_obj;
 

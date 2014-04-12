@@ -120,7 +120,8 @@ value_die::show (std::ostream &o) const
 {
   std::ios::fmtflags f {o.flags ()};
   o << "[" << std::hex << dwarf_dieoffset ((Dwarf_Die *) &m_die) << "]\t"
-    << constant {(unsigned) dwarf_tag ((Dwarf_Die *) &m_die), &dw_tag_dom};
+    << constant ((unsigned) dwarf_tag ((Dwarf_Die *) &m_die),
+		 &dw_tag_short_dom);
 
   for (auto it = attr_iterator {(Dwarf_Die *) &m_die};
        it != attr_iterator::end (); ++it)
@@ -160,8 +161,8 @@ value_attr::show (std::ostream &o) const
 {
   unsigned name = (unsigned) dwarf_whatattr ((Dwarf_Attribute *) &m_attr);
   unsigned form = dwarf_whatform ((Dwarf_Attribute *) &m_attr);
-  o << constant (name, &dw_attr_dom) << " ("
-    << constant (form, &dw_form_dom) << ")\t";
+  o << constant (name, &dw_attr_short_dom) << " ("
+    << constant (form, &dw_form_short_dom) << ")\t";
   auto v = at_value (m_attr, m_die);
   if (auto d = dynamic_cast <value_die const *> (v.get ()))
     o << "[" << dwarf_dieoffset ((Dwarf_Die *) &d->get_die ()) << "]";
