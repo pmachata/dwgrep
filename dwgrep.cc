@@ -6,6 +6,7 @@
 
 #include <exception>
 #include <iostream>
+#include <fstream>
 #include <memory>
 #include <system_error>
 
@@ -94,6 +95,7 @@ main(int argc, char *argv[])
     {"count", no_argument, nullptr, 'c'},
     {"with-filename", no_argument, nullptr, 'H'},
     {"no-filename", no_argument, nullptr, 'h'},
+    {"file", required_argument, nullptr, 'f'},
     {nullptr, no_argument, nullptr, 0},
   };
   static char const *options = "ce:Hhqs";
@@ -141,6 +143,16 @@ main(int argc, char *argv[])
 	case 's':
 	  no_messages = true;
 	  break;
+
+	case 'f':
+	  {
+	    std::ifstream ifs {optarg};
+	    std::string str {std::istreambuf_iterator <char> {ifs},
+			     std::istreambuf_iterator <char> {}};
+	    query = parse_query (str);
+	    seen_query = true;
+	    break;
+	  }
 
 	default:
 	  std::exit (2);
