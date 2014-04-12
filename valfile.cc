@@ -2,7 +2,10 @@
 
 #include "valfile.hh"
 #include "make_unique.hh"
+#include "dwcst.hh"
+#include "dwit.hh"
 #include "vfcst.hh"
+#include "atval.hh"
 
 namespace
 {
@@ -115,7 +118,18 @@ value_seq::cmp (value const &that) const
 void
 value_die::show (std::ostream &o) const
 {
-  o << "[" << std::hex << dwarf_dieoffset ((Dwarf_Die *) &m_die) << "]";
+  std::ios::fmtflags f {o.flags ()};
+  o << "[" << std::hex << dwarf_dieoffset ((Dwarf_Die *) &m_die) << "]\t"
+    << constant {(unsigned) dwarf_tag ((Dwarf_Die *) &m_die), &dw_tag_dom};
+
+  for (auto it = attr_iterator {(Dwarf_Die *) &m_die};
+       it != attr_iterator::end (); ++it)
+    {
+      o << "\n\t";
+      value_attr {**it, m_die}.show (o);
+    }
+
+  o.flags (f);
 }
 
 std::unique_ptr <value>
@@ -143,7 +157,15 @@ value_die::cmp (value const &that) const
 void
 value_attr::show (std::ostream &o) const
 {
-  o << "(attribute, NYI)";
+  unsigned name = (unsigned) dwarf_whatattr ((Dwarf_Attribute *) &m_attr);
+  unsigned form = dwarf_whatform ((Dwarf_Attribute *) &m_attr);
+  o << constant (name, &dw_attr_dom) << " ("
+    << constant (form, &dw_form_dom) << ")\t";
+  auto v = at_value (m_attr, m_die);
+  if (auto d = dynamic_cast <value_die const *> (v.get ()))
+    o << "[" << dwarf_dieoffset ((Dwarf_Die *) &d->get_die ()) << "]";
+  else
+    v->show (o);
 }
 
 std::unique_ptr <value>
