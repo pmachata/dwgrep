@@ -210,10 +210,13 @@ namespace
       auto it = a.begin ();
       auto jt = b.begin ();
       for (; it != a.end (); ++it, ++jt)
-	if (&typeid (**it) < &typeid (**jt))
-	  return -1;
-	else if (&typeid (**it) > &typeid (**jt))
-	  return 1;
+	if (*it != nullptr && *jt != nullptr)
+	  {
+	    if (&typeid (**it) < &typeid (**jt))
+	      return -1;
+	    else if (&typeid (**it) > &typeid (**jt))
+	      return 1;
+	  }
     }
 
     // We have the same number of slots with values of the same type.
@@ -222,18 +225,19 @@ namespace
       auto it = a.begin ();
       auto jt = b.begin ();
       for (; it != a.end (); ++it, ++jt)
-	switch ((*it)->cmp (**jt))
-	  {
-	  case cmp_result::fail:
-	    assert (! "Comparison of same-typed slots shouldn't fail!");
-	    abort ();
-	  case cmp_result::less:
-	    return -1;
-	  case cmp_result::greater:
-	    return 1;
-	  case cmp_result::equal:
-	    break;
-	  }
+	if (*it != nullptr && *jt != nullptr)
+	  switch ((*it)->cmp (**jt))
+	    {
+	    case cmp_result::fail:
+	      assert (! "Comparison of same-typed slots shouldn't fail!");
+	      abort ();
+	    case cmp_result::less:
+	      return -1;
+	    case cmp_result::greater:
+	      return 1;
+	    case cmp_result::equal:
+	      break;
+	    }
     }
 
     // The stacks are the same!
