@@ -53,7 +53,16 @@
 	throw std::runtime_error
 	  (std::string ("Invalid integer literal: `") + tmp + "'");
       }
-    return constant (val, &unsigned_constant_dom);
+
+    if (str.buf[0] == '0' && str.len > 1)
+      {
+	if (str.buf[1] == 'x' || str.buf[1] == 'X')
+	  return constant (val, &hex_constant_dom);
+	else
+	  return constant (val, &oct_constant_dom);
+      }
+    else
+      return constant (val, &unsigned_constant_dom);
    }
 %}
 

@@ -163,8 +163,8 @@ do_tests ()
 #undef ONE_KNOWN_DW_END
 
   test ("17", "(CONST<17>)");
-  test ("0x17", "(CONST<23>)");
-  test ("017", "(CONST<15>)");
+  test ("0x17", "(CONST<0x17>)");
+  test ("017", "(CONST<017>)");
 
   test ("\"string\"", "(FORMAT (STR<string>))");
 

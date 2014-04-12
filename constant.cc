@@ -75,6 +75,33 @@ static struct
   show (uint64_t v, std::ostream &o) const override
   {
     std::ios::fmtflags f {o.flags ()};
+    o << (v > 0 ? "0" : "") << std::oct << v;
+    o.flags (f);
+  }
+
+  bool
+  sign () const override
+  {
+    return false;
+  }
+
+  bool
+  safe_arith () const override
+  {
+    return true;
+  }
+} oct_constant_dom_obj;
+
+constant_dom const &oct_constant_dom = oct_constant_dom_obj;
+
+
+static struct
+  : public constant_dom
+{
+  void
+  show (uint64_t v, std::ostream &o) const override
+  {
+    std::ios::fmtflags f {o.flags ()};
     o << std::boolalpha << static_cast <bool> (v);
     o.flags (f);
   }
