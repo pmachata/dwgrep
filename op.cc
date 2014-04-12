@@ -75,8 +75,8 @@ struct op_sel_universe::pimpl
 
 	if (m_it != all_dies_iterator::end ())
 	  {
-	    auto ret = valfile::copy (*m_vf, m_size);
-	    ret->set_slot (m_dst, **m_it);
+	    auto ret = std::make_unique <valfile> (*m_vf);
+	    ret->set_slot (m_dst, std::make_unique <value_die> (**m_it));
 	    ++m_it;
 	    return ret;
 	  }
@@ -165,16 +165,16 @@ struct op_sel_unit::pimpl
 	  {
 	    if (auto vf = m_upstream->next ())
 	      {
-		if (vf->get_slot_type (m_src) == slot_type::DIE)
+		if (auto v = vf->get_slot_as <value_die> (m_src))
 		  {
-		    init_from_die (vf->get_slot_die (m_src));
+		    init_from_die (v->get_die ());
 		    m_vf = std::move (vf);
 		  }
-		else if (vf->get_slot_type (m_src) == slot_type::ATTR)
+		else if (auto v = vf->get_slot_as <value_attr> (m_src))
 		  {
-		    auto const &a = vf->get_slot_attr (m_src);
+		    Dwarf_Off paroff = v->get_parent_off ();
 		    Dwarf_Die die;
-		    if (dwarf_offdie (&*m_dw, a.die_off, &die) == nullptr)
+		    if (dwarf_offdie (&*m_dw, paroff, &die) == nullptr)
 		      throw_libdw ();
 		    init_from_die (die);
 		    m_vf = std::move (vf);
@@ -186,10 +186,8 @@ struct op_sel_unit::pimpl
 
 	if (m_it != m_end)
 	  {
-	    auto ret = valfile::copy (*m_vf, m_size);
-	    if (m_src == m_dst)
-	      ret->invalidate_slot (m_dst);
-	    ret->set_slot (m_dst, **m_it);
+	    auto ret = std::make_unique <valfile> (*m_vf);
+	    ret->set_slot (m_dst, std::make_unique <value_die> (**m_it));
 	    ++m_it;
 	    return ret;
 	  }
@@ -264,9 +262,9 @@ struct op_f_child::pimpl
 	  {
 	    if (auto vf = m_upstream->next ())
 	      {
-		if (vf->get_slot_type (m_src) == slot_type::DIE)
+		if (auto v = vf->get_slot_as <value_die> (m_src))
 		  {
-		    Dwarf_Die die = vf->get_slot_die (m_src);
+		    Dwarf_Die die = v->get_die ();
 		    if (dwarf_haschildren (&die))
 		      {
 			if (dwarf_child (&die, &m_child) != 0)
@@ -281,10 +279,8 @@ struct op_f_child::pimpl
 	      return nullptr;
 	  }
 
-	auto ret = valfile::copy (*m_vf, m_size);
-	if (m_src == m_dst)
-	  ret->invalidate_slot (m_dst);
-	ret->set_slot (m_dst, m_child);
+	auto ret = std::make_unique <valfile> (*m_vf);
+	ret->set_slot (m_dst, std::make_unique <value_die> (m_child));
 
 	switch (dwarf_siblingof (&m_child, &m_child))
 	  {
@@ -367,9 +363,9 @@ struct op_f_attr::pimpl
 	  {
 	    if (auto vf = m_upstream->next ())
 	      {
-		if (vf->get_slot_type (m_src) == slot_type::DIE)
+		if (auto v = vf->get_slot_as <value_die> (m_src))
 		  {
-		    m_die = vf->get_slot_die (m_src);
+		    m_die = v->get_die ();
 		    m_it = attr_iterator (&m_die);
 		    m_vf = std::move (vf);
 		  }
@@ -380,11 +376,10 @@ struct op_f_attr::pimpl
 
 	if (m_it != attr_iterator::end ())
 	  {
-	    auto ret = valfile::copy (*m_vf, m_size);
-	    if (m_src == m_dst)
-	      ret->invalidate_slot (m_dst);
-	    attribute_slot slot {**m_it, dwarf_dieoffset (&m_die)};
-	    ret->set_slot (m_dst, std::move (slot));
+	    auto ret = std::make_unique <valfile> (*m_vf);
+	    auto vp = std::make_unique <value_attr>
+	      (**m_it, dwarf_dieoffset (&m_die));
+	    ret->set_slot (m_dst, std::move (vp));
 	    ++m_it;
 	    return ret;
 	  }
@@ -462,20 +457,17 @@ valfile::uptr
 dwop_f::next ()
 {
   while (auto vf = m_upstream->next ())
-    if (vf->get_slot_type (m_src) == slot_type::DIE)
+    if (auto v = vf->get_slot_as <value_die> (m_src))
       {
-	Dwarf_Die die = vf->get_slot_die (m_src);
-	if (m_src == m_dst)
-	  vf->invalidate_slot (m_dst);
+	Dwarf_Die die = v->get_die ();
 	if (operate (*vf, m_dst, die))
 	  return vf;
       }
-    else if (vf->get_slot_type (m_src) == slot_type::ATTR)
+    else if (auto v = vf->get_slot_as <value_attr> (m_src))
       {
-	attribute_slot attr = vf->get_slot_attr (m_src);
-	if (m_src == m_dst)
-	  vf->invalidate_slot (m_dst);
-	if (operate (*vf, m_dst, attr))
+	Dwarf_Attribute attr = v->get_attr ();
+	Dwarf_Off paroff = v->get_parent_off ();
+	if (operate (*vf, m_dst, attr, paroff))
 	  return vf;
       }
 
@@ -492,7 +484,7 @@ namespace
     if (dwarf_formudata (&attr, &uval) != 0)
       throw_libdw ();
     constant cst { uval, &dom };
-    vf.set_slot (dst, std::move (cst));
+    vf.set_slot (dst, std::make_unique <value_cst> (cst));
   }
 
   void
@@ -508,7 +500,7 @@ namespace
     if (dwarf_formsdata (&attr, &sval) != 0)
       throw_libdw ();
     constant cst { (uint64_t) sval, &signed_constant_dom };
-    vf.set_slot (dst, std::move (cst));
+    vf.set_slot (dst, std::make_unique <value_cst> (cst));
   }
 
   void
@@ -596,7 +588,7 @@ namespace
 	  if (fn == nullptr)
 	    throw_libdw ();
 
-	  vf.set_slot (dst, std::string (fn));
+	  vf.set_slot (dst, std::make_unique <value_str> (fn));
 	  return;
 	}
 
@@ -750,7 +742,7 @@ namespace
 	  const char *str = dwarf_formstring (&attr);
 	  if (str == nullptr)
 	    throw_libdw ();
-	  vf.set_slot (dst, std::string (str));
+	  vf.set_slot (dst, std::make_unique <value_str> (str));
 	  return;
 	}
 
@@ -764,7 +756,7 @@ namespace
 	  Dwarf_Die die;
 	  if (dwarf_formref_die (&attr, &die) == nullptr)
 	    throw_libdw ();
-	  vf.set_slot (dst, std::move (die));
+	  vf.set_slot (dst, std::make_unique <value_die> (die));
 	  return;
 	}
 
@@ -786,7 +778,7 @@ namespace
 	  if (dwarf_formaddr (&attr, &addr) != 0)
 	    throw_libdw ();
 	  constant cst { addr, &hex_constant_dom };
-	  vf.set_slot (dst, std::move (cst));
+	  vf.set_slot (dst, std::make_unique <value_cst> (cst));
 	  return;
 	}
 
@@ -797,7 +789,7 @@ namespace
 	  if (dwarf_formflag (&attr, &flag) != 0)
 	    throw_libdw ();
 	  constant cst { static_cast <unsigned> (flag), &bool_constant_dom };
-	  vf.set_slot (dst, std::move (cst));
+	  vf.set_slot (dst, std::make_unique <value_cst> (cst));
 	  return;
 	}
 
@@ -820,11 +812,11 @@ namespace
 	  if (dwarf_formblock (&attr, &block) != 0)
 	    throw_libdw ();
 
-	  value_vector_t vv;
+	  value_seq::seq_t vv;
 	  for (Dwarf_Word i = 0; i < block.length; ++i)
 	    vv.push_back (std::make_unique <value_cst>
 			  (constant { block.data[i], &hex_constant_dom }));
-	  vf.set_slot (dst, std::move (vv));
+	  vf.set_slot (dst, std::make_unique <value_seq> (std::move (vv)));
 	  return;
 	}
 
@@ -835,7 +827,7 @@ namespace
 	std::cerr << "Form unhandled: "
 		  << constant (dwarf_whatform (&attr), &dw_form_dom)
 		  << std::endl;
-	vf.set_slot (dst, std::string ("(form unhandled)"));
+	vf.set_slot (dst, std::make_unique <value_str> ("(form unhandled)"));
 	return;
 
       case DW_FORM_indirect:
@@ -871,7 +863,8 @@ bool
 op_f_offset::operate (valfile &vf, slot_idx dst, Dwarf_Die die) const
 {
   Dwarf_Off off = dwarf_dieoffset (&die);
-  vf.set_slot (dst, constant { off, &hex_constant_dom });
+  auto v = std::make_unique <value_cst> (constant {off, &hex_constant_dom});
+  vf.set_slot (dst, std::move (v));
   return true;
 }
 
@@ -888,7 +881,8 @@ namespace
   {
     int tag = dwarf_tag (&die);
     assert (tag >= 0);
-    vf.set_slot (dst, constant { (unsigned) tag, &dw_tag_dom });
+    constant cst {(unsigned) tag, &dw_tag_dom};
+    vf.set_slot (dst, std::make_unique <value_cst> (cst));
     return true;
   }
 }
@@ -900,10 +894,13 @@ op_f_name::operate (valfile &vf, slot_idx dst, Dwarf_Die die) const
 }
 
 bool
-op_f_name::operate (valfile &vf, slot_idx dst, attribute_slot attr) const
+op_f_name::operate (valfile &vf, slot_idx dst,
+		    Dwarf_Attribute attr, Dwarf_Off paroff) const
+
 {
-  unsigned name = dwarf_whatattr (&attr.attr);
-  vf.set_slot (dst, constant { name, &dw_attr_dom });
+  unsigned name = dwarf_whatattr (&attr);
+  constant cst {name, &dw_attr_dom};
+  vf.set_slot (dst, std::make_unique <value_cst> (cst));
   return true;
 }
 
@@ -926,10 +923,12 @@ op_f_tag::name () const
 }
 
 bool
-op_f_form::operate (valfile &vf, slot_idx dst, attribute_slot attr) const
+op_f_form::operate (valfile &vf, slot_idx dst,
+		    Dwarf_Attribute attr, Dwarf_Off paroff) const
 {
-  unsigned name = dwarf_whatform (&attr.attr);
-  vf.set_slot (dst, constant { name, &dw_form_dom });
+  unsigned name = dwarf_whatform (&attr);
+  constant cst {name, &dw_form_dom};
+  vf.set_slot (dst, std::make_unique <value_cst> (cst));
   return true;
 }
 
@@ -941,13 +940,14 @@ op_f_form::name () const
 
 
 bool
-op_f_value::operate (valfile &vf, slot_idx dst, attribute_slot attr) const
+op_f_value::operate (valfile &vf, slot_idx dst,
+		     Dwarf_Attribute attr, Dwarf_Off paroff) const
 {
   Dwarf_Die die;
-  if (dwarf_offdie (&*m_g->dwarf, attr.die_off, &die) == nullptr)
+  if (dwarf_offdie (&*m_g->dwarf, paroff, &die) == nullptr)
     throw_libdw ();
 
-  at_value (vf, dst, attr.attr, die);
+  at_value (vf, dst, attr, die);
   return true;
 }
 
@@ -959,13 +959,14 @@ op_f_value::name () const
 
 
 bool
-op_f_parent::operate (valfile &vf, slot_idx dst, attribute_slot attr) const
+op_f_parent::operate (valfile &vf, slot_idx dst,
+		      Dwarf_Attribute attr, Dwarf_Off paroff) const
 {
   Dwarf_Die die;
-  if (dwarf_offdie (&*m_g->dwarf, attr.die_off, &die) == nullptr)
+  if (dwarf_offdie (&*m_g->dwarf, paroff, &die) == nullptr)
     throw_libdw ();
 
-  vf.set_slot (dst, die);
+  vf.set_slot (dst, std::make_unique <value_die> (die));
   return true;
 }
 
@@ -978,7 +979,7 @@ op_f_parent::operate (valfile &vf, slot_idx dst, Dwarf_Die die) const
 
   if (dwarf_offdie (&*m_g->dwarf, par_off, &die) == nullptr)
     throw_libdw ();
-  vf.set_slot (dst, die);
+  vf.set_slot (dst, std::make_unique <value_die> (die));
   return true;
 }
 
@@ -1052,8 +1053,8 @@ stringer_op::next ()
       if (auto op_vf = m_op->next ())
 	{
 	  std::stringstream ss;
-	  op_vf->get_slot (m_src)->show (ss);
-	  op_vf->invalidate_slot (m_src);
+	  op_vf->get_slot (m_src).show (ss);
+	  op_vf->set_slot (m_src, nullptr);
 	  return std::make_pair (std::move (op_vf), m_str + ss.str ());
 	}
 
@@ -1077,7 +1078,8 @@ op_format::next ()
       auto s = m_stringer->next ();
       if (s.first != nullptr)
 	{
-	  s.first->set_slot (m_dst, std::string (s.second));
+	  s.first->set_slot
+	    (m_dst, std::make_unique <value_str> (std::move (s.second)));
 	  return std::move (s.first);
 	}
 
@@ -1109,7 +1111,7 @@ op_drop::next ()
 {
   if (auto vf = m_upstream->next ())
     {
-      vf->invalidate_slot (m_idx);
+      vf->set_slot (m_idx, nullptr);
       return vf;
     }
   return nullptr;
@@ -1132,7 +1134,7 @@ op_dup::next ()
 {
   if (auto vf = m_upstream->next ())
     {
-      vf->get_slot (m_src)->clone ()->move_to_slot (m_dst, *vf);
+      vf->set_slot (m_dst, vf->get_slot (m_src).clone ());
       return vf;
     }
   return nullptr;
@@ -1156,11 +1158,9 @@ op_swap::next ()
 {
   if (auto vf = m_upstream->next ())
     {
-      auto tmp = vf->get_slot (m_dst_a)->clone ();
-      vf->invalidate_slot (m_dst_a);
-      vf->get_slot (m_dst_b)->clone ()->move_to_slot (m_dst_a, *vf);
-      vf->invalidate_slot (m_dst_b);
-      tmp->move_to_slot (m_dst_b, *vf);
+      auto tmp = vf->get_slot (m_dst_a).clone ();
+      vf->set_slot (m_dst_a, vf->get_slot (m_dst_b).clone ());
+      vf->set_slot (m_dst_b, std::move (tmp));
       return vf;
     }
   return nullptr;
@@ -1184,7 +1184,7 @@ op_const::next ()
 {
   if (auto vf = m_upstream->next ())
     {
-      vf->set_slot (m_dst, constant (m_cst));
+      vf->set_slot (m_dst, std::make_unique <value_cst> (m_cst));
       return vf;
     }
   return nullptr;
@@ -1204,7 +1204,7 @@ op_strlit::next ()
 {
   if (auto vf = m_upstream->next ())
     {
-      vf->set_slot (m_dst, std::string (m_str));
+      vf->set_slot (m_dst, std::make_unique <value_str> (std::string (m_str)));
       return vf;
     }
   return nullptr;
@@ -1224,7 +1224,7 @@ op_empty_list::next ()
 {
   if (auto vf = m_upstream->next ())
     {
-      vf->set_slot (m_dst, value_vector_t ());
+      vf->set_slot (m_dst, std::make_unique <value_seq> (value_seq::seq_t {}));
       return vf;
     }
   return nullptr;
@@ -1248,7 +1248,7 @@ op_tine::next ()
     {
       if (auto vf = m_upstream->next ())
 	for (auto &ptr: *m_file)
-	  ptr = valfile::copy (*vf, m_size);
+	  ptr = std::make_unique <valfile> (*vf);
       else
 	{
 	  *m_done = true;
@@ -1294,6 +1294,7 @@ op_merge::next ()
 void
 op_merge::reset ()
 {
+  *m_done = false;
   m_it = m_ops.begin ();
   for (auto op: m_ops)
     op->reset ();
@@ -1312,12 +1313,12 @@ op_capture::next ()
   if (auto vf = m_upstream->next ())
     {
       m_op->reset ();
-      m_origin->set_next (valfile::copy (*vf, m_size));
+      m_origin->set_next (std::make_unique <valfile> (*vf));
 
-      value_vector_t vv;
+      value_seq::seq_t vv;
       while (auto vf2 = m_op->next ())
-	vv.push_back (vf2->get_slot (m_src)->clone ());
-      vf->set_slot (m_dst, std::move (vv));
+	vv.push_back (vf2->get_slot (m_src).clone ());
+      vf->set_slot (m_dst, std::make_unique <value_seq> (std::move (vv)));
       return vf;
     }
   return nullptr;
@@ -1348,7 +1349,7 @@ op_f_each::next ()
 	{
 	  if (auto vf = m_upstream->next ())
 	    {
-	      if (vf->get_slot_type (m_src) == slot_type::SEQ)
+	      if (vf->get_slot_as <value_seq> (m_src) != nullptr)
 		{
 		  m_i = 0;
 		  m_vf = std::move (vf);
@@ -1358,14 +1359,14 @@ op_f_each::next ()
 	    return nullptr;
 	}
 
-      value_vector_t const &vv = m_vf->get_slot_seq (m_src);
+      auto &slot = static_cast <value_seq const &> (m_vf->get_slot (m_src));
+      auto &vv = slot.get_seq ();
+
       if (m_i < vv.size ())
 	{
 	  std::unique_ptr <value> v = vv[m_i++]->clone ();
-	  valfile::uptr vf = valfile::copy (*m_vf, m_size);
-	  if (m_src == m_dst)
-	    vf->invalidate_slot (m_dst);
-	  v->move_to_slot (m_dst, *vf);
+	  valfile::uptr vf = std::make_unique <valfile> (*m_vf);
+	  vf->set_slot (m_dst, std::move (v));
 	  return vf;
 	}
 
@@ -1392,50 +1393,9 @@ op_f_type::next ()
 {
   if (auto vf = m_upstream->next ())
     {
-      slot_type t = vf->get_slot_type (m_src);
-      if (m_src == m_dst)
-	vf->invalidate_slot (m_dst);
-
-      switch (t)
-	{
-	case slot_type::END:
-	case slot_type::INVALID:
-	  assert (! "Invalid slot type.");
-	  abort ();
-
-	case slot_type::CST:
-	  vf->set_slot (m_dst, constant {(int) slot_type_id::T_CONST,
-		&slot_type_dom});
-	  return vf;
-
-	case slot_type::FLT:
-	  vf->set_slot (m_dst, constant {(int) slot_type_id::T_FLOAT,
-		&slot_type_dom});
-	  return vf;
-
-	case slot_type::SEQ:
-	  vf->set_slot (m_dst, constant {(int) slot_type_id::T_SEQ,
-		&slot_type_dom});
-	  return vf;
-
-	case slot_type::STR:
-	  vf->set_slot (m_dst, constant {(int) slot_type_id::T_STR,
-		&slot_type_dom});
-	  return vf;
-
-	case slot_type::DIE:
-	case slot_type::LINE:
-	case slot_type::LOCLIST_ENTRY:
-	case slot_type::LOCLIST_OP:
-	  vf->set_slot (m_dst, constant {(int) slot_type_id::T_NODE,
-		&slot_type_dom});
-	  return vf;
-
-	case slot_type::ATTR:
-	  vf->set_slot (m_dst, constant {(int) slot_type_id::T_ATTR,
-		&slot_type_dom});
-	  return vf;
-	}
+      constant t = vf->get_slot (m_src).get_type_const ();
+      vf->set_slot (m_dst, std::make_unique <value_cst> (t));
+      return vf;
     }
 
   return nullptr;
@@ -1501,15 +1461,14 @@ pred_or::name () const
 pred_result
 pred_at::result (valfile &vf)
 {
-  if (vf.get_slot_type (m_idx) == slot_type::DIE)
+  if (auto v = vf.get_slot_as <value_die> (m_idx))
     {
-      auto &die = const_cast <Dwarf_Die &> (vf.get_slot_die (m_idx));
+      Dwarf_Die die = v->get_die ();
       return pred_result (dwarf_hasattr_integrate (&die, m_atname) != 0);
     }
-  else if (vf.get_slot_type (m_idx) == slot_type::ATTR)
+  else if (auto v = vf.get_slot_as <value_attr> (m_idx))
     {
-      auto &attr = const_cast <Dwarf_Attribute &>
-	(vf.get_slot_attr (m_idx).attr);
+      Dwarf_Attribute attr = v->get_attr ();
       return pred_result (dwarf_whatattr (&attr) == m_atname);
     }
   else
@@ -1527,9 +1486,9 @@ pred_at::name () const
 pred_result
 pred_tag::result (valfile &vf)
 {
-  if (vf.get_slot_type (m_idx) == slot_type::DIE)
+  if (auto v = vf.get_slot_as <value_die> (m_idx))
     {
-      auto &die = const_cast <Dwarf_Die &> (vf.get_slot_die (m_idx));
+      Dwarf_Die die = v->get_die ();
       return pred_result (dwarf_tag (&die) == m_tag);
     }
   else
@@ -1546,84 +1505,22 @@ pred_tag::name () const
 
 namespace
 {
-  template <class CMP>
   pred_result
-  comparison_result (valfile &vf, slot_idx idx_a, slot_idx idx_b)
+  comparison_result (valfile &vf, slot_idx idx_a, slot_idx idx_b,
+		     cmp_result want)
   {
-    slot_type st = vf.get_slot_type (idx_a);
-    if (st != vf.get_slot_type (idx_b))
+    cmp_result r = vf.get_slot (idx_a).cmp (vf.get_slot (idx_b));
+    if (r == cmp_result::fail)
       return pred_result::fail;
-
-    switch (st)
-      {
-      case slot_type::END:
-      case slot_type::INVALID:
-	assert (! "invalid slots for comparison");
-	abort ();
-
-      case slot_type::CST:
-	return CMP::result (vf.get_slot_cst (idx_a), vf.get_slot_cst (idx_b));
-
-      case slot_type::STR:
-	return CMP::result (vf.get_slot_str (idx_a), vf.get_slot_str (idx_b));
-
-      case slot_type::DIE:
-	{
-	  Dwarf_Die die_a = vf.get_slot_die (idx_a);
-	  Dwarf_Die die_b = vf.get_slot_die (idx_b);
-	  return CMP::result (dwarf_dieoffset (&die_a),
-			      dwarf_dieoffset (&die_b));
-	}
-
-      case slot_type::FLT:
-      case slot_type::SEQ:
-      case slot_type::ATTR:
-      case slot_type::LINE:
-      case slot_type::LOCLIST_ENTRY:
-      case slot_type::LOCLIST_OP:
-	assert (! "NIY");
-	abort ();
-      }
-
-    assert (! "invalid slot type");
-    abort ();
+    else
+      return pred_result (r == want);
   }
-
-  struct cmp_eq
-  {
-    template <class T>
-    static pred_result
-    result (T const &a, T const &b)
-    {
-      return pred_result (a == b);
-    }
-  };
-
-  struct cmp_lt
-  {
-    template <class T>
-    static pred_result
-    result (T const &a, T const &b)
-    {
-      return pred_result (a < b);
-    }
-  };
-
-  struct cmp_gt
-  {
-    template <class T>
-    static pred_result
-    result (T const &a, T const &b)
-    {
-      return pred_result (a > b);
-    }
-  };
 }
 
 pred_result
 pred_eq::result (valfile &vf)
 {
-  return comparison_result <cmp_eq> (vf, m_idx_a, m_idx_b);
+  return comparison_result (vf, m_idx_a, m_idx_b, cmp_result::equal);
 }
 
 std::string
@@ -1635,7 +1532,7 @@ pred_eq::name () const
 pred_result
 pred_lt::result (valfile &vf)
 {
-  return comparison_result <cmp_lt> (vf, m_idx_a, m_idx_b);
+  return comparison_result (vf, m_idx_a, m_idx_b, cmp_result::less);
 }
 
 std::string
@@ -1647,7 +1544,7 @@ pred_lt::name () const
 pred_result
 pred_gt::result (valfile &vf)
 {
-  return comparison_result <cmp_gt> (vf, m_idx_a, m_idx_b);
+  return comparison_result (vf, m_idx_a, m_idx_b, cmp_result::greater);
 }
 
 std::string
@@ -1665,10 +1562,10 @@ pred_root::pred_root (dwgrep_graph::sptr g, slot_idx idx_a)
 pred_result
 pred_root::result (valfile &vf)
 {
-  if (vf.get_slot_type (m_idx_a) == slot_type::DIE)
-    return pred_result (m_g->is_root (vf.get_slot_die (m_idx_a)));
+  if (auto v = vf.get_slot_as <value_die> (m_idx_a))
+    return pred_result (m_g->is_root (v->get_die ()));
 
-  else if (vf.get_slot_type (m_idx_a) == slot_type::ATTR)
+  else if (vf.get_slot_as <value_attr> (m_idx_a) != nullptr)
     // By definition, attributes are never root.
     return pred_result::no;
 
@@ -1686,7 +1583,7 @@ pred_result
 pred_subx_any::result (valfile &vf)
 {
   m_op->reset ();
-  m_origin->set_next (valfile::copy (vf, m_size));
+  m_origin->set_next (std::make_unique <valfile> (vf));
   if (m_op->next () != nullptr)
     return pred_result::yes;
   else
@@ -1710,31 +1607,14 @@ pred_subx_any::reset ()
 pred_result
 pred_empty::result (valfile &vf)
 {
-  switch (vf.get_slot_type (m_idx_a))
-    {
-    case slot_type::END:
-    case slot_type::INVALID:
-      assert (! "pred_empty: invalid predicate slot");
-      abort ();
+  if (auto v = vf.get_slot_as <value_str> (m_idx_a))
+    return pred_result (v->get_string () == "");
 
-    case slot_type::CST:
-    case slot_type::FLT:
-    case slot_type::DIE:
-    case slot_type::ATTR:
-    case slot_type::LINE:
-    case slot_type::LOCLIST_ENTRY:
-    case slot_type::LOCLIST_OP:
-      return pred_result::fail;
+  else if (auto v = vf.get_slot_as <value_seq> (m_idx_a))
+    return pred_result (v->get_seq ().empty ());
 
-    case slot_type::STR:
-      return pred_result (vf.get_slot_str (m_idx_a) == "");
-
-    case slot_type::SEQ:
-      return pred_result (vf.get_slot_seq (m_idx_a).empty ());
-    }
-
-  assert (! "pred_empty: unhandled slot type");
-  abort ();
+  else
+    return pred_result::fail;
 }
 
 std::string

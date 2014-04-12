@@ -177,7 +177,7 @@ public:
   { return false; }
 
   virtual bool operate (valfile &vf, slot_idx dst,
-			attribute_slot die) const
+			Dwarf_Attribute attr, Dwarf_Off paroff) const
   { return false; }
 };
 
@@ -215,7 +215,8 @@ public:
 
   std::string name () const override;
   bool operate (valfile &vf, slot_idx dst, Dwarf_Die die) const override;
-  bool operate (valfile &vf, slot_idx dst, attribute_slot attr) const override;
+  bool operate (valfile &vf, slot_idx dst,
+		Dwarf_Attribute attr, Dwarf_Off paroff) const override;
 };
 
 class op_f_tag
@@ -235,7 +236,8 @@ public:
   using dwop_f::dwop_f;
 
   std::string name () const override;
-  bool operate (valfile &vf, slot_idx dst, attribute_slot attr) const override;
+  bool operate (valfile &vf, slot_idx dst,
+		Dwarf_Attribute attr, Dwarf_Off paroff) const override;
 };
 
 class op_f_value
@@ -245,7 +247,8 @@ public:
   using dwop_f::dwop_f;
 
   std::string name () const override;
-  bool operate (valfile &vf, slot_idx dst, attribute_slot attr) const override;
+  bool operate (valfile &vf, slot_idx dst,
+		Dwarf_Attribute attr, Dwarf_Off paroff) const override;
 };
 
 class op_f_parent
@@ -255,8 +258,9 @@ public:
   using dwop_f::dwop_f;
 
   std::string name () const override;
-  bool operate (valfile &vf, slot_idx dst, attribute_slot attr) const override;
   bool operate (valfile &vf, slot_idx dst, Dwarf_Die die) const override;
+  bool operate (valfile &vf, slot_idx dst,
+		Dwarf_Attribute attr, Dwarf_Off paroff) const override;
 };
 
 // The stringer hieararchy supports op_format, which implements
@@ -629,8 +633,6 @@ public:
   void reset () override;
 };
 
-class op_transform;
-class op_protect;
 class op_close; //+, *, ?
 class op_f_add;
 class op_f_sub;
@@ -643,7 +645,6 @@ class op_f_form;
 class op_f_pos;
 class op_f_count;
 class op_sel_section;
-class op_sel_unit;
 
 class pred
 {

@@ -3,8 +3,7 @@
 
 #include "constant.hh"
 
-// Named constants for dwgrep "type" operator, which divides slot
-// types along a bit different lines than valfile's slot_type.
+// Named constants for dwgrep "type" operator.
 enum class slot_type_id
   {
     T_CONST,

@@ -125,7 +125,8 @@ tree::build_exec (std::shared_ptr <op> upstream, dwgrep_graph::sptr q,
 		  size_t maxsize) const
 {
   if (upstream == nullptr)
-    upstream = std::make_shared <op_origin> (valfile::create (maxsize));
+    upstream = std::make_shared <op_origin>
+      (std::make_unique <valfile> (maxsize));
 
   switch (m_tt)
     {

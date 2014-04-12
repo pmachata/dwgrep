@@ -2,59 +2,84 @@
 
 #include "valfile.hh"
 #include "make_unique.hh"
+#include "vfcst.hh"
 
-void
-std::default_delete <valfile>::operator() (valfile *ptr) const
+namespace
 {
-  ptr->~valfile ();
-  delete[] (unsigned char *) ptr;
+  template <class T>
+  cmp_result
+  compare (T const &a, T const &b)
+  {
+    if (a < b)
+      return cmp_result::less;
+    if (b < a)
+      return cmp_result::greater;
+    return cmp_result::equal;
+  }
 }
 
 void
-value_behavior <constant>::show (constant const&cst, std::ostream &o)
+value_cst::show (std::ostream &o) const
 {
-  o << cst;
-}
-
-void
-value_behavior <constant>::move_to_slot (constant &&cst,
-					 slot_idx i, valfile &vf)
-{
-  vf.set_slot (i, std::move (cst));
+  o << m_cst;
 }
 
 std::unique_ptr <value>
-value_behavior <constant>::clone (constant const&cst)
+value_cst::clone () const
 {
-  return std::make_unique <value_cst> (constant (cst));
+  return std::make_unique <value_cst> (m_cst);
 }
 
-void
-value_behavior <std::string>::show (std::string const &str, std::ostream &o)
+constant
+value_cst::get_type_const () const
 {
-  o << str;
+  return {(int) slot_type_id::T_CONST, &slot_type_dom};
 }
 
-void
-value_behavior <std::string>::move_to_slot (std::string &&str,
-					    slot_idx i, valfile &vf)
+cmp_result
+value_cst::cmp (value const &that) const
 {
-  vf.set_slot (i, std::move (str));
+  if (auto v = dynamic_cast <value_cst const *> (&that))
+    return compare (m_cst, v->m_cst);
+  else
+    return cmp_result::fail;
+}
+
+
+void
+value_str::show (std::ostream &o) const
+{
+  o << m_str;
 }
 
 std::unique_ptr <value>
-value_behavior <std::string>::clone (std::string const&cst)
+value_str::clone () const
 {
-  return std::make_unique <value_str> (std::string (cst));
+  return std::make_unique <value_str> (std::string (m_str));
 }
 
+constant
+value_str::get_type_const () const
+{
+  return {(int) slot_type_id::T_STR, &slot_type_dom};
+}
+
+cmp_result
+value_str::cmp (value const &that) const
+{
+  if (auto v = dynamic_cast <value_str const *> (&that))
+    return compare (m_str, v->m_str);
+  else
+    return cmp_result::fail;
+}
+
+
 void
-value_behavior <value_vector_t>::show (value_vector_t const &vv,
-				       std::ostream &o)
+value_seq::show (std::ostream &o) const
 {
   o << "[";
   bool seen = false;
-  for (auto const &v: vv)
+  for (auto const &v: m_seq)
     {
       if (seen)
 	o << ", ";
@@ -64,414 +89,166 @@ value_behavior <value_vector_t>::show (value_vector_t const &vv,
   o << "]";
 }
 
-void
-value_behavior <value_vector_t>::move_to_slot (value_vector_t &&vv,
-					       slot_idx i, valfile &vf)
-{
-  vf.set_slot (i, std::move (vv));
-}
-
 std::unique_ptr <value>
-value_behavior <value_vector_t>::clone (value_vector_t const&vv)
+value_seq::clone () const
 {
-  value_vector_t vv2;
-  for (auto const &v: vv)
+  seq_t vv2;
+  for (auto const &v: m_seq)
     vv2.emplace_back (std::move (v->clone ()));
   return std::make_unique <value_seq> (std::move (vv2));
 }
 
-void
-value_behavior <Dwarf_Die>::show (Dwarf_Die const &die, std::ostream &o)
+constant
+value_seq::get_type_const () const
 {
-  o << "[" << std::hex
-    << dwarf_dieoffset ((Dwarf_Die *) &die) << "]";
+  return {(int) slot_type_id::T_SEQ, &slot_type_dom};
 }
 
-void
-value_behavior <Dwarf_Die>::move_to_slot (Dwarf_Die &&die,
-					  slot_idx i, valfile &vf)
+cmp_result
+value_seq::cmp (value const &that) const
 {
-  vf.set_slot (i, die);
+  assert (! "value_seq::cmp NIY");
+  abort ();
+}
+
+
+void
+value_die::show (std::ostream &o) const
+{
+  o << "[" << std::hex << dwarf_dieoffset ((Dwarf_Die *) &m_die) << "]";
 }
 
 std::unique_ptr <value>
-value_behavior <Dwarf_Die>::clone (Dwarf_Die const &die)
+value_die::clone () const
 {
-  return std::make_unique <value_die> (Dwarf_Die (die));
+  return std::make_unique <value_die> (m_die);
 }
 
+constant
+value_die::get_type_const () const
+{
+  return {(int) slot_type_id::T_NODE, &slot_type_dom};
+}
+
+cmp_result
+value_die::cmp (value const &that) const
+{
+  if (auto v = dynamic_cast <value_die const *> (&that))
+    return compare (Dwarf_Off (&m_die), Dwarf_Off (&v->m_die));
+  else
+    return cmp_result::fail;
+}
+
+
 void
-value_behavior <attribute_slot>::show (attribute_slot const &attr,
-				       std::ostream &o)
+value_attr::show (std::ostream &o) const
 {
   o << "(attribute, NYI)";
 }
 
-void
-value_behavior <attribute_slot>::move_to_slot (attribute_slot &&attr,
-					       slot_idx i, valfile &vf)
-{
-  vf.set_slot (i, std::move (attr));
-}
-
 std::unique_ptr <value>
-value_behavior <attribute_slot>::clone (attribute_slot const &attr)
+value_attr::clone () const
 {
-  return std::make_unique <value_attr> (attribute_slot (attr));
+  return std::make_unique <value_attr> (m_attr, m_paroff);
 }
 
-void
-valfile_slot::destroy (slot_type t)
+constant
+value_attr::get_type_const () const
 {
-  switch (t)
+  return {(int) slot_type_id::T_ATTR, &slot_type_dom};
+}
+
+cmp_result
+value_attr::cmp (value const &that) const
+{
+  if (auto v = dynamic_cast <value_attr const *> (&that))
     {
-    case slot_type::INVALID:
-    case slot_type::FLT:
-    case slot_type::DIE:
-    case slot_type::ATTR:
-    case slot_type::LINE:
-      return;
-
-    case slot_type::CST:
-      cst.~constant ();
-      return;
-
-    case slot_type::STR:
-      str.~basic_string ();
-      return;
-
-    case slot_type::SEQ:
-      seq.~vector ();
-      return;
-
-    case slot_type::LOCLIST_ENTRY:
-    case slot_type::LOCLIST_OP:
-      assert (!"not implemented");
-      abort ();
-
-    case slot_type::END:
-      assert (t != slot_type::END);
-      abort ();
+      if (m_paroff != v->m_paroff)
+	return compare (m_paroff, v->m_paroff);
+      else
+	return compare (dwarf_whatattr ((Dwarf_Attribute *) &m_attr),
+			dwarf_whatattr ((Dwarf_Attribute *) &v->m_attr));
     }
-
-  assert (t != t);
-  abort ();
+  else
+    return cmp_result::fail;
 }
 
-valfile::allocd_block
-valfile::alloc (size_t n)
+
+valfile::valfile (valfile const &that)
 {
-  size_t sz1 = offsetof (valfile, m_slots[n]);
-  size_t sz = sz1 + sizeof (slot_type) * (n + 1);
-  unsigned char *buf = new unsigned char[sz];
-
-  auto types = reinterpret_cast <slot_type *> (buf + sz1);
-  for (size_t i = 0; i < n; ++i)
-    types[i] = slot_type::INVALID;
-  types[n] = slot_type::END;
-
-  return { buf, types };
-}
-
-std::unique_ptr <valfile>
-valfile::create (size_t n)
-{
-  allocd_block b = alloc (n);
-  return std::unique_ptr <valfile> { new (b.buf) valfile (b.types) };
-}
-
-std::unique_ptr <valfile>
-valfile::copy (valfile const &that, size_t size)
-{
-  assert (that.m_types[size] == slot_type::END);
-
-  allocd_block b = alloc (size);
-  auto copy = std::unique_ptr <valfile> (new (b.buf) valfile (b.types));
-
-  for (size_t i = 0; i < size; ++i)
-    if (that.m_types[i] != slot_type::INVALID)
-      {
-	std::unique_ptr <value> vp = that.get_slot (slot_idx (i))->clone ();
-	copy->set_slot (slot_idx (i), std::move (vp));
-      }
-  return copy;
-}
-
-valfile::~valfile ()
-{
-  for (size_t i = 0; m_types[i] != slot_type::END; ++i)
-    m_slots[i].destroy (m_types[i]);
+  for (auto const &vf: that.m_values)
+    if (vf != nullptr)
+      m_values.push_back (vf->clone ());
+    else
+      m_values.push_back (nullptr);
 }
 
 namespace
 {
-  void dontuse ()
+  int
+  compare_vf (std::vector <std::unique_ptr <value> > const &a,
+	      std::vector <std::unique_ptr <value> > const &b)
   {
-    static bool seen = false;
-    if (seen)
-      return;
-    seen = true;
-    std::cout << "valfile::size and valfile::capacity are fairly expensive\n"
-	      << "it should be possible to determine these constants statically"
-	      << "\nfor any given dwgrep expression\n";
+    // There shouldn't really be stacks of different sizes in one
+    // program.
+    assert (a.size () == b.size ());
+
+    // The stack that has nullptr where the other has non-nullptr is
+    // smaller.
+    {
+      auto it = a.begin ();
+      auto jt = b.begin ();
+      for (; it != a.end (); ++it, ++jt)
+	if (*it == nullptr && *jt != nullptr)
+	  return -1;
+	else if (*it != nullptr && *jt == nullptr)
+	  return 1;
+    }
+
+    // The stack with smaller type_info addresses is smaller.
+    {
+      auto it = a.begin ();
+      auto jt = b.begin ();
+      for (; it != a.end (); ++it, ++jt)
+	if (&typeid (**it) < &typeid (**jt))
+	  return -1;
+	else if (&typeid (**it) > &typeid (**jt))
+	  return 1;
+    }
+
+    // We have the same number of slots with values of the same type.
+    // Now compare the values directly.
+    {
+      auto it = a.begin ();
+      auto jt = b.begin ();
+      for (; it != a.end (); ++it, ++jt)
+	switch ((*it)->cmp (**jt))
+	  {
+	  case cmp_result::fail:
+	    assert (! "Comparison of same-typed slots shouldn't fail!");
+	    abort ();
+	  case cmp_result::less:
+	    return -1;
+	  case cmp_result::greater:
+	    return 1;
+	  case cmp_result::equal:
+	    break;
+	  }
+    }
+
+    // The stacks are the same!
+    return 0;
   }
 }
 
-size_t
-valfile::size () const
+bool
+valfile::operator< (valfile const &that) const
 {
-  dontuse ();
-
-  size_t n = 0;
-  for (size_t i = 0; m_types[i] != slot_type::END; ++i)
-    if (m_types[i] != slot_type::INVALID)
-      ++n;
-
-  return n;
-}
-
-size_t
-valfile::capacity () const
-{
-  dontuse ();
-
-  size_t i = 0;
-  while (m_types[i] != slot_type::END)
-    ++i;
-
-  return i;
-}
-
-slot_type
-valfile::get_slot_type (slot_idx i) const
-{
-  assert (m_types[i.value ()] != slot_type::END);
-  assert (m_types[i.value ()] != slot_type::INVALID);
-  return m_types[i.value ()];
-}
-
-std::string const &
-valfile::get_slot_str (slot_idx i) const
-{
-  assert (m_types[i.value ()] == slot_type::STR);
-  return m_slots[i.value ()].str;
-}
-
-constant const &
-valfile::get_slot_cst (slot_idx i) const
-{
-  assert (m_types[i.value ()] == slot_type::CST);
-  return m_slots[i.value ()].cst;
-}
-
-value_vector_t const &
-valfile::get_slot_seq (slot_idx i) const
-{
-  assert (m_types[i.value ()] == slot_type::SEQ);
-  return m_slots[i.value ()].seq;
-}
-
-Dwarf_Die const &
-valfile::get_slot_die (slot_idx i) const
-{
-  assert (m_types[i.value ()] == slot_type::DIE);
-  return m_slots[i.value ()].die;
-}
-
-attribute_slot const &
-valfile::get_slot_attr (slot_idx i) const
-{
-  assert (m_types[i.value ()] == slot_type::ATTR);
-  return m_slots[i.value ()].attr;
-}
-
-// General accessor for all slot types.
-std::unique_ptr <valueref>
-valfile::get_slot (slot_idx i) const
-{
-  switch (m_types[i.value ()])
-    {
-    case slot_type::FLT:
-    case slot_type::LINE:
-      assert (!"not yet implemented");
-      abort ();
-
-    case slot_type::DIE:
-      return std::make_unique <valueref_die> (m_slots[i.value ()].die);
-
-    case slot_type::ATTR:
-      return std::make_unique <valueref_attr> (m_slots[i.value ()].attr);
-
-    case slot_type::CST:
-      return std::make_unique <valueref_cst> (m_slots[i.value ()].cst);
-
-    case slot_type::STR:
-      return std::make_unique <valueref_str> (m_slots[i.value ()].str);
-
-    case slot_type::SEQ:
-      return std::make_unique <valueref_seq> (m_slots[i.value ()].seq);
-
-    case slot_type::LOCLIST_ENTRY:
-    case slot_type::LOCLIST_OP:
-      assert (!"not implemented");
-      abort ();
-
-    case slot_type::INVALID:
-      assert (m_types[i.value ()] != slot_type::INVALID);
-      abort ();
-
-    case slot_type::END:
-      assert (m_types[i.value ()] != slot_type::END);
-      abort ();
-    }
-
-  assert (m_types[i.value ()] != m_types[i.value ()]);
-  abort ();
-}
-
-void
-valfile::invalidate_slot (slot_idx i)
-{
-  assert (m_types[i.value ()] != slot_type::END);
-  assert (m_types[i.value ()] != slot_type::INVALID);
-  m_slots[i.value ()].destroy (m_types[i.value ()]);
-  m_types[i.value ()] = slot_type::INVALID;
-}
-
-void
-valfile::set_slot (slot_idx i, value &&sv)
-{
-  sv.move_to_slot (i, *this);
-}
-
-void
-valfile::set_slot (slot_idx i, std::unique_ptr <value> vp)
-{
-  vp->move_to_slot (i, *this);
-}
-
-void
-valfile::set_slot (slot_idx i, constant &&cst)
-{
-  assert (m_types[i.value ()] != slot_type::END);
-  assert (m_types[i.value ()] == slot_type::INVALID);
-  m_types[i.value ()] = slot_type::CST;
-  new (&m_slots[i.value ()].cst) constant { cst };
-}
-
-void
-valfile::set_slot (slot_idx i, std::string &&str)
-{
-  assert (m_types[i.value ()] != slot_type::END);
-  assert (m_types[i.value ()] == slot_type::INVALID);
-  m_types[i.value ()] = slot_type::STR;
-  new (&m_slots[i.value ()].str) std::string { str };
-}
-
-void
-valfile::set_slot (slot_idx i, value_vector_t &&seq)
-{
-  assert (m_types[i.value ()] != slot_type::END);
-  assert (m_types[i.value ()] == slot_type::INVALID);
-  m_types[i.value ()] = slot_type::SEQ;
-  new (&m_slots[i.value ()].seq) value_vector_t { std::move (seq) };
-}
-
-void
-valfile::set_slot (slot_idx i, Dwarf_Die const &die)
-{
-  assert (m_types[i.value ()] != slot_type::END);
-  assert (m_types[i.value ()] == slot_type::INVALID);
-  m_types[i.value ()] = slot_type::DIE;
-  m_slots[i.value ()].die = die;
-}
-
-void
-valfile::set_slot (slot_idx i, attribute_slot &&attr)
-{
-  assert (m_types[i.value ()] != slot_type::END);
-  assert (m_types[i.value ()] == slot_type::INVALID);
-  m_types[i.value ()] = slot_type::ATTR;
-  m_slots[i.value ()].attr = attr;
-}
-
-void
-valfile::const_iterator::next ()
-{
-  assert (m_i != -1);
-  while (m_seq->m_types[m_i] == slot_type::INVALID)
-    ++m_i;
-
-  if (m_seq->m_types[m_i] == slot_type::END)
-    m_i = -1;
+  return compare_vf (m_values, that.m_values) < 0;
 }
 
 bool
-valfile::const_iterator::operator== (const_iterator that) const
+valfile::operator== (valfile const &that) const
 {
-  return m_seq == that.m_seq
-    && m_i == that.m_i;
+  return compare_vf (m_values, that.m_values) == 0;
 }
-
-bool
-valfile::const_iterator::operator!= (const_iterator that) const
-{
-  return !(*this == that);
-}
-
-valfile::const_iterator &
-valfile::const_iterator::operator++ ()
-{
-  assert (m_i != -1);
-  ++m_i;
-  next ();
-  return *this;
-}
-
-valfile::const_iterator
-valfile::const_iterator::operator++ (int)
-{
-  const_iterator tmp = *this;
-  ++*this;
-  return tmp;
-}
-
-std::unique_ptr <valueref>
-valfile::const_iterator::operator* () const
-{
-  assert (m_i >= 0);
-  return m_seq->get_slot (slot_idx (unsigned (m_i)));
-}
-
-std::unique_ptr <valueref>
-valfile::const_iterator::operator-> () const
-{
-  return **this;
-}
-
-#if 0
-int
-main(int argc, char *argv[])
-{
-  auto stk = valfile::create (10);
-  stk->set_slot (slot_idx (0), value_str { "blah" });
-  stk->set_slot (slot_idx (1),
-		 value_cst { constant { 17, &untyped_constant_dom } });
-
-  {
-    value_vector_t v;
-    v.push_back (std::make_unique <value_str> ("blah"));
-    v.push_back (std::make_unique <value_cst>
-		 (constant { 17, &untyped_constant_dom }));
-    stk->set_slot (slot_idx (2), value_seq { std::move (v) });
-  }
-
-  auto stk2 = valfile::copy (*stk, 10);
-  for (auto it = stk2->begin (); it != stk2->end (); ++it)
-    {
-      auto v = *it;
-      v->show (std::cout);
-      std::cout << std::endl;
-    }
-}
-#endif

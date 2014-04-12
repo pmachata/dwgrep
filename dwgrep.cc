@@ -212,8 +212,7 @@ main(int argc, char *argv[])
 	    {
 	      if (with_filename)
 		std::cout << fn << ":";
-	      auto value = result->get_slot (slot_idx (0));
-	      value->show (std::cout);
+	      result->get_slot (slot_idx (0)).show (std::cout);
 	      std::cout << "\n";
 	    }
 	  else
