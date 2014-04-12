@@ -172,11 +172,11 @@ public:
   virtual std::string name () const override = 0;
 
   virtual bool operate (valfile &vf, slot_idx dst,
-			Dwarf_Die die) const
+			Dwarf_Die &die) const
   { return false; }
 
   virtual bool operate (valfile &vf, slot_idx dst,
-			Dwarf_Attribute attr, Dwarf_Die die) const
+			Dwarf_Attribute &attr, Dwarf_Die &die) const
   { return false; }
 };
 
@@ -193,7 +193,7 @@ public:
   {}
 
   std::string name () const override;
-  bool operate (valfile &vf, slot_idx dst, Dwarf_Die die) const override;
+  bool operate (valfile &vf, slot_idx dst, Dwarf_Die &die) const override;
 };
 
 class op_f_offset
@@ -203,7 +203,7 @@ public:
   using dwop_f::dwop_f;
 
   std::string name () const override;
-  bool operate (valfile &vf, slot_idx dst, Dwarf_Die die) const override;
+  bool operate (valfile &vf, slot_idx dst, Dwarf_Die &die) const override;
 };
 
 class op_f_name
@@ -213,9 +213,9 @@ public:
   using dwop_f::dwop_f;
 
   std::string name () const override;
-  bool operate (valfile &vf, slot_idx dst, Dwarf_Die die) const override;
+  bool operate (valfile &vf, slot_idx dst, Dwarf_Die &die) const override;
   bool operate (valfile &vf, slot_idx dst,
-		Dwarf_Attribute attr, Dwarf_Die die) const override;
+		Dwarf_Attribute &attr, Dwarf_Die &die) const override;
 };
 
 class op_f_tag
@@ -225,7 +225,7 @@ public:
   using dwop_f::dwop_f;
 
   std::string name () const override;
-  bool operate (valfile &vf, slot_idx dst, Dwarf_Die die) const override;
+  bool operate (valfile &vf, slot_idx dst, Dwarf_Die &die) const override;
 };
 
 class op_f_form
@@ -236,7 +236,7 @@ public:
 
   std::string name () const override;
   bool operate (valfile &vf, slot_idx dst,
-		Dwarf_Attribute attr, Dwarf_Die die) const override;
+		Dwarf_Attribute &attr, Dwarf_Die &die) const override;
 };
 
 class op_f_value
@@ -247,7 +247,7 @@ public:
 
   std::string name () const override;
   bool operate (valfile &vf, slot_idx dst,
-		Dwarf_Attribute attr, Dwarf_Die die) const override;
+		Dwarf_Attribute &attr, Dwarf_Die &die) const override;
 };
 
 class op_f_parent
@@ -257,9 +257,9 @@ public:
   using dwop_f::dwop_f;
 
   std::string name () const override;
-  bool operate (valfile &vf, slot_idx dst, Dwarf_Die die) const override;
+  bool operate (valfile &vf, slot_idx dst, Dwarf_Die &die) const override;
   bool operate (valfile &vf, slot_idx dst,
-		Dwarf_Attribute attr, Dwarf_Die die) const override;
+		Dwarf_Attribute &attr, Dwarf_Die &die) const override;
 };
 
 // The stringer hieararchy supports op_format, which implements

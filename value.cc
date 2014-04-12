@@ -19,7 +19,24 @@ namespace
       return cmp_result::greater;
     return cmp_result::equal;
   }
+
+  value_type
+  alloc_vtype ()
+  {
+    static uint8_t last = 0;
+    value_type vt {last++};
+    if (last == 0)
+      {
+	std::cerr << "Ran out of value type identifiers." << std::endl;
+	std::terminate ();
+      }
+    return vt;
+  }
 }
+
+value_type const value_type::none = alloc_vtype ();
+
+value_type const value_cst::vtype = alloc_vtype ();
 
 void
 value_cst::show (std::ostream &o) const
@@ -42,12 +59,14 @@ value_cst::get_type_const () const
 cmp_result
 value_cst::cmp (value const &that) const
 {
-  if (auto v = dynamic_cast <value_cst const *> (&that))
+  if (auto v = value::as <value_cst> (&that))
     return compare (m_cst, v->m_cst);
   else
     return cmp_result::fail;
 }
 
+
+value_type const value_str::vtype = alloc_vtype ();
 
 void
 value_str::show (std::ostream &o) const
@@ -70,12 +89,14 @@ value_str::get_type_const () const
 cmp_result
 value_str::cmp (value const &that) const
 {
-  if (auto v = dynamic_cast <value_str const *> (&that))
+  if (auto v = value::as <value_str> (&that))
     return compare (m_str, v->m_str);
   else
     return cmp_result::fail;
 }
 
+
+value_type const value_seq::vtype = alloc_vtype ();
 
 void
 value_seq::show (std::ostream &o) const
@@ -115,6 +136,8 @@ value_seq::cmp (value const &that) const
 }
 
 
+value_type const value_die::vtype = alloc_vtype ();
+
 void
 value_die::show (std::ostream &o) const
 {
@@ -148,13 +171,15 @@ value_die::get_type_const () const
 cmp_result
 value_die::cmp (value const &that) const
 {
-  if (auto v = dynamic_cast <value_die const *> (&that))
+  if (auto v = value::as <value_die> (&that))
     return compare (dwarf_dieoffset ((Dwarf_Die *) &m_die),
 		    dwarf_dieoffset ((Dwarf_Die *) &v->m_die));
   else
     return cmp_result::fail;
 }
 
+
+value_type const value_attr::vtype = alloc_vtype ();
 
 void
 value_attr::show (std::ostream &o) const
@@ -164,7 +189,7 @@ value_attr::show (std::ostream &o) const
   o << constant (name, &dw_attr_short_dom) << " ("
     << constant (form, &dw_form_short_dom) << ")\t";
   auto v = at_value (m_attr, m_die);
-  if (auto d = dynamic_cast <value_die const *> (v.get ()))
+  if (auto d = value::as <value_die> (v.get ()))
     o << "[" << dwarf_dieoffset ((Dwarf_Die *) &d->get_die ()) << "]";
   else
     v->show (o);
@@ -185,7 +210,7 @@ value_attr::get_type_const () const
 cmp_result
 value_attr::cmp (value const &that) const
 {
-  if (auto v = dynamic_cast <value_attr const *> (&that))
+  if (auto v = value::as <value_attr> (&that))
     {
       Dwarf_Off a = dwarf_dieoffset ((Dwarf_Die *) &m_die);
       Dwarf_Off b = dwarf_dieoffset ((Dwarf_Die *) &v->m_die);

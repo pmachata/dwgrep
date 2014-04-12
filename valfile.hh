@@ -100,11 +100,12 @@ public:
   }
 
   template <class T>
-  T *get_slot_as (slot_idx i) const
+  T *get_slot_as (slot_idx idx) const
   {
-    value *vp = m_values[i.value ()].get ();
+    size_t i = idx.value ();
+    value *vp = m_values[i].get ();
     assert (vp != nullptr);
-    return dynamic_cast <T *> (vp);
+    return value::as <T> (vp);
   }
 
   bool operator< (valfile const &that) const;

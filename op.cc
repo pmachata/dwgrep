@@ -251,10 +251,10 @@ struct op_f_child::pimpl
 	      {
 		if (auto v = vf->get_slot_as <value_die> (m_src))
 		  {
-		    Dwarf_Die die = v->get_die ();
-		    if (dwarf_haschildren (&die))
+		    Dwarf_Die *die = const_cast <Dwarf_Die *> (&v->get_die ());
+		    if (dwarf_haschildren (die))
 		      {
-			if (dwarf_child (&die, &m_child) != 0)
+			if (dwarf_child (die, &m_child) != 0)
 			  throw_libdw ();
 
 			// We found our guy.
@@ -441,13 +441,15 @@ dwop_f::next ()
   while (auto vf = m_upstream->next ())
     if (auto v = vf->get_slot_as <value_die> (m_src))
       {
-	Dwarf_Die die = v->get_die ();
-	if (operate (*vf, m_dst, die))
+	Dwarf_Die *die = const_cast <Dwarf_Die *> (&v->get_die ());
+	if (operate (*vf, m_dst, *die))
 	  return vf;
       }
     else if (auto v = vf->get_slot_as <value_attr> (m_src))
       {
-	if (operate (*vf, m_dst, v->get_attr (), v->get_die ()))
+	Dwarf_Die *die = const_cast <Dwarf_Die *> (&v->get_die ());
+	Dwarf_Attribute *at = const_cast <Dwarf_Attribute *> (&v->get_attr ());
+	if (operate (*vf, m_dst, *at, *die))
 	  return vf;
       }
 
@@ -455,7 +457,7 @@ dwop_f::next ()
 }
 
 bool
-op_f_atval::operate (valfile &vf, slot_idx dst, Dwarf_Die die) const
+op_f_atval::operate (valfile &vf, slot_idx dst, Dwarf_Die &die) const
 {
   Dwarf_Attribute attr;
   if (dwarf_attr_integrate (&die, m_name, &attr) == nullptr)
@@ -474,7 +476,7 @@ op_f_atval::name () const
 }
 
 bool
-op_f_offset::operate (valfile &vf, slot_idx dst, Dwarf_Die die) const
+op_f_offset::operate (valfile &vf, slot_idx dst, Dwarf_Die &die) const
 {
   Dwarf_Off off = dwarf_dieoffset (&die);
   auto v = std::make_unique <value_cst> (constant {off, &hex_constant_dom});
@@ -491,7 +493,7 @@ op_f_offset::name () const
 namespace
 {
   bool
-  operate_tag (valfile &vf, slot_idx dst, Dwarf_Die die)
+  operate_tag (valfile &vf, slot_idx dst, Dwarf_Die &die)
   {
     int tag = dwarf_tag (&die);
     assert (tag >= 0);
@@ -502,14 +504,14 @@ namespace
 }
 
 bool
-op_f_name::operate (valfile &vf, slot_idx dst, Dwarf_Die die) const
+op_f_name::operate (valfile &vf, slot_idx dst, Dwarf_Die &die) const
 {
   return operate_tag (vf, dst, die);
 }
 
 bool
 op_f_name::operate (valfile &vf, slot_idx dst,
-		    Dwarf_Attribute attr, Dwarf_Die die) const
+		    Dwarf_Attribute &attr, Dwarf_Die &die) const
 
 {
   unsigned name = dwarf_whatattr (&attr);
@@ -525,7 +527,7 @@ op_f_name::name () const
 }
 
 bool
-op_f_tag::operate (valfile &vf, slot_idx dst, Dwarf_Die die) const
+op_f_tag::operate (valfile &vf, slot_idx dst, Dwarf_Die &die) const
 {
   return operate_tag (vf, dst, die);
 }
@@ -538,7 +540,7 @@ op_f_tag::name () const
 
 bool
 op_f_form::operate (valfile &vf, slot_idx dst,
-		    Dwarf_Attribute attr, Dwarf_Die die) const
+		    Dwarf_Attribute &attr, Dwarf_Die &die) const
 {
   unsigned name = dwarf_whatform (&attr);
   constant cst {name, &dw_form_dom};
@@ -555,7 +557,7 @@ op_f_form::name () const
 
 bool
 op_f_value::operate (valfile &vf, slot_idx dst,
-		     Dwarf_Attribute attr, Dwarf_Die die) const
+		     Dwarf_Attribute &attr, Dwarf_Die &die) const
 {
   vf.set_slot (dst, at_value (attr, die));
   return true;
@@ -570,14 +572,14 @@ op_f_value::name () const
 
 bool
 op_f_parent::operate (valfile &vf, slot_idx dst,
-		      Dwarf_Attribute attr, Dwarf_Die die) const
+		      Dwarf_Attribute &attr, Dwarf_Die &die) const
 {
   vf.set_slot (dst, std::make_unique <value_die> (die));
   return true;
 }
 
 bool
-op_f_parent::operate (valfile &vf, slot_idx dst, Dwarf_Die die) const
+op_f_parent::operate (valfile &vf, slot_idx dst, Dwarf_Die &die) const
 {
   Dwarf_Off par_off = m_g->find_parent (die);
   if (par_off == dwgrep_graph::none_off)
@@ -1292,8 +1294,8 @@ pred_at::result (valfile &vf)
 {
   if (auto v = vf.get_slot_as <value_die> (m_idx))
     {
-      Dwarf_Die die = v->get_die ();
-      return pred_result (dwarf_hasattr_integrate (&die, m_atname) != 0);
+      Dwarf_Die *die = const_cast <Dwarf_Die *> (&v->get_die ());
+      return pred_result (dwarf_hasattr_integrate (die, m_atname) != 0);
     }
   else if (auto v = vf.get_slot_as <value_attr> (m_idx))
     {
@@ -1317,8 +1319,8 @@ pred_tag::result (valfile &vf)
 {
   if (auto v = vf.get_slot_as <value_die> (m_idx))
     {
-      Dwarf_Die die = v->get_die ();
-      return pred_result (dwarf_tag (&die) == m_tag);
+      Dwarf_Die *die = const_cast <Dwarf_Die *> (&v->get_die ());
+      return pred_result (dwarf_tag (die) == m_tag);
     }
   else
     return pred_result::fail;
