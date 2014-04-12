@@ -26,7 +26,7 @@ check: test-parser
 dwgrep: override LDFLAGS += -ldw -lelf
 
 dwgrep: dwgrep.o parser.o lexer.o tree.o constant.o op.o valfile.o	\
-	build.o cache.o dwcst.o vfcst.o
+	build.o cache.o dwcst.o vfcst.o atval.o
 test-parser: test-parser.o parser.o lexer.o tree.o constant.o dwcst.o	\
 	vfcst.o
 
