@@ -215,7 +215,6 @@ public:
   take_slot (slot_idx idx)
   {
     size_t i = idx.value ();
-    assert (m_values[i] != nullptr);
     return std::move (m_values[i]);
   }
 

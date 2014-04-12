@@ -764,8 +764,8 @@ op_swap::next ()
 {
   if (auto vf = m_upstream->next ())
     {
-      auto tmp = vf->get_slot (m_dst_a).clone ();
-      vf->set_slot (m_dst_a, vf->get_slot (m_dst_b).clone ());
+      auto tmp = vf->take_slot (m_dst_a);
+      vf->set_slot (m_dst_a, vf->take_slot (m_dst_b));
       vf->set_slot (m_dst_b, std::move (tmp));
       return vf;
     }
