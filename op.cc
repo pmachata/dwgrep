@@ -1129,6 +1129,120 @@ op_close::name () const
   return m_pimpl->name ();
 }
 
+
+namespace
+{
+  void
+  check_arith (constant cst_a, constant cst_b)
+  {
+    // If a named constant partakes, warn.
+    if (! cst_a.dom ()->safe_arith () || ! cst_b.dom ()->safe_arith ())
+      std::cerr << "Warning: doing arithmetic with " << cst_a << " and "
+		<< cst_b << " is probably not meaningful.\n";
+  }
+}
+
+valfile::uptr
+op_f_add::next ()
+{
+  while (auto vf = m_upstream->next ())
+    if (auto va = vf->get_slot_as <value_cst> (m_src_a))
+      {
+	if (auto vb = vf->get_slot_as <value_cst> (m_src_b))
+	  {
+	    constant cst_a = va->get_constant ();
+	    constant cst_b = vb->get_constant ();
+
+	    check_arith (cst_a, cst_b);
+
+	    constant result;
+	    if (cst_a.dom ()->sign () == cst_b.dom ()->sign ()
+		|| (cst_b.dom ()->sign () && ((int64_t) cst_b.value ()) >= 0))
+	      // Either both are signed, or both are unsigned, in
+	      // which case we can simply add.  Or B is signed and A
+	      // unsigned, but B is non-negative, and we can pretend
+	      // it's unsigned.
+	      result = constant {cst_a.value () + cst_b.value (),
+				 cst_a.dom ()->plain ()
+					? cst_b.dom () : cst_a.dom ()};
+
+	    else if (cst_a.dom ()->sign () && ((int64_t) cst_a.value ()) >= 0)
+	      // A's signed but non-negative, treat it as unsigned.
+	      result = constant {cst_a.value () + cst_b.value (),
+				 cst_b.dom ()};
+
+	    else if ((int64_t) (cst_a.value () + cst_b.value ()) >= 0)
+	      // A or B is signed and negative, but the other one is
+	      // greater, so we can keep unsigned dom.
+	      result = constant {cst_a.value () + cst_b.value (),
+				 cst_a.dom ()->sign ()
+					? cst_b.dom () : cst_a.dom ()};
+
+	    else
+	      // Otherwise we need to take the signed dom.
+	      result = constant {cst_a.value () + cst_b.value (),
+				 cst_a.dom ()->sign ()
+					? cst_a.dom () : cst_b.dom ()};
+	    if (m_src_a == m_dst)
+	      vf->set_slot (m_src_b, nullptr);
+	    else if (m_src_b == m_dst)
+	      vf->set_slot (m_src_a, nullptr);
+
+	    vf->set_slot (m_dst, std::make_unique <value_cst> (result));
+	    return vf;
+	  }
+      }
+    else if (auto va = vf->get_slot_as <value_str> (m_src_a))
+      {
+	if (auto vb = vf->get_slot_as <value_str> (m_src_b))
+	  {
+	    std::string result = va->get_string () + vb->get_string ();
+
+	    if (m_src_a == m_dst)
+	      vf->set_slot (m_src_b, nullptr);
+	    else if (m_src_b == m_dst)
+	      vf->set_slot (m_src_a, nullptr);
+
+	    vf->set_slot (m_dst,
+			  std::make_unique <value_str> (std::move (result)));
+	    return vf;
+	  }
+      }
+    else if (auto va = vf->get_slot_as <value_seq> (m_src_a))
+      {
+	if (auto vb = vf->get_slot_as <value_seq> (m_src_b))
+	  {
+	    value_seq::seq_t seq_a = va->move_seq ();
+	    for (auto &v: vb->move_seq ())
+	      seq_a.emplace_back (std::move (v));
+
+	    if (m_src_a == m_dst)
+	      vf->set_slot (m_src_b, nullptr);
+	    else if (m_src_b == m_dst)
+	      vf->set_slot (m_src_a, nullptr);
+
+	    vf->set_slot (m_dst,
+			  std::make_unique <value_seq> (std::move (seq_a)));
+	    return vf;
+	  }
+      }
+
+  return nullptr;
+}
+
+void
+op_f_add::reset ()
+{
+  m_upstream->reset ();
+}
+
+std::string
+op_f_add::name () const
+{
+  return "f_add";
+}
+
+
 pred_result
 pred_not::result (valfile &vf)
 {

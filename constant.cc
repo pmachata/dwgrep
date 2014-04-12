@@ -16,6 +16,17 @@ static struct
   {
     return true;
   }
+
+  bool
+  safe_arith () const override
+  {
+    return true;
+  }
+
+  bool plain () const override
+  {
+    return true;
+  }
 } signed_constant_dom_obj;
 
 constant_dom const &signed_constant_dom = signed_constant_dom_obj;
@@ -34,6 +45,17 @@ struct unsigned_constant_dom_t
   sign () const override
   {
     return false;
+  }
+
+  bool
+  safe_arith () const override
+  {
+    return true;
+  }
+
+  bool plain () const override
+  {
+    return true;
   }
 };
 
@@ -62,6 +84,12 @@ static struct
   sign () const override
   {
     return false;
+  }
+
+  bool
+  safe_arith () const override
+  {
+    return true;
   }
 } hex_constant_dom_obj;
 

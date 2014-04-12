@@ -261,6 +261,8 @@ tree::build_exec (std::shared_ptr <op> upstream, dwgrep_graph::sptr q,
       }
 
     case tree_type::F_ADD:
+      return std::make_unique <op_f_add> (upstream, src_a (), src_b (), dst ());
+
     case tree_type::F_SUB:
     case tree_type::F_MUL:
     case tree_type::F_DIV:

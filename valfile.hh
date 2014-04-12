@@ -136,6 +136,9 @@ public:
   seq_t const &get_seq () const
   { return m_seq; }
 
+  seq_t &&move_seq ()
+  { return std::move (m_seq); }
+
   void show (std::ostream &o) const override;
   std::unique_ptr <value> clone () const override;
   constant get_type_const () const override;
@@ -227,11 +230,11 @@ public:
   }
 
   template <class T>
-  T const *get_slot_as (slot_idx i) const
+  T *get_slot_as (slot_idx i) const
   {
-    value const *vp = m_values[i.value ()].get ();
+    value *vp = m_values[i.value ()].get ();
     assert (vp != nullptr);
-    return dynamic_cast <T const *> (vp);
+    return dynamic_cast <T *> (vp);
   }
 
   bool operator< (valfile const &that) const;

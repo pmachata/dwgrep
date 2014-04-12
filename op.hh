@@ -644,7 +644,28 @@ public:
   void reset () override;
 };
 
-class op_f_add;
+class op_f_add
+  : public op
+{
+  std::shared_ptr <op> m_upstream;
+  slot_idx m_src_a;
+  slot_idx m_src_b;
+  slot_idx m_dst;
+
+public:
+  op_f_add (std::shared_ptr <op> upstream,
+	    slot_idx src_a, slot_idx src_b, slot_idx dst)
+    : m_upstream {upstream}
+    , m_src_a {src_a}
+    , m_src_b {src_b}
+    , m_dst {dst}
+  {}
+
+  valfile::uptr next () override;
+  std::string name () const override;
+  void reset () override;
+};
+
 class op_f_sub;
 class op_f_mul;
 class op_f_div;

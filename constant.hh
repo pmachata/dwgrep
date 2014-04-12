@@ -12,7 +12,18 @@ class constant_dom
 public:
   virtual ~constant_dom () {}
   virtual void show (uint64_t c, std::ostream &o) const = 0;
+
+  // Whether values of this domain are signed.
   virtual bool sign () const = 0;
+
+  // Whether this domain is considered safe for integer arithmetic.
+  // (E.g. named constants wouldn't.)
+  virtual bool safe_arith () const { return false; }
+
+  // When doing arithmetic, whether this domain is considered plain
+  // and should be given up for the other one.  (E.g. hex domain
+  // wouldn't.)
+  virtual bool plain () const { return false; }
 };
 
 // Two trivial domains for unnamed constants: one for signed, one for
@@ -36,10 +47,17 @@ class constant
   constant_dom const *m_dom;
 
 public:
-  constant (uint64_t value, constant_dom const *dom)
-    : m_value (value)
-    , m_dom (dom)
+  constant ()
+    : m_value {0}
+    , m_dom {nullptr}
   {}
+
+  constant (uint64_t value, constant_dom const *dom)
+    : m_value {value}
+    , m_dom {dom}
+  {}
+
+  constant (constant const &copy) = default;
 
   constant_dom const *dom () const
   {
