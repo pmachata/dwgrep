@@ -119,12 +119,12 @@ void
 value_die::show (std::ostream &o) const
 {
   std::ios::fmtflags f {o.flags ()};
-  o << "[" << std::hex << dwarf_dieoffset ((Dwarf_Die *) &m_die) << "]\t"
-    << constant ((unsigned) dwarf_tag ((Dwarf_Die *) &m_die),
-		 &dw_tag_short_dom);
 
-  for (auto it = attr_iterator {(Dwarf_Die *) &m_die};
-       it != attr_iterator::end (); ++it)
+  Dwarf_Die *die = const_cast <Dwarf_Die *> (&m_die);
+  o << "[" << std::hex << dwarf_dieoffset (die) << "]\t"
+    << constant (dwarf_tag (die), &dw_tag_short_dom);
+
+  for (auto it = attr_iterator {die}; it != attr_iterator::end (); ++it)
     {
       o << "\n\t";
       value_attr {**it, m_die}.show (o);
