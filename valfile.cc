@@ -148,7 +148,8 @@ cmp_result
 value_die::cmp (value const &that) const
 {
   if (auto v = dynamic_cast <value_die const *> (&that))
-    return compare (Dwarf_Off (&m_die), Dwarf_Off (&v->m_die));
+    return compare (dwarf_dieoffset ((Dwarf_Die *) &m_die),
+		    dwarf_dieoffset ((Dwarf_Die *) &v->m_die));
   else
     return cmp_result::fail;
 }
