@@ -165,19 +165,19 @@ class value_attr
   : public value
 {
   Dwarf_Attribute m_attr;
-  Dwarf_Off m_paroff;
+  Dwarf_Die m_die;
 
 public:
-  value_attr (Dwarf_Attribute attr, Dwarf_Off paroff)
+  value_attr (Dwarf_Attribute attr, Dwarf_Die die)
     : m_attr (attr)
-    , m_paroff (paroff)
+    , m_die (die)
   {}
 
   Dwarf_Attribute const &get_attr () const
   { return m_attr; }
 
-  Dwarf_Off get_parent_off () const
-  { return m_paroff; }
+  Dwarf_Die get_die () const
+  { return m_die; }
 
   void show (std::ostream &o) const override;
   std::unique_ptr <value> clone () const override;

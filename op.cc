@@ -167,11 +167,7 @@ struct op_sel_unit::pimpl
 		  }
 		else if (auto v = vf->get_slot_as <value_attr> (m_src))
 		  {
-		    Dwarf_Off paroff = v->get_parent_off ();
-		    Dwarf_Die die;
-		    if (dwarf_offdie (&*m_dw, paroff, &die) == nullptr)
-		      throw_libdw ();
-		    init_from_die (die);
+		    init_from_die (v->get_die ());
 		    m_vf = std::move (vf);
 		  }
 	      }
@@ -365,8 +361,7 @@ struct op_f_attr::pimpl
 	if (m_it != attr_iterator::end ())
 	  {
 	    auto ret = std::make_unique <valfile> (*m_vf);
-	    auto vp = std::make_unique <value_attr>
-	      (**m_it, dwarf_dieoffset (&m_die));
+	    auto vp = std::make_unique <value_attr> (**m_it, m_die);
 	    ret->set_slot (m_dst, std::move (vp));
 	    ++m_it;
 	    return ret;
@@ -452,9 +447,7 @@ dwop_f::next ()
       }
     else if (auto v = vf->get_slot_as <value_attr> (m_src))
       {
-	Dwarf_Attribute attr = v->get_attr ();
-	Dwarf_Off paroff = v->get_parent_off ();
-	if (operate (*vf, m_dst, attr, paroff))
+	if (operate (*vf, m_dst, v->get_attr (), v->get_die ()))
 	  return vf;
       }
 
@@ -516,7 +509,7 @@ op_f_name::operate (valfile &vf, slot_idx dst, Dwarf_Die die) const
 
 bool
 op_f_name::operate (valfile &vf, slot_idx dst,
-		    Dwarf_Attribute attr, Dwarf_Off paroff) const
+		    Dwarf_Attribute attr, Dwarf_Die die) const
 
 {
   unsigned name = dwarf_whatattr (&attr);
@@ -545,7 +538,7 @@ op_f_tag::name () const
 
 bool
 op_f_form::operate (valfile &vf, slot_idx dst,
-		    Dwarf_Attribute attr, Dwarf_Off paroff) const
+		    Dwarf_Attribute attr, Dwarf_Die die) const
 {
   unsigned name = dwarf_whatform (&attr);
   constant cst {name, &dw_form_dom};
@@ -562,12 +555,8 @@ op_f_form::name () const
 
 bool
 op_f_value::operate (valfile &vf, slot_idx dst,
-		     Dwarf_Attribute attr, Dwarf_Off paroff) const
+		     Dwarf_Attribute attr, Dwarf_Die die) const
 {
-  Dwarf_Die die;
-  if (dwarf_offdie (&*m_g->dwarf, paroff, &die) == nullptr)
-    throw_libdw ();
-
   vf.set_slot (dst, at_value (attr, die));
   return true;
 }
@@ -581,12 +570,8 @@ op_f_value::name () const
 
 bool
 op_f_parent::operate (valfile &vf, slot_idx dst,
-		      Dwarf_Attribute attr, Dwarf_Off paroff) const
+		      Dwarf_Attribute attr, Dwarf_Die die) const
 {
-  Dwarf_Die die;
-  if (dwarf_offdie (&*m_g->dwarf, paroff, &die) == nullptr)
-    throw_libdw ();
-
   vf.set_slot (dst, std::make_unique <value_die> (die));
   return true;
 }

@@ -149,7 +149,7 @@ value_attr::show (std::ostream &o) const
 std::unique_ptr <value>
 value_attr::clone () const
 {
-  return std::make_unique <value_attr> (m_attr, m_paroff);
+  return std::make_unique <value_attr> (m_attr, m_die);
 }
 
 constant
@@ -163,8 +163,10 @@ value_attr::cmp (value const &that) const
 {
   if (auto v = dynamic_cast <value_attr const *> (&that))
     {
-      if (m_paroff != v->m_paroff)
-	return compare (m_paroff, v->m_paroff);
+      Dwarf_Off a = dwarf_dieoffset ((Dwarf_Die *) &m_die);
+      Dwarf_Off b = dwarf_dieoffset ((Dwarf_Die *) &v->m_die);
+      if (a != b)
+	return compare (a, b);
       else
 	return compare (dwarf_whatattr ((Dwarf_Attribute *) &m_attr),
 			dwarf_whatattr ((Dwarf_Attribute *) &v->m_attr));
