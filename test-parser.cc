@@ -400,6 +400,15 @@ do_tests ()
   test ("((1, 2), (3, 4))",
 	"(ALT (CONST<1>) (CONST<2>) (CONST<3>) (CONST<4>))");
 
+  ftest ("child?",
+	 "(CAT (SEL_UNIVERSE [dst=0;]) (ALT (F_CHILD [a=0;dst=0;]) (NOP)))",
+	 false);
+
+  ftest ("child+",
+	 "(CAT (SEL_UNIVERSE [dst=0;])"
+	 " (CAT (F_CHILD [a=0;dst=0;]) (CLOSE_STAR (F_CHILD [a=0;dst=0;]))))",
+	 false);
+
   std::cerr << tests << " tests total, " << failed << " failures." << std::endl;
   assert (failed == 0);
 }

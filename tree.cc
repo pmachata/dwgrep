@@ -288,10 +288,32 @@ namespace
   {
     switch (t.m_tt)
       {
+      case tree_type::CLOSE_PLUS:
+	  {
+	    assert (t.m_children.size () == 1);
+	    tree t2 {tree_type::CAT};
+	    t2.m_children.push_back (t.m_children[0]);
+	    tree t3 = t;
+	    t3.m_tt = tree_type::CLOSE_STAR;
+	    t2.m_children.push_back (std::move (t3));
+	    t = t2;
+	  }
+	  // Fall through.  T became a CAT node.
+
       case tree_type::CAT:
 	for (auto &t1: t.m_children)
 	  sr = resolve_operands (t1, sr, elim_shf);
 	break;
+
+      case tree_type::MAYBE:
+	{
+	  assert (t.m_children.size () == 1);
+	  tree t2 {tree_type::ALT};
+	  t2.m_children.push_back (t.m_children[0]);
+	  t2.m_children.push_back (tree {tree_type::NOP});
+	  t = t2;
+	}
+	// Fall through.  T became an ALT node.
 
       case tree_type::ALT:
 	{
@@ -488,9 +510,7 @@ namespace
 	  break;
 	}
 
-      case tree_type::CLOSE_PLUS:
       case tree_type::CLOSE_STAR:
-      case tree_type::MAYBE:
 	{
 	  assert (t.m_children.size () == 1);
 	  auto sr2 = resolve_operands (t.m_children[0], sr, elim_shf);

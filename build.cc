@@ -260,8 +260,6 @@ tree::build_exec (std::shared_ptr <op> upstream, dwgrep_graph::sptr q,
 	return std::make_unique <op_close> (upstream, origin, op);
       }
 
-    case tree_type::CLOSE_PLUS:
-    case tree_type::MAYBE:
     case tree_type::F_ADD:
     case tree_type::F_SUB:
     case tree_type::F_MUL:
@@ -279,9 +277,12 @@ tree::build_exec (std::shared_ptr <op> upstream, dwgrep_graph::sptr q,
       std::cerr << std::endl;
       abort ();
 
-    case tree_type::TRANSFORM:
-    case tree_type::PROTECT:
-    case tree_type::STR:
+    case tree_type::CLOSE_PLUS:  // X+ should be translated to X X*
+    case tree_type::MAYBE:       // X? should be translated to (,X)
+    case tree_type::TRANSFORM:   // N/X should be translated to N X's
+    case tree_type::PROTECT:     // +X should be translated to X[a=,dst=]
+    case tree_type::STR:         // FORMAT handles these nodes.
+
     case tree_type::PRED_TAG:
     case tree_type::PRED_AT:
     case tree_type::PRED_EQ:
