@@ -223,9 +223,14 @@ main(int argc, char *argv[])
 	  if (! show_count)
 	    {
 	      if (with_filename)
-		std::cout << fn << ":";
-	      result->get_slot (slot_idx (0)).show (std::cout);
-	      std::cout << "\n";
+		std::cout << fn << ":\n";
+	      for (size_t i = 0; i < stk_depth; ++i)
+		if (auto v = result->take_slot (slot_idx (i)))
+		  {
+		    v->show (std::cout);
+		    std::cout << "\n";
+		  }
+	      std::cout << "---\n";
 	    }
 	  else
 	    ++count;
