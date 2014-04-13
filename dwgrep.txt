@@ -714,7 +714,7 @@
 
    Each function numbers elements that it produces, and stores number
    of each element along with the element.  That number can be
-   recalled by saying "pos".  "count" the contains count of values
+   recalled by saying "pos".  "count" then contains count of values
    produced.
 
 ** EXPR → “?first” | “?second” | “?third” | “?last” — position assertion
@@ -784,7 +784,7 @@
    - "match" does a full-string match
    - "find" looks for an occurrence
 
-** EXPR → “+”?(“concat” | “length”) — operations on lists and strings
+** EXPR → “+”?“length” — length of a sequence or a string
 
 ** EXPR → (“?”|“!”)“empty” — list/string emptiness assertion
 
@@ -830,7 +830,7 @@
    : ?{@name ?"a"} child ?{@name ?"b"} child ?{@name ?"c"}
 
 
-* Representing non-DIE information
+* Interpreting
 
 ** @decl_file — represented as actual string including path
    (XXX we ignore mtime and size.  Those aren't stored anyway, but
@@ -839,8 +839,12 @@
    stored?  Or after it gets to be stored in general, where this is
    _not_ stored?)
 
-** @entry_pc constant — convert to full address
-    http://dwarfstd.org/ShowIssue.php?issue=120719.1
+** @high_pc constant, @entry_pc constant — convert to full address???
+   http://dwarfstd.org/ShowIssue.php?issue=120719.1
+
+   This could be optionally interpreted, i.e. @high_pc whose form is
+   DW_FORM_data* would actually yield a value computed from
+   DW_AT_ranges or DW_AT_low_pc.
 
 ** @MIPS_linkage_name — translated to @linkage_name automatically
 
