@@ -142,11 +142,13 @@ struct fmtlit
 %token TOK_PARENT TOK_CHILD TOK_ATTRIBUTE TOK_PREV
 %token TOK_NEXT TOK_TYPE TOK_OFFSET TOK_NAME TOK_TAG
 %token TOK_FORM TOK_VALUE TOK_POS TOK_COUNT TOK_EACH
+%token TOK_LENGTH
 
 %token TOK_PLUS_ADD TOK_PLUS_SUB TOK_PLUS_MUL TOK_PLUS_DIV TOK_PLUS_MOD
 %token TOK_PLUS_PARENT TOK_PLUS_CHILD TOK_PLUS_ATTRIBUTE TOK_PLUS_PREV
 %token TOK_PLUS_NEXT TOK_PLUS_TYPE TOK_PLUS_OFFSET TOK_PLUS_NAME TOK_PLUS_TAG
 %token TOK_PLUS_FORM TOK_PLUS_VALUE TOK_PLUS_POS TOK_PLUS_COUNT TOK_PLUS_EACH
+%token TOK_PLUS_LENGTH
 
 %token TOK_SWAP TOK_DUP TOK_OVER TOK_ROT TOK_DROP TOK_IF TOK_ELSE
 
@@ -415,6 +417,11 @@ Statement:
   { $$ = tree::create_nullary <tree_type::F_EACH> (); }
   | TOK_PLUS_EACH
   { $$ = tree::create_protect (tree::create_nullary <tree_type::F_EACH> ()); }
+
+  | TOK_LENGTH
+  { $$ = tree::create_nullary <tree_type::F_LENGTH> (); }
+  | TOK_PLUS_LENGTH
+  { $$ = tree::create_protect (tree::create_nullary <tree_type::F_LENGTH> ()); }
 
 
   | TOK_UNIVERSE

@@ -107,6 +107,7 @@ tree::build_pred (dwgrep_graph::sptr q, size_t maxsize) const
     case tree_type::F_POS:
     case tree_type::F_COUNT:
     case tree_type::F_EACH:
+    case tree_type::F_LENGTH:
     case tree_type::SEL_SECTION:
     case tree_type::SEL_UNIT:
     case tree_type::SHF_SWAP:
@@ -249,6 +250,9 @@ tree::build_exec (std::shared_ptr <op> upstream, dwgrep_graph::sptr q,
 
     case tree_type::F_EACH:
       return std::make_unique <op_f_each> (upstream, src_a (), dst ());
+
+    case tree_type::F_LENGTH:
+      return std::make_unique <op_f_length> (upstream, src_a (), dst ());
 
     case tree_type::F_TYPE:
       return std::make_unique <op_f_type> (upstream, src_a (), dst ());

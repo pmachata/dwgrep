@@ -606,6 +606,26 @@ public:
   void reset () override;
 };
 
+class op_f_length
+  : public op
+{
+  std::shared_ptr <op> m_upstream;
+  slot_idx m_src;
+  slot_idx m_dst;
+
+public:
+  op_f_length (std::shared_ptr <op> upstream,
+	     slot_idx src, slot_idx dst)
+    : m_upstream (upstream)
+    , m_src (src)
+    , m_dst (dst)
+  {}
+
+  valfile::uptr next () override;
+  std::string name () const override;
+  void reset () override;
+};
+
 class op_f_type
   : public op
 {

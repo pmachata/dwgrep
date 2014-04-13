@@ -71,6 +71,7 @@ OCT [0-7]
 "pos" return TOK_POS;
 "count" return TOK_COUNT;
 "each" return TOK_EACH;
+"length" return TOK_LENGTH;
 "universe" return TOK_UNIVERSE;
 "section" return TOK_SECTION;
 "unit" return TOK_UNIT;
@@ -94,6 +95,7 @@ OCT [0-7]
 "+pos" return TOK_PLUS_POS;
 "+count" return TOK_PLUS_COUNT;
 "+each" return TOK_PLUS_EACH;
+"+length" return TOK_PLUS_LENGTH;
 "+universe" return TOK_PLUS_UNIVERSE;
 "+section" return TOK_PLUS_SECTION;
 "+unit" return TOK_PLUS_UNIT;

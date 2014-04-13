@@ -992,6 +992,39 @@ op_f_each::name () const
 
 
 valfile::uptr
+op_f_length::next ()
+{
+  while (auto vf = m_upstream->next ())
+    if (auto v = vf->get_slot_as <value_seq> (m_src))
+      {
+	constant t {v->get_seq ().size (), &unsigned_constant_dom};
+	vf->set_slot (m_dst, std::make_unique <value_cst> (t));
+	return vf;
+      }
+    else if (auto v = vf->get_slot_as <value_str> (m_src))
+      {
+	constant t {v->get_string ().length (), &unsigned_constant_dom};
+	vf->set_slot (m_dst, std::make_unique <value_cst> (t));
+	return vf;
+      }
+
+  return nullptr;
+}
+
+void
+op_f_length::reset ()
+{
+  m_upstream->reset ();
+}
+
+std::string
+op_f_length::name () const
+{
+  return "f_length";
+}
+
+
+valfile::uptr
 op_f_type::next ()
 {
   if (auto vf = m_upstream->next ())
