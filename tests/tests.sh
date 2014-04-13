@@ -6,10 +6,12 @@ expect_count ()
     shift
     GOT=$(../dwgrep -c "$@" 2>/dev/null)
     if [ "$GOT" != "$COUNT" ]; then
-	echo "test: dwgrep -c" "$@"
-	echo "EXPECTED: $COUNT"
-	echo "     GOT: $GOT"
+	echo "FAIL: dwgrep -c" "$@"
+	echo "expected: $COUNT"
+	echo "     got: $GOT"
 	exit 1
+    else
+	echo "PASS: dwgrep -c" "$@"
     fi
 }
 
