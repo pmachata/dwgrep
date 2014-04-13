@@ -13,6 +13,6 @@ expect_count ()
     fi
 }
 
-expect_count 1 ./duplicate-parameters -e '
+expect_count 1 ./duplicate-const -e '
 	dup 2/child ?gt 2/(?const_type, ?volatile_type, ?restrict_type)
 	?{2/tag ?eq} ?{2/@type ?eq}'
