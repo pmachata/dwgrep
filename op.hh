@@ -28,6 +28,19 @@ public:
 // computations at all.
 class pred;
 
+// Origin is upstream-less node that is placed at the beginning of the
+// chain of computations.  It's provided a valfile from the outside by
+// way of set_next.  Its only action is to send this valfile down from
+// next() upon request.
+//
+// The way origin is used is that the chain is moved to initial state
+// by calling reset.  That reset eventually propagates to origin.
+// set_next can be caled then.  set_next assumes that reset was
+// called, and aborts if it didn't propagate all the way through
+// (i.e. there was a buggy op on the way).
+//
+// Several operation use origin to handle sub-expressions
+// (e.g. op_capture and pred_subx_any).
 class op_origin
   : public op
 {
