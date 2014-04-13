@@ -206,6 +206,12 @@ namespace
       case DW_AT_decimal_scale:
 	return atval_signed (attr);
 
+      case DW_AT_high_pc:
+      case DW_AT_entry_pc:
+	// High PC and entry PC that aren't DW_FORM_addr are relative
+	// to DW_AT_low_pc (or the first DW_AT_ranges address).  But
+	// we should probably keep it untranslated to keep close to
+	// actual data.
       case DW_AT_byte_size:
       case DW_AT_bit_size:
       case DW_AT_bit_offset:
