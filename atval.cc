@@ -35,6 +35,18 @@ namespace
   }
 
   std::unique_ptr <value>
+  atval_addr (Dwarf_Attribute attr)
+  {
+    // XXX Eventually we might want to have a dedicated type that
+    // carries along information necessary for later translation into
+    // symbol-relative offsets (like what readelf does).  NIY
+    Dwarf_Addr addr;
+    if (dwarf_formaddr (&attr, &addr) != 0)
+      throw_libdw ();
+    return std::make_unique <value_cst> (constant {addr, &hex_constant_dom});
+  }
+
+  std::unique_ptr <value>
   handle_at_dependent_value (Dwarf_Attribute attr, Dwarf_Die die)
   {
     switch (dwarf_whatattr (&attr))
@@ -276,17 +288,7 @@ at_value (Dwarf_Attribute attr, Dwarf_Die die)
       return atval_unsigned (attr);
 
     case DW_FORM_addr:
-      {
-	// XXX Eventually we might want to have a dedicated type
-	// that carries along information necessary for later
-	// translation into symbol-relative offsets (like what
-	// readelf does).
-	Dwarf_Addr addr;
-	if (dwarf_formaddr (&attr, &addr) != 0)
-	  throw_libdw ();
-	return std::make_unique <value_cst>
-	  (constant {addr, &hex_constant_dom});
-      }
+      return atval_addr (attr);
 
     case DW_FORM_flag:
     case DW_FORM_flag_present:
