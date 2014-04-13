@@ -16,3 +16,8 @@ expect_count ()
 expect_count 1 ./duplicate-const -e '
 	dup 2/child ?gt 2/(?const_type, ?volatile_type, ?restrict_type)
 	?{2/tag ?eq} ?{2/@type ?eq}'
+
+expect_count 1 ./nontrivial-types.o -e '
+	?subprogram !@declaration +child ?formal_parameter
+	?{@type ((?const_type, ?volatile_type, ?typedef) @type)*
+	  (?structure_type, ?class_type)}'
