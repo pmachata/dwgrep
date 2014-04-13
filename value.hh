@@ -17,6 +17,9 @@ enum class cmp_result
     fail,
   };
 
+// We use this to keep track of types of instances of subclasses of
+// class value.  value::as uses this to avoid having to dynamic_cast,
+// which is needlessly flexible and slow for our purposes.
 class value_type
 {
   uint8_t m_code;
