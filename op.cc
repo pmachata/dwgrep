@@ -251,7 +251,7 @@ struct op_f_child::pimpl
 	      {
 		if (auto v = vf->get_slot_as <value_die> (m_src))
 		  {
-		    Dwarf_Die *die = const_cast <Dwarf_Die *> (&v->get_die ());
+		    Dwarf_Die *die = &v->get_die ();
 		    if (dwarf_haschildren (die))
 		      {
 			if (dwarf_child (die, &m_child) != 0)
@@ -441,17 +441,12 @@ dwop_f::next ()
   while (auto vf = m_upstream->next ())
     if (auto v = vf->get_slot_as <value_die> (m_src))
       {
-	Dwarf_Die *die = const_cast <Dwarf_Die *> (&v->get_die ());
-	if (operate (*vf, m_dst, *die))
+	if (operate (*vf, m_dst, v->get_die ()))
 	  return vf;
       }
     else if (auto v = vf->get_slot_as <value_attr> (m_src))
-      {
-	Dwarf_Die *die = const_cast <Dwarf_Die *> (&v->get_die ());
-	Dwarf_Attribute *at = const_cast <Dwarf_Attribute *> (&v->get_attr ());
-	if (operate (*vf, m_dst, *at, *die))
-	  return vf;
-      }
+      if (operate (*vf, m_dst, v->get_attr (), v->get_die ()))
+	return vf;
 
   return nullptr;
 }
@@ -1294,7 +1289,7 @@ pred_at::result (valfile &vf)
 {
   if (auto v = vf.get_slot_as <value_die> (m_idx))
     {
-      Dwarf_Die *die = const_cast <Dwarf_Die *> (&v->get_die ());
+      Dwarf_Die *die = &v->get_die ();
       return pred_result (dwarf_hasattr_integrate (die, m_atname) != 0);
     }
   else if (auto v = vf.get_slot_as <value_attr> (m_idx))
@@ -1318,10 +1313,7 @@ pred_result
 pred_tag::result (valfile &vf)
 {
   if (auto v = vf.get_slot_as <value_die> (m_idx))
-    {
-      Dwarf_Die *die = const_cast <Dwarf_Die *> (&v->get_die ());
-      return pred_result (dwarf_tag (die) == m_tag);
-    }
+    return pred_result (dwarf_tag (&v->get_die ()) == m_tag);
   else
     return pred_result::fail;
 }

@@ -176,7 +176,7 @@ public:
     , m_die (die)
   {}
 
-  Dwarf_Die const &get_die () const
+  Dwarf_Die &get_die ()
   { return m_die; }
 
   void show (std::ostream &o) const override;
@@ -200,10 +200,10 @@ public:
     , m_die (die)
   {}
 
-  Dwarf_Attribute const &get_attr () const
+  Dwarf_Attribute &get_attr ()
   { return m_attr; }
 
-  Dwarf_Die const &get_die () const
+  Dwarf_Die &get_die ()
   { return m_die; }
 
   void show (std::ostream &o) const override;
