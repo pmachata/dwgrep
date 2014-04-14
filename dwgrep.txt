@@ -815,7 +815,8 @@
    ?DW_TAG_tag.  There would be a logic for allowing each domain its
    own set of ways to apply itself on a candidate value
    (e.g. ?DW_ATE_unsigned is not applicable to DIE's, but ?DW_AT_at
-   and ?DW_TAG_tag are).
+   and ?DW_TAG_tag are).  (Though really ?DW_ATE_unsigned applied on a
+   DIE might evaluate to ?{@encoding DW_ATE_unsigned ?eq}.)
 
    |-----------------+------------------|
    | constant family | applicability    |
@@ -936,6 +937,7 @@
 
 
 * Examples
+
 ** Josh Stone's nontrivial-parameters script
 
    : ?subprogram !@declaration
