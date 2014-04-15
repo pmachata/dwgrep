@@ -24,21 +24,27 @@ expect_count 1 ./nontrivial-types.o -e '
 	?{@type ((?const_type, ?volatile_type, ?typedef) @type)*
 	  (?structure_type, ?class_type)}'
 
+# Test that universe annotates position.
 expect_count 1 ./nontrivial-types.o -e '
 	?{offset 0xb8 ?eq} ?{pos 10 ?eq}'
 
+# Test that child annotates position.
 expect_count 1 ./nontrivial-types.o -e '
 	?root child ?{offset 0xb8 ?eq} ?{pos 6 ?eq}'
 
+# Test that format annotates position.
 expect_count 1 ./nontrivial-types.o -e '
 	?root "%( child offset %)" ?{"0xb8" ?eq} ?{pos 6 ?eq}'
 
+# Test that attribute annotates position.
 expect_count 1 ./nontrivial-types.o -e '
 	?root attribute ?@stmt_list ?{pos 6 ?eq}'
 
+# Test that unit annotates position.
 expect_count 11 ./nontrivial-types.o -e '
 	+unit ?{2/pos ?eq}'
 
+# Test that each annotates position.
 expect_count 1 ./nontrivial-types.o -e '
 	?root drop [10, 11, 12]
 	?{each ?{pos 0 ?eq} ?{10 ?eq}}
