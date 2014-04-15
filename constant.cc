@@ -32,32 +32,29 @@ static struct
 constant_dom const &signed_constant_dom = signed_constant_dom_obj;
 
 
-struct unsigned_constant_dom_t
-  : public constant_dom
+void
+unsigned_constant_dom_t::show (uint64_t v, std::ostream &o) const
 {
-  void
-  show (uint64_t v, std::ostream &o) const override
-  {
-    o << v;
-  }
+  o << v;
+}
 
-  bool
-  sign () const override
-  {
-    return false;
-  }
+bool
+unsigned_constant_dom_t::sign () const
+{
+  return false;
+}
 
-  bool
-  safe_arith () const override
-  {
-    return true;
-  }
+bool
+unsigned_constant_dom_t::safe_arith () const
+{
+  return true;
+}
 
-  bool plain () const override
-  {
-    return true;
-  }
-};
+bool
+unsigned_constant_dom_t::plain () const
+{
+  return true;
+}
 
 unsigned_constant_dom_t unsigned_constant_dom_obj;
 constant_dom const &unsigned_constant_dom = unsigned_constant_dom_obj;

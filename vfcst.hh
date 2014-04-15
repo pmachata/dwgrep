@@ -16,5 +16,6 @@ enum class slot_type_id
 
 // A domain for slot type constants.
 extern constant_dom const &slot_type_dom;
+extern constant_dom const &pos_dom;
 
 #endif /* _VFCST_H_ */

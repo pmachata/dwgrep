@@ -360,20 +360,15 @@ public:
 class op_format
   : public op
 {
-  std::shared_ptr <op> m_upstream;
-  std::shared_ptr <stringer_origin> m_origin;
-  std::shared_ptr <stringer> m_stringer;
-  slot_idx m_dst;
+  class pimpl;
+  std::unique_ptr <pimpl> m_pimpl;
 
 public:
   op_format (std::shared_ptr <op> upstream,
 	     std::shared_ptr <stringer_origin> origin,
-	     std::shared_ptr <stringer> stringer, slot_idx dst)
-    : m_upstream (upstream)
-    , m_origin (origin)
-    , m_stringer (stringer)
-    , m_dst (dst)
-  {}
+	     std::shared_ptr <stringer> stringer, slot_idx dst);
+
+  ~op_format ();
 
   valfile::uptr next () override;
   std::string name () const override;
@@ -599,20 +594,13 @@ public:
 class op_f_each
   : public op
 {
-  std::shared_ptr <op> m_upstream;
-  slot_idx m_src;
-  slot_idx m_dst;
-  valfile::uptr m_vf;
-  size_t m_i;
+  class pimpl;
+  std::unique_ptr <pimpl> m_pimpl;
 
 public:
   op_f_each (std::shared_ptr <op> upstream,
-	     slot_idx src, slot_idx dst)
-    : m_upstream (upstream)
-    , m_src (src)
-    , m_dst (dst)
-    , m_i (static_cast <size_t> (-1))
-  {}
+	     slot_idx src, slot_idx dst);
+  ~op_f_each ();
 
   valfile::uptr next () override;
   std::string name () const override;
@@ -699,6 +687,25 @@ public:
   void reset () override;
 };
 
+class op_f_pos
+  : public op
+{
+  std::shared_ptr <op> m_upstream;
+  slot_idx m_src;
+  slot_idx m_dst;
+
+public:
+  op_f_pos (std::shared_ptr <op> upstream, slot_idx src, slot_idx dst)
+    : m_upstream {upstream}
+    , m_src {src}
+    , m_dst {dst}
+  {}
+
+  valfile::uptr next () override;
+  std::string name () const override;
+  void reset () override;
+};
+
 class op_f_sub;
 class op_f_mul;
 class op_f_div;
@@ -706,7 +713,6 @@ class op_f_mod;
 class op_f_prev;
 class op_f_next;
 class op_f_form;
-class op_f_pos;
 class op_f_count;
 class op_sel_section;
 

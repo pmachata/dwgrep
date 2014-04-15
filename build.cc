@@ -267,13 +267,15 @@ tree::build_exec (std::shared_ptr <op> upstream, dwgrep_graph::sptr q,
     case tree_type::F_ADD:
       return std::make_unique <op_f_add> (upstream, src_a (), src_b (), dst ());
 
+    case tree_type::F_POS:
+      return std::make_unique <op_f_pos> (upstream, src_a (), dst ());
+
     case tree_type::F_SUB:
     case tree_type::F_MUL:
     case tree_type::F_DIV:
     case tree_type::F_MOD:
     case tree_type::F_PREV:
     case tree_type::F_NEXT:
-    case tree_type::F_POS:
     case tree_type::F_COUNT:
     case tree_type::SEL_SECTION:
     case tree_type::SHF_OVER:

@@ -15,7 +15,7 @@ namespace
     Dwarf_Word uval;
     if (dwarf_formudata (&attr, &uval) != 0)
       throw_libdw ();
-    return std::make_unique <value_cst> (constant {uval, &dom});
+    return std::make_unique <value_cst> (constant {uval, &dom}, 0);
   }
 
   std::unique_ptr <value>
@@ -31,7 +31,7 @@ namespace
     if (dwarf_formsdata (&attr, &sval) != 0)
       throw_libdw ();
     return std::make_unique <value_cst>
-      (constant {(uint64_t) sval, &signed_constant_dom});
+      (constant {(uint64_t) sval, &signed_constant_dom}, 0);
   }
 
   std::unique_ptr <value>
@@ -43,7 +43,7 @@ namespace
     Dwarf_Addr addr;
     if (dwarf_formaddr (&attr, &addr) != 0)
       throw_libdw ();
-    return std::make_unique <value_cst> (constant {addr, &hex_constant_dom});
+    return std::make_unique <value_cst> (constant {addr, &hex_constant_dom}, 0);
   }
 
   std::unique_ptr <value>
@@ -115,7 +115,7 @@ namespace
 	  if (fn == nullptr)
 	    throw_libdw ();
 
-	  return std::make_unique <value_str> (fn);
+	  return std::make_unique <value_str> (fn, 0);
 	}
 
       case DW_AT_const_value:
@@ -247,7 +247,7 @@ namespace
 	abort ();
       }
 
-    std::cerr << dwarf_whatattr (&attr) << std::endl;
+    std::cerr << dwarf_whatattr (&attr) << std::endl << std::flush;
     assert (! "signedness of attribute unhandled");
     abort ();
   }
@@ -265,7 +265,7 @@ at_value (Dwarf_Attribute attr, Dwarf_Die die)
 	const char *str = dwarf_formstring (&attr);
 	if (str == nullptr)
 	  throw_libdw ();
-	return std::make_unique <value_str> (str);
+	return std::make_unique <value_str> (str, 0);
       }
 
     case DW_FORM_ref_addr:
@@ -278,7 +278,7 @@ at_value (Dwarf_Attribute attr, Dwarf_Die die)
 	Dwarf_Die die;
 	if (dwarf_formref_die (&attr, &die) == nullptr)
 	  throw_libdw ();
-	return std::make_unique <value_die> (die);
+	return std::make_unique <value_die> (die, 0);
       }
 
     case DW_FORM_sdata:
@@ -297,7 +297,7 @@ at_value (Dwarf_Attribute attr, Dwarf_Die die)
 	if (dwarf_formflag (&attr, &flag) != 0)
 	  throw_libdw ();
 	return std::make_unique <value_cst>
-	  (constant {static_cast <unsigned> (flag), &bool_constant_dom});
+	  (constant {static_cast <unsigned> (flag), &bool_constant_dom}, 0);
       }
 
     case DW_FORM_data1:
@@ -321,8 +321,8 @@ at_value (Dwarf_Attribute attr, Dwarf_Die die)
 	value_seq::seq_t vv;
 	for (Dwarf_Word i = 0; i < block.length; ++i)
 	  vv.push_back (std::make_unique <value_cst>
-			(constant { block.data[i], &hex_constant_dom }));
-	return std::make_unique <value_seq> (std::move (vv));
+			(constant { block.data[i], &hex_constant_dom }, 0));
+	return std::make_unique <value_seq> (std::move (vv), 0);
       }
 
     case DW_FORM_sec_offset:
@@ -332,7 +332,7 @@ at_value (Dwarf_Attribute attr, Dwarf_Die die)
       std::cerr << "Form unhandled: "
 		<< constant (dwarf_whatform (&attr), &dw_form_dom)
 		<< std::endl;
-      return std::make_unique <value_str> ("(form unhandled)");
+      return std::make_unique <value_str> ("(form unhandled)", 0);
 
     case DW_FORM_indirect:
       assert (! "Form unhandled.");

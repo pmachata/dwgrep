@@ -26,6 +26,15 @@ public:
   virtual bool plain () const { return false; }
 };
 
+struct unsigned_constant_dom_t
+  : public constant_dom
+{
+  void show (uint64_t v, std::ostream &o) const override;
+  bool sign () const override;
+  bool safe_arith () const override;
+  bool plain () const override;
+};
+
 // Two trivial domains for unnamed constants: one for signed, one for
 // unsigned values.
 extern constant_dom const &signed_constant_dom;

@@ -57,11 +57,17 @@ public:
 class value
 {
   value_type const m_type;
+  size_t m_pos;
+  size_t m_count;
 
 protected:
-  value (value_type t)
+  value (value_type t, size_t pos)
     : m_type {t}
+    , m_pos {pos}
+    , m_count {static_cast <size_t> (-1)}
   {}
+
+  value (value const &that) = default;
 
 public:
   value_type get_type () { return m_type; }
@@ -71,6 +77,32 @@ public:
   virtual std::unique_ptr <value> clone () const = 0;
   virtual constant get_type_const () const = 0;
   virtual cmp_result cmp (value const &that) const = 0;
+
+  void
+  set_pos (size_t pos)
+  {
+    m_pos = pos;
+  }
+
+  void
+  set_count (size_t count)
+  {
+    assert (count != static_cast <size_t> (-1));
+    m_count = count;
+  }
+
+  size_t
+  get_pos () const
+  {
+    return m_pos;
+  }
+
+  size_t
+  get_count () const
+  {
+    assert (m_count != static_cast <size_t> (-1));
+    return m_count;
+  }
 
   template <class T>
   static T *
@@ -101,10 +133,12 @@ class value_cst
 public:
   static value_type const vtype;
 
-  explicit value_cst (constant cst)
-    : value {vtype}
+  value_cst (constant cst, size_t pos)
+    : value {vtype, pos}
     , m_cst {cst}
   {}
+
+  value_cst (value_cst const &that) = default;
 
   constant const &get_constant () const
   { return m_cst; }
@@ -123,8 +157,8 @@ class value_str
 public:
   static value_type const vtype;
 
-  explicit value_str (std::string &&str)
-    : value {vtype}
+  value_str (std::string &&str, size_t pos)
+    : value {vtype, pos}
     , m_str {std::move (str)}
   {}
 
@@ -149,10 +183,12 @@ private:
 public:
   static value_type const vtype;
 
-  explicit value_seq (seq_t &&seq)
-    : value {vtype}
+  value_seq (seq_t &&seq, size_t pos)
+    : value {vtype, pos}
     , m_seq {std::move (seq)}
   {}
+
+  value_seq (value_seq const &that);
 
   seq_t const &get_seq () const
   { return m_seq; }
@@ -174,10 +210,12 @@ class value_die
 public:
   static value_type const vtype;
 
-  explicit value_die (Dwarf_Die die)
-    : value {vtype}
+  value_die (Dwarf_Die die, size_t pos)
+    : value {vtype, pos}
     , m_die (die)
   {}
+
+  value_die (value_die const &that) = default;
 
   Dwarf_Die &get_die ()
   { return m_die; }
@@ -197,11 +235,13 @@ class value_attr
 public:
   static value_type const vtype;
 
-  value_attr (Dwarf_Attribute attr, Dwarf_Die die)
-    : value {vtype}
+  value_attr (Dwarf_Attribute attr, Dwarf_Die die, size_t pos)
+    : value {vtype, pos}
     , m_attr (attr)
     , m_die (die)
   {}
+
+  value_attr (value_attr const &that) = default;
 
   Dwarf_Attribute &get_attr ()
   { return m_attr; }

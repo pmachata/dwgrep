@@ -23,3 +23,24 @@ expect_count 1 ./nontrivial-types.o -e '
 	?subprogram !@declaration +child ?formal_parameter
 	?{@type ((?const_type, ?volatile_type, ?typedef) @type)*
 	  (?structure_type, ?class_type)}'
+
+expect_count 1 ./nontrivial-types.o -e '
+	?{offset 0xb8 ?eq} ?{pos 10 ?eq}'
+
+expect_count 1 ./nontrivial-types.o -e '
+	?root child ?{offset 0xb8 ?eq} ?{pos 6 ?eq}'
+
+expect_count 1 ./nontrivial-types.o -e '
+	?root "%( child offset %)" ?{"0xb8" ?eq} ?{pos 6 ?eq}'
+
+expect_count 1 ./nontrivial-types.o -e '
+	?root attribute ?@stmt_list ?{pos 6 ?eq}'
+
+expect_count 11 ./nontrivial-types.o -e '
+	+unit ?{2/pos ?eq}'
+
+expect_count 1 ./nontrivial-types.o -e '
+	?root drop [10, 11, 12]
+	?{each ?{pos 0 ?eq} ?{10 ?eq}}
+	?{each ?{pos 1 ?eq} ?{11 ?eq}}
+	?{each ?{pos 2 ?eq} ?{12 ?eq}}'

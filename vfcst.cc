@@ -42,3 +42,7 @@ static struct
 } slot_type_dom_obj;
 
 constant_dom const &slot_type_dom = slot_type_dom_obj;
+
+
+unsigned_constant_dom_t pos_dom_obj;
+constant_dom const &pos_dom = pos_dom_obj;

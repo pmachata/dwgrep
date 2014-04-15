@@ -47,7 +47,7 @@ value_cst::show (std::ostream &o) const
 std::unique_ptr <value>
 value_cst::clone () const
 {
-  return std::make_unique <value_cst> (m_cst);
+  return std::make_unique <value_cst> (*this);
 }
 
 constant
@@ -77,7 +77,7 @@ value_str::show (std::ostream &o) const
 std::unique_ptr <value>
 value_str::clone () const
 {
-  return std::make_unique <value_str> (std::string (m_str));
+  return std::make_unique <value_str> (*this);
 }
 
 constant
@@ -98,6 +98,23 @@ value_str::cmp (value const &that) const
 
 value_type const value_seq::vtype = alloc_vtype ();
 
+namespace
+{
+  value_seq::seq_t
+  clone_seq (value_seq::seq_t const &seq)
+  {
+    value_seq::seq_t seq2;
+    for (auto const &v: seq)
+      seq2.emplace_back (std::move (v->clone ()));
+    return seq2;
+  }
+}
+
+value_seq::value_seq (value_seq const &that)
+  : value {that}
+  , m_seq {clone_seq (that.m_seq)}
+{}
+
 void
 value_seq::show (std::ostream &o) const
 {
@@ -116,10 +133,7 @@ value_seq::show (std::ostream &o) const
 std::unique_ptr <value>
 value_seq::clone () const
 {
-  seq_t vv2;
-  for (auto const &v: m_seq)
-    vv2.emplace_back (std::move (v->clone ()));
-  return std::make_unique <value_seq> (std::move (vv2));
+  return std::make_unique <value_seq> (*this);
 }
 
 constant
@@ -150,7 +164,7 @@ value_die::show (std::ostream &o) const
   for (auto it = attr_iterator {die}; it != attr_iterator::end (); ++it)
     {
       o << "\n\t";
-      value_attr {**it, m_die}.show (o);
+      value_attr {**it, m_die, 0}.show (o);
     }
 
   o.flags (f);
@@ -159,7 +173,7 @@ value_die::show (std::ostream &o) const
 std::unique_ptr <value>
 value_die::clone () const
 {
-  return std::make_unique <value_die> (m_die);
+  return std::make_unique <value_die> (*this);
 }
 
 constant
@@ -198,7 +212,7 @@ value_attr::show (std::ostream &o) const
 std::unique_ptr <value>
 value_attr::clone () const
 {
-  return std::make_unique <value_attr> (m_attr, m_die);
+  return std::make_unique <value_attr> (*this);
 }
 
 constant
