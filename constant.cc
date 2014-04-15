@@ -151,17 +151,6 @@ operator<< (std::ostream &o, constant cst)
 bool
 constant::operator< (constant that) const
 {
-  // For two different domains, complain about comparisons that don't
-  // have at least one comparand signed_constant_dom or
-  // unsigned_constant_dom.
-  if (dom () != that.dom ()
-      && dom () != &signed_constant_dom
-      && dom () != &unsigned_constant_dom
-      && that.dom () != &signed_constant_dom
-      && that.dom () != &unsigned_constant_dom)
-    std::cerr << "Warning: comparing " << *this << " to " << that
-	      << " is probably not meaningful (different domains).\n";
-
   if (dom ()->sign () == that.dom ()->sign ())
     return m_value < that.m_value;
 

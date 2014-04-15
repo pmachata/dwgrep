@@ -1539,6 +1539,22 @@ namespace
   comparison_result (valfile &vf, slot_idx idx_a, slot_idx idx_b,
 		     cmp_result want)
   {
+    if (auto va = vf.get_slot_as <value_cst> (idx_a))
+      if (auto vb = vf.get_slot_as <value_cst> (idx_b))
+	// For two different domains, complain about comparisons that
+	// don't have at least one comparand signed_constant_dom or
+	// unsigned_constant_dom.
+	if (va->get_constant ().dom () != vb->get_constant ().dom ()
+	    && ! va->get_constant ().dom ()->safe_arith ()
+	    && ! vb->get_constant ().dom ()->safe_arith ())
+	  {
+	    std::cerr << "Warning: comparing ";
+	    va->show (std::cerr);
+	    std::cerr << " to ";
+	    vb->show (std::cerr);
+	    std::cerr << " is probably not meaningful (different domains).\n";
+	  }
+
     cmp_result r = vf.get_slot (idx_a).cmp (vf.get_slot (idx_b));
     if (r == cmp_result::fail)
       return pred_result::fail;
