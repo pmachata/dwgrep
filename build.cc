@@ -230,6 +230,7 @@ tree::build_exec (std::shared_ptr <op> upstream, dwgrep_graph::sptr q,
       return std::make_shared <op_drop> (upstream, dst ());
 
     case tree_type::SHF_DUP:
+    case tree_type::SHF_OVER:
       return std::make_shared <op_dup> (upstream, src_a (), dst ());
 
     case tree_type::SHF_SWAP:
@@ -281,7 +282,6 @@ tree::build_exec (std::shared_ptr <op> upstream, dwgrep_graph::sptr q,
     case tree_type::F_PREV:
     case tree_type::F_NEXT:
     case tree_type::SEL_SECTION:
-    case tree_type::SHF_OVER:
     case tree_type::SHF_ROT:
       std::cerr << "\n\nUNHANDLED:";
       dump (std::cerr);
