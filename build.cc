@@ -66,6 +66,7 @@ tree::build_pred (dwgrep_graph::sptr q, size_t maxsize) const
 
     case tree_type::PRED_FIND:
     case tree_type::PRED_MATCH:
+    case tree_type::PRED_LAST:
     case tree_type::PRED_SUBX_ALL:
       std::cerr << "\n\nUNHANDLED:";
       dump (std::cerr);
@@ -310,6 +311,7 @@ tree::build_exec (std::shared_ptr <op> upstream, dwgrep_graph::sptr q,
     case tree_type::PRED_NOT:
     case tree_type::PRED_SUBX_ALL:
     case tree_type::PRED_SUBX_ANY:
+    case tree_type::PRED_LAST:
       assert (! "Should never get here.");
       abort ();
     }

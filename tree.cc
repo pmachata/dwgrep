@@ -623,6 +623,7 @@ namespace
       case tree_type::PRED_TAG:
       case tree_type::PRED_EMPTY:
       case tree_type::PRED_ROOT:
+      case tree_type::PRED_LAST:
 	assert (t.m_children.size () == 0);
 	t.m_src_a = sr.top ();
 	break;
@@ -696,6 +697,7 @@ namespace
       case tree_type::PRED_FIND: case tree_type::PRED_MATCH:
       case tree_type::PRED_EQ: case tree_type::PRED_NE: case tree_type::PRED_GT:
       case tree_type::PRED_GE: case tree_type::PRED_LT: case tree_type::PRED_LE:
+      case tree_type::PRED_LAST:
 	return -1;
 
       case tree_type::CAT: case tree_type::ALT: case tree_type::CAPTURE:
