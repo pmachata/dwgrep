@@ -687,7 +687,7 @@ public:
   void reset () override;
 };
 
-class op_f_pos
+class simple_op
   : public op
 {
   std::shared_ptr <op> m_upstream;
@@ -695,15 +695,36 @@ class op_f_pos
   slot_idx m_dst;
 
 public:
-  op_f_pos (std::shared_ptr <op> upstream, slot_idx src, slot_idx dst)
+  simple_op (std::shared_ptr <op> upstream, slot_idx src, slot_idx dst)
     : m_upstream {upstream}
     , m_src {src}
     , m_dst {dst}
   {}
 
   valfile::uptr next () override;
-  std::string name () const override;
   void reset () override;
+
+  virtual std::unique_ptr <value> operate (value const &v) const = 0;
+};
+
+class op_f_pos
+  : public simple_op
+{
+public:
+  using simple_op::simple_op;
+
+  std::unique_ptr <value> operate (value const &v) const override;
+  std::string name () const override;
+};
+
+class op_f_count
+  : public simple_op
+{
+public:
+  using simple_op::simple_op;
+
+  std::unique_ptr <value> operate (value const &v) const override;
+  std::string name () const override;
 };
 
 class op_f_sub;

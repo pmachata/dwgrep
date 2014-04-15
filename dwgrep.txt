@@ -717,6 +717,13 @@
    recalled by saying "pos".  "count" then contains count of values
    produced.
 
+   - Count is potentially expensive.  The producers therefore don't
+     count all values up front.  Instead we can determine which
+     producers potentially produce the values that count is applied
+     to, and then replace the producer X with [X] each.
+
+   - The same holds for ?last.
+
 ** EXPR → “?first” | “?second” | “?third” | “?last” — position assertion
 
    (And corresponding ! forms.)

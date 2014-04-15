@@ -1081,6 +1081,7 @@ struct op_f_each::pimpl
 	  {
 	    std::unique_ptr <value> v = vv[m_i]->clone ();
 	    v->set_pos (m_i);
+	    v->set_count (vv.size ());
 	    m_i++;
 	    valfile::uptr vf = std::make_unique <valfile> (*m_vf);
 	    vf->set_slot (m_dst, std::move (v));
@@ -1402,13 +1403,11 @@ op_f_add::name () const
 
 
 valfile::uptr
-op_f_pos::next ()
+simple_op::next ()
 {
   if (auto vf = m_upstream->next ())
     {
-      size_t pos = vf->get_slot (m_src).get_pos ();
-      vf->set_slot (m_dst,
-		    std::make_unique <value_cst> (constant {pos, &pos_dom}, 0));
+      vf->set_slot (m_dst, operate (vf->get_slot (m_src)));
       return vf;
     }
 
@@ -1416,15 +1415,35 @@ op_f_pos::next ()
 }
 
 void
-op_f_pos::reset ()
+simple_op::reset ()
 {
   m_upstream->reset ();
+}
+
+
+std::unique_ptr <value>
+op_f_pos::operate (value const &v) const
+{
+  return std::make_unique <value_cst> (constant {v.get_pos (), &pos_dom}, 0);
 }
 
 std::string
 op_f_pos::name () const
 {
   return "f_pos";
+}
+
+
+std::unique_ptr <value>
+op_f_count::operate (value const &v) const
+{
+  return std::make_unique <value_cst> (constant {v.get_count (), &pos_dom}, 0);
+}
+
+std::string
+op_f_count::name () const
+{
+  return "f_count";
 }
 
 
