@@ -50,3 +50,9 @@ expect_count 1 ./nontrivial-types.o -e '
 	?{each ?{pos 0 ?eq} ?{10 ?eq}}
 	?{each ?{pos 1 ?eq} ?{11 ?eq}}
 	?{each ?{pos 2 ?eq} ?{12 ?eq}}'
+
+# Tests star closure whose body ends with stack in a different state
+# than it starts in (different slots are taken in the valfile).
+expect_count 1 ./typedef.o -e '
+	?{[] swap (@type ?typedef [()] 2/swap add swap)* drop length 3 ?eq}
+	?{offset 0x45 ?eq}'

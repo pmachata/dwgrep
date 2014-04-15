@@ -182,9 +182,15 @@ namespace
   struct stack_refs
   {
     std::vector <ssize_t> m_freelist;
+    size_t m_age;
 
   public:
+    stack_refs ()
+      : m_age {0}
+    {}
+
     std::vector <ssize_t> stk;
+    std::vector <size_t> age;
 
     bool
     operator== (stack_refs other) const
@@ -203,6 +209,7 @@ namespace
 	}
       else
 	stk.push_back (stk.size ());
+      age.push_back (m_age++);
     }
 
     size_t
@@ -227,6 +234,7 @@ namespace
 	    throw std::runtime_error ("stack underrun");
 	  m_freelist.push_back (stk.back ());
 	  stk.pop_back ();
+	  age.pop_back ();
 	}
     }
 
@@ -237,6 +245,7 @@ namespace
 	throw std::runtime_error ("stack underrun");
 
       std::swap (stk[stk.size () - 2], stk[stk.size () - 1]);
+      std::swap (age[age.size () - 2], age[age.size () - 1]);
     }
 
     void
@@ -245,9 +254,13 @@ namespace
       if (stk.size () < 3)
 	throw std::runtime_error ("stack underrun");
 
-      ssize_t idx = stk[stk.size () - 3];
+      ssize_t e = stk[stk.size () - 3];
       stk.erase (stk.begin () + stk.size () - 3);
-      stk.push_back (idx);
+      stk.push_back (e);
+
+      size_t a = age[age.size () - 3];
+      age.erase (age.begin () + age.size () - 3);
+      age.push_back (a);
     }
 
     ssize_t
@@ -259,6 +272,12 @@ namespace
       return stk.back ();
     }
 
+    std::pair <ssize_t, size_t>
+    top_w_age ()
+    {
+      return std::make_pair (top (), age.back ());
+    }
+
     ssize_t
     below ()
     {
@@ -266,6 +285,12 @@ namespace
 	throw std::runtime_error ("stack underrun");
 
       return stk[stk.size () - 2];
+    }
+
+    std::pair <ssize_t, size_t>
+    below_w_age ()
+    {
+      return std::make_pair (below (), age[age.size () - 2]);
     }
   };
 
@@ -276,7 +301,7 @@ namespace
     bool seen = false;
     for (auto idx: sr.stk)
       {
-	o << (seen ? ";x" : "x") << (int)idx;
+	o << (seen ? ";x" : "x") << (int) idx;
 	seen = true;
       }
     return o << ">";
@@ -407,14 +432,37 @@ namespace
       case tree_type::F_MUL:
       case tree_type::F_DIV:
       case tree_type::F_MOD:
-	t.m_src_a = sr.below ();
-	t.m_src_b = sr.top ();
-	if (! protect)
-	  sr.drop (2);
-	sr.push ();
-	t.m_dst = sr.top ();
-	break;
+	{
+	  auto src_a = sr.below_w_age ();
+	  auto src_b = sr.top_w_age ();
+	  t.m_src_a = src_a.first;
+	  t.m_src_b = src_b.first;
 
+	  if (! protect)
+	    {
+	      // We prefer the older slot for destination.  This is a
+	      // heuristic to attempt to keep stack at the exit from
+	      // closure in the same state as it was on entry.  See a
+	      // comment at CLOSE_STAR for more details.
+	      //
+	      // To achieve that, we possibly swap the two slots
+	      // before dropping them, so that the following push
+	      // picks up the one that we want.  Note that we
+	      // extracted src_a and src_b up there, so this swapping
+	      // won't influence the actual order of operands.
+
+	      if (src_b.second < src_a.second)
+		sr.swap ();
+
+	      sr.drop (2);
+	    }
+
+	  sr.push ();
+	  t.m_dst = sr.top ();
+	  break;
+	}
+
+      case tree_type::F_COUNT:
       case tree_type::F_PARENT:
       case tree_type::F_CHILD:
       case tree_type::F_ATTRIBUTE:
@@ -427,7 +475,6 @@ namespace
       case tree_type::F_FORM:
       case tree_type::F_VALUE:
       case tree_type::F_POS:
-      case tree_type::F_COUNT:
       case tree_type::F_EACH:
       case tree_type::F_LENGTH:
       case tree_type::F_ATVAL:
@@ -513,12 +560,57 @@ namespace
 
       case tree_type::CLOSE_STAR:
 	{
+	  // Even though the stack effects of closures have to be
+	  // balanced (they are not allowed to push more than they
+	  // pop, or vice versa), that doesn't mean that the stack
+	  // will be in the same state after one closure iteration.
+	  // For example, consider the following expression and its
+	  // stack effects (the number represents the assigned stack
+	  // slot):
+	  //
+	  //    +universe []   swap (@type [()] rot  add  swap)*
+	  //    0Die      0Die 1Seq  1Seq  1Seq 0Die 0Die 2Seq
+	  //              1Seq 0Die  0Die  0Die 2Seq 2Seq 0Die
+	  //                               2Seq 1Seq
+	  //
+	  // Note how what enters the closure (1Seq/0Die) differs from
+	  // what exits the closure (2Seq/0Die), even though the slot
+	  // types and stack depth are the same.  The problem of
+	  // course is that add doesn't know which slot to choose to
+	  // make the overall closure happy.  Currently it chooses the
+	  // bottom one for destination, but it would break similarly
+	  // for other expressions if it chose the top one.
+	  //
+	  // We try to mitigate this in arithmetic operations by
+	  // choosing the older stack slot for destination, but have
+	  // to be conservative here as well, and possibly give up
+	  // eliminating stack shuffling.
+
 	  assert (t.m_children.size () == 1);
-	  auto sr2 = resolve_operands (t.m_children[0], sr, elim_shf);
+
+	  // First, optimistically try to eliminate stack shuffling
+	  // and see if it happens to work out.
+	  auto t2 = t.m_children[0];
+	  auto sr2 = resolve_operands (t2, sr, elim_shf);
+
 	  if (sr2.stk.size () != sr.stk.size ())
 	    throw std::runtime_error
 	      ("iteration doesn't have neutral stack effect");
-	  sr = std::move (sr2);
+
+	  if (sr2.stk == sr.stk)
+	    {
+	      // Cool, commit the changes.
+	      t.m_children[0] = std::move (t2);
+	      sr = std::move (sr2);
+	    }
+	  else
+	    {
+	      // Not cool, redo with stack shuffling.
+	      sr2 = resolve_operands (t.m_children[0], sr, false);
+	      assert (sr2.stk == sr.stk);
+	      sr = std::move (sr2);
+	    }
+
 	  break;
 	}
 
