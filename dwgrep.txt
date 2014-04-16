@@ -401,7 +401,10 @@
 
 * Overview of dwgrep language
 
-** EXPR → EXPR₁ EXPR₂ — concatenate
+  - • means implemented
+  - · means partially implemented
+
+** •EXPR → EXPR₁ EXPR₂ — concatenate
 
    The constituent EXPR's may yield more than one output value.  A new
    working set is formed by gathering all these returned values.  If
@@ -409,7 +412,7 @@
    operator, which captures the resulting values and wraps them in a
    sequence.
 
-** EXPR → EXPR₁ “,” EXPR₂ … — alternate
+** •EXPR → EXPR₁ “,” EXPR₂ … — alternate
 
    EXPR yields all the values that EXPR₁ and EXPR₂ yield.  In practice
    this can be used as logical or, or to construct literal lists.
@@ -421,7 +424,7 @@
    - For example, to follow through all edges:
      : (child, attribute ?{form "%s" "DW_FORM_ref.*" ?match})
 
-** EXPR → NUM “/” EXPR₁ — pathset exploration
+** •EXPR → NUM “/” EXPR₁ — pathset exploration
 
    The effect is as if the topmost NUM elements were removed from
    stack and remembered as X₁ to Xₙ, with Xₙ the original TOS.  Then
@@ -452,7 +455,7 @@
      rotated by 3/swap etc.  This relies on the above liberal
      definition of N/expr.
 
-** EXPR → EXPR₁ “*” | EXPR₁ “+” | EXPR₁ “?” — iterate
+** •EXPR → EXPR₁ “*” | EXPR₁ “+” | EXPR₁ “?” — iterate
 
    EXPR₁ shall have a stack effect of +n,-n (number of slots pushed
    equals number of slots popped).
@@ -460,7 +463,7 @@
    - Example: explicit for loop
      : 0 (1 add ?{10 ?lt})*
 
-** EXPR → “+”?“"” (string literal) “"” | (“0x”|“0”|“”)[1-9][0-9]* — literals
+** •EXPR → “+”?“"” (string literal) “"” | (“0x”|“0”|“”)[1-9][0-9]* — literals
 
    String literals allow expression interpolation:
 
@@ -485,7 +488,7 @@
    The resulting string is pushed to stack after all interpolations
    are processed one after another.
 
-** EXPR → “+”?(“universe” | “section” | “unit”)
+**  EXPR → “+”?(“universe” | “section” | “unit”)
 
    - "universe" stands for every DIE (and pseudo-DIE) in Dwarf graph.
      Note that for consistency, it drops TOS even though it
@@ -511,9 +514,9 @@
    - A general note about + forms: +EXPR is exactly equivalent to:
      : [EXPR] each
 
-** EXPR → “(” EXPR₁ “)” — grouping, precedence
+** •EXPR → “(” EXPR₁ “)” — grouping, precedence
 
-** EXPR → “[” EXPR₁ “]” | “[” “]” — sub-expression capture
+** •EXPR → “[” EXPR₁ “]” | “[” “]” — sub-expression capture
 
    This is a literal form that gathers what EXPR₁ yields and pushes a
    sequence with those elements.  It can be used for constructing a
@@ -532,7 +535,7 @@
    - dup is exactly equivalent to (among others):
      : [ () ] each
 
-** EXPR → “?{” EXPR₁ “}” | “!{” EXPR₁ “}” — sub-expression assertions
+** •EXPR → “?{” EXPR₁ “}” | “!{” EXPR₁ “}” — sub-expression assertions
 
    - ?{ EXPR₁ } is exactly equivalent to:
      : [ EXPR₁ ] [] !eq drop drop
@@ -542,7 +545,7 @@
    - Examples:
      : !{child}       # keep leaf DIE's only
 
-** EXPR → (“?all{” | “!all{”) EXPR₁ “}” — quantifier assertion
+**  EXPR → (“?all{” | “!all{”) EXPR₁ “}” — quantifier assertion
 
    - ?all{EXPR₁} is exactly equivalent to:
      : ?{[each ?{EXPR₁}] 2/length ?eq}
@@ -555,7 +558,7 @@
      succeed.  For !all, only if at least one fails does the overall
      predicate succeed.  The list on TOS is kept.
 
-** EXPR → “if” | “else” — conditionals
+**  EXPR → “if” | “else” — conditionals
 
    - "if" pops TOS.  If it's an empty list, it fails.  It is exactly:
      : !empty drop
@@ -575,7 +578,7 @@
    If-elseif-else trees can be composed thus:
    : [ condition ] (if stuff, else [ cond2 ] (if stuff2, else stuff3))
 
-** EXPR → “swap” | “dup” | “over” | “rot” | “drop” — stack shuffling
+** ·EXPR → “swap” | “dup” | “over” | “rot” | “drop” — stack shuffling
 
    These words reorder elements on stack according to the following
    schemes:
@@ -596,7 +599,7 @@
    should be unnecessary as well.  But they are present for
    completeness' sake.
 
-** EXPR → “+”?“each” — pop a list, yield all its elements
+** •EXPR → “+”?“each” — pop a list, yield all its elements
 
    - "each" pops a list, and for each element yield a stack with that
      element pushed on top.  "+each" does the same, but doesn't pop.
@@ -615,7 +618,7 @@
    - Similarly for deeper, three-level zip:
      : 3/each ?{3/pos 2/?eq}
 
-** EXPR → “+”?(“child” | “attribute” | “parent” | “next” | “prev”) — traversal
+** ·EXPR → “+”?(“child” | “attribute” | “parent” | “next” | “prev”) — traversal
 
    - "child" pops DIE on TOS and yields one stack for each child,
      with that child pushed to TOS.
@@ -635,7 +638,7 @@
 
    - prev can be defined in manner similar to next.
 
-** EXPR → “?root” | “!root” — root node assertion
+** •EXPR → “?root” | “!root” — root node assertion
 
    - !root is exactly equivalent to:
      : ?{parent}
@@ -645,7 +648,7 @@
    - Examples:
      : parent* ?root        # finds a root node of node on TOS
 
-** EXPR → “+”?“@”ID — attribute value
+** ·EXPR → “+”?“@”ID — attribute value
 
    This function pops a DIE off TOS and pushes a value of its
    attribute DW_AT_ID.  If you want to access the attribute object
@@ -653,7 +656,7 @@
 
    : attribute ?@ID
 
-** EXPR → “+”?(“offset”|“name”|“tag”|“form”|“value”) — Dwarf tree introspection
+** •EXPR → “+”?(“offset”|“name”|“tag”|“form”|“value”) — Dwarf tree introspection
 
    - "offset" pops DIE or Attribute on TOS and pushes a value
      representing offset of the object in Dwarf file.
@@ -672,7 +675,7 @@
      integer on top, but it may yield e.g. several pseudo-DIEs for
      things like @stmt_list.
 
-** EXPR → “?”ID | “!”ID — DIE tag assertion
+** •EXPR → “?”ID | “!”ID — DIE tag assertion
 
    - ?ID is exactly equivalent to:
      : ?{tag DW_TAG_ID ?eq}
@@ -680,7 +683,7 @@
      : ?{tag DW_TAG_ID !eq}
    - Note that either form fails when applied to a non-DIE value.
 
-** EXPR → “?@”ID | “!@”ID — attribute presence/absence assertions
+** •EXPR → “?@”ID | “!@”ID — attribute presence/absence assertions
 
    - If the value on TOS is a DIE, these forms assert that they have
      (don't have) an attribute with a given name.
@@ -698,7 +701,7 @@
    - If the value on TOS is an Attribute, these forms assert that the
      attribute has a given name.
 
-** EXPR → “+”?“type” — TOS introspection
+** •EXPR → “+”?“type” — TOS introspection
 
    This produces an integer value suitable for comparison with the
    following constants:
@@ -710,7 +713,7 @@
    - T_CONST — for integer objects
    - T_FLOAT — for floats
 
-** EXPR → “+”?(“pos” | “count”) — pos of element within producing expression
+** •EXPR → “+”?(“pos” | “count”) — pos of element within producing expression
 
    Each function numbers elements that it produces, and stores number
    of each element along with the element.  That number can be
@@ -724,7 +727,7 @@
 
    - The same holds for ?last.
 
-** EXPR → “?first” | “?second” | “?third” | “?last” — position assertion
+**  EXPR → “?first” | “?second” | “?third” | “?last” — position assertion
 
    (And corresponding ! forms.)
 
@@ -744,7 +747,7 @@
      : each ?last	# get last element of a list on TOS
      : [each !first] swap each first   # split a list into head:rest
 
-** EXPR → “+”?(“add” | “sub” | “mul” | “div” | “mod”) — arithmetic
+** ·EXPR → “+”?(“add” | “sub” | “mul” | “div” | “mod”) — arithmetic
 
    - Two elements are popped: A and B, with B the original TOS, and "A
      op B" is pushed again.
@@ -754,7 +757,7 @@
 
    - XXX how to sum a list?
 
-** EXPR → (“?”|“!”)(“eq”|“ne”|“gt”|“ge”|“lt”|“le”) — comparison assertions
+** •EXPR → (“?”|“!”)(“eq”|“ne”|“gt”|“ge”|“lt”|“le”) — comparison assertions
 
    - Two elements are inspected: TOS and one below that (B and A,
      respectively).  The assertion holds if A op B is true.  Comparing
@@ -779,7 +782,7 @@
      : A B swap? ?lt drop    # "max" -- keep the greater number on stack
      : A B swap? ?gt drop    # "min"
 
-** EXPR → (“?”|“!”)(“match” | “find”) — regex assertion
+**  EXPR → (“?”|“!”)(“match” | “find”) — regex assertion
 
    This produces nothing when applied to non-string values.  Use "%s"
    to convert other value types to string.
@@ -791,16 +794,16 @@
    - "match" does a full-string match
    - "find" looks for an occurrence
 
-** EXPR → “+”?“length” — length of a sequence or a string
+** •EXPR → “+”?“length” — length of a sequence or a string
 
-** EXPR → (“?”|“!”)“empty” — list/string emptiness assertion
+**  EXPR → (“?”|“!”)“empty” — list/string emptiness assertion
 
    - ?empty is exactly equivalent to:
      : ?{[] ?eq}
    - !empty is exactly equivalent to:
      : ?{[] !eq}
 
-** EXPR → “?dump” — debug assertion
+**  EXPR → “?dump” — debug assertion
 
    Always succeeds, but as a side effect prints some information about
    the computation in whose context it appeared.
