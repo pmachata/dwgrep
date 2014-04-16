@@ -3,6 +3,7 @@
 #include <stdexcept>
 #include <climits>
 #include <algorithm>
+#include <set>
 
 #include "tree.hh"
 
@@ -462,7 +463,6 @@ namespace
 	  break;
 	}
 
-      case tree_type::F_COUNT:
       case tree_type::F_PARENT:
       case tree_type::F_CHILD:
       case tree_type::F_ATTRIBUTE:
@@ -475,6 +475,7 @@ namespace
       case tree_type::F_FORM:
       case tree_type::F_VALUE:
       case tree_type::F_POS:
+      case tree_type::F_COUNT:
       case tree_type::F_EACH:
       case tree_type::F_LENGTH:
       case tree_type::F_ATVAL:
@@ -724,12 +725,248 @@ namespace
     assert (t.m_tt != t.m_tt);
     abort ();
   }
+
+  std::set <ssize_t>
+  resolve_count (tree &t, std::set <ssize_t> unresolved)
+  {
+    // Called for nodes that can resolve one of the unresolved slots.
+    auto can_resolve = [&unresolved, &t] ()
+      {
+	ssize_t dst = t.m_dst;
+	if (unresolved.find (dst) != unresolved.end ())
+	  {
+	    if (true)
+	      {
+		std::cerr << "found producer: ";
+		t.dump (std::cerr);
+		std::cerr << std::endl;
+	      }
+
+	    // Convert the producer X to (CAT (CAPTURE X) (EACH)).
+	    tree t2 {tree_type::CAT};
+
+	    tree t3 {tree_type::CAPTURE};
+	    t3.push_back (t);
+	    t3.m_src_a = dst;
+	    t3.m_dst = dst;
+	    t2.push_back (t3);
+
+	    tree t4 {tree_type::F_EACH};
+	    t4.m_src_a = dst;
+	    t4.m_dst = dst;
+	    t2.push_back (t4);
+
+	    if (true)
+	      {
+		std::cerr << "converted: ";
+		t2.dump (std::cerr);
+		std::cerr << std::endl;
+	      }
+
+	    t = t2;
+	  }
+	unresolved.erase (dst);
+      };
+
+    auto isolated_subexpression = [&unresolved] (tree &ch)
+      {
+	// Sub-expressions of these nodes never resolves anything, but
+	// can introduce unresolved slots.  E.g. in (child ?{count}),
+	// the child resolves the count, but in (?{child} count), it
+	// doesn't.
+	auto unresolved2 = resolve_count (ch, {});
+	unresolved.insert (unresolved2.begin (), unresolved2.end ());
+      };
+
+    switch (t.m_tt)
+      {
+      case tree_type::F_COUNT:
+	{
+	  ssize_t src = t.m_src_a;
+	  if (false)
+	    {
+	      std::cerr << "unresolved slot: " << src << std::endl;
+	      std::cerr << "consumer: ";
+	      t.dump (std::cerr);
+	      std::cerr << std::endl;
+	    }
+
+	  can_resolve ();
+	  unresolved.insert (src);
+	  return unresolved;
+	}
+
+      case tree_type::PRED_LAST:
+	unresolved.insert (t.m_src_a);
+	return unresolved;
+
+      case tree_type::FORMAT:
+	can_resolve ();
+	// Fall through.
+      case tree_type::CAT:
+	for (auto it = t.m_children.rbegin ();
+	     it != t.m_children.rend (); ++it)
+	  if (it->m_tt != tree_type::STR)
+	    unresolved = resolve_count (*it, unresolved);
+	return unresolved;
+
+      case tree_type::PROTECT:
+      case tree_type::PRED_NOT:
+	return resolve_count (t.m_children[0], unresolved);
+
+      case tree_type::ALT:
+	{
+	  // Each branch must resolve a slot if that slot should be
+	  // resolved by ALT.  And resolves from each branch propagate
+	  // further.  So return union of resolves of all branches.
+	  std::set <ssize_t> ret;
+	  for (auto &ch: t.m_children)
+	    {
+	      auto unresolved2 = resolve_count (ch, unresolved);
+	      ret.insert (unresolved2.begin (), unresolved2.end ());
+	    }
+	  return ret;
+	}
+
+      case tree_type::PRED_AND:
+      case tree_type::PRED_OR:
+	isolated_subexpression (t.m_children[0]);
+	isolated_subexpression (t.m_children[1]);
+	return unresolved;
+
+      case tree_type::CAPTURE:
+	can_resolve ();
+	// Fall through.
+      case tree_type::ASSERT:
+      case tree_type::PRED_SUBX_ALL:
+      case tree_type::PRED_SUBX_ANY:
+	isolated_subexpression (t.m_children[0]);
+	return unresolved;
+
+      case tree_type::CLOSE_STAR:
+	{
+	  // Star's sub-expression may be applied not at all (in which
+	  // case it doesn't resolve anything), once (it might resolve
+	  // something, but might also introduce more unresolveds), or
+	  // twice (where it might resolve its own unresolveds from
+	  // the first iteration).
+
+	  auto unresolved2 = resolve_count (t.m_children[0], unresolved);
+	  unresolved.insert (unresolved2.begin (), unresolved2.end ());
+
+	  auto unresolved3 = resolve_count (t.m_children[0], unresolved2);
+	  unresolved.insert (unresolved3.begin (), unresolved3.end ());
+
+	  return unresolved;
+	}
+
+      case tree_type::SHF_DROP:
+	// Drop doesn't resolve anything even though it has a m_dst.
+	// But in fact it's very suspicious if we are dropping a slot
+	// that's later referenced by count, so check that that's not
+	// the case.
+	assert (unresolved.find (t.m_dst) == unresolved.end ());
+	return unresolved;
+
+      case tree_type::SHF_SWAP:
+      case tree_type::SHF_DUP:
+      case tree_type::SHF_OVER:
+	{
+	  // If these should resolve anything, they instead transfers
+	  // the unresolvedness to their source slot.  They therefore
+	  // don't resolve anything, as we need to generate the count
+	  // somewhere else than at these nodes.  (E.g. in (child dup
+	  // count) we want the child to annotate count, not the dup.)
+	  auto it = unresolved.find (t.m_dst);
+	  if (it != unresolved.end ())
+	    {
+	      unresolved.erase (it);
+	      unresolved.insert (t.m_src_a);
+	    }
+	  return unresolved;
+	}
+
+      case tree_type::F_EACH:
+	// If each resolves anything, we don't need to modify it in
+	// any way, as it already takes care of annotating count.
+	unresolved.erase (t.m_dst);
+	return unresolved;
+
+      case tree_type::EMPTY_LIST:
+      case tree_type::CONST:
+      case tree_type::F_ATVAL:
+      case tree_type::F_ADD:
+      case tree_type::F_SUB:
+      case tree_type::F_MUL:
+      case tree_type::F_DIV:
+      case tree_type::F_MOD:
+      case tree_type::F_PARENT:
+      case tree_type::F_CHILD:
+      case tree_type::F_ATTRIBUTE:
+      case tree_type::F_PREV:
+      case tree_type::F_NEXT:
+      case tree_type::F_TYPE:
+      case tree_type::F_OFFSET:
+      case tree_type::F_NAME:
+      case tree_type::F_TAG:
+      case tree_type::F_FORM:
+      case tree_type::F_VALUE:
+      case tree_type::F_POS:
+      case tree_type::F_LENGTH:
+      case tree_type::SEL_UNIVERSE:
+      case tree_type::SEL_SECTION:
+      case tree_type::SEL_UNIT:
+	assert (t.m_children.empty ());
+	can_resolve ();
+	return unresolved;
+
+      case tree_type::NOP:
+      case tree_type::PRED_AT:
+      case tree_type::PRED_TAG:
+      case tree_type::PRED_EQ:
+      case tree_type::PRED_NE:
+      case tree_type::PRED_GT:
+      case tree_type::PRED_GE:
+      case tree_type::PRED_LT:
+      case tree_type::PRED_LE:
+      case tree_type::PRED_FIND:
+      case tree_type::PRED_MATCH:
+      case tree_type::PRED_EMPTY:
+      case tree_type::PRED_ROOT:
+	return unresolved;
+
+      case tree_type::SHF_ROT:
+	assert (! "resolve_count: ROT unhandled");
+	abort ();
+
+      case tree_type::STR:
+      case tree_type::CLOSE_PLUS:
+      case tree_type::MAYBE:
+      case tree_type::TRANSFORM:
+	assert (! "Should never gete here.");
+	abort ();
+      }
+
+    assert (t.m_tt != t.m_tt);
+    abort ();
+  }
 }
 
 size_t
 tree::determine_stack_effects ()
 {
   size_t ret = resolve_operands (*this, stack_refs {}, true).max ();
+
+  // Count is potentially expensive and it would prevent most
+  // producers from doing incremental work, even though count is
+  // unlikely to be used often.  So instead we figure out which
+  // producers produce the slot that count is applied to, and convert
+  // the said producers X to ([X] each).  each is already written in
+  // such a way as to annotate produced values with total count,
+  // because each knows how long the sequence is.
+  auto unresolved = resolve_count (*this, {});
+  assert (unresolved.empty ());
+
   dump (std::cerr);
   std::cerr << std::endl;
   return ret;
