@@ -19,8 +19,9 @@ CXXOPTFLAGS = -O2
 YACC = bison
 
 all: $(TARGETS)
-check: test-parser
+check: dwgrep test-parser
 	./test-parser
+	(cd ./tests/; ./tests.sh)
 
 %.cc-dep $(TARGETS): override CXXFLAGS = -g3 $(CXXOPTFLAGS) -Wall -std=c++11 -I /usr/include/elfutils/
 dwgrep: override LDFLAGS += -ldw -lelf
