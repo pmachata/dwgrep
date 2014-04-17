@@ -6,6 +6,7 @@
 #include "valfile.hh"
 #include "dwpp.hh"
 #include "dwcst.hh"
+#include "atval.hh"
 
 namespace
 {
@@ -47,7 +48,8 @@ namespace
   }
 
   std::unique_ptr <value>
-  handle_at_dependent_value (Dwarf_Attribute attr, Dwarf_Die die)
+  handle_at_dependent_value (Dwarf_Attribute attr, Dwarf_Die die,
+			     dwgrep_graph &gr)
   {
     switch (dwarf_whatattr (&attr))
       {
@@ -123,92 +125,107 @@ namespace
 	  // This might be a DW_TAG_variable, DW_TAG_constant,
 	  // DW_TAG_formal_parameter, DW_TAG_inlined_subroutine,
 	  // DW_TAG_template_value_parameter or DW_TAG_enumerator.
-	  // In the former cases, we need to determine signedness
-	  // by inspecting the @type.
-	  //
-	  // To handle the enumerator, we need to look at @type in
-	  // the parent (DW_TAG_enumeration_type).  We don't have
-	  // access to that at this point.  We will have later,
-	  // when "parent" op is implemented.  For now, just
-	  // consider them unsigned.  NIY.
+	  // In the former cases, we need to determine signedness by
+	  // inspecting the @type.  To handle the enumerator, we need
+	  // to look at @type in the parent (DW_TAG_enumeration_type).
 
+	  Dwarf_Die type_die;
 	  if (dwarf_tag (&die) != DW_TAG_enumerator)
+	    type_die = die;
+	  else
 	    {
-	      Dwarf_Die type_die = die;
-	      Dwarf_Attribute at;
-	      while (dwarf_hasattr_integrate (&type_die, DW_AT_type))
-		{
-		  if (dwarf_attr_integrate (&type_die, DW_AT_type,
-					    &at) == nullptr
-		      || dwarf_formref_die (&at, &type_die) == nullptr)
-		    throw_libdw ();
-		  int tag = dwarf_tag (&type_die);
-		  if (tag != DW_TAG_const_type
-		      && tag != DW_TAG_volatile_type
-		      && tag != DW_TAG_restrict_type
-		      && tag != DW_TAG_mutable_type
-		      && tag != DW_TAG_typedef
-		      && tag != DW_TAG_subrange_type
-		      && tag != DW_TAG_packed_type)
-		    break;
-		}
+	      // Get DW_TAG_enumeration_type.
+	      if (dwarf_offdie (&*gr.dwarf, gr.find_parent (die),
+				&type_die) == nullptr)
+		throw_libdw ();
 
-	      if (dwarf_tag (&type_die) != DW_TAG_base_type
-		  || ! dwarf_hasattr_integrate (&type_die, DW_AT_encoding))
+	      if (dwarf_tag (&type_die) != DW_TAG_enumeration_type)
 		{
-		  // Ho hum.  This could be a structure, a pointer, or
-		  // something similarly useless.
+		  std::cerr << "Unexpected: DW_TAG_enumerator's parent is "
+		    "not DW_TAG_enumeration_type\n";
 		  return atval_unsigned (attr);
 		}
-	      else
+
+	      if (! dwarf_hasattr_integrate (&type_die, DW_AT_type))
 		{
-		  if (dwarf_attr_integrate (&type_die, DW_AT_encoding,
-					    &at) == nullptr)
-		    throw_libdw ();
-
-		  Dwarf_Word uval;
-		  if (dwarf_formudata (&at, &uval) != 0)
-		    throw_libdw ();
-
-		  switch (uval)
-		    {
-		    case DW_ATE_signed:
-		    case DW_ATE_signed_char:
-		      return atval_signed (attr);
-
-		    case DW_ATE_unsigned:
-		    case DW_ATE_unsigned_char:
-		    case DW_ATE_address:
-		    case DW_ATE_boolean:
-		      return atval_unsigned (attr);
-
-		    case DW_ATE_float:
-		    case DW_ATE_complex_float:
-		    case DW_ATE_imaginary_float: // ???
-		      // Encoding floating-point enumerators in
-		      // DW_FORM_data* actually makes sense, but
-		      // for now, NIY.
-		      assert (! "float enumerator unhandled");
-		      abort ();
-
-		    case DW_ATE_signed_fixed:
-		    case DW_ATE_unsigned_fixed:
-		    case DW_ATE_packed_decimal:
-		    case DW_ATE_decimal_float:
-		      // OK, gross.
-		      assert (! "weird-float enumerator unhandled");
-		      abort ();
-
-		    default:
-		      // There's a couple more that nobody should
-		      // probably put inside DW_FORM_data*.
-		      assert (! "unknown enumerator encoding");
-		      abort ();
-		    }
+		  std::cerr << "Unexpected: DW_TAG_enumeration_type whose "
+		    "DW_TAG_enumerator's DW_AT_const_value is "
+		    "DW_FORM_data[1248] doesn't have DW_AT_type.\n";
+		  return atval_unsigned (attr);
 		}
 	    }
+
+	  Dwarf_Attribute at;
+	  while (dwarf_hasattr_integrate (&type_die, DW_AT_type))
+	    {
+	      if (dwarf_attr_integrate (&type_die, DW_AT_type,
+					&at) == nullptr
+		  || dwarf_formref_die (&at, &type_die) == nullptr)
+		throw_libdw ();
+	      int tag = dwarf_tag (&type_die);
+	      if (tag != DW_TAG_const_type
+		  && tag != DW_TAG_volatile_type
+		  && tag != DW_TAG_restrict_type
+		  && tag != DW_TAG_mutable_type
+		  && tag != DW_TAG_typedef
+		  && tag != DW_TAG_subrange_type
+		  && tag != DW_TAG_packed_type)
+		break;
+	    }
+
+	  if (dwarf_tag (&type_die) != DW_TAG_base_type
+	      || ! dwarf_hasattr_integrate (&type_die, DW_AT_encoding))
+	    {
+	      // Ho hum.  This could be a structure, a pointer, or
+	      // something similarly useless.
+	      return atval_unsigned (attr);
+	    }
 	  else
-	    return atval_signed (attr);
+	    {
+	      if (dwarf_attr_integrate (&type_die, DW_AT_encoding,
+					&at) == nullptr)
+		throw_libdw ();
+
+	      Dwarf_Word uval;
+	      if (dwarf_formudata (&at, &uval) != 0)
+		throw_libdw ();
+
+	      switch (uval)
+		{
+		case DW_ATE_signed:
+		case DW_ATE_signed_char:
+		  return atval_signed (attr);
+
+		case DW_ATE_unsigned:
+		case DW_ATE_unsigned_char:
+		case DW_ATE_address:
+		case DW_ATE_boolean:
+		  return atval_unsigned (attr);
+
+		case DW_ATE_float:
+		case DW_ATE_complex_float:
+		case DW_ATE_imaginary_float: // ???
+		  // Encoding floating-point enumerators in
+		  // DW_FORM_data* actually makes sense, but
+		  // for now, NIY.
+		  assert (! "float enumerator unhandled");
+		  abort ();
+
+		case DW_ATE_signed_fixed:
+		case DW_ATE_unsigned_fixed:
+		case DW_ATE_packed_decimal:
+		case DW_ATE_decimal_float:
+		  // OK, gross.
+		  assert (! "weird-float enumerator unhandled");
+		  abort ();
+
+		default:
+		  // There's a couple more that nobody should
+		  // probably put inside DW_FORM_data*.
+		  assert (! "unknown enumerator encoding");
+		  abort ();
+		}
+	    }
 	}
 
       case DW_AT_byte_stride:
@@ -254,7 +271,7 @@ namespace
 }
 
 std::unique_ptr <value>
-at_value (Dwarf_Attribute attr, Dwarf_Die die)
+at_value (Dwarf_Attribute attr, Dwarf_Die die, dwgrep_graph::sptr gr)
 {
   switch (dwarf_whatform (&attr))
     {
@@ -278,7 +295,7 @@ at_value (Dwarf_Attribute attr, Dwarf_Die die)
 	Dwarf_Die die;
 	if (dwarf_formref_die (&attr, &die) == nullptr)
 	  throw_libdw ();
-	return std::make_unique <value_die> (die, 0);
+	return std::make_unique <value_die> (gr, die, 0);
       }
 
     case DW_FORM_sdata:
@@ -304,7 +321,7 @@ at_value (Dwarf_Attribute attr, Dwarf_Die die)
     case DW_FORM_data2:
     case DW_FORM_data4:
     case DW_FORM_data8:
-      return handle_at_dependent_value (attr, die);
+      return handle_at_dependent_value (attr, die, *gr);
 
     case DW_FORM_block1:
     case DW_FORM_block2:

@@ -47,15 +47,15 @@ op_origin::reset ()
 struct op_sel_universe::pimpl
 {
   std::shared_ptr <op> m_upstream;
-  std::shared_ptr <Dwarf> m_dw;
+  dwgrep_graph::sptr m_gr;
   all_dies_iterator m_it;
   valfile::uptr m_vf;
   slot_idx m_dst;
   size_t m_pos;
 
-  pimpl (std::shared_ptr <op> upstream, dwgrep_graph::sptr q, slot_idx dst)
+  pimpl (std::shared_ptr <op> upstream, dwgrep_graph::sptr gr, slot_idx dst)
     : m_upstream {upstream}
-    , m_dw {q->dwarf}
+    , m_gr {gr}
     , m_it {all_dies_iterator::end ()}
     , m_dst {dst}
     , m_pos {0}
@@ -78,13 +78,13 @@ struct op_sel_universe::pimpl
 	    m_vf = m_upstream->next ();
 	    if (m_vf == nullptr)
 	      return nullptr;
-	    m_it = all_dies_iterator (&*m_dw);
+	    m_it = all_dies_iterator (&*m_gr->dwarf);
 	  }
 
 	if (m_it != all_dies_iterator::end ())
 	  {
 	    auto ret = std::make_unique <valfile> (*m_vf);
-	    auto v = std::make_unique <value_die> (**m_it, m_pos++);
+	    auto v = std::make_unique <value_die> (m_gr, **m_it, m_pos++);
 	    ret->set_slot (m_dst, std::move (v));
 	    ++m_it;
 	    return ret;
@@ -132,7 +132,7 @@ op_sel_universe::name () const
 struct op_sel_unit::pimpl
 {
   std::shared_ptr <op> m_upstream;
-  std::shared_ptr <Dwarf> m_dw;
+  dwgrep_graph::sptr m_gr;
   valfile::uptr m_vf;
   slot_idx m_src;
   slot_idx m_dst;
@@ -141,13 +141,13 @@ struct op_sel_unit::pimpl
   size_t m_pos;
 
   pimpl (std::shared_ptr <op> upstream,
-	 dwgrep_graph::sptr g, slot_idx src, slot_idx dst)
-    : m_upstream (upstream)
-    , m_dw (g->dwarf)
-    , m_src (src)
-    , m_dst (dst)
-    , m_it (all_dies_iterator::end ())
-    , m_end (all_dies_iterator::end ())
+	 dwgrep_graph::sptr gr, slot_idx src, slot_idx dst)
+    : m_upstream {upstream}
+    , m_gr {gr}
+    , m_src {src}
+    , m_dst {dst}
+    , m_it {all_dies_iterator::end ()}
+    , m_end {all_dies_iterator::end ()}
     , m_pos {0}
   {}
 
@@ -158,7 +158,7 @@ struct op_sel_unit::pimpl
     if (dwarf_diecu (&die, &cudie, nullptr, nullptr) == nullptr)
       throw_libdw ();
 
-    cu_iterator cuit {&*m_dw, cudie};
+    cu_iterator cuit {&*m_gr->dwarf, cudie};
     m_it = all_dies_iterator (cuit);
     m_end = all_dies_iterator (++cuit);
   }
@@ -198,8 +198,8 @@ struct op_sel_unit::pimpl
 	if (m_it != m_end)
 	  {
 	    auto ret = std::make_unique <valfile> (*m_vf);
-	    ret->set_slot (m_dst,
-			   std::make_unique <value_die> (**m_it, m_pos++));
+	    ret->set_slot
+	      (m_dst, std::make_unique <value_die> (m_gr, **m_it, m_pos++));
 	    ++m_it;
 	    return ret;
 	  }
@@ -246,6 +246,7 @@ op_sel_unit::name () const
 struct op_f_child::pimpl
 {
   std::shared_ptr <op> m_upstream;
+  dwgrep_graph::sptr m_gr;
   valfile::uptr m_vf;
   Dwarf_Die m_child;
 
@@ -253,11 +254,13 @@ struct op_f_child::pimpl
   slot_idx m_dst;
   size_t m_pos;
 
-  pimpl (std::shared_ptr <op> upstream, slot_idx src, slot_idx dst)
-    : m_upstream (upstream)
+  pimpl (std::shared_ptr <op> upstream, dwgrep_graph::sptr gr,
+	 slot_idx src, slot_idx dst)
+    : m_upstream {upstream}
+    , m_gr {gr}
     , m_child {}
-    , m_src (src)
-    , m_dst (dst)
+    , m_src {src}
+    , m_dst {dst}
     , m_pos {0}
   {}
 
@@ -295,7 +298,8 @@ struct op_f_child::pimpl
 	  }
 
 	auto ret = std::make_unique <valfile> (*m_vf);
-	ret->set_slot (m_dst, std::make_unique <value_die> (m_child, m_pos++));
+	ret->set_slot
+	  (m_dst, std::make_unique <value_die> (m_gr, m_child, m_pos++));
 
 	switch (dwarf_siblingof (&m_child, &m_child))
 	  {
@@ -322,8 +326,9 @@ struct op_f_child::pimpl
 };
 
 op_f_child::op_f_child (std::shared_ptr <op> upstream,
+			dwgrep_graph::sptr gr,
 			slot_idx src, slot_idx dst)
-  : m_pimpl (std::make_unique <pimpl> (upstream, src, dst))
+  : m_pimpl (std::make_unique <pimpl> (upstream, gr, src, dst))
 {}
 
 op_f_child::~op_f_child ()
@@ -351,6 +356,7 @@ op_f_child::reset ()
 struct op_f_attr::pimpl
 {
   std::shared_ptr <op> m_upstream;
+  dwgrep_graph::sptr m_gr;
   Dwarf_Die m_die;
   valfile::uptr m_vf;
   attr_iterator m_it;
@@ -359,8 +365,10 @@ struct op_f_attr::pimpl
   slot_idx m_dst;
   size_t m_pos;
 
-  pimpl (std::shared_ptr <op> upstream, slot_idx src, slot_idx dst)
+  pimpl (std::shared_ptr <op> upstream, dwgrep_graph::sptr gr,
+	 slot_idx src, slot_idx dst)
     : m_upstream {upstream}
+    , m_gr {gr}
     , m_die {}
     , m_it {attr_iterator::end ()}
     , m_src {src}
@@ -398,7 +406,8 @@ struct op_f_attr::pimpl
 	if (m_it != attr_iterator::end ())
 	  {
 	    auto ret = std::make_unique <valfile> (*m_vf);
-	    auto vp = std::make_unique <value_attr> (**m_it, m_die, m_pos++);
+	    auto vp = std::make_unique <value_attr> (m_gr, **m_it,
+						     m_die, m_pos++);
 	    ret->set_slot (m_dst, std::move (vp));
 	    ++m_it;
 	    return ret;
@@ -416,8 +425,9 @@ struct op_f_attr::pimpl
   }
 };
 
-op_f_attr::op_f_attr (std::shared_ptr <op> upstream, slot_idx src, slot_idx dst)
-  : m_pimpl (std::make_unique <pimpl> (upstream, src, dst))
+op_f_attr::op_f_attr (std::shared_ptr <op> upstream, dwgrep_graph::sptr gr,
+		      slot_idx src, slot_idx dst)
+  : m_pimpl (std::make_unique <pimpl> (upstream, gr, src, dst))
 {}
 
 op_f_attr::~op_f_attr ()
@@ -489,13 +499,13 @@ dwop_f::next ()
 }
 
 bool
-op_f_attr_named::operate (valfile &vf, slot_idx dst, Dwarf_Die &die) const
+op_f_attr_named::operate (valfile &vf, slot_idx dst, Dwarf_Die &die)
 {
   Dwarf_Attribute attr;
   if (dwarf_attr_integrate (&die, m_name, &attr) == nullptr)
     return false;
 
-  vf.set_slot (dst, std::make_unique <value_attr> (attr, die, 0));
+  vf.set_slot (dst, std::make_unique <value_attr> (m_g, attr, die, 0));
   return true;
 }
 
@@ -508,7 +518,7 @@ op_f_attr_named::name () const
 }
 
 bool
-op_f_offset::operate (valfile &vf, slot_idx dst, Dwarf_Die &die) const
+op_f_offset::operate (valfile &vf, slot_idx dst, Dwarf_Die &die)
 {
   Dwarf_Off off = dwarf_dieoffset (&die);
   auto v = std::make_unique <value_cst> (constant {off, &hex_constant_dom}, 0);
@@ -536,14 +546,14 @@ namespace
 }
 
 bool
-op_f_name::operate (valfile &vf, slot_idx dst, Dwarf_Die &die) const
+op_f_name::operate (valfile &vf, slot_idx dst, Dwarf_Die &die)
 {
   return operate_tag (vf, dst, die);
 }
 
 bool
 op_f_name::operate (valfile &vf, slot_idx dst,
-		    Dwarf_Attribute &attr, Dwarf_Die &die) const
+		    Dwarf_Attribute &attr, Dwarf_Die &die)
 
 {
   unsigned name = dwarf_whatattr (&attr);
@@ -559,7 +569,7 @@ op_f_name::name () const
 }
 
 bool
-op_f_tag::operate (valfile &vf, slot_idx dst, Dwarf_Die &die) const
+op_f_tag::operate (valfile &vf, slot_idx dst, Dwarf_Die &die)
 {
   return operate_tag (vf, dst, die);
 }
@@ -572,7 +582,7 @@ op_f_tag::name () const
 
 bool
 op_f_form::operate (valfile &vf, slot_idx dst,
-		    Dwarf_Attribute &attr, Dwarf_Die &die) const
+		    Dwarf_Attribute &attr, Dwarf_Die &die)
 {
   unsigned name = dwarf_whatform (&attr);
   constant cst {name, &dw_form_dom};
@@ -589,9 +599,9 @@ op_f_form::name () const
 
 bool
 op_f_value::operate (valfile &vf, slot_idx dst,
-		     Dwarf_Attribute &attr, Dwarf_Die &die) const
+		     Dwarf_Attribute &attr, Dwarf_Die &die)
 {
-  vf.set_slot (dst, at_value (attr, die));
+  vf.set_slot (dst, at_value (attr, die, m_g));
   return true;
 }
 
@@ -604,14 +614,14 @@ op_f_value::name () const
 
 bool
 op_f_parent::operate (valfile &vf, slot_idx dst,
-		      Dwarf_Attribute &attr, Dwarf_Die &die) const
+		      Dwarf_Attribute &attr, Dwarf_Die &die)
 {
-  vf.set_slot (dst, std::make_unique <value_die> (die, 0));
+  vf.set_slot (dst, std::make_unique <value_die> (m_g, die, 0));
   return true;
 }
 
 bool
-op_f_parent::operate (valfile &vf, slot_idx dst, Dwarf_Die &die) const
+op_f_parent::operate (valfile &vf, slot_idx dst, Dwarf_Die &die)
 {
   Dwarf_Off par_off = m_g->find_parent (die);
   if (par_off == dwgrep_graph::none_off)
@@ -619,7 +629,7 @@ op_f_parent::operate (valfile &vf, slot_idx dst, Dwarf_Die &die) const
 
   if (dwarf_offdie (&*m_g->dwarf, par_off, &die) == nullptr)
     throw_libdw ();
-  vf.set_slot (dst, std::make_unique <value_die> (die, 0));
+  vf.set_slot (dst, std::make_unique <value_die> (m_g, die, 0));
   return true;
 }
 

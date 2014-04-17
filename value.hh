@@ -8,6 +8,7 @@
 #include <elfutils/libdw.h>
 
 #include "constant.hh"
+#include "dwgrep.hh"
 
 enum class cmp_result
   {
@@ -206,13 +207,15 @@ class value_die
   : public value
 {
   Dwarf_Die m_die;
+  dwgrep_graph::sptr m_gr;
 
 public:
   static value_type const vtype;
 
-  value_die (Dwarf_Die die, size_t pos)
+  value_die (dwgrep_graph::sptr gr, Dwarf_Die die, size_t pos)
     : value {vtype, pos}
     , m_die (die)
+    , m_gr {gr}
   {}
 
   value_die (value_die const &that) = default;
@@ -231,14 +234,17 @@ class value_attr
 {
   Dwarf_Attribute m_attr;
   Dwarf_Die m_die;
+  dwgrep_graph::sptr m_gr;
 
 public:
   static value_type const vtype;
 
-  value_attr (Dwarf_Attribute attr, Dwarf_Die die, size_t pos)
+  value_attr (dwgrep_graph::sptr gr,
+	      Dwarf_Attribute attr, Dwarf_Die die, size_t pos)
     : value {vtype, pos}
     , m_attr (attr)
     , m_die (die)
+    , m_gr {gr}
   {}
 
   value_attr (value_attr const &that) = default;

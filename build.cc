@@ -175,14 +175,14 @@ tree::build_exec (std::shared_ptr <op> upstream, dwgrep_graph::sptr q,
 	(upstream, m_children.front ().build_pred (q, maxsize));
 
     case tree_type::F_CHILD:
-      return std::make_unique <op_f_child> (upstream, src_a (), dst ());
+      return std::make_unique <op_f_child> (upstream, q, src_a (), dst ());
 
     case tree_type::F_ATTRIBUTE:
-      return std::make_unique <op_f_attr> (upstream, src_a (), dst ());
+      return std::make_unique <op_f_attr> (upstream, q, src_a (), dst ());
 
     case tree_type::F_ATTR_NAMED:
       return std::make_unique <op_f_attr_named>
-	(upstream, src_a (), dst (), int (m_u.cval->value ()));
+	(upstream, q, src_a (), dst (), int (m_u.cval->value ()));
 
     case tree_type::F_OFFSET:
       return std::make_unique <op_f_offset> (upstream, q, src_a (), dst ());

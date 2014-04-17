@@ -84,3 +84,11 @@ expect_count 5 ./typedef.o -e '
 	"%( +child count %)--%( count %)" ?{"5--6" ?eq}'
 expect_count 5 ./typedef.o -e '
 	"%( +child count %)--%( count %)" count ?{5 ?eq}'
+
+# Test decoding signed and unsigned value.
+expect_count 1 ./enum.o -e '
+	?{@name "f" ?eq} child ?{@name "V" ?eq}
+	?{@const_value "%s" "-1" ?eq}'
+expect_count 1 ./enum.o -e '
+	?{@name "e" ?eq} child ?{@name "V" ?eq}
+	?{@const_value "%s" "4294967295" ?eq}'

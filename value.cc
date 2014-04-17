@@ -181,7 +181,7 @@ value_die::show (std::ostream &o) const
   for (auto it = attr_iterator {die}; it != attr_iterator::end (); ++it)
     {
       o << "\n\t";
-      value_attr {**it, m_die, 0}.show (o);
+      value_attr {m_gr, **it, m_die, 0}.show (o);
     }
 
   o.flags (f);
@@ -219,7 +219,7 @@ value_attr::show (std::ostream &o) const
   unsigned form = dwarf_whatform ((Dwarf_Attribute *) &m_attr);
   o << constant (name, &dw_attr_short_dom) << " ("
     << constant (form, &dw_form_short_dom) << ")\t";
-  auto v = at_value (m_attr, m_die);
+  auto v = at_value (m_attr, m_die, m_gr);
   if (auto d = value::as <value_die> (v.get ()))
     o << "[" << dwarf_dieoffset ((Dwarf_Die *) &d->get_die ()) << "]";
   else
