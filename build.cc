@@ -88,7 +88,6 @@ tree::build_pred (dwgrep_graph::sptr q, size_t maxsize) const
     case tree_type::CONST:
     case tree_type::STR:
     case tree_type::FORMAT:
-    case tree_type::F_ATVAL:
     case tree_type::F_ADD:
     case tree_type::F_SUB:
     case tree_type::F_MUL:
@@ -97,6 +96,7 @@ tree::build_pred (dwgrep_graph::sptr q, size_t maxsize) const
     case tree_type::F_PARENT:
     case tree_type::F_CHILD:
     case tree_type::F_ATTRIBUTE:
+    case tree_type::F_ATTR_NAMED:
     case tree_type::F_PREV:
     case tree_type::F_NEXT:
     case tree_type::F_TYPE:
@@ -174,15 +174,15 @@ tree::build_exec (std::shared_ptr <op> upstream, dwgrep_graph::sptr q,
       return std::make_unique <op_assert>
 	(upstream, m_children.front ().build_pred (q, maxsize));
 
-    case tree_type::F_ATVAL:
-      return std::make_unique <op_f_atval>
-	(upstream, q, src_a (), dst (), int (m_u.cval->value ()));
-
     case tree_type::F_CHILD:
       return std::make_unique <op_f_child> (upstream, src_a (), dst ());
 
     case tree_type::F_ATTRIBUTE:
       return std::make_unique <op_f_attr> (upstream, src_a (), dst ());
+
+    case tree_type::F_ATTR_NAMED:
+      return std::make_unique <op_f_attr_named>
+	(upstream, src_a (), dst (), int (m_u.cval->value ()));
 
     case tree_type::F_OFFSET:
       return std::make_unique <op_f_offset> (upstream, q, src_a (), dst ());

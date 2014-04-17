@@ -193,14 +193,14 @@ public:
   { return false; }
 };
 
-class op_f_atval
+class op_f_attr_named
   : public dwop_f
 {
   int m_name;
 
 public:
-  op_f_atval (std::shared_ptr <op> upstream, dwgrep_graph::sptr g,
-	      slot_idx src, slot_idx dst, int name)
+  op_f_attr_named (std::shared_ptr <op> upstream, dwgrep_graph::sptr g,
+		   slot_idx src, slot_idx dst, int name)
     : dwop_f (upstream, g, src, dst)
     , m_name (name)
   {}

@@ -243,10 +243,10 @@ do_tests ()
   test ("+section", "(PROTECT (SEL_SECTION))");
   test ("+unit", "(PROTECT (SEL_UNIT))");
 
-#define ONE_KNOWN_DW_AT(NAME, CODE)				\
-  test ("@"#NAME, "(F_ATVAL<" #CODE ">)");			\
-  test ("+@"#NAME, "(PROTECT (F_ATVAL<" #CODE ">))");		\
-  test ("?@"#NAME, "(ASSERT (PRED_AT<" #CODE ">))");		\
+#define ONE_KNOWN_DW_AT(NAME, CODE)					\
+  test ("@"#NAME, "(CAT (F_ATTR_NAMED<" #CODE ">) (F_VALUE))");		\
+  test ("+@"#NAME, "(PROTECT (CAT (F_ATTR_NAMED<" #CODE ">) (F_VALUE)))"); \
+  test ("?@"#NAME, "(ASSERT (PRED_AT<" #CODE ">))");			\
   test ("!@"#NAME, "(ASSERT (PRED_NOT (PRED_AT<" #CODE ">)))");
 
   ALL_KNOWN_DW_AT;
@@ -348,7 +348,8 @@ do_tests ()
 
   test ("\"a%( \")%( [@name] %)(\" %)b\"",
 	"(FORMAT (STR<a>) (FORMAT (STR<)>)"
-	" (CAPTURE (F_ATVAL<DW_AT_name>)) (STR<(>)) (STR<b>))");
+	" (CAPTURE (CAT (F_ATTR_NAMED<DW_AT_name>) (F_VALUE)))"
+	" (STR<(>)) (STR<b>))");
   test ("\"abc%sdef\"",
 	"(FORMAT (STR<abc>) (NOP) (STR<def>))");
   test ("+\"foo\"",
@@ -386,8 +387,9 @@ do_tests ()
 
   ftest ("\"%( +offset %): %( @name %)\"",
 	 "(CAT (SEL_UNIVERSE [dst=0;])"
-	 " (FORMAT [dst=0;] (STR<>) (F_OFFSET [a=0;dst=1;])"
-	 " (STR<: >) (F_ATVAL<DW_AT_name> [a=0;dst=0;]) (STR<>)))",
+	 " (FORMAT [dst=0;] (STR<>) (F_OFFSET [a=0;dst=1;]) (STR<: >)"
+	 " (CAT [dst=0;] (F_ATTR_NAMED<DW_AT_name> [a=0;dst=0;])"
+	 " (F_VALUE [a=0;dst=0;])) (STR<>)))",
 	 true);
 
   ftest ("(?const_type, ?volatile_type, ?restrict_type)",

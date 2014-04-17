@@ -466,6 +466,7 @@ namespace
       case tree_type::F_PARENT:
       case tree_type::F_CHILD:
       case tree_type::F_ATTRIBUTE:
+      case tree_type::F_ATTR_NAMED:
       case tree_type::F_PREV:
       case tree_type::F_NEXT:
       case tree_type::F_TYPE:
@@ -478,7 +479,6 @@ namespace
       case tree_type::F_COUNT:
       case tree_type::F_EACH:
       case tree_type::F_LENGTH:
-      case tree_type::F_ATVAL:
       case tree_type::SEL_SECTION:
       case tree_type::SEL_UNIT:
 	t.m_src_a = sr.top ();
@@ -706,10 +706,11 @@ namespace
       case tree_type::PROTECT: case tree_type::NOP:
       case tree_type::CLOSE_PLUS: case tree_type::CLOSE_STAR:
       case tree_type::MAYBE: case tree_type::ASSERT: case tree_type::CONST:
-      case tree_type::STR: case tree_type::FORMAT: case tree_type::F_ATVAL:
+      case tree_type::STR: case tree_type::FORMAT:
       case tree_type::F_ADD: case tree_type::F_SUB: case tree_type::F_MUL:
       case tree_type::F_DIV: case tree_type::F_MOD: case tree_type::F_PARENT:
-      case tree_type::F_CHILD: case tree_type::F_ATTRIBUTE:
+      case tree_type::F_CHILD:
+      case tree_type::F_ATTRIBUTE: case tree_type::F_ATTR_NAMED:
       case tree_type::F_PREV: case tree_type::F_NEXT: case tree_type::F_TYPE:
       case tree_type::F_OFFSET: case tree_type::F_NAME: case tree_type::F_TAG:
       case tree_type::F_FORM: case tree_type::F_VALUE: case tree_type::F_POS:
@@ -894,7 +895,6 @@ namespace
 
       case tree_type::EMPTY_LIST:
       case tree_type::CONST:
-      case tree_type::F_ATVAL:
       case tree_type::F_ADD:
       case tree_type::F_SUB:
       case tree_type::F_MUL:
@@ -903,6 +903,7 @@ namespace
       case tree_type::F_PARENT:
       case tree_type::F_CHILD:
       case tree_type::F_ATTRIBUTE:
+      case tree_type::F_ATTR_NAMED:
       case tree_type::F_PREV:
       case tree_type::F_NEXT:
       case tree_type::F_TYPE:

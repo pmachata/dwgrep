@@ -489,21 +489,21 @@ dwop_f::next ()
 }
 
 bool
-op_f_atval::operate (valfile &vf, slot_idx dst, Dwarf_Die &die) const
+op_f_attr_named::operate (valfile &vf, slot_idx dst, Dwarf_Die &die) const
 {
   Dwarf_Attribute attr;
   if (dwarf_attr_integrate (&die, m_name, &attr) == nullptr)
     return false;
 
-  vf.set_slot (dst, at_value (attr, die));
+  vf.set_slot (dst, std::make_unique <value_attr> (attr, die, 0));
   return true;
 }
 
 std::string
-op_f_atval::name () const
+op_f_attr_named::name () const
 {
   std::stringstream ss;
-  ss << "f_atval<" << m_name << ">";
+  ss << "f_attr_named<" << m_name << ">";
   return ss.str ();
 }
 
