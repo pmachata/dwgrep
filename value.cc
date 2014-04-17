@@ -218,13 +218,16 @@ value_attr::show (std::ostream &o) const
 {
   unsigned name = (unsigned) dwarf_whatattr ((Dwarf_Attribute *) &m_attr);
   unsigned form = dwarf_whatform ((Dwarf_Attribute *) &m_attr);
+  std::ios::fmtflags f {o.flags ()};
   o << constant (name, &dw_attr_short_dom) << " ("
     << constant (form, &dw_form_short_dom) << ")\t";
   auto v = at_value (m_attr, m_die, m_gr);
   if (auto d = value::as <value_die> (v.get ()))
-    o << "[" << dwarf_dieoffset ((Dwarf_Die *) &d->get_die ()) << "]";
+    o << "[" << std::hex
+      << dwarf_dieoffset ((Dwarf_Die *) &d->get_die ()) << "]";
   else
     v->show (o);
+  o.flags (f);
 }
 
 std::unique_ptr <value>
