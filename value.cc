@@ -181,6 +181,7 @@ value_die::show (std::ostream &o) const
   for (auto it = attr_iterator {die}; it != attr_iterator::end (); ++it)
     {
       o << "\n\t";
+      o.flags (f);
       value_attr {m_gr, **it, m_die, 0}.show (o);
     }
 
