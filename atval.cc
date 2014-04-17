@@ -256,6 +256,9 @@ namespace
       case DW_AT_GNU_odr_signature:
 	return atval_unsigned (attr);
 
+      case DW_AT_stmt_list:
+	return atval_unsigned_with_domain (attr, hex_constant_dom);
+
       case DW_AT_discr_value:
 	// ^^^ """The number is signed if the tag type for the
 	// variant part containing this variant is a signed
@@ -343,6 +346,8 @@ at_value (Dwarf_Attribute attr, Dwarf_Die die, dwgrep_graph::sptr gr)
       }
 
     case DW_FORM_sec_offset:
+      return atval_unsigned_with_domain (attr, hex_constant_dom);
+
     case DW_FORM_exprloc:
     case DW_FORM_ref_sig8:
     case DW_FORM_GNU_ref_alt:
