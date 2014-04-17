@@ -398,6 +398,7 @@ namespace
       case tree_type::SEL_UNIVERSE:
       case tree_type::CONST:
       case tree_type::EMPTY_LIST:
+      case tree_type::STR:
 	sr.push ();
 	t.m_dst = sr.top ();
 	break;
@@ -422,11 +423,6 @@ namespace
 	sr.push ();
 	t.m_dst = sr.top ();
 	break;
-
-      // STR should be handled specially in FORMAT.
-      case tree_type::STR:
-	assert (false);
-	abort ();
 
       case tree_type::F_ADD:
       case tree_type::F_SUB:
@@ -719,7 +715,7 @@ namespace
       case tree_type::SEL_UNIT: case tree_type::SHF_SWAP:
       case tree_type::SHF_DUP: case tree_type::SHF_OVER:
       case tree_type::SHF_ROT: case tree_type::SHF_DROP:
-	assert (! "Should never gete here.");
+	assert (! "Should never get here.");
 	abort ();
       };
 
@@ -895,6 +891,7 @@ namespace
 
       case tree_type::EMPTY_LIST:
       case tree_type::CONST:
+      case tree_type::STR:
       case tree_type::F_ADD:
       case tree_type::F_SUB:
       case tree_type::F_MUL:
@@ -940,7 +937,6 @@ namespace
 	assert (! "resolve_count: ROT unhandled");
 	abort ();
 
-      case tree_type::STR:
       case tree_type::CLOSE_PLUS:
       case tree_type::MAYBE:
       case tree_type::TRANSFORM:
@@ -1008,6 +1004,15 @@ tree::simplify ()
   if (m_tt == tree_type::PROTECT
       || (m_tt == tree_type::CAT && m_children.size () == 1))
     *this = m_children.front ();
+
+  // Change (FORMAT (STR)) to (STR).
+  if (m_tt == tree_type::FORMAT
+      && m_children.size () == 1
+      && m_children.front ().m_tt == tree_type::STR)
+    {
+      m_children.front ().m_dst = m_dst;
+      *this = m_children.front ();
+    }
 
   // Change (DUP[a=A;dst=B;] [...] X[a=B;dst=B;]) to (X[a=A;dst=B] [...]).
   for (size_t i = 0; i < m_children.size (); ++i)

@@ -204,10 +204,6 @@ tree::build_exec (std::shared_ptr <op> upstream, dwgrep_graph::sptr q,
 
     case tree_type::FORMAT:
       {
-	if (m_children.size () == 1
-	    && m_children.front ().m_tt == tree_type::STR)
-	  return std::make_unique <op_strlit>
-	    (upstream, *m_children.front ().m_u.sval, dst ());
 
 	auto s_origin = std::make_shared <stringer_origin> ();
 	std::shared_ptr <stringer> strgr = s_origin;
@@ -225,6 +221,9 @@ tree::build_exec (std::shared_ptr <op> upstream, dwgrep_graph::sptr q,
 	return std::make_shared <op_format>
 	  (upstream, s_origin, strgr, dst ());
       }
+
+    case tree_type::STR:
+      return std::make_shared <op_strlit> (upstream, *m_u.sval, dst ());
 
     case tree_type::SHF_DROP:
       return std::make_shared <op_drop> (upstream, dst ());
@@ -292,7 +291,6 @@ tree::build_exec (std::shared_ptr <op> upstream, dwgrep_graph::sptr q,
     case tree_type::MAYBE:       // X? should be translated to (,X)
     case tree_type::TRANSFORM:   // N/X should be translated to N X's
     case tree_type::PROTECT:     // +X should be translated to X[a=,dst=]
-    case tree_type::STR:         // FORMAT handles these nodes.
 
     case tree_type::PRED_TAG:
     case tree_type::PRED_AT:
