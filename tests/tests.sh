@@ -94,3 +94,13 @@ expect_count 1 ./enum.o -e '
 expect_count 1 ./enum.o -e '
 	?{@name "e" ?eq} child ?{@name "V" ?eq}
 	?{@const_value "%s" "4294967295" ?eq}'
+
+# Test match operator
+expect_count 7 ./duplicate-const -e '
+	?{@decl_file "" ?match}'
+expect_count 7 ./duplicate-const -e '
+	?{@decl_file ".*petr.*" ?match}'
+expect_count 1 ./nontrivial-types.o -e '
+	?{@language "%s" "DW_LANG_C89" ?match}'
+expect_count 1 ./nontrivial-types.o -e '
+	?{@encoding "%s" "^DW_ATE_signed$" ?match}'
