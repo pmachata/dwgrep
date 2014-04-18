@@ -932,7 +932,17 @@ public:
   void reset () override {}
 };
 
+class pred_match
+  : public pred_binary
+{
+public:
+    using pred_binary::pred_binary;
+
+    pred_result result (valfile &vf) override;
+    std::string name () const override;
+};
+
 class pred_find;
-class pred_match;
+
 
 #endif /* _OP_H_ */

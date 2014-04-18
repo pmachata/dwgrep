@@ -64,8 +64,10 @@ tree::build_pred (dwgrep_graph::sptr q, size_t maxsize) const
     case tree_type::PRED_EMPTY:
       return std::make_unique <pred_empty> (src_a ());
 
-    case tree_type::PRED_FIND:
     case tree_type::PRED_MATCH:
+      return std::make_unique <pred_match> (src_a (), src_b ());
+
+    case tree_type::PRED_FIND:
     case tree_type::PRED_LAST:
     case tree_type::PRED_SUBX_ALL:
       std::cerr << "\n\nUNHANDLED:";
