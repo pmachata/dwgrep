@@ -355,6 +355,9 @@ do_tests ()
   test ("+\"foo\"",
 	"(PROTECT (FORMAT (STR<foo>)))");
 
+  test ("\"r\\aw\"", "(FORMAT (STR<r\aw>))");
+  test ("r\"r\\aw\"", "(FORMAT (STR<r\\aw>))");
+
   ftest ("?root",
 	 "(CAT (SEL_UNIVERSE [dst=0;]) (ASSERT (PRED_ROOT [a=0;])))");
 

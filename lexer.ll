@@ -134,45 +134,57 @@ OCT [0-7]
 
 "\"" {
   BEGIN STRING;
-  yylval->f = new fmtlit {false};
+  yylval->f = new fmtlit {false, false};
 }
 
 "+\"" {
   BEGIN STRING;
-  yylval->f = new fmtlit {true};
+  yylval->f = new fmtlit {true, false};
+}
+
+"r\"" {
+  BEGIN STRING;
+  yylval->f = new fmtlit {false, true};
+}
+
+"+r\"" {
+  BEGIN STRING;
+  yylval->f = new fmtlit {true, true};
 }
 
 <STRING>"\\"[0-3]{OCT}?{OCT}? {
   yylval->f->str += parse_esc_num (yyget_text (yyscanner),
 				   yyget_leng (yyscanner), 1, 8);
-  BEGIN STRING;
 }
 
 <STRING>"\\x"{HEX}{HEX} {
   yylval->f->str += parse_esc_num (yyget_text (yyscanner),
 				   yyget_leng (yyscanner), 2, 16);
-  BEGIN STRING;
 }
 
 <STRING>"\\". {
-  switch (yyget_text (yyscanner)[1])
+  if (yylval->f->raw)
     {
-    case 'a': yylval->f->str += '\a'; break;
-    case 'b': yylval->f->str += '\b'; break;
-    case 'e': yylval->f->str += '\e'; break;
-    case 't': yylval->f->str += '\t'; break;
-    case 'n': yylval->f->str += '\n'; break;
-    case 'v': yylval->f->str += '\v'; break;
-    case 'f': yylval->f->str += '\f'; break;
-    case 'r': yylval->f->str += '\r'; break;
-    case '\n': break; // Ignore the newline.
-
-    default:
+      yylval->f->str += yyget_text (yyscanner)[0];
       yylval->f->str += yyget_text (yyscanner)[1];
-      break;
     }
+  else
+    switch (yyget_text (yyscanner)[1])
+      {
+      case 'a': yylval->f->str += '\a'; break;
+      case 'b': yylval->f->str += '\b'; break;
+      case 'e': yylval->f->str += '\e'; break;
+      case 't': yylval->f->str += '\t'; break;
+      case 'n': yylval->f->str += '\n'; break;
+      case 'v': yylval->f->str += '\v'; break;
+      case 'f': yylval->f->str += '\f'; break;
+      case 'r': yylval->f->str += '\r'; break;
+      case '\n': break; // Ignore the newline.
 
-  BEGIN STRING;
+      default:
+	yylval->f->str += yyget_text (yyscanner)[1];
+	break;
+      }
 }
 
 <STRING>"\"" {

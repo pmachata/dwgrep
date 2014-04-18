@@ -463,10 +463,8 @@
    - Example: explicit for loop
      : 0 (1 add ?{10 ?lt})*
 
-** •EXPR → “+”?“"” (string literal) “"” | (“0x”|“0”|“”)[1-9][0-9]* — literals
-
-   String literals allow expression interpolation:
-
+** •EXPR → (“0x”|“0”|“”)[1-9][0-9]* — literals
+** ·EXPR → “+”? “r”? “"” (formatting string) “"”
    - %( and %) enclose an EXPR that's evaluated in plain context, and
      whose input is whatever is the input to the string literal
      itself.  TOS is then popped, converted to a string and embedded
@@ -485,8 +483,12 @@
      i.e. the interpolation is done in a sub-expression context and
      the result is pushed onto unmodified stack.
 
-   The resulting string is pushed to stack after all interpolations
-   are processed one after another.
+   - The resulting string is pushed to stack after all interpolations
+     are processed one after another.
+
+   - The r"" strings are raw strings.  They work the same as normal
+     formatting strings, but escape sequences are left intact in the
+     string.
 
 **  EXPR → “+”?(“universe” | “section” | “unit”)
 

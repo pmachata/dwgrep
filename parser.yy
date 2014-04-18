@@ -85,12 +85,14 @@ struct fmtlit
   size_t level;
   bool in_string;
   bool protect;
+  bool raw;
 
-  explicit fmtlit (bool a_protect)
-    : t { tree_type::FORMAT }
-    , level { 0 }
-    , in_string { false }
-    , protect { a_protect }
+  explicit fmtlit (bool a_protect, bool a_raw)
+    : t {tree_type::FORMAT}
+    , level {0}
+    , in_string {false}
+    , protect {a_protect}
+    , raw {a_raw}
   {}
 
   void
