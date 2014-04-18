@@ -749,6 +749,18 @@
      : each ?last	# get last element of a list on TOS
      : [each !first] swap each first   # split a list into head:rest
 
+**  EXPR → “+”?(“first” | “second” | “third” | “last” | “nth”) — sequence access
+
+   - nth expects a constant on TOS and a sequence or a string one
+     below TOS.  Extracts nth element of that.  (X N nth) is exactly
+     equivalent to:
+     : X each ?{pos N ?eq}
+
+   - first, second, third and last extract the given element of
+     sequence on TOS.  X Y, for Y in (first, second, third, last), is
+     exactly equivalent to:
+     : X each ?Y
+
 ** ·EXPR → “+”?(“add” | “sub” | “mul” | “div” | “mod”) — arithmetic
 
    - Two elements are popped: A and B, with B the original TOS, and "A
