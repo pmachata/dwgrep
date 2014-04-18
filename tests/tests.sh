@@ -73,6 +73,8 @@ expect_count 1 ./typedef.o -e '
 # 6 (for count applied to each node) and 6x count of 1 (for count
 # applied to count).
 expect_count 18 ./typedef.o -e '
+	count*'
+expect_count 18 ./typedef.o -e '
 	count* (?{(1, 6) ?eq}, ?{type T_NODE ?eq})'
 
 # Test count in format strings.
