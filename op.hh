@@ -160,6 +160,28 @@ public:
   { m_upstream->reset (); }
 };
 
+class op_f_value
+  : public op
+{
+  std::shared_ptr <op> m_upstream;
+  slot_idx m_src;
+  slot_idx m_dst;
+  dwgrep_graph::sptr m_gr;
+
+public:
+  op_f_value (std::shared_ptr <op> upstream, dwgrep_graph::sptr gr,
+	      slot_idx src, slot_idx dst)
+    : m_upstream {upstream}
+    , m_src {src}
+    , m_dst {dst}
+    , m_gr {gr}
+  {}
+
+  valfile::uptr next () override;
+  std::string name () const override;
+  void reset () override;
+};
+
 class dwop_f
   : public op
 {
@@ -171,12 +193,12 @@ protected:
   dwgrep_graph::sptr m_g;
 
 public:
-  dwop_f (std::shared_ptr <op> upstream, dwgrep_graph::sptr g,
+  dwop_f (std::shared_ptr <op> upstream, dwgrep_graph::sptr gr,
 	  slot_idx src, slot_idx dst)
-    : m_upstream (upstream)
-    , m_src (src)
-    , m_dst (dst)
-    , m_g (g)
+    : m_upstream {upstream}
+    , m_src {src}
+    , m_dst {dst}
+    , m_g {gr}
   {}
 
   valfile::uptr next () override final;
@@ -244,17 +266,6 @@ public:
 };
 
 class op_f_form
-  : public dwop_f
-{
-public:
-  using dwop_f::dwop_f;
-
-  std::string name () const override;
-  bool operate (valfile &vf, slot_idx dst,
-		Dwarf_Attribute &attr, Dwarf_Die &die) override;
-};
-
-class op_f_value
   : public dwop_f
 {
 public:

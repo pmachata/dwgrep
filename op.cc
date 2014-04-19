@@ -598,12 +598,31 @@ op_f_form::name () const
 }
 
 
-bool
-op_f_value::operate (valfile &vf, slot_idx dst,
-		     Dwarf_Attribute &attr, Dwarf_Die &die)
+valfile::uptr
+op_f_value::next ()
 {
-  vf.set_slot (dst, at_value (attr, die, m_g));
-  return true;
+  while (auto vf = m_upstream->next ())
+    if (auto v = vf->get_slot_as <value_attr> (m_src))
+      {
+	vf->set_slot (m_dst, at_value (v->get_attr (), v->get_die (), m_gr));
+	return vf;
+      }
+    else if (auto v = vf->get_slot_as <value_cst> (m_src))
+      {
+	auto &cst = v->get_constant ();
+	constant cst2 {cst.value (), cst.dom ()->sign ()
+			? &signed_constant_dom : &unsigned_constant_dom};
+	vf->set_slot (m_dst, std::make_unique <value_cst> (cst2, 0));
+	return vf;
+      }
+
+  return nullptr;
+}
+
+void
+op_f_value::reset ()
+{
+  m_upstream->reset ();
 }
 
 std::string
