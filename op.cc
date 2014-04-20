@@ -723,7 +723,7 @@ stringer_op::next ()
       if (auto op_vf = m_op->next ())
 	{
 	  std::stringstream ss;
-	  op_vf->get_slot (m_src).show (ss);
+	  ss << op_vf->get_slot (m_src);
 	  op_vf->set_slot (m_src, nullptr);
 	  return std::make_pair (std::move (op_vf), m_str + ss.str ());
 	}
@@ -1574,13 +1574,8 @@ namespace
 	if (va->get_constant ().dom () != vb->get_constant ().dom ()
 	    && ! va->get_constant ().dom ()->safe_arith ()
 	    && ! vb->get_constant ().dom ()->safe_arith ())
-	  {
-	    std::cerr << "Warning: comparing ";
-	    va->show (std::cerr);
-	    std::cerr << " to ";
-	    vb->show (std::cerr);
-	    std::cerr << " is probably not meaningful (different domains).\n";
-	  }
+	  std::cerr << "Warning: comparing " << *va << " to " << *vb
+		    << " is probably not meaningful (different domains).\n";
 
     cmp_result r = vf.get_slot (idx_a).cmp (vf.get_slot (idx_b));
     if (r == cmp_result::fail)

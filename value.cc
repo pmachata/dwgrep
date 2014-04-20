@@ -36,6 +36,13 @@ namespace
 
 value_type const value_type::none = alloc_vtype ();
 
+std::ostream &
+operator<< (std::ostream &o, value const &v)
+{
+  v.show (o);
+  return o;
+}
+
 value_type const value_cst::vtype = alloc_vtype ();
 
 void
@@ -142,7 +149,7 @@ value_seq::show (std::ostream &o) const
       if (seen)
 	o << ", ";
       seen = true;
-      v->show (o);
+      o << *v;
     }
   o << "]";
 }

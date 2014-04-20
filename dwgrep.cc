@@ -226,10 +226,7 @@ main(int argc, char *argv[])
 		std::cout << fn << ":\n";
 	      for (size_t i = 0; i < stk_depth; ++i)
 		if (auto v = result->take_slot (slot_idx (i)))
-		  {
-		    v->show (std::cout);
-		    std::cout << "\n";
-		  }
+		  std::cout << *v << std::endl;
 	      std::cout << "---\n";
 	    }
 	  else

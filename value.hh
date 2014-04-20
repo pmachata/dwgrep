@@ -126,6 +126,8 @@ public:
   }
 };
 
+std::ostream &operator<< (std::ostream &o, value const &v);
+
 class value_cst
   : public value
 {
