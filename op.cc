@@ -1487,7 +1487,7 @@ std::string
 pred_not::name () const
 {
   std::stringstream ss;
-  ss << "not <" << m_a->name () << ">";
+  ss << "not<" << m_a->name () << ">";
   return ss.str ();
 }
 
@@ -1502,7 +1502,7 @@ std::string
 pred_and::name () const
 {
   std::stringstream ss;
-  ss << "and <" << m_a->name () << "><" << m_b->name () << ">";
+  ss << "and<" << m_a->name () << "><" << m_b->name () << ">";
   return ss.str ();
 }
 
@@ -1517,7 +1517,7 @@ std::string
 pred_or::name () const
 {
   std::stringstream ss;
-  ss << "or <" << m_a->name () << "><" << m_b->name () << ">";
+  ss << "or<" << m_a->name () << "><" << m_b->name () << ">";
   return ss.str ();
 }
 
