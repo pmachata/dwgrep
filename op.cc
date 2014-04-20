@@ -1530,10 +1530,7 @@ pred_at::result (valfile &vf)
       return pred_result (dwarf_hasattr_integrate (die, m_atname) != 0);
     }
   else if (auto v = vf.get_slot_as <value_attr> (m_idx))
-    {
-      Dwarf_Attribute attr = v->get_attr ();
-      return pred_result (dwarf_whatattr (&attr) == m_atname);
-    }
+    return pred_result (dwarf_whatattr (&v->get_attr ()) == m_atname);
   else
     return pred_result::fail;
 }
