@@ -307,6 +307,12 @@ Statement:
 	else
 	  throw std::runtime_error ("Unknown slot type constant.");
       }
+    else if (str == "true")
+      $$ = tree::create_const <tree_type::CONST>
+	(constant (1, &bool_constant_dom));
+    else if (str == "false")
+      $$ = tree::create_const <tree_type::CONST>
+	(constant (0, &bool_constant_dom));
     else
       $$ = tree::create_const <tree_type::CONST> (constant::parse (str));
   }
