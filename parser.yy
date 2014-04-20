@@ -542,10 +542,10 @@ Statement:
   | TOK_PLUS_AT_WORD
   {
     std::string str {$1.buf, $1.len};
-    auto t = tree::create_const <tree_type::F_ATTR_NAMED>
-      (constant::parse_attr (str));
+    auto t = tree::create_protect (tree::create_const <tree_type::F_ATTR_NAMED>
+				   (constant::parse_attr (str)));
     auto u = tree::create_nullary <tree_type::F_VALUE> ();
-    $$ = tree::create_protect (tree::create_cat <tree_type::CAT> (t, u));
+    $$ = tree::create_cat <tree_type::CAT> (t, u);
   }
   | TOK_QMARK_AT_WORD
   {

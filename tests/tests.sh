@@ -110,3 +110,8 @@ expect_count 1 ./typedef.o -e '
 	?{@external true ?eq}'
 expect_count 1 ./typedef.o -e '
 	?{@external false !eq}'
+
+# Test that +@at expands to (+attribute ?@at value), not to
+# (+attribute ?@at +value).
+expect_count 1 ./typedef.o -e '
+	+@external drop type T_NODE ?eq'

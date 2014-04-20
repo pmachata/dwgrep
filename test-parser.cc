@@ -245,7 +245,7 @@ do_tests ()
 
 #define ONE_KNOWN_DW_AT(NAME, CODE)					\
   test ("@"#NAME, "(CAT (F_ATTR_NAMED<" #CODE ">) (F_VALUE))");		\
-  test ("+@"#NAME, "(PROTECT (CAT (F_ATTR_NAMED<" #CODE ">) (F_VALUE)))"); \
+  test ("+@"#NAME, "(CAT (PROTECT (F_ATTR_NAMED<" #CODE ">)) (F_VALUE))"); \
   test ("?@"#NAME, "(ASSERT (PRED_AT<" #CODE ">))");			\
   test ("!@"#NAME, "(ASSERT (PRED_NOT (PRED_AT<" #CODE ">)))");
 
