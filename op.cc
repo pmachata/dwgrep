@@ -1542,7 +1542,7 @@ std::string
 pred_at::name () const
 {
   std::stringstream ss;
-  ss << "pred_at<" << m_atname << ">";
+  ss << "pred_at<" << constant {m_atname, &dw_attr_dom} << ">";
   return ss.str ();
 }
 
@@ -1559,7 +1559,7 @@ std::string
 pred_tag::name () const
 {
   std::stringstream ss;
-  ss << "pred_tag<" << m_tag << ">";
+  ss << "pred_tag<" << constant {(unsigned) m_tag, &dw_tag_dom} << ">";
   return ss.str ();
 }
 
