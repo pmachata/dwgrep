@@ -104,3 +104,9 @@ expect_count 1 ./nontrivial-types.o -e '
 	?{@language "%s" "DW_LANG_C89" ?match}'
 expect_count 1 ./nontrivial-types.o -e '
 	?{@encoding "%s" "^DW_ATE_signed$" ?match}'
+
+# Test true/false
+expect_count 1 ./typedef.o -e '
+	?{@external true ?eq}'
+expect_count 1 ./typedef.o -e '
+	?{@external false !eq}'
