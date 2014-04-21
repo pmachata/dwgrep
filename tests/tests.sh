@@ -115,3 +115,7 @@ expect_count 1 ./typedef.o -e '
 # (+attribute ?@at +value).
 expect_count 1 ./typedef.o -e '
 	+@external drop type T_NODE ?eq'
+
+# Test that (dup parent) doesn't change the bottom DIE as well.
+expect_count 1 ./nontrivial-types.o -e '
+	?structure_type dup parent ?{swap offset 0x2d ?eq}'

@@ -647,9 +647,11 @@ op_f_parent::operate (valfile &vf, slot_idx dst, Dwarf_Die &die)
   if (par_off == dwgrep_graph::none_off)
     return false;
 
-  if (dwarf_offdie (&*m_g->dwarf, par_off, &die) == nullptr)
+  Dwarf_Die par_die;
+  if (dwarf_offdie (&*m_g->dwarf, par_off, &par_die) == nullptr)
     throw_libdw ();
-  vf.set_slot (dst, std::make_unique <value_die> (m_g, die, 0));
+
+  vf.set_slot (dst, std::make_unique <value_die> (m_g, par_die, 0));
   return true;
 }
 
