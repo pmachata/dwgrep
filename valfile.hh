@@ -59,6 +59,8 @@ public:
   }
 };
 
+std::ostream &operator<< (std::ostream &o, slot_idx const &idx);
+
 class valfile
 {
   std::vector <std::unique_ptr <value> > m_values;
