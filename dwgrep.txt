@@ -101,10 +101,10 @@
 
    : ?subprogram
 
-** ?@ID, !@ID — Attribute presence/absence assertion
+** ?@ID, !@ID — attribute presence/absence assertion
 ** EXPR₁ EXPR₂ … — concatenation
 
-   "?@ID" holds if TOS is a DIE with DW_AT_ID.
+   "?@ID" holds if the value on TOS is a DIE with DW_AT_ID.
 
    In dwgrep, function pipelines are formed by simply placing
    functions next to each other.  The stacks that the left function
@@ -112,14 +112,49 @@
    this happens to work as a logical and.
 
    For example, this is how we can get a list of all subprograms that
-   are pure declarations:
+   have a declaration attribute:
 
    : ?subprogram ?@declaration
 
-   Similarly, to get subprograms that are _not_ pure declarations, we
-   say:
+   Similarly, to get subprograms that do not have declaration
+   attribute, we say:
 
    : ?subprogram !@declaration
+
+** if, else, not — conditionals
+
+   Unfortunately, mere ?@declaration doesn't tell us whether a DIE is
+   a pure declaration.  We can probably safely assume that when a
+   compiler produces that attribute, it will actually have a value of
+   true, so most of the time ?@declaration (and !@declaration) is all
+   you need to write.  But if we are paranoid, or have grounds for
+   suspicion this is not so, we need to actually look at
+   DW_AT_declaration's value.
+
+   "if" expects a value on TOS.  If it's an empty list or a false, it
+   rejects the computation.  If it's non-empty list or a true, it
+   accepts it.  Thus to figure out whether a DIE represents a
+   subprogram declaration, we can say:
+
+   : ?subprogram @declaration if
+
+   "else" behaves in the opposite way.  So to see if something is not
+   a pure declaration (which is what we are after), we might say:
+
+   : ?subprogram @declaration else
+
+   But that apparently dangling else is fairly awkward.  For this
+   reason, there's "not", which switches truthfulness of the value on
+   TOS:
+
+   : ?subprogram @declaration not if
+
+   "if", "else" and "not" drop the value on TOS (they are not
+   assertions, as indicated by lack of ? or ! in their name).  "not"
+   additionally pushes a new value.
+
+   In following, we are not paranoid, and assume that ?@declaration
+   and (@declaration if) have the same effect.
 
 ** child — child traversal
 
@@ -168,34 +203,34 @@
    either.  We would like to know about the subprograms themselves,
    that have this property!  Hence:
 
-** ?{EXPR}, !{EXPR} — Sub-expression assertions
+** ?[EXPR], ![EXPR] — Sub-expression assertions
 
    Some dwgrep expressions are evaluated in what we call a
    sub-expression context.  What happens in sub-expression context,
    stays there--the stack effects of sub-expression computation never
    leak back to working set.
 
-   The ?{} expression is one such case.  It asserts that EXPR produces
+   The ?[] expression is one such case.  It asserts that EXPR produces
    at least one element.  We can use it to get to DIE's that have
    arguments that are structures:
 
-   : ?subprogram !@declaration ?{child ?formal_parameter @type ?structure_type}
+   : ?subprogram !@declaration ?[child ?formal_parameter @type ?structure_type]
 
    This asks whether, after going to types of children that are formal
    parameters, we get a structure.  Because the initial two assertions
    have no stack effects anyway, we might say the same thing thus:
 
-   : ?{?subprogram !@declaration child ?formal_parameter @type ?structure_type}
+   : ?[?subprogram !@declaration child ?formal_parameter @type ?structure_type]
 
-   The other sub-expression assertion, !{}, holds if EXPR produces no
+   The other sub-expression assertion, ![], holds if EXPR produces no
    values at all.  We don't need that, but we could use it to reword
    the query thus:
 
-   : ?subprogram !{?@declaration}
-   : ?{child ?formal_parameter @type ?structure_type}
+   : ?subprogram ![?@declaration]
+   : ?[child ?formal_parameter @type ?structure_type]
 
    If a DIE is a pure declaration, the expression ?@declaration yields
-   unchanged incoming stack.  But !{} only holds for expressions that
+   unchanged incoming stack.  But ![] only holds for expressions that
    yield nothing at all, thus such DIE's are rejected.
 
    But there's more than DW_TAG_structure_type, we care about
@@ -211,7 +246,7 @@
    logical or.  So:
 
    : ?subprogram !@declaration
-   : ?{child ?formal_parameter @type (?structure_type, ?class_type)}
+   : ?[child ?formal_parameter @type (?structure_type, ?class_type)]
 
    So this is fine, but it still shows only functions that take
    structure (or class) arguments directly.  But what if they take a
@@ -231,9 +266,9 @@
    typedef layers from our potential structure:
 
    : ?subprogram !@declaration
-   : ?{child ?formal_parameter
+   : ?[child ?formal_parameter
    :   @type ((?const_type, ?volatile_type, ?typedef) @type)*
-   :   (?structure_type, ?class_type)}
+   :   (?structure_type, ?class_type)]
 
    Next on, we would like to write a message:
 
@@ -255,9 +290,9 @@
    we could do for example:
 
    : ?subprogram !@declaration
-   : ?{child ?formal_parameter
+   : ?[child ?formal_parameter
    :   @type ((?const_type, ?volatile_type, ?typedef) @type)*
-   :   (?structure_type, ?class_type)}
+   :   (?structure_type, ?class_type)]
    : "%s: one of the parameters has non-trivial type."
 
    When dwgrep sees a string with formatting directives, it converts
@@ -271,7 +306,7 @@
    The output that our running example above gives would print
    something like this:
 
-   :  DIE .debug_info@0x420: type of one of the parameters is not trivial.
+   :  .debug_info@0x420: type of one of the parameters is not trivial.
 
    We would like to improve on that a bit.  We'd like to mention which
    parameter it is, and we'd like to tell the user the name of the
@@ -279,14 +314,15 @@
 
 ** +word — stack preservation
 
-   For dwgrep words that pop one or more top elements of the stack,
-   prefixing them with + makes them not pop and just add their result.
-   We can use this to keep two DIE's on stack in our in-progress
-   script: the subprogram itself as well as the struct argument.
+   For many dwgrep words that pop one or more top elements of the
+   stack, prefixing them with + makes them not pop and just add their
+   result.  We can use this to keep two DIE's on stack in our
+   in-progress script: the subprogram itself as well as the struct
+   argument.
 
    : ?subprogram !@declaration +child ?formal_parameter
-   : ?{@type ((?const_type, ?volatile_type, ?typedef) @type)*
-   :   (?structure_type, ?class_type)}
+   : ?[@type ((?const_type, ?volatile_type, ?typedef) @type)*
+   :   (?structure_type, ?class_type)]
    : "Parameter %s of %s has non-trivial type."
 
    So that's nice, but notice how we needed to change the message to
@@ -305,16 +341,16 @@
    the right order:
 
    : ?subprogram !@declaration +child ?formal_parameter
-   : ?{@type ((?const_type, ?volatile_type, ?typedef) @type)*
-   :   (?structure_type, ?class_type)} swap
+   : ?[@type ((?const_type, ?volatile_type, ?typedef) @type)*
+   :   (?structure_type, ?class_type)] swap
    : "%s: Parameter %s has non-trivial type."
 
    And now we can also transform each stack slot to its name, so that
    the message doesn't mention unfamiliar loci, but names:
 
    : ?subprogram !@declaration +child ?formal_parameter
-   : ?{@type ((?const_type, ?volatile_type, ?typedef) @type)*
-   :   (?structure_type, ?class_type)} @name swap @name
+   : ?[@type ((?const_type, ?volatile_type, ?typedef) @type)*
+   :   (?structure_type, ?class_type)] @name swap @name
    : "%s: Parameter %s has non-trivial type."
 
    Now the idiom "X swap X" is very common in dwgrep expressions.
@@ -322,7 +358,7 @@
    E.g. in dwarflint, there's a check that a scope doesn't contain two
    variables of the same name.  You can implement the check thus:
 
-   : dup child ?variable swap child ?variable !eq ?{@name swap @name ?eq}
+   : dup child ?variable swap child ?variable !eq ?[@name swap @name ?eq]
 
    We get the same "X swap X" idiom, and twice!  Clearly this is
    useful relatively often, so dwgrep has a syntax for this:
@@ -333,25 +369,25 @@
    compile-time constant with value greater than 0.  With this tool,
    we can rephrase the above check like this:
 
-   : dup 2/(child ?variable) !eq ?{2/@name ?eq}
+   : dup 2/(child ?variable) !eq ?[2/@name ?eq]
 
    Which is much better.  We can also use it to improve our
    non-trivial parameters script (but not much, we'll still need to
    swap):
 
    : ?subprogram !@declaration +child ?formal_parameter
-   : ?{@type ((?const_type, ?volatile_type, ?typedef) @type)*
-   :   (?structure_type, ?class_type)} 2/@name swap
+   : ?[@type ((?const_type, ?volatile_type, ?typedef) @type)*
+   :   (?structure_type, ?class_type)] 2/@name swap
    : "%s: Parameter %s has non-trivial type."
 
    Ideally we'd also include source code coordinates for the function
    name.  dwgrep formatters have a tool for this: you can enclose
-   arbitrary expressions between %( and %).  They are executed in
-   plain context and TOS is then popped and embedded in the template:
+   arbitrary expressions between %( and %).  They are executed, TOS is
+   then popped and embedded in the template:
 
    : ?subprogram !@declaration +child ?formal_parameter
-   : ?{@type ((?const_type, ?volatile_type, ?typedef) @type)*
-   :   (?structure_type, ?class_type)} swap
+   : ?[@type ((?const_type, ?volatile_type, ?typedef) @type)*
+   :   (?structure_type, ?class_type)] swap
    : "%( +@decl_file %): %( +@decl_line %): note: in function \
    : `%( @name %)', parameter `%( @name %)' type is not trivial."
 
@@ -371,7 +407,7 @@
   - assertions inspect TOS (or several values on TOS), test the
     condition, and either leave the stack unchanged, or abort the
     computation.  They do not pop.  This includes ?@at, !@at, ?tag,
-    !tag, ?{}, !{}, ?all{}, ?eq, !eq, ?gt, ?match, etc.  All
+    !tag, ?[], ![], ?all[], ?eq, !eq, ?gt, ?match, etc.  All
     assertions start either with a ? (if it's positive assertion), or
     with a ! (if it's negative assertion).
 
@@ -422,7 +458,7 @@
    same for each branch).
 
    - For example, to follow through all edges:
-     : (child, attribute ?{form "%s" "DW_FORM_ref.*" ?match})
+     : (child, attribute ?[form "%s" "DW_FORM_ref.*" ?match])
 
 ** •EXPR → NUM “/” EXPR₁ — pathset exploration
 
@@ -442,8 +478,8 @@
    should be syntax for it.
 
    - Compare names of two DIE's on TOS:
-     : ?{@name swap @name ?eq}
-     : ?{2/@name ?eq}
+     : ?[@name swap @name ?eq]
+     : ?[2/@name ?eq]
 
    - Follow the same traversal instructions for two DIE's on TOS:
      : child ?formal_parameter swap child ?formal_parameter
@@ -461,7 +497,7 @@
    equals number of slots popped).
 
    - Example: explicit for loop
-     : 0 (1 add ?{10 ?lt})*
+     : 0 (1 add ?[10 ?lt])*
 
 ** •EXPR → (“0x”|“0”|“”)[1-9][0-9]* — literals
 ** ·EXPR → “+”? “r”? “"” (formatting string) “"”
@@ -489,6 +525,35 @@
    - The r"" strings are raw strings.  They work the same as normal
      formatting strings, but escape sequences are left intact in the
      string.
+
+**  EXPR → (“?”|“!”)(literal) | (“?”|“!”)(named constant) — value assertions
+
+   Since majority of comparisons are ?eq or !eq anyway, and many of
+   those are vs. constants, there's a syntax for asserting a value.
+   This is allowed for string literals, numeric literals, or named
+   constants.
+
+   According to a value on TOS, and a constant family, the following
+   rewrire rules define the semantics of a value assertion:
+
+   |----------+----------------+---------------------|
+   | v        | TOS            | Meaning of ?v       |
+   |----------+----------------+---------------------|
+   | DW_TAG_  | T_NODE         | ?[tag ?value]       |
+   | DW_AT_   | T_NODE         | ?[attribute ?value] |
+   | DW_AT_   | T_ATTR         | ?[name ?value]      |
+   | DW_FORM_ | T_ATTR         | ?[form ?value]      |
+   | any      | T_ATTR         | ?[value ?v]         |
+   | any      | T_CONST, T_STR | ?[v ?eq]            |
+   |----------+----------------+---------------------|
+
+   For example, ?DW_ATE_unsigned is applicable to an attribute that is
+   DW_AT_encoding, or a constant of that domain.  ?"foo" is applicable
+   to a DW_FORM_string or DW_FORM_strp attribute, or another string.
+   Etc.
+
+   - Example: asking for a qualified name:
+     : ?[@name ?"a"] child ?[@name ?"b"] child ?[@name ?"c"]
 
 **  EXPR → “+”?(“universe” | “section” | “unit”)
 
@@ -518,41 +583,68 @@
 
 ** •EXPR → “(” EXPR₁ “)” — grouping, precedence
 
-** •EXPR → “[” EXPR₁ “]” | “[” “]” — sub-expression capture
+** •EXPR → “+”?“[” EXPR₁ “]” | “[” “]” — list generator
 
-   This is a literal form that gathers what EXPR₁ yields and pushes a
-   sequence with those elements.  It can be used for constructing a
-   sequence literal:
+   - [ EXPR₁ ] evalueates EXPR₁.  The first stack that EXPR₁ produces,
+     sans its TOS, is considered a base stack.  The overall expression
+     then produces one stack that is composed of this base stack with a
+     list containing TOS's of all produced EXPR₁ stacks pushed on top.
 
-   : [1, 2, 3]        # produces a list with elements 1, 2 and 3
-   : [child]          # list of immediate children
-   : [child*]         # list of all descendants
+     This round-about way of explaining the semantics is necessary to
+     make it clear what happens for the expressions like:
+     : [ swap? ]
+     : [ (rot,) ]
+     etc.  Using these expressions inside the capture really makes
+     little sense.  It might make sense in +[] form (see below).
 
-   [] is a literal that produces an empty list.  It is exactly
-   equivalent to (among others):
-   : [ 0 1 ?eq ]
+     Some examples:
+
+     : [1, 2, 3]	# push a list with elements 1, 2 and 3
+     : [()]		# wrap TOS in a one-element list
+     : [child]		# replace each node with a list of its children
+     : [child*]		# replace each node with a list of all descendants
+
+     The first example is note-worthy.  Since EXPR₁ pushes a new element
+     on TOS, the original stack is left unchanged.  The 1,2,3 syntax is
+     not special to list generator, but is ordinary alternation syntax,
+     described above.
+
+   - +[ EXPR₁ ] works similarly, but evaluates EXPR₁ in a sub-expression
+     context.  So it collects TOS's of all stacks that EXPR₁ produces
+     and wraps them in a list.  It then produces a single stack that is
+     the original input stack with the list of collected TOS's pushed on
+     top.
+
+     : +[child]		# push a new list containing immediate children
+
+   - [] is a literal that produces an empty list.  It is exactly
+     equivalent to (among others):
+     : [ 0 !0 ]
 
    - over is exactly equivalent to:
-     : [ drop ] each
+     : +[ drop ] each
    - dup is exactly equivalent to (among others):
-     : [ () ] each
+     : +[ () ] each
 
-** •EXPR → “?{” EXPR₁ “}” | “!{” EXPR₁ “}” — sub-expression assertions
+**  EXPR → “?[” EXPR₁ “]” | “![” EXPR₁ “]” — sub-expression assertions
 
-   - ?{ EXPR₁ } is exactly equivalent to:
-     : [ EXPR₁ ] [] !eq drop drop
-   - !{ EXPR₁ } is exactly equivalent to:
-     : [ EXPR₁ ] [] ?eq drop drop
+   These ask whether +[ EXPR₁ ] would be, respectively, a non-empty or
+   empty list.
+
+   - ?[ EXPR₁ ] is exactly equivalent to:
+     : +[ EXPR₁ ] !empty drop
+   - ![ EXPR₁ ] is exactly equivalent to:
+     : +[ EXPR₁ ] ?empty drop
 
    - Examples:
-     : !{child}       # keep leaf DIE's only
+     : ![child]       # keep leaf DIE's only
 
-**  EXPR → (“?all{” | “!all{”) EXPR₁ “}” — quantifier assertion
+**  EXPR → (“?all[” | “!all[”) EXPR₁ “]” — quantifier assertion
 
    - ?all{EXPR₁} is exactly equivalent to:
-     : ?{[each ?{EXPR₁}] 2/length ?eq}
+     : ?[[each ?[EXPR₁]] 2/length ?eq]
    - !all{EXPR₁} is exactly equivalent to:
-     : ?{[each ?{EXPR₁}] 2/length !eq}
+     : ?[[each ?[EXPR₁]] 2/length !eq]
 
    - I.e. it expects a list on TOS.  This list is forked into
      individual computations by "each".  For ?all, only if each of
@@ -560,25 +652,32 @@
      succeed.  For !all, only if at least one fails does the overall
      predicate succeed.  The list on TOS is kept.
 
-**  EXPR → “if” | “else” — conditionals
+**  EXPR → “if” | “else” | “not” | “and” | “or” — conditionals
 
-   - "if" pops TOS.  If it's an empty list, it fails.  It is exactly:
-     : !empty drop
+   - "if" inspects TOS.  If it's a list, it acts as !empty.  If it's a
+     constant, it acts as ?true.  After this, it pops TOS.  It is
+     exactly equivalent to:
+     : (+type ?T_SEQ drop ?empty, +type ?T_CONST drop ?false) drop
 
-   - "else" pops TOS.  Unless it's an empty list, it fails.  It is
-     exactly:
-     : ?empty drop
+   - "else" is like "if", but expect ?empty or ?false.
 
-   - Note there is no +if.  It would behave as assertion (if doesn't
-     push anything, but +if wouldn't pop anything either)--i.e. it
-     would check whether array is empty.  There's ?empty and !empty
-     for that.
+   - Usage:
+     : [ condition ] (if stuff stuff stuff, else stuff stuff stuff)
+     : [ condition ] (if stuff, else [ cond2 ] (if stuff2, else stuff3))
 
-   The way these two are used is as follows:
-   : [ condition ] (if stuff stuff stuff, else stuff stuff stuff)
+   - "not" is exactly equivalent to:
+     : (if false, else true)
 
-   If-elseif-else trees can be composed thus:
-   : [ condition ] (if stuff, else [ cond2 ] (if stuff2, else stuff3))
+     "not" is mostly provided so that one doesn't have to write
+     apparently dangling else's.  Consider:
+     : @declaration else
+     : @declaration not if	# perhaps clearer
+
+   - "and" is exactly equivalent to:
+     : (if (if true, else false), else drop false)
+
+   - "or" is exactly equivalent to:
+     : 2/not and
 
 ** ·EXPR → “swap” | “dup” | “over” | “rot” | “drop” — stack shuffling
 
@@ -607,7 +706,7 @@
      element pushed on top.  "+each" does the same, but doesn't pop.
 
    - To zip contents of two top lists near TOS, do:
-     : 2/each ?{2/pos ?eq}
+     : 2/each ?[2/pos ?eq]
 
      This takes two lists from the stack, and produces stacks that
      have those two elements replaced with individual elements from
@@ -618,7 +717,7 @@
      : (A B C₁ D₁, A B C₂ D₂, A B C₃ D₃)
 
    - Similarly for deeper, three-level zip:
-     : 3/each ?{3/pos 2/?eq}
+     : 3/each ?[3/pos 2/?eq]
 
 ** ·EXPR → “+”?(“child” | “attribute” | “parent” | “next” | “prev”) — traversal
 
@@ -628,13 +727,13 @@
    - "attribute" does the same with attributes instead of children
 
    - parent is exactly equivalent to:
-     : +universe ?{child ?eq} swap drop
+     : +universe ?[child ?eq] swap drop
      Note that in case of imported units, "parent" may return more
      than one DIE!  (XXX This doesn't seem desirable?)
 
    - next is exactly equivalent to:
      : dup parent child ?eq swap drop
-     : dup pos 1 add swap parent child ?{pos rot ?eq} swap drop
+     : dup pos 1 add swap parent child ?[pos rot ?eq] swap drop
      The first line is necessary to make sure that pos later refers
      to order in children array, not to e.g. a result of ([XYZ] each).
 
@@ -643,9 +742,9 @@
 ** •EXPR → “?root” | “!root” — root node assertion
 
    - !root is exactly equivalent to:
-     : ?{parent}
+     : ?[parent]
    - ?root is exactly equivalent to:
-     : ?{type T_DIE ?eq} !{parent}
+     : ?[type T_DIE ?eq] ![parent]
 
    - Examples:
      : parent* ?root        # finds a root node of node on TOS
@@ -680,9 +779,9 @@
 ** •EXPR → “?”ID | “!”ID — DIE tag assertion
 
    - ?ID is exactly equivalent to:
-     : ?{tag DW_TAG_ID ?eq}
+     : ?[tag DW_TAG_ID ?eq]
    - !ID is exactly equivalent to:
-     : ?{tag DW_TAG_ID !eq}
+     : ?[tag DW_TAG_ID !eq]
    - Note that either form fails when applied to a non-DIE value.
 
 ** •EXPR → “?@”ID | “!@”ID — attribute presence/absence assertions
@@ -693,12 +792,6 @@
      - Instead of using "?@ID", one can also simply access the
        attribute value with "@ID".  If such attribute is not
        available, that computation is aborted.
-
-     - Attributes with forms DW_FORM_flag are handled specially.  If
-       such attribute is present, but it has a value of false (0), it is
-       treated as if it were absent.  Similarly when asserting absence
-       of attribute with such form: if it has a value of 0, absence is
-       asserted even though the attribute is present.
 
    - If the value on TOS is an Attribute, these forms assert that the
      attribute has a given name.
@@ -739,11 +832,11 @@
    Y, and A B C Z.  "?first" would be true in context of A B C X, etc.
 
    - ?first is exactly equivalent to:
-     : ?{pos 0 ?eq}
+     : ?[pos 0 ?eq]
      (and similarly for ?second, ?third, ...)
 
    - ?last is exactly equivalent to:
-     : ?{+count 1 sub swap pos ?eq}
+     : ?[+count 1 sub swap pos ?eq]
 
    - Examples:
      : each ?last	# get last element of a list on TOS
@@ -754,7 +847,7 @@
    - nth expects a constant on TOS and a sequence or a string one
      below TOS.  Extracts nth element of that.  (X N nth) is exactly
      equivalent to:
-     : X each ?{pos N ?eq}
+     : X each ?[pos N ?eq]
 
    - first, second, third and last extract the given element of
      sequence on TOS.  X Y, for Y in (first, second, third, last), is
@@ -796,7 +889,7 @@
      : A B swap? ?lt drop    # "max" -- keep the greater number on stack
      : A B swap? ?gt drop    # "min"
 
-**  EXPR → (“?”|“!”)(“match” | “find”) — regex assertion
+** •EXPR → (“?”|“!”)“match” — regex assertion
 
    This produces nothing when applied to non-string values.  Use "%s"
    to convert other value types to string.
@@ -806,53 +899,32 @@
    TOS.
 
    - "match" does a full-string match
-   - "find" looks for an occurrence
+
+**  EXPR → (“?”|“!”)“find” — search in a sequence
+
+   - A B find looks for sub-sequence or sub-string B inside A
+     (e.g. "haystack" "needle" find or +[hay stack] +[needle] find).
+
+   - To determine, whether a sequence contains a particular element,
+     you would use the following construct:
+     : +[that sequence] ?[each +that element ?eq]
+     E.g.:
+     : +[child @name] ?[each ?"foo"]
+     : +[child] ?[each @name ?"foo"]
 
 ** •EXPR → “+”?“length” — length of a sequence or a string
 
 **  EXPR → (“?”|“!”)“empty” — list/string emptiness assertion
 
    - ?empty is exactly equivalent to:
-     : ?{[] ?eq}
+     : [] ?eq drop
    - !empty is exactly equivalent to:
-     : ?{[] !eq}
+     : [] !eq drop
 
 **  EXPR → “?dump” — debug assertion
 
    Always succeeds, but as a side effect prints some information about
    the computation in whose context it appeared.
-
-
-* Unsettled
-
-  (Not that anything here is really settled!)
-
-** EXPR → (“?”|“!”)(literal) | (“?”|“!”)(named constant) — value assertions
-
-   Since majority of comparisons is ?eq or !eq anyway, and many of
-   those are vs. constants, why not allow asserting a value?  This
-   would be allowed for string literals, numeric literals, or named
-   constants.  Similarly to how ?@at is applicable to a DIE and an
-   ATTR, e.g. ?DW_ATE_unsigned would be applicable to an attribute
-   that is DW_AT_encoding, or other integral value.  ?@at would become
-   syntax sugar for ?DW_AT_at.  ?tag would become syntax sugar for
-   ?DW_TAG_tag.  There would be a logic for allowing each domain its
-   own set of ways to apply itself on a candidate value
-   (e.g. ?DW_ATE_unsigned is not applicable to DIE's, but ?DW_AT_at
-   and ?DW_TAG_tag are).  (Though really ?DW_ATE_unsigned applied on a
-   DIE might evaluate to ?{@encoding DW_ATE_unsigned ?eq}.)
-
-   |-----------------+------------------|
-   | constant family | applicability    |
-   |-----------------+------------------|
-   | DW_TAG_         | DIE, const       |
-   | DW_AT_          | DIE, ATTR, const |
-   | DW_FORM_        | ATTR, const      |
-   |-----------------+------------------|
-
-   The same could be done with string literals.  So asking for a
-   qualified name would become:
-   : ?{@name ?"a"} child ?{@name ?"b"} child ?{@name ?"c"}
 
 
 * Interpreting
@@ -931,29 +1003,32 @@
 
 ** XXX nested identifier names
    currently we have to write
-   : ?{@name "a" ?eq} child ?{@name "b" ?eq} child ?{@name "c" ?eq}
+   : ?[@name "a" ?eq] child ?[@name "b" ?eq] child ?[@name "c" ?eq]
    which works, but is clumsy.  We'd much rather write something much
    less verbose.  It's not clear what, without cluttering the
    language.  If there were a library word, say lookup, meaning the
    following:
-   : ?{0 (?{swap each ?{pos ?eq} @name over ?eq} 1 add rot child rot rot)*
-   :   ?{swap length ?eq}}
+   : ?[0 (?[swap each ?[pos ?eq] @name over ?eq] 1 add rot child rot rot)*
+   :   ?[swap length ?eq]]
 
    We could use it thus:
    : ["a", "b", "c"] lookup
 
-   : ["a", "b", "c"] ?{each first swap (?{@name ?eq} <child, next>)* }
+   : ["a", "b", "c"] ?[each first swap (?[@name ?eq] <child, next>)* ]
 
    Or:
    : "a" ::@name "b" ::@name "c" ::@name
    where ::X would expand to:
-   : ?{swap (X) ?eq} child
+   : ?[swap (X) ?eq] child
    -- but the final child doesn't work.  It seems the original awkward
    way of expressing this is the best one after all.
 
 ** XXX optional dwarf_attr_integrate
    - Currently we do that always for @at, ?@at etc.  Maybe it should
      be configurable.
+     - It definitely should.  For things like ?@declaration you care
+       about whether the DIE itself is a declaration, not that some
+       @specification somewhere is (it obviously is...).
 
    - XXX "attribute" function should also consistently yield either
      only attributes at the DIE itself, or integrated attributes as
@@ -965,18 +1040,18 @@
 ** Josh Stone's nontrivial-parameters script
 
    : ?subprogram !@declaration
-   : ?{@decl_file ?{"^/usr/" match} !{"^/usr/src/debug" match}}
+   : ?[@decl_file ?["^/usr/" match] !["^/usr/src/debug" match]]
    : +child ?formal_parameter
-   : ?{@type ((?const_type, ?volatile_type, ?typedef) @type)*
-   :   (?structure_type, ?class_type)} swap
+   : ?[@type ((?const_type, ?volatile_type, ?typedef) @type)*
+   :   (?structure_type, ?class_type)] swap
    : "%( +@decl_file %): %( +@decl_line %): note: in function \
    : `%( @name %)', parameter `%( @name %)' type is not trivial"
 
    - What the following XQuery really does:
 
    : ?subprogram !@declaration +child ?formal_parameter
-   : ?{@type ((?const_type, ?volatile_type, ?typedef) @type)*
-   :   (?structure_type, ?class_type)} 2/@name swap
+   : ?[@type ((?const_type, ?volatile_type, ?typedef) @type)*
+   :   (?structure_type, ?class_type)] 2/@name swap
    : "%s: type of parameter %s is not trivial."
 
    - In XQuery, it is actually not horrible, except for having to
@@ -1013,12 +1088,12 @@
    :  ?label, ?with_stmt, ?try_block, ?catch_block)
    : dup (@entry_pc, @low_pc, @ranges)
    : swap parent* ?root
-   : !{@stmt_list @address ?eq} swap
+   : ![@stmt_list @address ?eq] swap
    : "Address %s referenced from %s not found in line table."
 
 ** contains DW_OP_fbreg && ! @frame_base
 
-   : !@frame_base ?{@location child @atom DW_OP_fbreg ?eq}
+   : !@frame_base ?[@location child @atom DW_OP_fbreg ?eq]
 
    - XQuery:
 
@@ -1026,16 +1101,16 @@
 
 ** uses register based operators
 
-   : ?{@location @atom (DW_OP_bregx ?eq, ?{DW_OP_reg0 ?ge} ?{DW_OP_regx ?le})}
+   : ?[@location @atom (DW_OP_bregx ?eq, ?[DW_OP_reg0 ?ge] ?[DW_OP_regx ?le])]
 
-   : ?{@location @atom "%s" "_b?reg" find}
+   : ?[@location @atom "%s" "_b?reg" find]
 
 ** whether it uses a deref operator
 
-   : ?{@location @atom (DW_OP_deref, DW_OP_xderef, DW_OP_deref_size,
-   :                    DW_OP_xderef_size, DW_OP_GNU_deref_type) ?eq}
+   : ?[@location @atom (DW_OP_deref, DW_OP_xderef, DW_OP_deref_size,
+   :                    DW_OP_xderef_size, DW_OP_GNU_deref_type) ?eq]
 
-   : ?{@location @atom "%s" "deref" ?find}
+   : ?[@location @atom "%s" "deref" ?find]
 
    - XQuery:
 
@@ -1046,7 +1121,7 @@
 
 ** contains DW_OP_call_frame_cfa && $@low_pc == 0
 
-   : ?{@low_pc 0 ?eq} ?{@frame_base @atom DW_OP_call_frame_cfa ?eq}
+   : ?[@low_pc 0 ?eq] ?[@frame_base @atom DW_OP_call_frame_cfa ?eq]
 
    - something
 
@@ -1058,7 +1133,7 @@
 
 ** is an empty location expression
 
-   : ?@location !{@location}
+   : ?@location ![@location]
 
    - something
 
@@ -1070,7 +1145,7 @@
 
 ** location expression ends with implicit_value or stack_value
 
-   : ?{@location ?last @atom (DW_OP_implicit_value, DW_OP_stack_value) ?eq}
+   : ?[@location ?last @atom (DW_OP_implicit_value, DW_OP_stack_value) ?eq]
 
    - something
 
@@ -1086,7 +1161,7 @@
    - http://gcc.gnu.org/bugzilla/show_bug.cgi?id=43053
 
    : ?subprogram +@specification 2/(child ?formal_parameter)
-   : ?{2/pos ?eq} ?{2/@type !eq}
+   : ?[2/pos ?eq] ?[2/@type !eq]
 
    - something:
 
@@ -1102,7 +1177,7 @@
    - http://gcc.gnu.org/bugzilla/show_bug.cgi?id=56740
 
    : +unit ?gt 2/(?const_type, ?volatile_type, ?restrict_type)
-   : ?{2/tag ?eq} ?{2/@type ?eq}
+   : ?[2/tag ?eq] ?[2/@type ?eq]
 
    - XQuery:
 
@@ -1112,7 +1187,7 @@
 
 ** find any attribute with value "blah"
 
-   : attribute ?{value "blah" ?eq}
+   : attribute ?[value "blah" ?eq]
 
    - XQuery:
 
@@ -1122,21 +1197,21 @@
    Check for two full DW_TAG_variable DIEs with the same DW_AT_name
    value.
 
-   : dup 2/(child ?variable) ?lt ?{2/@name ?eq}
+   : dup 2/(child ?variable) ?lt ?[2/@name ?eq]
 
-   : dup next+ 2/?variable ?{2/@name ?eq}
+   : dup next+ 2/?variable ?[2/@name ?eq]
 
 ** check_linkage_external_die.cc
 
-   : ?symbol ?{@type (STT_OBJECT, STT_FUNC) ?eq} ?{@name "" !eq}
-   : +universe ?@linkage_name [!{@linkage_name swap @name ?eq}]
+   : ?symbol ?[@type (STT_OBJECT, STT_FUNC) ?eq] ?[@name !""]
+   : +universe ?@linkage_name +[@linkage_name swap @name ?eq]
    :
    : ((if !@declaration !@const_value
    :   (!structure_type !enumeration_type !union_type, ?@name)
    :   "%s has linkage_name attribute that's not in symtab,\
    :   but is not marked as declaration"),
    :
-   :  (else [swap @binding STB_LOCAL !eq]
+   :  (else +[swap @binding STB_LOCAL !eq]
    :   (if !@declaration ?@external
    :    "%s has linkage_name attribute,\
    :    but the corresponding symbol is local"),
@@ -1155,13 +1230,13 @@
 ** CU A imports two PU's B and C, and both import the same third PU
 
    : ?root dup dup 2/(CU ?imported_unit @import) ?lt
-   : [2/(unit ?imported_unit @import) ?eq] each ?first
+   : +[2/(unit ?imported_unit @import) ?eq] each ?first
    : "PU %s is imported by PU's %s and %s, which are both imported by %s"
 
    - What the following XQuery really does:
 
-   : ?root ?{dup 2/(unit ?imported_unit @import) ?lt
-   :             2/(unit ?imported_unit @import) ?eq}
+   : ?root ?[dup 2/(unit ?imported_unit @import) ?lt
+   :             2/(unit ?imported_unit @import) ?eq]
 
    - XQuery:
 
