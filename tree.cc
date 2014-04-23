@@ -1085,7 +1085,13 @@ tree::simplify ()
 	    continue;
 
 	  for (ssize_t j = i - 1; j >= 0; --j)
-	    if (m_children[j].m_dst == a)
+	    if (m_children[j].m_tt == tree_type::ALT
+		|| m_children[j].m_tt == tree_type::CLOSE_STAR)
+	      // We can't move the assertion across these.  We might
+	      // move it inside ALT, if each branch contain a producer
+	      // of slot A, but that's NIY.
+	      break;
+	    else if (m_children[j].m_dst == a)
 	      {
 		j += 1;
 		assert (j >= 0);

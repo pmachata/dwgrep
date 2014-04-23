@@ -119,3 +119,12 @@ expect_count 1 ./typedef.o -e '
 # Test that (dup parent) doesn't change the bottom DIE as well.
 expect_count 1 ./nontrivial-types.o -e '
 	?structure_type dup parent ?{swap offset 0x2d ?eq}'
+
+# Check that when promoting assertions close to producers of their
+# slots, we don't move across alternation or closure.
+expect_count 3 ./nontrivial-types.o -e '
+	?subprogram child* ?formal_parameter'
+expect_count 3 ./nontrivial-types.o -e '
+	?subprogram child? ?formal_parameter'
+expect_count 3 ./nontrivial-types.o -e '
+	?subprogram (child,) ?formal_parameter'
