@@ -10,10 +10,10 @@ tree::build_pred (dwgrep_graph::sptr q, size_t maxsize) const
   switch (m_tt)
     {
     case tree_type::PRED_TAG:
-      return std::make_unique <pred_tag> (m_u.cval->value (), src_a ());
+      return std::make_unique <pred_tag> (cst ().value (), src_a ());
 
     case tree_type::PRED_AT:
-      return std::make_unique <pred_at> (m_u.cval->value (), src_a ());
+      return std::make_unique <pred_at> (cst ().value (), src_a ());
 
     case tree_type::PRED_NOT:
       return std::make_unique <pred_not>
@@ -184,7 +184,7 @@ tree::build_exec (std::shared_ptr <op> upstream, dwgrep_graph::sptr q,
 
     case tree_type::F_ATTR_NAMED:
       return std::make_shared <op_f_attr_named>
-	(upstream, q, src_a (), dst (), int (m_u.cval->value ()));
+	(upstream, q, src_a (), dst (), int (cst ().value ()));
 
     case tree_type::F_OFFSET:
       return std::make_shared <op_f_offset> (upstream, q, src_a (), dst ());
@@ -210,7 +210,7 @@ tree::build_exec (std::shared_ptr <op> upstream, dwgrep_graph::sptr q,
 	std::shared_ptr <stringer> strgr = s_origin;
 	for (auto const &tree: m_children)
 	  if (tree.m_tt == tree_type::STR)
-	    strgr = std::make_shared <stringer_lit> (strgr, *tree.m_u.sval);
+	    strgr = std::make_shared <stringer_lit> (strgr, tree.str ());
 	  else
 	    {
 	      auto origin2 = std::make_shared <op_origin> (nullptr);
@@ -224,7 +224,7 @@ tree::build_exec (std::shared_ptr <op> upstream, dwgrep_graph::sptr q,
       }
 
     case tree_type::STR:
-      return std::make_shared <op_strlit> (upstream, *m_u.sval, dst ());
+      return std::make_shared <op_strlit> (upstream, str (), dst ());
 
     case tree_type::SHF_DROP:
       return std::make_shared <op_drop> (upstream, dst ());
@@ -237,7 +237,7 @@ tree::build_exec (std::shared_ptr <op> upstream, dwgrep_graph::sptr q,
       return std::make_shared <op_swap> (upstream, src_a (), dst ());
 
     case tree_type::CONST:
-      return std::make_shared <op_const> (upstream, *m_u.cval, dst ());
+      return std::make_shared <op_const> (upstream, cst (), dst ());
 
     case tree_type::CAPTURE:
       {

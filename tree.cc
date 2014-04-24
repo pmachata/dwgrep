@@ -36,12 +36,12 @@ tree::tree (tree const &other)
 {
   switch (argtype[(int) m_tt])
     {
-    case tree_arity_v::CONST:
-      m_u.cval = new constant {*other.m_u.cval};
+    case tree_arity_v::CST:
+      m_u.cst = new constant {other.cst ()};
       break;
 
     case tree_arity_v::STR:
-      m_u.sval = new std::string {*other.m_u.sval};
+      m_u.str = new std::string {other.str ()};
       break;
 
     case tree_arity_v::NULLARY:
@@ -60,14 +60,14 @@ tree::~tree ()
     case tree_arity_v::BINARY:
       break;
 
-    case tree_arity_v::CONST:
-      delete m_u.cval;
-      m_u.cval = nullptr;
+    case tree_arity_v::CST:
+      delete m_u.cst;
+      m_u.cst = nullptr;
       break;
 
     case tree_arity_v::STR:
-      delete m_u.sval;
-      m_u.sval = nullptr;
+      delete m_u.str;
+      m_u.str = nullptr;
       break;
     }
 }
@@ -143,12 +143,12 @@ tree::dump (std::ostream &o) const
 
   switch (argtype[(int) m_tt])
     {
-    case tree_arity_v::CONST:
-      o << "<" << *m_u.cval << ">";
+    case tree_arity_v::CST:
+      o << "<" << cst () << ">";
       break;
 
     case tree_arity_v::STR:
-      o << "<" << *m_u.sval << ">";
+      o << "<" << str () << ">";
       break;
 
     case tree_arity_v::NULLARY:
@@ -531,7 +531,7 @@ namespace
 	{
 	  assert (t.m_children.size () == 2);
 	  assert (t.m_children.front ().m_tt == tree_type::CONST);
-	  assert (t.m_children.front ().m_u.cval->dom ()
+	  assert (t.m_children.front ().cst ().dom ()
 		  == &unsigned_constant_dom);
 
 	  if (t.m_children.back ().m_tt == tree_type::TRANSFORM)
@@ -539,7 +539,7 @@ namespace
 
 	  // OK, now we translate N/E into N of E's, each operating in
 	  // a different depth.
-	  uint64_t depth = t.m_children.front ().m_u.cval->value ();
+	  uint64_t depth = t.m_children.front ().cst ().value ();
 	  sr.drop (depth);
 
 	  std::vector <tree> nchildren;
@@ -1087,9 +1087,10 @@ tree::simplify ()
 	  for (ssize_t j = i - 1; j >= 0; --j)
 	    if (m_children[j].m_tt == tree_type::ALT
 		|| m_children[j].m_tt == tree_type::CLOSE_STAR)
-	      // We can't move the assertion across these.  We might
-	      // move it inside ALT, if each branch contain a producer
-	      // of slot A, but that's NIY.
+	      // We might move it inside ALT, if each branch contain a
+	      // producer of slot A, but that's NIY.  We might move it
+	      // inside the closure as well, if it contains no
+	      // producer of slot A.  NIY either.
 	      break;
 	    else if (m_children[j].m_dst == a)
 	      {

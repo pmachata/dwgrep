@@ -25,7 +25,7 @@ enum class tree_arity_v
     UNARY,
     BINARY,
     STR,
-    CONST,
+    CST,
   };
 
 // CAT -- A node for holding concatenation (X Y Z).
@@ -81,8 +81,8 @@ enum class tree_arity_v
   TREE_TYPE (CLOSE_STAR, UNARY)			\
   TREE_TYPE (MAYBE, UNARY)			\
   TREE_TYPE (ASSERT, UNARY)			\
-  TREE_TYPE (PRED_AT, CONST)			\
-  TREE_TYPE (PRED_TAG, CONST)			\
+  TREE_TYPE (PRED_AT, CST)			\
+  TREE_TYPE (PRED_TAG, CST)			\
   TREE_TYPE (PRED_EQ, NULLARY)			\
   TREE_TYPE (PRED_NE, NULLARY)			\
   TREE_TYPE (PRED_GT, NULLARY)			\
@@ -99,7 +99,7 @@ enum class tree_arity_v
   TREE_TYPE (PRED_SUBX_ALL, UNARY)		\
   TREE_TYPE (PRED_SUBX_ANY, UNARY)		\
   TREE_TYPE (PRED_LAST, NULLARY)		\
-  TREE_TYPE (CONST, CONST)			\
+  TREE_TYPE (CONST, CST)			\
   TREE_TYPE (STR, STR)				\
   TREE_TYPE (FORMAT, NULLARY)			\
   TREE_TYPE (F_ADD, NULLARY)			\
@@ -110,7 +110,7 @@ enum class tree_arity_v
   TREE_TYPE (F_PARENT, NULLARY)			\
   TREE_TYPE (F_CHILD, NULLARY)			\
   TREE_TYPE (F_ATTRIBUTE, NULLARY)		\
-  TREE_TYPE (F_ATTR_NAMED, CONST)		\
+  TREE_TYPE (F_ATTR_NAMED, CST)			\
   TREE_TYPE (F_PREV, NULLARY)			\
   TREE_TYPE (F_NEXT, NULLARY)			\
   TREE_TYPE (F_TYPE, NULLARY)			\
@@ -149,17 +149,18 @@ TREE_TYPES
 
 // This is for communication between lexical and syntactic analyzers
 // and the rest of the world.  It uses naked pointers all over the
-// place, as in %union that lexer and parser use, we can't hold
-// full-fledged classes.
-struct tree
+// place, as in the %union that the lexer and parser use, we can't
+// hold smart pointers.
+class tree
 {
+  union {
+    std::string *str;
+    constant *cst;
+  } m_u;
+
+public:
   tree_type m_tt;
   std::vector <tree> m_children;
-
-  union {
-    std::string *sval;
-    constant *cval;
-  } m_u;
 
   // -1 if not initialized, otherwise a slot number.
   ssize_t m_src_a;
@@ -182,6 +183,38 @@ struct tree
   {
     assert (m_dst >= 0);
     return slot_idx (m_dst);
+  }
+
+  std::string &
+  str () const
+  {
+    switch (m_tt)
+      {
+#define TREE_TYPE(ENUM, ARITY)						\
+	case tree_type::ENUM:						\
+	  assert (tree_arity_v::ARITY == tree_arity_v::STR); break;
+	TREE_TYPES
+#undef TREE_TYPE
+      }
+
+    assert (m_u.str != nullptr);
+    return *m_u.str;
+  }
+
+  constant &
+  cst () const
+  {
+    switch (m_tt)
+      {
+#define TREE_TYPE(ENUM, ARITY)						\
+	case tree_type::ENUM:						\
+	  assert (tree_arity_v::ARITY == tree_arity_v::CST); break;
+	TREE_TYPES
+#undef TREE_TYPE
+      }
+
+    assert (m_u.cst != nullptr);
+    return *m_u.cst;
   }
 
   tree ();
@@ -231,7 +264,7 @@ struct tree
     static_assert (tree_arity <TT>::value == tree_arity_v::STR,
 		   "Wrong tree arity.");
     auto t = new tree {TT};
-    t->m_u.sval = new std::string {s};
+    t->m_u.str = new std::string {s};
     return t;
   }
 
@@ -239,10 +272,10 @@ struct tree
   static tree *
   create_const (constant c)
   {
-    static_assert (tree_arity <TT>::value == tree_arity_v::CONST,
+    static_assert (tree_arity <TT>::value == tree_arity_v::CST,
 		   "Wrong tree arity.");
     auto t = new tree {TT};
-    t->m_u.cval = new constant {c};
+    t->m_u.cst = new constant {c};
     return t;
   }
 
