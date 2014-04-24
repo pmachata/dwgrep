@@ -27,6 +27,11 @@ static struct
   {
     return true;
   }
+
+  std::string name () const override
+  {
+    return "signed";
+  }
 } signed_constant_dom_obj;
 
 constant_dom const &signed_constant_dom = signed_constant_dom_obj;
@@ -56,13 +61,13 @@ unsigned_constant_dom_t::plain () const
   return true;
 }
 
-unsigned_constant_dom_t unsigned_constant_dom_obj;
+unsigned_constant_dom_t unsigned_constant_dom_obj ("unsigned");
 constant_dom const &unsigned_constant_dom = unsigned_constant_dom_obj;
 
-unsigned_constant_dom_t column_number_dom_obj;
+unsigned_constant_dom_t column_number_dom_obj ("column number");
 constant_dom const &column_number_dom = column_number_dom_obj;
 
-unsigned_constant_dom_t line_number_dom_obj;
+unsigned_constant_dom_t line_number_dom_obj ("line number");
 constant_dom const &line_number_dom = line_number_dom_obj;
 
 
@@ -87,6 +92,11 @@ static struct
   safe_arith () const override
   {
     return true;
+  }
+
+  std::string name () const override
+  {
+    return "hex";
   }
 } hex_constant_dom_obj;
 
@@ -115,6 +125,11 @@ static struct
   {
     return true;
   }
+
+  std::string name () const override
+  {
+    return "oct";
+  }
 } oct_constant_dom_obj;
 
 constant_dom const &oct_constant_dom = oct_constant_dom_obj;
@@ -135,6 +150,11 @@ static struct
   sign () const override
   {
     return false;
+  }
+
+  std::string name () const override
+  {
+    return "bool";
   }
 } bool_constant_dom_obj;
 

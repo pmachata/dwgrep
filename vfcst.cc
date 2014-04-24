@@ -39,10 +39,15 @@ static struct
   {
     return false;
   }
+
+  std::string name () const override
+  {
+    return "type";
+  }
 } slot_type_dom_obj;
 
 constant_dom const &slot_type_dom = slot_type_dom_obj;
 
 
-unsigned_constant_dom_t pos_dom_obj;
+unsigned_constant_dom_t pos_dom_obj ("pos");
 constant_dom const &pos_dom = pos_dom_obj;

@@ -12,6 +12,7 @@ class constant_dom
 public:
   virtual ~constant_dom () {}
   virtual void show (uint64_t c, std::ostream &o) const = 0;
+  virtual std::string name () const = 0;
 
   // Whether values of this domain are signed.
   virtual bool sign () const = 0;
@@ -29,10 +30,23 @@ public:
 struct unsigned_constant_dom_t
   : public constant_dom
 {
+  std::string m_name;
+
+public:
+  explicit unsigned_constant_dom_t (std::string const &name)
+    : m_name {name}
+  {}
+
   void show (uint64_t v, std::ostream &o) const override;
   bool sign () const override;
   bool safe_arith () const override;
   bool plain () const override;
+
+  std::string
+  name () const override
+  {
+    return m_name;
+  }
 };
 
 // Two trivial domains for unnamed constants: one for signed, one for
