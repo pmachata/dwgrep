@@ -90,43 +90,63 @@ tree::swap (tree &other)
   std::swap (m_dst, other.m_dst);
 }
 
-tree *
-tree::create_neg (tree *t)
+slot_idx
+tree::src_a () const
 {
-  return tree::create_unary <tree_type::PRED_NOT> (t);
+  assert (m_src_a >= 0);
+  return slot_idx (m_src_a);
 }
 
-tree *
-tree::create_assert (tree *t)
+slot_idx
+tree::src_b () const
 {
-  return tree::create_unary <tree_type::ASSERT> (t);
+  assert (m_src_b >= 0);
+  return slot_idx (m_src_b);
 }
 
-tree *
-tree::create_protect (tree *t)
+slot_idx
+tree::dst () const
 {
-  return tree::create_unary <tree_type::PROTECT> (t);
+  assert (m_dst >= 0);
+  return slot_idx (m_dst);
+}
+
+std::string &
+tree::str () const
+{
+  switch (m_tt)
+    {
+#define TREE_TYPE(ENUM, ARITY)						\
+      case tree_type::ENUM:						\
+	assert (tree_arity_v::ARITY == tree_arity_v::STR); break;
+      TREE_TYPES
+#undef TREE_TYPE
+	}
+
+  assert (m_u.str != nullptr);
+  return *m_u.str;
+}
+
+constant &
+tree::cst () const
+{
+  switch (m_tt)
+    {
+#define TREE_TYPE(ENUM, ARITY)						\
+      case tree_type::ENUM:						\
+	assert (tree_arity_v::ARITY == tree_arity_v::CST); break;
+      TREE_TYPES
+#undef TREE_TYPE
+	}
+
+  assert (m_u.cst != nullptr);
+  return *m_u.cst;
 }
 
 void
-tree::take_child (tree *t)
+tree::push_child (tree const &t)
 {
-  m_children.push_back (*t);
-  delete t;
-}
-
-void
-tree::take_child_front (tree *t)
-{
-  m_children.insert (m_children.begin (), *t);
-  delete t;
-}
-
-void
-tree::append_cat (tree *t)
-{
-  m_children.insert (m_children.end (),
-		     t->m_children.begin (), t->m_children.end ());
+  m_children.push_back (t);
 }
 
 void
@@ -743,15 +763,15 @@ namespace
 	    tree t2 {tree_type::CAT};
 
 	    tree t3 {tree_type::CAPTURE};
-	    t3.push_back (t);
+	    t3.push_child (t);
 	    t3.m_src_a = dst;
 	    t3.m_dst = dst;
-	    t2.push_back (t3);
+	    t2.push_child (t3);
 
 	    tree t4 {tree_type::F_EACH};
 	    t4.m_src_a = dst;
 	    t4.m_dst = dst;
-	    t2.push_back (t4);
+	    t2.push_child (t4);
 
 	    if (true)
 	      {

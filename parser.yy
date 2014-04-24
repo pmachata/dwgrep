@@ -1,119 +1,33 @@
-%{ // -*-c++-*-
-#include <sstream>
-#include <iostream>
-
-#include "lexer.hh"
-#include "constant.hh"
-#include "vfcst.hh"
-
-  void
-  yyerror (std::unique_ptr <tree> &t, yyscan_t lex, char const *s)
-  {
-    fprintf (stderr, "%s\n", s);
-  }
-
-  template <tree_type TT>
-  tree *
-  positive_assert ()
-  {
-    return tree::create_assert (tree::create_nullary <TT> ());
-  }
-
-  template <tree_type TT>
-  tree *
-  negative_assert ()
-  {
-    auto u = tree::create_neg (tree::create_nullary <TT> ());
-    return tree::create_assert (u);
-  }
-
-  tree *
-  ifelse (yytokentype tt)
-  {
-    auto t = tree::create_nullary <tree_type::PRED_EMPTY> ();
-    if (tt == TOK_IF)
-      t = tree::create_neg (t);
-    else
-      assert (tt == TOK_ELSE);
-    auto u = tree::create_assert (t);
-
-    auto v = tree::create_nullary <tree_type::SHF_DROP> ();
-    return tree::create_cat <tree_type::CAT> (u, v);
-  }
-
-  constant
-  parse_int (strlit str)
-  {
-    char *endptr = NULL;
-    long int val = strtol (str.buf, &endptr, 0);
-    assert (endptr >= str.buf);
-    if (size_t (endptr - str.buf) != str.len)
-      {
-        std::string tmp (str.buf, str.len);
-	throw std::runtime_error
-	  (std::string ("Invalid integer literal: `") + tmp + "'");
-      }
-
-    if (str.buf[0] == '0' && str.len > 1)
-      {
-	if (str.buf[1] == 'x' || str.buf[1] == 'X')
-	  return constant (val, &hex_constant_dom);
-	else
-	  return constant (val, &oct_constant_dom);
-      }
-    else
-      return constant (val, &unsigned_constant_dom);
-   }
-%}
-
-%code requires {
-#include <memory>
-#include "tree.hh"
-
-struct strlit
-{
-  const char *buf;
-  size_t len;
-};
-
-// A helper structure that the lexer uses when parsing string
-// literals.
-struct fmtlit
-{
-  std::string str;
-  tree t;
-  size_t level;
-  bool in_string;
-  bool protect;
-  bool raw;
-
-  explicit fmtlit (bool a_protect, bool a_raw)
-    : t {tree_type::FORMAT}
-    , level {0}
-    , in_string {false}
-    , protect {a_protect}
-    , raw {a_raw}
-  {}
-
-  void
-  flush_str ()
-  {
-    t.take_child (tree::create_str <tree_type::STR> (str));
-    str = "";
-  }
-
-  std::string
-  yank_str ()
-  {
-    std::string tmp = str;
-    str = "";
-    return tmp;
-  }
-};
+%code top { // -*-c++-*-
+#include "parser.hh"
 }
 
-%code top {
-#include "parser.hh"
+%code requires {
+  #include <memory>
+  #include "tree.hh"
+
+  struct strlit
+  {
+    const char *buf;
+    size_t len;
+  };
+
+  // A helper structure that the lexer uses when parsing string
+  // literals.
+  struct fmtlit
+  {
+    std::string str;
+    tree t;
+    size_t level;
+    bool in_string;
+    bool const protect;
+    bool const raw;
+
+    fmtlit (bool a_protect, bool a_raw);
+
+    void flush_str ();
+    std::string yank_str ();
+  };
 }
 
 %code provides {
@@ -126,6 +40,101 @@ struct fmtlit
   tree parse_string (std::string str);
   tree parse_string (char const *begin, char const *end);
 }
+
+%{
+  #include <sstream>
+  #include <iostream>
+
+  #include "lexer.hh"
+  #include "constant.hh"
+  #include "vfcst.hh"
+  #include "tree_cr.hh"
+
+  namespace
+  {
+    void
+    yyerror (std::unique_ptr <tree> &t, yyscan_t lex, char const *s)
+    {
+      fprintf (stderr, "%s\n", s);
+    }
+
+    template <tree_type TT>
+    tree *
+    positive_assert ()
+    {
+      return tree::create_assert (tree::create_nullary <TT> ());
+    }
+
+    template <tree_type TT>
+    tree *
+    negative_assert ()
+    {
+      auto u = tree::create_neg (tree::create_nullary <TT> ());
+      return tree::create_assert (u);
+    }
+
+    tree *
+    ifelse (yytokentype tt)
+    {
+      auto t = tree::create_nullary <tree_type::PRED_EMPTY> ();
+      if (tt == TOK_IF)
+	t = tree::create_neg (t);
+      else
+	assert (tt == TOK_ELSE);
+      auto u = tree::create_assert (t);
+
+      auto v = tree::create_nullary <tree_type::SHF_DROP> ();
+      return tree::create_cat <tree_type::CAT> (u, v);
+    }
+
+    constant
+    parse_int (strlit str)
+    {
+      char *endptr = NULL;
+      long int val = strtol (str.buf, &endptr, 0);
+      assert (endptr >= str.buf);
+      if (size_t (endptr - str.buf) != str.len)
+	{
+	  std::string tmp (str.buf, str.len);
+	  throw std::runtime_error
+	    (std::string ("Invalid integer literal: `") + tmp + "'");
+	}
+
+      if (str.buf[0] == '0' && str.len > 1)
+	{
+	  if (str.buf[1] == 'x' || str.buf[1] == 'X')
+	    return constant (val, &hex_constant_dom);
+	  else
+	    return constant (val, &oct_constant_dom);
+	}
+      else
+	return constant (val, &unsigned_constant_dom);
+    }
+  }
+
+  fmtlit::fmtlit (bool a_protect, bool a_raw)
+    : t {tree_type::FORMAT}
+    , level {0}
+    , in_string {false}
+    , protect {a_protect}
+    , raw {a_raw}
+  {}
+
+  void
+  fmtlit::flush_str ()
+  {
+    t.take_child (tree::create_str <tree_type::STR> (str));
+    str = "";
+  }
+
+  std::string
+  fmtlit::yank_str ()
+  {
+    std::string tmp = str;
+    str = "";
+    return tmp;
+  }
+%}
 
 %pure-parser
 %error-verbose
@@ -144,13 +153,13 @@ struct fmtlit
 %token TOK_PARENT TOK_CHILD TOK_ATTRIBUTE TOK_PREV
 %token TOK_NEXT TOK_TYPE TOK_OFFSET TOK_NAME TOK_TAG
 %token TOK_FORM TOK_VALUE TOK_POS TOK_COUNT TOK_EACH
-%token TOK_LENGTH
+%token TOK_LENGTH TOK_HEX TOK_OCT
 
 %token TOK_PLUS_ADD TOK_PLUS_SUB TOK_PLUS_MUL TOK_PLUS_DIV TOK_PLUS_MOD
 %token TOK_PLUS_PARENT TOK_PLUS_CHILD TOK_PLUS_ATTRIBUTE TOK_PLUS_PREV
 %token TOK_PLUS_NEXT TOK_PLUS_TYPE TOK_PLUS_OFFSET TOK_PLUS_NAME TOK_PLUS_TAG
 %token TOK_PLUS_FORM TOK_PLUS_VALUE TOK_PLUS_POS TOK_PLUS_COUNT TOK_PLUS_EACH
-%token TOK_PLUS_LENGTH
+%token TOK_PLUS_LENGTH TOK_PLUS_HEX TOK_PLUS_OCT
 
 %token TOK_SWAP TOK_DUP TOK_OVER TOK_ROT TOK_DROP TOK_IF TOK_ELSE
 

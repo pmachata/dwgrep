@@ -167,56 +167,6 @@ public:
   ssize_t m_src_b;
   ssize_t m_dst;
 
-  slot_idx src_a () const
-  {
-    assert (m_src_a >= 0);
-    return slot_idx (m_src_a);
-  }
-
-  slot_idx src_b () const
-  {
-    assert (m_src_b >= 0);
-    return slot_idx (m_src_b);
-  }
-
-  slot_idx dst () const
-  {
-    assert (m_dst >= 0);
-    return slot_idx (m_dst);
-  }
-
-  std::string &
-  str () const
-  {
-    switch (m_tt)
-      {
-#define TREE_TYPE(ENUM, ARITY)						\
-	case tree_type::ENUM:						\
-	  assert (tree_arity_v::ARITY == tree_arity_v::STR); break;
-	TREE_TYPES
-#undef TREE_TYPE
-      }
-
-    assert (m_u.str != nullptr);
-    return *m_u.str;
-  }
-
-  constant &
-  cst () const
-  {
-    switch (m_tt)
-      {
-#define TREE_TYPE(ENUM, ARITY)						\
-	case tree_type::ENUM:						\
-	  assert (tree_arity_v::ARITY == tree_arity_v::CST); break;
-	TREE_TYPES
-#undef TREE_TYPE
-      }
-
-    assert (m_u.cst != nullptr);
-    return *m_u.cst;
-  }
-
   tree ();
   explicit tree (tree_type tt);
   tree (tree const &other);
@@ -225,120 +175,14 @@ public:
   tree &operator= (tree other);
   void swap (tree &other);
 
-  template <tree_type TT>
-  static tree *
-  create_nullary ()
-  {
-    static_assert (tree_arity <TT>::value == tree_arity_v::NULLARY,
-		   "Wrong tree arity.");
-    return new tree {TT};
-  }
+  slot_idx src_a () const;
+  slot_idx src_b () const;
+  slot_idx dst () const;
 
-  template <tree_type TT>
-  static tree *
-  create_unary (tree *op)
-  {
-    static_assert (tree_arity <TT>::value == tree_arity_v::UNARY,
-		   "Wrong tree arity.");
-    auto t = new tree {TT};
-    t->take_child (op);
-    return t;
-  }
+  std::string &str () const;
+  constant &cst () const;
 
-  template <tree_type TT>
-  static tree *
-  create_binary (tree *lhs, tree *rhs)
-  {
-    static_assert (tree_arity <TT>::value == tree_arity_v::BINARY,
-		   "Wrong tree arity.");
-    auto t = new tree {TT};
-    t->take_child (lhs);
-    t->take_child (rhs);
-    return t;
-  }
-
-  template <tree_type TT>
-  static tree *
-  create_str (std::string s)
-  {
-    static_assert (tree_arity <TT>::value == tree_arity_v::STR,
-		   "Wrong tree arity.");
-    auto t = new tree {TT};
-    t->m_u.str = new std::string {s};
-    return t;
-  }
-
-  template <tree_type TT>
-  static tree *
-  create_const (constant c)
-  {
-    static_assert (tree_arity <TT>::value == tree_arity_v::CST,
-		   "Wrong tree arity.");
-    auto t = new tree {TT};
-    t->m_u.cst = new constant {c};
-    return t;
-  }
-
-  // Creates either a CAT or an ALT node.
-  //
-  // It is smart in that it transforms CAT's of CAT's into one
-  // overarching CAT, and appends or prepends other nodes to an
-  // existing CAT if possible.  It also knows to ignore a nullptr
-  // tree.
-  template <tree_type TT>
-  static tree *
-  create_cat (tree *t1, tree *t2)
-  {
-    bool cat1 = t1 != nullptr && t1->m_tt == TT;
-    bool cat2 = t2 != nullptr && t2->m_tt == TT;
-
-    if (cat1 && cat2)
-      {
-	t1->append_cat (t2);
-	return t1;
-      }
-    else if (cat1 && t2 != nullptr)
-      {
-	t1->take_child (t2);
-	return t1;
-      }
-    else if (cat2 && t1 != nullptr)
-      {
-	t2->take_child_front (t1);
-	return t2;
-      }
-
-    if (t1 == nullptr)
-      {
-	assert (t2 != nullptr);
-	return t2;
-      }
-    else if (t2 == nullptr)
-      return t1;
-    else
-      return tree::create_binary <TT> (t1, t2);
-  }
-
-  static tree *create_neg (tree *t1);
-  static tree *create_assert (tree *t1);
-  static tree *create_protect (tree *t1);
-
-  // push_back (*T) and delete T.
-  void take_child (tree *t);
-
-  // push_front (*T) and delete T.
-  void take_child_front (tree *t);
-
-  // Takes a tree T, which is a CAT or an ALT, and appends all
-  // children therein.  It then deletes T.
-  void append_cat (tree *t);
-
-  void
-  push_back (tree t)
-  {
-    m_children.push_back (t);
-  }
-
+  void push_child (tree const &t);
   void dump (std::ostream &o) const;
 
   // Remove unnecessary operations--some stack shuffling can be
@@ -375,6 +219,33 @@ public:
   std::shared_ptr <op>
   build_exec (std::shared_ptr <op> upstream,
 	      dwgrep_graph::sptr q, size_t maxsize) const;
+
+  // === Parser interface ===
+  //
+  // The following methods are implemented in tree_cr.hh and
+  // tree_cr.cc.  They are meant as parser interface, otherwise value
+  // semantics should be preferred.
+
+  template <tree_type TT> static tree *create_nullary ();
+  template <tree_type TT> static tree *create_unary (tree *op);
+  template <tree_type TT> static tree *create_binary (tree *lhs, tree *rhs);
+  template <tree_type TT> static tree *create_str (std::string s);
+  template <tree_type TT> static tree *create_const (constant c);
+  template <tree_type TT> static tree *create_cat (tree *t1, tree *t2);
+
+  static tree *create_neg (tree *t1);
+  static tree *create_assert (tree *t1);
+  static tree *create_protect (tree *t1);
+
+  // push_back (*T) and delete T.
+  void take_child (tree *t);
+
+  // push_front (*T) and delete T.
+  void take_child_front (tree *t);
+
+  // Takes a tree T, which is a CAT or an ALT, and appends all
+  // children therein.  It then deletes T.
+  void take_cat (tree *t);
 };
 
 #endif /* _TREE_H_ */

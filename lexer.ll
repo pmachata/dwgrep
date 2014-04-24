@@ -217,7 +217,7 @@ OCT [0-7]
 
 <STRING>"%s" {
   yylval->f->flush_str ();
-  yylval->f->t.push_back (parse_string (""));
+  yylval->f->t.push_child (parse_string (""));
 }
 
 <STRING>. {
@@ -257,7 +257,7 @@ OCT [0-7]
   yylval->f->in_string = true;
   if (yylval->f->level == 0)
     {
-      yylval->f->t.push_back (parse_string (yylval->f->yank_str ()));
+      yylval->f->t.push_child (parse_string (yylval->f->yank_str ()));
       BEGIN STRING;
     }
   else
