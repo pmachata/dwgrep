@@ -182,6 +182,28 @@ public:
   void reset () override;
 };
 
+class op_f_cast
+  : public op
+{
+  std::shared_ptr <op> m_upstream;
+  slot_idx m_src;
+  slot_idx m_dst;
+  constant_dom const *m_dom;
+
+public:
+  op_f_cast (std::shared_ptr <op> upstream, constant_dom const *dom,
+	     slot_idx src, slot_idx dst)
+    : m_upstream {upstream}
+    , m_src {src}
+    , m_dst {dst}
+    , m_dom {dom}
+  {}
+
+  valfile::uptr next () override;
+  std::string name () const override;
+  void reset () override;
+};
+
 class dwop_f
   : public op
 {

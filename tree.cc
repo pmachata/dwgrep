@@ -491,6 +491,7 @@ namespace
       case tree_type::F_TAG:
       case tree_type::F_FORM:
       case tree_type::F_VALUE:
+      case tree_type::F_CAST:
       case tree_type::F_POS:
       case tree_type::F_COUNT:
       case tree_type::F_EACH:
@@ -730,6 +731,7 @@ namespace
       case tree_type::F_PREV: case tree_type::F_NEXT: case tree_type::F_TYPE:
       case tree_type::F_OFFSET: case tree_type::F_NAME: case tree_type::F_TAG:
       case tree_type::F_FORM: case tree_type::F_VALUE: case tree_type::F_POS:
+      case tree_type::F_CAST:
       case tree_type::F_COUNT: case tree_type::F_EACH: case tree_type::F_LENGTH:
       case tree_type::SEL_UNIVERSE: case tree_type::SEL_SECTION:
       case tree_type::SEL_UNIT: case tree_type::SHF_SWAP:
@@ -929,6 +931,7 @@ namespace
       case tree_type::F_TAG:
       case tree_type::F_FORM:
       case tree_type::F_VALUE:
+      case tree_type::F_CAST:
       case tree_type::F_POS:
       case tree_type::F_LENGTH:
       case tree_type::SEL_UNIVERSE:

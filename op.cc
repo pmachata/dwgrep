@@ -632,6 +632,38 @@ op_f_value::name () const
 }
 
 
+valfile::uptr
+op_f_cast::next ()
+{
+  while (auto vf = m_upstream->next ())
+    if (auto v = vf->get_slot_as <value_cst> (m_src))
+      {
+	constant cst2 {v->get_constant ().value (), m_dom};
+	vf->set_slot (m_dst, std::make_unique <value_cst> (cst2, 0));
+	return vf;
+      }
+    else
+      std::cerr << "Error: cast to " << m_dom->name ()
+		<< " expects a constant on TOS.\n";
+
+  return nullptr;
+}
+
+void
+op_f_cast::reset ()
+{
+  m_upstream->reset ();
+}
+
+std::string
+op_f_cast::name () const
+{
+  std::stringstream ss;
+  ss << "f_cast<" << m_dom->name () << ">";
+  return ss.str ();
+}
+
+
 bool
 op_f_parent::operate (valfile &vf, slot_idx dst,
 		      Dwarf_Attribute &attr, Dwarf_Die &die)

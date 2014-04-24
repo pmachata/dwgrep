@@ -62,6 +62,9 @@ enum class tree_arity_v
 //
 // F_ADD, F_SUB, etc. -- For holding corresponding function words.
 //
+// F_CAST -- For domain casting.  The argument is a constant, whose
+// domain determines what domain to cast to.
+//
 // SEL_UNIVERSE, SEL_SECTION, SEL_UNIT -- Likewise.  But note that
 // SEL_UNIVERSE does NOT actually POP.  Plain "universe" is translated
 // as "SHF_DROP SEL_UNIVERSE", and "+universe" is translated as mere
@@ -123,6 +126,7 @@ enum class tree_arity_v
   TREE_TYPE (F_COUNT, NULLARY)			\
   TREE_TYPE (F_EACH, NULLARY)			\
   TREE_TYPE (F_LENGTH, NULLARY)			\
+  TREE_TYPE (F_CAST, CST)			\
   TREE_TYPE (SEL_UNIVERSE, NULLARY)		\
   TREE_TYPE (SEL_SECTION, NULLARY)		\
   TREE_TYPE (SEL_UNIT, NULLARY)			\

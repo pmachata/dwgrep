@@ -107,6 +107,7 @@ tree::build_pred (dwgrep_graph::sptr q, size_t maxsize) const
     case tree_type::F_TAG:
     case tree_type::F_FORM:
     case tree_type::F_VALUE:
+    case tree_type::F_CAST:
     case tree_type::F_POS:
     case tree_type::F_COUNT:
     case tree_type::F_EACH:
@@ -274,6 +275,10 @@ tree::build_exec (std::shared_ptr <op> upstream, dwgrep_graph::sptr q,
 
     case tree_type::F_COUNT:
       return std::make_shared <op_f_count> (upstream, src_a (), dst ());
+
+    case tree_type::F_CAST:
+      return std::make_shared <op_f_cast> (upstream, cst ().dom (),
+					   src_a (), dst ());
 
     case tree_type::F_SUB:
     case tree_type::F_MUL:

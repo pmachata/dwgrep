@@ -420,6 +420,20 @@ Statement:
   { $$ = tree::create_protect (tree::create_nullary <tree_type::F_OFFSET> ()); }
 
 
+  | TOK_HEX
+  { $$ = tree::create_const <tree_type::F_CAST>
+      ({0, &hex_constant_dom}); }
+  | TOK_PLUS_HEX
+  { $$ = tree::create_protect
+      (tree::create_const <tree_type::F_CAST> ({0, &hex_constant_dom})); }
+  | TOK_OCT
+  { $$ = tree::create_const <tree_type::F_CAST>
+      ({0, &oct_constant_dom}); }
+  | TOK_PLUS_OCT
+  { $$ = tree::create_protect
+      (tree::create_const <tree_type::F_CAST> ({0, &oct_constant_dom})); }
+
+
   | TOK_POS
   { $$ = tree::create_nullary <tree_type::F_POS> (); }
   | TOK_PLUS_POS

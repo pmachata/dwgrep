@@ -507,15 +507,14 @@
      in the string template.
 
    - %s stands for %( %)
-
-   - possibly have integer formatters like %d, %u, %x, etc. if one
-     wants to override the default thing for any reason.
-
+   - %d stands for %( value %)
+   - %x stands for %( value hex %)
+   - %o stands for %( value oct %)
    - %% stands for a single %
 
    - if the literal is prefixed with +, then it's exactly equivalent
      to the following:
-     : [EXPR] each
+     : +[EXPR] each
      i.e. the interpolation is done in a sub-expression context and
      the result is pushed onto unmodified stack.
 
@@ -579,7 +578,7 @@
      the domain we wish to operate on.
 
    - A general note about + forms: +EXPR is exactly equivalent to:
-     : [EXPR] each
+     : +[EXPR] each
 
 ** •EXPR → “(” EXPR₁ “)” — grouping, precedence
 
@@ -595,7 +594,7 @@
      : [ swap? ]
      : [ (rot,) ]
      etc.  Using these expressions inside the capture really makes
-     little sense.  It might make sense in +[] form (see below).
+     little sense.  It might make sense in +[ ... ] form (see below).
 
      Some examples:
 

@@ -68,6 +68,8 @@ OCT [0-7]
 "tag" return TOK_TAG;
 "form" return TOK_FORM;
 "value" return TOK_VALUE;
+"hex" return TOK_HEX;
+"oct" return TOK_OCT;
 "pos" return TOK_POS;
 "count" return TOK_COUNT;
 "each" return TOK_EACH;
@@ -92,6 +94,8 @@ OCT [0-7]
 "+tag" return TOK_PLUS_TAG;
 "+form" return TOK_PLUS_FORM;
 "+value" return TOK_PLUS_VALUE;
+"+hex" return TOK_PLUS_HEX;
+"+oct" return TOK_PLUS_OCT;
 "+pos" return TOK_PLUS_POS;
 "+count" return TOK_PLUS_COUNT;
 "+each" return TOK_PLUS_EACH;
@@ -218,6 +222,21 @@ OCT [0-7]
 <STRING>"%s" {
   yylval->f->flush_str ();
   yylval->f->t.push_child (parse_string (""));
+}
+
+<STRING>"%x" {
+  yylval->f->flush_str ();
+  yylval->f->t.push_child (parse_string ("value hex"));
+}
+
+<STRING>"%o" {
+  yylval->f->flush_str ();
+  yylval->f->t.push_child (parse_string ("value oct"));
+}
+
+<STRING>"%d" {
+  yylval->f->flush_str ();
+  yylval->f->t.push_child (parse_string ("value"));
 }
 
 <STRING>. {
