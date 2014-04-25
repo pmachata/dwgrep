@@ -1086,7 +1086,7 @@ op_capture::next ()
 
       value_seq::seq_t vv;
       while (auto vf2 = m_op->next ())
-	vv.push_back (vf2->get_slot (m_src).clone ());
+	vv.push_back (vf2->release_slot (m_src));
       vf->set_slot (m_dst, std::make_unique <value_seq> (std::move (vv), 0));
       return vf;
     }
