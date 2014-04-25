@@ -191,6 +191,9 @@ struct op_sel_unit::pimpl
 		    init_from_die (v->get_die ());
 		    m_vf = std::move (vf);
 		  }
+		else
+		  std::cerr << "Error: `unit' expects a T_NODE or "
+			       "T_ATTR on TOS.\n";
 	      }
 	    else
 	      return nullptr;
@@ -293,6 +296,8 @@ struct op_f_child::pimpl
 			m_vf = std::move (vf);
 		      }
 		  }
+		else
+		  std::cerr << "Error: `child' expects a T_NODE on TOS.\n";
 	      }
 	    else
 	      return nullptr;
@@ -399,6 +404,8 @@ struct op_f_attr::pimpl
 		    m_it = attr_iterator (&m_die);
 		    m_vf = std::move (vf);
 		  }
+		else
+		  std::cerr << "Error: `attribute' expects a T_NODE on TOS.\n";
 	      }
 	    else
 	      return nullptr;
@@ -493,8 +500,13 @@ dwop_f::next ()
 	  return vf;
       }
     else if (auto v = vf->get_slot_as <value_attr> (m_src))
-      if (operate (*vf, m_dst, v->get_attr (), v->get_die ()))
-	return vf;
+      {
+	if (operate (*vf, m_dst, v->get_attr (), v->get_die ()))
+	  return vf;
+      }
+    else
+      std::cerr << "Error: " << name ()
+		<< " expects a T_NODE or T_ATTR on TOS.\n";
 
   return nullptr;
 }
@@ -615,6 +627,8 @@ op_f_value::next ()
 	vf->set_slot (m_dst, std::make_unique <value_cst> (cst2, 0));
 	return vf;
       }
+    else
+      std::cerr << "Error: `value' expects a T_ATTR or T_CONST on TOS.\n";
 
   return nullptr;
 }
@@ -1134,6 +1148,8 @@ struct op_f_each::pimpl
 	    {
 	      if (vf->get_slot_as <value_seq> (m_src) != nullptr)
 		m_vf = std::move (vf);
+	      else
+		std::cerr << "Error: `each' expects a T_SEQ on TOS.\n";
 	    }
 	  else
 	    return nullptr;
@@ -1200,6 +1216,8 @@ op_f_length::next ()
 	vf->set_slot (m_dst, std::make_unique <value_cst> (t, 0));
 	return vf;
       }
+    else
+      std::cerr << "Error: `length' expects a T_SEQ or T_STR on TOS.\n";
 
   return nullptr;
 }
@@ -1368,6 +1386,12 @@ namespace
 valfile::uptr
 op_f_add::next ()
 {
+  auto show_error = [] ()
+    {
+      std::cerr << "Error: `add' expects T_CONST, T_STR or T_SEQ "
+		   "at and below TOS.\n";
+    };
+
   while (auto vf = m_upstream->next ())
     if (auto va = vf->get_slot_as <value_cst> (m_src_a))
       {
@@ -1414,6 +1438,8 @@ op_f_add::next ()
 	    vf->set_slot (m_dst, std::make_unique <value_cst> (result, 0));
 	    return vf;
 	  }
+	else
+	  show_error ();
       }
     else if (auto va = vf->get_slot_as <value_str> (m_src_a))
       {
@@ -1430,6 +1456,8 @@ op_f_add::next ()
 			  std::make_unique <value_str> (std::move (result), 0));
 	    return vf;
 	  }
+	else
+	  show_error ();
       }
     else if (auto va = vf->get_slot_as <value_seq> (m_src_a))
       {
@@ -1448,7 +1476,11 @@ op_f_add::next ()
 			  std::make_unique <value_seq> (std::move (seq_a), 0));
 	    return vf;
 	  }
+	else
+	  show_error ();
       }
+    else
+      show_error ();
 
   return nullptr;
 }
@@ -1566,7 +1598,11 @@ pred_at::result (valfile &vf)
   else if (auto v = vf.get_slot_as <value_attr> (m_idx))
     return pred_result (dwarf_whatattr (&v->get_attr ()) == m_atname);
   else
-    return pred_result::fail;
+    {
+      std::cerr << "Error: `?@" << constant {m_atname, &dw_attr_short_dom}
+		<< "' expects a T_NODE or T_ATTR on TOS.\n";
+      return pred_result::fail;
+    }
 }
 
 std::string
@@ -1583,7 +1619,12 @@ pred_tag::result (valfile &vf)
   if (auto v = vf.get_slot_as <value_die> (m_idx))
     return pred_result (dwarf_tag (&v->get_die ()) == m_tag);
   else
-    return pred_result::fail;
+    {
+      std::cerr << "Error: `?"
+		<< constant {(unsigned) m_tag, &dw_tag_short_dom}
+		<< "' expects a T_NODE on TOS.\n";
+      return pred_result::fail;
+    }
 }
 
 std::string
@@ -1611,9 +1652,14 @@ namespace
 	  std::cerr << "Warning: comparing " << *va << " to " << *vb
 		    << " is probably not meaningful (different domains).\n";
 
-    cmp_result r = vf.get_slot (idx_a).cmp (vf.get_slot (idx_b));
+    auto &va = vf.get_slot (idx_a);
+    auto &vb = vf.get_slot (idx_b);
+    cmp_result r = va.cmp (vb);
     if (r == cmp_result::fail)
-      return pred_result::fail;
+      {
+	std::cerr << "Error: Can't compare `" << va << "' to `" << vb << "'\n.";
+	return pred_result::fail;
+      }
     else
       return pred_result (r == want);
   }
@@ -1672,7 +1718,10 @@ pred_root::result (valfile &vf)
     return pred_result::no;
 
   else
-    return pred_result::fail;
+    {
+      std::cerr << "Error: `?root' expects a T_ATTR or T_NODE on TOS.\n";
+      return pred_result::fail;
+    }
 }
 
 std::string
@@ -1716,7 +1765,10 @@ pred_empty::result (valfile &vf)
     return pred_result (v->get_seq ().empty ());
 
   else
-    return pred_result::fail;
+    {
+      std::cerr << "Error: `?empty' expects a T_STR or T_SEQ on TOS.\n";
+      return pred_result::fail;
+    }
 }
 
 std::string
