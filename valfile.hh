@@ -87,7 +87,7 @@ public:
   }
 
   std::unique_ptr <value>
-  take_slot (slot_idx idx)
+  release_slot (slot_idx idx)
   {
     size_t i = idx.value ();
     return std::move (m_values[i]);
