@@ -1155,7 +1155,7 @@ struct op_f_each::pimpl
 	    return nullptr;
 
 	auto &slot = static_cast <value_seq const &> (m_vf->get_slot (m_src));
-	auto &vv = slot.get_seq ();
+	auto &vv = *slot.get_seq ();
 
 	if (m_i < vv.size ())
 	  {
@@ -1206,7 +1206,7 @@ op_f_length::next ()
   while (auto vf = m_upstream->next ())
     if (auto v = vf->get_slot_as <value_seq> (m_src))
       {
-	constant t {v->get_seq ().size (), &unsigned_constant_dom};
+	constant t {v->get_seq ()->size (), &unsigned_constant_dom};
 	vf->set_slot (m_dst, std::make_unique <value_cst> (t, 0));
 	return vf;
       }
@@ -1463,9 +1463,11 @@ op_f_add::next ()
       {
 	if (auto vb = vf->get_slot_as <value_seq> (m_src_b))
 	  {
-	    value_seq::seq_t seq_a = va->move_seq ();
-	    for (auto &v: vb->move_seq ())
-	      seq_a.emplace_back (std::move (v));
+	    value_seq::seq_t res;
+	    for (auto const &v: *va->get_seq ())
+	      res.emplace_back (v->clone ());
+	    for (auto const &v: *vb->get_seq ())
+	      res.emplace_back (v->clone ());
 
 	    if (m_src_a == m_dst)
 	      vf->set_slot (m_src_b, nullptr);
@@ -1473,7 +1475,7 @@ op_f_add::next ()
 	      vf->set_slot (m_src_a, nullptr);
 
 	    vf->set_slot (m_dst,
-			  std::make_unique <value_seq> (std::move (seq_a), 0));
+			  std::make_unique <value_seq> (std::move (res), 0));
 	    return vf;
 	  }
 	else
@@ -1762,7 +1764,7 @@ pred_empty::result (valfile &vf)
     return pred_result (v->get_string () == "");
 
   else if (auto v = vf.get_slot_as <value_seq> (m_idx_a))
-    return pred_result (v->get_seq ().empty ());
+    return pred_result (v->get_seq ()->empty ());
 
   else
     {

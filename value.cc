@@ -136,7 +136,7 @@ namespace
 
 value_seq::value_seq (value_seq const &that)
   : value {that}
-  , m_seq {clone_seq (that.m_seq)}
+  , m_seq {std::make_shared <seq_t> (clone_seq (*that.m_seq))}
 {}
 
 void
@@ -144,7 +144,7 @@ value_seq::show (std::ostream &o) const
 {
   o << "[";
   bool seen = false;
-  for (auto const &v: m_seq)
+  for (auto const &v: *m_seq)
     {
       if (seen)
 	o << ", ";

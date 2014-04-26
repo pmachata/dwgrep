@@ -181,23 +181,28 @@ public:
   typedef std::vector <std::unique_ptr <value> > seq_t;
 
 private:
-  seq_t m_seq;
+  std::shared_ptr <seq_t> m_seq;
 
 public:
   static value_type const vtype;
 
   value_seq (seq_t &&seq, size_t pos)
     : value {vtype, pos}
-    , m_seq {std::move (seq)}
+    , m_seq {std::make_shared <seq_t> (std::move (seq))}
+  {}
+
+  value_seq (std::shared_ptr <seq_t> seqp, size_t pos)
+    : value {vtype, pos}
+    , m_seq {seqp}
   {}
 
   value_seq (value_seq const &that);
 
-  seq_t const &get_seq () const
-  { return m_seq; }
-
-  seq_t &&move_seq ()
-  { return std::move (m_seq); }
+  std::shared_ptr <seq_t>
+  get_seq () const
+  {
+    return m_seq;
+  }
 
   void show (std::ostream &o) const override;
   std::unique_ptr <value> clone () const override;
