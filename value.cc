@@ -166,11 +166,60 @@ value_seq::get_type_const () const
   return {(int) slot_type_id::T_SEQ, &slot_type_dom};
 }
 
+namespace
+{
+  template <class Callable>
+  cmp_result
+  compare_sequences (value_seq::seq_t const &sa, value_seq::seq_t const &sb,
+		     Callable cmp)
+  {
+    cmp_result ret = cmp_result::fail;
+    auto mm = std::mismatch (sa.begin (), sa.end (), sb.begin (),
+			     [&ret, cmp] (std::unique_ptr <value> const &a,
+					  std::unique_ptr <value> const &b)
+			     {
+			       ret = cmp (a, b);
+			       assert (ret != cmp_result::fail);
+			       return ret == cmp_result::equal;
+			     });
+
+    if (mm.first != sa.end ())
+      {
+	assert (mm.second != sb.end ());
+	assert (ret != cmp_result::fail);
+	return ret;
+      }
+
+    return cmp_result::equal;
+  }
+}
+
 cmp_result
 value_seq::cmp (value const &that) const
 {
-  assert (! "value_seq::cmp NIY");
-  abort ();
+  if (auto v = value::as <value_seq> (&that))
+    {
+      cmp_result ret = compare (m_seq->size (), v->m_seq->size ());
+      if (ret != cmp_result::equal)
+	return ret;
+
+      ret = compare_sequences (*m_seq, *v->m_seq,
+			       [] (std::unique_ptr <value> const &a,
+				   std::unique_ptr <value> const &b)
+			       {
+				 return compare (a->get_type (),
+						 b->get_type ());
+			       });
+      if (ret != cmp_result::equal)
+	return ret;
+
+      return compare_sequences (*m_seq, *v->m_seq,
+				[] (std::unique_ptr <value> const &a,
+				    std::unique_ptr <value> const &b)
+				{ return a->cmp (*b); });
+    }
+  else
+    return cmp_result::fail;
 }
 
 
