@@ -584,17 +584,15 @@
 
 ** •EXPR → “+”?“[” EXPR₁ “]” | “[” “]” — list generator
 
-   - [ EXPR₁ ] evalueates EXPR₁.  The first stack that EXPR₁ produces,
-     sans its TOS, is considered a base stack.  The overall expression
-     then produces one stack that is composed of this base stack with a
-     list containing TOS's of all produced EXPR₁ stacks pushed on top.
+   - [ EXPR₁ ] evalueates EXPR₁.  It then collects all results that it
+     produces, pops TOS of each of these results, and stores these
+     TOS's into a sequence.  It then produces one stack per unique
+     stack collected with the sequence pushed on top.
 
-     This round-about way of explaining the semantics is necessary to
-     make it clear what happens for the expressions like:
-     : [ swap? ]
-     : [ (rot,) ]
-     etc.  Using these expressions inside the capture really makes
-     little sense.  It might make sense in +[ ... ] form (see below).
+     Note in particular, that if EXPR₁ produces no results, no
+     computations are produced, and in particular empty list is NOT
+     pushed on top.  If you need to see the empty list, use +[...]
+     instead.
 
      Some examples:
 
@@ -608,17 +606,17 @@
      not special to list generator, but is ordinary alternation syntax,
      described above.
 
-   - +[ EXPR₁ ] works similarly, but evaluates EXPR₁ in a sub-expression
-     context.  So it collects TOS's of all stacks that EXPR₁ produces
-     and wraps them in a list.  It then produces a single stack that is
-     the original input stack with the list of collected TOS's pushed on
-     top.
+   - +[ EXPR₁ ] works similarly, but evaluates EXPR₁ in a
+     sub-expression context.  Just like [ EXPR₁ ], it collects TOS's
+     of all stacks that EXPR₁ produces and wraps them in a sequence.
+     It then produces a single stack that is the original input stack
+     with the list of collected TOS's pushed on top.
 
      : +[child]		# push a new list containing immediate children
 
    - [] is a literal that produces an empty list.  It is exactly
      equivalent to (among others):
-     : [ 0 !0 ]
+     : +[ 0 !0 ]
 
    - over is exactly equivalent to:
      : +[ drop ] each
