@@ -189,6 +189,11 @@ public:
   void push_child (tree const &t);
   void dump (std::ostream &o) const;
 
+  // === Build interface ===
+  //
+  // The following methods are implemented in build.cc.  They are for
+  // translation of trees to actual execution nodes.
+
   // Remove unnecessary operations--some stack shuffling can be
   // eliminated and protect nodes.
   // XXX this should actually be hidden behind build_exec or what not.
@@ -201,21 +206,13 @@ public:
   // XXX this should actually be hidden behind build_exec or what not.
   size_t determine_stack_effects ();
 
-  // Produce program suitable for interpretation.  Implemented in
-  // build.cc.
+  // This should build an op node corresponding to this expression.
   //
-  // XXX see below for maxsize.  This should go away.  NIY.
-  std::unique_ptr <pred> build_pred (dwgrep_graph::sptr q,
-				     size_t maxsize) const;
-
-  // This should build an exec_node corresponding to this expression.
-  // Implemented in build.cc.
-  //
-  // Not every expression node needs to have an associated exec_node,
-  // some nodes will only install some plumbing (in particular, a CAT
-  // node would only create a series of nested exec's).  UPSTREAM
-  // should be nullptr if this is the toplevel-most expression,
-  // otherwise it should be a valid exec_node.
+  // Not every expression node needs to have an associated op, some
+  // nodes will only install some plumbing (in particular, a CAT node
+  // would only create a series of nested op's).  UPSTREAM should be
+  // nullptr if this is the toplevel-most expression, otherwise it
+  // should be a valid op that the op produced by this node feeds off.
   //
   // XXX Note that the MAXSIZE argument should go away.  This needs to
   // be set for each producer node by determine_stack_effects, and
@@ -223,6 +220,12 @@ public:
   std::shared_ptr <op>
   build_exec (std::shared_ptr <op> upstream,
 	      dwgrep_graph::sptr q, size_t maxsize) const;
+
+  // Produce program suitable for interpretation.
+  //
+  // XXX see above for maxsize.  This should go away.  NIY.
+  std::unique_ptr <pred> build_pred (dwgrep_graph::sptr q,
+				     size_t maxsize) const;
 
   // === Parser interface ===
   //
