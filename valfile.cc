@@ -39,16 +39,16 @@ namespace
 	  return 1;
     }
 
-    // The stack with smaller type_info addresses is smaller.
+    // The stack with "smaller" types is smaller.
     {
       auto it = a.begin ();
       auto jt = b.begin ();
       for (; it != a.end (); ++it, ++jt)
 	if (*it != nullptr && *jt != nullptr)
 	  {
-	    if (&typeid (**it) < &typeid (**jt))
+	    if ((*it)->get_type () < (*jt)->get_type ())
 	      return -1;
-	    else if (&typeid (**it) > &typeid (**jt))
+	    else if ((*jt)->get_type () < (*it)->get_type ())
 	      return 1;
 	  }
     }
