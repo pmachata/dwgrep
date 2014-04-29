@@ -267,6 +267,14 @@ tree::build_exec (std::shared_ptr <op> upstream, dwgrep_graph::sptr q,
 	return std::make_shared <op_close> (upstream, origin, op);
       }
 
+    case tree_type::PROTECT:
+      {
+	auto origin = std::make_shared <op_origin> (nullptr);
+	auto op = m_children.front ().build_exec (origin, q, maxsize);
+	return std::make_shared <op_subx> (upstream, origin, op,
+					   src_a (), dst ());
+      }
+
     case tree_type::F_ADD:
       return std::make_shared <op_f_add> (upstream, src_a (), src_b (), dst ());
 
@@ -296,7 +304,6 @@ tree::build_exec (std::shared_ptr <op> upstream, dwgrep_graph::sptr q,
     case tree_type::CLOSE_PLUS:  // X+ should be translated to X X*
     case tree_type::MAYBE:       // X? should be translated to (,X)
     case tree_type::TRANSFORM:   // N/X should be translated to N X's
-    case tree_type::PROTECT:     // +X should be translated to X[a=,dst=]
 
     case tree_type::PRED_TAG:
     case tree_type::PRED_AT:

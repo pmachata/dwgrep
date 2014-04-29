@@ -601,11 +601,8 @@ public:
 class op_capture
   : public op
 {
-  std::shared_ptr <op> m_upstream;
-  std::shared_ptr <op_origin> m_origin;
-  std::shared_ptr <op> m_op;
-  slot_idx m_src;
-  slot_idx m_dst;
+  class pimpl;
+  std::unique_ptr <pimpl> m_pimpl;
 
 public:
   // SRC is the slot where OP leaves the result.  DST is where the
@@ -613,17 +610,12 @@ public:
   op_capture (std::shared_ptr <op> upstream,
 	      std::shared_ptr <op_origin> origin,
 	      std::shared_ptr <op> op,
-	      slot_idx src, slot_idx dst)
-    : m_upstream (upstream)
-    , m_origin (origin)
-    , m_op (op)
-    , m_src (src)
-    , m_dst (dst)
-  {}
+	      slot_idx src, slot_idx dst);
+  ~op_capture ();
 
+  void reset () override;
   valfile::uptr next () override;
   std::string name () const override;
-  void reset () override;
 };
 
 class op_f_each
@@ -698,6 +690,26 @@ public:
   valfile::uptr next () override;
   std::string name () const override;
   void reset () override;
+};
+
+class op_subx
+  : public op
+{
+  class pimpl;
+  std::unique_ptr <pimpl> m_pimpl;
+
+public:
+  op_subx (std::shared_ptr <op> upstream,
+	   std::shared_ptr <op_origin> origin,
+	   std::shared_ptr <op> op,
+	   slot_idx src, slot_idx dst);
+
+  ~op_subx ();
+
+  valfile::uptr next () override;
+  std::string name () const override;
+  void reset () override;
+
 };
 
 class op_f_add

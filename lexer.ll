@@ -41,6 +41,7 @@ OCT [0-7]
 "*" return TOK_ASTERISK;
 "+" return TOK_PLUS;
 "?" return TOK_QMARK;
+"-" return TOK_MINUS;
 "," return TOK_COMMA;
 "/" return TOK_SLASH;
 
@@ -78,32 +79,6 @@ OCT [0-7]
 "section" return TOK_SECTION;
 "unit" return TOK_UNIT;
 
-"+add" return TOK_PLUS_ADD;
-"+sub" return TOK_PLUS_SUB;
-"+mul" return TOK_PLUS_MUL;
-"+div" return TOK_PLUS_DIV;
-"+mod" return TOK_PLUS_MOD;
-"+parent" return TOK_PLUS_PARENT;
-"+child" return TOK_PLUS_CHILD;
-"+attribute" return TOK_PLUS_ATTRIBUTE;
-"+prev" return TOK_PLUS_PREV;
-"+next" return TOK_PLUS_NEXT;
-"+type" return TOK_PLUS_TYPE;
-"+offset" return TOK_PLUS_OFFSET;
-"+name" return TOK_PLUS_NAME;
-"+tag" return TOK_PLUS_TAG;
-"+form" return TOK_PLUS_FORM;
-"+value" return TOK_PLUS_VALUE;
-"+hex" return TOK_PLUS_HEX;
-"+oct" return TOK_PLUS_OCT;
-"+pos" return TOK_PLUS_POS;
-"+count" return TOK_PLUS_COUNT;
-"+each" return TOK_PLUS_EACH;
-"+length" return TOK_PLUS_LENGTH;
-"+universe" return TOK_PLUS_UNIVERSE;
-"+section" return TOK_PLUS_SECTION;
-"+unit" return TOK_PLUS_UNIT;
-
 "?eq" return TOK_QMARK_EQ;
 "!eq" return TOK_BANG_EQ;
 "?ne" return TOK_QMARK_NE;
@@ -130,7 +105,6 @@ OCT [0-7]
 {ID} return pass_string (yyscanner, yylval, TOK_CONSTANT);
 
 "@"{ID} return pass_string (yyscanner, yylval, TOK_AT_WORD, 1);
-"+@"{ID} return pass_string (yyscanner, yylval, TOK_PLUS_AT_WORD, 2);
 "?@"{ID} return pass_string (yyscanner, yylval, TOK_QMARK_AT_WORD, 2);
 "!@"{ID} return pass_string (yyscanner, yylval, TOK_BANG_AT_WORD, 2);
 "?"{ID} return pass_string (yyscanner, yylval, TOK_QMARK_WORD, 1);
@@ -138,22 +112,12 @@ OCT [0-7]
 
 "\"" {
   BEGIN STRING;
-  yylval->f = new fmtlit {false, false};
-}
-
-"+\"" {
-  BEGIN STRING;
-  yylval->f = new fmtlit {true, false};
+  yylval->f = new fmtlit {false};
 }
 
 "r\"" {
   BEGIN STRING;
-  yylval->f = new fmtlit {false, true};
-}
-
-"+r\"" {
-  BEGIN STRING;
-  yylval->f = new fmtlit {true, true};
+  yylval->f = new fmtlit {true};
 }
 
 <STRING>"\\"[0-3]{OCT}?{OCT}? {
@@ -198,8 +162,6 @@ OCT [0-7]
   f->flush_str ();
 
   yylval->t = new tree {f->t};
-  if (f->protect)
-    yylval->t = tree::create_protect (yylval->t);
 
   delete f;
 

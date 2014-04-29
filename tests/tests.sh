@@ -4,7 +4,7 @@ expect_count ()
 {
     COUNT=$1
     shift
-    GOT=$(../dwgrep -c "$@" 2>/dev/null)
+    GOT=$(timeout 10 ../dwgrep -c "$@" 2>/dev/null)
     if [ "$GOT" != "$COUNT" ]; then
 	echo "FAIL: dwgrep -c" "$@"
 	echo "expected: $COUNT"
@@ -20,7 +20,7 @@ expect_count 1 ./duplicate-const -e '
 	?{2/tag ?eq} ?{2/@type ?eq}'
 
 expect_count 1 ./nontrivial-types.o -e '
-	?subprogram !@declaration +child ?formal_parameter
+	?subprogram !@declaration -child ?formal_parameter
 	?{@type ((?const_type, ?volatile_type, ?typedef) @type)*
 	  (?structure_type, ?class_type)}'
 
@@ -42,7 +42,7 @@ expect_count 1 ./nontrivial-types.o -e '
 
 # Test that unit annotates position.
 expect_count 11 ./nontrivial-types.o -e '
-	+unit ?{2/pos ?eq}'
+	-unit ?{2/pos ?eq}'
 
 # Test that each annotates position.
 expect_count 1 ./nontrivial-types.o -e '
@@ -54,7 +54,7 @@ expect_count 1 ./nontrivial-types.o -e '
 # Tests star closure whose body ends with stack in a different state
 # than it starts in (different slots are taken in the valfile).
 expect_count 1 ./typedef.o -e '
-	?{[] swap (@type ?typedef [()] 2/swap add swap)* drop length 3 ?eq}
+	?{[] swap (@type ?typedef -[()] 2/swap add swap)* drop length 3 ?eq}
 	?{offset 0x45 ?eq}'
 
 # Test count of universe.
@@ -83,9 +83,9 @@ expect_count 6 ./typedef.o -e '
 expect_count 6 ./typedef.o -e '
 	"%(count%)" count 1 ?eq'
 expect_count 5 ./typedef.o -e '
-	"%( +child count %)--%( count %)" ?{"5--6" ?eq}'
+	"%( -child count %)--%( count %)" ?{"5--6" ?eq}'
 expect_count 5 ./typedef.o -e '
-	"%( +child count %)--%( count %)" count ?{5 ?eq}'
+	"%( -child count %)--%( count %)" count ?{5 ?eq}'
 
 # Test decoding signed and unsigned value.
 expect_count 1 ./enum.o -e '
@@ -111,10 +111,10 @@ expect_count 1 ./typedef.o -e '
 expect_count 1 ./typedef.o -e '
 	?{@external false !eq}'
 
-# Test that +@at expands to (+attribute ?@at value), not to
-# (+attribute ?@at +value).
+# Test that -@at expands to (-attribute ?@at value), not to
+# (-attribute ?@at -value).
 expect_count 1 ./typedef.o -e '
-	+@external drop type T_NODE ?eq'
+	-@external drop type T_NODE ?eq'
 
 # Test that (dup parent) doesn't change the bottom DIE as well.
 expect_count 1 ./nontrivial-types.o -e '

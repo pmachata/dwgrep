@@ -491,6 +491,10 @@
      rotated by 3/swap etc.  This relies on the above liberal
      definition of N/expr.
 
+**  EXPR → “-” EXPR₁ — evaluation in sub-expression context
+   EXPR₁ is evaluated on a separate stack, whose TOS is then copied to
+   the incoming stack and produced as a result.
+
 ** •EXPR → EXPR₁ “*” | EXPR₁ “+” | EXPR₁ “?” — iterate
 
    EXPR₁ shall have a stack effect of +n,-n (number of slots pushed
@@ -500,7 +504,7 @@
      : 0 (1 add ?[10 ?lt])*
 
 ** •EXPR → (“0x”|“0”|“”)[1-9][0-9]* — literals
-** ·EXPR → “+”? “r”? “"” (formatting string) “"”
+** ·EXPR → “r”? “"” (formatting string) “"”
    - %( and %) enclose an EXPR that's evaluated in plain context, and
      whose input is whatever is the input to the string literal
      itself.  TOS is then popped, converted to a string and embedded
@@ -511,12 +515,6 @@
    - %x stands for %( value hex %)
    - %o stands for %( value oct %)
    - %% stands for a single %
-
-   - if the literal is prefixed with +, then it's exactly equivalent
-     to the following:
-     : +[EXPR] each
-     i.e. the interpolation is done in a sub-expression context and
-     the result is pushed onto unmodified stack.
 
    - The resulting string is pushed to stack after all interpolations
      are processed one after another.
@@ -554,14 +552,12 @@
    - Example: asking for a qualified name:
      : ?[@name ?"a"] child ?[@name ?"b"] child ?[@name ?"c"]
 
-**  EXPR → “+”?(“universe” | “section” | “unit”)
+**  EXPR → (“universe” | “section” | “unit”)
 
    - "universe" stands for every DIE (and pseudo-DIE) in Dwarf graph.
-     Note that for consistency, it drops TOS even though it
-     technically doesn't need it for anything.  Use +universe if you
-     want to keep TOS.
+     Unlike section and unit, it doesn't drop.
 
-     (+universe) is implicit at the beginning of the full dwgrep
+     (universe) is implicit at the beginning of the full dwgrep
      expression.  (XXX so it is--but should it be?  Maybe it would be
      better to allow the user to select what he cares about.)
 
@@ -577,22 +573,33 @@
    - XXX consider similar forms .info, .line, for explicitly choosing
      the domain we wish to operate on.
 
-   - A general note about + forms: +EXPR is exactly equivalent to:
-     : +[EXPR] each
-
 ** •EXPR → “(” EXPR₁ “)” — grouping, precedence
 
-** •EXPR → “+”?“[” EXPR₁ “]” | “[” “]” — list generator
+**  EXPR → “[” EXPR₁ “]” | “[” “]” — list generator
+
+   - The stack ordering after EXPR₁ has been applied must be the same
+     as before EXPR₁, with possible exception of EXPR₁ doing one
+     additional push.  In particular:
+
+     : 1 2 [()]		# OK -- no action
+     : 1 2 [3]		# OK -- single push
+     : 1 2 [-child]	# OK -- single push
+     : 1 2 [child]	# OK -- a pop followed by a push
+     : 1 2 [drop 1]	# OK -- a pop followed by a push
+     : 1 2 [drop]	# not OK
+     : 1 2 [swap]	# not OK
+     : 1 2 [-drop]	# OK -- a single push (drop is in subexpression context)
 
    - [ EXPR₁ ] evalueates EXPR₁.  It then collects all results that it
      produces, pops TOS of each of these results, and stores these
      TOS's into a sequence.  It then produces one stack per unique
      stack collected with the sequence pushed on top.
 
-     Note in particular, that if EXPR₁ produces no results, no
-     computations are produced, and in particular empty list is NOT
-     pushed on top.  If you need to see the empty list, use +[...]
-     instead.
+     If EXPR₁ yields nothing, then [ EXPR₁ ] produces an incoming
+     stack with an empty list on top, pushed to the slot where EXPR₁
+     would push the list.  This is the reason behing the above
+     limitation--the list generator expression needs to know where to
+     put the empty list even if EXPR₁ doesn't yield anything.
 
      Some examples:
 
@@ -601,46 +608,38 @@
      : [child]		# replace each node with a list of its children
      : [child*]		# replace each node with a list of all descendants
 
-     The first example is note-worthy.  Since EXPR₁ pushes a new element
-     on TOS, the original stack is left unchanged.  The 1,2,3 syntax is
-     not special to list generator, but is ordinary alternation syntax,
-     described above.
-
-   - +[ EXPR₁ ] works similarly, but evaluates EXPR₁ in a
-     sub-expression context.  Just like [ EXPR₁ ], it collects TOS's
-     of all stacks that EXPR₁ produces and wraps them in a sequence.
-     It then produces a single stack that is the original input stack
-     with the list of collected TOS's pushed on top.
-
-     : +[child]		# push a new list containing immediate children
+     The first example is note-worthy.  Since integer literals push a
+     new element on TOS, the original stack is left unchanged.  The
+     1,2,3 syntax is not special to list generator, but is ordinary
+     alternation syntax, described above.
 
    - [] is a literal that produces an empty list.  It is exactly
      equivalent to (among others):
-     : +[ 0 !0 ]
+     : [ 0 !0 ]
 
    - over is exactly equivalent to:
-     : +[ drop ] each
+     : [ -drop ] each
    - dup is exactly equivalent to (among others):
-     : +[ () ] each
+     : [ -() ] each
 
 **  EXPR → “?[” EXPR₁ “]” | “![” EXPR₁ “]” — sub-expression assertions
 
-   These ask whether +[ EXPR₁ ] would be, respectively, a non-empty or
-   empty list.
+   These ask whether TOS of [ EXPR₁ ] would be, respectively, a
+   non-empty or empty list.
 
    - ?[ EXPR₁ ] is exactly equivalent to:
-     : +[ EXPR₁ ] !empty drop
+     : -[ -EXPR₁ ] !empty drop
    - ![ EXPR₁ ] is exactly equivalent to:
-     : +[ EXPR₁ ] ?empty drop
+     : -[ -EXPR₁ ] ?empty drop
 
    - Examples:
      : ![child]       # keep leaf DIE's only
 
 **  EXPR → (“?all[” | “!all[”) EXPR₁ “]” — quantifier assertion
 
-   - ?all{EXPR₁} is exactly equivalent to:
+   - ?all[EXPR₁] is exactly equivalent to:
      : ?[[each ?[EXPR₁]] 2/length ?eq]
-   - !all{EXPR₁} is exactly equivalent to:
+   - !all[EXPR₁] is exactly equivalent to:
      : ?[[each ?[EXPR₁]] 2/length !eq]
 
    - I.e. it expects a list on TOS.  This list is forked into
@@ -654,7 +653,7 @@
    - "if" inspects TOS.  If it's a list, it acts as !empty.  If it's a
      constant, it acts as ?true.  After this, it pops TOS.  It is
      exactly equivalent to:
-     : (+type ?T_SEQ drop ?empty, +type ?T_CONST drop ?false) drop
+     : (-type ?T_SEQ drop ?empty, -type ?T_CONST drop ?false) drop
 
    - "else" is like "if", but expect ?empty or ?false.
 
@@ -697,10 +696,10 @@
    should be unnecessary as well.  But they are present for
    completeness' sake.
 
-** •EXPR → “+”?“each” — pop a list, yield all its elements
+** •EXPR → “each” — pop a list, yield all its elements
 
    - "each" pops a list, and for each element yield a stack with that
-     element pushed on top.  "+each" does the same, but doesn't pop.
+     element pushed on top
 
    - To zip contents of two top lists near TOS, do:
      : 2/each ?[2/pos ?eq]
@@ -716,7 +715,7 @@
    - Similarly for deeper, three-level zip:
      : 3/each ?[3/pos 2/?eq]
 
-** ·EXPR → “+”?(“child” | “attribute” | “parent” | “next” | “prev”) — traversal
+** ·EXPR → “child” | “attribute” | “parent” | “next” | “prev” — traversal
 
    - "child" pops DIE on TOS and yields one stack for each child,
      with that child pushed to TOS.
@@ -724,7 +723,7 @@
    - "attribute" does the same with attributes instead of children
 
    - parent is exactly equivalent to:
-     : +universe ?[child ?eq] swap drop
+     : universe ?[child ?eq] swap drop
      Note that in case of imported units, "parent" may return more
      than one DIE!  (XXX This doesn't seem desirable?)
 
@@ -746,7 +745,7 @@
    - Examples:
      : parent* ?root        # finds a root node of node on TOS
 
-** ·EXPR → “+”?“@”ID — attribute value
+** ·EXPR → “@”ID — attribute value
 
    This function pops a DIE off TOS and pushes a value of its
    attribute DW_AT_ID.  If you want to access the attribute object
@@ -754,7 +753,7 @@
 
    : attribute ?@ID
 
-** •EXPR → “+”?(“offset”|“name”|“tag”|“form”|“value”) — Dwarf tree introspection
+** •EXPR → “offset”|“name”|“tag”|“form”|“value” — Dwarf tree introspection
 
    - "offset" pops DIE or Attribute on TOS and pushes a value
      representing offset of the object in Dwarf file.
@@ -793,7 +792,7 @@
    - If the value on TOS is an Attribute, these forms assert that the
      attribute has a given name.
 
-** •EXPR → “+”?“type” — TOS introspection
+** •EXPR → “type” — TOS introspection
 
    This produces an integer value suitable for comparison with the
    following constants:
@@ -805,7 +804,7 @@
    - T_CONST — for integer objects
    - T_FLOAT — for floats
 
-** •EXPR → “+”?(“pos” | “count”) — pos of element within producing expression
+** •EXPR → “pos” | “count” — pos of element within producing expression
 
    Each function numbers elements that it produces, and stores number
    of each element along with the element.  That number can be
@@ -833,13 +832,13 @@
      (and similarly for ?second, ?third, ...)
 
    - ?last is exactly equivalent to:
-     : ?[+count 1 sub swap pos ?eq]
+     : ?[-count 1 sub swap pos ?eq]
 
    - Examples:
      : each ?last	# get last element of a list on TOS
      : [each !first] swap each first   # split a list into head:rest
 
-**  EXPR → “+”?(“first” | “second” | “third” | “last” | “nth”) — sequence access
+**  EXPR → “1st” | “2nd” | “3rd” | “last” | “nth” — sequence access
 
    - nth expects a constant on TOS and a sequence or a string one
      below TOS.  Extracts nth element of that.  (X N nth) is exactly
@@ -851,7 +850,7 @@
      exactly equivalent to:
      : X each ?Y
 
-** ·EXPR → “+”?(“add” | “sub” | “mul” | “div” | “mod”) — arithmetic
+** ·EXPR → “add” | “sub” | “mul” | “div” | “mod” — arithmetic
 
    - Two elements are popped: A and B, with B the original TOS, and "A
      op B" is pushed again.
@@ -900,16 +899,16 @@
 **  EXPR → (“?”|“!”)“find” — search in a sequence
 
    - A B find looks for sub-sequence or sub-string B inside A
-     (e.g. "haystack" "needle" find or +[hay stack] +[needle] find).
+     (e.g. "haystack" "needle" find or -[hay stack] -[needle] find).
 
    - To determine, whether a sequence contains a particular element,
      you would use the following construct:
-     : +[that sequence] ?[each +that element ?eq]
+     : [that sequence] ?[each -that element ?eq]
      E.g.:
-     : +[child @name] ?[each ?"foo"]
-     : +[child] ?[each @name ?"foo"]
+     : [-child @name] ?[each ?"foo"]
+     : [-child] ?[each @name ?"foo"]
 
-** •EXPR → “+”?“length” — length of a sequence or a string
+** •EXPR → “length” — length of a sequence or a string
 
 **  EXPR → (“?”|“!”)“empty” — list/string emptiness assertion
 
@@ -1038,15 +1037,15 @@
 
    : ?subprogram !@declaration
    : ?[@decl_file ?["^/usr/" match] !["^/usr/src/debug" match]]
-   : +child ?formal_parameter
+   : -child ?formal_parameter
    : ?[@type ((?const_type, ?volatile_type, ?typedef) @type)*
    :   (?structure_type, ?class_type)] swap
-   : "%( +@decl_file %): %( +@decl_line %): note: in function \
+   : "%( -@decl_file %): %( -@decl_line %): note: in function \
    : `%( @name %)', parameter `%( @name %)' type is not trivial"
 
    - What the following XQuery really does:
 
-   : ?subprogram !@declaration +child ?formal_parameter
+   : ?subprogram !@declaration -child ?formal_parameter
    : ?[@type ((?const_type, ?volatile_type, ?typedef) @type)*
    :   (?structure_type, ?class_type)] 2/@name swap
    : "%s: type of parameter %s is not trivial."
@@ -1157,7 +1156,7 @@
 ** types inconsistent between instance and specification
    - http://gcc.gnu.org/bugzilla/show_bug.cgi?id=43053
 
-   : ?subprogram +@specification 2/(child ?formal_parameter)
+   : ?subprogram -@specification 2/(child ?formal_parameter)
    : ?[2/pos ?eq] ?[2/@type !eq]
 
    - something:
@@ -1173,7 +1172,7 @@
 ** duplicat DW_TAG_const_type
    - http://gcc.gnu.org/bugzilla/show_bug.cgi?id=56740
 
-   : +unit ?gt 2/(?const_type, ?volatile_type, ?restrict_type)
+   : -unit ?gt 2/(?const_type, ?volatile_type, ?restrict_type)
    : ?[2/tag ?eq] ?[2/@type ?eq]
 
    - XQuery:
@@ -1201,14 +1200,14 @@
 ** check_linkage_external_die.cc
 
    : ?symbol ?[@type (STT_OBJECT, STT_FUNC) ?eq] ?[@name !""]
-   : +universe ?@linkage_name +[@linkage_name swap @name ?eq]
+   : universe ?@linkage_name [-(@linkage_name swap @name ?eq)]
    :
    : ((if !@declaration !@const_value
    :   (!structure_type !enumeration_type !union_type, ?@name)
    :   "%s has linkage_name attribute that's not in symtab,\
    :   but is not marked as declaration"),
    :
-   :  (else +[swap @binding STB_LOCAL !eq]
+   :  (else [-(swap @binding STB_LOCAL !eq)]
    :   (if !@declaration ?@external
    :    "%s has linkage_name attribute,\
    :    but the corresponding symbol is local"),
@@ -1227,7 +1226,7 @@
 ** CU A imports two PU's B and C, and both import the same third PU
 
    : ?root dup dup 2/(CU ?imported_unit @import) ?lt
-   : +[2/(unit ?imported_unit @import) ?eq] each ?first
+   : [-(2/(unit ?imported_unit @import) ?eq)] each ?first
    : "PU %s is imported by PU's %s and %s, which are both imported by %s"
 
    - What the following XQuery really does:

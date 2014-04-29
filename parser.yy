@@ -20,10 +20,9 @@
     tree t;
     size_t level;
     bool in_string;
-    bool const protect;
     bool const raw;
 
-    fmtlit (bool a_protect, bool a_raw);
+    explicit fmtlit (bool a_raw);
 
     void flush_str ();
     std::string yank_str ();
@@ -112,11 +111,10 @@
     }
   }
 
-  fmtlit::fmtlit (bool a_protect, bool a_raw)
+  fmtlit::fmtlit (bool a_raw)
     : t {tree_type::FORMAT}
     , level {0}
     , in_string {false}
-    , protect {a_protect}
     , raw {a_raw}
   {}
 
@@ -147,19 +145,13 @@
 %token TOK_QMARK_LBRACE TOK_BANG_LBRACE TOK_RBRACE
 %token TOK_QMARK_ALL_LBRACE TOK_BANG_ALL_LBRACE
 
-%token TOK_ASTERISK TOK_PLUS TOK_QMARK TOK_CARET TOK_COMMA TOK_SLASH
+%token TOK_ASTERISK TOK_PLUS TOK_QMARK TOK_MINUS TOK_COMMA TOK_SLASH
 
 %token TOK_ADD TOK_SUB TOK_MUL TOK_DIV TOK_MOD
 %token TOK_PARENT TOK_CHILD TOK_ATTRIBUTE TOK_PREV
 %token TOK_NEXT TOK_TYPE TOK_OFFSET TOK_NAME TOK_TAG
 %token TOK_FORM TOK_VALUE TOK_POS TOK_COUNT TOK_EACH
 %token TOK_LENGTH TOK_HEX TOK_OCT
-
-%token TOK_PLUS_ADD TOK_PLUS_SUB TOK_PLUS_MUL TOK_PLUS_DIV TOK_PLUS_MOD
-%token TOK_PLUS_PARENT TOK_PLUS_CHILD TOK_PLUS_ATTRIBUTE TOK_PLUS_PREV
-%token TOK_PLUS_NEXT TOK_PLUS_TYPE TOK_PLUS_OFFSET TOK_PLUS_NAME TOK_PLUS_TAG
-%token TOK_PLUS_FORM TOK_PLUS_VALUE TOK_PLUS_POS TOK_PLUS_COUNT TOK_PLUS_EACH
-%token TOK_PLUS_LENGTH TOK_PLUS_HEX TOK_PLUS_OCT
 
 %token TOK_SWAP TOK_DUP TOK_OVER TOK_ROT TOK_DROP TOK_IF TOK_ELSE
 
@@ -171,13 +163,12 @@
 %token TOK_BANG_GE TOK_BANG_MATCH TOK_BANG_FIND TOK_BANG_EMPTY
 %token TOK_BANG_ROOT
 
-%token TOK_AT_WORD TOK_PLUS_AT_WORD TOK_QMARK_AT_WORD TOK_BANG_AT_WORD
+%token TOK_AT_WORD  TOK_QMARK_AT_WORD TOK_BANG_AT_WORD
 %token TOK_QMARK_WORD TOK_BANG_WORD
 
 %token TOK_CONSTANT TOK_LIT_STR TOK_LIT_INT
 
 %token TOK_UNIVERSE TOK_SECTION TOK_UNIT
-%token TOK_PLUS_UNIVERSE TOK_PLUS_SECTION TOK_PLUS_UNIT
 
 %token TOK_EOF
 
@@ -190,7 +181,7 @@
 %type <t> Program AltList StatementList Statement
 %type <s> TOK_LIT_INT
 %type <s> TOK_CONSTANT
-%type <s> TOK_AT_WORD TOK_PLUS_AT_WORD TOK_QMARK_AT_WORD TOK_BANG_AT_WORD
+%type <s> TOK_AT_WORD TOK_QMARK_AT_WORD TOK_BANG_AT_WORD
 %type <s> TOK_QMARK_WORD TOK_BANG_WORD
 %type <t> TOK_LIT_STR
 
@@ -281,6 +272,9 @@ Statement:
   | Statement TOK_QMARK
   { $$ = tree::create_unary <tree_type::MAYBE> ($1); }
 
+  | TOK_MINUS Statement
+  { $$ = tree::create_protect ($2); }
+
   | TOK_LIT_INT TOK_SLASH Statement
   {
     auto t = tree::create_const <tree_type::CONST> (parse_int ($1));
@@ -338,149 +332,82 @@ Statement:
 
   | TOK_ADD
   { $$ = tree::create_nullary <tree_type::F_ADD> (); }
-  | TOK_PLUS_ADD
-  { $$ = tree::create_protect (tree::create_nullary <tree_type::F_ADD> ()); }
 
   | TOK_SUB
   { $$ = tree::create_nullary <tree_type::F_SUB> (); }
-  | TOK_PLUS_SUB
-  { $$ = tree::create_protect (tree::create_nullary <tree_type::F_SUB> ()); }
 
   | TOK_MUL
   { $$ = tree::create_nullary <tree_type::F_MUL> (); }
-  | TOK_PLUS_MUL
-  { $$ = tree::create_protect (tree::create_nullary <tree_type::F_MUL> ()); }
 
   | TOK_DIV
   { $$ = tree::create_nullary <tree_type::F_DIV> (); }
-  | TOK_PLUS_DIV
-  { $$ = tree::create_protect (tree::create_nullary <tree_type::F_DIV> ()); }
 
   | TOK_MOD
   { $$ = tree::create_nullary <tree_type::F_MOD> (); }
-  | TOK_PLUS_MOD
-  { $$ = tree::create_protect (tree::create_nullary <tree_type::F_MOD> ()); }
 
   | TOK_PARENT
   { $$ = tree::create_nullary <tree_type::F_PARENT> (); }
-  | TOK_PLUS_PARENT
-  { $$ = tree::create_protect (tree::create_nullary <tree_type::F_PARENT> ()); }
 
   | TOK_CHILD
   { $$ = tree::create_nullary <tree_type::F_CHILD> (); }
-  | TOK_PLUS_CHILD
-  { $$ = tree::create_protect (tree::create_nullary <tree_type::F_CHILD> ()); }
 
   | TOK_ATTRIBUTE
   { $$ = tree::create_nullary <tree_type::F_ATTRIBUTE> (); }
-  | TOK_PLUS_ATTRIBUTE
-  {
-    auto t = tree::create_nullary <tree_type::F_ATTRIBUTE> ();
-    $$ = tree::create_protect (t);
-  }
 
   | TOK_PREV
   { $$ = tree::create_nullary <tree_type::F_PREV> (); }
-  | TOK_PLUS_PREV
-  { $$ = tree::create_protect (tree::create_nullary <tree_type::F_PREV> ()); }
 
   | TOK_NEXT
   { $$ = tree::create_nullary <tree_type::F_NEXT> (); }
-  | TOK_PLUS_NEXT
-  { $$ = tree::create_protect (tree::create_nullary <tree_type::F_NEXT> ()); }
 
   | TOK_TYPE
   { $$ = tree::create_nullary <tree_type::F_TYPE> (); }
-  | TOK_PLUS_TYPE
-  { $$ = tree::create_protect (tree::create_nullary <tree_type::F_TYPE> ()); }
 
   | TOK_NAME
   { $$ = tree::create_nullary <tree_type::F_NAME> (); }
-  | TOK_PLUS_NAME
-  { $$ = tree::create_protect (tree::create_nullary <tree_type::F_NAME> ()); }
 
   | TOK_TAG
   { $$ = tree::create_nullary <tree_type::F_TAG> (); }
-  | TOK_PLUS_TAG
-  { $$ = tree::create_protect (tree::create_nullary <tree_type::F_TAG> ()); }
 
   | TOK_FORM
   { $$ = tree::create_nullary <tree_type::F_FORM> (); }
-  | TOK_PLUS_FORM
-  { $$ = tree::create_protect (tree::create_nullary <tree_type::F_FORM> ()); }
 
   | TOK_VALUE
   { $$ = tree::create_nullary <tree_type::F_VALUE> (); }
-  | TOK_PLUS_VALUE
-  { $$ = tree::create_protect (tree::create_nullary <tree_type::F_VALUE> ()); }
 
   | TOK_OFFSET
   { $$ = tree::create_nullary <tree_type::F_OFFSET> (); }
-  | TOK_PLUS_OFFSET
-  { $$ = tree::create_protect (tree::create_nullary <tree_type::F_OFFSET> ()); }
 
 
   | TOK_HEX
   { $$ = tree::create_const <tree_type::F_CAST>
       ({0, &hex_constant_dom}); }
-  | TOK_PLUS_HEX
-  { $$ = tree::create_protect
-      (tree::create_const <tree_type::F_CAST> ({0, &hex_constant_dom})); }
   | TOK_OCT
   { $$ = tree::create_const <tree_type::F_CAST>
       ({0, &oct_constant_dom}); }
-  | TOK_PLUS_OCT
-  { $$ = tree::create_protect
-      (tree::create_const <tree_type::F_CAST> ({0, &oct_constant_dom})); }
 
 
   | TOK_POS
   { $$ = tree::create_nullary <tree_type::F_POS> (); }
-  | TOK_PLUS_POS
-  { $$ = tree::create_protect (tree::create_nullary <tree_type::F_POS> ()); }
 
   | TOK_COUNT
   { $$ = tree::create_nullary <tree_type::F_COUNT> (); }
-  | TOK_PLUS_COUNT
-  { $$ = tree::create_protect (tree::create_nullary <tree_type::F_COUNT> ()); }
 
   | TOK_EACH
   { $$ = tree::create_nullary <tree_type::F_EACH> (); }
-  | TOK_PLUS_EACH
-  { $$ = tree::create_protect (tree::create_nullary <tree_type::F_EACH> ()); }
 
   | TOK_LENGTH
   { $$ = tree::create_nullary <tree_type::F_LENGTH> (); }
-  | TOK_PLUS_LENGTH
-  { $$ = tree::create_protect (tree::create_nullary <tree_type::F_LENGTH> ()); }
 
 
   | TOK_UNIVERSE
-  {
-    auto t = tree::create_nullary <tree_type::SHF_DROP> ();
-    auto u = tree::create_nullary <tree_type::SEL_UNIVERSE> ();
-    $$ = tree::create_cat <tree_type::CAT> (t, u);
-  }
-  | TOK_PLUS_UNIVERSE
-  {
-    $$ = tree::create_nullary <tree_type::SEL_UNIVERSE> ();
-  }
+  { $$ = tree::create_nullary <tree_type::SEL_UNIVERSE> (); }
 
   | TOK_SECTION
   { $$ = tree::create_nullary <tree_type::SEL_SECTION> (); }
-  | TOK_PLUS_SECTION
-  {
-    auto t = tree::create_nullary <tree_type::SEL_SECTION> ();
-    $$ = tree::create_protect (t);
-  }
 
   | TOK_UNIT
   { $$ = tree::create_nullary <tree_type::SEL_UNIT> (); }
-  | TOK_PLUS_UNIT
-  {
-    auto t = tree::create_nullary <tree_type::SEL_UNIT> ();
-    $$ = tree::create_protect (t);
-  }
 
 
   | TOK_SWAP
@@ -562,14 +489,6 @@ Statement:
     auto u = tree::create_nullary <tree_type::F_VALUE> ();
     $$ = tree::create_cat <tree_type::CAT> (t, u);
   }
-  | TOK_PLUS_AT_WORD
-  {
-    std::string str {$1.buf, $1.len};
-    auto t = tree::create_protect (tree::create_const <tree_type::F_ATTR_NAMED>
-				   (constant::parse_attr (str)));
-    auto u = tree::create_nullary <tree_type::F_VALUE> ();
-    $$ = tree::create_cat <tree_type::CAT> (t, u);
-  }
   | TOK_QMARK_AT_WORD
   {
     std::string str {$1.buf, $1.len};
@@ -643,7 +562,7 @@ parse_string (char const *begin, char const *end)
 tree
 parse_query (std::string str)
 {
-  auto t = new tree { parse_string ("+universe") };
+  auto t = new tree { parse_string ("universe") };
   auto u = new tree { parse_string (str) };
   auto v = std::unique_ptr <tree>
     { tree::create_cat <tree_type::CAT> (t, u) };

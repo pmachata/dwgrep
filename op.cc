@@ -1076,35 +1076,119 @@ op_merge::name () const
 }
 
 
+namespace
+{
+  struct deref_less
+  {
+    template <class T>
+    bool
+    operator() (T const &a, T const &b)
+    {
+      return *a < *b;
+    }
+  };
+}
+
+struct op_capture::pimpl
+{
+  std::shared_ptr <op> m_upstream;
+  std::shared_ptr <op_origin> m_origin;
+  std::shared_ptr <op> m_op;
+  slot_idx m_src;
+  slot_idx m_dst;
+  std::vector <std::unique_ptr <valfile>> m_bases;
+
+  pimpl (std::shared_ptr <op> upstream,
+	 std::shared_ptr <op_origin> origin,
+	 std::shared_ptr <op> op,
+	 slot_idx src, slot_idx dst)
+    : m_upstream (upstream)
+    , m_origin (origin)
+    , m_op (op)
+    , m_src (src)
+    , m_dst (dst)
+  {}
+
+  void
+  reset_me ()
+  {
+    m_op->reset ();
+    m_bases.clear ();
+  }
+
+  valfile::uptr
+  next ()
+  {
+    while (m_bases.empty ())
+      if (auto vf = m_upstream->next ())
+	{
+	  m_op->reset ();
+	  m_origin->set_next (std::make_unique <valfile> (*vf));
+
+	  value_seq::seq_t vv;
+	  while (auto vf2 = m_op->next ())
+	    {
+	      std::unique_ptr <value> v2 = m_src != m_dst
+		? vf2->get_slot (m_src).clone ()
+		: vf2->release_slot (m_src);
+	      vv.push_back (std::move (v2));
+	      m_bases.push_back (std::move (vf2));
+	    }
+
+	  std::sort (m_bases.begin (), m_bases.end (), deref_less ());
+	  m_bases.erase (std::unique (m_bases.begin (), m_bases.end (),
+				      [] (std::unique_ptr <valfile> const &a,
+					  std::unique_ptr <valfile> const &b)
+				      { return *a == *b; }),
+			 m_bases.end ());
+
+	  auto vvp = std::make_shared <value_seq::seq_t> (std::move (vv));
+	  for (auto &b: m_bases)
+	    b->set_slot (m_dst, std::make_unique <value_seq> (vvp, 0));
+	}
+      else
+	return nullptr;
+
+    auto ret = std::move (m_bases.back ());
+    m_bases.pop_back ();
+    return std::move (ret);
+  }
+
+  void
+  reset ()
+  {
+    reset_me ();
+    m_upstream->reset ();
+  }
+};
+
+op_capture::op_capture (std::shared_ptr <op> upstream,
+			std::shared_ptr <op_origin> origin,
+			std::shared_ptr <op> op,
+			slot_idx src, slot_idx dst)
+  : m_pimpl {std::make_unique <pimpl> (upstream, origin, op, src, dst)}
+{}
+
+op_capture::~op_capture ()
+{}
+
 valfile::uptr
 op_capture::next ()
 {
-  if (auto vf = m_upstream->next ())
-    {
-      m_op->reset ();
-      m_origin->set_next (std::make_unique <valfile> (*vf));
-
-      value_seq::seq_t vv;
-      while (auto vf2 = m_op->next ())
-	vv.push_back (vf2->release_slot (m_src));
-      vf->set_slot (m_dst, std::make_unique <value_seq> (std::move (vv), 0));
-      return vf;
-    }
-  return nullptr;
+  return m_pimpl->next ();
 }
 
 void
 op_capture::reset ()
 {
-  m_op->reset ();
-  m_upstream->reset ();
+  m_pimpl->reset ();
 }
 
 std::string
 op_capture::name () const
 {
   std::stringstream ss;
-  ss << "capture<" << m_op->name () << ">";
+  ss << "capture<" << m_pimpl->m_op->name () << ">";
   return ss.str ();
 }
 
@@ -1267,14 +1351,7 @@ struct op_close::pimpl
   std::shared_ptr <op_origin> m_origin;
   std::shared_ptr <op> m_op;
 
-  struct vf_lt {
-    bool operator() (std::shared_ptr <valfile> const &a,
-		     std::shared_ptr <valfile> const &b) {
-      return *a < *b;
-    }
-  };
-
-  std::set <std::shared_ptr <valfile>, vf_lt> m_seen;
+  std::set <std::shared_ptr <valfile>, deref_less> m_seen;
   std::vector <std::shared_ptr <valfile> > m_vfs;
 
   pimpl (std::shared_ptr <op> upstream,
@@ -1368,6 +1445,96 @@ std::string
 op_close::name () const
 {
   return m_pimpl->name ();
+}
+
+
+struct op_subx::pimpl
+{
+  std::shared_ptr <op> m_upstream;
+  std::shared_ptr <op_origin> m_origin;
+  std::shared_ptr <op> m_op;
+  slot_idx m_src;
+  slot_idx m_dst;
+  valfile::uptr m_vf;
+
+  pimpl (std::shared_ptr <op> upstream,
+	 std::shared_ptr <op_origin> origin,
+	 std::shared_ptr <op> op,
+	 slot_idx src, slot_idx dst)
+    : m_upstream {upstream}
+    , m_origin {origin}
+    , m_op {op}
+    , m_src {src}
+    , m_dst {dst}
+  {}
+
+  void
+  reset_me ()
+  {
+    m_vf = nullptr;
+  }
+
+  valfile::uptr
+  next ()
+  {
+    while (true)
+      {
+	while (m_vf == nullptr)
+	  if ((m_vf = m_upstream->next ()) != nullptr)
+	    {
+	      m_op->reset ();
+	      m_origin->set_next (std::make_unique <valfile> (*m_vf));
+	    }
+	  else
+	    return nullptr;
+
+	if (auto vf = m_op->next ())
+	  {
+	    auto ret = std::make_unique <valfile> (*m_vf);
+	    ret->set_slot (m_dst, vf->release_slot (m_src));
+	    return ret;
+	  }
+
+	reset_me ();
+      }
+  }
+
+  void
+  reset ()
+  {
+    reset_me ();
+    m_upstream->reset ();
+  }
+};
+
+op_subx::op_subx (std::shared_ptr <op> upstream,
+		  std::shared_ptr <op_origin> origin,
+		  std::shared_ptr <op> op,
+		  slot_idx src, slot_idx dst)
+  : m_pimpl {std::make_unique <pimpl> (upstream, origin, op, src, dst)}
+{}
+
+op_subx::~op_subx ()
+{}
+
+valfile::uptr
+op_subx::next ()
+{
+  return m_pimpl->next ();
+}
+
+void
+op_subx::reset ()
+{
+  m_pimpl->reset ();
+}
+
+std::string
+op_subx::name () const
+{
+  std::stringstream ss;
+  ss << "subx<" << m_pimpl->m_op->name () << ">";
+  return ss.str ();
 }
 
 

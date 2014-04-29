@@ -216,36 +216,36 @@ do_tests ()
   test ("pos", "(F_POS)");
   test ("count", "(F_COUNT)");
   test ("each", "(F_EACH)");
-  test ("universe", "(CAT (SHF_DROP) (SEL_UNIVERSE))");
+  test ("universe", "(SEL_UNIVERSE)");
   test ("section", "(SEL_SECTION)");
   test ("unit", "(SEL_UNIT)");
 
-  test ("+add", "(PROTECT (F_ADD))");
-  test ("+sub", "(PROTECT (F_SUB))");
-  test ("+mul", "(PROTECT (F_MUL))");
-  test ("+div", "(PROTECT (F_DIV))");
-  test ("+mod", "(PROTECT (F_MOD))");
-  test ("+parent", "(PROTECT (F_PARENT))");
-  test ("+child", "(PROTECT (F_CHILD))");
-  test ("+attribute", "(PROTECT (F_ATTRIBUTE))");
-  test ("+prev", "(PROTECT (F_PREV))");
-  test ("+next", "(PROTECT (F_NEXT))");
-  test ("+type", "(PROTECT (F_TYPE))");
-  test ("+offset", "(PROTECT (F_OFFSET))");
-  test ("+name", "(PROTECT (F_NAME))");
-  test ("+tag", "(PROTECT (F_TAG))");
-  test ("+form", "(PROTECT (F_FORM))");
-  test ("+value", "(PROTECT (F_VALUE))");
-  test ("+pos", "(PROTECT (F_POS))");
-  test ("+count", "(PROTECT (F_COUNT))");
-  test ("+each", "(PROTECT (F_EACH))");
-  test ("+universe", "(SEL_UNIVERSE)");
-  test ("+section", "(PROTECT (SEL_SECTION))");
-  test ("+unit", "(PROTECT (SEL_UNIT))");
+  test ("-add", "(PROTECT (F_ADD))");
+  test ("-sub", "(PROTECT (F_SUB))");
+  test ("-mul", "(PROTECT (F_MUL))");
+  test ("-div", "(PROTECT (F_DIV))");
+  test ("-mod", "(PROTECT (F_MOD))");
+  test ("-parent", "(PROTECT (F_PARENT))");
+  test ("-child", "(PROTECT (F_CHILD))");
+  test ("-attribute", "(PROTECT (F_ATTRIBUTE))");
+  test ("-prev", "(PROTECT (F_PREV))");
+  test ("-next", "(PROTECT (F_NEXT))");
+  test ("-type", "(PROTECT (F_TYPE))");
+  test ("-offset", "(PROTECT (F_OFFSET))");
+  test ("-name", "(PROTECT (F_NAME))");
+  test ("-tag", "(PROTECT (F_TAG))");
+  test ("-form", "(PROTECT (F_FORM))");
+  test ("-value", "(PROTECT (F_VALUE))");
+  test ("-pos", "(PROTECT (F_POS))");
+  test ("-count", "(PROTECT (F_COUNT))");
+  test ("-each", "(PROTECT (F_EACH))");
+  test ("-universe", "(PROTECT (SEL_UNIVERSE))");
+  test ("-section", "(PROTECT (SEL_SECTION))");
+  test ("-unit", "(PROTECT (SEL_UNIT))");
 
 #define ONE_KNOWN_DW_AT(NAME, CODE)					\
   test ("@"#NAME, "(CAT (F_ATTR_NAMED<" #CODE ">) (F_VALUE))");		\
-  test ("+@"#NAME, "(CAT (PROTECT (F_ATTR_NAMED<" #CODE ">)) (F_VALUE))"); \
+  test ("-@"#NAME, "(PROTECT (CAT (F_ATTR_NAMED<" #CODE ">) (F_VALUE)))"); \
   test ("?@"#NAME, "(ASSERT (PRED_AT<" #CODE ">))");			\
   test ("!@"#NAME, "(ASSERT (PRED_NOT (PRED_AT<" #CODE ">)))");
 
@@ -274,9 +274,9 @@ do_tests ()
 	"(CAT (CLOSE_STAR (F_CHILD)) (F_NEXT))");
   test ("child+ next",
 	"(CAT (CLOSE_PLUS (F_CHILD)) (F_NEXT))");
-  test ("child +next",
+  test ("child -next",
 	"(CAT (F_CHILD) (PROTECT (F_NEXT)))");
-  test ("child+ +next",
+  test ("child+ -next",
 	"(CAT (CLOSE_PLUS (F_CHILD)) (PROTECT (F_NEXT)))");
 
   test ("dup swap child",
@@ -316,7 +316,7 @@ do_tests ()
 
   test ("dup, over",
 	"(ALT (SHF_DUP) (SHF_OVER))");
-  test ("dup, over, +child",
+  test ("dup, over, -child",
 	"(ALT (SHF_DUP) (SHF_OVER) (PROTECT (F_CHILD)))");
   test ("swap,",
 	"(ALT (SHF_SWAP) (NOP))");
@@ -352,7 +352,7 @@ do_tests ()
 	" (STR<(>)) (STR<b>))");
   test ("\"abc%sdef\"",
 	"(FORMAT (STR<abc>) (NOP) (STR<def>))");
-  test ("+\"foo\"",
+  test ("-\"foo\"",
 	"(PROTECT (FORMAT (STR<foo>)))");
 
   test ("\"r\\aw\"", "(FORMAT (STR<r\aw>))");
@@ -388,7 +388,7 @@ do_tests ()
 	 " (SHF_DROP [dst=0;]) (FORMAT [dst=0;] (STR<foo>)))");
   ftestx ("drop \"%s\"", "underrun");
 
-  ftest ("\"%( +offset %): %( @name %)\"",
+  ftest ("\"%( -offset %): %( @name %)\"",
 	 "(CAT (SEL_UNIVERSE [dst=0;])"
 	 " (FORMAT [dst=0;] (STR<>) (F_OFFSET [a=0;dst=1;]) (STR<: >)"
 	 " (CAT [dst=0;] (F_ATTR_NAMED<DW_AT_name> [a=0;dst=0;])"

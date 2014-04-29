@@ -329,8 +329,7 @@ namespace
   }
 
   stack_refs
-  resolve_operands (tree &t, stack_refs sr, bool elim_shf,
-		    bool protect = false)
+  resolve_operands (tree &t, stack_refs sr, bool elim_shf)
   {
     switch (t.m_tt)
       {
@@ -406,12 +405,36 @@ namespace
       case tree_type::CAPTURE:
 	{
 	  assert (t.m_children.size () == 1);
-	  auto sr2 = resolve_operands (t.m_children[0], sr, true);
-	  t.m_src_a = sr2.top ();
 
-	  sr.accomodate (sr2);
-	  sr.push ();
-	  t.m_dst = sr.top ();
+	  // Capture allows only either no change in stack effects, or
+	  // one additional push.  The reason is that we need to be
+	  // able to figure out where to place the empty list in case
+	  // no computations are produced at all.
+	  auto resolve_capture = [&t, &sr] (bool elim) -> bool
+	    {
+	      auto popped = [] (stack_refs sr3)
+	        {
+		  sr3.drop ();
+		  return sr3;
+		};
+
+	      auto nchildren = t.m_children;
+	      auto sr2 = resolve_operands (nchildren.front (), sr, elim);
+	      if (sr2.stk == sr.stk || popped (sr2).stk == sr.stk)
+		{
+		  sr = sr2;
+		  t.m_children = nchildren;
+		  t.m_src_a = t.m_dst = sr2.top ();
+		  return true;
+		}
+
+	      return false;
+	    };
+
+	  // Try to eliminate stack shuffling.  Retry without if it fails.
+	  if (! resolve_capture (true) && ! resolve_capture (false))
+	    throw std::runtime_error ("capture with too complex stack effects");
+
 	  break;
 	}
 
@@ -455,25 +478,21 @@ namespace
 	  t.m_src_a = src_a.first;
 	  t.m_src_b = src_b.first;
 
-	  if (! protect)
-	    {
-	      // We prefer the older slot for destination.  This is a
-	      // heuristic to attempt to keep stack at the exit from
-	      // closure in the same state as it was on entry.  See a
-	      // comment at CLOSE_STAR for more details.
-	      //
-	      // To achieve that, we possibly swap the two slots
-	      // before dropping them, so that the following push
-	      // picks up the one that we want.  Note that we
-	      // extracted src_a and src_b up there, so this swapping
-	      // won't influence the actual order of operands.
+	  // We prefer the older slot for destination.  This is a
+	  // heuristic to attempt to keep stack at the exit from
+	  // closure in the same state as it was on entry.  See a
+	  // comment at CLOSE_STAR for more details.
+	  //
+	  // To achieve that, we possibly swap the two slots
+	  // before dropping them, so that the following push
+	  // picks up the one that we want.  Note that we
+	  // extracted src_a and src_b up there, so this swapping
+	  // won't influence the actual order of operands.
 
-	      if (src_b.second < src_a.second)
-		sr.swap ();
+	  if (src_b.second < src_a.second)
+	    sr.swap ();
 
-	      sr.drop (2);
-	    }
-
+	  sr.drop (2);
 	  sr.push ();
 	  t.m_dst = sr.top ();
 	  break;
@@ -499,16 +518,24 @@ namespace
       case tree_type::SEL_SECTION:
       case tree_type::SEL_UNIT:
 	t.m_src_a = sr.top ();
-	if (! protect)
-	  sr.drop ();
+	sr.drop ();
 	sr.push ();
 	t.m_dst = sr.top ();
 	break;
 
       case tree_type::PROTECT:
-	assert (t.m_children.size () == 1);
-	sr = resolve_operands (t.m_children[0], sr, elim_shf, true);
-	break;
+	{
+	  assert (t.m_children.size () == 1);
+
+	  auto sr2 = resolve_operands (t.m_children[0], sr, elim_shf);
+	  t.m_src_a = sr2.top ();
+	  sr2.drop ();
+
+	  sr.accomodate (sr2);
+	  sr.push ();
+	  t.m_dst = sr.top ();
+	  break;
+	}
 
       case tree_type::NOP:
 	break;
@@ -586,7 +613,7 @@ namespace
 	  // stack effects (the number represents the assigned stack
 	  // slot):
 	  //
-	  //    +universe []   swap (@type [()] rot  add  swap)*
+	  //    -universe []   swap (@type [()] rot  add  swap)*
 	  //    0Die      0Die 1Seq  1Seq  1Seq 0Die 0Die 2Seq
 	  //              1Seq 0Die  0Die  0Die 2Seq 2Seq 0Die
 	  //                               2Seq 1Seq
@@ -789,9 +816,9 @@ namespace
 
     auto isolated_subexpression = [&unresolved] (tree &ch)
       {
-	// Sub-expressions of these nodes never resolves anything, but
-	// can introduce unresolved slots.  E.g. in (child ?{count}),
-	// the child resolves the count, but in (?{child} count), it
+	// Sub-expressions of these nodes never resolve anything, but
+	// can introduce unresolved slots.  E.g. in (child ?[count]),
+	// the child resolves the count, but in (?[child] count), it
 	// doesn't.
 	auto unresolved2 = resolve_count (ch, {});
 	unresolved.insert (unresolved2.begin (), unresolved2.end ());
@@ -820,6 +847,7 @@ namespace
 	return unresolved;
 
       case tree_type::FORMAT:
+      case tree_type::CAPTURE:
 	can_resolve ();
 	// Fall through.
       case tree_type::CAT:
@@ -829,7 +857,6 @@ namespace
 	    unresolved = resolve_count (*it, unresolved);
 	return unresolved;
 
-      case tree_type::PROTECT:
       case tree_type::PRED_NOT:
 	return resolve_count (t.m_children[0], unresolved);
 
@@ -853,12 +880,14 @@ namespace
 	isolated_subexpression (t.m_children[1]);
 	return unresolved;
 
-      case tree_type::CAPTURE:
-	can_resolve ();
-	// Fall through.
       case tree_type::ASSERT:
       case tree_type::PRED_SUBX_ALL:
       case tree_type::PRED_SUBX_ANY:
+	isolated_subexpression (t.m_children[0]);
+	return unresolved;
+
+      case tree_type::PROTECT:
+	can_resolve ();
 	isolated_subexpression (t.m_children[0]);
 	return unresolved;
 
@@ -1023,10 +1052,12 @@ tree::simplify ()
 	  break;
       }
 
-  // Promote PROTECT's child or CAT's only child.
-  if (m_tt == tree_type::PROTECT
-      || (m_tt == tree_type::CAT && m_children.size () == 1))
-    *this = m_children.front ();
+  // Promote CAT's only child.
+  if (m_tt == tree_type::CAT && m_children.size () == 1)
+    {
+      *this = m_children.front ();
+      simplify ();
+    }
 
   // Change (FORMAT (STR)) to (STR).
   if (m_tt == tree_type::FORMAT
@@ -1035,6 +1066,7 @@ tree::simplify ()
     {
       m_children.front ().m_dst = m_dst;
       *this = m_children.front ();
+      simplify ();
     }
 
   // Change (DUP[a=A;dst=B;] [...] X[a=B;dst=B;]) to (X[a=A;dst=B] [...]).
@@ -1060,6 +1092,16 @@ tree::simplify ()
 	    m_children.erase (m_children.begin () + j);
 	    break;
 	  }
+
+  // Change (PROTECT[a=A;dst=B;] (X[...;dst=A;])) to X[...;dst=B].
+  if (m_tt == tree_type::PROTECT
+      && m_children.front ().m_dst == m_src_a)
+    {
+      auto dst = m_dst;
+      *this = m_children.front ();
+      m_dst = dst;
+      simplify ();
+    }
 
   // Recurse.
   for (auto &t: m_children)
@@ -1094,6 +1136,7 @@ tree::simplify ()
 	  u.m_children.push_back (std::move (t));
 
 	  *this = std::move (u);
+	  simplify ();
 	}
     }
 
