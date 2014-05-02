@@ -1024,6 +1024,10 @@ tree::determine_stack_effects ()
 void
 tree::simplify ()
 {
+  // Recurse.
+  for (auto &t: m_children)
+    t.simplify ();
+
   // Promote CAT's in CAT nodes and ALT's in ALT nodes.  Parser does
   // this already, but other transformations may lead to re-emergence
   // of this pattern.
@@ -1103,10 +1107,6 @@ tree::simplify ()
       simplify ();
     }
 
-  // Recurse.
-  for (auto &t: m_children)
-    t.simplify ();
-
   // Convert ALT->(ASSERT->PRED, ASSERT->PRED) to
   // ASSERT->OR->(PRED, PRED), if all PRED's are on the same slot.
   if (m_tt == tree_type::ALT
@@ -1183,10 +1183,16 @@ tree::simplify ()
 	}
 
   if (m_tt == tree_type::CAT)
-    // Drop NOP's in CAT nodes.
-    m_children.erase (std::remove_if (m_children.begin (), m_children.end (),
-				      [] (tree &t) {
-					return t.m_tt == tree_type::NOP;
-				      }),
-		      m_children.end ());
+    {
+      // Drop NOP's in CAT nodes.
+      auto it = std::remove_if (m_children.begin (), m_children.end (),
+				[] (tree &t) {
+				  return t.m_tt == tree_type::NOP;
+				});
+      if (it != m_children.end ())
+	{
+	  m_children.erase (it, m_children.end ());
+	  simplify ();
+	}
+    }
 }
