@@ -209,11 +209,14 @@ public:
 	case 0:
 	  return *this;
 	case 1:
-	  assert (!m_stack.empty ());
-	  // No sibling found, go a level up and retry.
-	  if (dwarf_offdie (m_cuit.m_dw, m_stack.back (), &m_die) == nullptr)
-	    throw std::runtime_error ("dwarf_offdie");
-	  m_stack.pop_back ();
+	  // No sibling found.  Go a level up and retry, unless this
+	  // was a sole, childless CU DIE.
+	  if (! m_stack.empty ())
+	    {
+	      if (dwarf_offdie (m_cuit.m_dw, m_stack.back (), &m_die) == nullptr)
+		throw std::runtime_error ("dwarf_offdie");
+	      m_stack.pop_back ();
+	    }
 	}
     while (!m_stack.empty ());
 

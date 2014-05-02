@@ -140,3 +140,7 @@ expect_count 1 ./enum.o -e '
 	?{@name "e" ?eq} child @const_value oct "%s" "037777777777" ?eq'
 expect_count 1 ./enum.o -e '
 	?{@name "e" ?eq} child tag "%d" "40" ?eq'
+
+# Check iterating over empty compile unit.
+expect_count 1 ./empty -e '
+	offset'
