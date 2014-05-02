@@ -259,6 +259,14 @@ namespace
       case DW_AT_stmt_list:
 	return atval_unsigned_with_domain (attr, hex_constant_dom);
 
+      case DW_AT_location:
+	std::cerr << "location lists NIY\n";
+	return atval_unsigned_with_domain (attr, hex_constant_dom);
+
+      case DW_AT_ranges:
+	std::cerr << "address ranges NIY\n";
+	return atval_unsigned_with_domain (attr, hex_constant_dom);
+
       case DW_AT_discr_value:
 	// ^^^ """The number is signed if the tag type for the
 	// variant part containing this variant is a signed
