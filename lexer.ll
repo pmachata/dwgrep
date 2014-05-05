@@ -10,9 +10,7 @@
   static char parse_esc_num (char const *str, int len, int ignore, int base);
 %}
 
-%option 8bit bison-bridge
-%option warn nodefault
-%option yylineno
+%option 8bit bison-bridge warn yylineno
 %option outfile="lexer.cc" header-file="lexer.hh"
 %option noyywrap nounput batch noinput
 
