@@ -144,3 +144,7 @@ expect_count 1 ./enum.o -e '
 # Check iterating over empty compile unit.
 expect_count 1 ./empty -e '
 	offset'
+
+# Check that -[child offset] doesn't get optimized to something silly.
+expect_count 0 ./enum.o -e '
+	-[child offset] swap type T_CONST ?eq'

@@ -1099,7 +1099,8 @@ tree::simplify ()
 
   // Change (PROTECT[a=A;dst=B;] (X[...;dst=A;])) to X[...;dst=B].
   if (m_tt == tree_type::PROTECT
-      && m_children.front ().m_dst == m_src_a)
+      && m_children.front ().m_dst == m_src_a
+      && m_children.front ().m_tt != tree_type::CAPTURE)
     {
       auto dst = m_dst;
       *this = m_children.front ();
