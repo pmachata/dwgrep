@@ -315,7 +315,7 @@ namespace
     }
   };
 
-  std::ostream &
+  __attribute__ ((used)) std::ostream &
   operator<< (std::ostream &o, stack_refs const &sr)
   {
     o << "<";
