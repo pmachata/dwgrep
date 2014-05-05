@@ -164,6 +164,11 @@ main(int argc, char *argv[])
 
   if (! seen_query)
     {
+      if (argc == 0)
+	{
+	  std::cerr << "No query specified.\n";
+	  return 2;
+	}
       query = parse_query (*argv++);
       argc--;
     }
