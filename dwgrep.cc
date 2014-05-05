@@ -98,13 +98,14 @@ main(int argc, char *argv[])
     {"file", required_argument, nullptr, 'f'},
     {nullptr, no_argument, nullptr, 0},
   };
-  static char const *options = "ce:Hhqs";
+  static char const *options = "ce:Hhqsf:O:";
 
   bool quiet = false;
   bool no_messages = false;
   bool show_count = false;
   bool with_filename = false;
   bool no_filename = false;
+  bool optimize = true;
 
   std::vector <std::string> to_process;
 
@@ -154,6 +155,18 @@ main(int argc, char *argv[])
 	    break;
 	  }
 
+	case 'O':
+	  if (std::string {optarg} == "1")
+	    optimize = true;
+	  else if (std::string {optarg} == "0")
+	    optimize = false;
+	  else
+	    {
+	      std::cerr << "Unknown optimization level " << optarg << std::endl;
+	      return 2;
+	    }
+	  break;
+
 	default:
 	  std::exit (2);
 	}
@@ -174,7 +187,9 @@ main(int argc, char *argv[])
     }
 
   size_t stk_depth = query.determine_stack_effects ();
-  query.simplify ();
+  if (optimize)
+    query.simplify ();
+
   if (! quiet)
     {
       query.dump (std::cerr);
