@@ -148,3 +148,7 @@ expect_count 1 ./empty -e '
 # Check that -[child offset] doesn't get optimized to something silly.
 expect_count 0 ./enum.o -e '
 	-[child offset] swap type T_CONST ?eq'
+
+# Check N/-X
+expect_count 5 ./typedef.o -e '
+	-child 2/-@name 4/type 2/swap ?eq'

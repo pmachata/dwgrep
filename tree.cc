@@ -200,14 +200,53 @@ tree::dump (std::ostream &o) const
 
 namespace
 {
+  class slot_buf
+  {
+    friend class stack_refs;
+    std::vector <ssize_t> m_freelist;
+
+    ssize_t
+    release ()
+    {
+      assert (! m_freelist.empty ());
+      ssize_t ret = m_freelist.front ();
+      m_freelist.erase (m_freelist.begin ());
+      return ret;
+    }
+
+    explicit slot_buf (std::vector <ssize_t> &&list)
+      : m_freelist {std::move (list)}
+    {}
+
+    bool
+    empty () const
+    {
+      return m_freelist.empty ();
+    }
+
+  public:
+    slot_buf (slot_buf const &that) = default;
+    ~slot_buf () = default;
+
+    slot_buf
+    reverse () const
+    {
+      std::vector <ssize_t> ret = m_freelist;
+      std::reverse (ret.begin (), ret.end ());
+      return slot_buf {std::move (ret)};
+    }
+  };
+
   struct stack_refs
   {
     std::vector <ssize_t> m_freelist;
     size_t m_age;
+    size_t m_max;
 
   public:
     stack_refs ()
       : m_age {0}
+      , m_max {0}
     {}
 
     std::vector <ssize_t> stk;
@@ -217,7 +256,8 @@ namespace
     operator== (stack_refs other) const
     {
       return m_freelist == other.m_freelist
-	&& stk == other.stk;
+	&& stk == other.stk
+	&& m_max == other.m_max;
     }
 
     void
@@ -229,34 +269,61 @@ namespace
 	  m_freelist.pop_back ();
 	}
       else
-	stk.push_back (stk.size ());
+	stk.push_back (m_max++);
       age.push_back (m_age++);
+    }
+
+    void
+    take_one (slot_buf &buf)
+    {
+      m_freelist.push_back (buf.release ());
+    }
+
+    void
+    take (slot_buf &&buf)
+    {
+      while (! buf.empty ())
+	take_one (buf);
+    }
+
+    void
+    push_one (slot_buf &buf)
+    {
+      take_one (buf);
+      push ();
     }
 
     size_t
     max ()
     {
-      return m_freelist.size () + stk.size ();
+      return m_max;
     }
 
     void
     accomodate (stack_refs other)
     {
-      while (max () < other.max ())
-	m_freelist.push_back (max ());
+      m_max = std::max (other.m_max, m_max);
     }
 
     void
     drop (unsigned i = 1)
     {
+      take (drop_release (i));
+    }
+
+    slot_buf
+    drop_release (unsigned i = 1)
+    {
+      std::vector <ssize_t> ret;
       while (i-- > 0)
 	{
 	  if (stk.size () == 0)
 	    throw std::runtime_error ("stack underrun");
-	  m_freelist.push_back (stk.back ());
+	  ret.push_back (stk.back ());
 	  stk.pop_back ();
 	  age.pop_back ();
 	}
+      return slot_buf {std::move (ret)};
     }
 
     void
@@ -588,12 +655,12 @@ namespace
 	  // OK, now we translate N/E into N of E's, each operating in
 	  // a different depth.
 	  uint64_t depth = t.m_children.front ().cst ().value ();
-	  sr.drop (depth);
+	  auto slots = sr.drop_release (depth).reverse ();
 
 	  std::vector <tree> nchildren;
 	  for (uint64_t i = 0; i < depth; ++i)
 	    {
-	      sr.push ();
+	      sr.push_one (slots);
 	      nchildren.push_back (t.m_children.back ());
 	      sr = resolve_operands (nchildren.back (), sr, elim_shf);
 	    }
@@ -920,7 +987,7 @@ namespace
       case tree_type::SHF_DUP:
       case tree_type::SHF_OVER:
 	{
-	  // If these should resolve anything, they instead transfers
+	  // If these should resolve anything, they instead transfer
 	  // the unresolvedness to their source slot.  They therefore
 	  // don't resolve anything, as we need to generate the count
 	  // somewhere else than at these nodes.  (E.g. in (child dup
