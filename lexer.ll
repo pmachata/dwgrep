@@ -1,5 +1,6 @@
 %{ // -*-c++-*-
 #include <iostream>
+#include <sstream>
 #include "parser.hh"
 
   static yytokentype pass_string (yyscan_t yyscanner,
@@ -264,7 +265,9 @@ OCT [0-7]
 [ \t\n]+ // Skip.
 
 . {
-  std::cerr << "Invalid token `" << *yytext << "'\n";
+  std::stringstream ss;
+  ss << "invalid token `" << *yytext << "'";
+  throw std::runtime_error (ss.str ());
 }
 
 <<EOF>> return TOK_EOF;
