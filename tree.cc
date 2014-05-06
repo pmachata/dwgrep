@@ -21,55 +21,51 @@ tree::tree ()
 {}
 
 tree::tree (tree_type tt)
-  : m_tt (tt)
-  , m_src_a (-1)
-  , m_src_b (-1)
-  , m_dst (-1)
+  : m_tt {tt}
+  , m_src_a {-1}
+  , m_src_b {-1}
+  , m_dst {-1}
 {}
 
-tree::tree (tree const &other)
-  : m_tt (other.m_tt)
-  , m_children (other.m_children)
-  , m_src_a (other.m_src_a)
-  , m_src_b (other.m_src_b)
-  , m_dst (other.m_dst)
+namespace
 {
-  switch (argtype[(int) m_tt])
-    {
-    case tree_arity_v::CST:
-      m_u.cst = new constant {other.cst ()};
-      break;
-
-    case tree_arity_v::STR:
-      m_u.str = new std::string {other.str ()};
-      break;
-
-    case tree_arity_v::NULLARY:
-    case tree_arity_v::UNARY:
-    case tree_arity_v::BINARY:
-      break;
+  template <class T>
+  std::unique_ptr <T>
+  copy_unique (std::unique_ptr <T> const &ptr)
+  {
+    if (ptr == nullptr)
+      return nullptr;
+    else
+      return std::make_unique <T> (*ptr);
   }
 }
 
-tree::~tree ()
+tree::tree (tree const &other)
+  : m_str {copy_unique (other.m_str)}
+  , m_cst {copy_unique (other.m_cst)}
+  , m_tt {other.m_tt}
+  , m_children {other.m_children}
+  , m_src_a {other.m_src_a}
+  , m_src_b {other.m_src_b}
+  , m_dst {other.m_dst}
+{}
+
+tree::tree (tree_type tt, std::string const &str)
+  : m_str {std::make_unique <std::string> (str)}
+  , m_tt {tt}
+  , m_src_a {-1}
+  , m_src_b {-1}
+  , m_dst {-1}
 {
-  switch (argtype[(int) m_tt])
-    {
-    case tree_arity_v::NULLARY:
-    case tree_arity_v::UNARY:
-    case tree_arity_v::BINARY:
-      break;
+}
 
-    case tree_arity_v::CST:
-      delete m_u.cst;
-      m_u.cst = nullptr;
-      break;
-
-    case tree_arity_v::STR:
-      delete m_u.str;
-      m_u.str = nullptr;
-      break;
-    }
+tree::tree (tree_type tt, constant const &cst)
+  : m_cst {std::make_unique <constant> (cst)}
+  , m_tt {tt}
+  , m_src_a {-1}
+  , m_src_b {-1}
+  , m_dst {-1}
+{
 }
 
 tree &
@@ -82,9 +78,10 @@ tree::operator= (tree other)
 void
 tree::swap (tree &other)
 {
+  std::swap (m_str, other.m_str);
+  std::swap (m_cst, other.m_cst);
   std::swap (m_tt, other.m_tt);
   std::swap (m_children, other.m_children);
-  std::swap (m_u, other.m_u);
   std::swap (m_src_a, other.m_src_a);
   std::swap (m_src_b, other.m_src_b);
   std::swap (m_dst, other.m_dst);
@@ -111,36 +108,32 @@ tree::dst () const
   return slot_idx (m_dst);
 }
 
+tree &
+tree::child (size_t idx)
+{
+  assert (idx < m_children.size ());
+  return m_children[idx];
+}
+
+tree const &
+tree::child (size_t idx) const
+{
+  assert (idx < m_children.size ());
+  return m_children[idx];
+}
+
 std::string &
 tree::str () const
 {
-  switch (m_tt)
-    {
-#define TREE_TYPE(ENUM, ARITY)						\
-      case tree_type::ENUM:						\
-	assert (tree_arity_v::ARITY == tree_arity_v::STR); break;
-      TREE_TYPES
-#undef TREE_TYPE
-	}
-
-  assert (m_u.str != nullptr);
-  return *m_u.str;
+  assert (m_str != nullptr);
+  return *m_str;
 }
 
 constant &
 tree::cst () const
 {
-  switch (m_tt)
-    {
-#define TREE_TYPE(ENUM, ARITY)						\
-      case tree_type::ENUM:						\
-	assert (tree_arity_v::ARITY == tree_arity_v::CST); break;
-      TREE_TYPES
-#undef TREE_TYPE
-	}
-
-  assert (m_u.cst != nullptr);
-  return *m_u.cst;
+  assert (m_cst != nullptr);
+  return *m_cst;
 }
 
 void
@@ -404,10 +397,10 @@ namespace
 	  {
 	    assert (t.m_children.size () == 1);
 	    tree t2 {tree_type::CAT};
-	    t2.m_children.push_back (t.m_children[0]);
+	    t2.push_child (t.child (0));
 	    tree t3 = t;
 	    t3.m_tt = tree_type::CLOSE_STAR;
-	    t2.m_children.push_back (std::move (t3));
+	    t2.push_child (std::move (t3));
 	    t = t2;
 	  }
 	  // Fall through.  T became a CAT node.
@@ -421,8 +414,8 @@ namespace
 	{
 	  assert (t.m_children.size () == 1);
 	  tree t2 {tree_type::ALT};
-	  t2.m_children.push_back (t.m_children[0]);
-	  t2.m_children.push_back (tree {tree_type::NOP});
+	  t2.push_child (t.child (0));
+	  t2.push_child (tree {tree_type::NOP});
 	  t = t2;
 	}
 	// Fall through.  T became an ALT node.
@@ -457,7 +450,7 @@ namespace
 	    }
 	  else
 	    {
-	      sr2 = resolve_operands (t.m_children.front (), sr, false);
+	      sr2 = resolve_operands (t.child (0), sr, false);
 	      std::for_each (t.m_children.begin () + 1, t.m_children.end (),
 			     [&sr2, sr] (tree &t)
 			     {
@@ -594,7 +587,7 @@ namespace
 	{
 	  assert (t.m_children.size () == 1);
 
-	  auto sr2 = resolve_operands (t.m_children[0], sr, elim_shf);
+	  auto sr2 = resolve_operands (t.child (0), sr, elim_shf);
 	  t.m_src_a = sr2.top ();
 	  sr2.drop ();
 
@@ -609,7 +602,7 @@ namespace
 
       case tree_type::ASSERT:
 	assert (t.m_children.size () == 1);
-	sr.accomodate (resolve_operands (t.m_children[0], sr, elim_shf));
+	sr.accomodate (resolve_operands (t.child (0), sr, elim_shf));
 	break;
 
       case tree_type::SHF_SWAP:
@@ -645,16 +638,15 @@ namespace
       case tree_type::TRANSFORM:
 	{
 	  assert (t.m_children.size () == 2);
-	  assert (t.m_children.front ().m_tt == tree_type::CONST);
-	  assert (t.m_children.front ().cst ().dom ()
-		  == &unsigned_constant_dom);
+	  assert (t.child (0).m_tt == tree_type::CONST);
+	  assert (t.child (0).cst ().dom () == &unsigned_constant_dom);
 
 	  if (t.m_children.back ().m_tt == tree_type::TRANSFORM)
 	    throw std::runtime_error ("directly nested X/ disallowed");
 
 	  // OK, now we translate N/E into N of E's, each operating in
 	  // a different depth.
-	  uint64_t depth = t.m_children.front ().cst ().value ();
+	  uint64_t depth = t.child (0).cst ().value ();
 	  auto slots = sr.drop_release (depth).reverse ();
 
 	  std::vector <tree> nchildren;
@@ -702,7 +694,7 @@ namespace
 
 	  // First, optimistically try to eliminate stack shuffling
 	  // and see if it happens to work out.
-	  auto t2 = t.m_children[0];
+	  auto t2 = t.child (0);
 	  auto sr2 = resolve_operands (t2, sr, elim_shf);
 
 	  if (sr2.stk.size () != sr.stk.size ())
@@ -712,13 +704,13 @@ namespace
 	  if (sr2.stk == sr.stk)
 	    {
 	      // Cool, commit the changes.
-	      t.m_children[0] = std::move (t2);
+	      t.child (0) = std::move (t2);
 	      sr = std::move (sr2);
 	    }
 	  else
 	    {
 	      // Not cool, redo with stack shuffling.
-	      sr2 = resolve_operands (t.m_children[0], sr, false);
+	      sr2 = resolve_operands (t.child (0), sr, false);
 	      assert (sr2.stk == sr.stk);
 	      sr = std::move (sr2);
 	    }
@@ -755,22 +747,22 @@ namespace
 
       case tree_type::PRED_NOT:
 	assert (t.m_children.size () == 1);
-	sr.accomodate (resolve_operands (t.m_children[0], sr, elim_shf));
+	sr.accomodate (resolve_operands (t.child (0), sr, elim_shf));
 	break;
 
       case tree_type::PRED_SUBX_ALL:
       case tree_type::PRED_SUBX_ANY:
 	{
 	  assert (t.m_children.size () == 1);
-	  sr.accomodate (resolve_operands (t.m_children[0], sr, true));
+	  sr.accomodate (resolve_operands (t.child (0), sr, true));
 	  break;
 	}
 
       case tree_type::PRED_AND:
       case tree_type::PRED_OR:
 	assert (t.m_children.size () == 2);
-	sr.accomodate (resolve_operands (t.m_children[1],
-					 resolve_operands (t.m_children[0], sr,
+	sr.accomodate (resolve_operands (t.child (1),
+					 resolve_operands (t.child (0), sr,
 							   elim_shf),
 					 elim_shf));
 	break;
@@ -794,8 +786,8 @@ namespace
       case tree_type::PRED_OR:
 	{
 	  assert (t.m_children.size () == 2);
-	  ssize_t a = get_common_slot (t.m_children[0]);
-	  ssize_t b = get_common_slot (t.m_children[1]);
+	  ssize_t a = get_common_slot (t.child (0));
+	  ssize_t b = get_common_slot (t.child (1));
 	  if (a == -1 || b == -1)
 	    return -1;
 	  return a;
@@ -803,7 +795,7 @@ namespace
 
       case tree_type::PRED_NOT:
 	assert (t.m_children.size () == 1);
-	return get_common_slot (t.m_children[0]);
+	return get_common_slot (t.child (0));
 
       case tree_type::PRED_SUBX_ALL: case tree_type::PRED_SUBX_ANY:
       case tree_type::PRED_FIND: case tree_type::PRED_MATCH:
@@ -918,14 +910,13 @@ namespace
 	can_resolve ();
 	// Fall through.
       case tree_type::CAT:
-	for (auto it = t.m_children.rbegin ();
-	     it != t.m_children.rend (); ++it)
+	for (auto it = t.m_children.rbegin (); it != t.m_children.rend (); ++it)
 	  if (it->m_tt != tree_type::STR)
 	    unresolved = resolve_count (*it, unresolved);
 	return unresolved;
 
       case tree_type::PRED_NOT:
-	return resolve_count (t.m_children[0], unresolved);
+	return resolve_count (t.child (0), unresolved);
 
       case tree_type::ALT:
 	{
@@ -943,19 +934,19 @@ namespace
 
       case tree_type::PRED_AND:
       case tree_type::PRED_OR:
-	isolated_subexpression (t.m_children[0]);
-	isolated_subexpression (t.m_children[1]);
+	isolated_subexpression (t.child (0));
+	isolated_subexpression (t.child (1));
 	return unresolved;
 
       case tree_type::ASSERT:
       case tree_type::PRED_SUBX_ALL:
       case tree_type::PRED_SUBX_ANY:
-	isolated_subexpression (t.m_children[0]);
+	isolated_subexpression (t.child (0));
 	return unresolved;
 
       case tree_type::PROTECT:
 	can_resolve ();
-	isolated_subexpression (t.m_children[0]);
+	isolated_subexpression (t.child (0));
 	return unresolved;
 
       case tree_type::CLOSE_STAR:
@@ -966,10 +957,10 @@ namespace
 	  // twice (where it might resolve its own unresolveds from
 	  // the first iteration).
 
-	  auto unresolved2 = resolve_count (t.m_children[0], unresolved);
+	  auto unresolved2 = resolve_count (t.child (0), unresolved);
 	  unresolved.insert (unresolved2.begin (), unresolved2.end ());
 
-	  auto unresolved3 = resolve_count (t.m_children[0], unresolved2);
+	  auto unresolved3 = resolve_count (t.child (0), unresolved2);
 	  unresolved.insert (unresolved3.begin (), unresolved3.end ());
 
 	  return unresolved;
@@ -1103,7 +1094,7 @@ tree::simplify ()
       {
 	bool changed = false;
 	for (size_t i = 0; i < m_children.size (); )
-	  if (m_children[i].m_tt == m_tt)
+	  if (child (i).m_tt == m_tt)
 	    {
 	      std::vector <tree> nchildren = m_children;
 
@@ -1126,51 +1117,51 @@ tree::simplify ()
   // Promote CAT's only child.
   if (m_tt == tree_type::CAT && m_children.size () == 1)
     {
-      *this = m_children.front ();
+      *this = child (0);
       simplify ();
     }
 
   // Change (FORMAT (STR)) to (STR).
   if (m_tt == tree_type::FORMAT
       && m_children.size () == 1
-      && m_children.front ().m_tt == tree_type::STR)
+      && child (0).m_tt == tree_type::STR)
     {
-      m_children.front ().m_dst = m_dst;
-      *this = m_children.front ();
+      child (0).m_dst = m_dst;
+      *this = child (0);
       simplify ();
     }
 
   // Change (DUP[a=A;dst=B;] [...] X[a=B;dst=B;]) to (X[a=A;dst=B] [...]).
   for (size_t i = 0; i < m_children.size (); ++i)
-    if (m_children[i].m_tt == tree_type::SHF_DUP)
+    if (child (i).m_tt == tree_type::SHF_DUP)
       for (size_t j = i + 1; j < m_children.size (); ++j)
-	if (m_children[j].m_src_b == -1
-	    && m_children[j].m_src_a == m_children[i].m_dst
-	    && m_children[j].m_dst == m_children[i].m_dst)
+	if (child (j).m_src_b == -1
+	    && child (j).m_src_a == child (i).m_dst
+	    && child (j).m_dst == child (i).m_dst)
 	  {
 	    if (false)
 	      {
 		std::cerr << "dup: ";
-		m_children[i].dump (std::cerr);
+		child (i).dump (std::cerr);
 		std::cerr << std::endl;
 		std::cerr << "  x: ";
-		m_children[j].dump (std::cerr);
+		child (j).dump (std::cerr);
 		std::cerr << std::endl;
 	      }
 
-	    m_children[j].m_src_a = m_children[i].m_src_a;
-	    m_children[i] = std::move (m_children[j]);
+	    child (j).m_src_a = child (i).m_src_a;
+	    child (i) = std::move (child (j));
 	    m_children.erase (m_children.begin () + j);
 	    break;
 	  }
 
   // Change (PROTECT[a=A;dst=B;] (X[...;dst=A;])) to X[...;dst=B].
   if (m_tt == tree_type::PROTECT
-      && m_children.front ().m_dst == m_src_a
-      && m_children.front ().m_tt != tree_type::CAPTURE)
+      && child (0).m_dst == m_src_a
+      && child (0).m_tt != tree_type::CAPTURE)
     {
       auto dst = m_dst;
-      *this = m_children.front ();
+      *this = child (0);
       m_dst = dst;
       simplify ();
     }
@@ -1183,25 +1174,24 @@ tree::simplify ()
 			return t.m_tt == tree_type::ASSERT;
 		      }))
     {
-      tree t = std::move (m_children[0].m_children[0]);
+      tree t = std::move (child (0).child (0));
       ssize_t a = get_common_slot (t);
       if (a != -1
 	  && std::all_of (m_children.begin () + 1, m_children.end (),
 			  [a] (tree &ch) {
-			    return a == get_common_slot (ch.m_children[0]);
+			    return a == get_common_slot (ch.child (0));
 			  }))
 	{
 	  std::for_each (m_children.begin () + 1, m_children.end (),
 			 [&t] (tree &ch) {
-			   tree t2 { tree_type::PRED_OR };
-			   t2.m_children.push_back (std::move (t));
-			   t2.m_children.push_back
-			     (std::move (ch.m_children[0]));
+			   tree t2 {tree_type::PRED_OR};
+			   t2.push_child (std::move (t));
+			   t2.push_child (std::move (ch.child (0)));
 			   t = std::move (t2);
 			 });
 
-	  tree u { tree_type::ASSERT };
-	  u.m_children.push_back (std::move (t));
+	  tree u {tree_type::ASSERT};
+	  u.push_child (std::move (t));
 
 	  *this = std::move (u);
 	  simplify ();
@@ -1212,40 +1202,49 @@ tree::simplify ()
   // Move assertions as close to their producing node as possible.
   if (m_tt == tree_type::CAT)
     for (size_t i = 1; i < m_children.size (); ++i)
-      if (m_children[i].m_tt == tree_type::ASSERT)
+      if (child (i).m_tt == tree_type::ASSERT)
 	{
-	  ssize_t a = get_common_slot (m_children[i].m_children[0]);
+	  ssize_t a = get_common_slot (child (i).child (0));
 	  if (a == -1)
 	    continue;
 
 	  for (ssize_t j = i - 1; j >= 0; --j)
-	    if (m_children[j].m_tt == tree_type::ALT
-		|| m_children[j].m_tt == tree_type::CLOSE_STAR)
-	      // We might move it inside ALT, if each branch contain a
-	      // producer of slot A, but that's NIY.  We might move it
-	      // inside the closure as well, if it contains no
+	    if (child (j).m_tt == tree_type::ALT
+		|| child (j).m_tt == tree_type::CLOSE_STAR)
+	      // We might move it inside ALT, if each branch contains
+	      // a producer of slot A, but that's NIY.  We might move
+	      // it inside the closure as well, if it contains no
 	      // producer of slot A.  NIY either.
 	      break;
-	    else if (m_children[j].m_dst == a)
+	    else if (child (j).m_dst == a)
 	      {
-		j += 1;
 		assert (j >= 0);
-		if ((size_t) j == i)
-		  break;
 
 		if (false)
 		  {
 		    std::cerr << "assert: ";
-		    m_children[i].dump (std::cerr);
+		    child (i).dump (std::cerr);
 		    std::cerr << std::endl;
 		    std::cerr << "     p: ";
-		    m_children[j].dump (std::cerr);
+		    child (j).dump (std::cerr);
 		    std::cerr << std::endl;
 		  }
 
-		tree t = std::move (m_children[i]);
-		m_children.erase (m_children.begin () + i);
-		m_children.insert (m_children.begin () + j, std::move (t));
+		auto drop_assert = [this, i] () -> tree
+		  {
+		    tree t = std::move (child (i));
+		    m_children.erase (m_children.begin () + i);
+		    return t;
+		  };
+
+		if ((size_t) (j + 1) == i)
+		  break;
+		else
+		  {
+		    auto a = drop_assert ();
+		    j += 1;
+		    m_children.insert (m_children.begin () + j, std::move (a));
+		  }
 		break;
 	      }
 	}

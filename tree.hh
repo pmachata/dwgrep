@@ -157,10 +157,8 @@ TREE_TYPES
 // hold smart pointers.
 class tree
 {
-  union {
-    std::string *str;
-    constant *cst;
-  } m_u;
+  std::unique_ptr <std::string> m_str;
+  std::unique_ptr <constant> m_cst;
 
 public:
   tree_type m_tt;
@@ -174,7 +172,9 @@ public:
   tree ();
   explicit tree (tree_type tt);
   tree (tree const &other);
-  ~tree ();
+
+  tree (tree_type tt, std::string const &str);
+  tree (tree_type tt, constant const &cst);
 
   tree &operator= (tree other);
   void swap (tree &other);
@@ -182,6 +182,9 @@ public:
   slot_idx src_a () const;
   slot_idx src_b () const;
   slot_idx dst () const;
+
+  tree &child (size_t idx);
+  tree const &child (size_t idx) const;
 
   std::string &str () const;
   constant &cst () const;

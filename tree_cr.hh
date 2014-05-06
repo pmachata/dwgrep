@@ -42,7 +42,7 @@ tree::create_str (std::string s)
   static_assert (tree_arity <TT>::value == tree_arity_v::STR,
 		 "Wrong tree arity.");
   auto t = new tree {TT};
-  t->m_u.str = new std::string {s};
+  t->m_str = std::make_unique <std::string> (std::move (s));
   return t;
 }
 
@@ -53,7 +53,7 @@ tree::create_const (constant c)
   static_assert (tree_arity <TT>::value == tree_arity_v::CST,
 		 "Wrong tree arity.");
   auto t = new tree {TT};
-  t->m_u.cst = new constant {c};
+  t->m_cst = std::make_unique <constant> (std::move (c));
   return t;
 }
 
