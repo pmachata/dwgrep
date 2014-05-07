@@ -57,7 +57,7 @@ test (std::string parse, std::string expect,
     }
 
   std::ostringstream ss;
-  t.dump (ss);
+  ss << t;
   if (ss.str () != expect || expect_exc != "")
     {
       std::cerr << "bad parse: «" << parse << "»" << std::endl;
@@ -424,8 +424,7 @@ main (int argc, char *argv[])
   if (argc > 1)
     {
       tree t = parse_query (argv[1]);
-      t.dump (std::cerr);
-      std::cerr << std::endl;
+      std::cerr << t << std::endl;
     }
   else
     do_tests ();

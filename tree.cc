@@ -142,26 +142,26 @@ tree::push_child (tree const &t)
   m_children.push_back (t);
 }
 
-void
-tree::dump (std::ostream &o) const
+std::ostream &
+operator<< (std::ostream &o, tree const &t)
 {
   o << "(";
 
-  switch (m_tt)
+  switch (t.m_tt)
     {
 #define TREE_TYPE(ENUM, ARITY) case tree_type::ENUM: o << #ENUM; break;
       TREE_TYPES
 #undef TREE_TYPE
     }
 
-  switch (argtype[(int) m_tt])
+  switch (argtype[(int) t.m_tt])
     {
     case tree_arity_v::CST:
-      o << "<" << cst () << ">";
+      o << "<" << t.cst () << ">";
       break;
 
     case tree_arity_v::STR:
-      o << "<" << str () << ">";
+      o << "<" << t.str () << ">";
       break;
 
     case tree_arity_v::NULLARY:
@@ -170,25 +170,23 @@ tree::dump (std::ostream &o) const
       break;
     }
 
-  if (m_src_a != -1 || m_src_b != -1 || m_dst != -1)
+  if (t.m_src_a != -1 || t.m_src_b != -1 || t.m_dst != -1)
     {
       o << " [";
-      if (m_src_a != -1)
-	o << "a=" << m_src_a << ";";
-      if (m_src_b != -1)
-	o << "b=" << m_src_b << ";";
-      if (m_dst != -1)
-	o << "dst=" << m_dst << ";";
+      if (t.m_src_a != -1)
+	o << "a=" << t.m_src_a << ";";
+      if (t.m_src_b != -1)
+	o << "b=" << t.m_src_b << ";";
+      if (t.m_dst != -1)
+	o << "dst=" << t.m_dst << ";";
       o << "]";
     }
 
-  for (auto const &child: m_children)
-    {
-      o << " ";
-      child.dump (o);
-    }
 
-  o << ")";
+  for (auto const &child: t.m_children)
+    o << " " << child;
+
+  return o << ")";
 }
 
 namespace
@@ -841,11 +839,7 @@ namespace
 	if (unresolved.find (dst) != unresolved.end ())
 	  {
 	    if (true)
-	      {
-		std::cerr << "found producer: ";
-		t.dump (std::cerr);
-		std::cerr << std::endl;
-	      }
+	      std::cerr << "found producer: " << t << std::endl;
 
 	    // Convert the producer X to (CAT (CAPTURE X) (EACH)).
 	    tree t2 {tree_type::CAT};
@@ -862,11 +856,7 @@ namespace
 	    t2.push_child (t4);
 
 	    if (true)
-	      {
-		std::cerr << "converted: ";
-		t2.dump (std::cerr);
-		std::cerr << std::endl;
-	      }
+	      std::cerr << "converted: " << t2 << std::endl;
 
 	    t = t2;
 	  }
@@ -891,9 +881,7 @@ namespace
 	  if (false)
 	    {
 	      std::cerr << "unresolved slot: " << src << std::endl;
-	      std::cerr << "consumer: ";
-	      t.dump (std::cerr);
-	      std::cerr << std::endl;
+	      std::cerr << "consumer: " << t << std::endl;
 	    }
 
 	  can_resolve ();
@@ -1074,8 +1062,7 @@ tree::determine_stack_effects ()
   auto unresolved = resolve_count (*this, {});
   assert (unresolved.empty ());
 
-  dump (std::cerr);
-  std::cerr << std::endl;
+  std::cerr << *this << std::endl;
   return ret;
 }
 
@@ -1141,12 +1128,8 @@ tree::simplify ()
 	  {
 	    if (false)
 	      {
-		std::cerr << "dup: ";
-		child (i).dump (std::cerr);
-		std::cerr << std::endl;
-		std::cerr << "  x: ";
-		child (j).dump (std::cerr);
-		std::cerr << std::endl;
+		std::cerr << "dup: " << child (i) << std::endl;
+		std::cerr << "  x: " << child (j) << std::endl;
 	      }
 
 	    child (j).m_src_a = child (i).m_src_a;
@@ -1222,12 +1205,8 @@ tree::simplify ()
 
 		if (false)
 		  {
-		    std::cerr << "assert: ";
-		    child (i).dump (std::cerr);
-		    std::cerr << std::endl;
-		    std::cerr << "     p: ";
-		    child (j).dump (std::cerr);
-		    std::cerr << std::endl;
+		    std::cerr << "assert: " << child (i) << std::endl;
+		    std::cerr << "     p: " << child (j) << std::endl;
 		  }
 
 		auto drop_assert = [this, i] () -> tree

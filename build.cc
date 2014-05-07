@@ -70,9 +70,7 @@ tree::build_pred (dwgrep_graph::sptr q, size_t maxsize) const
     case tree_type::PRED_FIND:
     case tree_type::PRED_LAST:
     case tree_type::PRED_SUBX_ALL:
-      std::cerr << "\n\nUNHANDLED:";
-      dump (std::cerr);
-      std::cerr << std::endl;
+      std::cerr << "\n\nUNHANDLED:" << *this << std::endl;
       abort ();
 
     case tree_type::CAT:
@@ -296,9 +294,7 @@ tree::build_exec (std::shared_ptr <op> upstream, dwgrep_graph::sptr q,
     case tree_type::F_NEXT:
     case tree_type::SEL_SECTION:
     case tree_type::SHF_ROT:
-      std::cerr << "\n\nUNHANDLED:";
-      dump (std::cerr);
-      std::cerr << std::endl;
+      std::cerr << "\n\nUNHANDLED:" << *this << std::endl;
       abort ();
 
     case tree_type::CLOSE_PLUS:  // X+ should be translated to X X*

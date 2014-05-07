@@ -191,10 +191,7 @@ main(int argc, char *argv[])
     query.simplify ();
 
   if (! quiet)
-    {
-      query.dump (std::cerr);
-      std::cerr << std::endl;
-    }
+    std::cerr << query << std::endl;
 
   if (argc == 0)
     {

@@ -191,7 +191,6 @@ public:
   constant &cst () const;
 
   void push_child (tree const &t);
-  void dump (std::ostream &o) const;
 
   // === Build interface ===
   //
@@ -257,6 +256,10 @@ public:
   // Takes a tree T, which is a CAT or an ALT, and appends all
   // children therein.  It then deletes T.
   void take_cat (tree *t);
+
+  friend std::ostream &operator<< (std::ostream &o, tree const &t);
 };
+
+std::ostream &operator<< (std::ostream &o, tree const &t);
 
 #endif /* _TREE_H_ */
