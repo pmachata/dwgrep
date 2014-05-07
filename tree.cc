@@ -4,8 +4,65 @@
 #include <climits>
 #include <algorithm>
 #include <set>
+#include <boost/optional.hpp>
 
 #include "tree.hh"
+
+std::ostream &
+operator<< (std::ostream &o, slot_coords const &c)
+{
+  if (c.has_src_a () || c.has_src_b () || c.has_dst ())
+    {
+      o << " [";
+      if (c.has_src_a ())
+	o << "a=" << c.src_a () << ";";
+      if (c.has_src_b ())
+	o << "b=" << c.src_b () << ";";
+      if (c.has_dst ())
+	o << "dst=" << c.dst () << ";";
+      o << "]";
+    }
+  return o;
+}
+
+slot_idx
+slot_coords::src_a () const
+{
+  assert (has_src_a ());
+  return *m_src_a;
+}
+
+void
+slot_coords::set_src_a (slot_idx idx)
+{
+  m_src_a = idx;
+}
+
+slot_idx
+slot_coords::src_b () const
+{
+  assert (has_src_b ());
+  return *m_src_b;
+}
+
+void
+slot_coords::set_src_b (slot_idx idx)
+{
+  m_src_b = idx;
+}
+
+slot_idx
+slot_coords::dst () const
+{
+  assert (has_dst ());
+  return *m_dst;
+}
+
+void
+slot_coords::set_dst (slot_idx idx)
+{
+  m_dst = idx;
+}
 
 namespace
 {
@@ -22,9 +79,6 @@ tree::tree ()
 
 tree::tree (tree_type tt)
   : m_tt {tt}
-  , m_src_a {-1}
-  , m_src_b {-1}
-  , m_dst {-1}
 {}
 
 namespace
@@ -43,30 +97,20 @@ namespace
 tree::tree (tree const &other)
   : m_str {copy_unique (other.m_str)}
   , m_cst {copy_unique (other.m_cst)}
+  , m_coords {other.m_coords}
   , m_tt {other.m_tt}
   , m_children {other.m_children}
-  , m_src_a {other.m_src_a}
-  , m_src_b {other.m_src_b}
-  , m_dst {other.m_dst}
 {}
 
 tree::tree (tree_type tt, std::string const &str)
   : m_str {std::make_unique <std::string> (str)}
   , m_tt {tt}
-  , m_src_a {-1}
-  , m_src_b {-1}
-  , m_dst {-1}
-{
-}
+{}
 
 tree::tree (tree_type tt, constant const &cst)
   : m_cst {std::make_unique <constant> (cst)}
   , m_tt {tt}
-  , m_src_a {-1}
-  , m_src_b {-1}
-  , m_dst {-1}
-{
-}
+{}
 
 tree &
 tree::operator= (tree other)
@@ -82,30 +126,25 @@ tree::swap (tree &other)
   std::swap (m_cst, other.m_cst);
   std::swap (m_tt, other.m_tt);
   std::swap (m_children, other.m_children);
-  std::swap (m_src_a, other.m_src_a);
-  std::swap (m_src_b, other.m_src_b);
-  std::swap (m_dst, other.m_dst);
+  std::swap (m_coords, other.m_coords);
 }
 
 slot_idx
 tree::src_a () const
 {
-  assert (m_src_a >= 0);
-  return slot_idx (m_src_a);
+  return m_coords.src_a ();
 }
 
 slot_idx
 tree::src_b () const
 {
-  assert (m_src_b >= 0);
-  return slot_idx (m_src_b);
+  return m_coords.src_b ();
 }
 
 slot_idx
 tree::dst () const
 {
-  assert (m_dst >= 0);
-  return slot_idx (m_dst);
+  return m_coords.dst ();
 }
 
 tree &
@@ -170,18 +209,7 @@ operator<< (std::ostream &o, tree const &t)
       break;
     }
 
-  if (t.m_src_a != -1 || t.m_src_b != -1 || t.m_dst != -1)
-    {
-      o << " [";
-      if (t.m_src_a != -1)
-	o << "a=" << t.m_src_a << ";";
-      if (t.m_src_b != -1)
-	o << "b=" << t.m_src_b << ";";
-      if (t.m_dst != -1)
-	o << "dst=" << t.m_dst << ";";
-      o << "]";
-    }
-
+  o << t.m_coords;
 
   for (auto const &child: t.m_children)
     o << " " << child;
@@ -194,18 +222,18 @@ namespace
   class slot_buf
   {
     friend class stack_refs;
-    std::vector <ssize_t> m_freelist;
+    std::vector <slot_idx> m_freelist;
 
-    ssize_t
+    slot_idx
     release ()
     {
       assert (! m_freelist.empty ());
-      ssize_t ret = m_freelist.front ();
+      slot_idx ret = m_freelist.front ();
       m_freelist.erase (m_freelist.begin ());
       return ret;
     }
 
-    explicit slot_buf (std::vector <ssize_t> &&list)
+    explicit slot_buf (std::vector <slot_idx> &&list)
       : m_freelist {std::move (list)}
     {}
 
@@ -222,7 +250,7 @@ namespace
     slot_buf
     reverse () const
     {
-      std::vector <ssize_t> ret = m_freelist;
+      std::vector <slot_idx> ret = m_freelist;
       std::reverse (ret.begin (), ret.end ());
       return slot_buf {std::move (ret)};
     }
@@ -230,9 +258,9 @@ namespace
 
   struct stack_refs
   {
-    std::vector <ssize_t> m_freelist;
+    std::vector <slot_idx> m_freelist;
     size_t m_age;
-    size_t m_max;
+    unsigned m_max;
 
   public:
     stack_refs ()
@@ -240,7 +268,7 @@ namespace
       , m_max {0}
     {}
 
-    std::vector <ssize_t> stk;
+    std::vector <slot_idx> stk;
     std::vector <size_t> age;
 
     bool
@@ -260,7 +288,7 @@ namespace
 	  m_freelist.pop_back ();
 	}
       else
-	stk.push_back (m_max++);
+	stk.push_back (slot_idx (m_max++));
       age.push_back (m_age++);
     }
 
@@ -305,7 +333,7 @@ namespace
     slot_buf
     drop_release (unsigned i = 1)
     {
-      std::vector <ssize_t> ret;
+      std::vector <slot_idx> ret;
       while (i-- > 0)
 	{
 	  if (stk.size () == 0)
@@ -333,7 +361,7 @@ namespace
       if (stk.size () < 3)
 	throw std::runtime_error ("stack underrun");
 
-      ssize_t e = stk[stk.size () - 3];
+      slot_idx e = stk[stk.size () - 3];
       stk.erase (stk.begin () + stk.size () - 3);
       stk.push_back (e);
 
@@ -342,7 +370,7 @@ namespace
       age.push_back (a);
     }
 
-    ssize_t
+    slot_idx
     top ()
     {
       if (stk.size () < 1)
@@ -351,13 +379,13 @@ namespace
       return stk.back ();
     }
 
-    std::pair <ssize_t, size_t>
+    std::pair <slot_idx, size_t>
     top_w_age ()
     {
       return std::make_pair (top (), age.back ());
     }
 
-    ssize_t
+    slot_idx
     below ()
     {
       if (stk.size () < 2)
@@ -366,7 +394,7 @@ namespace
       return stk[stk.size () - 2];
     }
 
-    std::pair <ssize_t, size_t>
+    std::pair <slot_idx, size_t>
     below_w_age ()
     {
       return std::make_pair (below (), age[age.size () - 2]);
@@ -380,7 +408,7 @@ namespace
     bool seen = false;
     for (auto idx: sr.stk)
       {
-	o << (seen ? ";x" : "x") << (int) idx;
+	o << (seen ? ";x" : "x") << idx;
 	seen = true;
       }
     return o << ">";
@@ -482,7 +510,8 @@ namespace
 		{
 		  sr = sr2;
 		  t.m_children = nchildren;
-		  t.m_src_a = t.m_dst = sr2.top ();
+		  t.set_src_a (sr2.top ());
+		  t.set_dst (sr2.top ());
 		  return true;
 		}
 
@@ -501,7 +530,7 @@ namespace
       case tree_type::EMPTY_LIST:
       case tree_type::STR:
 	sr.push ();
-	t.m_dst = sr.top ();
+	t.set_dst (sr.top ());
 	break;
 
       case tree_type::FORMAT:
@@ -514,15 +543,15 @@ namespace
 	      // ASSERT), but we need somewhere to look for the result
 	      // value.  So if a node otherwise doesn't touch the
 	      // stack, mark TOS at its m_dst.
-	      if (t1.m_dst != -1)
-		assert (t1.m_dst == sr.top ());
+	      if (t1.has_dst ())
+		assert (t1.dst () == sr.top ());
 	      else
-		t1.m_dst = sr.top ();
+		t1.set_dst (sr.top ());
 
 	      sr.drop ();
 	    }
 	sr.push ();
-	t.m_dst = sr.top ();
+	t.set_dst (sr.top ());
 	break;
 
       case tree_type::F_ADD:
@@ -533,8 +562,8 @@ namespace
 	{
 	  auto src_a = sr.below_w_age ();
 	  auto src_b = sr.top_w_age ();
-	  t.m_src_a = src_a.first;
-	  t.m_src_b = src_b.first;
+	  t.set_src_a (src_a.first);
+	  t.set_src_b (src_b.first);
 
 	  // We prefer the older slot for destination.  This is a
 	  // heuristic to attempt to keep stack at the exit from
@@ -552,7 +581,7 @@ namespace
 
 	  sr.drop (2);
 	  sr.push ();
-	  t.m_dst = sr.top ();
+	  t.set_dst (sr.top ());
 	  break;
 	}
 
@@ -575,10 +604,10 @@ namespace
       case tree_type::F_LENGTH:
       case tree_type::SEL_SECTION:
       case tree_type::SEL_UNIT:
-	t.m_src_a = sr.top ();
+	t.set_src_a (sr.top ());
 	sr.drop ();
 	sr.push ();
-	t.m_dst = sr.top ();
+	t.set_dst (sr.top ());
 	break;
 
       case tree_type::PROTECT:
@@ -586,12 +615,12 @@ namespace
 	  assert (t.m_children.size () == 1);
 
 	  auto sr2 = resolve_operands (t.child (0), sr, elim_shf);
-	  t.m_src_a = sr2.top ();
+	  t.set_src_a (sr2.top ());
 	  sr2.drop ();
 
 	  sr.accomodate (sr2);
 	  sr.push ();
-	  t.m_dst = sr.top ();
+	  t.set_dst (sr.top ());
 	  break;
 	}
 
@@ -611,21 +640,21 @@ namespace
 	  }
 	else
 	  {
-	    t.m_src_a = sr.below ();
-	    t.m_dst = sr.top ();
+	    t.set_src_a (sr.below ());
+	    t.set_dst (sr.top ());
 	  }
 	break;
 
       case tree_type::SHF_DUP:
-	t.m_src_a = sr.top ();
+	t.set_src_a (sr.top ());
 	sr.push ();
-	t.m_dst = sr.top ();
+	t.set_dst (sr.top ());
 	break;
 
       case tree_type::SHF_OVER:
-	t.m_src_a = sr.below ();
+	t.set_src_a (sr.below ());
 	sr.push ();
-	t.m_dst = sr.top ();
+	t.set_dst (sr.top ());
 	break;
 
       case tree_type::SHF_ROT:
@@ -717,7 +746,7 @@ namespace
 	}
 
       case tree_type::SHF_DROP:
-	t.m_dst = sr.top ();
+	t.set_dst (sr.top ());
 	sr.drop ();
 	break;
 
@@ -727,7 +756,7 @@ namespace
       case tree_type::PRED_ROOT:
       case tree_type::PRED_LAST:
 	assert (t.m_children.size () == 0);
-	t.m_src_a = sr.top ();
+	t.set_src_a (sr.top ());
 	break;
 
       case tree_type::PRED_EQ:
@@ -739,8 +768,8 @@ namespace
       case tree_type::PRED_FIND:
       case tree_type::PRED_MATCH:
 	assert (t.m_children.size () == 0);
-	t.m_src_a = sr.below ();
-	t.m_src_b = sr.top ();
+	t.set_src_a (sr.below ());
+	t.set_src_b (sr.top ());
 	break;
 
       case tree_type::PRED_NOT:
@@ -769,7 +798,7 @@ namespace
     return sr;
   }
 
-  ssize_t
+  boost::optional <slot_idx>
   get_common_slot (tree const &t)
   {
     switch (t.m_tt)
@@ -778,16 +807,16 @@ namespace
       case tree_type::PRED_TAG:
       case tree_type::PRED_EMPTY:
       case tree_type::PRED_ROOT:
-	return t.m_src_a;
+	return boost::make_optional (t.src_a ());
 
       case tree_type::PRED_AND:
       case tree_type::PRED_OR:
 	{
 	  assert (t.m_children.size () == 2);
-	  ssize_t a = get_common_slot (t.child (0));
-	  ssize_t b = get_common_slot (t.child (1));
-	  if (a == -1 || b == -1)
-	    return -1;
+	  auto a = get_common_slot (t.child (0));
+	  auto b = get_common_slot (t.child (1));
+	  if (! a || ! b)
+	    return {};
 	  return a;
 	}
 
@@ -800,7 +829,7 @@ namespace
       case tree_type::PRED_EQ: case tree_type::PRED_NE: case tree_type::PRED_GT:
       case tree_type::PRED_GE: case tree_type::PRED_LT: case tree_type::PRED_LE:
       case tree_type::PRED_LAST:
-	return -1;
+	return {};
 
       case tree_type::CAT: case tree_type::ALT: case tree_type::CAPTURE:
       case tree_type::EMPTY_LIST: case tree_type::TRANSFORM:
@@ -829,13 +858,13 @@ namespace
     abort ();
   }
 
-  std::set <ssize_t>
-  resolve_count (tree &t, std::set <ssize_t> unresolved)
+  std::set <slot_idx>
+  resolve_count (tree &t, std::set <slot_idx> unresolved)
   {
     // Called for nodes that can resolve one of the unresolved slots.
     auto can_resolve = [&unresolved, &t] ()
       {
-	ssize_t dst = t.m_dst;
+	slot_idx dst = t.dst ();
 	if (unresolved.find (dst) != unresolved.end ())
 	  {
 	    if (true)
@@ -846,13 +875,13 @@ namespace
 
 	    tree t3 {tree_type::CAPTURE};
 	    t3.push_child (t);
-	    t3.m_src_a = dst;
-	    t3.m_dst = dst;
+	    t3.set_src_a (dst);
+	    t3.set_dst (dst);
 	    t2.push_child (t3);
 
 	    tree t4 {tree_type::F_EACH};
-	    t4.m_src_a = dst;
-	    t4.m_dst = dst;
+	    t4.set_src_a (dst);
+	    t4.set_dst (dst);
 	    t2.push_child (t4);
 
 	    if (true)
@@ -877,7 +906,7 @@ namespace
       {
       case tree_type::F_COUNT:
 	{
-	  ssize_t src = t.m_src_a;
+	  slot_idx src = t.src_a ();
 	  if (false)
 	    {
 	      std::cerr << "unresolved slot: " << src << std::endl;
@@ -890,7 +919,7 @@ namespace
 	}
 
       case tree_type::PRED_LAST:
-	unresolved.insert (t.m_src_a);
+	unresolved.insert (t.src_a ());
 	return unresolved;
 
       case tree_type::FORMAT:
@@ -911,7 +940,7 @@ namespace
 	  // Each branch must resolve a slot if that slot should be
 	  // resolved by ALT.  And resolves from each branch propagate
 	  // further.  So return union of resolves of all branches.
-	  std::set <ssize_t> ret;
+	  std::set <slot_idx> ret;
 	  for (auto &ch: t.m_children)
 	    {
 	      auto unresolved2 = resolve_count (ch, unresolved);
@@ -959,7 +988,7 @@ namespace
 	// But in fact it's very suspicious if we are dropping a slot
 	// that's later referenced by count, so check that that's not
 	// the case.
-	assert (unresolved.find (t.m_dst) == unresolved.end ());
+	assert (unresolved.find (t.dst ()) == unresolved.end ());
 	return unresolved;
 
       case tree_type::SHF_SWAP:
@@ -971,11 +1000,11 @@ namespace
 	  // don't resolve anything, as we need to generate the count
 	  // somewhere else than at these nodes.  (E.g. in (child dup
 	  // count) we want the child to annotate count, not the dup.)
-	  auto it = unresolved.find (t.m_dst);
+	  auto it = unresolved.find (t.dst ());
 	  if (it != unresolved.end ())
 	    {
 	      unresolved.erase (it);
-	      unresolved.insert (t.m_src_a);
+	      unresolved.insert (t.src_a ());
 	    }
 	  return unresolved;
 	}
@@ -983,7 +1012,7 @@ namespace
       case tree_type::F_EACH:
 	// If each resolves anything, we don't need to modify it in
 	// any way, as it already takes care of annotating count.
-	unresolved.erase (t.m_dst);
+	unresolved.erase (t.dst ());
 	return unresolved;
 
       case tree_type::EMPTY_LIST:
@@ -1113,7 +1142,7 @@ tree::simplify ()
       && m_children.size () == 1
       && child (0).m_tt == tree_type::STR)
     {
-      child (0).m_dst = m_dst;
+      child (0).set_dst (dst ());
       *this = child (0);
       simplify ();
     }
@@ -1122,9 +1151,11 @@ tree::simplify ()
   for (size_t i = 0; i < m_children.size (); ++i)
     if (child (i).m_tt == tree_type::SHF_DUP)
       for (size_t j = i + 1; j < m_children.size (); ++j)
-	if (child (j).m_src_b == -1
-	    && child (j).m_src_a == child (i).m_dst
-	    && child (j).m_dst == child (i).m_dst)
+	if (! child (j).has_src_b ()
+	    && child (j).has_src_a () && child (j).has_dst ()
+	    && child (i).has_dst ()
+	    && child (j).src_a () == child (i).dst ()
+	    && child (j).dst () == child (i).dst ())
 	  {
 	    if (false)
 	      {
@@ -1132,7 +1163,7 @@ tree::simplify ()
 		std::cerr << "  x: " << child (j) << std::endl;
 	      }
 
-	    child (j).m_src_a = child (i).m_src_a;
+	    child (j).set_src_a (child (i).src_a ());
 	    child (i) = std::move (child (j));
 	    m_children.erase (m_children.begin () + j);
 	    break;
@@ -1140,12 +1171,13 @@ tree::simplify ()
 
   // Change (PROTECT[a=A;dst=B;] (X[...;dst=A;])) to X[...;dst=B].
   if (m_tt == tree_type::PROTECT
-      && child (0).m_dst == m_src_a
+      && has_src_a () && child (0).has_dst ()
+      && child (0).dst () == src_a ()
       && child (0).m_tt != tree_type::CAPTURE)
     {
-      auto dst = m_dst;
+      auto d = dst ();
       *this = child (0);
-      m_dst = dst;
+      set_dst (d);
       simplify ();
     }
 
@@ -1157,13 +1189,12 @@ tree::simplify ()
 			return t.m_tt == tree_type::ASSERT;
 		      }))
     {
-      tree t = std::move (child (0).child (0));
-      ssize_t a = get_common_slot (t);
-      if (a != -1
-	  && std::all_of (m_children.begin () + 1, m_children.end (),
-			  [a] (tree &ch) {
-			    return a == get_common_slot (ch.child (0));
-			  }))
+      tree t = child (0).child (0);
+      boost::optional <slot_idx> a = get_common_slot (t);
+      if (a && std::all_of (m_children.begin () + 1, m_children.end (),
+			    [a] (tree &ch) {
+			      return a == get_common_slot (ch.child (0));
+			    }))
 	{
 	  std::for_each (m_children.begin () + 1, m_children.end (),
 			 [&t] (tree &ch) {
@@ -1187,8 +1218,8 @@ tree::simplify ()
     for (size_t i = 1; i < m_children.size (); ++i)
       if (child (i).m_tt == tree_type::ASSERT)
 	{
-	  ssize_t a = get_common_slot (child (i).child (0));
-	  if (a == -1)
+	  boost::optional <slot_idx> a = get_common_slot (child (i).child (0));
+	  if (! a)
 	    continue;
 
 	  for (ssize_t j = i - 1; j >= 0; --j)
@@ -1199,7 +1230,7 @@ tree::simplify ()
 	      // it inside the closure as well, if it contains no
 	      // producer of slot A.  NIY either.
 	      break;
-	    else if (child (j).m_dst == a)
+	    else if (child (j).has_dst () && child (j).dst () == *a)
 	      {
 		assert (j >= 0);
 

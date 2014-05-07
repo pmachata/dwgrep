@@ -3,6 +3,8 @@
 
 #include <vector>
 #include <string>
+#include <iosfwd>
+#include <boost/optional.hpp>
 
 #include "constant.hh"
 #include "op.hh"
@@ -152,6 +154,52 @@ template <tree_type TT> class tree_arity;
 TREE_TYPES
 #undef TREE_TYPE
 
+class slot_coords
+{
+  boost::optional <slot_idx> m_src_a;
+  boost::optional <slot_idx> m_src_b;
+  boost::optional <slot_idx> m_dst;
+
+public:
+  void
+  swap (slot_coords &other)
+  {
+    std::swap (m_src_a, other.m_src_a);
+    std::swap (m_src_b, other.m_src_b);
+    std::swap (m_dst, other.m_dst);
+  }
+
+  slot_coords &
+  operator= (slot_coords other)
+  {
+    this->swap (other);
+    return *this;
+  }
+
+  slot_idx src_a () const;
+  void set_src_a (slot_idx idx);
+  bool has_src_a () const
+  {
+    return m_src_a;
+  }
+
+  slot_idx src_b () const;
+  void set_src_b (slot_idx idx);
+  bool has_src_b () const
+  {
+    return m_src_b;
+  }
+
+  slot_idx dst () const;
+  void set_dst (slot_idx idx);
+  bool has_dst () const
+  {
+    return m_dst;
+  }
+};
+
+std::ostream &operator<< (std::ostream &o, slot_coords const &c);
+
 // This is for communication between lexical and syntactic analyzers
 // and the rest of the world.  It uses naked pointers all over the
 // place, as in the %union that the lexer and parser use, we can't
@@ -160,15 +208,11 @@ class tree
 {
   std::unique_ptr <std::string> m_str;
   std::unique_ptr <constant> m_cst;
+  slot_coords m_coords;
 
 public:
   tree_type m_tt;
   std::vector <tree> m_children;
-
-  // -1 if not initialized, otherwise a slot number.
-  ssize_t m_src_a;
-  ssize_t m_src_b;
-  ssize_t m_dst;
 
   tree ();
   explicit tree (tree_type tt);
@@ -181,8 +225,16 @@ public:
   void swap (tree &other);
 
   slot_idx src_a () const;
+  bool has_src_a () const { return m_coords.has_src_a (); }
+  void set_src_a (slot_idx idx) { m_coords.set_src_a (idx); }
+
   slot_idx src_b () const;
+  bool has_src_b () const { return m_coords.has_src_b (); }
+  bool has_dst () const { return m_coords.has_dst (); }
+
   slot_idx dst () const;
+  void set_src_b (slot_idx idx) { m_coords.set_src_b (idx); }
+  void set_dst (slot_idx idx) { m_coords.set_dst (idx); }
 
   tree &child (size_t idx);
   tree const &child (size_t idx) const;
