@@ -1,12 +1,4 @@
-#include <iostream>
-
 #include "valfile.hh"
-
-std::ostream &
-operator<< (std::ostream &o, slot_idx const &idx)
-{
-  return o << "idx:" << idx.value ();
-}
 
 valfile::valfile (valfile const &that)
 {

@@ -5,62 +5,12 @@
 #include <vector>
 
 #include "value.hh"
+#include "slot_idx.hh"
 
 // Value file is a container type that's used for maintaining stacks
 // of dwgrep values.  The file is static in size.  Unlike std::array,
 // the size can be determined at runtime, but like std::array, the
 // size never changes during the lifetime of a value file.
-struct valfile;
-
-// Strongly typed unsigned for representing slot indices.
-class slot_idx
-{
-  unsigned m_value;
-
-public:
-  explicit slot_idx (unsigned value)
-    : m_value (value)
-  {}
-
-  slot_idx (slot_idx const &that)
-    : m_value (that.m_value)
-  {}
-
-  slot_idx
-  operator= (slot_idx that)
-  {
-    m_value = that.m_value;
-    return *this;
-  }
-
-  unsigned
-  value () const
-  {
-    return m_value;
-  }
-
-  bool
-  operator== (slot_idx that) const
-  {
-    return m_value == that.m_value;
-  }
-
-  bool
-  operator!= (slot_idx that) const
-  {
-    return m_value != that.m_value;
-  }
-
-  slot_idx
-  operator- (unsigned value) const
-  {
-    assert (value <= m_value);
-    return slot_idx (m_value - value);
-  }
-};
-
-std::ostream &operator<< (std::ostream &o, slot_idx const &idx);
-
 class valfile
 {
   std::vector <std::unique_ptr <value> > m_values;
