@@ -4,5 +4,5 @@
 std::ostream &
 operator<< (std::ostream &o, slot_idx const &idx)
 {
-  return o << idx.value ();
+  return o << static_cast <unsigned> (idx);
 }

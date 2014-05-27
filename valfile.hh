@@ -33,29 +33,26 @@ public:
   void
   set_slot (slot_idx i, std::unique_ptr <value> vp)
   {
-    m_values[i.value ()] = std::move (vp);
+    m_values[i] = std::move (vp);
   }
 
   std::unique_ptr <value>
   release_slot (slot_idx idx)
   {
-    size_t i = idx.value ();
-    return std::move (m_values[i]);
+    return std::move (m_values[idx]);
   }
 
   value const &
   get_slot (slot_idx idx) const
   {
-    size_t i = idx.value ();
-    assert (m_values[i] != nullptr);
-    return *m_values[i].get ();
+    assert (m_values[idx] != nullptr);
+    return *m_values[idx].get ();
   }
 
   template <class T>
   T *get_slot_as (slot_idx idx) const
   {
-    size_t i = idx.value ();
-    value *vp = m_values[i].get ();
+    value *vp = m_values[idx].get ();
     assert (vp != nullptr);
     return value::as <T> (vp);
   }
