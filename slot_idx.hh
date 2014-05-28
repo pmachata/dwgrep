@@ -5,6 +5,6 @@
 
 enum slot_idx: unsigned {};
 
-std::ostream &operator<< (std::ostream &o, slot_idx const &idx);
+std::ostream &operator<< (std::ostream &o, slot_idx idx);
 
 #endif /* _SLOT_IDX_H_ */
