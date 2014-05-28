@@ -557,14 +557,10 @@
    - Example: asking for a qualified name:
      : ?(@name ?"a") child ?(@name ?"b") child ?(@name ?"c")
 
-**  EXPR → (“universe” | “section” | “unit”)
+**  EXPR → (“universe” | “section” | “unit” | “winfo” )
 
    - "universe" stands for every DIE (and pseudo-DIE) in Dwarf graph.
      Unlike section and unit, it doesn't drop.
-
-     (universe) is implicit at the beginning of the full dwgrep
-     expression.  (XXX so it is--but should it be?  Maybe it would be
-     better to allow the user to select what he cares about.)
 
    - "section" is similar, but selects only DIE's (or pseudo-DIE's)
      that come from the same section as value on TOS -- e.g. from
@@ -573,10 +569,10 @@
    - "unit" selects objects belonging to the same logical unit.  This
      may mean a CU, a current line table, etc.
 
+   - "winfo" selects .debug_info.  XXX The rest is not yet in.
+
    - XXX We might need "unit" to mean "the CU that we came from" and
      something else to mean "local set of entities".
-   - XXX consider similar forms .info, .line, for explicitly choosing
-     the domain we wish to operate on.
 
 ** •EXPR → “(” EXPR₁ “)” — grouping, precedence
 
@@ -1315,7 +1311,7 @@
 ** check_linkage_external_die.cc
 
    : ?symbol ?(@type (STT_OBJECT, STT_FUNC) ?eq) ?(@name !"")
-   : universe ?@linkage_name [-(@linkage_name swap @name ?eq)]
+   : winfo ?@linkage_name [-(@linkage_name swap @name ?eq)]
    :
    : ((if !@declaration !@const_value
    :   (!structure_type !enumeration_type !union_type, ?@name)

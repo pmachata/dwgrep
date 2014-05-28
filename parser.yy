@@ -30,14 +30,9 @@
 }
 
 %code provides {
-  // This is top-level parser entry point.  Initial "universe" is
-  // implied.
+  // These two are for sub-expression parsing.
   tree parse_query (std::string str);
-
-  // These two are for sub-expression parsing.  They don't add initial
-  // "universe".
-  tree parse_string (std::string str);
-  tree parse_string (char const *begin, char const *end);
+  tree parse_query (char const *begin, char const *end);
 }
 
 %{
@@ -168,7 +163,7 @@
 
 %token TOK_CONSTANT TOK_LIT_STR TOK_LIT_INT
 
-%token TOK_UNIVERSE TOK_SECTION TOK_UNIT
+%token TOK_UNIVERSE TOK_SECTION TOK_UNIT TOK_WINFO
 
 %token TOK_EOF
 
@@ -403,6 +398,9 @@ Statement:
   | TOK_UNIVERSE
   { $$ = tree::create_nullary <tree_type::SEL_UNIVERSE> (); }
 
+  | TOK_WINFO
+  { $$ = tree::create_nullary <tree_type::SEL_WINFO> (); }
+
   | TOK_SECTION
   { $$ = tree::create_nullary <tree_type::SEL_SECTION> (); }
 
@@ -543,28 +541,18 @@ struct lexer
 };
 
 tree
-parse_string (std::string str)
+parse_query (std::string str)
 {
   char const *buf = str.c_str ();
-  return parse_string (buf, buf + str.length ());
+  return parse_query (buf, buf + str.length ());
 }
 
 tree
-parse_string (char const *begin, char const *end)
+parse_query (char const *begin, char const *end)
 {
   lexer lex (begin, end);
   std::unique_ptr <tree> t;
   if (yyparse (t, lex.m_sc) == 0)
     return *t;
   throw std::runtime_error ("syntax error");
-}
-
-tree
-parse_query (std::string str)
-{
-  auto t = new tree { parse_string ("universe") };
-  auto u = new tree { parse_string (str) };
-  auto v = std::unique_ptr <tree>
-    { tree::create_cat <tree_type::CAT> (t, u) };
-  return *v;
 }

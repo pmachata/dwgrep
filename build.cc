@@ -75,6 +75,7 @@ tree::build_pred (dwgrep_graph::sptr q, size_t maxsize) const
 
     case tree_type::CAT:
     case tree_type::SEL_UNIVERSE:
+    case tree_type::SEL_WINFO:
     case tree_type::NOP:
     case tree_type::ASSERT:
     case tree_type::ALT:
@@ -162,8 +163,8 @@ tree::build_exec (std::shared_ptr <op> upstream, dwgrep_graph::sptr q,
 	return std::make_shared <op_merge> (ops, done);
       }
 
-    case tree_type::SEL_UNIVERSE:
-      return std::make_shared <op_sel_universe> (upstream, q, dst ());
+    case tree_type::SEL_WINFO:
+      return std::make_shared <op_sel_winfo> (upstream, q, dst ());
 
     case tree_type::SEL_UNIT:
       return std::make_shared <op_sel_unit> (upstream, q, src_a (), dst ());
@@ -292,6 +293,7 @@ tree::build_exec (std::shared_ptr <op> upstream, dwgrep_graph::sptr q,
     case tree_type::F_MOD:
     case tree_type::F_PREV:
     case tree_type::F_NEXT:
+    case tree_type::SEL_UNIVERSE:
     case tree_type::SEL_SECTION:
     case tree_type::SHF_ROT:
       std::cerr << "\n\nUNHANDLED:" << *this << std::endl;

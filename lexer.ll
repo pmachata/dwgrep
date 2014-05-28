@@ -78,6 +78,8 @@ OCT [0-7]
 "section" return TOK_SECTION;
 "unit" return TOK_UNIT;
 
+"winfo" return TOK_WINFO;
+
 "?eq" return TOK_QMARK_EQ;
 "!eq" return TOK_BANG_EQ;
 "?ne" return TOK_QMARK_NE;
@@ -182,22 +184,22 @@ OCT [0-7]
 
 <STRING>"%s" {
   yylval->f->flush_str ();
-  yylval->f->t.push_child (parse_string (""));
+  yylval->f->t.push_child (parse_query (""));
 }
 
 <STRING>"%x" {
   yylval->f->flush_str ();
-  yylval->f->t.push_child (parse_string ("value hex"));
+  yylval->f->t.push_child (parse_query ("value hex"));
 }
 
 <STRING>"%o" {
   yylval->f->flush_str ();
-  yylval->f->t.push_child (parse_string ("value oct"));
+  yylval->f->t.push_child (parse_query ("value oct"));
 }
 
 <STRING>"%d" {
   yylval->f->flush_str ();
-  yylval->f->t.push_child (parse_string ("value"));
+  yylval->f->t.push_child (parse_query ("value"));
 }
 
 <STRING>. {
@@ -237,7 +239,7 @@ OCT [0-7]
   yylval->f->in_string = true;
   if (yylval->f->level == 0)
     {
-      yylval->f->t.push_child (parse_string (yylval->f->yank_str ()));
+      yylval->f->t.push_child (parse_query (yylval->f->yank_str ()));
       BEGIN STRING;
     }
   else

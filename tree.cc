@@ -525,6 +525,7 @@ namespace
 	  break;
 	}
 
+      case tree_type::SEL_WINFO:
       case tree_type::SEL_UNIVERSE:
       case tree_type::CONST:
       case tree_type::EMPTY_LIST:
@@ -847,6 +848,7 @@ namespace
       case tree_type::F_CAST:
       case tree_type::F_COUNT: case tree_type::F_EACH: case tree_type::F_LENGTH:
       case tree_type::SEL_UNIVERSE: case tree_type::SEL_SECTION:
+      case tree_type::SEL_WINFO:
       case tree_type::SEL_UNIT: case tree_type::SHF_SWAP:
       case tree_type::SHF_DUP: case tree_type::SHF_OVER:
       case tree_type::SHF_ROT: case tree_type::SHF_DROP:
@@ -1039,6 +1041,7 @@ namespace
       case tree_type::F_POS:
       case tree_type::F_LENGTH:
       case tree_type::SEL_UNIVERSE:
+      case tree_type::SEL_WINFO:
       case tree_type::SEL_SECTION:
       case tree_type::SEL_UNIT:
 	assert (t.m_children.empty ());

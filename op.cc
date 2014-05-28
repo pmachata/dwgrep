@@ -45,7 +45,7 @@ op_origin::reset ()
 }
 
 
-struct op_sel_universe::pimpl
+struct op_sel_winfo::pimpl
 {
   std::shared_ptr <op> m_upstream;
   dwgrep_graph::sptr m_gr;
@@ -103,30 +103,30 @@ struct op_sel_universe::pimpl
   }
 };
 
-op_sel_universe::op_sel_universe (std::shared_ptr <op> upstream,
-				  dwgrep_graph::sptr q, slot_idx dst)
+op_sel_winfo::op_sel_winfo (std::shared_ptr <op> upstream,
+			    dwgrep_graph::sptr q, slot_idx dst)
   : m_pimpl (std::make_unique <pimpl> (upstream, q, dst))
 {}
 
-op_sel_universe::~op_sel_universe ()
+op_sel_winfo::~op_sel_winfo ()
 {}
 
 valfile::uptr
-op_sel_universe::next ()
+op_sel_winfo::next ()
 {
   return m_pimpl->next ();
 }
 
 void
-op_sel_universe::reset ()
+op_sel_winfo::reset ()
 {
   m_pimpl->reset ();
 }
 
 std::string
-op_sel_universe::name () const
+op_sel_winfo::name () const
 {
-  return "sel_universe";
+  return "sel_winfo";
 }
 
 

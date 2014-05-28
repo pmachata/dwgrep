@@ -25,15 +25,13 @@ test (std::string parse, std::string expect,
   tree t;
   try
     {
+      t = parse_query (parse);
       if (full)
 	{
-	  t = parse_query (parse);
 	  t.determine_stack_effects ();
 	  if (optimize)
 	    t.simplify ();
 	}
-      else
-	t = parse_string (parse);
     }
   catch (std::runtime_error const &e)
     {
@@ -358,45 +356,45 @@ do_tests ()
   test ("\"r\\aw\"", "(FORMAT (STR<r\aw>))");
   test ("r\"r\\aw\"", "(FORMAT (STR<r\\aw>))");
 
-  ftest ("?root",
-	 "(CAT (SEL_UNIVERSE [dst=0;]) (ASSERT (PRED_ROOT [a=0;])))");
+  ftest ("winfo ?root",
+	 "(CAT (SEL_WINFO [dst=0;]) (ASSERT (PRED_ROOT [a=0;])))");
 
-  ftest ("?compile_unit !root",
-	 "(CAT (SEL_UNIVERSE [dst=0;])"
+  ftest ("winfo ?compile_unit !root",
+	 "(CAT (SEL_WINFO [dst=0;])"
 	 " (ASSERT (PRED_TAG<DW_TAG_compile_unit> [a=0;]))"
 	 " (ASSERT (PRED_NOT (PRED_ROOT [a=0;]))))");
 
-  ftest (",", "(CAT (SEL_UNIVERSE [dst=0;]) (ALT (NOP) (NOP)))");
-  ftest ("dup (swap,)",
-	 "(CAT (SEL_UNIVERSE [dst=0;]) (SHF_DUP [a=0;dst=1;])"
+  ftest (",", "(ALT (NOP) (NOP))");
+  ftest ("winfo dup (swap,)",
+	 "(CAT (SEL_WINFO [dst=0;]) (SHF_DUP [a=0;dst=1;])"
 	 " (ALT (SHF_SWAP [a=0;dst=1;]) (NOP)))");
-  ftest ("dup (,swap)",
-	 "(CAT (SEL_UNIVERSE [dst=0;]) (SHF_DUP [a=0;dst=1;])"
+  ftest ("winfo dup (,swap)",
+	 "(CAT (SEL_WINFO [dst=0;]) (SHF_DUP [a=0;dst=1;])"
 	 " (ALT (NOP) (SHF_SWAP [a=0;dst=1;])))");
-  ftest ("(drop,drop)",
-	 "(CAT (SEL_UNIVERSE [dst=0;])"
+  ftest ("winfo (drop,drop)",
+	 "(CAT (SEL_WINFO [dst=0;])"
 	 " (ALT (SHF_DROP [dst=0;]) (SHF_DROP [dst=0;])))");
-  ftestx ("(,drop)", "unbalanced");
-  ftest ("(,drop 1)",
-	 "(CAT (SEL_UNIVERSE [dst=0;])"
+  ftestx ("winfo (,drop)", "unbalanced");
+  ftest ("winfo (,drop 1)",
+	 "(CAT (SEL_WINFO [dst=0;])"
 	 " (ALT (NOP) (CAT (SHF_DROP [dst=0;]) (CONST<1> [dst=0;]))))");
-  ftest ("(drop 1,)",
-	 "(CAT (SEL_UNIVERSE [dst=0;])"
+  ftest ("winfo (drop 1,)",
+	 "(CAT (SEL_WINFO [dst=0;])"
 	 " (ALT (CAT (SHF_DROP [dst=0;]) (CONST<1> [dst=0;])) (NOP)))");
-  ftest ("drop \"foo\"",
-	 "(CAT (SEL_UNIVERSE [dst=0;])"
+  ftest ("winfo drop \"foo\"",
+	 "(CAT (SEL_WINFO [dst=0;])"
 	 " (SHF_DROP [dst=0;]) (FORMAT [dst=0;] (STR<foo>)))");
   ftestx ("drop \"%s\"", "underrun");
 
-  ftest ("\"%( -offset %): %( @name %)\"",
-	 "(CAT (SEL_UNIVERSE [dst=0;])"
+  ftest ("winfo \"%( -offset %): %( @name %)\"",
+	 "(CAT (SEL_WINFO [dst=0;])"
 	 " (FORMAT [dst=0;] (STR<>) (F_OFFSET [a=0;dst=1;]) (STR<: >)"
 	 " (CAT [dst=0;] (F_ATTR_NAMED<DW_AT_name> [a=0;dst=0;])"
 	 " (F_VALUE [a=0;dst=0;])) (STR<>)))",
 	 true);
 
-  ftest ("(?const_type, ?volatile_type, ?restrict_type)",
-	 "(CAT (SEL_UNIVERSE [dst=0;])"
+  ftest ("winfo (?const_type, ?volatile_type, ?restrict_type)",
+	 "(CAT (SEL_WINFO [dst=0;])"
 	 " (ASSERT (PRED_OR (PRED_OR (PRED_TAG<DW_TAG_const_type> [a=0;])"
 	 " (PRED_TAG<DW_TAG_volatile_type> [a=0;]))"
 	 " (PRED_TAG<DW_TAG_restrict_type> [a=0;]))))",
@@ -405,12 +403,12 @@ do_tests ()
   test ("((1, 2), (3, 4))",
 	"(ALT (CONST<1>) (CONST<2>) (CONST<3>) (CONST<4>))");
 
-  ftest ("child?",
-	 "(CAT (SEL_UNIVERSE [dst=0;]) (ALT (F_CHILD [a=0;dst=0;]) (NOP)))",
+  ftest ("winfo child?",
+	 "(CAT (SEL_WINFO [dst=0;]) (ALT (F_CHILD [a=0;dst=0;]) (NOP)))",
 	 false);
 
-  ftest ("child+",
-	 "(CAT (SEL_UNIVERSE [dst=0;])"
+  ftest ("winfo child+",
+	 "(CAT (SEL_WINFO [dst=0;])"
 	 " (CAT (F_CHILD [a=0;dst=0;]) (CLOSE_STAR (F_CHILD [a=0;dst=0;]))))",
 	 false);
 
