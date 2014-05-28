@@ -839,7 +839,7 @@
    - !root is exactly equivalent to:
      : ?(parent)
    - ?root is exactly equivalent to:
-     : ?(type T_DIE ?eq) !(parent)
+     : ?(type T_NODE ?eq) !(parent)
 
    - Examples:
      : parent* ?root        # finds a root node of node on TOS
@@ -1024,7 +1024,7 @@
    the computation in whose context it appeared.
 
 
-* Interpreting
+* TODO
 
 ** @decl_file — represented as actual string including path
    (XXX we ignore mtime and size.  Those aren't stored anyway, but
@@ -1131,6 +1131,20 @@
      only attributes at the DIE itself, or integrated attributes as
      well.
 
+** XXX optional inlining of DW_TAG_partial unit
+   - We don't interpret DW_TAG_imported_unit at all currently.
+     Eventually we'll probably want to inline this by default, but
+     also have a way to actually see the DW_TAG_imported_unit DIE's as
+     well.
+
+   - (Note that DW_TAG_imported_module and DW_TAG_imported_declaration
+     are for "using namespace X" and "using X" respectively, so
+     unrelated to this.)
+
+** XXX multithreading
+   - processing Dwarf has the potential for a lot of concurrency.  If
+     locks end up serializing, we might actually open the Dwarf in
+     each thread anew, and see if that helps.
 
 * Examples
 
