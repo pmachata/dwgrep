@@ -627,6 +627,100 @@
    - dup is exactly equivalent to (among others):
      : [ -() ] each
 
+**  EXPR → “{” EXPR₁ “}” | “:”ID — blocks, symbols
+
+    - {X} -- A block syntax.  A value representing an expression X is
+      pushed on TOS.
+
+    - :ID -- A symbol syntax.  A value representing symbol ID is
+      pushed on TOS.  Normally mentioning a word such as "swap" leads
+      directly to that action being performed.  ":swap" instead pushes
+      the symbol to TOS.
+
+    - def -- pop symbol on TOS and value below TOS.  In local scope,
+      bind the symbol to that value.
+
+      If a def'd symbol is mentioned later (without the ":"), the
+      value it's bound to is pushed to the stack.  If the value is a
+      block, that block is executed.
+
+      : { dup add } :double def
+      : 3 double		# gives 6
+
+      : { :x def ... }		# within {}, x refers to whatever was on TOS
+      : { :x def :y def ... }	# x is what was on TOS, y is what was below TOS
+
+      XXX since {} and :X are both literal forms, and "def" is just an
+      ordinary word, this all takes place at runtime.  Hence we don't
+      know what a word refers to until we look it up, and that may
+      pose serious performance overhead (some tens of millions of
+      lookups are bound to be noticeable).
+
+      XXX This also kills pre-computing of stack slots.  But that was
+      a problem for extensibility anyway, so maybe it would have to go
+      away sooner or later anway.
+
+      The above definition allows for recursive functions as well,
+      since the names have to be resolved at runtime anyway:
+
+      : { :n def n 1 eq (if 1, else n n 1 - fact *) } :fact def
+      : 3 fact	# 6
+
+    - XXX eval -- resolve symbol on TOS to whatever it's bound to.
+
+    - x -- if a symbol is on TOS, then eval it.  Then expect a block
+      on TOS, which is executed.
+
+      The execution introduces a new activation record (dynamic scope)
+      inside the current scope.  Any def's bind symbols in this new
+      scope, and words are looked up in this scope as well (but of
+      course proceed upwards if the symbol is not found).  Any block
+      literals inside this execution remember the scope (which in turn
+      remembers its surrounding scope, even if the execution already
+      left it), so that they work as closures.
+
+      : { :x def { :y def x y + } } :adder def
+      : 2 adder 1 swap call
+
+      : { :f def [ each f xc ] } :map def
+
+    - XXX sx -- pop TOS and avaluate it in sub-expression context,
+      push TOS of sub-stack on TOS of outer stack.
+
+    - + -- pop a block on TOS, then evaluate its transitive closure
+    - * -- likewise for transitive reflexive closure
+
+    - Examples: dip, dip2, dipn:
+      : { :op def :tmp def op tmp } :dip def
+      : 1 2 3 { swap } dip	# 2 1 3
+
+      : { :op def { { op } dip } dip } :dip2 def
+      : 1 2 3 4 { swap } dip2	# 2 1 3 4
+
+      : { :n def :op def
+      :   n 0 eq (if op, else :tmp def { op } n 1 - dipn tmp) } :dipn def
+      :
+      : 1 2 3 4 { swap } 0 dipn	# 1 2 4 3
+      : 1 2 3 4 { swap } 1 dipn	# 1 3 2 4
+
+    - N/X can be made into {X} N topn:
+      : { :n def :op def
+      :   n 0 eq (if, else { op } n 1 - dipn
+      :                    { op } n 1 - topn) } :topn def
+
+      : 1 2 3 { 1 + } 1 topn	# 1 2 4
+      : 1 2 3 { 1 + } 2 topn	# 1 3 4
+
+    - {X} ? and {X} ! could assert whether X produces anything.
+      : { dup [] eq if } "?empty" def
+      : { dup [] ne if } "!empty" def
+      : { :op def {[ op ]} sx !empty drop } "?" def
+      : { :op def {[ op ]} sx ?empty drop } "!" def
+
+      But I guess we might as well keep the original ?{}, !{} syntax.
+      We might as well introduce -{}, ={} or something for execution
+      in sub-expression context, as that's wildly useful.
+
 **  EXPR → “?(” EXPR₁ “)” | “!(” EXPR₁ “)” — sub-expression assertions
 
    These ask whether TOS of [ EXPR₁ ] would be, respectively, a
