@@ -699,6 +699,16 @@
       : 1 2 3 4 { swap } 0 dipn	# 1 2 4 3
       : 1 2 3 4 { swap } 1 dipn	# 1 3 2 4
 
+      : { :op def op op } :twice def
+      : 1 2 3 4 { add } twice	# 1 9
+
+      : { foo } :bar def
+      : { :op def  2 :foo def  op } :baz def
+      : { bar } baz		# 2
+
+      : { :tbr def :fbr def (?true tbr, ?false fbr) } :ifelse def
+      : -[ child ] length 0 eq { "empty" }{ "non-empty" } ifelse
+
     - N/X can be made into {X} N topn:
       : { :n def :op def
       :   n 0 eq (if, else { op } n 1 - dipn
@@ -716,6 +726,13 @@
       But I guess we might as well keep the original ?{}, !{} syntax.
       We might as well introduce -{}, ={} or something for execution
       in sub-expression context, as that's wildly useful.
+
+    - Stack shuffling operators:
+      : { :a def } :drop def
+      : { :a def a a } :dup def
+      : { :a def :b def a b } :swap def
+      : { :a def :b def :c def b a c } :rot def
+      : { :a def :b def b a b } :over def
 
 **  EXPR → “?(” EXPR₁ “)” | “!(” EXPR₁ “)” — sub-expression assertions
 
