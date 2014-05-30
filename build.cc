@@ -10,10 +10,10 @@ tree::build_pred (dwgrep_graph::sptr q, size_t maxsize) const
   switch (m_tt)
     {
     case tree_type::PRED_TAG:
-      return std::make_unique <pred_tag> (cst ().value (), src_a ());
+      return std::make_unique <pred_tag> (cst ().value ());
 
     case tree_type::PRED_AT:
-      return std::make_unique <pred_at> (cst ().value (), src_a ());
+      return std::make_unique <pred_at> (cst ().value ());
 
     case tree_type::PRED_NOT:
       return std::make_unique <pred_not>
@@ -30,28 +30,25 @@ tree::build_pred (dwgrep_graph::sptr q, size_t maxsize) const
 	 m_children[1].build_pred (q, maxsize));
 
     case tree_type::PRED_EQ:
-      return std::make_unique <pred_eq> (src_a (), src_b ());
+      return std::make_unique <pred_eq> ();
 
     case tree_type::PRED_NE:
-      return std::make_unique <pred_not>
-	(std::make_unique <pred_eq> (src_a (), src_b ()));
+      return std::make_unique <pred_not> (std::make_unique <pred_eq> ());
 
     case tree_type::PRED_LT:
-      return std::make_unique <pred_lt> (src_a (), src_b ());
+      return std::make_unique <pred_lt> ();
 
     case tree_type::PRED_GT:
-      return std::make_unique <pred_gt> (src_a (), src_b ());
+      return std::make_unique <pred_gt> ();
 
     case tree_type::PRED_GE:
-      return std::make_unique <pred_not>
-	(std::make_unique <pred_lt> (src_a (), src_b ()));
+      return std::make_unique <pred_not> (std::make_unique <pred_lt> ());
 
     case tree_type::PRED_LE:
-      return std::make_unique <pred_not>
-	(std::make_unique <pred_gt> (src_a (), src_b ()));
+      return std::make_unique <pred_not> (std::make_unique <pred_gt> ());
 
     case tree_type::PRED_ROOT:
-      return std::make_unique <pred_root> (q, src_a ());
+      return std::make_unique <pred_root> (q);
 
     case tree_type::PRED_SUBX_ANY:
       {
@@ -62,10 +59,10 @@ tree::build_pred (dwgrep_graph::sptr q, size_t maxsize) const
       }
 
     case tree_type::PRED_EMPTY:
-      return std::make_unique <pred_empty> (src_a ());
+      return std::make_unique <pred_empty> ();
 
     case tree_type::PRED_MATCH:
-      return std::make_unique <pred_match> (src_a (), src_b ());
+      return std::make_unique <pred_match> ();
 
     case tree_type::PRED_FIND:
     case tree_type::PRED_LAST:
@@ -129,8 +126,7 @@ tree::build_exec (std::shared_ptr <op> upstream, dwgrep_graph::sptr q,
 		  size_t maxsize) const
 {
   if (upstream == nullptr)
-    upstream = std::make_shared <op_origin>
-      (std::make_unique <valfile> (maxsize));
+    upstream = std::make_shared <op_origin> (std::make_unique <valfile> ());
 
   switch (m_tt)
     {
@@ -164,10 +160,10 @@ tree::build_exec (std::shared_ptr <op> upstream, dwgrep_graph::sptr q,
       }
 
     case tree_type::SEL_WINFO:
-      return std::make_shared <op_sel_winfo> (upstream, q, dst ());
+      return std::make_shared <op_sel_winfo> (upstream, q);
 
     case tree_type::SEL_UNIT:
-      return std::make_shared <op_sel_unit> (upstream, q, src_a (), dst ());
+      return std::make_shared <op_sel_unit> (upstream, q);
 
     case tree_type::NOP:
       return std::make_shared <op_nop> (upstream);
@@ -177,32 +173,32 @@ tree::build_exec (std::shared_ptr <op> upstream, dwgrep_graph::sptr q,
 	(upstream, m_children.front ().build_pred (q, maxsize));
 
     case tree_type::F_CHILD:
-      return std::make_shared <op_f_child> (upstream, q, src_a (), dst ());
+      return std::make_shared <op_f_child> (upstream, q);
 
     case tree_type::F_ATTRIBUTE:
-      return std::make_shared <op_f_attr> (upstream, q, src_a (), dst ());
+      return std::make_shared <op_f_attr> (upstream, q);
 
     case tree_type::F_ATTR_NAMED:
       return std::make_shared <op_f_attr_named>
-	(upstream, q, src_a (), dst (), int (cst ().value ()));
+	(upstream, q, int (cst ().value ()));
 
     case tree_type::F_OFFSET:
-      return std::make_shared <op_f_offset> (upstream, q, src_a (), dst ());
+      return std::make_shared <op_f_offset> (upstream, q);
 
     case tree_type::F_NAME:
-      return std::make_shared <op_f_name> (upstream, q, src_a (), dst ());
+      return std::make_shared <op_f_name> (upstream, q);
 
     case tree_type::F_TAG:
-      return std::make_shared <op_f_tag> (upstream, q, src_a (), dst ());
+      return std::make_shared <op_f_tag> (upstream, q);
 
     case tree_type::F_FORM:
-      return std::make_shared <op_f_form> (upstream, q, src_a (), dst ());
+      return std::make_shared <op_f_form> (upstream, q);
 
     case tree_type::F_VALUE:
-      return std::make_shared <op_f_value> (upstream, q, src_a (), dst ());
+      return std::make_shared <op_f_value> (upstream, q);
 
     case tree_type::F_PARENT:
-      return std::make_shared <op_f_parent> (upstream, q, src_a (), dst ());
+      return std::make_shared <op_f_parent> (upstream, q);
 
     case tree_type::FORMAT:
       {
@@ -215,49 +211,46 @@ tree::build_exec (std::shared_ptr <op> upstream, dwgrep_graph::sptr q,
 	    {
 	      auto origin2 = std::make_shared <op_origin> (nullptr);
 	      auto op = tree.build_exec (origin2, q, maxsize);
-	      strgr = std::make_shared <stringer_op>
-		(strgr, origin2, op, tree.dst ());
+	      strgr = std::make_shared <stringer_op> (strgr, origin2, op);
 	    }
 
-	return std::make_shared <op_format>
-	  (upstream, s_origin, strgr, dst ());
+	return std::make_shared <op_format> (upstream, s_origin, strgr);
       }
 
     case tree_type::STR:
-      return std::make_shared <op_strlit> (upstream, str (), dst ());
+      return std::make_shared <op_strlit> (upstream, str ());
 
     case tree_type::SHF_DROP:
-      return std::make_shared <op_drop> (upstream, dst ());
+      return std::make_shared <op_drop> (upstream);
 
     case tree_type::SHF_DUP:
     case tree_type::SHF_OVER:
-      return std::make_shared <op_dup> (upstream, src_a (), dst ());
+      return std::make_shared <op_dup> (upstream);
 
     case tree_type::SHF_SWAP:
-      return std::make_shared <op_swap> (upstream, src_a (), dst ());
+      return std::make_shared <op_swap> (upstream);
 
     case tree_type::CONST:
-      return std::make_shared <op_const> (upstream, cst (), dst ());
+      return std::make_shared <op_const> (upstream, cst ());
 
     case tree_type::CAPTURE:
       {
 	auto origin = std::make_shared <op_origin> (nullptr);
 	auto op = m_children.front ().build_exec (origin, q, maxsize);
-	return std::make_shared <op_capture> (upstream, origin, op,
-					      src_a (), dst ());
+	return std::make_shared <op_capture> (upstream, origin, op);
       }
 
     case tree_type::EMPTY_LIST:
-      return std::make_shared <op_empty_list> (upstream, dst ());
+      return std::make_shared <op_empty_list> (upstream);
 
     case tree_type::F_EACH:
-      return std::make_shared <op_f_each> (upstream, src_a (), dst ());
+      return std::make_shared <op_f_each> (upstream);
 
     case tree_type::F_LENGTH:
-      return std::make_shared <op_f_length> (upstream, src_a (), dst ());
+      return std::make_shared <op_f_length> (upstream);
 
     case tree_type::F_TYPE:
-      return std::make_shared <op_f_type> (upstream, src_a (), dst ());
+      return std::make_shared <op_f_type> (upstream);
 
     case tree_type::CLOSE_STAR:
       {
@@ -270,22 +263,20 @@ tree::build_exec (std::shared_ptr <op> upstream, dwgrep_graph::sptr q,
       {
 	auto origin = std::make_shared <op_origin> (nullptr);
 	auto op = m_children.front ().build_exec (origin, q, maxsize);
-	return std::make_shared <op_subx> (upstream, origin, op,
-					   src_a (), dst ());
+	return std::make_shared <op_subx> (upstream, origin, op);
       }
 
     case tree_type::F_ADD:
-      return std::make_shared <op_f_add> (upstream, src_a (), src_b (), dst ());
+      return std::make_shared <op_f_add> (upstream);
 
     case tree_type::F_POS:
-      return std::make_shared <op_f_pos> (upstream, src_a (), dst ());
+      return std::make_shared <op_f_pos> (upstream);
 
     case tree_type::F_COUNT:
-      return std::make_shared <op_f_count> (upstream, src_a (), dst ());
+      return std::make_shared <op_f_count> (upstream);
 
     case tree_type::F_CAST:
-      return std::make_shared <op_f_cast> (upstream, cst ().dom (),
-					   src_a (), dst ());
+      return std::make_shared <op_f_cast> (upstream, cst ().dom ());
 
     case tree_type::F_SUB:
     case tree_type::F_MUL:

@@ -3,10 +3,7 @@
 valfile::valfile (valfile const &that)
 {
   for (auto const &vf: that.m_values)
-    if (vf != nullptr)
-      m_values.push_back (vf->clone ());
-    else
-      m_values.push_back (nullptr);
+    m_values.push_back (vf->clone ());
 }
 
 namespace
@@ -15,9 +12,10 @@ namespace
   compare_vf (std::vector <std::unique_ptr <value> > const &a,
 	      std::vector <std::unique_ptr <value> > const &b)
   {
-    // There shouldn't really be stacks of different sizes in one
-    // program.
-    assert (a.size () == b.size ());
+    if (a.size () < b.size ())
+      return -1;
+    else if (a.size () > b.size ())
+      return 1;
 
     // The stack that has nullptr where the other has non-nullptr is
     // smaller.

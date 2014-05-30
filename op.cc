@@ -51,14 +51,12 @@ struct op_sel_winfo::pimpl
   dwgrep_graph::sptr m_gr;
   all_dies_iterator m_it;
   valfile::uptr m_vf;
-  slot_idx m_dst;
   size_t m_pos;
 
-  pimpl (std::shared_ptr <op> upstream, dwgrep_graph::sptr gr, slot_idx dst)
+  pimpl (std::shared_ptr <op> upstream, dwgrep_graph::sptr gr)
     : m_upstream {upstream}
     , m_gr {gr}
     , m_it {all_dies_iterator::end ()}
-    , m_dst {dst}
     , m_pos {0}
   {}
 
@@ -86,7 +84,7 @@ struct op_sel_winfo::pimpl
 	  {
 	    auto ret = std::make_unique <valfile> (*m_vf);
 	    auto v = std::make_unique <value_die> (m_gr, **m_it, m_pos++);
-	    ret->set_slot (m_dst, std::move (v));
+	    ret->push (std::move (v));
 	    ++m_it;
 	    return ret;
 	  }
@@ -103,9 +101,8 @@ struct op_sel_winfo::pimpl
   }
 };
 
-op_sel_winfo::op_sel_winfo (std::shared_ptr <op> upstream,
-			    dwgrep_graph::sptr q, slot_idx dst)
-  : m_pimpl (std::make_unique <pimpl> (upstream, q, dst))
+op_sel_winfo::op_sel_winfo (std::shared_ptr <op> upstream, dwgrep_graph::sptr q)
+  : m_pimpl {std::make_unique <pimpl> (upstream, q)}
 {}
 
 op_sel_winfo::~op_sel_winfo ()
@@ -135,18 +132,13 @@ struct op_sel_unit::pimpl
   std::shared_ptr <op> m_upstream;
   dwgrep_graph::sptr m_gr;
   valfile::uptr m_vf;
-  slot_idx m_src;
-  slot_idx m_dst;
   all_dies_iterator m_it;
   all_dies_iterator m_end;
   size_t m_pos;
 
-  pimpl (std::shared_ptr <op> upstream,
-	 dwgrep_graph::sptr gr, slot_idx src, slot_idx dst)
+  pimpl (std::shared_ptr <op> upstream, dwgrep_graph::sptr gr)
     : m_upstream {upstream}
     , m_gr {gr}
-    , m_src {src}
-    , m_dst {dst}
     , m_it {all_dies_iterator::end ()}
     , m_end {all_dies_iterator::end ()}
     , m_pos {0}
@@ -181,12 +173,13 @@ struct op_sel_unit::pimpl
 	  {
 	    if (auto vf = m_upstream->next ())
 	      {
-		if (auto v = vf->get_slot_as <value_die> (m_src))
+		auto vp = vf->pop ();
+		if (auto v = value::as <value_die> (&*vp))
 		  {
 		    init_from_die (v->get_die ());
 		    m_vf = std::move (vf);
 		  }
-		else if (auto v = vf->get_slot_as <value_attr> (m_src))
+		else if (auto v = value::as <value_attr> (&*vp))
 		  {
 		    init_from_die (v->get_die ());
 		    m_vf = std::move (vf);
@@ -202,8 +195,7 @@ struct op_sel_unit::pimpl
 	if (m_it != m_end)
 	  {
 	    auto ret = std::make_unique <valfile> (*m_vf);
-	    ret->set_slot
-	      (m_dst, std::make_unique <value_die> (m_gr, **m_it, m_pos++));
+	    ret->push (std::make_unique <value_die> (m_gr, **m_it, m_pos++));
 	    ++m_it;
 	    return ret;
 	  }
@@ -220,9 +212,8 @@ struct op_sel_unit::pimpl
   }
 };
 
-op_sel_unit::op_sel_unit (std::shared_ptr <op> upstream,
-			  dwgrep_graph::sptr q, slot_idx src, slot_idx dst)
-  : m_pimpl (std::make_unique <pimpl> (upstream, q, src, dst))
+op_sel_unit::op_sel_unit (std::shared_ptr <op> upstream, dwgrep_graph::sptr q)
+  : m_pimpl {std::make_unique <pimpl> (upstream, q)}
 {}
 
 op_sel_unit::~op_sel_unit ()
@@ -254,17 +245,12 @@ struct op_f_child::pimpl
   valfile::uptr m_vf;
   Dwarf_Die m_child;
 
-  slot_idx m_src;
-  slot_idx m_dst;
   size_t m_pos;
 
-  pimpl (std::shared_ptr <op> upstream, dwgrep_graph::sptr gr,
-	 slot_idx src, slot_idx dst)
+  pimpl (std::shared_ptr <op> upstream, dwgrep_graph::sptr gr)
     : m_upstream {upstream}
     , m_gr {gr}
     , m_child {}
-    , m_src {src}
-    , m_dst {dst}
     , m_pos {0}
   {}
 
@@ -284,7 +270,8 @@ struct op_f_child::pimpl
 	  {
 	    if (auto vf = m_upstream->next ())
 	      {
-		if (auto v = vf->get_slot_as <value_die> (m_src))
+		auto vp = vf->pop ();
+		if (auto v = value::as <value_die> (&*vp))
 		  {
 		    Dwarf_Die *die = &v->get_die ();
 		    if (dwarf_haschildren (die))
@@ -304,8 +291,7 @@ struct op_f_child::pimpl
 	  }
 
 	auto ret = std::make_unique <valfile> (*m_vf);
-	ret->set_slot
-	  (m_dst, std::make_unique <value_die> (m_gr, m_child, m_pos++));
+	ret->push (std::make_unique <value_die> (m_gr, m_child, m_pos++));
 
 	switch (dwarf_siblingof (&m_child, &m_child))
 	  {
@@ -332,9 +318,8 @@ struct op_f_child::pimpl
 };
 
 op_f_child::op_f_child (std::shared_ptr <op> upstream,
-			dwgrep_graph::sptr gr,
-			slot_idx src, slot_idx dst)
-  : m_pimpl (std::make_unique <pimpl> (upstream, gr, src, dst))
+			dwgrep_graph::sptr gr)
+  : m_pimpl {std::make_unique <pimpl> (upstream, gr)}
 {}
 
 op_f_child::~op_f_child ()
@@ -367,18 +352,13 @@ struct op_f_attr::pimpl
   valfile::uptr m_vf;
   attr_iterator m_it;
 
-  slot_idx m_src;
-  slot_idx m_dst;
   size_t m_pos;
 
-  pimpl (std::shared_ptr <op> upstream, dwgrep_graph::sptr gr,
-	 slot_idx src, slot_idx dst)
+  pimpl (std::shared_ptr <op> upstream, dwgrep_graph::sptr gr)
     : m_upstream {upstream}
     , m_gr {gr}
     , m_die {}
     , m_it {attr_iterator::end ()}
-    , m_src {src}
-    , m_dst {dst}
     , m_pos {0}
   {}
 
@@ -398,7 +378,8 @@ struct op_f_attr::pimpl
 	  {
 	    if (auto vf = m_upstream->next ())
 	      {
-		if (auto v = vf->get_slot_as <value_die> (m_src))
+		auto vp = vf->pop ();
+		if (auto v = value::as <value_die> (&*vp))
 		  {
 		    m_die = v->get_die ();
 		    m_it = attr_iterator (&m_die);
@@ -414,9 +395,8 @@ struct op_f_attr::pimpl
 	if (m_it != attr_iterator::end ())
 	  {
 	    auto ret = std::make_unique <valfile> (*m_vf);
-	    auto vp = std::make_unique <value_attr> (m_gr, **m_it,
-						     m_die, m_pos++);
-	    ret->set_slot (m_dst, std::move (vp));
+	    ret->push (std::make_unique <value_attr>
+		       (m_gr, **m_it, m_die, m_pos++));
 	    ++m_it;
 	    return ret;
 	  }
@@ -433,9 +413,8 @@ struct op_f_attr::pimpl
   }
 };
 
-op_f_attr::op_f_attr (std::shared_ptr <op> upstream, dwgrep_graph::sptr gr,
-		      slot_idx src, slot_idx dst)
-  : m_pimpl (std::make_unique <pimpl> (upstream, gr, src, dst))
+op_f_attr::op_f_attr (std::shared_ptr <op> upstream, dwgrep_graph::sptr gr)
+  : m_pimpl {std::make_unique <pimpl> (upstream, gr)}
 {}
 
 op_f_attr::~op_f_attr ()
@@ -494,31 +473,34 @@ valfile::uptr
 dwop_f::next ()
 {
   while (auto vf = m_upstream->next ())
-    if (auto v = vf->get_slot_as <value_die> (m_src))
-      {
-	if (operate (*vf, m_dst, v->get_die ()))
-	  return vf;
-      }
-    else if (auto v = vf->get_slot_as <value_attr> (m_src))
-      {
-	if (operate (*vf, m_dst, v->get_attr (), v->get_die ()))
-	  return vf;
-      }
-    else
-      std::cerr << "Error: " << name ()
-		<< " expects a T_NODE or T_ATTR on TOS.\n";
+    {
+      auto vp = vf->pop ();
+      if (auto v = value::as <value_die> (&*vp))
+	{
+	  if (operate (*vf, v->get_die ()))
+	    return vf;
+	}
+      else if (auto v = value::as <value_attr> (&*vp))
+	{
+	  if (operate (*vf, v->get_attr (), v->get_die ()))
+	    return vf;
+	}
+      else
+	std::cerr << "Error: " << name ()
+		  << " expects a T_NODE or T_ATTR on TOS.\n";
+    }
 
   return nullptr;
 }
 
 bool
-op_f_attr_named::operate (valfile &vf, slot_idx dst, Dwarf_Die &die)
+op_f_attr_named::operate (valfile &vf, Dwarf_Die &die)
 {
   Dwarf_Attribute attr;
   if (dwarf_attr_integrate (&die, m_name, &attr) == nullptr)
     return false;
 
-  vf.set_slot (dst, std::make_unique <value_attr> (m_g, attr, die, 0));
+  vf.push (std::make_unique <value_attr> (m_g, attr, die, 0));
   return true;
 }
 
@@ -531,11 +513,10 @@ op_f_attr_named::name () const
 }
 
 bool
-op_f_offset::operate (valfile &vf, slot_idx dst, Dwarf_Die &die)
+op_f_offset::operate (valfile &vf, Dwarf_Die &die)
 {
   Dwarf_Off off = dwarf_dieoffset (&die);
-  auto v = std::make_unique <value_cst> (constant {off, &hex_constant_dom}, 0);
-  vf.set_slot (dst, std::move (v));
+  vf.push (std::make_unique <value_cst> (constant {off, &hex_constant_dom}, 0));
   return true;
 }
 
@@ -548,30 +529,29 @@ op_f_offset::name () const
 namespace
 {
   bool
-  operate_tag (valfile &vf, slot_idx dst, Dwarf_Die &die)
+  operate_tag (valfile &vf, Dwarf_Die &die)
   {
     int tag = dwarf_tag (&die);
     assert (tag >= 0);
     constant cst {(unsigned) tag, &dw_tag_dom};
-    vf.set_slot (dst, std::make_unique <value_cst> (cst, 0));
+    vf.push (std::make_unique <value_cst> (cst, 0));
     return true;
   }
 }
 
 bool
-op_f_name::operate (valfile &vf, slot_idx dst, Dwarf_Die &die)
+op_f_name::operate (valfile &vf, Dwarf_Die &die)
 {
-  return operate_tag (vf, dst, die);
+  return operate_tag (vf, die);
 }
 
 bool
-op_f_name::operate (valfile &vf, slot_idx dst,
-		    Dwarf_Attribute &attr, Dwarf_Die &die)
+op_f_name::operate (valfile &vf, Dwarf_Attribute &attr, Dwarf_Die &die)
 
 {
   unsigned name = dwarf_whatattr (&attr);
   constant cst {name, &dw_attr_dom};
-  vf.set_slot (dst, std::make_unique <value_cst> (cst, 0));
+  vf.push (std::make_unique <value_cst> (cst, 0));
   return true;
 }
 
@@ -582,9 +562,9 @@ op_f_name::name () const
 }
 
 bool
-op_f_tag::operate (valfile &vf, slot_idx dst, Dwarf_Die &die)
+op_f_tag::operate (valfile &vf, Dwarf_Die &die)
 {
-  return operate_tag (vf, dst, die);
+  return operate_tag (vf, die);
 }
 
 std::string
@@ -594,12 +574,11 @@ op_f_tag::name () const
 }
 
 bool
-op_f_form::operate (valfile &vf, slot_idx dst,
-		    Dwarf_Attribute &attr, Dwarf_Die &die)
+op_f_form::operate (valfile &vf, Dwarf_Attribute &attr, Dwarf_Die &die)
 {
   unsigned name = dwarf_whatform (&attr);
   constant cst {name, &dw_form_dom};
-  vf.set_slot (dst, std::make_unique <value_cst> (cst, 0));
+  vf.push (std::make_unique <value_cst> (cst, 0));
   return true;
 }
 
@@ -614,21 +593,24 @@ valfile::uptr
 op_f_value::next ()
 {
   while (auto vf = m_upstream->next ())
-    if (auto v = vf->get_slot_as <value_attr> (m_src))
-      {
-	vf->set_slot (m_dst, at_value (v->get_attr (), v->get_die (), m_gr));
-	return vf;
-      }
-    else if (auto v = vf->get_slot_as <value_cst> (m_src))
-      {
-	auto &cst = v->get_constant ();
-	constant cst2 {cst.value (), cst.dom ()->sign ()
-			? &signed_constant_dom : &unsigned_constant_dom};
-	vf->set_slot (m_dst, std::make_unique <value_cst> (cst2, 0));
-	return vf;
-      }
-    else
-      std::cerr << "Error: `value' expects a T_ATTR or T_CONST on TOS.\n";
+    {
+      auto vp = vf->pop ();
+      if (auto v = value::as <value_attr> (&*vp))
+	{
+	  vf->push (at_value (v->get_attr (), v->get_die (), m_gr));
+	  return vf;
+	}
+      else if (auto v = value::as <value_cst> (&*vp))
+	{
+	  auto &cst = v->get_constant ();
+	  constant cst2 {cst.value (), cst.dom ()->sign ()
+	      ? &signed_constant_dom : &unsigned_constant_dom};
+	  vf->push (std::make_unique <value_cst> (cst2, 0));
+	  return vf;
+	}
+      else
+	std::cerr << "Error: `value' expects a T_ATTR or T_CONST on TOS.\n";
+    }
 
   return nullptr;
 }
@@ -650,15 +632,18 @@ valfile::uptr
 op_f_cast::next ()
 {
   while (auto vf = m_upstream->next ())
-    if (auto v = vf->get_slot_as <value_cst> (m_src))
-      {
-	constant cst2 {v->get_constant ().value (), m_dom};
-	vf->set_slot (m_dst, std::make_unique <value_cst> (cst2, 0));
-	return vf;
-      }
-    else
-      std::cerr << "Error: cast to " << m_dom->name ()
-		<< " expects a constant on TOS.\n";
+    {
+      auto vp = vf->pop ();
+      if (auto v = value::as <value_cst> (&*vp))
+	{
+	  constant cst2 {v->get_constant ().value (), m_dom};
+	  vf->push (std::make_unique <value_cst> (cst2, 0));
+	  return vf;
+	}
+      else
+	std::cerr << "Error: cast to " << m_dom->name ()
+		  << " expects a constant on TOS.\n";
+    }
 
   return nullptr;
 }
@@ -679,15 +664,14 @@ op_f_cast::name () const
 
 
 bool
-op_f_parent::operate (valfile &vf, slot_idx dst,
-		      Dwarf_Attribute &attr, Dwarf_Die &die)
+op_f_parent::operate (valfile &vf, Dwarf_Attribute &attr, Dwarf_Die &die)
 {
-  vf.set_slot (dst, std::make_unique <value_die> (m_g, die, 0));
+  vf.push (std::make_unique <value_die> (m_g, die, 0));
   return true;
 }
 
 bool
-op_f_parent::operate (valfile &vf, slot_idx dst, Dwarf_Die &die)
+op_f_parent::operate (valfile &vf, Dwarf_Die &die)
 {
   Dwarf_Off par_off = m_g->find_parent (die);
   if (par_off == dwgrep_graph::none_off)
@@ -697,7 +681,7 @@ op_f_parent::operate (valfile &vf, slot_idx dst, Dwarf_Die &die)
   if (dwarf_offdie (&*m_g->dwarf, par_off, &par_die) == nullptr)
     throw_libdw ();
 
-  vf.set_slot (dst, std::make_unique <value_die> (m_g, par_die, 0));
+  vf.push (std::make_unique <value_die> (m_g, par_die, 0));
   return true;
 }
 
@@ -771,8 +755,7 @@ stringer_op::next ()
       if (auto op_vf = m_op->next ())
 	{
 	  std::stringstream ss;
-	  ss << op_vf->get_slot (m_src);
-	  op_vf->set_slot (m_src, nullptr);
+	  ss << *op_vf->pop ();
 	  return std::make_pair (std::move (op_vf), m_str + ss.str ());
 	}
 
@@ -793,16 +776,14 @@ struct op_format::pimpl
   std::shared_ptr <op> m_upstream;
   std::shared_ptr <stringer_origin> m_origin;
   std::shared_ptr <stringer> m_stringer;
-  slot_idx m_dst;
   size_t m_pos;
 
   pimpl (std::shared_ptr <op> upstream,
 	 std::shared_ptr <stringer_origin> origin,
-	 std::shared_ptr <stringer> stringer, slot_idx dst)
+	 std::shared_ptr <stringer> stringer)
     : m_upstream {upstream}
     , m_origin {origin}
     , m_stringer {stringer}
-    , m_dst {dst}
     , m_pos {0}
   {}
 
@@ -821,9 +802,8 @@ struct op_format::pimpl
 	auto s = m_stringer->next ();
 	if (s.first != nullptr)
 	  {
-	    auto v = std::make_unique <value_str>
-	      (std::move (s.second), m_pos++);
-	    s.first->set_slot (m_dst, std::move (v));
+	    s.first->push (std::make_unique <value_str>
+			   (std::move (s.second), m_pos++));
 	    return std::move (s.first);
 	  }
 
@@ -847,8 +827,8 @@ struct op_format::pimpl
 
 op_format::op_format (std::shared_ptr <op> upstream,
 		      std::shared_ptr <stringer_origin> origin,
-		      std::shared_ptr <stringer> stringer, slot_idx dst)
-  : m_pimpl {std::make_unique <pimpl> (upstream, origin, stringer, dst)}
+		      std::shared_ptr <stringer> stringer)
+  : m_pimpl {std::make_unique <pimpl> (upstream, origin, stringer)}
 {}
 
 op_format::~op_format ()
@@ -878,7 +858,7 @@ op_drop::next ()
 {
   if (auto vf = m_upstream->next ())
     {
-      vf->set_slot (m_idx, nullptr);
+      vf->pop ();
       return vf;
     }
   return nullptr;
@@ -901,7 +881,7 @@ op_dup::next ()
 {
   if (auto vf = m_upstream->next ())
     {
-      vf->set_slot (m_dst, vf->get_slot (m_src).clone ());
+      vf->push (vf->top ().clone ());
       return vf;
     }
   return nullptr;
@@ -925,9 +905,10 @@ op_swap::next ()
 {
   if (auto vf = m_upstream->next ())
     {
-      auto tmp = vf->release_slot (m_dst_a);
-      vf->set_slot (m_dst_a, vf->release_slot (m_dst_b));
-      vf->set_slot (m_dst_b, std::move (tmp));
+      auto a = vf->pop ();
+      auto b = vf->pop ();
+      vf->push (std::move (a));
+      vf->push (std::move (b));
       return vf;
     }
   return nullptr;
@@ -951,7 +932,7 @@ op_const::next ()
 {
   if (auto vf = m_upstream->next ())
     {
-      vf->set_slot (m_dst, std::make_unique <value_cst> (m_cst, 0));
+      vf->push (std::make_unique <value_cst> (m_cst, 0));
       return vf;
     }
   return nullptr;
@@ -971,8 +952,7 @@ op_strlit::next ()
 {
   if (auto vf = m_upstream->next ())
     {
-      vf->set_slot (m_dst,
-		    std::make_unique <value_str> (std::string (m_str), 0));
+      vf->push (std::make_unique <value_str> (std::string (m_str), 0));
       return vf;
     }
   return nullptr;
@@ -992,8 +972,7 @@ op_empty_list::next ()
 {
   if (auto vf = m_upstream->next ())
     {
-      vf->set_slot (m_dst,
-		    std::make_unique <value_seq> (value_seq::seq_t {}, 0));
+      vf->push (std::make_unique <value_seq> (value_seq::seq_t {}, 0));
       return vf;
     }
   return nullptr;
@@ -1094,19 +1073,14 @@ struct op_capture::pimpl
   std::shared_ptr <op> m_upstream;
   std::shared_ptr <op_origin> m_origin;
   std::shared_ptr <op> m_op;
-  slot_idx m_src;
-  slot_idx m_dst;
   std::vector <std::unique_ptr <valfile>> m_bases;
 
   pimpl (std::shared_ptr <op> upstream,
 	 std::shared_ptr <op_origin> origin,
-	 std::shared_ptr <op> op,
-	 slot_idx src, slot_idx dst)
-    : m_upstream (upstream)
-    , m_origin (origin)
-    , m_op (op)
-    , m_src (src)
-    , m_dst (dst)
+	 std::shared_ptr <op> op)
+    : m_upstream {upstream}
+    , m_origin {origin}
+    , m_op {op}
   {}
 
   void
@@ -1128,10 +1102,7 @@ struct op_capture::pimpl
 	  value_seq::seq_t vv;
 	  while (auto vf2 = m_op->next ())
 	    {
-	      std::unique_ptr <value> v2 = m_src != m_dst
-		? vf2->get_slot (m_src).clone ()
-		: vf2->release_slot (m_src);
-	      vv.push_back (std::move (v2));
+	      vv.push_back (vf2->pop ());
 	      m_bases.push_back (std::move (vf2));
 	    }
 
@@ -1144,7 +1115,7 @@ struct op_capture::pimpl
 
 	  auto vvp = std::make_shared <value_seq::seq_t> (std::move (vv));
 	  for (auto &b: m_bases)
-	    b->set_slot (m_dst, std::make_unique <value_seq> (vvp, 0));
+	    b->push (std::make_unique <value_seq> (vvp, 0));
 	}
       else
 	return nullptr;
@@ -1164,9 +1135,8 @@ struct op_capture::pimpl
 
 op_capture::op_capture (std::shared_ptr <op> upstream,
 			std::shared_ptr <op_origin> origin,
-			std::shared_ptr <op> op,
-			slot_idx src, slot_idx dst)
-  : m_pimpl {std::make_unique <pimpl> (upstream, origin, op, src, dst)}
+			std::shared_ptr <op> op)
+  : m_pimpl {std::make_unique <pimpl> (upstream, origin, op)}
 {}
 
 op_capture::~op_capture ()
@@ -1196,15 +1166,11 @@ op_capture::name () const
 struct op_f_each::pimpl
 {
   std::shared_ptr <op> m_upstream;
-  slot_idx m_src;
-  slot_idx m_dst;
   valfile::uptr m_vf;
   size_t m_i;
 
-  pimpl (std::shared_ptr <op> upstream, slot_idx src, slot_idx dst)
+  explicit pimpl (std::shared_ptr <op> upstream)
     : m_upstream {upstream}
-    , m_src {src}
-    , m_dst {dst}
     , m_i {0}
   {}
 
@@ -1230,7 +1196,7 @@ struct op_f_each::pimpl
 	while (m_vf == nullptr)
 	  if (auto vf = m_upstream->next ())
 	    {
-	      if (vf->get_slot_as <value_seq> (m_src) != nullptr)
+	      if (vf->top ().is <value_seq> ())
 		m_vf = std::move (vf);
 	      else
 		std::cerr << "Error: `each' expects a T_SEQ on TOS.\n";
@@ -1238,8 +1204,8 @@ struct op_f_each::pimpl
 	  else
 	    return nullptr;
 
-	auto &slot = static_cast <value_seq const &> (m_vf->get_slot (m_src));
-	auto &vv = *slot.get_seq ();
+	auto vp = m_vf->pop ();
+	auto &vv = *static_cast <value_seq *> (vp.get ())->get_seq ();
 
 	if (m_i < vv.size ())
 	  {
@@ -1248,7 +1214,7 @@ struct op_f_each::pimpl
 	    v->set_count (vv.size ());
 	    m_i++;
 	    valfile::uptr vf = std::make_unique <valfile> (*m_vf);
-	    vf->set_slot (m_dst, std::move (v));
+	    vf->push (std::move (v));
 	    return vf;
 	  }
 
@@ -1257,9 +1223,8 @@ struct op_f_each::pimpl
   }
 };
 
-op_f_each::op_f_each (std::shared_ptr <op> upstream,
-		      slot_idx src, slot_idx dst)
-  : m_pimpl {std::make_unique <pimpl> (upstream, src, dst)}
+op_f_each::op_f_each (std::shared_ptr <op> upstream)
+  : m_pimpl {std::make_unique <pimpl> (upstream)}
 {}
 
 op_f_each::~op_f_each ()
@@ -1288,20 +1253,23 @@ valfile::uptr
 op_f_length::next ()
 {
   while (auto vf = m_upstream->next ())
-    if (auto v = vf->get_slot_as <value_seq> (m_src))
-      {
-	constant t {v->get_seq ()->size (), &unsigned_constant_dom};
-	vf->set_slot (m_dst, std::make_unique <value_cst> (t, 0));
-	return vf;
-      }
-    else if (auto v = vf->get_slot_as <value_str> (m_src))
-      {
-	constant t {v->get_string ().length (), &unsigned_constant_dom};
-	vf->set_slot (m_dst, std::make_unique <value_cst> (t, 0));
-	return vf;
-      }
-    else
-      std::cerr << "Error: `length' expects a T_SEQ or T_STR on TOS.\n";
+    {
+      auto vp = vf->pop ();
+      if (auto v = value::as <value_seq> (&*vp))
+	{
+	  constant t {v->get_seq ()->size (), &unsigned_constant_dom};
+	  vf->push (std::make_unique <value_cst> (t, 0));
+	  return vf;
+	}
+      else if (auto v = value::as <value_str> (&*vp))
+	{
+	  constant t {v->get_string ().length (), &unsigned_constant_dom};
+	  vf->push (std::make_unique <value_cst> (t, 0));
+	  return vf;
+	}
+      else
+	std::cerr << "Error: `length' expects a T_SEQ or T_STR on TOS.\n";
+    }
 
   return nullptr;
 }
@@ -1324,8 +1292,8 @@ op_f_type::next ()
 {
   if (auto vf = m_upstream->next ())
     {
-      constant t = vf->get_slot (m_src).get_type_const ();
-      vf->set_slot (m_dst, std::make_unique <value_cst> (t, 0));
+      constant t = vf->pop ()->get_type_const ();
+      vf->push (std::make_unique <value_cst> (t, 0));
       return vf;
     }
 
@@ -1453,19 +1421,14 @@ struct op_subx::pimpl
   std::shared_ptr <op> m_upstream;
   std::shared_ptr <op_origin> m_origin;
   std::shared_ptr <op> m_op;
-  slot_idx m_src;
-  slot_idx m_dst;
   valfile::uptr m_vf;
 
   pimpl (std::shared_ptr <op> upstream,
 	 std::shared_ptr <op_origin> origin,
-	 std::shared_ptr <op> op,
-	 slot_idx src, slot_idx dst)
+	 std::shared_ptr <op> op)
     : m_upstream {upstream}
     , m_origin {origin}
     , m_op {op}
-    , m_src {src}
-    , m_dst {dst}
   {}
 
   void
@@ -1491,7 +1454,7 @@ struct op_subx::pimpl
 	if (auto vf = m_op->next ())
 	  {
 	    auto ret = std::make_unique <valfile> (*m_vf);
-	    ret->set_slot (m_dst, vf->release_slot (m_src));
+	    ret->push (vf->pop ());
 	    return ret;
 	  }
 
@@ -1509,9 +1472,8 @@ struct op_subx::pimpl
 
 op_subx::op_subx (std::shared_ptr <op> upstream,
 		  std::shared_ptr <op_origin> origin,
-		  std::shared_ptr <op> op,
-		  slot_idx src, slot_idx dst)
-  : m_pimpl {std::make_unique <pimpl> (upstream, origin, op, src, dst)}
+		  std::shared_ptr <op> op)
+  : m_pimpl {std::make_unique <pimpl> (upstream, origin, op)}
 {}
 
 op_subx::~op_subx ()
@@ -1560,96 +1522,84 @@ op_f_add::next ()
     };
 
   while (auto vf = m_upstream->next ())
-    if (auto va = vf->get_slot_as <value_cst> (m_src_a))
-      {
-	if (auto vb = vf->get_slot_as <value_cst> (m_src_b))
-	  {
-	    constant cst_a = va->get_constant ();
-	    constant cst_b = vb->get_constant ();
+    {
+      auto vpb = vf->pop ();
+      auto vpa = vf->pop ();
+      if (auto va = value::as <value_cst> (&*vpa))
+	{
+	  if (auto vb = value::as <value_cst> (&*vpb))
+	    {
+	      constant cst_a = va->get_constant ();
+	      constant cst_b = vb->get_constant ();
 
-	    check_arith (cst_a, cst_b);
+	      check_arith (cst_a, cst_b);
 
-	    constant result;
-	    if (cst_a.dom ()->sign () == cst_b.dom ()->sign ()
-		|| (cst_b.dom ()->sign () && ((int64_t) cst_b.value ()) >= 0))
-	      // Either both are signed, or both are unsigned, in
-	      // which case we can simply add.  Or B is signed and A
-	      // unsigned, but B is non-negative, and we can pretend
-	      // it's unsigned.
-	      result = constant {cst_a.value () + cst_b.value (),
-				 cst_a.dom ()->plain ()
-					? cst_b.dom () : cst_a.dom ()};
+	      constant result;
+	      if (cst_a.dom ()->sign () == cst_b.dom ()->sign ()
+		  || (cst_b.dom ()->sign () && ((int64_t) cst_b.value ()) >= 0))
+		// Either both are signed, or both are unsigned, in
+		// which case we can simply add.  Or B is signed and A
+		// unsigned, but B is non-negative, and we can pretend
+		// it's unsigned.
+		result = constant {cst_a.value () + cst_b.value (),
+				   cst_a.dom ()->plain ()
+				   ? cst_b.dom () : cst_a.dom ()};
 
-	    else if (cst_a.dom ()->sign () && ((int64_t) cst_a.value ()) >= 0)
-	      // A's signed but non-negative, treat it as unsigned.
-	      result = constant {cst_a.value () + cst_b.value (),
-				 cst_b.dom ()};
+	      else if (cst_a.dom ()->sign () && ((int64_t) cst_a.value ()) >= 0)
+		// A's signed but non-negative, treat it as unsigned.
+		result = constant {cst_a.value () + cst_b.value (),
+				   cst_b.dom ()};
 
-	    else if ((int64_t) (cst_a.value () + cst_b.value ()) >= 0)
-	      // A or B is signed and negative, but the other one is
-	      // greater, so we can keep unsigned dom.
-	      result = constant {cst_a.value () + cst_b.value (),
-				 cst_a.dom ()->sign ()
-					? cst_b.dom () : cst_a.dom ()};
+	      else if ((int64_t) (cst_a.value () + cst_b.value ()) >= 0)
+		// A or B is signed and negative, but the other one is
+		// greater, so we can keep unsigned dom.
+		result = constant {cst_a.value () + cst_b.value (),
+				   cst_a.dom ()->sign ()
+				   ? cst_b.dom () : cst_a.dom ()};
 
-	    else
-	      // Otherwise we need to take the signed dom.
-	      result = constant {cst_a.value () + cst_b.value (),
-				 cst_a.dom ()->sign ()
-					? cst_a.dom () : cst_b.dom ()};
-	    if (m_src_a == m_dst)
-	      vf->set_slot (m_src_b, nullptr);
-	    else if (m_src_b == m_dst)
-	      vf->set_slot (m_src_a, nullptr);
+	      else
+		// Otherwise we need to take the signed dom.
+		result = constant {cst_a.value () + cst_b.value (),
+				   cst_a.dom ()->sign ()
+				   ? cst_a.dom () : cst_b.dom ()};
 
-	    vf->set_slot (m_dst, std::make_unique <value_cst> (result, 0));
-	    return vf;
-	  }
-	else
-	  show_error ();
-      }
-    else if (auto va = vf->get_slot_as <value_str> (m_src_a))
-      {
-	if (auto vb = vf->get_slot_as <value_str> (m_src_b))
-	  {
-	    std::string result = va->get_string () + vb->get_string ();
+	      vf->push (std::make_unique <value_cst> (result, 0));
+	      return vf;
+	    }
+	  else
+	    show_error ();
+	}
+      else if (auto va = value::as <value_str> (&*vpa))
+	{
+	  if (auto vb = value::as <value_str> (&*vpb))
+	    {
+	      std::string result = va->get_string () + vb->get_string ();
 
-	    if (m_src_a == m_dst)
-	      vf->set_slot (m_src_b, nullptr);
-	    else if (m_src_b == m_dst)
-	      vf->set_slot (m_src_a, nullptr);
+	      vf->push (std::make_unique <value_str> (std::move (result), 0));
+	      return vf;
+	    }
+	  else
+	    show_error ();
+	}
+      else if (auto va = value::as <value_seq> (&*vpa))
+	{
+	  if (auto vb = value::as <value_seq> (&*vpb))
+	    {
+	      value_seq::seq_t res;
+	      for (auto const &v: *va->get_seq ())
+		res.emplace_back (v->clone ());
+	      for (auto const &v: *vb->get_seq ())
+		res.emplace_back (v->clone ());
 
-	    vf->set_slot (m_dst,
-			  std::make_unique <value_str> (std::move (result), 0));
-	    return vf;
-	  }
-	else
-	  show_error ();
-      }
-    else if (auto va = vf->get_slot_as <value_seq> (m_src_a))
-      {
-	if (auto vb = vf->get_slot_as <value_seq> (m_src_b))
-	  {
-	    value_seq::seq_t res;
-	    for (auto const &v: *va->get_seq ())
-	      res.emplace_back (v->clone ());
-	    for (auto const &v: *vb->get_seq ())
-	      res.emplace_back (v->clone ());
-
-	    if (m_src_a == m_dst)
-	      vf->set_slot (m_src_b, nullptr);
-	    else if (m_src_b == m_dst)
-	      vf->set_slot (m_src_a, nullptr);
-
-	    vf->set_slot (m_dst,
-			  std::make_unique <value_seq> (std::move (res), 0));
-	    return vf;
-	  }
-	else
-	  show_error ();
-      }
-    else
-      show_error ();
+	      vf->push (std::make_unique <value_seq> (std::move (res), 0));
+	      return vf;
+	    }
+	  else
+	    show_error ();
+	}
+      else
+	show_error ();
+    }
 
   return nullptr;
 }
@@ -1672,7 +1622,8 @@ simple_op::next ()
 {
   if (auto vf = m_upstream->next ())
     {
-      vf->set_slot (m_dst, operate (vf->get_slot (m_src)));
+      auto vp = vf->pop ();
+      vf->push (operate (*vp));
       return vf;
     }
 
@@ -1759,12 +1710,12 @@ pred_or::name () const
 pred_result
 pred_at::result (valfile &vf)
 {
-  if (auto v = vf.get_slot_as <value_die> (m_idx))
+  if (auto v = vf.top_as <value_die> ())
     {
       Dwarf_Die *die = &v->get_die ();
       return pred_result (dwarf_hasattr_integrate (die, m_atname) != 0);
     }
-  else if (auto v = vf.get_slot_as <value_attr> (m_idx))
+  else if (auto v = vf.top_as <value_attr> ())
     return pred_result (dwarf_whatattr (&v->get_attr ()) == m_atname);
   else
     {
@@ -1785,7 +1736,7 @@ pred_at::name () const
 pred_result
 pred_tag::result (valfile &vf)
 {
-  if (auto v = vf.get_slot_as <value_die> (m_idx))
+  if (auto v = vf.top_as <value_die> ())
     return pred_result (dwarf_tag (&v->get_die ()) == m_tag);
   else
     {
@@ -1807,11 +1758,10 @@ pred_tag::name () const
 namespace
 {
   pred_result
-  comparison_result (valfile &vf, slot_idx idx_a, slot_idx idx_b,
-		     cmp_result want)
+  comparison_result (valfile &vf, cmp_result want)
   {
-    if (auto va = vf.get_slot_as <value_cst> (idx_a))
-      if (auto vb = vf.get_slot_as <value_cst> (idx_b))
+    if (auto va = vf.top_as <value_cst> ())
+      if (auto vb = vf.below_as <value_cst> ())
 	// For two different domains, complain about comparisons that
 	// don't have at least one comparand signed_constant_dom or
 	// unsigned_constant_dom.
@@ -1821,8 +1771,8 @@ namespace
 	  std::cerr << "Warning: comparing " << *va << " to " << *vb
 		    << " is probably not meaningful (different domains).\n";
 
-    auto &va = vf.get_slot (idx_a);
-    auto &vb = vf.get_slot (idx_b);
+    auto &va = vf.top ();
+    auto &vb = vf.below ();
     cmp_result r = va.cmp (vb);
     if (r == cmp_result::fail)
       {
@@ -1837,7 +1787,7 @@ namespace
 pred_result
 pred_eq::result (valfile &vf)
 {
-  return comparison_result (vf, m_idx_a, m_idx_b, cmp_result::equal);
+  return comparison_result (vf, cmp_result::equal);
 }
 
 std::string
@@ -1849,7 +1799,7 @@ pred_eq::name () const
 pred_result
 pred_lt::result (valfile &vf)
 {
-  return comparison_result (vf, m_idx_a, m_idx_b, cmp_result::less);
+  return comparison_result (vf, cmp_result::less);
 }
 
 std::string
@@ -1861,7 +1811,7 @@ pred_lt::name () const
 pred_result
 pred_gt::result (valfile &vf)
 {
-  return comparison_result (vf, m_idx_a, m_idx_b, cmp_result::greater);
+  return comparison_result (vf, cmp_result::greater);
 }
 
 std::string
@@ -1870,19 +1820,17 @@ pred_gt::name () const
   return "pred_gt";
 }
 
-pred_root::pred_root (dwgrep_graph::sptr g, slot_idx idx_a)
-  : m_g (g)
-  , m_idx_a (idx_a)
-{
-}
+pred_root::pred_root (dwgrep_graph::sptr g)
+  : m_g {g}
+{}
 
 pred_result
 pred_root::result (valfile &vf)
 {
-  if (auto v = vf.get_slot_as <value_die> (m_idx_a))
+  if (auto v = vf.top_as <value_die> ())
     return pred_result (m_g->is_root (v->get_die ()));
 
-  else if (vf.get_slot_as <value_attr> (m_idx_a) != nullptr)
+  else if (vf.top ().is <value_attr> ())
     // By definition, attributes are never root.
     return pred_result::no;
 
@@ -1927,10 +1875,10 @@ pred_subx_any::reset ()
 pred_result
 pred_empty::result (valfile &vf)
 {
-  if (auto v = vf.get_slot_as <value_str> (m_idx_a))
+  if (auto v = vf.top_as <value_str> ())
     return pred_result (v->get_string () == "");
 
-  else if (auto v = vf.get_slot_as <value_seq> (m_idx_a))
+  else if (auto v = vf.top_as <value_seq> ())
     return pred_result (v->get_seq ()->empty ());
 
   else
@@ -1949,14 +1897,14 @@ pred_empty::name () const
 pred_result
 pred_match::result (valfile &vf)
 {
-  auto va = vf.get_slot_as <value_str> (m_idx_a);
+  auto va = vf.below_as <value_str> ();
   if (va == nullptr)
     {
       std::cerr << "Error: match: value below TOS is not a string\n";
       return pred_result::fail;
     }
 
-  auto vb = vf.get_slot_as <value_str> (m_idx_b);
+  auto vb = vf.top_as <value_str> ();
   if (vb == nullptr)
     {
       std::cerr << "Error: match: value on TOS is not a string\n";

@@ -17,11 +17,10 @@ class valfile
 
 public:
   typedef std::unique_ptr <valfile> uptr;
-  explicit valfile (size_t n)
-    : m_values {n}
-  {}
 
+  valfile () = default;
   valfile (valfile const &other);
+  valfile (valfile &&other) = default;
   ~valfile () = default;
 
   size_t
@@ -31,30 +30,47 @@ public:
   }
 
   void
-  set_slot (slot_idx i, std::unique_ptr <value> vp)
+  push (std::unique_ptr <value> vp)
   {
-    m_values[i] = std::move (vp);
+    m_values.push_back (std::move (vp));
   }
 
   std::unique_ptr <value>
-  release_slot (slot_idx idx)
+  pop ()
   {
-    return std::move (m_values[idx]);
+    auto ret = std::move (m_values.back ());
+    m_values.pop_back ();
+    return ret;
   }
 
   value const &
-  get_slot (slot_idx idx) const
+  top () const
   {
-    assert (m_values[idx] != nullptr);
-    return *m_values[idx].get ();
+    assert (! m_values.empty ());
+    return *m_values.back ().get ();
+  }
+
+  value const &
+  below () const
+  {
+    assert (m_values.size () > 1);
+    return *(m_values.rbegin () + 1)->get ();
   }
 
   template <class T>
-  T *get_slot_as (slot_idx idx) const
+  T *
+  top_as ()
   {
-    value *vp = m_values[idx].get ();
-    assert (vp != nullptr);
-    return value::as <T> (vp);
+    value const &ret = top ();
+    return value::as <T> (const_cast <value *> (&ret));
+  }
+
+  template <class T>
+  T *
+  below_as ()
+  {
+    value const &ret = below ();
+    return value::as <T> (const_cast <value *> (&ret));
   }
 
   bool operator< (valfile const &that) const;

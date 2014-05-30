@@ -417,6 +417,7 @@ namespace
   stack_refs
   resolve_operands (tree &t, stack_refs sr, bool elim_shf)
   {
+    elim_shf = false;
     switch (t.m_tt)
       {
       case tree_type::CLOSE_PLUS:

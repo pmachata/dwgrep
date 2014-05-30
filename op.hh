@@ -67,8 +67,7 @@ class op_sel_winfo
   std::unique_ptr <pimpl> m_pimpl;
 
 public:
-  op_sel_winfo (std::shared_ptr <op> upstream,
-		   dwgrep_graph::sptr q, slot_idx dst);
+  op_sel_winfo (std::shared_ptr <op> upstream, dwgrep_graph::sptr q);
   ~op_sel_winfo ();
 
   valfile::uptr next () override;
@@ -84,8 +83,7 @@ class op_sel_unit
 
 public:
   op_sel_unit (std::shared_ptr <op> upstream,
-	       dwgrep_graph::sptr q,
-	       slot_idx src, slot_idx dst);
+	       dwgrep_graph::sptr q);
   ~op_sel_unit ();
 
   valfile::uptr next () override;
@@ -101,8 +99,7 @@ class op_f_child
 
 public:
   op_f_child (std::shared_ptr <op> upstream,
-	       dwgrep_graph::sptr gr,
-	      slot_idx src, slot_idx dst);
+	       dwgrep_graph::sptr gr);
   ~op_f_child ();
   valfile::uptr next () override;
   std::string name () const override;
@@ -117,8 +114,7 @@ class op_f_attr
 
 public:
   op_f_attr (std::shared_ptr <op> upstream,
-	     dwgrep_graph::sptr gr,
-	     slot_idx src, slot_idx dst);
+	     dwgrep_graph::sptr gr);
   ~op_f_attr ();
 
   valfile::uptr next () override;
@@ -164,16 +160,11 @@ class op_f_value
   : public op
 {
   std::shared_ptr <op> m_upstream;
-  slot_idx m_src;
-  slot_idx m_dst;
   dwgrep_graph::sptr m_gr;
 
 public:
-  op_f_value (std::shared_ptr <op> upstream, dwgrep_graph::sptr gr,
-	      slot_idx src, slot_idx dst)
+  op_f_value (std::shared_ptr <op> upstream, dwgrep_graph::sptr gr)
     : m_upstream {upstream}
-    , m_src {src}
-    , m_dst {dst}
     , m_gr {gr}
   {}
 
@@ -186,16 +177,11 @@ class op_f_cast
   : public op
 {
   std::shared_ptr <op> m_upstream;
-  slot_idx m_src;
-  slot_idx m_dst;
   constant_dom const *m_dom;
 
 public:
-  op_f_cast (std::shared_ptr <op> upstream, constant_dom const *dom,
-	     slot_idx src, slot_idx dst)
+  op_f_cast (std::shared_ptr <op> upstream, constant_dom const *dom)
     : m_upstream {upstream}
-    , m_src {src}
-    , m_dst {dst}
     , m_dom {dom}
   {}
 
@@ -208,18 +194,13 @@ class dwop_f
   : public op
 {
   std::shared_ptr <op> m_upstream;
-  slot_idx m_src;
-  slot_idx m_dst;
 
 protected:
   dwgrep_graph::sptr m_g;
 
 public:
-  dwop_f (std::shared_ptr <op> upstream, dwgrep_graph::sptr gr,
-	  slot_idx src, slot_idx dst)
+  dwop_f (std::shared_ptr <op> upstream, dwgrep_graph::sptr gr)
     : m_upstream {upstream}
-    , m_src {src}
-    , m_dst {dst}
     , m_g {gr}
   {}
 
@@ -230,12 +211,10 @@ public:
 
   virtual std::string name () const override = 0;
 
-  virtual bool operate (valfile &vf, slot_idx dst,
-			Dwarf_Die &die)
+  virtual bool operate (valfile &vf, Dwarf_Die &die)
   { return false; }
 
-  virtual bool operate (valfile &vf, slot_idx dst,
-			Dwarf_Attribute &attr, Dwarf_Die &die)
+  virtual bool operate (valfile &vf, Dwarf_Attribute &attr, Dwarf_Die &die)
   { return false; }
 };
 
@@ -246,13 +225,13 @@ class op_f_attr_named
 
 public:
   op_f_attr_named (std::shared_ptr <op> upstream, dwgrep_graph::sptr g,
-		   slot_idx src, slot_idx dst, int name)
-    : dwop_f (upstream, g, src, dst)
-    , m_name (name)
+		   int name)
+    : dwop_f {upstream, g}
+    , m_name {name}
   {}
 
   std::string name () const override;
-  bool operate (valfile &vf, slot_idx dst, Dwarf_Die &die) override;
+  bool operate (valfile &vf, Dwarf_Die &die) override;
 };
 
 class op_f_offset
@@ -262,7 +241,7 @@ public:
   using dwop_f::dwop_f;
 
   std::string name () const override;
-  bool operate (valfile &vf, slot_idx dst, Dwarf_Die &die) override;
+  bool operate (valfile &vf, Dwarf_Die &die) override;
 };
 
 class op_f_name
@@ -272,9 +251,8 @@ public:
   using dwop_f::dwop_f;
 
   std::string name () const override;
-  bool operate (valfile &vf, slot_idx dst, Dwarf_Die &die) override;
-  bool operate (valfile &vf, slot_idx dst,
-		Dwarf_Attribute &attr, Dwarf_Die &die) override;
+  bool operate (valfile &vf, Dwarf_Die &die) override;
+  bool operate (valfile &vf, Dwarf_Attribute &attr, Dwarf_Die &die) override;
 };
 
 class op_f_tag
@@ -284,7 +262,7 @@ public:
   using dwop_f::dwop_f;
 
   std::string name () const override;
-  bool operate (valfile &vf, slot_idx dst, Dwarf_Die &die) override;
+  bool operate (valfile &vf, Dwarf_Die &die) override;
 };
 
 class op_f_form
@@ -294,8 +272,7 @@ public:
   using dwop_f::dwop_f;
 
   std::string name () const override;
-  bool operate (valfile &vf, slot_idx dst,
-		Dwarf_Attribute &attr, Dwarf_Die &die) override;
+  bool operate (valfile &vf, Dwarf_Attribute &attr, Dwarf_Die &die) override;
 };
 
 class op_f_parent
@@ -305,9 +282,8 @@ public:
   using dwop_f::dwop_f;
 
   std::string name () const override;
-  bool operate (valfile &vf, slot_idx dst, Dwarf_Die &die) override;
-  bool operate (valfile &vf, slot_idx dst,
-		Dwarf_Attribute &attr, Dwarf_Die &die) override;
+  bool operate (valfile &vf, Dwarf_Die &die) override;
+  bool operate (valfile &vf, Dwarf_Attribute &attr, Dwarf_Die &die) override;
 };
 
 // The stringer hieararchy supports op_format, which implements
@@ -373,18 +349,16 @@ class stringer_op
   std::shared_ptr <op_origin> m_origin;
   std::shared_ptr <op> m_op;
   std::string m_str;
-  slot_idx m_src;
   bool m_have;
 
 public:
   stringer_op (std::shared_ptr <stringer> upstream,
 	       std::shared_ptr <op_origin> origin,
-	       std::shared_ptr <op> op, slot_idx src)
-    : m_upstream (std::move (upstream))
-    , m_origin (origin)
-    , m_op (op)
-    , m_src (src)
-    , m_have (false)
+	       std::shared_ptr <op> op)
+    : m_upstream {std::move (upstream)}
+    , m_origin {origin}
+    , m_op {op}
+    , m_have {false}
   {}
 
   std::pair <valfile::uptr, std::string> next () override;
@@ -401,7 +375,7 @@ class op_format
 public:
   op_format (std::shared_ptr <op> upstream,
 	     std::shared_ptr <stringer_origin> origin,
-	     std::shared_ptr <stringer> stringer, slot_idx dst);
+	     std::shared_ptr <stringer> stringer);
 
   ~op_format ();
 
@@ -414,12 +388,10 @@ class op_drop
   : public op
 {
   std::shared_ptr <op> m_upstream;
-  slot_idx m_idx;
 
 public:
-  explicit op_drop (std::shared_ptr <op> upstream, slot_idx idx)
+  explicit op_drop (std::shared_ptr <op> upstream)
     : m_upstream (upstream)
-    , m_idx (idx)
   {}
 
   valfile::uptr next () override;
@@ -431,14 +403,10 @@ class op_dup
   : public op
 {
   std::shared_ptr <op> m_upstream;
-  slot_idx m_src;
-  slot_idx m_dst;
 
 public:
-  op_dup (std::shared_ptr <op> upstream, slot_idx src, slot_idx dst)
+  op_dup (std::shared_ptr <op> upstream)
     : m_upstream (upstream)
-    , m_src (src)
-    , m_dst (dst)
   {}
 
   valfile::uptr next () override;
@@ -450,14 +418,10 @@ class op_swap
   : public op
 {
   std::shared_ptr <op> m_upstream;
-  slot_idx m_dst_a;
-  slot_idx m_dst_b;
 
 public:
-  op_swap (std::shared_ptr <op> upstream, slot_idx dst_a, slot_idx dst_b)
+  op_swap (std::shared_ptr <op> upstream)
     : m_upstream (upstream)
-    , m_dst_a (dst_a)
-    , m_dst_b (dst_b)
   {}
 
   valfile::uptr next () override;
@@ -470,14 +434,11 @@ class op_const
 {
   std::shared_ptr <op> m_upstream;
   constant m_cst;
-  slot_idx m_dst;
 
 public:
-  op_const (std::shared_ptr <op> upstream,
-	    constant cst, slot_idx dst)
+  op_const (std::shared_ptr <op> upstream, constant cst)
     : m_upstream (upstream)
     , m_cst (cst)
-    , m_dst (dst)
   {}
 
   valfile::uptr next () override;
@@ -492,14 +453,11 @@ class op_strlit
 {
   std::shared_ptr <op> m_upstream;
   std::string m_str;
-  slot_idx m_dst;
 
 public:
-  op_strlit (std::shared_ptr <op> upstream,
-	     std::string str, slot_idx dst)
+  op_strlit (std::shared_ptr <op> upstream, std::string str)
     : m_upstream (upstream)
     , m_str (str)
-    , m_dst (dst)
   {}
 
   valfile::uptr next () override;
@@ -513,12 +471,10 @@ class op_empty_list
   : public op
 {
   std::shared_ptr <op> m_upstream;
-  slot_idx m_dst;
 
 public:
-  op_empty_list (std::shared_ptr <op> upstream, slot_idx dst)
+  op_empty_list (std::shared_ptr <op> upstream)
     : m_upstream (upstream)
-    , m_dst (dst)
   {}
 
   valfile::uptr next () override;
@@ -609,8 +565,7 @@ public:
   // resulting list should be put to.
   op_capture (std::shared_ptr <op> upstream,
 	      std::shared_ptr <op_origin> origin,
-	      std::shared_ptr <op> op,
-	      slot_idx src, slot_idx dst);
+	      std::shared_ptr <op> op);
   ~op_capture ();
 
   void reset () override;
@@ -625,8 +580,7 @@ class op_f_each
   std::unique_ptr <pimpl> m_pimpl;
 
 public:
-  op_f_each (std::shared_ptr <op> upstream,
-	     slot_idx src, slot_idx dst);
+  op_f_each (std::shared_ptr <op> upstream);
   ~op_f_each ();
 
   valfile::uptr next () override;
@@ -638,15 +592,10 @@ class op_f_length
   : public op
 {
   std::shared_ptr <op> m_upstream;
-  slot_idx m_src;
-  slot_idx m_dst;
 
 public:
-  op_f_length (std::shared_ptr <op> upstream,
-	     slot_idx src, slot_idx dst)
+  op_f_length (std::shared_ptr <op> upstream)
     : m_upstream (upstream)
-    , m_src (src)
-    , m_dst (dst)
   {}
 
   valfile::uptr next () override;
@@ -658,15 +607,10 @@ class op_f_type
   : public op
 {
   std::shared_ptr <op> m_upstream;
-  slot_idx m_src;
-  slot_idx m_dst;
 
 public:
-  op_f_type (std::shared_ptr <op> upstream,
-	     slot_idx src, slot_idx dst)
+  op_f_type (std::shared_ptr <op> upstream)
     : m_upstream {upstream}
-    , m_src {src}
-    , m_dst {dst}
   {}
 
   valfile::uptr next () override;
@@ -701,8 +645,7 @@ class op_subx
 public:
   op_subx (std::shared_ptr <op> upstream,
 	   std::shared_ptr <op_origin> origin,
-	   std::shared_ptr <op> op,
-	   slot_idx src, slot_idx dst);
+	   std::shared_ptr <op> op);
 
   ~op_subx ();
 
@@ -716,17 +659,10 @@ class op_f_add
   : public op
 {
   std::shared_ptr <op> m_upstream;
-  slot_idx m_src_a;
-  slot_idx m_src_b;
-  slot_idx m_dst;
 
 public:
-  op_f_add (std::shared_ptr <op> upstream,
-	    slot_idx src_a, slot_idx src_b, slot_idx dst)
+  explicit op_f_add (std::shared_ptr <op> upstream)
     : m_upstream {upstream}
-    , m_src_a {src_a}
-    , m_src_b {src_b}
-    , m_dst {dst}
   {}
 
   valfile::uptr next () override;
@@ -738,14 +674,10 @@ class simple_op
   : public op
 {
   std::shared_ptr <op> m_upstream;
-  slot_idx m_src;
-  slot_idx m_dst;
 
 public:
-  simple_op (std::shared_ptr <op> upstream, slot_idx src, slot_idx dst)
+  explicit simple_op (std::shared_ptr <op> upstream)
     : m_upstream {upstream}
-    , m_src {src}
-    , m_dst {dst}
   {}
 
   valfile::uptr next () override;
@@ -798,7 +730,9 @@ class pred_not
   std::unique_ptr <pred> m_a;
 
 public:
-  explicit pred_not (std::unique_ptr <pred> a) : m_a { std::move (a) } {}
+  explicit pred_not (std::unique_ptr <pred> a)
+    : m_a {std::move (a)}
+  {}
 
   pred_result result (valfile &vf) override;
   std::string name () const override;
@@ -855,12 +789,10 @@ class pred_at
   : public pred
 {
   unsigned m_atname;
-  slot_idx m_idx;
 
 public:
-  pred_at (unsigned atname, slot_idx idx)
+  explicit pred_at (unsigned atname)
     : m_atname (atname)
-    , m_idx (idx)
   {}
 
   pred_result result (valfile &vf) override;
@@ -872,12 +804,10 @@ class pred_tag
   : public pred
 {
   int m_tag;
-  slot_idx m_idx;
 
 public:
-  pred_tag (int tag, slot_idx idx)
+  explicit pred_tag (int tag)
     : m_tag (tag)
-    , m_idx (idx)
   {}
 
   pred_result result (valfile &vf) override;
@@ -888,15 +818,8 @@ public:
 class pred_binary
   : public pred
 {
-protected:
-  slot_idx m_idx_a;
-  slot_idx m_idx_b;
-
 public:
-  pred_binary (slot_idx idx_a, slot_idx idx_b)
-    : m_idx_a (idx_a)
-    , m_idx_b (idx_b)
-  {}
+  pred_binary () {}
   void reset () override {}
 };
 
@@ -934,10 +857,9 @@ class pred_root
   : public pred
 {
   dwgrep_graph::sptr m_g;
-  slot_idx m_idx_a;
 
 public:
-  pred_root (dwgrep_graph::sptr g, slot_idx idx_a);
+  explicit pred_root (dwgrep_graph::sptr g);
 
   pred_result result (valfile &vf) override;
   std::string name () const override;
@@ -965,12 +887,8 @@ public:
 class pred_empty
   : public pred
 {
-  slot_idx m_idx_a;
-
 public:
-  explicit pred_empty (slot_idx idx_a)
-    : m_idx_a (idx_a)
-  {}
+  pred_empty () {}
 
   pred_result result (valfile &vf) override;
   std::string name () const override;

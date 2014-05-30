@@ -106,11 +106,18 @@ public:
   }
 
   template <class T>
+  bool
+  is () const
+  {
+    return T::vtype == m_type;
+  }
+
+  template <class T>
   static T *
   as (value *val)
   {
     assert (val != nullptr);
-    if (T::vtype != val->m_type)
+    if (! val->is <T> ())
       return nullptr;
     return static_cast <T *> (val);
   }
@@ -120,7 +127,7 @@ public:
   as (value const *val)
   {
     assert (val != nullptr);
-    if (T::vtype != val->m_type)
+    if (! val->is <T> ())
       return nullptr;
     return static_cast <T const *> (val);
   }

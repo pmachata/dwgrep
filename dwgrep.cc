@@ -241,9 +241,8 @@ main(int argc, char *argv[])
 	    {
 	      if (with_filename)
 		std::cout << fn << ":\n";
-	      for (size_t i = 0; i < stk_depth; ++i)
-		if (auto v = result->release_slot (slot_idx (i)))
-		  std::cout << *v << std::endl;
+	      while (result->size () > 0)
+		std::cout << *result->pop () << std::endl;
 	      std::cout << "---\n";
 	    }
 	  else
