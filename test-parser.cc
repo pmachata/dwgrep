@@ -388,16 +388,10 @@ do_tests ()
 
   ftest ("winfo \"%( -offset %): %( @name %)\"",
 	 "(CAT (SEL_WINFO [dst=0;])"
-	 " (FORMAT [dst=0;] (STR<>) (F_OFFSET [a=0;dst=1;]) (STR<: >)"
+	 " (FORMAT [dst=0;] (STR<>)"
+	 " (PROTECT [a=0;dst=1;] (F_OFFSET [a=0;dst=0;])) (STR<: >)"
 	 " (CAT [dst=0;] (F_ATTR_NAMED<DW_AT_name> [a=0;dst=0;])"
 	 " (F_VALUE [a=0;dst=0;])) (STR<>)))",
-	 true);
-
-  ftest ("winfo (?const_type, ?volatile_type, ?restrict_type)",
-	 "(CAT (SEL_WINFO [dst=0;])"
-	 " (ASSERT (PRED_OR (PRED_OR (PRED_TAG<DW_TAG_const_type> [a=0;])"
-	 " (PRED_TAG<DW_TAG_volatile_type> [a=0;]))"
-	 " (PRED_TAG<DW_TAG_restrict_type> [a=0;]))))",
 	 true);
 
   test ("((1, 2), (3, 4))",
