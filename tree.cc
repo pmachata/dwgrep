@@ -673,21 +673,6 @@ namespace
 	  if (t.m_children.back ().m_tt == tree_type::TRANSFORM)
 	    throw std::runtime_error ("directly nested X/ disallowed");
 
-	  // OK, now we translate N/E into N of E's, each operating in
-	  // a different depth.
-	  uint64_t depth = t.child (0).cst ().value ();
-	  auto slots = sr.drop_release (depth).reverse ();
-
-	  std::vector <tree> nchildren;
-	  for (uint64_t i = 0; i < depth; ++i)
-	    {
-	      sr.push_one (slots);
-	      nchildren.push_back (t.m_children.back ());
-	      sr = resolve_operands (nchildren.back (), sr, elim_shf);
-	    }
-
-	  t.m_children = nchildren;
-	  t.m_tt = tree_type::CAT;
 	  break;
 	}
 
@@ -1064,14 +1049,16 @@ namespace
       case tree_type::PRED_ROOT:
 	return unresolved;
 
+      case tree_type::TRANSFORM:
+	return unresolved;
+
       case tree_type::SHF_ROT:
 	assert (! "resolve_count: ROT unhandled");
 	abort ();
 
       case tree_type::CLOSE_PLUS:
       case tree_type::MAYBE:
-      case tree_type::TRANSFORM:
-	assert (! "Should never gete here.");
+	assert (! "Should never get here.");
 	abort ();
       }
 

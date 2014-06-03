@@ -278,6 +278,25 @@ tree::build_exec (std::shared_ptr <op> upstream, dwgrep_graph::sptr q,
     case tree_type::F_CAST:
       return std::make_shared <op_f_cast> (upstream, cst ().dom ());
 
+    case tree_type::TRANSFORM:
+      {
+	// OK, now we translate N/E into N of E's, each operating in
+	// a different depth.
+	uint64_t depth = child (0).cst ().value ();
+	assert (static_cast <unsigned> (depth) == depth);
+
+	for (unsigned u = depth; u > 1; --u)
+	  {
+	    auto origin = std::make_shared <op_origin> (nullptr);
+	    auto op = child (1).build_exec (origin, q, maxsize);
+	    upstream = std::make_shared <op_transform> (upstream,
+							origin, op, u);
+	  }
+
+	// Now we attach the operation itself for the case of DEPTH==1.
+	return child (1).build_exec (upstream, q, maxsize);
+      }
+
     case tree_type::F_SUB:
     case tree_type::F_MUL:
     case tree_type::F_DIV:
@@ -292,7 +311,6 @@ tree::build_exec (std::shared_ptr <op> upstream, dwgrep_graph::sptr q,
 
     case tree_type::CLOSE_PLUS:  // X+ should be translated to X X*
     case tree_type::MAYBE:       // X? should be translated to (,X)
-    case tree_type::TRANSFORM:   // N/X should be translated to N X's
 
     case tree_type::PRED_TAG:
     case tree_type::PRED_AT:

@@ -1664,6 +1664,100 @@ op_f_count::name () const
 }
 
 
+struct op_transform::pimpl
+{
+  std::shared_ptr <op> m_upstream;
+  std::shared_ptr <op_origin> m_origin;
+  std::shared_ptr <op> m_op;
+  std::vector <std::unique_ptr <value> > m_saved;
+  unsigned m_depth;
+
+  pimpl (std::shared_ptr <op> upstream,
+	 std::shared_ptr <op_origin> origin,
+	 std::shared_ptr <op> op,
+	 unsigned depth)
+    : m_upstream {upstream}
+    , m_origin {origin}
+    , m_op {op}
+    , m_depth {depth}
+  {
+    assert (m_depth > 0);
+  }
+
+  void
+  reset_me ()
+  {
+    m_saved.clear ();
+  }
+
+  valfile::uptr
+  next ()
+  {
+    while (true)
+      {
+	while (m_saved.empty ())
+	  if (auto vf = m_upstream->next ())
+	    {
+	      for (unsigned i = 0; i < m_depth - 1; ++i)
+		m_saved.push_back (vf->pop ());
+
+	      m_op->reset ();
+	      m_origin->set_next (std::move (vf));
+	    }
+	  else
+	    return nullptr;
+
+	if (auto ret = m_op->next ())
+	  {
+	    for (unsigned i = m_saved.size (); i > 0; --i)
+	      ret->push (m_saved[i - 1]->clone ());
+	    return ret;
+	  }
+
+	reset_me ();
+      }
+  }
+
+  void
+  reset ()
+  {
+    reset_me ();
+    m_upstream->reset ();
+  }
+};
+
+op_transform::op_transform (std::shared_ptr <op> upstream,
+			    std::shared_ptr <op_origin> origin,
+			    std::shared_ptr <op> op,
+			    unsigned depth)
+  : m_pimpl {std::make_unique <pimpl> (upstream, origin, op, depth)}
+{}
+
+ op_transform::~op_transform ()
+{}
+
+valfile::uptr
+op_transform::next ()
+{
+  return m_pimpl->next ();
+}
+
+void
+op_transform::reset ()
+{
+  return m_pimpl->reset ();
+}
+
+std::string
+op_transform::name () const
+{
+  std::stringstream ss;
+  ss << "trasform<" << m_pimpl->m_depth
+     << ", " << m_pimpl->m_op->name () << ">";
+  return ss.str ();
+}
+
+
 pred_result
 pred_not::result (valfile &vf)
 {
