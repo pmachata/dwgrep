@@ -260,7 +260,7 @@ public:
   // computation.  As it works through the AST, it checks a number of
   // invariants, such as number of children, stack underruns, etc.
   // XXX this should actually be hidden behind build_exec or what not.
-  size_t determine_stack_effects ();
+  void determine_stack_effects ();
 
   // This should build an op node corresponding to this expression.
   //
@@ -274,14 +274,12 @@ public:
   // be set for each producer node by determine_stack_effects, and
   // should capture stack needs of the following computations.  NIY.
   std::shared_ptr <op>
-  build_exec (std::shared_ptr <op> upstream,
-	      dwgrep_graph::sptr q, size_t maxsize) const;
+  build_exec (std::shared_ptr <op> upstream, dwgrep_graph::sptr q) const;
 
   // Produce program suitable for interpretation.
   //
   // XXX see above for maxsize.  This should go away.  NIY.
-  std::unique_ptr <pred> build_pred (dwgrep_graph::sptr q,
-				     size_t maxsize) const;
+  std::unique_ptr <pred> build_pred (dwgrep_graph::sptr q) const;
 
   // === Parser interface ===
   //

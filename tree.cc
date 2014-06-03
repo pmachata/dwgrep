@@ -1067,10 +1067,10 @@ namespace
   }
 }
 
-size_t
+void
 tree::determine_stack_effects ()
 {
-  size_t ret = resolve_operands (*this, stack_refs {}, true).max ();
+  resolve_operands (*this, stack_refs {}, true).max ();
 
   // Count is potentially expensive and it would prevent most
   // producers from doing incremental work, even though count is
@@ -1083,7 +1083,6 @@ tree::determine_stack_effects ()
   assert (unresolved.empty ());
 
   std::cerr << *this << std::endl;
-  return ret;
 }
 
 void

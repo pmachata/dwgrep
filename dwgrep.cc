@@ -186,7 +186,7 @@ main(int argc, char *argv[])
       argc--;
     }
 
-  size_t stk_depth = query.determine_stack_effects ();
+  query.determine_stack_effects ();
   if (optimize)
     query.simplify ();
 
@@ -226,7 +226,7 @@ main(int argc, char *argv[])
 	  continue;
 	}
 
-      auto program = query.build_exec (nullptr, g, stk_depth);
+      auto program = query.build_exec (nullptr, g);
 
       uint64_t count = 0;
       while (valfile::uptr result = program->next ())

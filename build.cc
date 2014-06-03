@@ -5,7 +5,7 @@
 #include "make_unique.hh"
 
 std::unique_ptr <pred>
-tree::build_pred (dwgrep_graph::sptr q, size_t maxsize) const
+tree::build_pred (dwgrep_graph::sptr q) const
 {
   switch (m_tt)
     {
@@ -16,18 +16,17 @@ tree::build_pred (dwgrep_graph::sptr q, size_t maxsize) const
       return std::make_unique <pred_at> (cst ().value ());
 
     case tree_type::PRED_NOT:
-      return std::make_unique <pred_not>
-	(m_children.front ().build_pred (q, maxsize));
+      return std::make_unique <pred_not> (m_children.front ().build_pred (q));
 
     case tree_type::PRED_OR:
       return std::make_unique <pred_or>
-	(m_children[0].build_pred (q, maxsize),
-	 m_children[1].build_pred (q, maxsize));
+	(m_children[0].build_pred (q),
+	 m_children[1].build_pred (q));
 
     case tree_type::PRED_AND:
       return std::make_unique <pred_and>
-	(m_children[0].build_pred (q, maxsize),
-	 m_children[1].build_pred (q, maxsize));
+	(m_children[0].build_pred (q),
+	 m_children[1].build_pred (q));
 
     case tree_type::PRED_EQ:
       return std::make_unique <pred_eq> ();
@@ -54,7 +53,7 @@ tree::build_pred (dwgrep_graph::sptr q, size_t maxsize) const
       {
 	assert (m_children.size () == 1);
 	auto origin = std::make_shared <op_origin> (nullptr);
-	auto op = m_children.front ().build_exec (origin, q, maxsize);
+	auto op = m_children.front ().build_exec (origin, q);
 	return std::make_unique <pred_subx_any> (op, origin);
       }
 
@@ -122,8 +121,7 @@ tree::build_pred (dwgrep_graph::sptr q, size_t maxsize) const
 }
 
 std::shared_ptr <op>
-tree::build_exec (std::shared_ptr <op> upstream, dwgrep_graph::sptr q,
-		  size_t maxsize) const
+tree::build_exec (std::shared_ptr <op> upstream, dwgrep_graph::sptr q) const
 {
   if (upstream == nullptr)
     upstream = std::make_shared <op_origin> (std::make_unique <valfile> ());
@@ -132,7 +130,7 @@ tree::build_exec (std::shared_ptr <op> upstream, dwgrep_graph::sptr q,
     {
     case tree_type::CAT:
       for (auto const &tree: m_children)
-	upstream = tree.build_exec (upstream, q, maxsize);
+	upstream = tree.build_exec (upstream, q);
       return upstream;
 
     case tree_type::ALT:
@@ -147,10 +145,9 @@ tree::build_exec (std::shared_ptr <op> upstream, dwgrep_graph::sptr q,
 	    ops.push_back (std::make_shared <op_tine> (upstream, f, done, i));
 	}
 
-	auto build_branch = [&q, maxsize] (tree const &ch,
-					   std::shared_ptr <op> o)
+	auto build_branch = [&q] (tree const &ch, std::shared_ptr <op> o)
 	  {
-	    return ch.build_exec (o, q, maxsize);
+	    return ch.build_exec (o, q);
 	  };
 
 	std::transform (m_children.begin (), m_children.end (),
@@ -170,7 +167,7 @@ tree::build_exec (std::shared_ptr <op> upstream, dwgrep_graph::sptr q,
 
     case tree_type::ASSERT:
       return std::make_shared <op_assert>
-	(upstream, m_children.front ().build_pred (q, maxsize));
+	(upstream, m_children.front ().build_pred (q));
 
     case tree_type::F_CHILD:
       return std::make_shared <op_f_child> (upstream, q);
@@ -210,7 +207,7 @@ tree::build_exec (std::shared_ptr <op> upstream, dwgrep_graph::sptr q,
 	  else
 	    {
 	      auto origin2 = std::make_shared <op_origin> (nullptr);
-	      auto op = tree.build_exec (origin2, q, maxsize);
+	      auto op = tree.build_exec (origin2, q);
 	      strgr = std::make_shared <stringer_op> (strgr, origin2, op);
 	    }
 
@@ -236,7 +233,7 @@ tree::build_exec (std::shared_ptr <op> upstream, dwgrep_graph::sptr q,
     case tree_type::CAPTURE:
       {
 	auto origin = std::make_shared <op_origin> (nullptr);
-	auto op = m_children.front ().build_exec (origin, q, maxsize);
+	auto op = m_children.front ().build_exec (origin, q);
 	return std::make_shared <op_capture> (upstream, origin, op);
       }
 
@@ -255,14 +252,14 @@ tree::build_exec (std::shared_ptr <op> upstream, dwgrep_graph::sptr q,
     case tree_type::CLOSE_STAR:
       {
 	auto origin = std::make_shared <op_origin> (nullptr);
-	auto op = m_children.front ().build_exec (origin, q, maxsize);
+	auto op = m_children.front ().build_exec (origin, q);
 	return std::make_shared <op_close> (upstream, origin, op);
       }
 
     case tree_type::PROTECT:
       {
 	auto origin = std::make_shared <op_origin> (nullptr);
-	auto op = m_children.front ().build_exec (origin, q, maxsize);
+	auto op = m_children.front ().build_exec (origin, q);
 	return std::make_shared <op_subx> (upstream, origin, op);
       }
 
@@ -288,13 +285,13 @@ tree::build_exec (std::shared_ptr <op> upstream, dwgrep_graph::sptr q,
 	for (unsigned u = depth; u > 1; --u)
 	  {
 	    auto origin = std::make_shared <op_origin> (nullptr);
-	    auto op = child (1).build_exec (origin, q, maxsize);
+	    auto op = child (1).build_exec (origin, q);
 	    upstream = std::make_shared <op_transform> (upstream,
 							origin, op, u);
 	  }
 
 	// Now we attach the operation itself for the case of DEPTH==1.
-	return child (1).build_exec (upstream, q, maxsize);
+	return child (1).build_exec (upstream, q);
       }
 
     case tree_type::F_SUB:
