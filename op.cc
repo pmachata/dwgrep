@@ -1204,8 +1204,8 @@ struct op_f_each::pimpl
 	  else
 	    return nullptr;
 
-	auto vp = m_vf->pop ();
-	auto &vv = *static_cast <value_seq *> (vp.get ())->get_seq ();
+	value &vp = m_vf->top ();
+	auto &vv = *static_cast <value_seq &> (vp).get_seq ();
 
 	if (m_i < vv.size ())
 	  {
@@ -1214,6 +1214,7 @@ struct op_f_each::pimpl
 	    v->set_count (vv.size ());
 	    m_i++;
 	    valfile::uptr vf = std::make_unique <valfile> (*m_vf);
+	    vf->pop ();
 	    vf->push (std::move (v));
 	    return vf;
 	  }

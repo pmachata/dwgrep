@@ -38,20 +38,21 @@ public:
   std::unique_ptr <value>
   pop ()
   {
+    assert (! m_values.empty ());
     auto ret = std::move (m_values.back ());
     m_values.pop_back ();
     return ret;
   }
 
-  value const &
-  top () const
+  value &
+  top ()
   {
     assert (! m_values.empty ());
     return *m_values.back ().get ();
   }
 
-  value const &
-  below () const
+  value &
+  below ()
   {
     assert (m_values.size () > 1);
     return *(m_values.rbegin () + 1)->get ();
