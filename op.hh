@@ -128,7 +128,9 @@ class op_nop
   std::shared_ptr <op> m_upstream;
 
 public:
-  explicit op_nop (std::shared_ptr <op> upstream) : m_upstream (upstream) {}
+  explicit op_nop (std::shared_ptr <op> upstream)
+    : m_upstream {upstream}
+  {}
 
   valfile::uptr next () override;
   std::string name () const override;
@@ -145,8 +147,8 @@ class op_assert
 
 public:
   op_assert (std::shared_ptr <op> upstream, std::unique_ptr <pred> p)
-    : m_upstream (upstream)
-    , m_pred (std::move (p))
+    : m_upstream {upstream}
+    , m_pred {std::move (p)}
   {}
 
   valfile::uptr next () override;
@@ -391,7 +393,7 @@ class op_drop
 
 public:
   explicit op_drop (std::shared_ptr <op> upstream)
-    : m_upstream (upstream)
+    : m_upstream {upstream}
   {}
 
   valfile::uptr next () override;
@@ -405,8 +407,8 @@ class op_dup
   std::shared_ptr <op> m_upstream;
 
 public:
-  op_dup (std::shared_ptr <op> upstream)
-    : m_upstream (upstream)
+  explicit op_dup (std::shared_ptr <op> upstream)
+    : m_upstream {upstream}
   {}
 
   valfile::uptr next () override;
@@ -420,8 +422,8 @@ class op_swap
   std::shared_ptr <op> m_upstream;
 
 public:
-  op_swap (std::shared_ptr <op> upstream)
-    : m_upstream (upstream)
+  explicit op_swap (std::shared_ptr <op> upstream)
+    : m_upstream {upstream}
   {}
 
   valfile::uptr next () override;
@@ -437,8 +439,8 @@ class op_const
 
 public:
   op_const (std::shared_ptr <op> upstream, constant cst)
-    : m_upstream (upstream)
-    , m_cst (cst)
+    : m_upstream {upstream}
+    , m_cst {cst}
   {}
 
   valfile::uptr next () override;
@@ -456,8 +458,8 @@ class op_strlit
 
 public:
   op_strlit (std::shared_ptr <op> upstream, std::string str)
-    : m_upstream (upstream)
-    , m_str (str)
+    : m_upstream {upstream}
+    , m_str {str}
   {}
 
   valfile::uptr next () override;
@@ -473,8 +475,8 @@ class op_empty_list
   std::shared_ptr <op> m_upstream;
 
 public:
-  op_empty_list (std::shared_ptr <op> upstream)
-    : m_upstream (upstream)
+  explicit op_empty_list (std::shared_ptr <op> upstream)
+    : m_upstream {upstream}
   {}
 
   valfile::uptr next () override;
@@ -516,10 +518,10 @@ public:
 	   std::shared_ptr <std::vector <valfile::uptr> > file,
 	   std::shared_ptr <bool> done,
 	   size_t branch_id)
-    : m_upstream (upstream)
-    , m_file (file)
-    , m_done (done)
-    , m_branch_id (branch_id)
+    : m_upstream {upstream}
+    , m_file {file}
+    , m_done {done}
+    , m_branch_id {branch_id}
   {
     assert (m_branch_id < m_file->size ());
   }
@@ -580,7 +582,7 @@ class op_f_each
   std::unique_ptr <pimpl> m_pimpl;
 
 public:
-  op_f_each (std::shared_ptr <op> upstream);
+  explicit op_f_each (std::shared_ptr <op> upstream);
   ~op_f_each ();
 
   valfile::uptr next () override;
@@ -594,7 +596,7 @@ class op_f_length
   std::shared_ptr <op> m_upstream;
 
 public:
-  op_f_length (std::shared_ptr <op> upstream)
+  explicit op_f_length (std::shared_ptr <op> upstream)
     : m_upstream (upstream)
   {}
 
@@ -609,7 +611,7 @@ class op_f_type
   std::shared_ptr <op> m_upstream;
 
 public:
-  op_f_type (std::shared_ptr <op> upstream)
+  explicit op_f_type (std::shared_ptr <op> upstream)
     : m_upstream {upstream}
   {}
 
