@@ -1359,19 +1359,19 @@
 
    - What the following XQuery really does:
 
-   : ?root ?(dup 2/(unit ?imported_unit @import) ?lt
-   :             2/(unit ?imported_unit @import) ?eq)
+     : ?root ?(dup 2/(unit ?imported_unit @import) ?lt
+     :             2/(unit ?imported_unit @import) ?eq)
 
    - XQuery:
 
-   : for $u in //.[../name() = "debug_info"]
-   : for $a in $u//tag_imported_unit
-   : for $b in $u//tag_imported_unit
-   : let $c := //.[@id=$a/at_import/text()]
-   : let $d := //.[@id=$b/at_import/text()]
-   : where $a/@id < $b/@id and $c//tag_imported_unit/at_import/text()
-   :                         = $d//tag_imported_unit/at_import/text()
-   : return $u
+     : for $u in //.[../name() = "debug_info"]
+     : for $a in $u//tag_imported_unit
+     : for $b in $u//tag_imported_unit
+     : let $c := //.[@id=$a/at_import/text()]
+     : let $d := //.[@id=$b/at_import/text()]
+     : where $a/@id < $b/@id and $c//tag_imported_unit/at_import/text()
+     :                         = $d//tag_imported_unit/at_import/text()
+     : return $u
 
 ** typedef resolution
    - dsmith asked for a way to get typedef "resolution" from DWARF
