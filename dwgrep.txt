@@ -1373,3 +1373,28 @@
    :                         = $d//tag_imported_unit/at_import/text()
    : return $u
 
+** typedef resolution
+   - dsmith asked for a way to get typedef "resolution" from DWARF
+     (for use with the syscall types in the kernel). Which was timely
+     since I was just thinking about having some "roundtripping" tests
+     for GCC/elfutils DWARF types. So hacked up a dwfltypedef that
+     prints all (C) typedefs found:
+
+     $ ./dwfltypedef -e ./dwfltypedef
+     [2d] typedef size_t long unsigned int (unsigned, 8 bytes);
+     [70] typedef __off_t long int (signed, 8 bytes);
+     [7b] typedef __off64_t long int (signed, 8 bytes);
+     [...]
+
+     : winfo ?typedef dup @type (?typedef @type)* !typedef swap
+     : "[%(-offset%)] typedef %(@name%) %(-@name%) \
+     : (%((-@encoding, !@encoding "???")%), \
+     : %((@byte_size, !@byte_size drop "???")%) bytes)"
+
+     [0x57] typedef __int32_t int (DW_ATE_signed, 4 bytes)
+     [0x70] typedef __off_t long int (DW_ATE_signed, 8 bytes)
+     [0x7b] typedef __off64_t long int (DW_ATE_signed, 8 bytes)
+     [0x9c] typedef __intptr_t long int (DW_ATE_signed, 8 bytes)
+     [0xa7] typedef size_t long unsigned int (DW_ATE_unsigned, 8 bytes)
+     [...]
+
