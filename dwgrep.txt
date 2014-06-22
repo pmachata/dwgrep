@@ -465,6 +465,11 @@
    - For example, to follow through all edges:
      : (child, attribute ?(form "%s" "DW_FORM_ref.*" ?match))
 
+**  EXPR → EXPR₁ “||” EXPR₂ … — first match
+
+   EXPR yields all the values of the first expression that yields
+   anything.
+
 ** •EXPR → NUM “/” EXPR₁ — pathset exploration
 
    The effect is as if the topmost NUM elements were removed from
@@ -495,10 +500,6 @@
      It is thus easy to achieve deep rotation: top four items are
      rotated by 3/swap etc.  This relies on the above liberal
      definition of N/expr.
-
-**  EXPR → “-” EXPR₁ — evaluation in sub-expression context
-   EXPR₁ is evaluated on a separate stack, whose TOS is then copied to
-   the incoming stack and produced as a result.
 
 ** •EXPR → EXPR₁ “*” | EXPR₁ “+” | EXPR₁ “?” — iterate
 
@@ -590,49 +591,37 @@
    equivalent to (among others):
    : [ 0 1 ?eq ]
 
-**  EXPR → “{” EXPR₁ “}” | “:”ID — blocks, symbols
+**  EXPR → “->” ID — binding
+
+   - This pops TOS and binds this value to an identifier ID.  From
+     that point on, mentioning ID is the same as pushing the value to
+     TOS.
+
+**  EXPR → “{” EXPR₁ “}” | “def” ID “{” EXPR₁ “}” | “:”ID | “apply” — blocks
 
     - {X} -- A block syntax.  A value representing an expression X is
-      pushed on TOS.
+      pushed to TOS.
 
-    - :ID -- A symbol syntax.  A value representing symbol ID is
-      pushed on TOS.  Normally mentioning a word such as "swap" leads
-      directly to that action being performed.  ":swap" instead pushes
-      the symbol to TOS.
+      XXX This seems to need a declarator block syntax.  ->A ->B works
+      fine, but the way that A and B are mentioned in the wrong order,
+      and the stack effect schemes are in different order still, makes
+      things unclear.  So maybe { ->A B | ... }?  Kitten just says
+      "->A B;".
 
-    - def -- pop symbol on TOS and value below TOS.  In local scope,
-      bind the symbol to that value.
+    - def ID {X} -- similar to {X} ->ID, but binds a function.
+      Mentioning ID doesn't push the block, but directly evaluates the
+      body.  The following two are equivalent:
+      : def ID {X} ID
+      : {X} -> ID ID apply
 
-      If a def'd symbol is mentioned later (without the ":"), the
-      value it's bound to is pushed to the stack.  If the value is a
-      block, that block is executed.
-
-      : { dup add } :double def
+      : def double { dup add }
       : 3 double		# gives 6
 
-      : { :x def ... }		# within {}, x refers to whatever was on TOS
-      : { :x def :y def ... }	# x is what was on TOS, y is what was below TOS
+      : { ->x ... }	# within {}, x refers to whatever was on TOS
+      : { ->x ->y ... }	# x is what was on TOS, y is what was below TOS
 
-      XXX since {} and :X are both literal forms, and "def" is just an
-      ordinary word, this all takes place at runtime.  Hence we don't
-      know what a word refers to until we look it up, and that may
-      pose serious performance overhead (some tens of millions of
-      lookups are bound to be noticeable).
-
-      XXX This also kills pre-computing of stack slots.  But that was
-      a problem for extensibility anyway, so maybe it would have to go
-      away sooner or later anway.
-
-      The above definition allows for recursive functions as well,
-      since the names have to be resolved at runtime anyway:
-
-      : { :n def n 1 eq (if 1, else n n 1 - fact *) } :fact def
+      : def fact { ->n  if n ?1 then 1 else (n n 1 sub fact mul) }
       : 3 fact	# 6
-
-    - XXX eval -- resolve symbol on TOS to whatever it's bound to.
-
-    - x -- if a symbol is on TOS, then eval it.  Then expect a block
-      on TOS, which is executed.
 
       The execution introduces a new activation record (dynamic scope)
       inside the current scope.  Any def's bind symbols in this new
@@ -642,64 +631,136 @@
       remembers its surrounding scope, even if the execution already
       left it), so that they work as closures.
 
-      : { :x def { :y def x y + } } :adder def
-      : 2 adder 1 swap call
+      : def adder { ->x { ->y  x y add } }
+      : 2 adder 1 swap apply
 
-      : { :f def [ each f xc ] } :map def
+      : def map { ->f ->L  [ L each f apply ] }
 
-    - XXX sx -- pop TOS and avaluate it in sub-expression context,
-      push TOS of sub-stack on TOS of outer stack.
+      The apply as used in this context is thorny, see below.
 
-    - + -- pop a block on TOS, then evaluate its transitive closure
-    - * -- likewise for transitive reflexive closure
+    - :ID -- A symbol syntax.  A value representing symbol ID is
+      pushed on TOS.  Normally mentioning a word such as "swap" leads
+      directly to that action being performed.  ":swap" instead pushes
+      the symbol to TOS.
 
-    - Examples: dip, dip2, dipn:
-      : { :op def :tmp def op tmp } :dip def
-      : 1 2 3 { swap } dip	# 2 1 3
+    - XXX eval -- resolve symbol on TOS to whatever it's bound to.
 
-      : { :op def { { op } dip } dip } :dip2 def
-      : 1 2 3 4 { swap } dip2	# 2 1 3 4
+    - apply -- if a symbol is on TOS, then eval it.  Then expect a
+      block on TOS, which is executed.  If the result of that is again
+      a block, that block is not executed.
 
-      : { :n def :op def
-      :   n 0 eq (if op, else :tmp def { op } n 1 - dipn tmp) } :dipn def
-      :
-      : 1 2 3 4 { swap } 0 dipn	# 1 2 4 3
-      : 1 2 3 4 { swap } 1 dipn	# 1 3 2 4
+      This is a problematic operator, as we'd need to be able to
+      figure out statically what the stack effects will be.  For
+      obvious cases it might be possible to deduce, and for the rest
+      there might be an optional effect syntax.  E.g.:
 
-      : { :op def op op } :twice def
-      : 1 2 3 4 { add } twice	# 1 9
-
-      : { foo } :bar def
-      : { :op def  2 :foo def  op } :baz def
-      : { bar } baz		# 2
-
-      : { :tbr def :fbr def (?true tbr, ?false fbr) } :ifelse def
-      : -[ child ] length 0 eq { "empty" }{ "non-empty" } ifelse
-
-    - N/X can be made into {X} N topn:
-      : { :n def :op def
-      :   n 0 eq (if, else { op } n 1 - dipn
-      :                    { op } n 1 - topn) } :topn def
-
-      : 1 2 3 { 1 + } 1 topn	# 1 2 4
-      : 1 2 3 { 1 + } 2 topn	# 1 3 4
-
-    - {X} ? and {X} ! could assert whether X produces anything.
-      : { dup [] eq if } "?empty" def
-      : { dup [] ne if } "!empty" def
-      : { :op def {[ op ]} sx !empty drop } "?" def
-      : { :op def {[ op ]} sx ?empty drop } "!" def
-
-      But I guess we might as well keep the original ?{}, !{} syntax.
-      We might as well introduce -{}, ={} or something for execution
-      in sub-expression context, as that's wildly useful.
+      : def map { ->(a->b)f ->L  ... }
 
     - Stack shuffling operators:
-      : { :a def } :drop def
-      : { :a def a a } :dup def
-      : { :a def :b def a b } :swap def
-      : { :a def :b def :c def b a c } :rot def
-      : { :a def :b def b a b } :over def
+      : def drop { ->a }		# ->(a->)drop
+      : def dup { ->a a a }		# ->(a->a a)dup
+      : def swap { ->a ->b a b }	# ->(a b->b a)swap
+      : def rot { ->a ->b ->c b a c }	# ->(a b c->b c a)rot
+      : def over { ->a ->b b a b }	# ->(a b->a b a)over
+      So it seems tractable to deduce these schemes in these simple
+      cases, but in anything more involved, it's not altogether clear
+      this is possible.  But maybe it is--executing symbolically,
+      applying stack schemes of called functions recursively, taking
+      new letters from some pool, and then looking what symbols are
+      left on stack.
+
+    - With this all, can we still demand that stack effects be static?
+      It doesn't seem so.  Consider:
+      : { :foo def foo } :unknown def
+      : { drop } unknown
+      : { dup } unknown
+
+      With stack schemes, we can either postpone the deduction:
+      : def unknown { foo | foo apply }	# will be deduced on use site
+      : { drop } unknown		# ->(a (b->)->)unknown
+      : { dup } unknown			# ->(a (b->b b)->a a)unknown
+
+      Some of the deduction will need to be postponed anyway.  For
+      example, consider:
+      : def moo { f:(* *->* *) | f apply }
+      : def one { a b | a a }
+      : def two { a b | b b }
+      : { one } moo
+      : { two } moo
+      The two calls of moo end up having different effect on stack
+      slot ownership, which is important for separation of effects.
+      So perhaps we can just give up on stack effect declarations
+      altogether and deduce them all.
+
+      : def ifelse { tbr fbr | (?true drop tbr, ?false drop fbr) }
+      : ifelse:(x t f -> ???)	# deduced at instantiation depending on t and f
+
+      : winfo -[ child ] length 0 eq { X } { Y } ifelse      ?eq
+      :          (a->b)              (->g) (->i) (x t f->j)  (a b->a b)
+      : a         b    a   a    a a    a     a      a
+      :                b   c    c e    e     e      k
+      :                         d      f     f
+      :                                      g
+
+      So this seems to somehow work.  It's not clear whether it will
+      work very well with recursion, but it as well might.  The ?eq
+      binds together a "k" and an "a".  "a" is produced all the way
+      back at the front.  "k" is produced by ifelse, which takes e, f
+      and g as inputs, who are in turn produced by... etc.  This
+      eventually brings us back to "a", and I'm not sure whether
+      that's not a problem.  The goal is that the algorithm realizes
+      that it can create a set of values produced by winfo, and then
+      set of values produced by the remainder, and just make an
+      intersection of the two, instead of iterating all the
+      combinations the hard way.
+
+      We don't know what stack will look like after "unknown" is
+      called, unless we treat the definition as a template and
+      instantiate it each time (and then handling recursion becomes
+      tricky).
+
+      Can we instantiate each block once for each block argument?
+      I.e. the above would be instantiated twice: once for 1--0, and
+      once for 0--1.  That would mean that we know how many variables
+      a block takes.  We could require that be statically
+      determinable.
+
+      If we have statically-determined variables and function
+      definitions, we can determine when a variable is used in word
+      context.  We also see that apply is used, and know it expects
+      TOS as a block.  That would allow sort-of jitting, cloning
+      functions in run time.  It wouldn't be a good design for
+      statically slicing a program in several parts that can be run
+      separately and their results combined.
+
+      : { :tbr def :fbr def (?true tbr, ?false fbr) } :ifelse def
+      : +1 +1  -2   +1  -2    +0   +1     +0    +1       +1    -2
+
+      : winfo -[ child ] length 0 eq   { "empty" } { "non-empty" } ifelse
+      : +1       -1+1 +1 -1+1  +1 -2+1 +1 +1       +1 +1            
+
+      If we had "var" for local variables and "def" for new words,
+      that would mean blocks per se don't exist.  You couldn't say
+      ({blah} do-stuff) because the code inside do-stuff, to be
+      properly optimized, would need to know stack effects of the
+      outer block:
+      : { :tmp def tmp } :blah def
+      : 1 blah		# pushes 1
+      : {drop} blah	# drops
+      ... so again the "it would work as a macro, but then what do we
+      do with recursion".
+
+      : def blah { (* ->) * -> | @ }
+      : {drop} blah	# OK: {drop} is *->
+      : 1 blah		# error: 1 is *, expected *->
+      : {1} blah	# error: {1} is ->*, expected *->
+
+      : { a b | a @name b @name ?eq } ?
+
+    - XXXX how about count deferral?  We need to know which slots end
+      up being counted to wrap them in counters...  One obvious
+      solution is not to do it and let people do ([ X ] -length swap
+      each) if they care.
 
 **  EXPR → “?(” EXPR₁ “)” | “!(” EXPR₁ “)” — sub-expression assertions
 
@@ -999,6 +1060,7 @@
 
    Always succeeds, but as a side effect prints some information about
    the computation in whose context it appeared.
+~
 
 
 * TODO
@@ -1123,6 +1185,7 @@
      locks end up serializing, we might actually open the Dwarf in
      each thread anew, and see if that helps.
 
+
 * Examples
 
 ** Josh Stone's nontrivial-parameters script
@@ -1134,6 +1197,15 @@
    :   (?structure_type, ?class_type)) swap
    : "%( -@decl_file %): %( -@decl_line %): note: in function \
    : `%( @name %)', parameter `%( @name %)' type is not trivial"
+
+   - XXX
+     : winfo ?subprogram !@declaration
+     : ?(@decl_file ?("^/usr/" match) !("^/usr/src/debug" match)) -> A
+     : A child ?formal_parameter
+     : ?(@type while (?const_type, ?volatile_type, ?typedef)
+     :   (?structure_type, ?class_type)) -> B
+     : "%( A @decl_file %): %( A @decl_line %): note: in function "\
+     : "`%( A @name %)', parameter `%( B @name %)' type is not trivial"
 
    - What the following XQuery really does:
 
@@ -1179,6 +1251,13 @@
    : !(@stmt_list @address ?eq) swap
    : "Address %s referenced from %s not found in line table."
 
+   - XXX
+     : winfo (?subprogram, ?inline_subroutine, ?entry_point, ?lexical_block,
+     :        ?label, ?with_stmt, ?try_block, ?catch_block) -> A
+     : A (@entry_pc, @low_pc, @ranges) -> B
+     : A root !(@stmt_list @address ?eq) -> C
+     : "Address %( B %) referenced from %( C %) not found in line table."
+
 ** contains DW_OP_fbreg && ! @frame_base
 
    : !@frame_base ?(@location child @atom DW_OP_fbreg ?eq)
@@ -1209,11 +1288,11 @@
 
 ** contains DW_OP_call_frame_cfa && $@low_pc == 0
 
-   : ?(@low_pc 0 ?eq) ?(@frame_base @atom DW_OP_call_frame_cfa ?eq)
+   : winfo ?(@low_pc ?0) ?(@frame_base @atom ?DW_OP_call_frame_cfa)
 
    - something
 
-   : if (@low_pc == 0 and @frame_base @atom == DW_OP_call_frame_cfa)
+   : winfo if (@low_pc == 0 and @frame_base @atom == DW_OP_call_frame_cfa)
 
    - XQuery (note this matches @low_pc as text, not as number):
 
@@ -1221,11 +1300,7 @@
 
 ** is an empty location expression
 
-   : ?@location !(@location)
-
-   - something
-
-   : if (has @location and empty [@location])
+   : winfo ?@location !(@location)
 
    - XQuery:
 
@@ -1233,12 +1308,12 @@
 
 ** location expression ends with implicit_value or stack_value
 
-   : ?(@location ?last @atom (DW_OP_implicit_value, DW_OP_stack_value) ?eq)
+   : winfo ?(@location ?last @atom (?DW_OP_implicit_value, ?DW_OP_stack_value))
 
    - something
 
-   : if (@location, if last, if (@atom == DW_OP_implicit_value
-   :                             or @atom == DW_OP_stack_value))
+   : winfo when (@location when last when (@atom == DW_OP_implicit_value
+   :                                       or @atom == DW_OP_stack_value))
 
    - XQuery:
 
@@ -1251,9 +1326,30 @@
    : ?subprogram dup @specification 2/(child ?formal_parameter)
    : ?(2/pos ?eq) ?(2/@type !eq)
 
-   - something:
+   - XXX
+     : winfo ?subprogram -> A
+     : A child ?formal_parameter -> B
+     : A @specification child ?formal_parameter -> C
+     : • ?(B C <pos>?eq <@type>!eq) A
+     : • ?(B pos C pos ?eq) ?(B @type C @type !eq) A
+     : • ?(B C ?({pos} 2/ ?eq) ?({@type} 2/ !eq)) A
 
-   : if (is subprogram) with @specification 2/(child is formal_parameter)
+     : <winfo ?subprogram dup @specification>
+     : child ?formal_parameter ?(pos <> ?eq) ?(@type <> !eq) <>
+
+     - <EXPR₁ EXPR₂ … > would create a nodeset.  <> is the
+       corresponding operator that pushes the individual nodes back to
+       stack.
+
+       Nodeset is similar to list, but operations are applied to each
+       node in turn instead of to the set as a whole.  It would
+       remember stack contents on entry to <>-operator, then let the
+       expression inside produce a bunch of stacks, take each of them,
+       and create a nodeset from the top elements.
+
+       This mode of operation is in stark contrast to how lists
+       operate, which is necessary so that the corresponding unpack
+       operation produces meaningful results.
 
    - XQuery:
 
@@ -1267,6 +1363,16 @@
    : -unit ?gt 2/(?const_type, ?volatile_type, ?restrict_type)
    : ?(2/tag ?eq) ?(2/@type ?eq)
 
+   - XXX
+     : winfo dup unit ?gt {?const_type, ?volatile_type, ?restrict_type} 2/
+     : • ?({tag} 2/ ?eq) ?({@type} 2/ ?eq)
+     : • <tag>?eq <@type>?eq
+
+     : { ?const_type, ?volatile_type, ?restrict_type } -> ?cvr_type
+     : winfo ?cvr_type -> A
+     : A unit ?gt ?cvr_type -> B
+     : A B ?(<tag>?eq <type>?eq)
+
    - XQuery:
 
    : for $x in (//tag_const_type | //tag_volatile_type | //tag_restrict_type)
@@ -1276,6 +1382,10 @@
 ** find any attribute with value "blah"
 
    : attribute ?(value "blah" ?eq)
+
+   - XXX
+     : winfo attribute ?(value ?"blah")
+     : winfo attribute <value>?"blah"
 
    - XQuery:
 
@@ -1289,9 +1399,21 @@
 
    : dup next+ 2/?variable ?(2/@name ?eq)
 
+   - XXX
+     : winfo -> A
+     : ?(A child ?variable -> B
+     :   A child ?variable ?(B ?lt) -> C
+     :   B @name C @name ?eq)
+
+     : winfo -> A
+     : ?(A child ?variable
+     :   A child ?variable ?lt <@name>?eq)
+
+     : winfo dup next+ <?variable @name>?eq
+
 ** check_linkage_external_die.cc
 
-   : ?symbol ?(@type (STT_OBJECT, STT_FUNC) ?eq) ?(@name !"")
+   : symtab ?symbol ?(@type (?STT_OBJECT, ?STT_FUNC)) ?(@name !"")
    : winfo ?@linkage_name [-(@linkage_name swap @name ?eq)]
    :
    : ((if !@declaration !@const_value
@@ -1315,6 +1437,59 @@
    that we look at the bottom slot and cross-reference @name with
    @linkage_name should be possible.
 
+   Actually, this is broken.  symtab forks N×, winfo M×, and for some
+   of those combinations the if will succeed, for others it will
+   fail--but some of these computations are meaningless, comparing a
+   DIE with an unrelated symbol.
+
+   - XXX
+     : winfo ?@linkage_name -> A
+     : [symtab ?(@type (?STT_OBJECT, ?STT_FUNC))
+     :  ?(@name A @linkage_name ?eq)] -> Ss
+     : if Ss ?empty then (
+     :     A !@declaration !@const_value
+     :     (!structure_type !enumeration_type !union_type, ?@name)
+     :     "%s has linkage_name attribute that's not in symtab, "\
+     :     "but is not marked as declaration"
+     : ) else if Ss elem @binding ?STB_LOCAL then (
+     :     A !@declaration ?@external
+     :     "%s has linkage_name attribute, "\
+     :     "but the corresponding symbol is local"
+     : ) else (
+     :     A !@external
+     :     "%s has linkage_name attribute, but no external attribute"
+     : )
+
+     The interpreter would still need smarts to realize that we access
+     symtab as a storage indexed by name.
+
+     XXX I use "elem" here instead of "each", because "each" here is
+     confusing, implying we wish all the Ss to be ?STB_LOCAL.  Maybe
+     "elem" is what the function name should be.
+
+   - XXX2
+     : {-> X symtab (?STT_OBJECT, ?STT_FUNC)
+     :  ?(@name X @linkage_name ?eq)} -> GetSym
+     : winfo ?@linkage_name if !(GetSym) then (
+     :     !@declaration !@const_value
+     :     (!structure_type !enumeration_type !union_type, ?@name)
+     :     "%s has linkage_name attribute that's not in symtab, "\
+     :     "but is not marked as declaration"
+     : ) else if GetSym ?STB_LOCAL then (
+     :     !@declaration ?@external
+     :     "%s has linkage_name attribute, "\
+     :     "but the corresponding symbol is local"
+     : ) else (
+     :     !@external
+     :     "%s has linkage_name attribute, but no external attribute"
+     : )
+
+     Instead of using list, why not use a function that yields all
+     matching symbols?  If it yields nothing, the if passes, otherwise
+     we check in the next branch that the stuff that it produces isn't
+     ?STB_LOCAL.  N.B. additionally here we use constant assertions to
+     make a couple tests more compact.
+
 ** CU A imports two PU's B and C, and both import the same third PU
 
    : ?root dup dup 2/(CU ?imported_unit @import) ?lt
@@ -1325,6 +1500,15 @@
 
      : ?root ?(dup 2/(unit ?imported_unit @import) ?lt
      :             2/(unit ?imported_unit @import) ?eq)
+
+   - XXX:
+     : def root {parent while !root}
+     :
+     : winfo ?root ->U
+     : U child ?imported_unit @import ->A
+     : U child ?imported_unit @import ?(A ?lt) ->B
+     : ?(A B <root child ?imported_unit @import>?eq)
+     : U A B
 
    - XQuery:
 
@@ -1362,3 +1546,7 @@
      [0xa7] typedef size_t long unsigned int (DW_ATE_unsigned, 8 bytes)
      [...]
 
+     : winfo ?typedef ->A
+     : A @type while ?typedef ->B
+     : "[%(A offset%)] typedef %(A @name%) %(B @name%) "\
+     : "(%( B @encoding || "???" %), %( B @byte_size || "???" %) bytes)"
