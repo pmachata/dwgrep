@@ -576,52 +576,19 @@
 
 ** •EXPR → “(” EXPR₁ “)” — grouping, precedence
 
-**  EXPR → “[” EXPR₁ “]” | “[” “]” — list generator
+**  EXPR → “[” EXPR₁ “]” | “[” “]” — sub-expression capture
 
-   - The stack ordering after EXPR₁ has been applied must be the same
-     as before EXPR₁, with possible exception of EXPR₁ doing one
-     additional push.  In particular:
+   This is a literal form that gathers what EXPR₁ yields and pushes a
+   sequence with those elements.  It can be used for constructing a
+   sequence literal:
 
-     : 1 2 [()]		# OK -- no action
-     : 1 2 [3]		# OK -- single push
-     : 1 2 [-child]	# OK -- single push
-     : 1 2 [child]	# OK -- a pop followed by a push
-     : 1 2 [drop 1]	# OK -- a pop followed by a push
-     : 1 2 [drop]	# not OK
-     : 1 2 [swap]	# not OK
-     : 1 2 [-drop]	# OK -- a single push (drop is in subexpression context)
+   : [1, 2, 3]        # produces a list with elements 1, 2 and 3
+   : [child]          # list of immediate children
+   : [child*]         # list of all descendants
 
-   - [ EXPR₁ ] evalueates EXPR₁.  It then collects all results that it
-     produces, pops TOS of each of these results, and stores these
-     TOS's into a sequence.  It then produces one stack per unique
-     stack collected with the sequence pushed on top.
-
-     If EXPR₁ yields nothing, then [ EXPR₁ ] produces an incoming
-     stack with an empty list on top, pushed to the slot where EXPR₁
-     would push the list.  This is the reason behing the above
-     limitation--the list generator expression needs to know where to
-     put the empty list even if EXPR₁ doesn't yield anything.
-
-     Some examples:
-
-     : [1, 2, 3]	# push a list with elements 1, 2 and 3
-     : [()]		# wrap TOS in a one-element list
-     : [child]		# replace each node with a list of its children
-     : [child*]		# replace each node with a list of all descendants
-
-     The first example is note-worthy.  Since integer literals push a
-     new element on TOS, the original stack is left unchanged.  The
-     1,2,3 syntax is not special to list generator, but is ordinary
-     alternation syntax, described above.
-
-   - [] is a literal that produces an empty list.  It is exactly
-     equivalent to (among others):
-     : [ 0 !0 ]
-
-   - over is exactly equivalent to:
-     : [ -drop ] each
-   - dup is exactly equivalent to (among others):
-     : [ -() ] each
+   [] is a literal that produces an empty list.  It is exactly
+   equivalent to (among others):
+   : [ 0 1 ?eq ]
 
 **  EXPR → “{” EXPR₁ “}” | “:”ID — blocks, symbols
 
