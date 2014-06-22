@@ -760,32 +760,29 @@
      succeed.  For !all, only if at least one fails does the overall
      predicate succeed.  The list on TOS is kept.
 
-**  EXPR → “if” | “else” | “not” | “and” | “or” — conditionals
+**  EXPR → “if” EXPR₀ “then” EXPR₁ “else” EXPR₂ — conditionals
 
-   - "if" inspects TOS.  If it's a list, it acts as !empty.  If it's a
-     constant, it acts as ?true.  After this, it pops TOS.  It is
-     exactly equivalent to:
-     : (-type ?T_SEQ drop ?empty, -type ?T_CONST drop ?false) drop
+   - EXPR₀ is evaluated in sub-expression context.  If it yields
+     anything, EXPR₁ is evaluated in plain context.  Otherwise EXPR₂
+     is evaluated in plain context.
 
-   - "else" is like "if", but expect ?empty or ?false.
+**  EXPR → EXPR₁ (“while” | “until”) EXPR₀
 
-   - Usage:
-     : [ condition ] (if stuff stuff stuff, else stuff stuff stuff)
-     : [ condition ] (if stuff, else [ cond2 ] (if stuff2, else stuff3))
+   - The "while" loop evaluates EXPR₁ as long as EXPR₀ holds.  In each
+     iteration, it checks whether EXPR₀ holds for every computation
+     under consideration.  The computations for which EXPR₀ doesn't
+     hold are yielded unchanged.  To others, EXPR₁ is applied and what
+     this yields is added into consideration.  Then another iteration
+     is done.
 
-   - "not" is exactly equivalent to:
-     : (if false, else true)
+     : (if EXPR₀ then EXPR₁ else ())* !(EXPR₀)
 
-     "not" is mostly provided so that one doesn't have to write
-     apparently dangling else's.  Consider:
-     : @declaration else
-     : @declaration not if	# perhaps clearer
+   - The "until" loop has the same mode of operation, but meaning of
+     EXPR₀ is reversed.
 
-   - "and" is exactly equivalent to:
-     : (if (if true, else false), else drop false)
+     : (if EXPR₀ then () else EXPR₁)* ?(EXPR₀)
 
-   - "or" is exactly equivalent to:
-     : 2/not and
+   - EXPR₁ has to have neutral stack effect.
 
 ** ·EXPR → “swap” | “dup” | “over” | “rot” | “drop” — stack shuffling
 
