@@ -28,13 +28,13 @@ OCT [0-7]
 
 "(" return TOK_LPAREN;
 ")" return TOK_RPAREN;
+"?(" return TOK_QMARK_LPAREN;
+"!(" return TOK_BANG_LPAREN;
+"?all(" return TOK_QMARK_ALL_LPAREN;
+"!all(" return TOK_BANG_ALL_LPAREN;
+
 "[" return TOK_LBRACKET;
 "]" return TOK_RBRACKET;
-
-"?{" return TOK_QMARK_LBRACE;
-"!{" return TOK_BANG_LBRACE;
-"?all{" return TOK_QMARK_ALL_LBRACE;
-"!all{" return TOK_BANG_ALL_LBRACE;
 "}" return TOK_RBRACE;
 
 "*" return TOK_ASTERISK;
