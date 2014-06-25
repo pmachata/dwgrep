@@ -71,7 +71,6 @@ OCT [0-7]
 "hex" return TOK_HEX;
 "oct" return TOK_OCT;
 "pos" return TOK_POS;
-"count" return TOK_COUNT;
 "each" return TOK_EACH;
 "length" return TOK_LENGTH;
 "universe" return TOK_UNIVERSE;

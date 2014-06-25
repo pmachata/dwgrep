@@ -58,36 +58,6 @@ expect_count 1 ./typedef.o -e '
 	?{[] swap (@type ?typedef -[()] 2/swap add swap)* drop length 3 ?eq}
 	?{offset 0x45 ?eq}'
 
-# Test count of universe.
-expect_count 1 ./typedef.o -e '
-	winfo ?root ?{count 6 ?eq}'
-
-# Test count of child.
-expect_count 1 ./typedef.o -e '
-	winfo ?root child ?base_type ?{count 5 ?eq}'
-
-# Test count of count.
-expect_count 1 ./typedef.o -e '
-	winfo ?root count count ?{1 ?eq}'
-
-# Test closure.  We expect 6 nodes (for count unapplied), 6x count of
-# 6 (for count applied to each node) and 6x count of 1 (for count
-# applied to count).
-expect_count 18 ./typedef.o -e '
-	winfo count*'
-expect_count 18 ./typedef.o -e '
-	winfo count* (?{(1, 6) ?eq}, ?{type T_NODE ?eq})'
-
-# Test count in format strings.
-expect_count 6 ./typedef.o -e '
-	winfo "%(count%)" ?{"6" ?eq}'
-expect_count 6 ./typedef.o -e '
-	winfo "%(count%)" count 1 ?eq'
-expect_count 5 ./typedef.o -e '
-	winfo "%( -child count %)--%( count %)" ?{"5--6" ?eq}'
-expect_count 5 ./typedef.o -e '
-	winfo "%( -child count %)--%( count %)" count ?{5 ?eq}'
-
 # Test decoding signed and unsigned value.
 expect_count 1 ./enum.o -e '
 	winfo ?{@name "f" ?eq} child ?{@name "V" ?eq}

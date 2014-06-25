@@ -59,13 +59,11 @@ class value
 {
   value_type const m_type;
   size_t m_pos;
-  size_t m_count;
 
 protected:
   value (value_type t, size_t pos)
     : m_type {t}
     , m_pos {pos}
-    , m_count {static_cast <size_t> (-1)}
   {}
 
   value (value const &that) = default;
@@ -85,24 +83,10 @@ public:
     m_pos = pos;
   }
 
-  void
-  set_count (size_t count)
-  {
-    assert (count != static_cast <size_t> (-1));
-    m_count = count;
-  }
-
   size_t
   get_pos () const
   {
     return m_pos;
-  }
-
-  size_t
-  get_count () const
-  {
-    assert (m_count != static_cast <size_t> (-1));
-    return m_count;
   }
 
   template <class T>

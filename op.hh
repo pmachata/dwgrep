@@ -698,16 +698,6 @@ public:
   std::string name () const override;
 };
 
-class op_f_count
-  : public simple_op
-{
-public:
-  using simple_op::simple_op;
-
-  std::unique_ptr <value> operate (value const &v) const override;
-  std::string name () const override;
-};
-
 // Pop DEPTH slots, perform OP, and for each produced stack, push
 // those slots back and yield that stack.
 class op_transform
@@ -735,7 +725,6 @@ class op_f_mod;
 class op_f_prev;
 class op_f_next;
 class op_f_form;
-class op_f_count;
 class op_sel_section;
 
 class pred

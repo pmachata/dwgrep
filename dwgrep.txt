@@ -941,19 +941,15 @@
    - T_CONST — for integer objects
    - T_FLOAT — for floats
 
-** •EXPR → “pos” | “count” — pos of element within producing expression
+** •EXPR → “pos” — pos of element within producing expression
 
    Each function numbers elements that it produces, and stores number
    of each element along with the element.  That number can be
-   recalled by saying "pos".  "count" then contains count of values
-   produced.
+   recalled by saying "pos".
 
-   - Count is potentially expensive.  The producers therefore don't
-     count all values up front.  Instead we can determine which
-     producers potentially produce the values that count is applied
-     to, and then replace the producer X with [X] each.
-
-   - The same holds for ?last.
+   If you wish to know the number of values produced, you have to
+   count them by hand:
+   : [ child ] (length->L;) each
 
 **  EXPR → “?first” | “?second” | “?third” | “?last” — position assertion
 

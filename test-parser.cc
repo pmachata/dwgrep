@@ -212,7 +212,6 @@ do_tests ()
   test ("form", "(F_FORM)");
   test ("value", "(F_VALUE)");
   test ("pos", "(F_POS)");
-  test ("count", "(F_COUNT)");
   test ("each", "(F_EACH)");
   test ("universe", "(SEL_UNIVERSE)");
   test ("section", "(SEL_SECTION)");
@@ -235,7 +234,6 @@ do_tests ()
   test ("-form", "(PROTECT (F_FORM))");
   test ("-value", "(PROTECT (F_VALUE))");
   test ("-pos", "(PROTECT (F_POS))");
-  test ("-count", "(PROTECT (F_COUNT))");
   test ("-each", "(PROTECT (F_EACH))");
   test ("-universe", "(PROTECT (SEL_UNIVERSE))");
   test ("-section", "(PROTECT (SEL_SECTION))");

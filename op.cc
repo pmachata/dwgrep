@@ -1211,7 +1211,6 @@ struct op_f_each::pimpl
 	  {
 	    std::unique_ptr <value> v = vv[m_i]->clone ();
 	    v->set_pos (m_i);
-	    v->set_count (vv.size ());
 	    m_i++;
 	    valfile::uptr vf = std::make_unique <valfile> (*m_vf);
 	    vf->pop ();
@@ -1648,19 +1647,6 @@ std::string
 op_f_pos::name () const
 {
   return "f_pos";
-}
-
-
-std::unique_ptr <value>
-op_f_count::operate (value const &v) const
-{
-  return std::make_unique <value_cst> (constant {v.get_count (), &pos_dom}, 0);
-}
-
-std::string
-op_f_count::name () const
-{
-  return "f_count";
 }
 
 

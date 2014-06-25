@@ -145,7 +145,7 @@
 %token TOK_ADD TOK_SUB TOK_MUL TOK_DIV TOK_MOD
 %token TOK_PARENT TOK_CHILD TOK_ATTRIBUTE TOK_PREV
 %token TOK_NEXT TOK_TYPE TOK_OFFSET TOK_NAME TOK_TAG
-%token TOK_FORM TOK_VALUE TOK_POS TOK_COUNT TOK_EACH
+%token TOK_FORM TOK_VALUE TOK_POS TOK_EACH
 %token TOK_LENGTH TOK_HEX TOK_OCT
 
 %token TOK_SWAP TOK_DUP TOK_OVER TOK_ROT TOK_DROP TOK_IF TOK_ELSE
@@ -384,9 +384,6 @@ Statement:
 
   | TOK_POS
   { $$ = tree::create_nullary <tree_type::F_POS> (); }
-
-  | TOK_COUNT
-  { $$ = tree::create_nullary <tree_type::F_COUNT> (); }
 
   | TOK_EACH
   { $$ = tree::create_nullary <tree_type::F_EACH> (); }
