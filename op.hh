@@ -559,16 +559,18 @@ public:
 class op_capture
   : public op
 {
-  class pimpl;
-  std::unique_ptr <pimpl> m_pimpl;
+  std::shared_ptr <op> m_upstream;
+  std::shared_ptr <op_origin> m_origin;
+  std::shared_ptr <op> m_op;
 
 public:
-  // SRC is the slot where OP leaves the result.  DST is where the
-  // resulting list should be put to.
   op_capture (std::shared_ptr <op> upstream,
 	      std::shared_ptr <op_origin> origin,
-	      std::shared_ptr <op> op);
-  ~op_capture ();
+	      std::shared_ptr <op> op)
+    : m_upstream {upstream}
+    , m_origin {origin}
+    , m_op {op}
+  {}
 
   void reset () override;
   valfile::uptr next () override;

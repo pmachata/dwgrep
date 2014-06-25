@@ -1055,110 +1055,37 @@ op_merge::name () const
 }
 
 
-namespace
-{
-  struct deref_less
-  {
-    template <class T>
-    bool
-    operator() (T const &a, T const &b)
-    {
-      return *a < *b;
-    }
-  };
-}
-
-struct op_capture::pimpl
-{
-  std::shared_ptr <op> m_upstream;
-  std::shared_ptr <op_origin> m_origin;
-  std::shared_ptr <op> m_op;
-  std::vector <std::unique_ptr <valfile>> m_bases;
-
-  pimpl (std::shared_ptr <op> upstream,
-	 std::shared_ptr <op_origin> origin,
-	 std::shared_ptr <op> op)
-    : m_upstream {upstream}
-    , m_origin {origin}
-    , m_op {op}
-  {}
-
-  void
-  reset_me ()
-  {
-    m_op->reset ();
-    m_bases.clear ();
-  }
-
-  valfile::uptr
-  next ()
-  {
-    while (m_bases.empty ())
-      if (auto vf = m_upstream->next ())
-	{
-	  m_op->reset ();
-	  m_origin->set_next (std::make_unique <valfile> (*vf));
-
-	  value_seq::seq_t vv;
-	  while (auto vf2 = m_op->next ())
-	    {
-	      vv.push_back (vf2->pop ());
-	      m_bases.push_back (std::move (vf2));
-	    }
-
-	  std::sort (m_bases.begin (), m_bases.end (), deref_less ());
-	  m_bases.erase (std::unique (m_bases.begin (), m_bases.end (),
-				      [] (std::unique_ptr <valfile> const &a,
-					  std::unique_ptr <valfile> const &b)
-				      { return *a == *b; }),
-			 m_bases.end ());
-
-	  auto vvp = std::make_shared <value_seq::seq_t> (std::move (vv));
-	  for (auto &b: m_bases)
-	    b->push (std::make_unique <value_seq> (vvp, 0));
-	}
-      else
-	return nullptr;
-
-    auto ret = std::move (m_bases.back ());
-    m_bases.pop_back ();
-    return std::move (ret);
-  }
-
-  void
-  reset ()
-  {
-    reset_me ();
-    m_upstream->reset ();
-  }
-};
-
-op_capture::op_capture (std::shared_ptr <op> upstream,
-			std::shared_ptr <op_origin> origin,
-			std::shared_ptr <op> op)
-  : m_pimpl {std::make_unique <pimpl> (upstream, origin, op)}
-{}
-
-op_capture::~op_capture ()
-{}
-
 valfile::uptr
 op_capture::next ()
 {
-  return m_pimpl->next ();
+  if (auto vf = m_upstream->next ())
+    {
+      m_op->reset ();
+      m_origin->set_next (std::make_unique <valfile> (*vf));
+
+      value_seq::seq_t vv;
+      while (auto vf2 = m_op->next ())
+	vv.push_back (vf2->pop ());
+
+      vf->push (std::make_unique <value_seq> (std::move (vv), 0));
+      return vf;
+    }
+
+  return nullptr;
 }
 
 void
 op_capture::reset ()
 {
-  m_pimpl->reset ();
+  m_op->reset ();
+  m_upstream->reset ();
 }
 
 std::string
 op_capture::name () const
 {
   std::stringstream ss;
-  ss << "capture<" << m_pimpl->m_op->name () << ">";
+  ss << "capture<" << m_op->name () << ">";
   return ss.str ();
 }
 
@@ -1312,6 +1239,19 @@ op_f_type::name () const
   return "f_type";
 }
 
+
+namespace
+{
+  struct deref_less
+  {
+    template <class T>
+    bool
+    operator() (T const &a, T const &b)
+    {
+      return *a < *b;
+    }
+  };
+}
 
 struct op_close::pimpl
 {
