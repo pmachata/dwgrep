@@ -199,16 +199,10 @@ public:
   // would only create a series of nested op's).  UPSTREAM should be
   // nullptr if this is the toplevel-most expression, otherwise it
   // should be a valid op that the op produced by this node feeds off.
-  //
-  // XXX Note that the MAXSIZE argument should go away.  This needs to
-  // be set for each producer node by determine_stack_effects, and
-  // should capture stack needs of the following computations.  NIY.
   std::shared_ptr <op>
   build_exec (std::shared_ptr <op> upstream, dwgrep_graph::sptr q) const;
 
   // Produce program suitable for interpretation.
-  //
-  // XXX see above for maxsize.  This should go away.  NIY.
   std::unique_ptr <pred> build_pred (dwgrep_graph::sptr q) const;
 
   // === Parser interface ===
