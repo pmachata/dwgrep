@@ -1794,7 +1794,7 @@ namespace
 
     auto &va = vf.top ();
     auto &vb = vf.below ();
-    cmp_result r = va.cmp (vb);
+    cmp_result r = vb.cmp (va);
     if (r == cmp_result::fail)
       {
 	std::cerr << "Error: Can't compare `" << va << "' to `" << vb << "'\n.";
