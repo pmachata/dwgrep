@@ -79,9 +79,7 @@ tree::build_pred (dwgrep_graph::sptr q) const
     case tree_type::EMPTY_LIST:
     case tree_type::TRANSFORM:
     case tree_type::PROTECT:
-    case tree_type::CLOSE_PLUS:
     case tree_type::CLOSE_STAR:
-    case tree_type::MAYBE:
     case tree_type::CONST:
     case tree_type::STR:
     case tree_type::FORMAT:
@@ -301,9 +299,6 @@ tree::build_exec (std::shared_ptr <op> upstream, dwgrep_graph::sptr q) const
     case tree_type::SHF_ROT:
       std::cerr << "\n\nUNHANDLED:" << *this << std::endl;
       abort ();
-
-    case tree_type::CLOSE_PLUS:  // X+ should be translated to X X*
-    case tree_type::MAYBE:       // X? should be translated to (,X)
 
     case tree_type::PRED_TAG:
     case tree_type::PRED_AT:

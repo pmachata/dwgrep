@@ -42,8 +42,8 @@ enum class tree_arity_v
 //
 // NOP -- For holding a no-op that comes up in "%s" and (,X).
 //
-// CLOSE_STAR, CLOSE_PLUS, MAYBE -- For holding X*, X+, X?.  X is the
-// only child of these nodes.
+// CLOSE_STAR -- For holding X*.  X is the only child.  X+ is emulated
+// as (CAT X X*); X? is emulated as (X,).
 //
 // ASSERT -- All assertions (such as ?some_tag) are modeled using an
 // ASSERT node, whose only child is a predicate node expressing the
@@ -83,9 +83,7 @@ enum class tree_arity_v
   TREE_TYPE (TRANSFORM, BINARY)			\
   TREE_TYPE (PROTECT, UNARY)			\
   TREE_TYPE (NOP, NULLARY)			\
-  TREE_TYPE (CLOSE_PLUS, UNARY)			\
   TREE_TYPE (CLOSE_STAR, UNARY)			\
-  TREE_TYPE (MAYBE, UNARY)			\
   TREE_TYPE (ASSERT, UNARY)			\
   TREE_TYPE (PRED_AT, CST)			\
   TREE_TYPE (PRED_TAG, CST)			\

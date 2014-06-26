@@ -252,11 +252,11 @@ do_tests ()
 #undef ONE_KNOWN_DW_TAG
 
   test ("child*", "(CLOSE_STAR (F_CHILD))");
-  test ("child+", "(CLOSE_PLUS (F_CHILD))");
-  test ("child?", "(MAYBE (F_CHILD))");
+  test ("child+", "(CAT (F_CHILD) (CLOSE_STAR (F_CHILD)))");
+  test ("child?", "(ALT (F_CHILD) (NOP))");
   test ("swap*", "(CLOSE_STAR (SHF_SWAP))");
-  test ("swap+", "(CLOSE_PLUS (SHF_SWAP))");
-  test ("swap?", "(MAYBE (SHF_SWAP))");
+  test ("swap+", "(CAT (SHF_SWAP) (CLOSE_STAR (SHF_SWAP)))");
+  test ("swap?", "(ALT (SHF_SWAP) (NOP))");
 
   test ("child next",
 	"(CAT (F_CHILD) (F_NEXT))");
@@ -265,11 +265,11 @@ do_tests ()
   test ("child* next",
 	"(CAT (CLOSE_STAR (F_CHILD)) (F_NEXT))");
   test ("child+ next",
-	"(CAT (CLOSE_PLUS (F_CHILD)) (F_NEXT))");
+	"(CAT (F_CHILD) (CLOSE_STAR (F_CHILD)) (F_NEXT))");
   test ("child -next",
 	"(CAT (F_CHILD) (PROTECT (F_NEXT)))");
   test ("child+ -next",
-	"(CAT (CLOSE_PLUS (F_CHILD)) (PROTECT (F_NEXT)))");
+	"(CAT (F_CHILD) (CLOSE_STAR (F_CHILD)) (PROTECT (F_NEXT)))");
 
   test ("dup swap child",
 	"(CAT (SHF_DUP) (SHF_SWAP) (F_CHILD))");
@@ -394,8 +394,7 @@ do_tests ()
 	 false);
 
   ftest ("winfo child+",
-	 "(CAT (SEL_WINFO)"
-	 " (CAT (F_CHILD) (CLOSE_STAR (F_CHILD))))",
+	 "(CAT (SEL_WINFO) (F_CHILD) (CLOSE_STAR (F_CHILD)))",
 	 false);
 
   std::cerr << tests << " tests total, " << failed << " failures." << std::endl;

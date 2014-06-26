@@ -262,10 +262,17 @@ Statement:
   { $$ = tree::create_unary <tree_type::CLOSE_STAR> ($1); }
 
   | Statement TOK_PLUS
-  { $$ = tree::create_unary <tree_type::CLOSE_PLUS> ($1); }
+  {
+    auto t = new tree (*$1);
+    auto u = tree::create_unary <tree_type::CLOSE_STAR> ($1);
+    $$ = tree::create_cat <tree_type::CAT> (t, u);
+  }
 
   | Statement TOK_QMARK
-  { $$ = tree::create_unary <tree_type::MAYBE> ($1); }
+  {
+    auto t = tree::create_nullary <tree_type::NOP> ();
+    $$ = tree::create_cat <tree_type::ALT> ($1, t);
+  }
 
   | TOK_MINUS Statement
   { $$ = tree::create_protect ($2); }
