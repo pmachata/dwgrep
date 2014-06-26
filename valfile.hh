@@ -5,7 +5,6 @@
 #include <vector>
 
 #include "value.hh"
-#include "slot_idx.hh"
 
 // Value file is a container type that's used for maintaining stacks
 // of dwgrep values.  The file is static in size.  Unlike std::array,

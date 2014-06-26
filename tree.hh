@@ -9,7 +9,6 @@
 #include "constant.hh"
 #include "op.hh"
 #include "valfile.hh"
-#include "slot_idx.hh"
 
 // These constants describe how a tree is allowed to be constructed.
 // It's mostly present to make sure we don't inadvertently construct
