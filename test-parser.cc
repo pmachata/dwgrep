@@ -26,12 +26,8 @@ test (std::string parse, std::string expect,
   try
     {
       t = parse_query (parse);
-      if (full)
-	{
-	  t.determine_stack_effects ();
-	  if (optimize)
-	    t.simplify ();
-	}
+      if (full && optimize)
+	  t.simplify ();
     }
   catch (std::runtime_error const &e)
     {
@@ -355,53 +351,51 @@ do_tests ()
   test ("r\"r\\aw\"", "(FORMAT (STR<r\\aw>))");
 
   ftest ("winfo ?root",
-	 "(CAT (SEL_WINFO [dst=0;]) (ASSERT (PRED_ROOT [a=0;])))");
+	 "(CAT (SEL_WINFO) (ASSERT (PRED_ROOT)))");
 
   ftest ("winfo ?compile_unit !root",
-	 "(CAT (SEL_WINFO [dst=0;])"
-	 " (ASSERT (PRED_TAG<DW_TAG_compile_unit> [a=0;]))"
-	 " (ASSERT (PRED_NOT (PRED_ROOT [a=0;]))))");
+	 "(CAT (SEL_WINFO)"
+	 " (ASSERT (PRED_TAG<DW_TAG_compile_unit>))"
+	 " (ASSERT (PRED_NOT (PRED_ROOT))))");
 
   ftest (",", "(ALT (NOP) (NOP))");
   ftest ("winfo dup (swap,)",
-	 "(CAT (SEL_WINFO [dst=0;]) (SHF_DUP [a=0;dst=1;])"
-	 " (ALT (SHF_SWAP [a=0;dst=1;]) (NOP)))");
+	 "(CAT (SEL_WINFO) (SHF_DUP)"
+	 " (ALT (SHF_SWAP) (NOP)))");
   ftest ("winfo dup (,swap)",
-	 "(CAT (SEL_WINFO [dst=0;]) (SHF_DUP [a=0;dst=1;])"
-	 " (ALT (NOP) (SHF_SWAP [a=0;dst=1;])))");
+	 "(CAT (SEL_WINFO) (SHF_DUP)"
+	 " (ALT (NOP) (SHF_SWAP)))");
   ftest ("winfo (drop,drop)",
-	 "(CAT (SEL_WINFO [dst=0;])"
-	 " (ALT (SHF_DROP [dst=0;]) (SHF_DROP [dst=0;])))");
-  ftestx ("winfo (,drop)", "unbalanced");
+	 "(CAT (SEL_WINFO)"
+	 " (ALT (SHF_DROP) (SHF_DROP)))");
   ftest ("winfo (,drop 1)",
-	 "(CAT (SEL_WINFO [dst=0;])"
-	 " (ALT (NOP) (CAT (SHF_DROP [dst=0;]) (CONST<1> [dst=0;]))))");
+	 "(CAT (SEL_WINFO)"
+	 " (ALT (NOP) (CAT (SHF_DROP) (CONST<1>))))");
   ftest ("winfo (drop 1,)",
-	 "(CAT (SEL_WINFO [dst=0;])"
-	 " (ALT (CAT (SHF_DROP [dst=0;]) (CONST<1> [dst=0;])) (NOP)))");
+	 "(CAT (SEL_WINFO)"
+	 " (ALT (CAT (SHF_DROP) (CONST<1>)) (NOP)))");
   ftest ("winfo drop \"foo\"",
-	 "(CAT (SEL_WINFO [dst=0;])"
-	 " (SHF_DROP [dst=0;]) (FORMAT [dst=0;] (STR<foo>)))");
-  ftestx ("drop \"%s\"", "underrun");
+	 "(CAT (SEL_WINFO)"
+	 " (SHF_DROP) (FORMAT (STR<foo>)))");
 
   ftest ("winfo \"%( -offset %): %( @name %)\"",
-	 "(CAT (SEL_WINFO [dst=0;])"
-	 " (FORMAT [dst=0;] (STR<>)"
-	 " (PROTECT [a=0;dst=1;] (F_OFFSET [a=0;dst=0;])) (STR<: >)"
-	 " (CAT [dst=0;] (F_ATTR_NAMED<DW_AT_name> [a=0;dst=0;])"
-	 " (F_VALUE [a=0;dst=0;])) (STR<>)))",
+	 "(CAT (SEL_WINFO)"
+	 " (FORMAT (STR<>)"
+	 " (PROTECT (F_OFFSET)) (STR<: >)"
+	 " (CAT (F_ATTR_NAMED<DW_AT_name>)"
+	 " (F_VALUE)) (STR<>)))",
 	 true);
 
   test ("((1, 2), (3, 4))",
 	"(ALT (CONST<1>) (CONST<2>) (CONST<3>) (CONST<4>))");
 
   ftest ("winfo child?",
-	 "(CAT (SEL_WINFO [dst=0;]) (ALT (F_CHILD [a=0;dst=0;]) (NOP)))",
+	 "(CAT (SEL_WINFO) (ALT (F_CHILD) (NOP)))",
 	 false);
 
   ftest ("winfo child+",
-	 "(CAT (SEL_WINFO [dst=0;])"
-	 " (CAT (F_CHILD [a=0;dst=0;]) (CLOSE_STAR (F_CHILD [a=0;dst=0;]))))",
+	 "(CAT (SEL_WINFO)"
+	 " (CAT (F_CHILD) (CLOSE_STAR (F_CHILD))))",
 	 false);
 
   std::cerr << tests << " tests total, " << failed << " failures." << std::endl;

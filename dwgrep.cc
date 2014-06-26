@@ -186,7 +186,6 @@ main(int argc, char *argv[])
       argc--;
     }
 
-  query.determine_stack_effects ();
   if (optimize)
     query.simplify ();
 
