@@ -7,9 +7,7 @@
 #include "value.hh"
 
 // Value file is a container type that's used for maintaining stacks
-// of dwgrep values.  The file is static in size.  Unlike std::array,
-// the size can be determined at runtime, but like std::array, the
-// size never changes during the lifetime of a value file.
+// of dwgrep values.
 class valfile
 {
   std::vector <std::unique_ptr <value> > m_values;
