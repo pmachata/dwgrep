@@ -9,6 +9,7 @@
 #include "constant.hh"
 #include "op.hh"
 #include "valfile.hh"
+#include "scope.hh"
 
 // These constants describe how a tree is allowed to be constructed.
 // It's mostly present to make sure we don't inadvertently construct
@@ -21,6 +22,9 @@
 // NULLARY, but holds any number of sub-trees as well.
 //
 // STR, CONST -- A tree that holds a constant, has no children.
+//
+// BLOCK -- A tree that holds one sub-tree and a scope (only BLOCK as
+// of now, hence the name).
 enum class tree_arity_v
   {
     NULLARY,
@@ -28,6 +32,7 @@ enum class tree_arity_v
     BINARY,
     STR,
     CST,
+    BLOCK,
   };
 
 // CAT -- A node for holding concatenation (X Y Z).
@@ -78,6 +83,9 @@ enum class tree_arity_v
   TREE_TYPE (CAT, BINARY)			\
   TREE_TYPE (ALT, BINARY)			\
   TREE_TYPE (CAPTURE, UNARY)			\
+  TREE_TYPE (BLOCK, BLOCK)			\
+  TREE_TYPE (BIND, STR)				\
+  TREE_TYPE (READ, STR)				\
   TREE_TYPE (EMPTY_LIST, NULLARY)		\
   TREE_TYPE (TRANSFORM, BINARY)			\
   TREE_TYPE (PROTECT, UNARY)			\
@@ -159,6 +167,7 @@ class tree
 {
   std::unique_ptr <std::string> m_str;
   std::unique_ptr <constant> m_cst;
+  std::shared_ptr <scope> m_scope;
 
 public:
   tree_type m_tt;
@@ -170,15 +179,18 @@ public:
 
   tree (tree_type tt, std::string const &str);
   tree (tree_type tt, constant const &cst);
+  tree (tree_type tt, std::shared_ptr <scope> scope);
 
   tree &operator= (tree other);
   void swap (tree &other);
 
   tree &child (size_t idx);
   tree const &child (size_t idx) const;
+  tree_type tt () const { return m_tt; }
 
   std::string &str () const;
   constant &cst () const;
+  std::shared_ptr <scope> scp () const;
 
   void push_child (tree const &t);
 
@@ -200,10 +212,12 @@ public:
   // nullptr if this is the toplevel-most expression, otherwise it
   // should be a valid op that the op produced by this node feeds off.
   std::shared_ptr <op>
-  build_exec (std::shared_ptr <op> upstream, dwgrep_graph::sptr q) const;
+  build_exec (std::shared_ptr <op> upstream, dwgrep_graph::sptr q,
+	      std::shared_ptr <scope> scope = {}) const;
 
   // Produce program suitable for interpretation.
-  std::unique_ptr <pred> build_pred (dwgrep_graph::sptr q) const;
+  std::unique_ptr <pred>
+  build_pred (dwgrep_graph::sptr q, std::shared_ptr <scope> scope) const;
 
   // === Parser interface ===
   //
@@ -221,6 +235,9 @@ public:
   static tree *create_neg (tree *t1);
   static tree *create_assert (tree *t1);
   static tree *create_protect (tree *t1);
+
+  static tree build_block (tree t, std::shared_ptr <scope> scope);
+  static tree promote_scopes (tree t, std::shared_ptr <scope> parent = {});
 
   // push_back (*T) and delete T.
   void take_child (tree *t);

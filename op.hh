@@ -720,6 +720,54 @@ public:
   std::string name () const override;
 };
 
+class op_scope
+  : public op
+{
+  struct pimpl;
+  std::unique_ptr <pimpl> m_pimpl;
+
+public:
+  op_scope (std::shared_ptr <op> upstream,
+	    std::shared_ptr <op_origin> origin,
+	    std::shared_ptr <op> op,
+	    size_t num_vars);
+  ~op_scope ();
+
+  valfile::uptr next () override;
+  void reset () override;
+  std::string name () const override;
+};
+
+class op_bind
+  : public op
+{
+protected:
+  std::shared_ptr <op> m_upstream;
+  size_t m_depth;
+  var_id m_index;
+
+public:
+  op_bind (std::shared_ptr <op> upstream, size_t depth, var_id index)
+    : m_upstream {upstream}
+    , m_depth {depth}
+    , m_index {index}
+  {}
+
+  valfile::uptr next () override;
+  void reset () override;
+  std::string name () const override;
+};
+
+class op_read
+  : public op_bind
+{
+public:
+  using op_bind::op_bind;
+
+  valfile::uptr next () override;
+  std::string name () const override;
+};
+
 class op_f_sub;
 class op_f_mul;
 class op_f_div;

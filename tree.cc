@@ -41,6 +41,7 @@ namespace
 tree::tree (tree const &other)
   : m_str {copy_unique (other.m_str)}
   , m_cst {copy_unique (other.m_cst)}
+  , m_scope {other.m_scope}
   , m_tt {other.m_tt}
   , m_children {other.m_children}
 {}
@@ -52,6 +53,11 @@ tree::tree (tree_type tt, std::string const &str)
 
 tree::tree (tree_type tt, constant const &cst)
   : m_cst {std::make_unique <constant> (cst)}
+  , m_tt {tt}
+{}
+
+tree::tree (tree_type tt, std::shared_ptr <scope> scope)
+  : m_scope {scope}
   , m_tt {tt}
 {}
 
@@ -67,6 +73,7 @@ tree::swap (tree &other)
 {
   std::swap (m_str, other.m_str);
   std::swap (m_cst, other.m_cst);
+  std::swap (m_scope, other.m_scope);
   std::swap (m_tt, other.m_tt);
   std::swap (m_children, other.m_children);
 }
@@ -99,6 +106,12 @@ tree::cst () const
   return *m_cst;
 }
 
+std::shared_ptr <scope>
+tree::scp () const
+{
+  return m_scope;
+}
+
 void
 tree::push_child (tree const &t)
 {
@@ -126,6 +139,25 @@ operator<< (std::ostream &o, tree const &t)
     case tree_arity_v::STR:
       o << "<" << t.str () << ">";
       break;
+
+    case tree_arity_v::BLOCK:
+      {
+	auto scp = t.scp ();
+	if (! scp->vars.empty ())
+	  {
+	    o << "{";
+	    bool through = false;
+	    for (auto const &s: scp->vars)
+	      {
+		if (through)
+		  o << ";";
+		through = true;
+		o << s;
+	      }
+	    o << "}";
+	  }
+	break;
+      }
 
     case tree_arity_v::NULLARY:
     case tree_arity_v::UNARY:

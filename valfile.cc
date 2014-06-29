@@ -1,6 +1,41 @@
 #include "valfile.hh"
+#include <iostream>
+
+void
+frame::bind_value (var_id index, std::unique_ptr <value> val)
+{
+  assert (index < m_values.size ());
+  // XXX this might actually be an assertion.  Cases of this should be
+  // statically determinable.
+  if (m_values[index] != nullptr)
+    throw std::runtime_error ("attempt to rebind a bound variable");
+
+  m_values[index] = std::move (val);
+}
+
+value &
+frame::read_value (var_id index)
+{
+  assert (index < m_values.size ());
+  // XXX this might actually be an assertion.  Cases of this should be
+  // statically determinable.
+  if (m_values[index] == nullptr)
+    throw std::runtime_error ("attempt to reand an unbound variable");
+
+  return *m_values[index];
+}
+
+std::shared_ptr <frame>
+frame::clone () const
+{
+  auto ret = std::make_shared <frame> (m_parent, 0);
+  for (auto const &val: m_values)
+    ret->m_values.push_back (val != nullptr ? val->clone () : nullptr);
+  return ret;
+}
 
 valfile::valfile (valfile const &that)
+  : m_frame {that.m_frame != nullptr ? that.m_frame->clone () : nullptr}
 {
   for (auto const &vf: that.m_values)
     m_values.push_back (vf->clone ());
@@ -63,6 +98,9 @@ namespace
 	      break;
 	    }
     }
+
+    std::cerr << "XXX compare VF frames as well\n";
+    // And drop #include <iostream> afterwards.
 
     // The stacks are the same!
     return 0;

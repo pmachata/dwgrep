@@ -35,6 +35,7 @@ OCT [0-7]
 
 "[" return TOK_LBRACKET;
 "]" return TOK_RBRACKET;
+"{" return TOK_LBRACE;
 "}" return TOK_RBRACE;
 
 "*" return TOK_ASTERISK;
@@ -43,6 +44,8 @@ OCT [0-7]
 "-" return TOK_MINUS;
 "," return TOK_COMMA;
 "/" return TOK_SLASH;
+";" return TOK_SEMICOLON;
+"->" return TOK_ARROW;
 
 "swap" return TOK_SWAP;
 "dup" return TOK_DUP;

@@ -896,7 +896,7 @@ op_dup::reset ()
 std::string
 op_dup::name () const
 {
-  return "drop";
+  return "dup";
 }
 
 
@@ -1659,7 +1659,7 @@ op_transform::op_transform (std::shared_ptr <op> upstream,
   : m_pimpl {std::make_unique <pimpl> (upstream, origin, op, depth)}
 {}
 
- op_transform::~op_transform ()
+op_transform::~op_transform ()
 {}
 
 valfile::uptr
@@ -1680,6 +1680,147 @@ op_transform::name () const
   std::stringstream ss;
   ss << "trasform<" << m_pimpl->m_depth
      << ", " << m_pimpl->m_op->name () << ">";
+  return ss.str ();
+}
+
+
+struct op_scope::pimpl
+{
+  std::shared_ptr <op> m_upstream;
+  std::shared_ptr <op_origin> m_origin;
+  std::shared_ptr <op> m_op;
+  size_t m_num_vars;
+  bool m_primed;
+
+  pimpl (std::shared_ptr <op> upstream,
+	 std::shared_ptr <op_origin> origin,
+	 std::shared_ptr <op> op,
+	 size_t num_vars)
+    : m_upstream {upstream}
+    , m_origin {origin}
+    , m_op {op}
+    , m_num_vars {num_vars}
+    , m_primed {false}
+  {}
+
+  void
+  reset_me ()
+  {
+    m_primed = false;
+  }
+
+  valfile::uptr
+  next ()
+  {
+    while (true)
+      {
+	while (! m_primed)
+	  if (auto vf = m_upstream->next ())
+	    {
+	      // Push new stack frame.
+	      vf->set_frame (std::make_shared <frame> (vf->nth_frame (0),
+						       m_num_vars));
+	      m_op->reset ();
+	      m_origin->set_next (std::move (vf));
+	      m_primed = true;
+	    }
+	  else
+	    return nullptr;
+
+	if (auto vf = m_op->next ())
+	  {
+	    // Pop top stack frame.
+	    vf->set_frame (vf->nth_frame (1));
+	    return vf;
+	  }
+
+	reset_me ();
+      }
+  }
+
+  void
+  reset ()
+  {
+    reset_me ();
+    m_upstream->reset ();
+  }
+};
+
+op_scope::op_scope (std::shared_ptr <op> upstream,
+		    std::shared_ptr <op_origin> origin,
+		    std::shared_ptr <op> op,
+		    size_t num_vars)
+  : m_pimpl {std::make_unique <pimpl> (upstream, origin, op, num_vars)}
+{}
+
+op_scope::~op_scope ()
+{}
+
+valfile::uptr
+op_scope::next ()
+{
+  return m_pimpl->next ();
+}
+
+void
+op_scope::reset ()
+{
+  return m_pimpl->reset ();
+}
+
+std::string
+op_scope::name () const
+{
+  std::stringstream ss;
+  ss << "block<vars=" << m_pimpl->m_num_vars
+     << ", " << m_pimpl->m_op->name () << ">";
+  return ss.str ();
+}
+
+
+void
+op_bind::reset ()
+{
+  m_upstream->reset ();
+}
+
+valfile::uptr
+op_bind::next ()
+{
+  if (auto vf = m_upstream->next ())
+    {
+      auto frame = vf->nth_frame (m_depth);
+      frame->bind_value (m_index, vf->pop ());
+      return vf;
+    }
+  return nullptr;
+}
+
+std::string
+op_bind::name () const
+{
+  std::stringstream ss;
+  ss << "bind<" << m_index << "@" << m_depth << ">";
+  return ss.str ();
+}
+
+valfile::uptr
+op_read::next ()
+{
+  if (auto vf = m_upstream->next ())
+    {
+      auto frame = vf->nth_frame (m_depth);
+      vf->push (frame->read_value (m_index).clone ());
+      return vf;
+    }
+  return nullptr;
+}
+
+std::string
+op_read::name () const
+{
+  std::stringstream ss;
+  ss << "read<" << m_index << "@" << m_depth << ">";
   return ss.str ();
 }
 

@@ -283,7 +283,8 @@ do_tests ()
   test ("2/(child next)",
 	"(TRANSFORM (CONST<2>) (CAT (F_CHILD) (F_NEXT)))");
   test ("2/child 2/next",
-	"(CAT (TRANSFORM (CONST<2>) (F_CHILD)) (TRANSFORM (CONST<2>) (F_NEXT)))");
+	"(CAT (TRANSFORM (CONST<2>) (F_CHILD))"
+	" (TRANSFORM (CONST<2>) (F_NEXT)))");
 
   test ("(child next)",
 	"(CAT (F_CHILD) (F_NEXT))");
@@ -321,7 +322,8 @@ do_tests ()
 	"(ALT (CAT (SHF_SWAP) (SHF_DUP)) (CAT (SHF_OVER) (F_NEXT)) "
 	"(CAT (F_PARENT) (SHF_DUP)))");
   test ("2/next, 2/prev",
-	"(ALT (TRANSFORM (CONST<2>) (F_NEXT)) (TRANSFORM (CONST<2>) (F_PREV)))");
+	"(ALT (TRANSFORM (CONST<2>) (F_NEXT))"
+	" (TRANSFORM (CONST<2>) (F_PREV)))");
   test ("next, prev*",
 	"(ALT (F_NEXT) (CLOSE_STAR (F_PREV)))");
 

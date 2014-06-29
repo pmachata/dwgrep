@@ -137,10 +137,11 @@
 
 %token TOK_LPAREN TOK_RPAREN TOK_LBRACKET TOK_RBRACKET
 
-%token TOK_QMARK_LPAREN TOK_BANG_LPAREN TOK_RBRACE
+%token TOK_QMARK_LPAREN TOK_BANG_LPAREN TOK_LBRACE TOK_RBRACE
 %token TOK_QMARK_ALL_LPAREN TOK_BANG_ALL_LPAREN
 
 %token TOK_ASTERISK TOK_PLUS TOK_QMARK TOK_MINUS TOK_COMMA TOK_SLASH
+%token TOK_SEMICOLON TOK_ARROW
 
 %token TOK_ADD TOK_SUB TOK_MUL TOK_DIV TOK_MOD
 %token TOK_PARENT TOK_CHILD TOK_ATTRIBUTE TOK_PREV
@@ -171,9 +172,11 @@
   tree *t;
   strlit s;
   fmtlit *f;
+  std::vector <std::string> *ids;
  }
 
 %type <t> Program AltList StatementList Statement
+%type <ids> IdList IdListOpt
 %type <s> TOK_LIT_INT
 %type <s> TOK_CONSTANT
 %type <s> TOK_AT_WORD TOK_QMARK_AT_WORD TOK_BANG_AT_WORD
@@ -190,24 +193,17 @@ Query: Program TOK_EOF
 
 Program: AltList
   {
-    if ($1 == nullptr)
-      $1 = tree::create_nullary <tree_type::NOP> ();
-    $$ = $1;
+    $$ = $1 != nullptr ? $1 : tree::create_nullary <tree_type::NOP> ();
   }
 
 AltList:
    StatementList
-   {
-     $$ = $1;
-   }
 
    | StatementList TOK_COMMA AltList
    {
-     if ($1 == nullptr)
-       $1 = tree::create_nullary <tree_type::NOP> ();
-     if ($3 == nullptr)
-       $3 = tree::create_nullary <tree_type::NOP> ();
-     $$ = tree::create_cat <tree_type::ALT> ($1, $3);
+     $$ = tree::create_cat <tree_type::ALT>
+       ($1 != nullptr ? $1 : tree::create_nullary <tree_type::NOP> (),
+	$3 != nullptr ? $3 : tree::create_nullary <tree_type::NOP> ());
    }
 
 StatementList:
@@ -219,6 +215,21 @@ StatementList:
     $$ = tree::create_cat <tree_type::CAT> ($1, $2);
   }
 
+IdListOpt:
+  /* eps. */
+  {
+    $$ = new std::vector <std::string> ();
+  }
+
+  | IdList
+
+IdList:
+  TOK_CONSTANT IdListOpt
+  {
+    $2->push_back (std::string {$1.buf, $1.len});
+    $$ = $2;
+  }
+
 Statement:
   TOK_LPAREN Program TOK_RPAREN
   { $$ = $2; }
@@ -228,6 +239,7 @@ Statement:
     auto t = tree::create_unary <tree_type::PRED_SUBX_ANY> ($2);
     $$ = tree::create_assert (t);
   }
+
   | TOK_BANG_LPAREN Program TOK_RPAREN
   {
     auto t = tree::create_unary <tree_type::PRED_SUBX_ANY> ($2);
@@ -257,7 +269,20 @@ Statement:
     $$ = tree::create_unary <tree_type::CAPTURE> ($2);
   }
 
-  // XXX precedence.  X Y* must mean X (Y*)
+  | TOK_LBRACE Program TOK_RBRACE
+  { $$ = $2; }
+
+  | TOK_ARROW IdList TOK_SEMICOLON
+  {
+    assert ($2->size () > 0);
+    $$ = nullptr;
+    for (auto const &s: *$2)
+      {
+	auto t = tree::create_str <tree_type::BIND> (s);
+	$$ = tree::create_cat <tree_type::CAT> ($$, t);
+      }
+  }
+
   | Statement TOK_ASTERISK
   { $$ = tree::create_unary <tree_type::CLOSE_STAR> ($1); }
 
@@ -318,8 +343,11 @@ Statement:
     else if (str == "false")
       $$ = tree::create_const <tree_type::CONST>
 	(constant (0, &bool_constant_dom));
-    else
+    else if (str.length () > 3
+	     && str[0] == 'D' && str[1] == 'W' && str[2] == '_')
       $$ = tree::create_const <tree_type::CONST> (constant::parse (str));
+    else
+      $$ = tree::create_str <tree_type::READ> (str);
   }
 
   | TOK_LIT_STR
@@ -557,6 +585,6 @@ parse_query (char const *begin, char const *end)
   lexer lex (begin, end);
   std::unique_ptr <tree> t;
   if (yyparse (t, lex.m_sc) == 0)
-    return *t;
+    return tree::promote_scopes (*t);
   throw std::runtime_error ("syntax error");
 }

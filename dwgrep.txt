@@ -591,11 +591,17 @@
    equivalent to (among others):
    : [ 0 1 ?eq ]
 
-**  EXPR → “->” ID — binding
+**  EXPR → “->” ID₀ [ID₁ …] “;” — binding
 
-   - This pops TOS and binds this value to an identifier ID.  From
-     that point on, mentioning ID is the same as pushing the value to
-     TOS.
+   - This pops a bunch of values from TOS and binds each of them to
+     one identifier ID.  From that point on, mentioning ID is the same
+     as pushing the value to TOS.
+
+   - The following two pieces of code are equivalent:
+     : ->A B;
+     : ->B; ->A;
+     The mnemonic for this is that the list of variables describes
+     stack layout, with TOS being on the right.
 
 **  EXPR → “{” EXPR₁ “}” | “def” ID “{” EXPR₁ “}” | “:”ID | “apply” — blocks
 
@@ -612,15 +618,15 @@
       Mentioning ID doesn't push the block, but directly evaluates the
       body.  The following two are equivalent:
       : def ID {X} ID
-      : {X} -> ID ID apply
+      : {X} -> ID; ID apply
 
       : def double { dup add }
       : 3 double		# gives 6
 
-      : { ->x ... }	# within {}, x refers to whatever was on TOS
-      : { ->x ->y ... }	# x is what was on TOS, y is what was below TOS
+      : { ->x; ... }	# within {}, x refers to whatever was on TOS
+      : { ->y x; ... }	# x is what was on TOS, y is what was below TOS
 
-      : def fact { ->n  if n ?1 then 1 else (n n 1 sub fact mul) }
+      : def fact { ->n; if n ?1 then 1 else (n n 1 sub fact mul) }
       : 3 fact	# 6
 
       The execution introduces a new activation record (dynamic scope)
@@ -631,10 +637,10 @@
       remembers its surrounding scope, even if the execution already
       left it), so that they work as closures.
 
-      : def adder { ->x { ->y  x y add } }
+      : def adder { ->x; { ->y;  x y add } }
       : 2 adder 1 swap apply
 
-      : def map { ->f ->L  [ L each f apply ] }
+      : def map { ->L f;  [ L each f apply ] }
 
       The apply as used in this context is thorny, see below.
 
@@ -654,31 +660,25 @@
       obvious cases it might be possible to deduce, and for the rest
       there might be an optional effect syntax.  E.g.:
 
-      : def map { ->(a->b)f ->L  ... }
+      : def map { ->L (a->b)f;  ... }
 
     - Stack shuffling operators:
-      : def drop { ->a }		# ->(a->)drop
-      : def dup { ->a a a }		# ->(a->a a)dup
-      : def swap { ->a ->b a b }	# ->(a b->b a)swap
-      : def rot { ->a ->b ->c b a c }	# ->(a b c->b c a)rot
-      : def over { ->a ->b b a b }	# ->(a b->a b a)over
-      So it seems tractable to deduce these schemes in these simple
-      cases, but in anything more involved, it's not altogether clear
-      this is possible.  But maybe it is--executing symbolically,
-      applying stack schemes of called functions recursively, taking
-      new letters from some pool, and then looking what symbols are
-      left on stack.
+      : def drop { ->a; }		# ->(a->)drop;
+      : def dup { ->a; a a }		# ->(a->a a)dup;
+      : def swap { ->a b; b a }		# ->(a b->b a)swap;
+      : def rot { ->a b c; b c a }	# ->(a b c->b c a)rot;
+      : def over { ->a b; a b a }	# ->(a b->a b a)over;
 
     - With this all, can we still demand that stack effects be static?
       It doesn't seem so.  Consider:
-      : { :foo def foo } :unknown def
+      : def unknown { ->foo; foo apply }
       : { drop } unknown
       : { dup } unknown
 
       With stack schemes, we can either postpone the deduction:
       : def unknown { foo | foo apply }	# will be deduced on use site
-      : { drop } unknown		# ->(a (b->)->)unknown
-      : { dup } unknown			# ->(a (b->b b)->a a)unknown
+      : { drop } unknown		# ->(a (b->)->)unknown;
+      : { dup } unknown			# ->(a (b->b b)->a a)unknown;
 
       Some of the deduction will need to be postponed anyway.  For
       example, consider:
@@ -692,32 +692,9 @@
       So perhaps we can just give up on stack effect declarations
       altogether and deduce them all.
 
-      : def ifelse { tbr fbr | (?true drop tbr, ?false drop fbr) }
-      : ifelse:(x t f -> ???)	# deduced at instantiation depending on t and f
-
-      : winfo -[ child ] length 0 eq { X } { Y } ifelse      ?eq
-      :          (a->b)              (->g) (->i) (x t f->j)  (a b->a b)
-      : a         b    a   a    a a    a     a      a
-      :                b   c    c e    e     e      k
-      :                         d      f     f
-      :                                      g
-
-      So this seems to somehow work.  It's not clear whether it will
-      work very well with recursion, but it as well might.  The ?eq
-      binds together a "k" and an "a".  "a" is produced all the way
-      back at the front.  "k" is produced by ifelse, which takes e, f
-      and g as inputs, who are in turn produced by... etc.  This
-      eventually brings us back to "a", and I'm not sure whether
-      that's not a problem.  The goal is that the algorithm realizes
-      that it can create a set of values produced by winfo, and then
-      set of values produced by the remainder, and just make an
-      intersection of the two, instead of iterating all the
-      combinations the hard way.
-
-      We don't know what stack will look like after "unknown" is
-      called, unless we treat the definition as a template and
-      instantiate it each time (and then handling recursion becomes
-      tricky).
+      We don't know what stack will look like after "moo" is called,
+      unless we treat the definition as a template and instantiate it
+      each time (and then handling recursion becomes tricky).
 
       Can we instantiate each block once for each block argument?
       I.e. the above would be instantiated twice: once for 1--0, and
@@ -733,22 +710,11 @@
       statically slicing a program in several parts that can be run
       separately and their results combined.
 
-      : { :tbr def :fbr def (?true tbr, ?false fbr) } :ifelse def
+      : def ifelse { ->tbr fbr; (?true tbr, ?false fbr) apply }
       : +1 +1  -2   +1  -2    +0   +1     +0    +1       +1    -2
 
-      : winfo -[ child ] length 0 eq   { "empty" } { "non-empty" } ifelse
-      : +1       -1+1 +1 -1+1  +1 -2+1 +1 +1       +1 +1            
-
-      If we had "var" for local variables and "def" for new words,
-      that would mean blocks per se don't exist.  You couldn't say
-      ({blah} do-stuff) because the code inside do-stuff, to be
-      properly optimized, would need to know stack effects of the
-      outer block:
-      : { :tmp def tmp } :blah def
-      : 1 blah		# pushes 1
-      : {drop} blah	# drops
-      ... so again the "it would work as a macro, but then what do we
-      do with recursion".
+      : winfo [ child ] length 0 eq   { "empty" } { "non-empty" } ifelse
+      : +1      -1+1 +1 -1+1  +1 -2+1 +1 +1       +1 +1            
 
       : def blah { (* ->) * -> | @ }
       : {drop} blah	# OK: {drop} is *->
@@ -756,11 +722,6 @@
       : {1} blah	# error: {1} is ->*, expected *->
 
       : { a b | a @name b @name ?eq } ?
-
-    - XXXX how about count deferral?  We need to know which slots end
-      up being counted to wrap them in counters...  One obvious
-      solution is not to do it and let people do ([ X ] -length swap
-      each) if they care.
 
 **  EXPR → “?(” EXPR₁ “)” | “!(” EXPR₁ “)” — sub-expression assertions
 
