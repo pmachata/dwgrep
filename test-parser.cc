@@ -213,31 +213,8 @@ do_tests ()
   test ("section", "(SEL_SECTION)");
   test ("unit", "(SEL_UNIT)");
 
-  test ("-add", "(PROTECT (F_ADD))");
-  test ("-sub", "(PROTECT (F_SUB))");
-  test ("-mul", "(PROTECT (F_MUL))");
-  test ("-div", "(PROTECT (F_DIV))");
-  test ("-mod", "(PROTECT (F_MOD))");
-  test ("-parent", "(PROTECT (F_PARENT))");
-  test ("-child", "(PROTECT (F_CHILD))");
-  test ("-attribute", "(PROTECT (F_ATTRIBUTE))");
-  test ("-prev", "(PROTECT (F_PREV))");
-  test ("-next", "(PROTECT (F_NEXT))");
-  test ("-type", "(PROTECT (F_TYPE))");
-  test ("-offset", "(PROTECT (F_OFFSET))");
-  test ("-name", "(PROTECT (F_NAME))");
-  test ("-tag", "(PROTECT (F_TAG))");
-  test ("-form", "(PROTECT (F_FORM))");
-  test ("-value", "(PROTECT (F_VALUE))");
-  test ("-pos", "(PROTECT (F_POS))");
-  test ("-each", "(PROTECT (F_EACH))");
-  test ("-universe", "(PROTECT (SEL_UNIVERSE))");
-  test ("-section", "(PROTECT (SEL_SECTION))");
-  test ("-unit", "(PROTECT (SEL_UNIT))");
-
 #define ONE_KNOWN_DW_AT(NAME, CODE)					\
   test ("@"#NAME, "(CAT (F_ATTR_NAMED<" #CODE ">) (F_VALUE))");		\
-  test ("-@"#NAME, "(PROTECT (CAT (F_ATTR_NAMED<" #CODE ">) (F_VALUE)))"); \
   test ("?@"#NAME, "(ASSERT (PRED_AT<" #CODE ">))");			\
   test ("!@"#NAME, "(ASSERT (PRED_NOT (PRED_AT<" #CODE ">)))");
 
@@ -266,10 +243,6 @@ do_tests ()
 	"(CAT (CLOSE_STAR (F_CHILD)) (F_NEXT))");
   test ("child+ next",
 	"(CAT (F_CHILD) (CLOSE_STAR (F_CHILD)) (F_NEXT))");
-  test ("child -next",
-	"(CAT (F_CHILD) (PROTECT (F_NEXT)))");
-  test ("child+ -next",
-	"(CAT (F_CHILD) (CLOSE_STAR (F_CHILD)) (PROTECT (F_NEXT)))");
 
   test ("dup swap child",
 	"(CAT (SHF_DUP) (SHF_SWAP) (F_CHILD))");
@@ -309,8 +282,8 @@ do_tests ()
 
   test ("dup, over",
 	"(ALT (SHF_DUP) (SHF_OVER))");
-  test ("dup, over, -child",
-	"(ALT (SHF_DUP) (SHF_OVER) (PROTECT (F_CHILD)))");
+  test ("dup, over, child",
+	"(ALT (SHF_DUP) (SHF_OVER) (F_CHILD))");
   test ("swap,",
 	"(ALT (SHF_SWAP) (NOP))");
   test ("swap dup, over",
@@ -348,8 +321,6 @@ do_tests ()
 	" (STR<(>)) (STR<b>))");
   test ("\"abc%sdef\"",
 	"(FORMAT (STR<abc>) (NOP) (STR<def>))");
-  test ("-\"foo\"",
-	"(PROTECT (FORMAT (STR<foo>)))");
 
   test ("\"r\\aw\"", "(FORMAT (STR<r\aw>))");
   test ("r\"r\\aw\"", "(FORMAT (STR<r\\aw>))");
@@ -402,10 +373,10 @@ do_tests ()
 	 "(CAT (SEL_WINFO)"
 	 " (SHF_DROP) (FORMAT (STR<foo>)))");
 
-  ftest ("winfo \"%( -offset %): %( @name %)\"",
+  ftest ("winfo \"%( dup offset %): %( @name %)\"",
 	 "(CAT (SEL_WINFO)"
 	 " (FORMAT (STR<>)"
-	 " (PROTECT (F_OFFSET)) (STR<: >)"
+	 " (CAT (SHF_DUP) (F_OFFSET)) (STR<: >)"
 	 " (CAT (F_ATTR_NAMED<DW_AT_name>)"
 	 " (F_VALUE)) (STR<>)))",
 	 true);

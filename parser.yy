@@ -309,9 +309,6 @@ Statement:
     $$ = tree::create_cat <tree_type::ALT> ($1, t);
   }
 
-  | TOK_MINUS Statement
-  { $$ = tree::create_protect ($2); }
-
   | TOK_LIT_INT TOK_SLASH Statement
   {
     auto t = tree::create_const <tree_type::CONST> (parse_int ($1));
@@ -420,11 +417,9 @@ Statement:
 
 
   | TOK_HEX
-  { $$ = tree::create_const <tree_type::F_CAST>
-      ({0, &hex_constant_dom}); }
+  { $$ = tree::create_const <tree_type::F_CAST> ({1, &hex_constant_dom}); }
   | TOK_OCT
-  { $$ = tree::create_const <tree_type::F_CAST>
-      ({0, &oct_constant_dom}); }
+  { $$ = tree::create_const <tree_type::F_CAST> ({1, &oct_constant_dom}); }
 
 
   | TOK_POS

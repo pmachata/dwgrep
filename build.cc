@@ -80,7 +80,6 @@ tree::build_pred (dwgrep_graph::sptr q, std::shared_ptr <scope> scope) const
     case tree_type::CAPTURE:
     case tree_type::EMPTY_LIST:
     case tree_type::TRANSFORM:
-    case tree_type::PROTECT:
     case tree_type::CLOSE_STAR:
     case tree_type::CONST:
     case tree_type::STR:
@@ -270,13 +269,6 @@ tree::build_exec (std::shared_ptr <op> upstream, dwgrep_graph::sptr q,
 	auto origin = std::make_shared <op_origin> (nullptr);
 	auto op = m_children.front ().build_exec (origin, q, scope);
 	return std::make_shared <op_close> (upstream, origin, op);
-      }
-
-    case tree_type::PROTECT:
-      {
-	auto origin = std::make_shared <op_origin> (nullptr);
-	auto op = m_children.front ().build_exec (origin, q, scope);
-	return std::make_shared <op_subx> (upstream, origin, op);
       }
 
     case tree_type::F_ADD:

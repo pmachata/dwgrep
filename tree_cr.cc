@@ -12,12 +12,6 @@ tree::create_assert (tree *t)
   return tree::create_unary <tree_type::ASSERT> (t);
 }
 
-tree *
-tree::create_protect (tree *t)
-{
-  return tree::create_unary <tree_type::PROTECT> (t);
-}
-
 void
 tree::take_child (tree *t)
 {
@@ -64,7 +58,6 @@ namespace
       case tree_type::CAPTURE:
       case tree_type::OR:
       case tree_type::BLOCK:
-      case tree_type::PROTECT:
       case tree_type::CLOSE_STAR:
       case tree_type::ASSERT:
 	for (auto &c: t.m_children)

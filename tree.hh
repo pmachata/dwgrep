@@ -43,8 +43,6 @@ enum class tree_arity_v
 // TRANSFORM -- For holding NUM/X.  The first child is a constant
 // representing application depth, the second is the X.
 //
-// PROTECT -- For holding +X.
-//
 // NOP -- For holding a no-op that comes up in "%s" and (,X).
 //
 // CLOSE_STAR -- For holding X*.  X is the only child.  X+ is emulated
@@ -90,7 +88,6 @@ enum class tree_arity_v
   TREE_TYPE (READ, STR)				\
   TREE_TYPE (EMPTY_LIST, NULLARY)		\
   TREE_TYPE (TRANSFORM, BINARY)			\
-  TREE_TYPE (PROTECT, UNARY)			\
   TREE_TYPE (NOP, NULLARY)			\
   TREE_TYPE (CLOSE_STAR, UNARY)			\
   TREE_TYPE (ASSERT, UNARY)			\
@@ -236,7 +233,6 @@ public:
 
   static tree *create_neg (tree *t1);
   static tree *create_assert (tree *t1);
-  static tree *create_protect (tree *t1);
 
   static tree build_block (tree t, std::shared_ptr <scope> scope);
   static tree promote_scopes (tree t, std::shared_ptr <scope> parent = {});

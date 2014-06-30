@@ -23,7 +23,7 @@ expect_count 1 ./duplicate-const -e '
 	?(2/tag ?eq) ?(2/@type ?eq)'
 
 expect_count 1 ./nontrivial-types.o -e '
-	winfo ?subprogram !@declaration -child ?formal_parameter
+	winfo ?subprogram !@declaration dup child ?formal_parameter
 	?(@type ((?const_type, ?volatile_type, ?typedef) @type)*
 	  (?structure_type, ?class_type))'
 
@@ -45,7 +45,7 @@ expect_count 1 ./nontrivial-types.o -e '
 
 # Test that unit annotates position.
 expect_count 11 ./nontrivial-types.o -e '
-	winfo -unit ?(2/pos ?eq)'
+	winfo dup unit ?(2/pos ?eq)'
 
 # Test that each annotates position.
 expect_count 1 ./nontrivial-types.o -e '
@@ -58,7 +58,7 @@ expect_count 1 ./nontrivial-types.o -e '
 # than it starts in (different slots are taken in the valfile).
 expect_count 1 ./typedef.o -e '
 	winfo
-	?([] swap (@type ?typedef -[()] 2/swap add swap)* drop length 3 ?eq)
+	?([] swap (@type ?typedef [()] 2/swap add swap)* drop length 3 ?eq)
 	?(offset 0x45 ?eq)'
 
 # Test decoding signed and unsigned value.
@@ -84,11 +84,6 @@ expect_count 1 ./typedef.o -e '
 	winfo ?(@external true ?eq)'
 expect_count 1 ./typedef.o -e '
 	winfo ?(@external false !eq)'
-
-# Test that -@at expands to (-attribute ?@at value), not to
-# (-attribute ?@at -value).
-expect_count 1 ./typedef.o -e '
-	winfo -@external drop type T_NODE ?eq'
 
 # Test that (dup parent) doesn't change the bottom DIE as well.
 expect_count 1 ./nontrivial-types.o -e '
@@ -119,13 +114,9 @@ expect_count 1 ./enum.o -e '
 expect_count 1 ./empty -e '
 	winfo offset'
 
-# Check that -[child offset] doesn't get optimized to something silly.
-expect_count 0 ./enum.o -e '
-	winfo -[child offset] swap type T_CONST ?eq'
-
-# Check N/-X
+# Check N/(dup X)
 expect_count 5 ./typedef.o -e '
-	winfo -child 2/-@name 4/type 2/swap ?eq'
+	winfo dup child 2/(dup @name) 4/type 2/swap ?eq'
 
 # Check ||.
 expect_count 6 ./typedef.o -e '

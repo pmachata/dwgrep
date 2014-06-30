@@ -408,9 +408,6 @@
     that were popped.  This includes traversal forms (@at, child,
     parent, etc.) and operators (sub, add, etc.).
 
-  - "-" evaluates the following sub-expression on a separate stack,
-    and pushes the sub-stack's TOS on current stack.
-
   dwgrep expressions make it possible to determine stack size
   statically.  dwgrep uses this extensively to remove stack shuffling
   where possible, and to remove stack copying for sub-expression
@@ -544,7 +541,7 @@
    - Example: asking for a qualified name:
      : ?(@name ?"a") child ?(@name ?"b") child ?(@name ?"c")
 
-**  EXPR → (“universe” | “section” | “unit” | “winfo” )
+** ·EXPR → (“universe” | “section” | “unit” | “winfo” )
 
    - "universe" stands for every DIE (and pseudo-DIE) in Dwarf graph.
      Unlike section and unit, it doesn't drop.
@@ -979,14 +976,14 @@
 **  EXPR → (“?”|“!”)“find” — search in a sequence
 
    - A B find looks for sub-sequence or sub-string B inside A
-     (e.g. "haystack" "needle" find or -[hay stack] -[needle] find).
+     (e.g. "haystack" "needle" find or [hay stack] [needle] find).
 
    - To determine, whether a sequence contains a particular element,
      you would use the following construct:
-     : [that sequence] ?(each -that element ?eq)
+     : [that sequence] ?(each dup something ?eq)
      E.g.:
-     : [-child @name] ?(each ?"foo")
-     : [-child] ?(each @name ?"foo")
+     : [child @name] ?(each ?"foo")
+     : [child] ?(each @name ?"foo")
 
 ** •EXPR → “length” — length of a sequence or a string
 
@@ -1135,10 +1132,10 @@
 
    : ?subprogram !@declaration
    : ?(@decl_file ?("^/usr/" match) !("^/usr/src/debug" match))
-   : -child ?formal_parameter
+   : dup child ?formal_parameter
    : ?(@type ((?const_type, ?volatile_type, ?typedef) @type)*
    :   (?structure_type, ?class_type)) swap
-   : "%( -@decl_file %): %( -@decl_line %): note: in function "\
+   : "%( dup @decl_file %): %( dup @decl_line %): note: in function "\
    : "`%( @name %)', parameter `%( @name %)' type is not trivial"
 
    - XXX
@@ -1303,7 +1300,7 @@
 ** duplicat DW_TAG_const_type
    - http://gcc.gnu.org/bugzilla/show_bug.cgi?id=56740
 
-   : -unit ?gt 2/(?const_type, ?volatile_type, ?restrict_type)
+   : winfo dup unit ?gt 2/(?const_type, ?volatile_type, ?restrict_type)
    : ?(2/tag ?eq) ?(2/@type ?eq)
 
    - XXX
@@ -1352,19 +1349,21 @@
      : ?(A child ?variable
      :   A child ?variable ?lt <@name>?eq)
 
+     : winfo ?(dup <child ?variable>?lt <@name>?eq)
+
      : winfo dup next+ <?variable @name>?eq
 
 ** check_linkage_external_die.cc
 
    : symtab ?symbol ?(@type (?STT_OBJECT, ?STT_FUNC)) ?(@name !"")
-   : winfo ?@linkage_name [-(@linkage_name swap @name ?eq)]
+   : winfo ?@linkage_name [@linkage_name swap @name ?eq]
    :
    : ((if !@declaration !@const_value
    :   (!structure_type !enumeration_type !union_type, ?@name)
    :   "%s has linkage_name attribute that's not in symtab, "\
    :   "but is not marked as declaration"),
    :
-   :  (else [-(swap @binding STB_LOCAL !eq)]
+   :  (else [swap @binding STB_LOCAL !eq]
    :   (if !@declaration ?@external
    :    "%s has linkage_name attribute, "\
    :    "but the corresponding symbol is local"),
@@ -1436,7 +1435,7 @@
 ** CU A imports two PU's B and C, and both import the same third PU
 
    : ?root dup dup 2/(CU ?imported_unit @import) ?lt
-   : [-(2/(unit ?imported_unit @import) ?eq)] each ?first
+   : [2/(unit ?imported_unit @import) ?eq] each ?first
    : "PU %s is imported by PU's %s and %s, which are both imported by %s"
 
    - What the following XQuery really does:
