@@ -240,9 +240,10 @@ main(int argc, char *argv[])
 	    {
 	      if (with_filename)
 		std::cout << fn << ":\n";
+	      if (result->size () > 1)
+		std::cout << "---\n";
 	      while (result->size () > 0)
 		std::cout << *result->pop () << std::endl;
-	      std::cout << "---\n";
 	    }
 	  else
 	    ++count;
