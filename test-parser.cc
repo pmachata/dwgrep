@@ -341,6 +341,7 @@ do_tests ()
 	"(CAPTURE (ALT (CONST<1>) (NOP) (CONST<2>) (NOP)))");
 
   // Formatting strings.
+  test ("\"%%\"", "(FORMAT (STR<%>))");
   test ("\"a%( \")%( [@name] %)(\" %)b\"",
 	"(FORMAT (STR<a>) (FORMAT (STR<)>)"
 	" (CAPTURE (CAT (F_ATTR_NAMED<DW_AT_name>) (F_VALUE)))"

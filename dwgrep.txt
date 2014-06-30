@@ -488,7 +488,7 @@
      : 0 (1 add ?(10 ?lt))*
 
 ** •EXPR → (“0x”|“0”|“”)[1-9][0-9]* — literals
-** ·EXPR → “r”? “"” (formatting string) “"”
+** •EXPR → “r”? “"” (formatting string) “"”
    - %( and %) enclose an EXPR that's evaluated in plain context, and
      whose input is whatever is the input to the string literal
      itself.  TOS is then popped, converted to a string and embedded
