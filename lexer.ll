@@ -159,6 +159,14 @@ OCT [0-7]
       }
 }
 
+ /* String continuation: "blah"\ "foo" is the same as "blahfoo".  */
+<STRING>"\"\\"[ \t\n]*"\"" {
+  yylval->f->raw = false;
+}
+<STRING>"\"\\"[ \t\n]*"r\"" {
+  yylval->f->raw = true;
+}
+
 <STRING>"\"" {
   BEGIN INITIAL;
 

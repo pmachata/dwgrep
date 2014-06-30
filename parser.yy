@@ -20,7 +20,7 @@
     tree t;
     size_t level;
     bool in_string;
-    bool const raw;
+    bool raw;
 
     explicit fmtlit (bool a_raw);
 

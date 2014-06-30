@@ -340,6 +340,7 @@ do_tests ()
   test ("[1,,2,]",
 	"(CAPTURE (ALT (CONST<1>) (NOP) (CONST<2>) (NOP)))");
 
+  // Formatting strings.
   test ("\"a%( \")%( [@name] %)(\" %)b\"",
 	"(FORMAT (STR<a>) (FORMAT (STR<)>)"
 	" (CAPTURE (CAT (F_ATTR_NAMED<DW_AT_name>) (F_VALUE)))"
@@ -351,6 +352,26 @@ do_tests ()
 
   test ("\"r\\aw\"", "(FORMAT (STR<r\aw>))");
   test ("r\"r\\aw\"", "(FORMAT (STR<r\\aw>))");
+
+  // String continuation.
+  test ("\"con\\t\"\\   \"i\\nued\"",
+	"(FORMAT (STR<con\ti\nued>))");
+  test ("r\"con\\t\"\\   \"inued\"",
+	"(FORMAT (STR<con\\tinued>))");
+  test ("r\"con\\t\"\\   \"i\\nued\"",
+	"(FORMAT (STR<con\\ti\nued>))");
+  test ("\"con\\t\"\\   r\"i\\nued\"",
+	"(FORMAT (STR<con\ti\\nued>))");
+  test ("r\"con\\t\"\\   r\"i\\nued\"",
+	"(FORMAT (STR<con\\ti\\nued>))");
+  test ("\"co\\n\"\\ \"\\ti\"\\   \"\\nued\"",
+	"(FORMAT (STR<co\n\ti\nued>))");
+  test ("r\"co\\n\"\\ \"\\ti\"\\   \"\\nued\"",
+	"(FORMAT (STR<co\\n\ti\nued>))");
+  test ("\"co\\n\"\\ r\"\\ti\"\\   \"\\nued\"",
+	"(FORMAT (STR<co\n\\ti\nued>))");
+  test ("\"co\\n\"\\ \"\\ti\"\\   r\"\\nued\"",
+	"(FORMAT (STR<co\n\ti\\nued>))");
 
   ftest ("winfo ?root",
 	 "(CAT (SEL_WINFO) (ASSERT (PRED_ROOT)))");

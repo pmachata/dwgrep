@@ -393,8 +393,12 @@
    : ?subprogram !@declaration -child ?formal_parameter
    : ?(@type ((?const_type, ?volatile_type, ?typedef) @type)*
    :   (?structure_type, ?class_type)) swap
-   : "%( -@decl_file %): %( -@decl_line %): note: in function \
-   : `%( @name %)', parameter `%( @name %)' type is not trivial."
+   : "%( -@decl_file %): %( -@decl_line %): note: in function "\
+   : "`%( @name %)', parameter `%( @name %)' type is not trivial."
+
+   Note the string contiuation syntax using "\.  If a string ends with
+   "\ instead of mere ", the following string literal is merged with
+   the current one.
 
    So, that's it.  This was a quick tour through the interesting parts
    of dwgrep language.  In the following sections, all of it will be
@@ -528,6 +532,14 @@
    - The r"" strings are raw strings.  They work the same as normal
      formatting strings, but escape sequences are left intact in the
      string.
+
+   - String literals can be split, provided that all but the last
+     segment end not with a mere quote, but "\.  The following two
+     examples produce equivalent programs:
+     : "a long string "\ "that continues here"
+     : "a long string that continues here"
+     Any whitespace (but only whitespace) is allowed between "\ and
+     the followig ".
 
 **  EXPR → (“?”|“!”)(literal) | (“?”|“!”)(named constant) — value assertions
 
@@ -1152,8 +1164,8 @@
    : -child ?formal_parameter
    : ?(@type ((?const_type, ?volatile_type, ?typedef) @type)*
    :   (?structure_type, ?class_type)) swap
-   : "%( -@decl_file %): %( -@decl_line %): note: in function \
-   : `%( @name %)', parameter `%( @name %)' type is not trivial"
+   : "%( -@decl_file %): %( -@decl_line %): note: in function "\
+   : "`%( @name %)', parameter `%( @name %)' type is not trivial"
 
    - XXX
      : winfo ?subprogram !@declaration
@@ -1375,13 +1387,13 @@
    :
    : ((if !@declaration !@const_value
    :   (!structure_type !enumeration_type !union_type, ?@name)
-   :   "%s has linkage_name attribute that's not in symtab,\
-   :   but is not marked as declaration"),
+   :   "%s has linkage_name attribute that's not in symtab, "\
+   :   "but is not marked as declaration"),
    :
    :  (else [-(swap @binding STB_LOCAL !eq)]
    :   (if !@declaration ?@external
-   :    "%s has linkage_name attribute,\
-   :    but the corresponding symbol is local"),
+   :    "%s has linkage_name attribute, "\
+   :    "but the corresponding symbol is local"),
    :   (else !@external
    :    "%s has linkage_name attribute, but no external attribute")))
 
@@ -1491,10 +1503,10 @@
      [7b] typedef __off64_t long int (signed, 8 bytes);
      [...]
 
-     : winfo ?typedef dup @type (?typedef @type)* !typedef swap
-     : "[%(-offset%)] typedef %(@name%) %(-@name%) \
-     : (%((-@encoding, !@encoding "???")%), \
-     : %((@byte_size, !@byte_size drop "???")%) bytes)"
+     : winfo ?typedef ->T;
+     : T @type (?typedef @type)* !typedef ->U;
+     : "[%(T offset%)] typedef %(T @name%) %(U @name%) "\
+     : "(%( U @encoding || "???" %), %( U @byte_size || "???" %) bytes)"
 
      [0x57] typedef __int32_t int (DW_ATE_signed, 4 bytes)
      [0x70] typedef __off_t long int (DW_ATE_signed, 8 bytes)
@@ -1504,6 +1516,6 @@
      [...]
 
      : winfo ?typedef ->A;
-     : A @type while ?typedef ->B;
+     : A do @type while ?typedef ->B;
      : "[%(A offset%)] typedef %(A @name%) %(B @name%) "\
      : "(%( B @encoding || "???" %), %( B @byte_size || "???" %) bytes)"
