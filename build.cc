@@ -229,9 +229,6 @@ tree::build_exec (std::shared_ptr <op> upstream, dwgrep_graph::sptr q,
 	return std::make_shared <op_format> (upstream, s_origin, strgr);
       }
 
-    case tree_type::STR:
-      return std::make_shared <op_strlit> (upstream, str ());
-
     case tree_type::SHF_DROP:
       return std::make_shared <op_drop> (upstream);
 
@@ -243,7 +240,22 @@ tree::build_exec (std::shared_ptr <op> upstream, dwgrep_graph::sptr q,
       return std::make_shared <op_swap> (upstream);
 
     case tree_type::CONST:
-      return std::make_shared <op_const> (upstream, cst ());
+      {
+	auto val = std::make_unique <value_cst> (cst (), 0);
+	return std::make_shared <op_const> (upstream, std::move (val));
+      }
+
+    case tree_type::STR:
+      {
+	auto val = std::make_unique <value_str> (std::string (str ()), 0);
+	return std::make_shared <op_const> (upstream, std::move (val));
+      }
+
+    case tree_type::EMPTY_LIST:
+      {
+	auto val = std::make_unique <value_seq> (value_seq::seq_t {}, 0);
+	return std::make_shared <op_const> (upstream, std::move (val));
+      }
 
     case tree_type::CAPTURE:
       {
@@ -251,9 +263,6 @@ tree::build_exec (std::shared_ptr <op> upstream, dwgrep_graph::sptr q,
 	auto op = m_children.front ().build_exec (origin, q, scope);
 	return std::make_shared <op_capture> (upstream, origin, op);
       }
-
-    case tree_type::EMPTY_LIST:
-      return std::make_shared <op_empty_list> (upstream);
 
     case tree_type::F_EACH:
       return std::make_shared <op_f_each> (upstream);

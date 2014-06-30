@@ -932,7 +932,7 @@ op_const::next ()
 {
   if (auto vf = m_upstream->next ())
     {
-      vf->push (std::make_unique <value_cst> (m_cst, 0));
+      vf->push (m_value->clone ());
       return vf;
     }
   return nullptr;
@@ -942,46 +942,10 @@ std::string
 op_const::name () const
 {
   std::stringstream ss;
-  ss << "const<" << m_cst << ">";
+  ss << "const<";
+  m_value->show (ss);
+  ss << ">";
   return ss.str ();
-}
-
-
-valfile::uptr
-op_strlit::next ()
-{
-  if (auto vf = m_upstream->next ())
-    {
-      vf->push (std::make_unique <value_str> (std::string (m_str), 0));
-      return vf;
-    }
-  return nullptr;
-}
-
-std::string
-op_strlit::name () const
-{
-  std::stringstream ss;
-  ss << "strlit<" << m_str << ">";
-  return ss.str ();
-}
-
-
-valfile::uptr
-op_empty_list::next ()
-{
-  if (auto vf = m_upstream->next ())
-    {
-      vf->push (std::make_unique <value_seq> (value_seq::seq_t {}, 0));
-      return vf;
-    }
-  return nullptr;
-}
-
-std::string
-op_empty_list::name () const
-{
-  return "empty_list";
 }
 
 

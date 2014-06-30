@@ -357,7 +357,7 @@ public:
   stringer_op (std::shared_ptr <stringer> upstream,
 	       std::shared_ptr <op_origin> origin,
 	       std::shared_ptr <op> op)
-    : m_upstream {std::move (upstream)}
+    : m_upstream {upstream}
     , m_origin {origin}
     , m_op {op}
     , m_have {false}
@@ -435,48 +435,12 @@ class op_const
   : public op
 {
   std::shared_ptr <op> m_upstream;
-  constant m_cst;
+  std::unique_ptr <value> m_value;
 
 public:
-  op_const (std::shared_ptr <op> upstream, constant cst)
+  op_const (std::shared_ptr <op> upstream, std::unique_ptr <value> &&value)
     : m_upstream {upstream}
-    , m_cst {cst}
-  {}
-
-  valfile::uptr next () override;
-  std::string name () const override;
-
-  void reset () override
-  { m_upstream->reset (); }
-};
-
-class op_strlit
-  : public op
-{
-  std::shared_ptr <op> m_upstream;
-  std::string m_str;
-
-public:
-  op_strlit (std::shared_ptr <op> upstream, std::string str)
-    : m_upstream {upstream}
-    , m_str {str}
-  {}
-
-  valfile::uptr next () override;
-  std::string name () const override;
-
-  void reset () override
-  { m_upstream->reset (); }
-};
-
-class op_empty_list
-  : public op
-{
-  std::shared_ptr <op> m_upstream;
-
-public:
-  explicit op_empty_list (std::shared_ptr <op> upstream)
-    : m_upstream {upstream}
+    , m_value {std::move (value)}
   {}
 
   valfile::uptr next () override;
