@@ -3,7 +3,7 @@
 
   Dwgrep is a tool and an associated language for querying Dwarf
   (debuginfo) graphs.  If you want to find out more about Dwarf, you
-  may check out the following links.  But you can also pretend that
+  can check out the following links.  But you can also pretend that
   Dwarf is like XML, except nodes are called DIE's.  That, and
   perusing the output of eu-readelf -winfo, should be enough to get
   you started.
@@ -24,18 +24,19 @@
 
   In particular, a simple expression in dwgrep might look like this:
 
-  : ?subprogram child ?formal_parameter @name
+  : winfo ?subprogram child ?formal_parameter @name
 
   Which (ignoring the initial colon that's part of meta-syntax) says:
   show me values of attribute DW_AT_name of DW_TAG_formal_parameter
-  nodes that are children of DW_TAG_subprogram nodes.  Reading
-  forward, you get list of instructions to a matcher: accept all
-  DW_TAG_subprogram's, look at their children, accept those that are
-  DW_TAG_formal_parameter, take value of attribute DW_AT_name.
+  nodes that are children of DW_TAG_subprogram nodes in .debug_info.
+  Reading forward, you get list of instructions to a matcher: take
+  .debug_info nodes, accept all DW_TAG_subprogram's, look at their
+  children, accept those that are DW_TAG_formal_parameter, take value
+  of attribute DW_AT_name.
 
   Another example comes from dwarflint:
 
-  : ?@decl_column !@decl_line
+  : winfo ?@decl_column !@decl_line
 
   ... which looks for DIE's that have DW_AT_decl_column, but don't
   have DW_AT_decl_line--a semantic violation that is worth reporting.
@@ -49,9 +50,11 @@
   comes out of the other end is the result of the query.
 
   We call what flows through the dwgrep expression a /working set/.
-  Initial working set contains all DIE's in a given Dwarf graph.  As
-  the working set is transformed, its elements can be more than just
-  DIE's--as mentioned, they can be also integers, strings, etc.
+  Initial working set is empty.  Expressions will typically start with
+  selecting an appropriate working set--such as "winfo" seen above.
+
+  As the working set is transformed, its elements can be more than
+  just DIE's--as mentioned, they can be also integers, strings, etc.
 
   Each function takes on input an element of the working set, and
   produces zero or more elements on the output.  Note that producing
@@ -87,89 +90,61 @@
   : blah blah lorem ipsum stuff
 
   The initial colon is not part of the example, but an artifact of
-  Emacs org mode.
+  Emacs org-mode.
+
+** winfo — domain selection
+
+   Since the initial working set is empty, it is usually desirable to
+   select the domain that the query should be run over.  Each Dwarf
+   section has one domain designator (winfo, wline, etc.) (XXX though
+   only winfo is implemented as of now), and there are also
+   designators for ELF symbol tables (XXX also not implemented yet).
 
 ** ?ID — DIE tag assertion
+** EXPR₁ EXPR₂ … — concatenation
 
-   The assertion "?ID" takes the value at top of stack (TOS).  If what
-   is there is not a DIE, or it's a DIE whose tag is not DW_TAG_ID,
-   this function yields nothing.  Otherwise it yields the input stack
-   unchanged.
+   The assertion "?ID" takes the value at top of stack (TOS).  If its
+   tag is not DW_TAG_ID, this function yields nothing.  Otherwise it
+   yields the input stack unchanged.
+
+   In dwgrep, function pipelines are formed by simply placing
+   functions next to each other.  The stacks that the left function
+   produces becomes an input of the right function.
 
    For example, to list all subprograms, one would use the following
    expression:
 
-   : ?subprogram
+   : winfo ?subprogram
 
 ** ?@ID, !@ID — attribute presence/absence assertion
-** EXPR₁ EXPR₂ … — concatenation
 
    "?@ID" holds if the value on TOS is a DIE with DW_AT_ID.
 
-   In dwgrep, function pipelines are formed by simply placing
-   functions next to each other.  The stacks that the left function
-   produces becomes an input of the right function.  For assertions,
-   this happens to work as a logical and.
-
-   For example, this is how we can get a list of all subprograms that
+   For assertions, concatenation happens to work as a logical and, so
+   for example, this is how we can get a list of all subprograms that
    have a declaration attribute:
 
-   : ?subprogram ?@declaration
+   : winfo ?subprogram ?@declaration
 
    Similarly, to get subprograms that do not have declaration
    attribute, we say:
 
-   : ?subprogram !@declaration
-
-** if, else, not — conditionals
-
-   Unfortunately, mere ?@declaration doesn't tell us whether a DIE is
-   a pure declaration.  We can probably safely assume that when a
-   compiler produces that attribute, it will actually have a value of
-   true, so most of the time ?@declaration (and !@declaration) is all
-   you need to write.  But if we are paranoid, or have grounds for
-   suspicion this is not so, we need to actually look at
-   DW_AT_declaration's value.
-
-   "if" expects a value on TOS.  If it's an empty list or a false, it
-   rejects the computation.  If it's non-empty list or a true, it
-   accepts it.  Thus to figure out whether a DIE represents a
-   subprogram declaration, we can say:
-
-   : ?subprogram @declaration if
-
-   "else" behaves in the opposite way.  So to see if something is not
-   a pure declaration (which is what we are after), we might say:
-
-   : ?subprogram @declaration else
-
-   But that apparently dangling else is fairly awkward.  For this
-   reason, there's "not", which switches truthfulness of the value on
-   TOS:
-
-   : ?subprogram @declaration not if
-
-   "if", "else" and "not" drop the value on TOS (they are not
-   assertions, as indicated by lack of ? or ! in their name).  "not"
-   additionally pushes a new value.
-
-   In following, we are not paranoid, and assume that ?@declaration
-   and (@declaration if) have the same effect.
+   : winfo ?subprogram !@declaration
 
 ** child — child traversal
 
    This function drops the DIE at TOS, and produces a set of stacks,
-   each with one child pushed to TOS.  If applied on a childless DIE
-   or on a value that's not a DIE at all, it produces nothing, and
-   such computations are thus dropped.  To get at the formal arguments
-   of the subprograms from the previous example, one might say:
+   each with one child pushed to TOS.  If applied on a childless DIE,
+   it produces nothing, and such computations are thus dropped.  To
+   get at the formal arguments of the subprograms from the previous
+   example, one might say:
 
-   : ?subprogram !@declaration child
+   : winfo ?subprogram !@declaration child
 
    If we want to make sure these children are actually formal
    parameters:
 
-   : ?subprogram !@declaration child ?formal_parameter
+   : winfo ?subprogram !@declaration child ?formal_parameter
 
 ** @ID — value of attribute DW_AT_ID
 
@@ -178,25 +153,26 @@
    value of the attribute of that DIE.  E.g. we could obtain names of
    the formal parameters selected above:
 
-   : ?subprogram !@declaration child ?formal_parameter @name
+   : winfo ?subprogram !@declaration child ?formal_parameter @name
 
-   The result would be a set of strings with names of all formal
-   parameters in the program.  That's not very useful, as that just
-   lists a bunch of names.
+   The result would be a set (really, multiset) of strings with names
+   of all formal parameters in the program.  That's not very useful,
+   as that just lists a bunch of names.
 
    But there's another use of this same feature: for attributes with
    reference form, we get the effect of traversing over the edge
    rooted at given attribute.  For example, we could get types of
    formal parameters thus:
 
-   : ?subprogram !@declaration child ?formal_parameter @type
+   : winfo ?subprogram !@declaration child ?formal_parameter @type
 
    ... which is a bit more useful.  We might use this to discover
    whether some formal parameters have structure types, and would
    therefore incur a potentially expensive copy when the subprogram is
    invoked:
 
-   : ?subprogram !@declaration child ?formal_parameter @type ?structure_type
+   : winfo ?subprogram !@declaration
+   : child ?formal_parameter @type ?structure_type
 
    So that will let us know whether there are any offenders like that.
    That's closer to being interesting, but not quite what we need
@@ -214,39 +190,66 @@
    at least one element.  We can use it to get to DIE's that have
    arguments that are structures:
 
-   : ?subprogram !@declaration ?(child ?formal_parameter @type ?structure_type)
+   : winfo ?subprogram !@declaration
+   : ?(child ?formal_parameter @type ?structure_type)
 
    This asks whether, after going to types of children that are formal
    parameters, we get a structure.  Because the initial two assertions
    have no stack effects anyway, we might say the same thing thus:
 
-   : ?(?subprogram !@declaration child ?formal_parameter @type ?structure_type)
+   : winfo ?(?subprogram !@declaration
+   :         child ?formal_parameter @type ?structure_type)
 
    The other sub-expression assertion, !(), holds if EXPR produces no
    values at all.  We don't need that, but we could use it to reword
    the query thus:
 
-   : ?subprogram !(?@declaration)
+   : winfo ?subprogram !(?@declaration)
    : ?(child ?formal_parameter @type ?structure_type)
 
    If a DIE is a pure declaration, the expression ?@declaration yields
    unchanged incoming stack.  But !() only holds for expressions that
    yield nothing at all, thus such DIE's are rejected.
 
-   But there's more than DW_TAG_structure_type, we care about
-   DW_TAG_class_type as well!  We can express "and" easily simply by
-   juxtaposing the assertions, but we would like a way of expressing
-   "or" as well!
+   There's one more use of ?().  Mere ?@declaration doesn't tell us
+   whether a DIE is a pure declaration.  We can probably safely assume
+   that when a compiler produces that attribute, it will actually have
+   a value of true, so most of the time ?@declaration (and
+   !@declaration) is all you need to write.  But if we are paranoid,
+   or have grounds for suspicion this is not so, we need to actually
+   look at DW_AT_declaration's value.  So instead of ?@declaration, we
+   should be writing something along the lines of:
+
+   : ?(@declaration true ?eq)
+
+   Back to the problem at hand--there's more than
+   DW_TAG_structure_type, we care about DW_TAG_class_type as well!  We
+   can express "and" easily simply by juxtaposing the assertions, but
+   we would like a way of expressing "or" as well.
 
 ** EXPR, EXPR — alternative paths
+** EXPR || EXPR — C-style fallback
 
-   This expression evaluates all constituent EXPR's with the same
-   input, and then yields all values that each EXPR yields.  If the
-   expressions are assertions, this happens to behave exactly like a
-   logical or.  So:
+   The former expression evaluates all constituent EXPR's with the
+   same input, and then yields all values that each EXPR yields.  If
+   the expressions are assertions, this happens to behave exactly like
+   a logical or.  So:
 
-   : ?subprogram !@declaration
+   : winfo ?subprogram !@declaration
    : ?(child ?formal_parameter @type (?structure_type, ?class_type))
+
+   The || operator works differently.  It evaluates one expression
+   after another, as long as those expressions don't yield anything.
+   It thus yields whatever the first expression that actually yields
+   anything yields.  It thus operates in a manner similar to the
+   operator || in C language.  The typical use would be in fallbacks.
+   For example if we prefer DW_AT_MIPS_linkage_name to DW_AT_name, but
+   can make do with the latter, that would be encoded as follows:
+
+   : winfo (@MIPS_linkage_name || @name)
+
+   For selecting structures and classes, we can use either of these
+   tools interchangeably.
 
    So this is fine, but it still shows only functions that take
    structure (or class) arguments directly.  But what if they take a
@@ -265,7 +268,7 @@
    We can use this tool to remove const_type, volatile_type and
    typedef layers from our potential structure:
 
-   : ?subprogram !@declaration
+   : winfo ?subprogram !@declaration
    : ?(child ?formal_parameter
    :   @type ((?const_type, ?volatile_type, ?typedef) @type)*
    :   (?structure_type, ?class_type))
@@ -289,7 +292,7 @@
    directives.  To write a nice error message for our running example,
    we could do for example:
 
-   : ?subprogram !@declaration
+   : winfo ?subprogram !@declaration
    : ?(child ?formal_parameter
    :   @type ((?const_type, ?volatile_type, ?typedef) @type)*
    :   (?structure_type, ?class_type))
@@ -312,93 +315,64 @@
    parameter it is, and we'd like to tell the user the name of the
    function, not just a DIE offset.  We'll address both.
 
-** -EXPR — Sub-expression evaluation
+** ->X; — name binding
 
-   When decorated like this, EXPR is evaluated in subexpression
-   context (?() and !() described above are another expressions
-   evaluated like this).  EXPR is evaluated on a copy of incoming
-   stack, after which TOS of the sub-stack is pushed on top of
-   incoming stack.
+   XXX
 
-   dwgrep words, except for assertions, implicitly drop the operands
-   that they work with.  "-" is an easy way to make them preserve the
-   stack and only push the resultant value.
-
-   We can use this to keep two DIE's on stack in our in-progress
-   script: the subprogram itself as well as the struct argument.
-
-   : ?subprogram !@declaration -child ?formal_parameter
+   : winfo ?subprogram !@declaration ->S;
+   : S child ?formal_parameter
    : ?(@type ((?const_type, ?volatile_type, ?typedef) @type)*
-   :   (?structure_type, ?class_type))
-   : "Parameter %s of %s has non-trivial type."
+   :   (?structure_type, ?class_type)) ->P;
+   : P S "%s: Parameter %s has non-trivial type."
 
-   So that's nice, but notice how we needed to change the message to
-   reflect order of values on stack.  For these reasons, dwgrep has a
-   suite of stack-shuffling words from Forth:
+   Which is not too shabby, but having to keep track of which %s takes
+   which value is perhaps not too comfortable.  For that reason,
+   dwgrep allows interpolation of expressions in strings.
 
-** Stack shuffling
+** %( %) — string interpolation
 
-   - "dup" duplicates top element of stack.
-   - "swap" swaps top two stack elements.
+   In formatting string, code between %( and the matching %) is
+   evaluated in plain context, after which TOS of the result is popped
+   and interpolated in formatting string.  %s is then exactly
+   equivalent to %(%).
 
-   Apart from these two, dwgrep includes over, rot and drop.  See
-   below for their definition.  With swap, we can get our message in
-   the right order:
+   With this tool, we can make the formatting string quite a bit
+   clearer:
 
-   : ?subprogram !@declaration -child ?formal_parameter
+   : winfo ?subprogram !@declaration ->S;
+   : S child ?formal_parameter
    : ?(@type ((?const_type, ?volatile_type, ?typedef) @type)*
-   :   (?structure_type, ?class_type)) swap
-   : "%s: Parameter %s has non-trivial type."
-
-   And now we can also transform each stack slot to its name, so that
-   the message doesn't mention unfamiliar loci, but names:
-
-   : ?subprogram !@declaration -child ?formal_parameter
-   : ?(@type ((?const_type, ?volatile_type, ?typedef) @type)*
-   :   (?structure_type, ?class_type)) @name swap @name
-   : "%s: Parameter %s has non-trivial type."
-
-   Now the idiom "X swap X" is very common in dwgrep expressions.
-   Typically you would use it to tie DIE's from two sets together.
-   E.g. in dwarflint, there's a check that a scope doesn't contain two
-   variables of the same name.  You can implement the check thus:
-
-   : dup child ?variable swap child ?variable !eq ?(@name swap @name ?eq)
-
-   We get the same "X swap X" idiom, and twice!  Clearly this is
-   useful relatively often, so dwgrep has a syntax for this:
-
-** N / EXPR — pathset exploration
-
-   This form applies EXPR to the top N stack elements, with N a
-   compile-time constant with value greater than 0.  With this tool,
-   we can rephrase the above check like this:
-
-   : dup 2/(child ?variable) !eq ?(2/@name ?eq)
-
-   Which is much better.  We can also use it to improve our
-   non-trivial parameters script (but not much, we'll still need to
-   swap):
-
-   : ?subprogram !@declaration -child ?formal_parameter
-   : ?(@type ((?const_type, ?volatile_type, ?typedef) @type)*
-   :   (?structure_type, ?class_type)) 2/@name swap
-   : "%s: Parameter %s has non-trivial type."
+   :   (?structure_type, ?class_type)) ->P;
+   : "%( S %): Parameter %( P %) has non-trivial type."
 
    Ideally we'd also include source code coordinates for the function
-   name.  dwgrep formatters have a tool for this: you can enclose
-   arbitrary expressions between %( and %).  They are executed, TOS is
-   then popped and embedded in the template:
+   name, and with the interpolation, it's actually quite easy:
 
-   : ?subprogram !@declaration -child ?formal_parameter
+   : winfo ?subprogram !@declaration ->S;
+   :
+   : S child ?formal_parameter
    : ?(@type ((?const_type, ?volatile_type, ?typedef) @type)*
-   :   (?structure_type, ?class_type)) swap
-   : "%( -@decl_file %): %( -@decl_line %): note: in function "\
-   : "`%( @name %)', parameter `%( @name %)' type is not trivial."
+   :   (?structure_type, ?class_type)) ->P;
+   :
+   : "%( S @decl_file %): %( S @decl_line %): note: in function "\
+   : "`%( S @name %)', parameter `%( P @name %)' type is not trivial."
 
    Note the string contiuation syntax using "\.  If a string ends with
    "\ instead of mere ", the following string literal is merged with
    the current one.
+
+   If we were paranoid, we could guard against missing @decl_file and
+   @decl_line thus (quoting just the relevant part of the above
+   example):
+
+   : "%( S @decl_file || "???" %): %( S @decl_line || "???" %): "\
+   : "note: in function `%( S @name %)', "\
+   : "parameter `%( P @name %)' type is not trivial."
+
+   Note how you can use string literals inside %( %) inside formatting
+   strings.  Not that it would be a good idea to nest layers and
+   layers of strings, but for a quick default like this, there's no
+   harm.
 
    So, that's it.  This was a quick tour through the interesting parts
    of dwgrep language.  In the following sections, all of it will be
