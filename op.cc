@@ -1182,10 +1182,24 @@ struct op_f_each::pimpl
 	while (m_vf == nullptr)
 	  if (auto vf = m_upstream->next ())
 	    {
+	      if (vf->top ().is <value_str> ())
+		{
+		  auto s = vf->pop ();
+
+		  std::string const &str
+		    = static_cast <value_str const &> (*s).get_string ();
+		  value_seq::seq_t seq;
+		  for (auto c: str)
+		    seq.push_back (std::make_unique <value_str>
+				   (std::string {c}, 0));
+
+		  vf->push (std::make_unique <value_seq> (std::move (seq), 0));
+		}
+
 	      if (vf->top ().is <value_seq> ())
 		m_vf = std::move (vf);
 	      else
-		std::cerr << "Error: `each' expects a T_SEQ on TOS.\n";
+		std::cerr << "Error: `each' expects a T_SEQ or T_STR on TOS.\n";
 	    }
 	  else
 	    return nullptr;
