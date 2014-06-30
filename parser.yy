@@ -140,8 +140,8 @@
 %token TOK_QMARK_LPAREN TOK_BANG_LPAREN TOK_LBRACE TOK_RBRACE
 %token TOK_QMARK_ALL_LPAREN TOK_BANG_ALL_LPAREN
 
-%token TOK_ASTERISK TOK_PLUS TOK_QMARK TOK_MINUS TOK_COMMA TOK_SLASH
-%token TOK_SEMICOLON TOK_ARROW
+%token TOK_ASTERISK TOK_PLUS TOK_QMARK TOK_MINUS TOK_COMMA TOK_SEMICOLON
+%token TOK_DOUBLE_VBAR TOK_SLASH TOK_ARROW
 
 %token TOK_ADD TOK_SUB TOK_MUL TOK_DIV TOK_MOD
 %token TOK_PARENT TOK_CHILD TOK_ATTRIBUTE TOK_PREV
@@ -175,7 +175,7 @@
   std::vector <std::string> *ids;
  }
 
-%type <t> Program AltList StatementList Statement
+%type <t> Program AltList OrList StatementList Statement
 %type <ids> IdList IdListOpt
 %type <s> TOK_LIT_INT
 %type <s> TOK_CONSTANT
@@ -197,14 +197,24 @@ Program: AltList
   }
 
 AltList:
-   StatementList
+   OrList
 
-   | StatementList TOK_COMMA AltList
+   | OrList TOK_COMMA AltList
    {
      $$ = tree::create_cat <tree_type::ALT>
        ($1 != nullptr ? $1 : tree::create_nullary <tree_type::NOP> (),
 	$3 != nullptr ? $3 : tree::create_nullary <tree_type::NOP> ());
    }
+
+OrList:
+  StatementList
+
+  | StatementList TOK_DOUBLE_VBAR OrList
+  {
+    $$ = tree::create_cat <tree_type::OR>
+       ($1 != nullptr ? $1 : tree::create_nullary <tree_type::NOP> (),
+	$3 != nullptr ? $3 : tree::create_nullary <tree_type::NOP> ());
+  }
 
 StatementList:
   /* eps. */

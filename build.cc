@@ -76,6 +76,7 @@ tree::build_pred (dwgrep_graph::sptr q, std::shared_ptr <scope> scope) const
     case tree_type::NOP:
     case tree_type::ASSERT:
     case tree_type::ALT:
+    case tree_type::OR:
     case tree_type::CAPTURE:
     case tree_type::EMPTY_LIST:
     case tree_type::TRANSFORM:
@@ -157,6 +158,18 @@ tree::build_exec (std::shared_ptr <op> upstream, dwgrep_graph::sptr q,
 			ops.begin (), ops.begin (), build_branch);
 
 	return std::make_shared <op_merge> (ops, done);
+      }
+
+    case tree_type::OR:
+      {
+	auto o = std::make_shared <op_or> (upstream);
+	for (auto const &tree: m_children)
+	  {
+	    auto origin2 = std::make_shared <op_origin> (nullptr);
+	    auto op = tree.build_exec (origin2, q, scope);
+	    o->add_branch (origin2, op);
+	  }
+	return o;
       }
 
     case tree_type::SEL_WINFO:

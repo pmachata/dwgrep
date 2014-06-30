@@ -556,6 +556,36 @@ public:
   void reset () override;
 };
 
+class op_or
+  : public op
+{
+  std::shared_ptr <op> m_upstream;
+  std::vector <std::pair <std::shared_ptr <op_origin>,
+			  std::shared_ptr <op>>> m_branches;
+  decltype (m_branches)::const_iterator m_branch_it;
+
+  void reset_me ();
+
+public:
+  op_or (std::shared_ptr <op> upstream)
+    : m_upstream {upstream}
+    , m_branch_it {m_branches.end ()}
+  {}
+
+  void
+  add_branch (std::shared_ptr <op_origin> origin,
+	      std::shared_ptr <op> op)
+  {
+    assert (m_branch_it == m_branches.end ());
+    m_branches.push_back (std::make_pair (origin, op));
+    m_branch_it = m_branches.end ();
+  }
+
+  void reset () override;
+  valfile::uptr next () override;
+  std::string name () const override;
+};
+
 class op_capture
   : public op
 {

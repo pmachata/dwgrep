@@ -465,7 +465,7 @@
    - For example, to follow through all edges:
      : (child, attribute ?(form "%s" "DW_FORM_ref.*" ?match))
 
-**  EXPR → EXPR₁ “||” EXPR₂ … — first match
+** •EXPR → EXPR₁ “||” EXPR₂ … — first match
 
    EXPR yields all the values of the first expression that yields
    anything.
@@ -577,7 +577,7 @@
 
 ** •EXPR → “(” EXPR₁ “)” — grouping, precedence
 
-**  EXPR → “[” EXPR₁ “]” | “[” “]” — sub-expression capture
+** •EXPR → “[” EXPR₁ “]” | “[” “]” — sub-expression capture
 
    This is a literal form that gathers what EXPR₁ yields and pushes a
    sequence with those elements.  It can be used for constructing a
@@ -591,7 +591,7 @@
    equivalent to (among others):
    : [ 0 1 ?eq ]
 
-**  EXPR → “->” ID₀ [ID₁ …] “;” — binding
+** •EXPR → “->” ID₀ [ID₁ …] “;” — binding
 
    - This pops a bunch of values from TOS and binds each of them to
      one identifier ID.  From that point on, mentioning ID is the same
@@ -723,15 +723,15 @@
 
       : { a b | a @name b @name ?eq } ?
 
-**  EXPR → “?(” EXPR₁ “)” | “!(” EXPR₁ “)” — sub-expression assertions
+** •EXPR → “?(” EXPR₁ “)” | “!(” EXPR₁ “)” — sub-expression assertions
 
    These ask whether TOS of [ EXPR₁ ] would be, respectively, a
    non-empty or empty list.
 
    - ?( EXPR₁ ) is exactly equivalent to:
-     : -[ -EXPR₁ ] !empty drop
+     : [ EXPR₁ ] !empty drop
    - !( EXPR₁ ) is exactly equivalent to:
-     : -[ -EXPR₁ ] ?empty drop
+     : [ EXPR₁ ] ?empty drop
 
    - Examples:
      : !(child)       # keep leaf DIE's only
@@ -1157,7 +1157,7 @@
 
    - XXX
      : winfo ?subprogram !@declaration
-     : ?(@decl_file ?("^/usr/" match) !("^/usr/src/debug" match)) -> A
+     : ?(@decl_file ?("^/usr/" ?match) ?("^/usr/src/debug" !match)) -> A;
      : A child ?formal_parameter
      : ?(@type while (?const_type, ?volatile_type, ?typedef)
      :   (?structure_type, ?class_type)) -> B
@@ -1210,9 +1210,9 @@
 
    - XXX
      : winfo (?subprogram, ?inline_subroutine, ?entry_point, ?lexical_block,
-     :        ?label, ?with_stmt, ?try_block, ?catch_block) -> A
-     : A (@entry_pc, @low_pc, @ranges) -> B
-     : A root !(@stmt_list @address ?eq) -> C
+     :        ?label, ?with_stmt, ?try_block, ?catch_block) ->A;
+     : A (@entry_pc, @low_pc, @ranges) ->B;
+     : A root !(@stmt_list @address B ?eq) ->C;
      : "Address %( B %) referenced from %( C %) not found in line table."
 
 ** contains DW_OP_fbreg && ! @frame_base
@@ -1225,9 +1225,9 @@
 
 ** uses register based operators
 
-   : ?(@location @atom (DW_OP_bregx ?eq, ?(DW_OP_reg0 ?ge) ?(DW_OP_regx ?le)))
+   : ?(@location @atom (?DW_OP_bregx, ?(DW_OP_reg0 ?ge) ?(DW_OP_regx ?le)))
 
-   : ?(@location @atom "%s" "_b?reg" find)
+   : ?(@location @atom "%s" "_b?reg" ?find)
 
 ** whether it uses a deref operator
 
@@ -1265,7 +1265,7 @@
 
 ** location expression ends with implicit_value or stack_value
 
-   : winfo ?(@location ?last @atom (?DW_OP_implicit_value, ?DW_OP_stack_value))
+   : winfo ?([@location] last @atom (?DW_OP_implicit_value, ?DW_OP_stack_value))
 
    - something
 
@@ -1284,9 +1284,9 @@
    : ?(2/pos ?eq) ?(2/@type !eq)
 
    - XXX
-     : winfo ?subprogram -> A
-     : A child ?formal_parameter -> B
-     : A @specification child ?formal_parameter -> C
+     : winfo ?subprogram ->A;
+     : A child ?formal_parameter ->B;
+     : A @specification child ?formal_parameter ->C;
      : • ?(B C <pos>?eq <@type>!eq) A
      : • ?(B pos C pos ?eq) ?(B @type C @type !eq) A
      : • ?(B C ?({pos} 2/ ?eq) ?({@type} 2/ !eq)) A
@@ -1325,9 +1325,9 @@
      : • ?({tag} 2/ ?eq) ?({@type} 2/ ?eq)
      : • <tag>?eq <@type>?eq
 
-     : { ?const_type, ?volatile_type, ?restrict_type } -> ?cvr_type
-     : winfo ?cvr_type -> A
-     : A unit ?gt ?cvr_type -> B
+     : def ?cvr_type { ?const_type || ?volatile_type || ?restrict_type }
+     : winfo ?cvr_type -> A;
+     : A unit ?gt ?cvr_type -> B;
      : A B ?(<tag>?eq <type>?eq)
 
    - XQuery:
@@ -1352,17 +1352,17 @@
    Check for two full DW_TAG_variable DIEs with the same DW_AT_name
    value.
 
-   : dup 2/(child ?variable) ?lt ?(2/@name ?eq)
+   : winfo dup 2/(child ?variable) ?lt ?(2/@name ?eq)
 
-   : dup next+ 2/?variable ?(2/@name ?eq)
+   : winfo dup next+ 2/?variable ?(2/@name ?eq)
 
    - XXX
-     : winfo -> A
-     : ?(A child ?variable -> B
-     :   A child ?variable ?(B ?lt) -> C
+     : winfo -> A;
+     : ?(A child ?variable -> B;
+     :   A child ?variable ?(B ?lt) -> C;
      :   B @name C @name ?eq)
 
-     : winfo -> A
+     : winfo -> A;
      : ?(A child ?variable
      :   A child ?variable ?lt <@name>?eq)
 
@@ -1400,9 +1400,9 @@
    DIE with an unrelated symbol.
 
    - XXX
-     : winfo ?@linkage_name -> A
+     : winfo ?@linkage_name -> A;
      : [symtab ?(@type (?STT_OBJECT, ?STT_FUNC))
-     :  ?(@name A @linkage_name ?eq)] -> Ss
+     :  ?(@name A @linkage_name ?eq)] -> Ss;
      : if Ss ?empty then (
      :     A !@declaration !@const_value
      :     (!structure_type !enumeration_type !union_type, ?@name)
@@ -1425,8 +1425,8 @@
      "elem" is what the function name should be.
 
    - XXX2
-     : {-> X symtab (?STT_OBJECT, ?STT_FUNC)
-     :  ?(@name X @linkage_name ?eq)} -> GetSym
+     : def GetSym {->X; symtab (?STT_OBJECT, ?STT_FUNC)
+     :             ?(@name X @linkage_name ?eq)}
      : winfo ?@linkage_name if !(GetSym) then (
      :     !@declaration !@const_value
      :     (!structure_type !enumeration_type !union_type, ?@name)
@@ -1461,9 +1461,9 @@
    - XXX:
      : def root {parent while !root}
      :
-     : winfo ?root ->U
-     : U child ?imported_unit @import ->A
-     : U child ?imported_unit @import ?(A ?lt) ->B
+     : winfo ?root ->U;
+     : U child ?imported_unit @import ->A;
+     : U child ?imported_unit @import ?(A ?lt) ->B;
      : ?(A B <root child ?imported_unit @import>?eq)
      : U A B
 
@@ -1503,7 +1503,7 @@
      [0xa7] typedef size_t long unsigned int (DW_ATE_unsigned, 8 bytes)
      [...]
 
-     : winfo ?typedef ->A
-     : A @type while ?typedef ->B
+     : winfo ?typedef ->A;
+     : A @type while ?typedef ->B;
      : "[%(A offset%)] typedef %(A @name%) %(B @name%) "\
      : "(%( B @encoding || "???" %), %( B @byte_size || "???" %) bytes)"

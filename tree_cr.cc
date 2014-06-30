@@ -62,6 +62,7 @@ namespace
       {
       case tree_type::ALT:
       case tree_type::CAPTURE:
+      case tree_type::OR:
       case tree_type::BLOCK:
       case tree_type::PROTECT:
       case tree_type::CLOSE_STAR:

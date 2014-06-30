@@ -126,3 +126,13 @@ expect_count 0 ./enum.o -e '
 # Check N/-X
 expect_count 5 ./typedef.o -e '
 	winfo -child 2/-@name 4/type 2/swap ?eq'
+
+# Check ||.
+expect_count 6 ./typedef.o -e '
+	winfo (@decl_line || drop 42)'
+expect_count 2 ./typedef.o -e '
+	winfo (@decl_line || drop 42) ?(42 ?eq)'
+expect_count 6 ./typedef.o -e '
+	winfo (@decl_line || @byte_size || drop 42)'
+expect_count 1 ./typedef.o -e '
+	winfo (@decl_line || @byte_size || drop 42) ?(42 ?eq)'

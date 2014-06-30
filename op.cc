@@ -1055,6 +1055,65 @@ op_merge::name () const
 }
 
 
+void
+op_or::reset_me ()
+{
+  m_branch_it = m_branches.end ();
+  for (auto const &branch: m_branches)
+    branch.second->reset ();
+}
+
+void
+op_or::reset ()
+{
+  reset_me ();
+  m_upstream->reset ();
+}
+
+valfile::uptr
+op_or::next ()
+{
+  while (true)
+    {
+      if (m_branch_it == m_branches.end ())
+	{
+	  if (auto vf = m_upstream->next ())
+	    for (m_branch_it = m_branches.begin ();
+		 m_branch_it != m_branches.end (); ++m_branch_it)
+	      {
+		m_branch_it->second->reset ();
+		m_branch_it->first->set_next (std::make_unique <valfile> (*vf));
+		if (auto vf2 = m_branch_it->second->next ())
+		  return vf2;
+	      }
+	  return nullptr;
+	}
+
+      if (auto vf2 = m_branch_it->second->next ())
+	return vf2;
+
+      reset_me ();
+    }
+}
+
+std::string
+op_or::name () const
+{
+  std::stringstream ss;
+  ss << "or<";
+  bool sep = false;
+  for (auto const &branch: m_branches)
+    {
+      if (sep)
+	ss << " || ";
+      sep = true;
+      ss << branch.second->name ();
+    }
+  ss << ">";
+  return ss.str ();
+}
+
+
 valfile::uptr
 op_capture::next ()
 {

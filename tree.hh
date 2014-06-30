@@ -38,6 +38,7 @@ enum class tree_arity_v
 // CAT -- A node for holding concatenation (X Y Z).
 // ALT -- A node for holding alternation (X, Y, Z).
 // CAPTURE -- For holding [X].
+// OR -- For holding first-match alternation (X || Y || Z)
 //
 // TRANSFORM -- For holding NUM/X.  The first child is a constant
 // representing application depth, the second is the X.
@@ -83,6 +84,7 @@ enum class tree_arity_v
   TREE_TYPE (CAT, BINARY)			\
   TREE_TYPE (ALT, BINARY)			\
   TREE_TYPE (CAPTURE, UNARY)			\
+  TREE_TYPE (OR, BINARY)			\
   TREE_TYPE (BLOCK, BLOCK)			\
   TREE_TYPE (BIND, STR)				\
   TREE_TYPE (READ, STR)				\

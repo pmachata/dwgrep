@@ -46,6 +46,7 @@ OCT [0-7]
 "/" return TOK_SLASH;
 ";" return TOK_SEMICOLON;
 "->" return TOK_ARROW;
+"||" return TOK_DOUBLE_VBAR;
 
 "swap" return TOK_SWAP;
 "dup" return TOK_DUP;
