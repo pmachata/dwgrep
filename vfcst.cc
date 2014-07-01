@@ -10,6 +10,9 @@ static struct
   {
     switch (static_cast <slot_type_id> (v))
       {
+      case slot_type_id::T_CLOSURE:
+	o << "T_CLOSURE";
+	return;
       case slot_type_id::T_CONST:
 	o << "T_CONST";
 	return;

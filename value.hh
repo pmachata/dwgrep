@@ -201,6 +201,47 @@ public:
   cmp_result cmp (value const &that) const override;
 };
 
+class op;
+class op_origin;
+class frame;
+
+class value_closure
+  : public value
+{
+  std::shared_ptr <op_origin> m_origin;
+  std::shared_ptr <op> m_op;
+  std::shared_ptr <frame> m_frame;
+
+public:
+  static value_type const vtype;
+
+  value_closure (std::shared_ptr <op_origin> origin,
+		 std::shared_ptr <op> op,
+		 std::shared_ptr <frame> frame,
+		 size_t pos)
+    : value {vtype, pos}
+    , m_origin {origin}
+    , m_op {op}
+    , m_frame {frame}
+  {}
+
+  value_closure (value_closure const &that) = default;
+
+  std::shared_ptr <op_origin> get_origin () const
+  { return m_origin; }
+
+  std::shared_ptr <op> get_op () const
+  { return m_op; }
+
+  std::shared_ptr <frame> get_frame () const
+  { return m_frame; }
+
+  void show (std::ostream &o) const override;
+  std::unique_ptr <value> clone () const override;
+  constant get_type_const () const override;
+  cmp_result cmp (value const &that) const override;
+};
+
 class value_die
   : public value
 {

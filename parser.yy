@@ -149,7 +149,7 @@
 %token TOK_FORM TOK_VALUE TOK_POS TOK_EACH
 %token TOK_LENGTH TOK_HEX TOK_OCT
 
-%token TOK_SWAP TOK_DUP TOK_OVER TOK_ROT TOK_DROP TOK_IF TOK_ELSE
+%token TOK_SWAP TOK_DUP TOK_OVER TOK_ROT TOK_DROP TOK_IF TOK_ELSE TOK_APPLY
 
 %token TOK_QMARK_EQ TOK_QMARK_NE TOK_QMARK_LT TOK_QMARK_GT TOK_QMARK_LE
 %token TOK_QMARK_GE TOK_QMARK_MATCH TOK_QMARK_FIND TOK_QMARK_EMPTY
@@ -280,7 +280,9 @@ Statement:
   }
 
   | TOK_LBRACE Program TOK_RBRACE
-  { $$ = $2; }
+  {
+    $$ = tree::create_unary <tree_type::BLOCK> ($2);
+  }
 
   | TOK_ARROW IdList TOK_SEMICOLON
   {
@@ -414,6 +416,9 @@ Statement:
 
   | TOK_OFFSET
   { $$ = tree::create_nullary <tree_type::F_OFFSET> (); }
+
+  | TOK_APPLY
+  { $$ = tree::create_nullary <tree_type::F_APPLY> (); }
 
 
   | TOK_HEX

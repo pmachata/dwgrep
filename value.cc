@@ -6,6 +6,7 @@
 #include "dwit.hh"
 #include "vfcst.hh"
 #include "atval.hh"
+#include "op.hh"
 
 namespace
 {
@@ -218,6 +219,37 @@ value_seq::cmp (value const &that) const
 				    std::unique_ptr <value> const &b)
 				{ return a->cmp (*b); });
     }
+  else
+    return cmp_result::fail;
+}
+
+
+value_type const value_closure::vtype = alloc_vtype ();
+
+void
+value_closure::show (std::ostream &o) const
+{
+  o << '{' << m_op->name () << '}';
+}
+
+std::unique_ptr <value>
+value_closure::clone () const
+{
+  return std::make_unique <value_closure> (*this);
+}
+
+constant
+value_closure::get_type_const () const
+{
+  return {(int) slot_type_id::T_CLOSURE, &slot_type_dom};
+}
+
+cmp_result
+value_closure::cmp (value const &that) const
+{
+  if (auto v = value::as <value_closure> (&that))
+    return compare (std::make_pair (m_origin, m_op),
+		    std::make_pair (v->m_origin, v->m_op));
   else
     return cmp_result::fail;
 }

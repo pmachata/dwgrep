@@ -6,6 +6,7 @@
 // Named constants for dwgrep "type" operator.
 enum class slot_type_id
   {
+    T_CLOSURE,
     T_CONST,
     T_FLOAT,
     T_STR,

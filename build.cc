@@ -105,6 +105,7 @@ tree::build_pred (dwgrep_graph::sptr q, std::shared_ptr <scope> scope) const
     case tree_type::F_POS:
     case tree_type::F_EACH:
     case tree_type::F_LENGTH:
+    case tree_type::F_APPLY:
     case tree_type::SEL_SECTION:
     case tree_type::SEL_UNIT:
     case tree_type::SHF_SWAP:
@@ -114,6 +115,7 @@ tree::build_pred (dwgrep_graph::sptr q, std::shared_ptr <scope> scope) const
     case tree_type::SHF_DROP:
     case tree_type::BIND:
     case tree_type::READ:
+    case tree_type::SCOPE:
     case tree_type::BLOCK:
       assert (! "Should never get here.");
       abort ();
@@ -308,7 +310,7 @@ tree::build_exec (std::shared_ptr <op> upstream, dwgrep_graph::sptr q,
 	return child (1).build_exec (upstream, q, scope);
       }
 
-    case tree_type::BLOCK:
+    case tree_type::SCOPE:
       {
 	auto origin = std::make_shared <op_origin> (nullptr);
 	auto op = child (0).build_exec (origin, q, scp ());
@@ -316,16 +318,25 @@ tree::build_exec (std::shared_ptr <op> upstream, dwgrep_graph::sptr q,
 					    scp ()->num_names ());
       }
 
+    case tree_type::BLOCK:
+      {
+	auto origin = std::make_shared <op_origin> (nullptr);
+	auto op = child (0).build_exec (origin, q, scp ());
+	return std::make_shared <op_lex_closure> (upstream, origin, op);
+      }
+
     case tree_type::BIND:
     case tree_type::READ:
       {
 	// Find access coordinates.  Stack frames form a chain.  Here
 	// we find what stack frame will be accessed (i.e. how deeply
-	// nested is this OP inside BLOCK's) and at which position.
+	// nested is this OP inside SCOPE's) and at which position.
 
 	std::string const &name = str ();
 	size_t depth = 0;
 	for (auto scp = scope; scp != nullptr; scp = scp->parent, ++depth)
+	  {
+	    std::cerr << "at depth " << depth << &*scp << std::endl;
 	  if (scp->has_name (name))
 	    {
 	      auto id = scp->index (name);
@@ -339,11 +350,15 @@ tree::build_exec (std::shared_ptr <op> upstream, dwgrep_graph::sptr q,
 	      else
 		return std::make_shared <op_read> (upstream, depth, id);
 	    }
+	  }
 
 	// We should never get here--binds define new variables, and
 	// we therefore really ought to find the corresponding scope.
 	assert (false);
       }
+
+    case tree_type::F_APPLY:
+      return std::make_shared <op_apply> (upstream);
 
     case tree_type::F_SUB:
     case tree_type::F_MUL:

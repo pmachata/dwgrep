@@ -1862,6 +1862,119 @@ op_read::name () const
 }
 
 
+void
+op_lex_closure::reset ()
+{
+  m_upstream->reset ();
+}
+
+valfile::uptr
+op_lex_closure::next ()
+{
+  if (auto vf = m_upstream->next ())
+    {
+      vf->push (std::make_unique <value_closure> (m_origin, m_op,
+						  vf->nth_frame (0), 0));
+      return vf;
+    }
+  return nullptr;
+}
+
+std::string
+op_lex_closure::name () const
+{
+  return "lex_closure";
+}
+
+
+struct op_apply::pimpl
+{
+  std::shared_ptr <op> m_upstream;
+  std::shared_ptr <op> m_op;
+  std::shared_ptr <frame> m_old_frame;
+
+  pimpl (std::shared_ptr <op> upstream)
+    : m_upstream {upstream}
+  {}
+
+  void
+  reset_me ()
+  {
+    m_op = nullptr;
+    m_old_frame = nullptr;
+  }
+
+  valfile::uptr
+  next ()
+  {
+    while (true)
+      {
+	while (m_op == nullptr)
+	  if (auto vf = m_upstream->next ())
+	    {
+	      if (! vf->top ().is <value_closure> ())
+		{
+		  std::cerr << "Error: `apply' expects a T_CLOSURE on TOS.\n";
+		  continue;
+		}
+
+	      auto val = vf->pop ();
+	      auto &cl = static_cast <value_closure &> (*val);
+
+	      m_old_frame = vf->nth_frame (0);
+	      vf->set_frame (cl.get_frame ());
+
+	      m_op = cl.get_op ();
+	      m_op->reset ();
+	      cl.get_origin ()->set_next (std::move (vf));
+	    }
+	  else
+	    return nullptr;
+
+	if (auto vf = m_op->next ())
+	  {
+	    vf->set_frame (m_old_frame);
+	    return vf;
+	  }
+
+	reset_me ();
+      }
+  }
+
+  void
+  reset ()
+  {
+    reset_me ();
+    m_upstream->reset ();
+  }
+};
+
+op_apply::op_apply (std::shared_ptr <op> upstream)
+  : m_pimpl {std::make_unique <pimpl> (upstream)}
+{}
+
+op_apply::~op_apply ()
+{}
+
+void
+op_apply::reset ()
+{
+  m_pimpl->reset ();
+}
+
+valfile::uptr
+op_apply::next ()
+{
+  return m_pimpl->next ();
+}
+
+std::string
+op_apply::name () const
+{
+  return "apply";
+}
+
+
 pred_result
 pred_not::result (valfile &vf)
 {

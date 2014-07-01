@@ -55,6 +55,7 @@ OCT [0-7]
 "drop" return TOK_DROP;
 "if" return TOK_IF;
 "else" return TOK_ELSE;
+"apply" return TOK_APPLY;
 
 "add" return TOK_ADD;
 "sub" return TOK_SUB;

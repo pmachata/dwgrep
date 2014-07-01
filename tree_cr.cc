@@ -34,19 +34,6 @@ tree::take_cat (tree *t)
 }
 
 
-tree
-tree::build_block (tree t, std::shared_ptr <scope> scope)
-{
-  if (scope->empty ())
-    return t;
-  else
-    {
-      tree ret {tree_type::BLOCK, scope};
-      ret.m_children.push_back (t);
-      return ret;
-    }
-}
-
 namespace
 {
   tree
@@ -57,6 +44,7 @@ namespace
       case tree_type::ALT:
       case tree_type::CAPTURE:
       case tree_type::OR:
+      case tree_type::SCOPE:
       case tree_type::BLOCK:
       case tree_type::CLOSE_STAR:
       case tree_type::ASSERT:
@@ -91,6 +79,7 @@ namespace
       case tree_type::F_OFFSET: case tree_type::F_NAME: case tree_type::F_TAG:
       case tree_type::F_FORM: case tree_type::F_VALUE: case tree_type::F_POS:
       case tree_type::F_EACH: case tree_type::F_LENGTH: case tree_type::F_CAST:
+      case tree_type::F_APPLY:
       case tree_type::SEL_UNIVERSE: case tree_type::SEL_WINFO:
       case tree_type::SEL_SECTION: case tree_type::SEL_UNIT:
       case tree_type::SHF_SWAP: case tree_type::SHF_DUP:
@@ -102,6 +91,19 @@ namespace
       }
     return t;
   }
+
+  tree
+  build_scope (tree t, std::shared_ptr <scope> scope)
+  {
+    if (scope->empty ())
+      return t;
+    else
+      {
+	tree ret {tree_type::SCOPE, scope};
+	ret.m_children.push_back (t);
+	return ret;
+      }
+  }
 }
 
 tree
@@ -109,5 +111,5 @@ tree::promote_scopes (tree t, std::shared_ptr <scope> parent)
 {
   auto scp = std::make_shared <scope> (parent);
   auto t2 = ::promote_scopes (t, scp);
-  return tree::build_block (t2, scp);
+  return build_scope (t2, scp);
 }

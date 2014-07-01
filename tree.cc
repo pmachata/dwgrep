@@ -140,7 +140,7 @@ operator<< (std::ostream &o, tree const &t)
       o << "<" << t.str () << ">";
       break;
 
-    case tree_arity_v::BLOCK:
+    case tree_arity_v::SCOPE:
       {
 	auto scp = t.scp ();
 	if (! scp->vars.empty ())

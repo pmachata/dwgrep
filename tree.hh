@@ -23,8 +23,7 @@
 //
 // STR, CONST -- A tree that holds a constant, has no children.
 //
-// BLOCK -- A tree that holds one sub-tree and a scope (only BLOCK as
-// of now, hence the name).
+// SCOPE -- A tree that holds one sub-tree and a scope.
 enum class tree_arity_v
   {
     NULLARY,
@@ -32,7 +31,7 @@ enum class tree_arity_v
     BINARY,
     STR,
     CST,
-    BLOCK,
+    SCOPE,
   };
 
 // CAT -- A node for holding concatenation (X Y Z).
@@ -83,7 +82,8 @@ enum class tree_arity_v
   TREE_TYPE (ALT, BINARY)			\
   TREE_TYPE (CAPTURE, UNARY)			\
   TREE_TYPE (OR, BINARY)			\
-  TREE_TYPE (BLOCK, BLOCK)			\
+  TREE_TYPE (SCOPE, SCOPE)			\
+  TREE_TYPE (BLOCK, UNARY)			\
   TREE_TYPE (BIND, STR)				\
   TREE_TYPE (READ, STR)				\
   TREE_TYPE (EMPTY_LIST, NULLARY)		\
@@ -133,6 +133,7 @@ enum class tree_arity_v
   TREE_TYPE (F_EACH, NULLARY)			\
   TREE_TYPE (F_LENGTH, NULLARY)			\
   TREE_TYPE (F_CAST, CST)			\
+  TREE_TYPE (F_APPLY, NULLARY)			\
   TREE_TYPE (SEL_UNIVERSE, NULLARY)		\
   TREE_TYPE (SEL_WINFO, NULLARY)		\
   TREE_TYPE (SEL_SECTION, NULLARY)		\
@@ -234,7 +235,6 @@ public:
   static tree *create_neg (tree *t1);
   static tree *create_assert (tree *t1);
 
-  static tree build_block (tree t, std::shared_ptr <scope> scope);
   static tree promote_scopes (tree t, std::shared_ptr <scope> parent = {});
 
   // push_back (*T) and delete T.
