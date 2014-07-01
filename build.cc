@@ -277,7 +277,7 @@ tree::build_exec (std::shared_ptr <op> upstream, dwgrep_graph::sptr q,
       {
 	auto origin = std::make_shared <op_origin> (nullptr);
 	auto op = m_children.front ().build_exec (origin, q, scope);
-	return std::make_shared <op_close> (upstream, origin, op);
+	return std::make_shared <op_tr_closure> (upstream, origin, op);
       }
 
     case tree_type::F_ADD:

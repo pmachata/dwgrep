@@ -1290,7 +1290,7 @@ namespace
   };
 }
 
-struct op_close::pimpl
+struct op_tr_closure::pimpl
 {
   std::shared_ptr <op> m_upstream;
   std::shared_ptr <op_origin> m_origin;
@@ -1365,29 +1365,29 @@ struct op_close::pimpl
   }
 };
 
-op_close::op_close (std::shared_ptr <op> upstream,
-		    std::shared_ptr <op_origin> origin,
-		    std::shared_ptr <op> op)
+op_tr_closure::op_tr_closure (std::shared_ptr <op> upstream,
+			      std::shared_ptr <op_origin> origin,
+			      std::shared_ptr <op> op)
   : m_pimpl {std::make_unique <pimpl> (upstream, origin, op)}
 {}
 
-op_close::~op_close ()
+op_tr_closure::~op_tr_closure ()
 {}
 
 valfile::uptr
-op_close::next ()
+op_tr_closure::next ()
 {
   return m_pimpl->next ();
 }
 
 void
-op_close::reset ()
+op_tr_closure::reset ()
 {
   m_pimpl->reset ();
 }
 
 std::string
-op_close::name () const
+op_tr_closure::name () const
 {
   return m_pimpl->name ();
 }

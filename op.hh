@@ -616,18 +616,18 @@ public:
   void reset () override;
 };
 
-class op_close
+class op_tr_closure
   : public op
 {
   class pimpl;
   std::unique_ptr <pimpl> m_pimpl;
 
 public:
-  op_close (std::shared_ptr <op> upstream,
-	    std::shared_ptr <op_origin> origin,
-	    std::shared_ptr <op> op);
+  op_tr_closure (std::shared_ptr <op> upstream,
+		 std::shared_ptr <op_origin> origin,
+		 std::shared_ptr <op> op);
 
-  ~op_close ();
+  ~op_tr_closure ();
 
   valfile::uptr next () override;
   std::string name () const override;
