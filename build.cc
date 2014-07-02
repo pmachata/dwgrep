@@ -321,7 +321,8 @@ tree::build_exec (std::shared_ptr <op> upstream, dwgrep_graph::sptr q,
     case tree_type::BLOCK:
       {
 	auto origin = std::make_shared <op_origin> (nullptr);
-	auto op = child (0).build_exec (origin, q, scp ());
+	auto op = child (0).build_exec (origin, q,
+					scp () != nullptr ? scp () : scope);
 	return std::make_shared <op_lex_closure> (upstream, origin, op);
       }
 
@@ -335,8 +336,6 @@ tree::build_exec (std::shared_ptr <op> upstream, dwgrep_graph::sptr q,
 	std::string const &name = str ();
 	size_t depth = 0;
 	for (auto scp = scope; scp != nullptr; scp = scp->parent, ++depth)
-	  {
-	    std::cerr << "at depth " << depth << &*scp << std::endl;
 	  if (scp->has_name (name))
 	    {
 	      auto id = scp->index (name);
@@ -350,7 +349,6 @@ tree::build_exec (std::shared_ptr <op> upstream, dwgrep_graph::sptr q,
 	      else
 		return std::make_shared <op_read> (upstream, depth, id);
 	    }
-	  }
 
 	// We should never get here--binds define new variables, and
 	// we therefore really ought to find the corresponding scope.

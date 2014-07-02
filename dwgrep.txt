@@ -586,18 +586,12 @@
      The mnemonic for this is that the list of variables describes
      stack layout, with TOS being on the right.
 
-**  EXPR → “{” EXPR₁ “}” | “def” ID “{” EXPR₁ “}” | “:”ID | “apply” — blocks
+** ·EXPR → “{” EXPR₁ “}” | “def” ID “{” EXPR₁ “}” | “:”ID | “apply” — blocks
 
-    - {X} -- A block syntax.  A value representing an expression X is
-      pushed to TOS.
+    - {X} -- A block syntax.  A value representing an expression X
+      is pushed to TOS.
 
-      XXX This seems to need a declarator block syntax.  ->A ->B works
-      fine, but the way that A and B are mentioned in the wrong order,
-      and the stack effect schemes are in different order still, makes
-      things unclear.  So maybe { ->A B | ... }?  Kitten just says
-      "->A B;".
-
-    - def ID {X} -- similar to {X} ->ID, but binds a function.
+    - def ID {X} -- similar to {X} ->ID;, but binds a function.
       Mentioning ID doesn't push the block, but directly evaluates the
       body.  The following two are equivalent:
       : def ID {X} ID
@@ -605,9 +599,6 @@
 
       : def double { dup add }
       : 3 double		# gives 6
-
-      : { ->x; ... }	# within {}, x refers to whatever was on TOS
-      : { ->y x; ... }	# x is what was on TOS, y is what was below TOS
 
       : def fact { ->n; if n ?1 then 1 else (n n 1 sub fact mul) }
       : 3 fact	# 6

@@ -127,3 +127,11 @@ expect_count 6 ./typedef.o -e '
 	winfo (@decl_line || @byte_size || drop 42)'
 expect_count 1 ./typedef.o -e '
 	winfo (@decl_line || @byte_size || drop 42) ?(42 ?eq)'
+
+# Check closures.
+expect_count 1 ./empty -e '
+	{->A; {->B; A}} 2 swap apply 9 swap apply ?(1 1 add ?eq)'
+expect_count 1 ./empty -e '
+	{->A; {A}} 5 swap apply apply ?(2 3 add ?eq)'
+expect_count 1 ./empty -e '
+	{dup add} -> double; 1 double apply ?(2 ?eq)'
