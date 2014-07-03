@@ -668,6 +668,21 @@ public:
   void reset () override;
 };
 
+class op_f_debug
+  : public op
+{
+  std::shared_ptr <op> m_upstream;
+
+public:
+  explicit op_f_debug (std::shared_ptr <op> upstream)
+    : m_upstream {upstream}
+  {}
+
+  valfile::uptr next () override;
+  std::string name () const override;
+  void reset () override;
+};
+
 class simple_op
   : public op
 {

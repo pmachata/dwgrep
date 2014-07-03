@@ -987,11 +987,10 @@
 
 **  EXPR → “demangle” — demangle a string on TOS
 
-**  EXPR → “?dump” — debug assertion
+** •EXPR → “\dbg” — debug assertion
 
    Always succeeds, but as a side effect prints some information about
    the computation in whose context it appeared.
-~
 
 
 * TODO

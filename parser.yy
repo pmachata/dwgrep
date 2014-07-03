@@ -164,7 +164,7 @@
 
 %token TOK_CONSTANT TOK_LIT_STR TOK_LIT_INT
 
-%token TOK_UNIVERSE TOK_SECTION TOK_UNIT TOK_WINFO
+%token TOK_UNIVERSE TOK_SECTION TOK_UNIT TOK_WINFO TOK_DEBUG
 
 %token TOK_EOF
 
@@ -371,6 +371,9 @@ Statement:
 
   | TOK_ADD
   { $$ = tree::create_nullary <tree_type::F_ADD> (); }
+
+  | TOK_DEBUG
+  { $$ = tree::create_nullary <tree_type::F_DEBUG> (); }
 
   | TOK_SUB
   { $$ = tree::create_nullary <tree_type::F_SUB> (); }

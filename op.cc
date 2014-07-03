@@ -1595,6 +1595,56 @@ op_f_add::name () const
 
 
 valfile::uptr
+op_f_debug::next ()
+{
+  while (auto vf = m_upstream->next ())
+    {
+      {
+	std::vector <std::unique_ptr <value>> stk;
+	while (vf->size () > 0)
+	  stk.push_back (vf->pop ());
+
+	std::cerr << "<";
+	std::for_each (stk.rbegin (), stk.rend (),
+		       [&vf] (std::unique_ptr <value> &v) {
+			 v->show (std::cerr << ' ');
+			 vf->push (std::move (v));
+		       });
+	std::cerr << " > (";
+      }
+
+      std::shared_ptr <frame> frame = vf->nth_frame (0);
+      while (frame != nullptr)
+	{
+	  std::cerr << frame;
+	  std::cerr << "{";
+	  for (auto const &v: frame->m_values)
+	    v->show (std::cerr << ' ');
+	  std::cerr << " }  ";
+
+	  frame = frame->m_parent;
+	}
+      std::cerr << ")\n";
+
+      return vf;
+    }
+  return nullptr;
+}
+
+std::string
+op_f_debug::name () const
+{
+  return "f_debug";
+}
+
+void
+op_f_debug::reset ()
+{
+  m_upstream->reset ();
+}
+
+
+valfile::uptr
 simple_op::next ()
 {
   if (auto vf = m_upstream->next ())

@@ -81,6 +81,7 @@ OCT [0-7]
 "universe" return TOK_UNIVERSE;
 "section" return TOK_SECTION;
 "unit" return TOK_UNIT;
+"\\dbg" return TOK_DEBUG;
 
 "winfo" return TOK_WINFO;
 
