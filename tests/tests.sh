@@ -135,3 +135,9 @@ expect_count 1 ./empty -e '
 	{->A; {A}} 5 swap apply apply ?(2 3 add ?eq)'
 expect_count 1 ./empty -e '
 	{dup add} -> double; 1 double apply ?(2 ?eq)'
+
+# Check recursion.
+expect_count 1 ./empty -e '
+	{->A; (?(A 10 ?ge) 0 || A 1 add F apply 1 add)} ->F;
+	0 F apply
+	?(10 ?eq)'

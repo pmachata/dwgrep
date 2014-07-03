@@ -1859,7 +1859,7 @@ std::string
 op_scope::name () const
 {
   std::stringstream ss;
-  ss << "block<vars=" << m_pimpl->m_num_vars
+  ss << "scope<vars=" << m_pimpl->m_num_vars
      << ", " << m_pimpl->m_op->name () << ">";
   return ss.str ();
 }
@@ -1923,7 +1923,7 @@ op_lex_closure::next ()
 {
   if (auto vf = m_upstream->next ())
     {
-      vf->push (std::make_unique <value_closure> (m_origin, m_op,
+      vf->push (std::make_unique <value_closure> (m_t, m_q, m_scope,
 						  vf->nth_frame (0), 0));
       return vf;
     }
@@ -1973,10 +1973,9 @@ struct op_apply::pimpl
 
 	      m_old_frame = vf->nth_frame (0);
 	      vf->set_frame (cl.get_frame ());
-
-	      m_op = cl.get_op ();
-	      m_op->reset ();
-	      cl.get_origin ()->set_next (std::move (vf));
+	      auto origin = std::make_shared <op_origin> (std::move (vf));
+	      m_op = cl.get_tree ().build_exec (origin, cl.get_graph (),
+						cl.get_scope ());
 	    }
 	  else
 	    return nullptr;

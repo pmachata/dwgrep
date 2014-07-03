@@ -14,11 +14,13 @@
 #include <libdw.h>
 #include <libelf.h>
 
-#include "dwpp.hh"
-#include "tree.hh"
-#include "parser.hh"
-#include "valfile.hh"
 #include "cache.hh"
+#include "dwpp.hh"
+#include "make_unique.hh"
+#include "op.hh"
+#include "parser.hh"
+#include "tree.hh"
+#include "valfile.hh"
 
 namespace
 {

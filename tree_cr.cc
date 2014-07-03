@@ -1,3 +1,4 @@
+#include "scope.hh"
 #include "tree_cr.hh"
 
 tree *

@@ -7,9 +7,7 @@
 #include <boost/optional.hpp>
 
 #include "constant.hh"
-#include "op.hh"
 #include "valfile.hh"
-#include "scope.hh"
 
 // These constants describe how a tree is allowed to be constructed.
 // It's mostly present to make sure we don't inadvertently construct
@@ -159,6 +157,10 @@ template <tree_type TT> class tree_arity;
   };
 TREE_TYPES
 #undef TREE_TYPE
+
+class op;
+class pred;
+class scope;
 
 // This is for communication between lexical and syntactic analyzers
 // and the rest of the world.  It uses naked pointers all over the

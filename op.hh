@@ -9,6 +9,7 @@
 #include "dwgrep.hh"
 #include "valfile.hh"
 #include "pred_result.hh"
+#include "tree.hh"
 
 // Subclasses of class op represent computations.  An op node is
 // typically constructed such that it directly feeds from another op
@@ -783,16 +784,18 @@ class op_lex_closure
   : public op
 {
   std::shared_ptr <op> m_upstream;
-  std::shared_ptr <op_origin> m_origin;
-  std::shared_ptr <op> m_op;
+  tree m_t;
+  dwgrep_graph::sptr m_q;
+  std::shared_ptr <scope> m_scope;
 
 public:
   op_lex_closure (std::shared_ptr <op> upstream,
-		  std::shared_ptr <op_origin> origin,
-		  std::shared_ptr <op> op)
+		  tree t, dwgrep_graph::sptr q,
+		  std::shared_ptr <scope> scope)
     : m_upstream {upstream}
-    , m_origin {origin}
-    , m_op {op}
+    , m_t {t}
+    , m_q {q}
+    , m_scope {scope}
   {}
 
   void reset () override;

@@ -201,37 +201,35 @@ public:
   cmp_result cmp (value const &that) const override;
 };
 
-class op;
-class op_origin;
+class tree;
 class frame;
+class scope;
 
 class value_closure
   : public value
 {
-  std::shared_ptr <op_origin> m_origin;
-  std::shared_ptr <op> m_op;
+  std::unique_ptr <tree> m_t;
+  dwgrep_graph::sptr m_q;
+  std::shared_ptr <scope> m_scope;
   std::shared_ptr <frame> m_frame;
 
 public:
   static value_type const vtype;
 
-  value_closure (std::shared_ptr <op_origin> origin,
-		 std::shared_ptr <op> op,
-		 std::shared_ptr <frame> frame,
-		 size_t pos)
-    : value {vtype, pos}
-    , m_origin {origin}
-    , m_op {op}
-    , m_frame {frame}
-  {}
+  value_closure (tree const &t, dwgrep_graph::sptr q,
+		 std::shared_ptr <scope> scope, std::shared_ptr <frame> frame,
+		 size_t pos);
+  value_closure (value_closure const &that);
+  ~value_closure();
 
-  value_closure (value_closure const &that) = default;
+  tree const &get_tree () const
+  { return *m_t; }
 
-  std::shared_ptr <op_origin> get_origin () const
-  { return m_origin; }
+  dwgrep_graph::sptr get_graph () const
+  { return m_q; }
 
-  std::shared_ptr <op> get_op () const
-  { return m_op; }
+  std::shared_ptr <scope> get_scope () const
+  { return m_scope; }
 
   std::shared_ptr <frame> get_frame () const
   { return m_frame; }

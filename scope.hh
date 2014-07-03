@@ -1,6 +1,7 @@
 #ifndef _SCOPE_H_
 #define _SCOPE_H_
 
+#include <algorithm>
 #include "valfile.hh"
 
 struct scope

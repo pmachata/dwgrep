@@ -1,12 +1,13 @@
 #include <iostream>
 
-#include "value.hh"
-#include "make_unique.hh"
+#include "atval.hh"
 #include "dwcst.hh"
 #include "dwit.hh"
-#include "vfcst.hh"
-#include "atval.hh"
+#include "make_unique.hh"
 #include "op.hh"
+#include "tree.hh"
+#include "value.hh"
+#include "vfcst.hh"
 
 namespace
 {
@@ -226,10 +227,28 @@ value_seq::cmp (value const &that) const
 
 value_type const value_closure::vtype = alloc_vtype ();
 
+value_closure::value_closure (tree const &t, dwgrep_graph::sptr q,
+			      std::shared_ptr <scope> scope,
+			      std::shared_ptr <frame> frame, size_t pos)
+  : value {vtype, pos}
+  , m_t {std::make_unique <tree> (t)}
+  , m_q {q}
+  , m_scope {scope}
+  , m_frame {frame}
+{}
+
+value_closure::value_closure (value_closure const &that)
+  : value_closure {*that.m_t, that.m_q, that.m_scope, that.m_frame,
+		   that.get_pos ()}
+{}
+
+value_closure::~value_closure()
+{}
+
 void
 value_closure::show (std::ostream &o) const
 {
-  o << '{' << m_op->name () << '}';
+  o << "closure(" << *m_t << ")";
 }
 
 std::unique_ptr <value>
@@ -247,9 +266,8 @@ value_closure::get_type_const () const
 cmp_result
 value_closure::cmp (value const &that) const
 {
-  if (auto v = value::as <value_closure> (&that))
-    return compare (std::make_pair (m_origin, m_op),
-		    std::make_pair (v->m_origin, v->m_op));
+  if (that.is <value_closure> ())
+    return compare (static_cast <value const *> (this), &that);
   else
     return cmp_result::fail;
 }

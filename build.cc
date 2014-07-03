@@ -1,8 +1,11 @@
-#include <iostream>
 #include <algorithm>
+#include <iostream>
+#include <memory>
 
-#include "tree.hh"
 #include "make_unique.hh"
+#include "op.hh"
+#include "tree.hh"
+#include "scope.hh"
 
 std::unique_ptr <pred>
 tree::build_pred (dwgrep_graph::sptr q, std::shared_ptr <scope> scope) const
@@ -320,12 +323,8 @@ tree::build_exec (std::shared_ptr <op> upstream, dwgrep_graph::sptr q,
       }
 
     case tree_type::BLOCK:
-      {
-	auto origin = std::make_shared <op_origin> (nullptr);
-	auto op = child (0).build_exec (origin, q,
-					scp () != nullptr ? scp () : scope);
-	return std::make_shared <op_lex_closure> (upstream, origin, op);
-      }
+      assert (scp () == nullptr);
+      return std::make_shared <op_lex_closure> (upstream, child (0), q, scope);
 
     case tree_type::BIND:
     case tree_type::READ:

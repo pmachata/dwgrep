@@ -1,12 +1,15 @@
-#include <cassert>
-#include <iostream>
-#include <stdexcept>
-#include <climits>
 #include <algorithm>
+#include <cassert>
+#include <climits>
+#include <iostream>
+#include <memory>
 #include <set>
+#include <stdexcept>
 #include <boost/optional.hpp>
 
+#include "make_unique.hh"
 #include "tree.hh"
+#include "scope.hh"
 
 namespace
 {
