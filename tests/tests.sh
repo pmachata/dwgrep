@@ -124,10 +124,17 @@ expect_count 1 ./empty -e '-10 1 add ?(-9 ?eq)'
 expect_count 1 ./empty -e '10 -1 add ?(9 ?eq)'
 expect_count 1 ./empty -e '10 -1 add ?(9 ?eq)'
 
-# Check that 0xffffffffffffffff is really decoded as such.
+# Check decoding of huge literals.
 expect_count 1 ./empty -e '
 	[0xffffffffffffffff "%s" each !(pos (0,1) ?eq)]
 	?(length 16 ?eq) !(each "f" !eq)'
+expect_count 1 ./empty -e '
+	18446744073709551615 0xffffffffffffffff ?eq'
+expect_count 1 ./empty -e '
+	01777777777777777777777 0xffffffffffffffff ?eq'
+expect_count 1 ./empty -e '
+	0b1111111111111111111111111111111111111111111111111111111111111111
+	0xffffffffffffffff ?eq'
 
 # Check iterating over empty compile unit.
 expect_count 1 ./empty -e '
