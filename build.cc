@@ -350,9 +350,8 @@ tree::build_exec (std::shared_ptr <op> upstream, dwgrep_graph::sptr q,
 		return std::make_shared <op_read> (upstream, depth, id);
 	    }
 
-	// We should never get here--binds define new variables, and
-	// we therefore really ought to find the corresponding scope.
-	assert (false);
+	throw std::runtime_error (std::string {"Unknown identifier `"}
+				  + name + "'.");
       }
 
     case tree_type::F_APPLY:
