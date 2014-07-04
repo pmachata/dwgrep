@@ -15,8 +15,8 @@ expect_count ()
     fi
 }
 
-expect_count 1 ./duplicate-const -e '1 10 ?lt'
-expect_count 1 ./duplicate-const -e '10 1 ?gt'
+expect_count 1 ./empty -e '1 10 ?lt'
+expect_count 1 ./empty -e '10 1 ?gt'
 
 expect_count 1 ./duplicate-const -e '
 	winfo dup 2/child ?gt 2/(?const_type, ?volatile_type, ?restrict_type)
@@ -108,7 +108,26 @@ expect_count 1 ./enum.o -e '
 expect_count 1 ./enum.o -e '
 	winfo ?(@name "e" ?eq) child @const_value oct "%s" "037777777777" ?eq'
 expect_count 1 ./enum.o -e '
+	winfo ?(@name "e" ?eq) child @const_value
+	"%b" "0b11111111111111111111111111111111" ?eq'
+expect_count 1 ./enum.o -e '
+	winfo ?(@name "e" ?eq) child @const_value bin
+	"%s" "0b11111111111111111111111111111111" ?eq'
+expect_count 1 ./enum.o -e '
 	winfo ?(@name "e" ?eq) child tag "%d" "40" ?eq'
+
+# Check arithmetic.
+expect_count 1 ./empty -e '-1 1 add ?(0 ?eq)'
+expect_count 1 ./empty -e '-1 10 add ?(9 ?eq)'
+expect_count 1 ./empty -e '1 -10 add ?(-9 ?eq)'
+expect_count 1 ./empty -e '-10 1 add ?(-9 ?eq)'
+expect_count 1 ./empty -e '10 -1 add ?(9 ?eq)'
+expect_count 1 ./empty -e '10 -1 add ?(9 ?eq)'
+
+# Check that 0xffffffffffffffff is really decoded as such.
+expect_count 1 ./empty -e '
+	[0xffffffffffffffff "%s" each !(pos (0,1) ?eq)]
+	?(length 16 ?eq) !(each "f" !eq)'
 
 # Check iterating over empty compile unit.
 expect_count 1 ./empty -e '

@@ -1,5 +1,6 @@
 #include <sstream>
 #include <iostream>
+#include <bitset>
 #include "constant.hh"
 
 static struct
@@ -133,6 +134,42 @@ static struct
 } oct_constant_dom_obj;
 
 constant_dom const &oct_constant_dom = oct_constant_dom_obj;
+
+
+static struct
+  : public constant_dom
+{
+  void
+  show (uint64_t v, std::ostream &o) const override
+  {
+    if (v == 0)
+      o << '0';
+    else
+      {
+	auto s = (std::bitset <8 * sizeof v> {v}).to_string ();
+	o << (v > 0 ? "0b" : "") << s.substr (s.find ('1'));
+      }
+  }
+
+  bool
+  sign () const override
+  {
+    return false;
+  }
+
+  bool
+  safe_arith () const override
+  {
+    return true;
+  }
+
+  std::string name () const override
+  {
+    return "bin";
+  }
+} bin_constant_dom_obj;
+
+constant_dom const &bin_constant_dom = bin_constant_dom_obj;
 
 
 static struct

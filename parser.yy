@@ -84,25 +84,61 @@
     constant
     parse_int (strlit str)
     {
-      char *endptr = NULL;
-      long int val = strtol (str.buf, &endptr, 0);
-      assert (endptr >= str.buf);
-      if (size_t (endptr - str.buf) != str.len)
+      const char *buf = str.buf;
+      size_t len = str.len;
+
+      bool sign = buf[0] == '-';
+      if (sign)
 	{
-	  std::string tmp (str.buf, str.len);
-	  throw std::runtime_error
-	    (std::string ("Invalid integer literal: `") + tmp + "'");
+	  buf += 1;
+	  len -= 1;
 	}
 
-      if (str.buf[0] == '0' && str.len > 1)
+      int base;
+      constant_dom const *dom;
+      if (len > 2 && buf[0] == '0' && (buf[1] == 'x' || buf[1] == 'X'))
 	{
-	  if (str.buf[1] == 'x' || str.buf[1] == 'X')
-	    return constant (val, &hex_constant_dom);
-	  else
-	    return constant (val, &oct_constant_dom);
+	  base = 16;
+	  buf += 2;
+	  len -= 2;
+	  dom = &hex_constant_dom;
+	}
+      else if (len > 2 && buf[0] == '0' && (buf[1] == 'b' || buf[1] == 'B'))
+	{
+	  base = 2;
+	  buf += 2;
+	  len -= 2;
+	  dom = &bin_constant_dom;
+	}
+      else if (len > 2 && buf[0] == '0' && (buf[1] == 'o' || buf[1] == 'O'))
+	{
+	  base = 8;
+	  buf += 2;
+	  len -= 2;
+	  dom = &oct_constant_dom;
+	}
+      else if (len > 1 && buf[0] == '0')
+	{
+	  base = 8;
+	  buf += 1;
+	  len -= 1;
+	  dom = &oct_constant_dom;
 	}
       else
-	return constant (val, &unsigned_constant_dom);
+	{
+	  base = 10;
+	  dom = sign ? &signed_constant_dom : &unsigned_constant_dom;
+	}
+
+      size_t idx;
+      auto ull = std::stoull ({buf, len}, &idx, base);
+      if (sign)
+	ull = (unsigned long long) -((long long) ull);
+      if (idx < len)
+	throw std::runtime_error
+	  (std::string ("Invalid integer literal: `") + str.buf + "'");
+
+      return constant (ull, dom);
     }
   }
 
@@ -147,7 +183,7 @@
 %token TOK_PARENT TOK_CHILD TOK_ATTRIBUTE TOK_PREV
 %token TOK_NEXT TOK_TYPE TOK_OFFSET TOK_NAME TOK_TAG
 %token TOK_FORM TOK_VALUE TOK_POS TOK_EACH
-%token TOK_LENGTH TOK_HEX TOK_OCT
+%token TOK_LENGTH TOK_HEX TOK_OCT TOK_BIN
 
 %token TOK_SWAP TOK_DUP TOK_OVER TOK_ROT TOK_DROP TOK_IF TOK_ELSE TOK_APPLY
 
@@ -428,6 +464,8 @@ Statement:
   { $$ = tree::create_const <tree_type::F_CAST> ({1, &hex_constant_dom}); }
   | TOK_OCT
   { $$ = tree::create_const <tree_type::F_CAST> ({1, &oct_constant_dom}); }
+  | TOK_BIN
+  { $$ = tree::create_const <tree_type::F_CAST> ({1, &bin_constant_dom}); }
 
 
   | TOK_POS

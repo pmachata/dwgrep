@@ -20,6 +20,7 @@ ID  [_a-zA-Z][_a-zA-Z0-9]*
 HEX [a-fA-F0-9]
 DEC [0-9]
 OCT [0-7]
+BIN [01]
 
 %x STRING
 %x STRING_EMBEDDED
@@ -75,6 +76,7 @@ OCT [0-7]
 "value" return TOK_VALUE;
 "hex" return TOK_HEX;
 "oct" return TOK_OCT;
+"bin" return TOK_BIN;
 "pos" return TOK_POS;
 "each" return TOK_EACH;
 "length" return TOK_LENGTH;
@@ -210,6 +212,11 @@ OCT [0-7]
   yylval->f->t.push_child (parse_query ("value oct"));
 }
 
+<STRING>"%b" {
+  yylval->f->flush_str ();
+  yylval->f->t.push_child (parse_query ("value bin"));
+}
+
 <STRING>"%d" {
   yylval->f->flush_str ();
   yylval->f->t.push_child (parse_query ("value"));
@@ -271,9 +278,10 @@ OCT [0-7]
     ("too few closing parentheses in embedded expression");
 }
 
-0[xX]{HEX}+ |
-0{OCT}+     |
-{DEC}+      return pass_string (yyscanner, yylval, TOK_LIT_INT);
+"-"?0[xX]{HEX}+ |
+"-"?0[oO]?{OCT}+ |
+"-"?0[bB]?{BIN}+ |
+"-"?{DEC}+      return pass_string (yyscanner, yylval, TOK_LIT_INT);
 
 [ \t\n]+ // Skip.
 

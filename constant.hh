@@ -54,9 +54,10 @@ public:
 extern constant_dom const &signed_constant_dom;
 extern constant_dom const &unsigned_constant_dom;
 
-// A domain for hex- and oct-formated unsigned values.
+// A domain for hex-, oct- and bin-formated unsigned values.
 extern constant_dom const &hex_constant_dom;
 extern constant_dom const &oct_constant_dom;
+extern constant_dom const &bin_constant_dom;
 
 // A domain for boolean-formated unsigned values.
 extern constant_dom const &bool_constant_dom;
