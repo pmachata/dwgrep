@@ -165,6 +165,7 @@ operator<< (std::ostream &o, tree const &t)
     case tree_arity_v::NULLARY:
     case tree_arity_v::UNARY:
     case tree_arity_v::BINARY:
+    case tree_arity_v::TERNARY:
       break;
     }
 

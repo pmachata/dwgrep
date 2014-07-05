@@ -121,6 +121,7 @@ tree::build_pred (dwgrep_graph::sptr q, std::shared_ptr <scope> scope) const
     case tree_type::READ:
     case tree_type::SCOPE:
     case tree_type::BLOCK:
+    case tree_type::IFELSE:
       assert (! "Should never get here.");
       abort ();
     }
@@ -373,6 +374,7 @@ tree::build_exec (std::shared_ptr <op> upstream, dwgrep_graph::sptr q,
     case tree_type::SEL_UNIVERSE:
     case tree_type::SEL_SECTION:
     case tree_type::SHF_ROT:
+    case tree_type::IFELSE:
       std::cerr << "\n\nUNHANDLED:" << *this << std::endl;
       abort ();
 

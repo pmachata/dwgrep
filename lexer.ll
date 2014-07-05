@@ -54,9 +54,10 @@ BIN [01]
 "over" return TOK_OVER;
 "rot" return TOK_ROT;
 "drop" return TOK_DROP;
-"if" return TOK_IF;
-"else" return TOK_ELSE;
 "apply" return TOK_APPLY;
+"if" return TOK_IF;
+"then" return TOK_THEN;
+"else" return TOK_ELSE;
 
 "add" return TOK_ADD;
 "sub" return TOK_SUB;

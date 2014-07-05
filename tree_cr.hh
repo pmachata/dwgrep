@@ -38,6 +38,19 @@ tree::create_binary (tree *lhs, tree *rhs)
 
 template <tree_type TT>
 tree *
+tree::create_ternary (tree *op1, tree *op2, tree *op3)
+{
+  static_assert (tree_arity <TT>::value == tree_arity_v::TERNARY,
+		 "Wrong tree arity.");
+  auto t = new tree {TT};
+  t->take_child (op1);
+  t->take_child (op2);
+  t->take_child (op3);
+  return t;
+}
+
+template <tree_type TT>
+tree *
 tree::create_str (std::string s)
 {
   static_assert (tree_arity <TT>::value == tree_arity_v::STR,

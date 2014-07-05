@@ -67,20 +67,6 @@
       return tree::create_assert (u);
     }
 
-    tree *
-    ifelse (yytokentype tt)
-    {
-      auto t = tree::create_nullary <tree_type::PRED_EMPTY> ();
-      if (tt == TOK_IF)
-	t = tree::create_neg (t);
-      else
-	assert (tt == TOK_ELSE);
-      auto u = tree::create_assert (t);
-
-      auto v = tree::create_nullary <tree_type::SHF_DROP> ();
-      return tree::create_cat <tree_type::CAT> (u, v);
-    }
-
     constant
     parse_int (strlit str)
     {
@@ -191,7 +177,8 @@
 %token TOK_FORM TOK_VALUE TOK_POS TOK_EACH
 %token TOK_LENGTH TOK_HEX TOK_OCT TOK_BIN
 
-%token TOK_SWAP TOK_DUP TOK_OVER TOK_ROT TOK_DROP TOK_IF TOK_ELSE TOK_APPLY
+%token TOK_SWAP TOK_DUP TOK_OVER TOK_ROT TOK_DROP TOK_APPLY
+%token TOK_IF TOK_THEN TOK_ELSE
 
 %token TOK_QMARK_EQ TOK_QMARK_NE TOK_QMARK_LT TOK_QMARK_GT TOK_QMARK_LE
 %token TOK_QMARK_GE TOK_QMARK_MATCH TOK_QMARK_FIND TOK_QMARK_EMPTY
@@ -358,6 +345,9 @@ Statement:
     auto t = tree::create_const <tree_type::CONST> (parse_int ($1));
     $$ = tree::create_binary <tree_type::TRANSFORM> (t, $3);
   }
+
+  | TOK_IF Statement TOK_THEN Statement TOK_ELSE Statement
+  { $$ = tree::create_ternary <tree_type::IFELSE> ($2, $4, $6); }
 
   | TOK_LIT_INT
   { $$ = tree::create_const <tree_type::CONST> (parse_int ($1)); }
@@ -561,11 +551,6 @@ Statement:
   { $$ = positive_assert <tree_type::PRED_ROOT> (); }
   | TOK_BANG_ROOT
   { $$ = negative_assert <tree_type::PRED_ROOT> (); }
-
-  | TOK_IF
-  { $$ = ifelse (TOK_IF); }
-  | TOK_ELSE
-  { $$ = ifelse (TOK_ELSE); }
 
 
   | TOK_AT_WORD

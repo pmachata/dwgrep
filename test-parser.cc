@@ -167,8 +167,27 @@ do_tests ()
   test ("over", "(SHF_OVER)");
   test ("rot", "(SHF_ROT)");
   test ("drop", "(SHF_DROP)");
-  test ("if", "(CAT (ASSERT (PRED_NOT (PRED_EMPTY))) (SHF_DROP))");
-  test ("else", "(CAT (ASSERT (PRED_EMPTY)) (SHF_DROP))");
+
+  test ("if () then () else ()",
+	"(IFELSE (NOP) (NOP) (NOP))");
+  test ("if child then next else prev",
+	"(IFELSE (F_CHILD) (F_NEXT) (F_PREV))");
+  test ("if if child then 1 else 2 then 3 else 4",
+	"(IFELSE (IFELSE (F_CHILD) (CONST<1>) (CONST<2>))"
+	" (CONST<3>) (CONST<4>))");
+  test ("if 1 then if child then 2 else 3 else 4",
+	"(IFELSE (CONST<1>) (IFELSE (F_CHILD) (CONST<2>) (CONST<3>))"
+	" (CONST<4>))");
+  test ("if 1 then 2 else if child then 3 else 4",
+	"(IFELSE (CONST<1>) (CONST<2>)"
+	" (IFELSE (F_CHILD) (CONST<3>) (CONST<4>)))");
+  test ("if 1 then 2 "
+	"else if child then 3 "
+	"else if next then 4 "
+	"else 5 ",
+	"(IFELSE (CONST<1>) (CONST<2>)"
+	" (IFELSE (F_CHILD) (CONST<3>)"
+	" (IFELSE (F_NEXT) (CONST<4>) (CONST<5>))))");
 
   test ("?eq", "(ASSERT (PRED_EQ))");
   test ("!eq", "(ASSERT (PRED_NOT (PRED_EQ)))");

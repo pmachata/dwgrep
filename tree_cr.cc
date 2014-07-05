@@ -49,6 +49,7 @@ namespace
       case tree_type::BLOCK:
       case tree_type::CLOSE_STAR:
       case tree_type::ASSERT:
+      case tree_type::IFELSE:
 	for (auto &c: t.m_children)
 	  c = tree::promote_scopes (c, scp);
 	return t;
