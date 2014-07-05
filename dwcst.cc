@@ -22,11 +22,12 @@
 #include "constant.hh"
 
 static const char *
-dwarf_tag_string (unsigned int tag)
+dwarf_tag_string (unsigned int tag, bool shrt)
 {
   switch (tag)
     {
-#define ONE_KNOWN_DW_TAG(NAME, CODE) case CODE: return #CODE;
+#define ONE_KNOWN_DW_TAG(NAME, CODE)			\
+	case CODE: return #CODE + (shrt ? 7 : 0);
       ALL_KNOWN_DW_TAG
 #undef ONE_KNOWN_DW_TAG
     default:
@@ -49,11 +50,12 @@ dwarf_tag_value (std::string str)
 
 
 static const char *
-dwarf_attr_string (unsigned int attrnum)
+dwarf_attr_string (int attrnum, bool shrt)
 {
   switch (attrnum)
     {
-#define ONE_KNOWN_DW_AT(NAME, CODE) case CODE: return #CODE;
+#define ONE_KNOWN_DW_AT(NAME, CODE) \
+	case CODE: return #CODE + (shrt ? 6 : 0);
       ALL_KNOWN_DW_AT
 #undef ONE_KNOWN_DW_AT
     default:
@@ -73,12 +75,13 @@ dwarf_attr_value (std::string str)
 
 
 static const char *
-dwarf_form_string (unsigned int form)
+dwarf_form_string (int form, bool shrt)
 {
   switch (form)
     {
 #define ONE_KNOWN_DW_FORM_DESC(NAME, CODE, DESC) ONE_KNOWN_DW_FORM (NAME, CODE)
-#define ONE_KNOWN_DW_FORM(NAME, CODE) case CODE: return #CODE;
+#define ONE_KNOWN_DW_FORM(NAME, CODE) \
+	case CODE: return #CODE + (shrt ? 8 : 0);
       ALL_KNOWN_DW_FORM
 #undef ONE_KNOWN_DW_FORM
 #undef ONE_KNOWN_DW_FORM_DESC
@@ -101,7 +104,7 @@ dwarf_form_value (std::string str)
 
 
 static const char *
-dwarf_lang_string (unsigned int lang)
+dwarf_lang_string (int lang)
 {
   switch (lang)
     {
@@ -125,7 +128,7 @@ dwarf_lang_value (std::string str)
 
 
 static const char *
-dwarf_inline_string (unsigned int code)
+dwarf_inline_string (int code)
 {
   switch (code)
     {
@@ -148,7 +151,7 @@ dwarf_inline_value (std::string str)
 
 
 static const char *
-dwarf_encoding_string (unsigned int code)
+dwarf_encoding_string (int code)
 {
   switch (code)
     {
@@ -172,7 +175,7 @@ dwarf_encoding_value (std::string str)
 
 
 static const char *
-dwarf_access_string (unsigned int code)
+dwarf_access_string (int code)
 {
   switch (code)
     {
@@ -196,7 +199,7 @@ dwarf_access_value (std::string str)
 
 
 static const char *
-dwarf_visibility_string (unsigned int code)
+dwarf_visibility_string (int code)
 {
   switch (code)
     {
@@ -220,7 +223,7 @@ dwarf_visibility_value (std::string str)
 
 
 static const char *
-dwarf_virtuality_string (unsigned int code)
+dwarf_virtuality_string (int code)
 {
   switch (code)
     {
@@ -244,7 +247,7 @@ dwarf_virtuality_value (std::string str)
 
 
 static const char *
-dwarf_identifier_case_string (unsigned int code)
+dwarf_identifier_case_string (int code)
 {
   switch (code)
     {
@@ -268,7 +271,7 @@ dwarf_identifier_case_value (std::string str)
 
 
 static const char *
-dwarf_calling_convention_string (unsigned int code)
+dwarf_calling_convention_string (int code)
 {
   switch (code)
     {
@@ -292,7 +295,7 @@ dwarf_calling_convention_value (std::string str)
 
 
 static const char *
-dwarf_ordering_string (unsigned int code)
+dwarf_ordering_string (int code)
 {
   switch (code)
     {
@@ -316,7 +319,7 @@ dwarf_ordering_value (std::string str)
 
 
 static const char *
-dwarf_discr_list_string (unsigned int code)
+dwarf_discr_list_string (int code)
 {
   switch (code)
     {
@@ -340,7 +343,7 @@ dwarf_discr_list_value (std::string str)
 
 
 static const char *
-dwarf_decimal_sign_string (unsigned int code)
+dwarf_decimal_sign_string (int code)
 {
   switch (code)
     {
@@ -364,7 +367,7 @@ dwarf_decimal_sign_value (std::string str)
 
 
 static const char *
-dwarf_locexpr_opcode_string (unsigned int code)
+dwarf_locexpr_opcode_string (int code)
 {
   switch (code)
     {
@@ -392,7 +395,7 @@ dwarf_locexpr_opcode_value (std::string str)
 
 
 static const char *
-dwarf_address_class_string (unsigned int code)
+dwarf_address_class_string (int code)
 {
   switch (code)
     {
@@ -414,7 +417,7 @@ dwarf_address_class_value (std::string str)
 
 
 static const char *
-dwarf_endianity_string (unsigned int code)
+dwarf_endianity_string (int code)
 {
   switch (code)
     {
@@ -467,19 +470,20 @@ string_or_unknown (const char *known, const char *prefix,
 
 namespace
 {
-  struct unsigned_constant_dom
-    : public constant_dom
+  int
+  positive_int_from_mpz (mpz_class const &v)
   {
-    bool
-    sign () const override
-    {
-      return false;
-    }
-  };
+    if (! v.fits_uint_p ())
+      return -1;
+    unsigned long ul = v.get_ui ();
+    if (ul >= (1U << 31))
+      return -1;
+    return static_cast <int> (ul);
+  }
 }
 
 static class dw_tag_dom_t
-  : public unsigned_constant_dom
+  : public constant_dom
 {
   bool m_short;
 
@@ -489,10 +493,10 @@ public:
   {}
 
   void
-  show (uint64_t v, std::ostream &o) const override
+  show (mpz_class const &v, std::ostream &o) const override
   {
-    int tag = v;
-    const char *ret = dwarf_tag_string (tag) + (m_short ? 7 : 0);
+    int tag = positive_int_from_mpz (v);
+    const char *ret = dwarf_tag_string (tag, m_short);
     o << string_or_unknown (ret, "DW_TAG_",
 			    tag, DW_TAG_lo_user, DW_TAG_hi_user, true);
   }
@@ -508,7 +512,7 @@ constant_dom const &dw_tag_short_dom = dw_tag_short_dom_obj;
 
 
 static class dw_attr_dom_t
-  : public unsigned_constant_dom
+  : public constant_dom
 {
   bool m_short;
 
@@ -518,10 +522,10 @@ public:
   {}
 
   virtual void
-  show (uint64_t v, std::ostream &o) const
+  show (mpz_class const &v, std::ostream &o) const
   {
-    unsigned int attr = v;
-    const char *ret = dwarf_attr_string (attr) + (m_short ? 6 : 0);
+    int attr = positive_int_from_mpz (v);
+    const char *ret = dwarf_attr_string (attr, m_short);
     o << string_or_unknown (ret, "DW_AT_",
 			    attr, DW_AT_lo_user, DW_AT_hi_user, true);
   }
@@ -537,7 +541,7 @@ constant_dom const &dw_attr_short_dom = dw_attr_short_dom_obj;
 
 
 static struct dw_form_dom_t
-  : public unsigned_constant_dom
+  : public constant_dom
 {
   bool m_short;
 
@@ -547,10 +551,10 @@ public:
   {}
 
   virtual void
-  show (uint64_t v, std::ostream &o) const
+  show (mpz_class const &v, std::ostream &o) const
   {
-    unsigned int form = v;
-    const char *ret = dwarf_form_string (form) + (m_short ? 8 : 0);
+    int form = positive_int_from_mpz (v);
+    const char *ret = dwarf_form_string (form, m_short);
     o << string_or_unknown (ret, "DW_FORM_", form, 0, 0, true);
   }
 
@@ -565,12 +569,12 @@ constant_dom const &dw_form_short_dom = dw_form_short_dom_obj;
 
 
 static struct
-  : public unsigned_constant_dom
+  : public constant_dom
 {
   virtual void
-  show (uint64_t v, std::ostream &o) const
+  show (mpz_class const &v, std::ostream &o) const
   {
-    unsigned int lang = v;
+    int lang = positive_int_from_mpz (v);
     const char *ret = dwarf_lang_string (lang);
     o << string_or_unknown (ret, "DW_LANG_",
 			    lang, DW_LANG_lo_user, DW_LANG_hi_user, false);
@@ -586,12 +590,12 @@ constant_dom const &dw_lang_dom = dw_lang_dom_obj;
 
 
 static struct
-  : public unsigned_constant_dom
+  : public constant_dom
 {
   virtual void
-  show (uint64_t v, std::ostream &o) const
+  show (mpz_class const &v, std::ostream &o) const
   {
-    unsigned int code = v;
+    int code = positive_int_from_mpz (v);
     const char *ret = dwarf_inline_string (code);
     o << string_or_unknown (ret, "DW_INL_", code, 0, 0, false);
   }
@@ -606,12 +610,12 @@ constant_dom const &dw_inline_dom = dw_inline_dom_obj;
 
 
 static struct
-  : public unsigned_constant_dom
+  : public constant_dom
 {
   virtual void
-  show (uint64_t v, std::ostream &o) const
+  show (mpz_class const &v, std::ostream &o) const
   {
-    unsigned int code = v;
+    int code = positive_int_from_mpz (v);
     const char *ret = dwarf_encoding_string (code);
     o << string_or_unknown (ret, "DW_ATE_",
 			    code, DW_ATE_lo_user, DW_ATE_hi_user, false);
@@ -627,12 +631,12 @@ constant_dom const &dw_encoding_dom = dw_encoding_dom_obj;
 
 
 static struct
-  : public unsigned_constant_dom
+  : public constant_dom
 {
   virtual void
-  show (uint64_t v, std::ostream &o) const
+  show (mpz_class const &v, std::ostream &o) const
   {
-    unsigned int code = v;
+    int code = positive_int_from_mpz (v);
     const char *ret = dwarf_access_string (code);
     o << string_or_unknown (ret, "DW_ACCESS_", code, 0, 0, false);
   }
@@ -647,12 +651,12 @@ constant_dom const &dw_access_dom = dw_access_dom_obj;
 
 
 static struct
-  : public unsigned_constant_dom
+  : public constant_dom
 {
   virtual void
-  show (uint64_t v, std::ostream &o) const
+  show (mpz_class const &v, std::ostream &o) const
   {
-    unsigned int code = v;
+    int code = positive_int_from_mpz (v);
     const char *ret = dwarf_visibility_string (code);
     o << string_or_unknown (ret, "DW_VIS_", code, 0, 0, false);
   }
@@ -667,12 +671,12 @@ constant_dom const &dw_visibility_dom = dw_visibility_dom_obj;
 
 
 static struct
-  : public unsigned_constant_dom
+  : public constant_dom
 {
   virtual void
-  show (uint64_t v, std::ostream &o) const
+  show (mpz_class const &v, std::ostream &o) const
   {
-    unsigned int code = v;
+    int code = positive_int_from_mpz (v);
     const char *ret = dwarf_virtuality_string (code);
     o << string_or_unknown (ret, "DW_VIRTUALITY_", code, 0, 0, false);
   }
@@ -687,12 +691,12 @@ constant_dom const &dw_virtuality_dom = dw_virtuality_dom_obj;
 
 
 static struct
-  : public unsigned_constant_dom
+  : public constant_dom
 {
   virtual void
-  show (uint64_t v, std::ostream &o) const
+  show (mpz_class const &v, std::ostream &o) const
   {
-    unsigned int code = v;
+    int code = positive_int_from_mpz (v);
     const char *ret = dwarf_identifier_case_string (code);
     o << string_or_unknown (ret, "DW_ID_", code, 0, 0, false);
   }
@@ -707,12 +711,12 @@ constant_dom const &dw_identifier_case_dom = dw_identifier_case_dom_obj;
 
 
 static struct
-  : public unsigned_constant_dom
+  : public constant_dom
 {
   virtual void
-  show (uint64_t v, std::ostream &o) const
+  show (mpz_class const &v, std::ostream &o) const
   {
-    unsigned int code = v;
+    int code = positive_int_from_mpz (v);
     const char *ret = dwarf_calling_convention_string (code);
     o << string_or_unknown (ret, "DW_CC_",
 			    code, DW_CC_lo_user, DW_CC_hi_user, false);
@@ -728,12 +732,12 @@ constant_dom const &dw_calling_convention_dom = dw_calling_convention_dom_obj;
 
 
 static struct
-  : public unsigned_constant_dom
+  : public constant_dom
 {
   virtual void
-  show (uint64_t v, std::ostream &o) const
+  show (mpz_class const &v, std::ostream &o) const
   {
-    unsigned int code = v;
+    int code = positive_int_from_mpz (v);
     const char *ret = dwarf_ordering_string (code);
     o << string_or_unknown (ret, "DW_ORD_", code, 0, 0, false);
   }
@@ -748,12 +752,12 @@ constant_dom const &dw_ordering_dom = dw_ordering_dom_obj;
 
 
 static struct
-  : public unsigned_constant_dom
+  : public constant_dom
 {
   virtual void
-  show (uint64_t v, std::ostream &o) const
+  show (mpz_class const &v, std::ostream &o) const
   {
-    unsigned int code = v;
+    int code = positive_int_from_mpz (v);
     const char *ret = dwarf_discr_list_string (code);
     o << string_or_unknown (ret, "DW_DSC_", code, 0, 0, false);
   }
@@ -768,12 +772,12 @@ constant_dom const &dw_discr_list_dom = dw_discr_list_dom_obj;
 
 
 static struct
-  : public unsigned_constant_dom
+  : public constant_dom
 {
   virtual void
-  show (uint64_t v, std::ostream &o) const
+  show (mpz_class const &v, std::ostream &o) const
   {
-    unsigned int code = v;
+    int code = positive_int_from_mpz (v);
     const char *ret = dwarf_decimal_sign_string (code);
     o << string_or_unknown (ret, "DW_DS_", code, 0, 0, false);
   }
@@ -788,12 +792,12 @@ constant_dom const &dw_decimal_sign_dom = dw_decimal_sign_dom_obj;
 
 
 static struct
-  : public unsigned_constant_dom
+  : public constant_dom
 {
   virtual void
-  show (uint64_t v, std::ostream &o) const
+  show (mpz_class const &v, std::ostream &o) const
   {
-    unsigned int code = v;
+    int code = positive_int_from_mpz (v);
     const char *ret = dwarf_locexpr_opcode_string (code);
     o << string_or_unknown (ret, "DW_OP_",
 			    code, DW_OP_lo_user, DW_OP_hi_user, true);
@@ -809,12 +813,12 @@ constant_dom const &dw_locexpr_opcode_dom = dw_locexpr_opcode_dom_obj;
 
 
 static struct
-  : public unsigned_constant_dom
+  : public constant_dom
 {
   virtual void
-  show (uint64_t v, std::ostream &o) const
+  show (mpz_class const &v, std::ostream &o) const
   {
-    unsigned int code = v;
+    int code = positive_int_from_mpz (v);
     const char *ret = dwarf_address_class_string (code);
     o << string_or_unknown (ret, "DW_ADDR_", code, 0, 0, false);
   }
@@ -829,12 +833,12 @@ constant_dom const &dw_address_class_dom = dw_address_class_dom_obj;
 
 
 static struct
-  : public unsigned_constant_dom
+  : public constant_dom
 {
   virtual void
-  show (uint64_t v, std::ostream &o) const
+  show (mpz_class const &v, std::ostream &o) const
   {
-    unsigned int code = v;
+    int code = positive_int_from_mpz (v);
     const char *ret = dwarf_endianity_string (code);
     o << string_or_unknown (ret, "DW_END_", code, 0, 0, false);
   }

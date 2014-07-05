@@ -127,18 +127,24 @@
       else
 	{
 	  base = 10;
-	  dom = sign ? &signed_constant_dom : &unsigned_constant_dom;
+	  dom = &dec_constant_dom;
 	}
 
-      size_t idx;
-      auto ull = std::stoull ({buf, len}, &idx, base);
-      if (sign)
-	ull = (unsigned long long) -((long long) ull);
-      if (idx < len)
-	throw std::runtime_error
-	  (std::string ("Invalid integer literal: `") + str.buf + "'");
+      mpz_class val;
+      try
+	{
+	  val = mpz_class {{buf, len}, base};
+	}
+      catch (std::invalid_argument const &e)
+	{
+	  throw std::runtime_error
+	    (std::string ("Invalid integer literal: `") + str.buf + "'");
+	}
 
-      return constant (ull, dom);
+      if (sign)
+	val = -val;
+
+      return constant {val, dom};
     }
   }
 

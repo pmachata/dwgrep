@@ -13,10 +13,10 @@ tree::build_pred (dwgrep_graph::sptr q, std::shared_ptr <scope> scope) const
   switch (m_tt)
     {
     case tree_type::PRED_TAG:
-      return std::make_unique <pred_tag> (cst ().value ());
+      return std::make_unique <pred_tag> (cst ().value ().get_ui ());
 
     case tree_type::PRED_AT:
-      return std::make_unique <pred_at> (cst ().value ());
+      return std::make_unique <pred_at> (cst ().value ().get_ui ());
 
     case tree_type::PRED_NOT:
       return std::make_unique <pred_not>
@@ -198,7 +198,7 @@ tree::build_exec (std::shared_ptr <op> upstream, dwgrep_graph::sptr q,
 
     case tree_type::F_ATTR_NAMED:
       return std::make_shared <op_f_attr_named>
-	(upstream, q, int (cst ().value ()));
+	(upstream, q, int (cst ().value ().get_ui ()));
 
     case tree_type::F_OFFSET:
       return std::make_shared <op_f_offset> (upstream, q);
@@ -299,7 +299,7 @@ tree::build_exec (std::shared_ptr <op> upstream, dwgrep_graph::sptr q,
       {
 	// OK, now we translate N/E into N of E's, each operating in
 	// a different depth.
-	uint64_t depth = child (0).cst ().value ();
+	uint64_t depth = child (0).cst ().value ().get_ui ();
 	assert (static_cast <unsigned> (depth) == depth);
 
 	for (unsigned u = depth; u > 1; --u)

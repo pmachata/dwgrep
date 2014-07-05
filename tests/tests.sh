@@ -124,6 +124,11 @@ expect_count 1 ./empty -e '-10 1 add ?(-9 ?eq)'
 expect_count 1 ./empty -e '10 -1 add ?(9 ?eq)'
 expect_count 1 ./empty -e '10 -1 add ?(9 ?eq)'
 
+expect_count 1 ./empty -e '
+	-1 0xffffffffffffffff add "%s" "0xfffffffffffffffe" ?eq'
+expect_count 1 ./empty -e '
+	0xffffffffffffffff -1 add "%s" "0xfffffffffffffffe" ?eq'
+
 # Check decoding of huge literals.
 expect_count 1 ./empty -e '
 	[0xffffffffffffffff "%s" each !(pos (0,1) ?eq)]

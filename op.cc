@@ -603,8 +603,7 @@ op_f_value::next ()
       else if (auto v = value::as <value_cst> (&*vp))
 	{
 	  auto &cst = v->get_constant ();
-	  constant cst2 {cst.value (), cst.dom ()->sign ()
-	      ? &signed_constant_dom : &unsigned_constant_dom};
+	  constant cst2 {cst.value (), &dec_constant_dom};
 	  vf->push (std::make_unique <value_cst> (cst2, 0));
 	  return vf;
 	}
@@ -1221,13 +1220,13 @@ op_f_length::next ()
       auto vp = vf->pop ();
       if (auto v = value::as <value_seq> (&*vp))
 	{
-	  constant t {v->get_seq ()->size (), &unsigned_constant_dom};
+	  constant t {v->get_seq ()->size (), &dec_constant_dom};
 	  vf->push (std::make_unique <value_cst> (t, 0));
 	  return vf;
 	}
       else if (auto v = value::as <value_str> (&*vp))
 	{
-	  constant t {v->get_string ().length (), &unsigned_constant_dom};
+	  constant t {v->get_string ().length (), &dec_constant_dom};
 	  vf->push (std::make_unique <value_cst> (t, 0));
 	  return vf;
 	}
@@ -1480,7 +1479,7 @@ op_subx::name () const
 namespace
 {
   void
-  check_arith (constant cst_a, constant cst_b)
+  check_arith (constant const &cst_a, constant const &cst_b)
   {
     // If a named constant partakes, warn.
     if (! cst_a.dom ()->safe_arith () || ! cst_b.dom ()->safe_arith ())
@@ -1506,40 +1505,15 @@ op_f_add::next ()
 	{
 	  if (auto vb = value::as <value_cst> (&*vpb))
 	    {
-	      constant cst_a = va->get_constant ();
-	      constant cst_b = vb->get_constant ();
+	      constant const &cst_a = va->get_constant ();
+	      constant const &cst_b = vb->get_constant ();
 
 	      check_arith (cst_a, cst_b);
 
-	      constant result;
-	      if (cst_a.dom ()->sign () == cst_b.dom ()->sign ()
-		  || (cst_b.dom ()->sign () && ((int64_t) cst_b.value ()) >= 0))
-		// Either both are signed, or both are unsigned, in
-		// which case we can simply add.  Or B is signed and A
-		// unsigned, but B is non-negative, and we can pretend
-		// it's unsigned.
-		result = constant {cst_a.value () + cst_b.value (),
-				   cst_a.dom ()->plain ()
-				   ? cst_b.dom () : cst_a.dom ()};
+	      constant_dom const *d = cst_a.dom ()->plain ()
+		? cst_b.dom () : cst_a.dom ();
 
-	      else if (cst_a.dom ()->sign () && ((int64_t) cst_a.value ()) >= 0)
-		// A's signed but non-negative, treat it as unsigned.
-		result = constant {cst_a.value () + cst_b.value (),
-				   cst_b.dom ()};
-
-	      else if ((int64_t) (cst_a.value () + cst_b.value ()) >= 0)
-		// A or B is signed and negative, but the other one is
-		// greater, so we can keep unsigned dom.
-		result = constant {cst_a.value () + cst_b.value (),
-				   cst_a.dom ()->sign ()
-				   ? cst_b.dom () : cst_a.dom ()};
-
-	      else
-		// Otherwise we need to take the signed dom.
-		result = constant {cst_a.value () + cst_b.value (),
-				   cst_a.dom ()->sign ()
-				   ? cst_a.dom () : cst_b.dom ()};
-
+	      constant result {cst_a.value () + cst_b.value (), d};
 	      vf->push (std::make_unique <value_cst> (result, 0));
 	      return vf;
 	    }

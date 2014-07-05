@@ -22,7 +22,7 @@ namespace
   std::unique_ptr <value>
   atval_unsigned (Dwarf_Attribute attr)
   {
-    return atval_unsigned_with_domain (attr, unsigned_constant_dom);
+    return atval_unsigned_with_domain (attr, dec_constant_dom);
   }
 
   std::unique_ptr <value>
@@ -31,8 +31,7 @@ namespace
     Dwarf_Sword sval;
     if (dwarf_formsdata (&attr, &sval) != 0)
       throw_libdw ();
-    return std::make_unique <value_cst>
-      (constant {(uint64_t) sval, &signed_constant_dom}, 0);
+    return std::make_unique <value_cst> (constant {sval, &dec_constant_dom}, 0);
   }
 
   std::unique_ptr <value>

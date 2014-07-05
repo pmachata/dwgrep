@@ -1,74 +1,22 @@
 #include <sstream>
 #include <iostream>
 #include <bitset>
+#include <vector>
 #include "constant.hh"
 
-static struct
-  : public constant_dom
-{
-  void
-  show (uint64_t v, std::ostream &o) const override
-  {
-    o << static_cast <int64_t> (v);
-  }
-
-  bool
-  sign () const override
-  {
-    return true;
-  }
-
-  bool
-  safe_arith () const override
-  {
-    return true;
-  }
-
-  bool plain () const override
-  {
-    return true;
-  }
-
-  std::string name () const override
-  {
-    return "signed";
-  }
-} signed_constant_dom_obj;
-
-constant_dom const &signed_constant_dom = signed_constant_dom_obj;
-
-
 void
-unsigned_constant_dom_t::show (uint64_t v, std::ostream &o) const
+numeric_constant_dom_t::show (mpz_class const &v, std::ostream &o) const
 {
   o << v;
 }
 
-bool
-unsigned_constant_dom_t::sign () const
-{
-  return false;
-}
+numeric_constant_dom_t dec_constant_dom_obj ("dec");
+constant_dom const &dec_constant_dom = dec_constant_dom_obj;
 
-bool
-unsigned_constant_dom_t::safe_arith () const
-{
-  return true;
-}
-
-bool
-unsigned_constant_dom_t::plain () const
-{
-  return true;
-}
-
-unsigned_constant_dom_t unsigned_constant_dom_obj ("unsigned");
-constant_dom const &unsigned_constant_dom = unsigned_constant_dom_obj;
-
-unsigned_constant_dom_t column_number_dom_obj ("column number");
+numeric_constant_dom_t column_number_dom_obj ("column number");
 constant_dom const &column_number_dom = column_number_dom_obj;
 
-unsigned_constant_dom_t line_number_dom_obj ("line number");
+numeric_constant_dom_t line_number_dom_obj ("line number");
 constant_dom const &line_number_dom = line_number_dom_obj;
 
 
@@ -76,17 +24,11 @@ static struct
   : public constant_dom
 {
   void
-  show (uint64_t v, std::ostream &o) const override
+  show (mpz_class const &v, std::ostream &o) const override
   {
     std::ios::fmtflags f {o.flags ()};
-    o << (v > 0 ? "0x" : "") << std::hex << v;
+    o << std::hex << std::showbase << v;
     o.flags (f);
-  }
-
-  bool
-  sign () const override
-  {
-    return false;
   }
 
   bool
@@ -108,17 +50,11 @@ static struct
   : public constant_dom
 {
   void
-  show (uint64_t v, std::ostream &o) const override
+  show (mpz_class const &v, std::ostream &o) const override
   {
     std::ios::fmtflags f {o.flags ()};
-    o << (v > 0 ? "0" : "") << std::oct << v;
+    o << std::oct << std::showbase << v;
     o.flags (f);
-  }
-
-  bool
-  sign () const override
-  {
-    return false;
   }
 
   bool
@@ -140,21 +76,20 @@ static struct
   : public constant_dom
 {
   void
-  show (uint64_t v, std::ostream &o) const override
+  show (mpz_class const &t, std::ostream &o) const override
   {
-    if (v == 0)
+    if (t == 0)
       o << '0';
     else
       {
-	auto s = (std::bitset <8 * sizeof v> {v}).to_string ();
-	o << (v > 0 ? "0b" : "") << s.substr (s.find ('1'));
+	mpz_class v = t < 0 ? mpz_class (-t) : t;
+	size_t sz = mpz_sizeinbase (v.get_mpz_t (), 2);
+	std::vector <char> chars (sz + 1, '\0');
+	for (size_t i = 0; i < sz; ++i)
+	  *(chars.rbegin () + i + 1)
+	    = mpz_tstbit (v.get_mpz_t (), i) == 0 ? '0' : '1';
+	o << (t < 0 ? "-" : "") << "0b" << &*chars.begin ();
       }
-  }
-
-  bool
-  sign () const override
-  {
-    return false;
   }
 
   bool
@@ -176,17 +111,11 @@ static struct
   : public constant_dom
 {
   void
-  show (uint64_t v, std::ostream &o) const override
+  show (mpz_class const &v, std::ostream &o) const override
   {
     std::ios::fmtflags f {o.flags ()};
-    o << std::boolalpha << static_cast <bool> (v);
+    o << std::boolalpha << (v != 0);
     o.flags (f);
-  }
-
-  bool
-  sign () const override
-  {
-    return false;
   }
 
   std::string name () const override
@@ -208,23 +137,11 @@ operator<< (std::ostream &o, constant cst)
 bool
 constant::operator< (constant that) const
 {
-  if (dom ()->sign () == that.dom ()->sign ())
-    return m_value < that.m_value;
-
-  if (dom ()->sign ())
-    {
-      if (static_cast <int64_t> (m_value) < 0)
-	return true;
-      else
-	return m_value < that.m_value;
-    }
+  if (dom ()->safe_arith () && that.dom ()->safe_arith ())
+    return value () < that.value ();
   else
-    {
-      if (static_cast <int64_t> (that.m_value) < 0)
-	return false;
-      else
-	return m_value < that.m_value;
-    }
+    return std::make_pair (dom (), value ())
+	< std::make_pair (that.dom (), that.value ());
 }
 
 bool

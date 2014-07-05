@@ -4,6 +4,8 @@
 #include <cassert>
 #include <iosfwd>
 #include <cstdint>
+#include <cstddef> // Workaround for gmpxx.h.
+#include <gmpxx.h>
 
 class constant;
 
@@ -11,14 +13,11 @@ class constant_dom
 {
 public:
   virtual ~constant_dom () {}
-  virtual void show (uint64_t c, std::ostream &o) const = 0;
+  virtual void show (mpz_class const &c, std::ostream &o) const = 0;
   virtual std::string name () const = 0;
 
-  // Whether values of this domain are signed.
-  virtual bool sign () const = 0;
-
   // Whether this domain is considered safe for integer arithmetic.
-  // (E.g. named constants wouldn't.)
+  // (E.g. named constants aren't.)
   virtual bool safe_arith () const { return false; }
 
   // When doing arithmetic, whether this domain is considered plain
@@ -27,20 +26,19 @@ public:
   virtual bool plain () const { return false; }
 };
 
-struct unsigned_constant_dom_t
+struct numeric_constant_dom_t
   : public constant_dom
 {
   std::string m_name;
 
 public:
-  explicit unsigned_constant_dom_t (std::string const &name)
+  explicit numeric_constant_dom_t (std::string const &name)
     : m_name {name}
   {}
 
-  void show (uint64_t v, std::ostream &o) const override;
-  bool sign () const override;
-  bool safe_arith () const override;
-  bool plain () const override;
+  void show (mpz_class const &v, std::ostream &o) const override;
+  bool safe_arith () const override { return true; }
+  bool plain () const override { return true; }
 
   std::string
   name () const override
@@ -49,12 +47,8 @@ public:
   }
 };
 
-// Two trivial domains for unnamed constants: one for signed, one for
-// unsigned values.
-extern constant_dom const &signed_constant_dom;
-extern constant_dom const &unsigned_constant_dom;
-
-// A domain for hex-, oct- and bin-formated unsigned values.
+// Domains for unnamed constants.
+extern constant_dom const &dec_constant_dom;
 extern constant_dom const &hex_constant_dom;
 extern constant_dom const &oct_constant_dom;
 extern constant_dom const &bin_constant_dom;
@@ -67,7 +61,7 @@ extern constant_dom const &line_number_dom;
 
 class constant
 {
-  uint64_t m_value;
+  mpz_class m_value;
   constant_dom const *m_dom;
 
 public:
@@ -76,8 +70,9 @@ public:
     , m_dom {nullptr}
   {}
 
-  constant (uint64_t value, constant_dom const *dom)
-    : m_value {value}
+  template <class T>
+  constant (T const &value, constant_dom const *dom)
+    : m_value (value)
     , m_dom {dom}
   {}
 
@@ -88,7 +83,7 @@ public:
     return m_dom;
   }
 
-  uint64_t value () const
+  mpz_class const &value () const
   {
     return m_value;
   }
