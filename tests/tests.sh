@@ -172,3 +172,7 @@ expect_count 1 ./empty -e '
 	{->A; (?(A 10 ?ge) 0 || A 1 add F apply 1 add)} ->F;
 	0 F apply
 	?(10 ?eq)'
+
+expect_count 1 ./empty -e '
+	{->F T; (?(F T ?le) F, ?(F T ?lt) F 1 add T seq apply) } -> seq;
+	[1 10 seq apply] ?([1, 2, 3, 4, 5, 6, 7, 8, 9, 10] ?eq)'
