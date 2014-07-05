@@ -140,6 +140,15 @@ expect_count 1 ./empty -e '
 expect_count 1 ./empty -e '
 	0b1111111111111111111111111111111111111111111111111111111111111111
 	0xffffffffffffffff ?eq'
+expect_count 1 ./empty -e'
+	-0xff dup dup dup "%s %d %b %o" "-0xff -255 -0b11111111 -0377" ?eq'
+expect_count 1 ./empty -e'
+	-0377 dup dup dup "%x %d %b %s" "-0xff -255 -0b11111111 -0377" ?eq'
+expect_count 1 ./empty -e'
+	-255 dup dup dup "%x %s %b %o" "-0xff -255 -0b11111111 -0377" ?eq'
+expect_count 1 ./empty -e'
+	-0b11111111 dup dup dup "%x %d %s %o"
+	"-0xff -255 -0b11111111 -0377" ?eq'
 
 # Check iterating over empty compile unit.
 expect_count 1 ./empty -e '
