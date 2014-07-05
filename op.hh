@@ -724,10 +724,53 @@ public:
   std::string name () const override;
 };
 
-class op_f_sub;
-class op_f_mul;
-class op_f_div;
-class op_f_mod;
+class op_f_sub
+  : public arith_op
+{
+public:
+  using arith_op::arith_op;
+
+  std::unique_ptr <value>
+  operate (value const &a, value const &b) const override;
+
+  std::string name () const override;
+};
+
+class op_f_mul
+  : public arith_op
+{
+public:
+  using arith_op::arith_op;
+
+  std::unique_ptr <value>
+  operate (value const &a, value const &b) const override;
+
+  std::string name () const override;
+};
+
+class op_f_div
+  : public arith_op
+{
+public:
+  using arith_op::arith_op;
+
+  std::unique_ptr <value>
+  operate (value const &a, value const &b) const override;
+
+  std::string name () const override;
+};
+
+class op_f_mod
+  : public arith_op
+{
+public:
+  using arith_op::arith_op;
+
+  std::unique_ptr <value>
+  operate (value const &a, value const &b) const override;
+
+  std::string name () const override;
+};
 
 // Pop DEPTH slots, perform OP, and for each produced stack, push
 // those slots back and yield that stack.

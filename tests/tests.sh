@@ -116,19 +116,6 @@ expect_count 1 ./enum.o -e '
 expect_count 1 ./enum.o -e '
 	winfo ?(@name "e" ?eq) child tag "%d" "40" ?eq'
 
-# Check arithmetic.
-expect_count 1 ./empty -e '-1 1 add ?(0 ?eq)'
-expect_count 1 ./empty -e '-1 10 add ?(9 ?eq)'
-expect_count 1 ./empty -e '1 -10 add ?(-9 ?eq)'
-expect_count 1 ./empty -e '-10 1 add ?(-9 ?eq)'
-expect_count 1 ./empty -e '10 -1 add ?(9 ?eq)'
-expect_count 1 ./empty -e '10 -1 add ?(9 ?eq)'
-
-expect_count 1 ./empty -e '
-	-1 0xffffffffffffffff add "%s" "0xfffffffffffffffe" ?eq'
-expect_count 1 ./empty -e '
-	0xffffffffffffffff -1 add "%s" "0xfffffffffffffffe" ?eq'
-
 # Check decoding of huge literals.
 expect_count 1 ./empty -e '
 	[0xffffffffffffffff "%s" each !(pos (0,1) ?eq)]
@@ -149,6 +136,32 @@ expect_count 1 ./empty -e'
 expect_count 1 ./empty -e'
 	-0b11111111 dup dup dup "%x %d %s %o"
 	"-0xff -255 -0b11111111 -0377" ?eq'
+
+# Check arithmetic.
+expect_count 1 ./empty -e '-1 1 add ?(0 ?eq)'
+expect_count 1 ./empty -e '-1 10 add ?(9 ?eq)'
+expect_count 1 ./empty -e '1 -10 add ?(-9 ?eq)'
+expect_count 1 ./empty -e '-10 1 add ?(-9 ?eq)'
+expect_count 1 ./empty -e '10 -1 add ?(9 ?eq)'
+
+expect_count 1 ./empty -e '
+	-1 0xffffffffffffffff add "%s" "0xfffffffffffffffe" ?eq'
+expect_count 1 ./empty -e '
+	0xffffffffffffffff -1 add "%s" "0xfffffffffffffffe" ?eq'
+
+expect_count 1 ./empty -e '-1 1 sub ?(-2 ?eq)'
+expect_count 1 ./empty -e '-1 10 sub ?(-11 ?eq)'
+expect_count 1 ./empty -e '1 -10 sub ?(11 ?eq)'
+expect_count 1 ./empty -e '-10 1 sub ?(-11 ?eq)'
+expect_count 1 ./empty -e '10 -1 sub ?(11 ?eq)'
+
+expect_count 1 ./empty -e '-2 2 mul ?(-4 ?eq)'
+expect_count 1 ./empty -e '-2 10 mul ?(-20 ?eq)'
+expect_count 1 ./empty -e '2 -10 mul ?(-20 ?eq)'
+expect_count 1 ./empty -e '-10 2 mul ?(-20 ?eq)'
+expect_count 1 ./empty -e '10 -2 mul ?(-20 ?eq)'
+expect_count 1 ./empty -e '-10 -2 mul ?(20 ?eq)'
+expect_count 1 ./empty -e '-2 -10 mul ?(20 ?eq)'
 
 # Check iterating over empty compile unit.
 expect_count 1 ./empty -e '
@@ -185,3 +198,10 @@ expect_count 1 ./empty -e '
 expect_count 1 ./empty -e '
 	{->F T; (?(F T ?le) F, ?(F T ?lt) F 1 add T seq apply) } -> seq;
 	[1 10 seq apply] ?([1, 2, 3, 4, 5, 6, 7, 8, 9, 10] ?eq)'
+
+expect_count 1 ./empty -e '
+	{->N; (?(N 2 ?lt) 1 || N 1 sub fact apply N mul)} -> fact;
+	?(5 fact apply 120 ?eq)
+	?(6 fact apply 720 ?eq)
+	?(7 fact apply 5040 ?eq)
+	?(8 fact apply 40320 ?eq)'

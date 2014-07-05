@@ -288,6 +288,14 @@ tree::build_exec (std::shared_ptr <op> upstream, dwgrep_graph::sptr q,
 
     case tree_type::F_ADD:
       return std::make_shared <op_f_add> (upstream);
+    case tree_type::F_SUB:
+      return std::make_shared <op_f_sub> (upstream);
+    case tree_type::F_MUL:
+      return std::make_shared <op_f_mul> (upstream);
+    case tree_type::F_DIV:
+      return std::make_shared <op_f_div> (upstream);
+    case tree_type::F_MOD:
+      return std::make_shared <op_f_mod> (upstream);
 
     case tree_type::F_POS:
       return std::make_shared <op_f_pos> (upstream);
@@ -360,10 +368,6 @@ tree::build_exec (std::shared_ptr <op> upstream, dwgrep_graph::sptr q,
     case tree_type::F_DEBUG:
       return std::make_shared <op_f_debug> (upstream);
 
-    case tree_type::F_SUB:
-    case tree_type::F_MUL:
-    case tree_type::F_DIV:
-    case tree_type::F_MOD:
     case tree_type::F_PREV:
     case tree_type::F_NEXT:
     case tree_type::SEL_UNIVERSE:

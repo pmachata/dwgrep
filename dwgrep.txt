@@ -925,15 +925,16 @@
      exactly equivalent to:
      : X each ?Y
 
-** ·EXPR → “add” | “sub” | “mul” | “div” | “mod” — arithmetic
+** •EXPR → “add” | “sub” | “mul” | “div” | “mod” — arithmetic
 
    - Two elements are popped: A and B, with B the original TOS, and "A
      op B" is pushed again.
 
-   - Undefined operations (such as division by zero) simply abort the
-     computation in question.
+   - "add" is meaningful for two constants, two strings or two
+     sequences.  Other operators are only meaningful for constants.
 
-   - XXX how to sum a list?
+   - division and modulo by zero produce an error message and abort
+     current computation.
 
 ** •EXPR → (“?”|“!”)(“eq”|“ne”|“gt”|“ge”|“lt”|“le”) — comparison assertions
 

@@ -1660,6 +1660,122 @@ op_f_add::name () const
 }
 
 
+namespace
+{
+  template <class F>
+  std::unique_ptr <value>
+  simple_arith_op (value const &a, value const &b,
+		   char const *name, F f)
+  {
+    if (auto va = value::as <value_cst> (&a))
+      if (auto vb = value::as <value_cst> (&b))
+	{
+	  constant const &cst_a = va->get_constant ();
+	  constant const &cst_b = vb->get_constant ();
+
+	  check_arith (cst_a, cst_b);
+
+	  constant_dom const *d = cst_a.dom ()->plain ()
+	    ? cst_b.dom () : cst_a.dom ();
+
+	  return f (cst_a, cst_b, d);
+	}
+
+    std::cerr << "Error: `" << name << "' expects T_CONST at and below TOS.\n";
+    return nullptr;
+  }
+}
+
+std::unique_ptr <value>
+op_f_sub::operate (value const &a, value const &b) const
+{
+  return simple_arith_op (a, b, "sub",
+			  [] (constant const &cst_a, constant const &cst_b,
+			      constant_dom const *d)
+			  {
+			    constant r {cst_a.value () - cst_b.value (), d};
+			    return std::make_unique <value_cst> (r, 0);
+			  });
+}
+
+std::string
+op_f_sub::name () const
+{
+  return "f_sub";
+}
+
+
+std::unique_ptr <value>
+op_f_mul::operate (value const &a, value const &b) const
+{
+  return simple_arith_op (a, b, "mul",
+			  [] (constant const &cst_a, constant const &cst_b,
+			      constant_dom const *d)
+			  {
+			    constant r {cst_a.value () * cst_b.value (), d};
+			    return std::make_unique <value_cst> (r, 0);
+			  });
+}
+
+std::string
+op_f_mul::name () const
+{
+  return "f_mul";
+}
+
+
+std::unique_ptr <value>
+op_f_div::operate (value const &a, value const &b) const
+{
+  return simple_arith_op (a, b, "div",
+			  [] (constant const &cst_a, constant const &cst_b,
+			      constant_dom const *d) -> std::unique_ptr <value>
+			  {
+			    if (cst_b.value () == 0)
+			      {
+				std::cerr
+				  << "Error: `div': division by zero.\n";
+				return nullptr;
+			      }
+
+			    constant r {cst_a.value () / cst_b.value (), d};
+			    return std::make_unique <value_cst> (r, 0);
+			  });
+}
+
+std::string
+op_f_div::name () const
+{
+  return "f_div";
+}
+
+
+std::unique_ptr <value>
+op_f_mod::operate (value const &a, value const &b) const
+{
+  return simple_arith_op (a, b, "mod",
+			  [] (constant const &cst_a, constant const &cst_b,
+			      constant_dom const *d) -> std::unique_ptr <value>
+			  {
+			    if (cst_b.value () == 0)
+			      {
+				std::cerr
+				  << "Error: `mod': division by zero.\n";
+				return nullptr;
+			      }
+
+			    constant r {cst_a.value () % cst_b.value (), d};
+			    return std::make_unique <value_cst> (r, 0);
+			  });
+}
+
+std::string
+op_f_mod::name () const
+{
+  return "f_mod";
+}
+
+
 struct op_transform::pimpl
 {
   std::shared_ptr <op> m_upstream;
