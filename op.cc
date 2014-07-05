@@ -1476,98 +1476,6 @@ op_subx::name () const
 }
 
 
-namespace
-{
-  void
-  check_arith (constant const &cst_a, constant const &cst_b)
-  {
-    // If a named constant partakes, warn.
-    if (! cst_a.dom ()->safe_arith () || ! cst_b.dom ()->safe_arith ())
-      std::cerr << "Warning: doing arithmetic with " << cst_a << " and "
-		<< cst_b << " is probably not meaningful.\n";
-  }
-}
-
-valfile::uptr
-op_f_add::next ()
-{
-  auto show_error = [] ()
-    {
-      std::cerr << "Error: `add' expects T_CONST, T_STR or T_SEQ "
-		   "at and below TOS.\n";
-    };
-
-  while (auto vf = m_upstream->next ())
-    {
-      auto vpb = vf->pop ();
-      auto vpa = vf->pop ();
-      if (auto va = value::as <value_cst> (&*vpa))
-	{
-	  if (auto vb = value::as <value_cst> (&*vpb))
-	    {
-	      constant const &cst_a = va->get_constant ();
-	      constant const &cst_b = vb->get_constant ();
-
-	      check_arith (cst_a, cst_b);
-
-	      constant_dom const *d = cst_a.dom ()->plain ()
-		? cst_b.dom () : cst_a.dom ();
-
-	      constant result {cst_a.value () + cst_b.value (), d};
-	      vf->push (std::make_unique <value_cst> (result, 0));
-	      return vf;
-	    }
-	  else
-	    show_error ();
-	}
-      else if (auto va = value::as <value_str> (&*vpa))
-	{
-	  if (auto vb = value::as <value_str> (&*vpb))
-	    {
-	      std::string result = va->get_string () + vb->get_string ();
-
-	      vf->push (std::make_unique <value_str> (std::move (result), 0));
-	      return vf;
-	    }
-	  else
-	    show_error ();
-	}
-      else if (auto va = value::as <value_seq> (&*vpa))
-	{
-	  if (auto vb = value::as <value_seq> (&*vpb))
-	    {
-	      value_seq::seq_t res;
-	      for (auto const &v: *va->get_seq ())
-		res.emplace_back (v->clone ());
-	      for (auto const &v: *vb->get_seq ())
-		res.emplace_back (v->clone ());
-
-	      vf->push (std::make_unique <value_seq> (std::move (res), 0));
-	      return vf;
-	    }
-	  else
-	    show_error ();
-	}
-      else
-	show_error ();
-    }
-
-  return nullptr;
-}
-
-void
-op_f_add::reset ()
-{
-  m_upstream->reset ();
-}
-
-std::string
-op_f_add::name () const
-{
-  return "f_add";
-}
-
-
 valfile::uptr
 op_f_debug::next ()
 {
@@ -1648,6 +1556,107 @@ std::string
 op_f_pos::name () const
 {
   return "f_pos";
+}
+
+
+valfile::uptr
+arith_op::next ()
+{
+  while (auto vf = m_upstream->next ())
+    {
+      auto bp = vf->pop ();
+      auto ap = vf->pop ();
+      if (auto cp = operate (*ap, *bp))
+	{
+	  vf->push (std::move (cp));
+	  return vf;
+	}
+    }
+
+  return nullptr;
+}
+
+void
+arith_op::reset ()
+{
+  m_upstream->reset ();
+}
+
+namespace
+{
+  void
+  check_arith (constant const &cst_a, constant const &cst_b)
+  {
+    // If a named constant partakes, warn.
+    if (! cst_a.dom ()->safe_arith () || ! cst_b.dom ()->safe_arith ())
+      std::cerr << "Warning: doing arithmetic with " << cst_a << " and "
+		<< cst_b << " is probably not meaningful.\n";
+  }
+}
+
+std::unique_ptr <value>
+op_f_add::operate (value const &vpa, value const &vpb) const
+{
+  auto show_error = [] ()
+    {
+      std::cerr << "Error: `add' expects T_CONST, T_STR or T_SEQ "
+		   "at and below TOS.\n";
+    };
+
+  if (auto va = value::as <value_cst> (&vpa))
+    {
+      if (auto vb = value::as <value_cst> (&vpb))
+	{
+	  constant const &cst_a = va->get_constant ();
+	  constant const &cst_b = vb->get_constant ();
+
+	  check_arith (cst_a, cst_b);
+
+	  constant_dom const *d = cst_a.dom ()->plain ()
+	    ? cst_b.dom () : cst_a.dom ();
+
+	  constant result {cst_a.value () + cst_b.value (), d};
+	  return std::make_unique <value_cst> (result, 0);
+	}
+      else
+	show_error ();
+    }
+  else if (auto va = value::as <value_str> (&vpa))
+    {
+      if (auto vb = value::as <value_str> (&vpb))
+	{
+	  std::string result = va->get_string () + vb->get_string ();
+
+	  return std::make_unique <value_str> (std::move (result), 0);
+	}
+      else
+	show_error ();
+    }
+  else if (auto va = value::as <value_seq> (&vpa))
+    {
+      if (auto vb = value::as <value_seq> (&vpb))
+	{
+	  value_seq::seq_t res;
+	  for (auto const &v: *va->get_seq ())
+	    res.emplace_back (v->clone ());
+	  for (auto const &v: *vb->get_seq ())
+	    res.emplace_back (v->clone ());
+
+	  return std::make_unique <value_seq> (std::move (res), 0);
+	}
+      else
+	show_error ();
+    }
+  else
+    show_error ();
+
+  return nullptr;
+}
+
+std::string
+op_f_add::name () const
+{
+  return "f_add";
 }
 
 

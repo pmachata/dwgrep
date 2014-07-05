@@ -654,21 +654,6 @@ public:
 
 };
 
-class op_f_add
-  : public op
-{
-  std::shared_ptr <op> m_upstream;
-
-public:
-  explicit op_f_add (std::shared_ptr <op> upstream)
-    : m_upstream {upstream}
-  {}
-
-  valfile::uptr next () override;
-  std::string name () const override;
-  void reset () override;
-};
-
 class op_f_debug
   : public op
 {
@@ -709,6 +694,40 @@ public:
   std::unique_ptr <value> operate (value const &v) const override;
   std::string name () const override;
 };
+
+class arith_op
+  : public op
+{
+  std::shared_ptr <op> m_upstream;
+
+public:
+  explicit arith_op (std::shared_ptr <op> upstream)
+    : m_upstream {upstream}
+  {}
+
+  valfile::uptr next () override;
+  void reset () override;
+
+  virtual std::unique_ptr <value>
+  operate (value const &a, value const &b) const = 0;
+};
+
+class op_f_add
+  : public arith_op
+{
+public:
+  using arith_op::arith_op;
+
+  std::unique_ptr <value>
+  operate (value const &a, value const &b) const override;
+
+  std::string name () const override;
+};
+
+class op_f_sub;
+class op_f_mul;
+class op_f_div;
+class op_f_mod;
 
 // Pop DEPTH slots, perform OP, and for each produced stack, push
 // those slots back and yield that stack.
@@ -819,10 +838,6 @@ public:
   std::string name () const override;
 };
 
-class op_f_sub;
-class op_f_mul;
-class op_f_div;
-class op_f_mod;
 class op_f_prev;
 class op_f_next;
 class op_f_form;
