@@ -710,7 +710,7 @@
    - Examples:
      : !(child)       # keep leaf DIE's only
 
-**  EXPR → “if” EXPR₀ “then” EXPR₁ “else” EXPR₂ — conditionals
+** •EXPR → “if” EXPR₀ “then” EXPR₁ “else” EXPR₂ — conditionals
 
    - EXPR₀ is evaluated in sub-expression context.  If it yields
      anything, EXPR₁ is evaluated in plain context.  Otherwise EXPR₂

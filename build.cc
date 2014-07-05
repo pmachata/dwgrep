@@ -369,12 +369,27 @@ tree::build_exec (std::shared_ptr <op> upstream, dwgrep_graph::sptr q,
     case tree_type::F_DEBUG:
       return std::make_shared <op_f_debug> (upstream);
 
+    case tree_type::IFELSE:
+      {
+	auto cond_origin = std::make_shared <op_origin> (nullptr);
+	auto cond_op = child (0).build_exec (cond_origin, q, scope);
+
+	auto then_origin = std::make_shared <op_origin> (nullptr);
+	auto then_op = child (1).build_exec (then_origin, q, scope);
+
+	auto else_origin = std::make_shared <op_origin> (nullptr);
+	auto else_op = child (2).build_exec (else_origin, q, scope);
+
+	return std::make_shared <op_ifelse> (upstream, cond_origin, cond_op,
+					     then_origin, then_op,
+					     else_origin, else_op);
+      }
+
     case tree_type::F_PREV:
     case tree_type::F_NEXT:
     case tree_type::SEL_UNIVERSE:
     case tree_type::SEL_SECTION:
     case tree_type::SHF_ROT:
-    case tree_type::IFELSE:
       std::cerr << "\n\nUNHANDLED:" << *this << std::endl;
       abort ();
 

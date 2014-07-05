@@ -205,3 +205,13 @@ expect_count 1 ./empty -e '
 	?(6 fact apply 720 ?eq)
 	?(7 fact apply 5040 ?eq)
 	?(8 fact apply 40320 ?eq)'
+
+# Check ifelse.
+expect_count 1 ./empty -e '
+	[if ?(1) then (2,3) else (4,5)] ?([2,3] ?eq)'
+expect_count 1 ./empty -e '
+	[if !(1) then (2,3) else (4,5)] ?([4,5] ?eq)'
+expect_count 6 ./typedef.o -e '
+	[winfo] ?(length 6 ?eq)
+	each if child then 1 else 0 "%s %(offset%)"
+	?(("1 0xb","0 0x1d","0 0x28","0 0x2f","0 0x3a","0 0x45") ?eq)'

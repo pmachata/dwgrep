@@ -840,8 +840,7 @@ public:
   std::string name () const override;
 };
 
-// Push to TOS a value_closure defined from given m_origin, m_op and
-// current top scope.
+// Push to TOS a value_closure.
 class op_lex_closure
   : public op
 {
@@ -875,6 +874,28 @@ class op_apply
 public:
   op_apply (std::shared_ptr <op> upstream);
   ~op_apply ();
+
+  void reset () override;
+  valfile::uptr next () override;
+  std::string name () const override;
+};
+
+class op_ifelse
+  : public op
+{
+  class pimpl;
+  std::unique_ptr <pimpl> m_pimpl;
+
+public:
+  op_ifelse (std::shared_ptr <op> upstream,
+	     std::shared_ptr <op_origin> cond_origin,
+	     std::shared_ptr <op> cond_op,
+	     std::shared_ptr <op_origin> then_origin,
+	     std::shared_ptr <op> then_op,
+	     std::shared_ptr <op_origin> else_origin,
+	     std::shared_ptr <op> else_op);
+
+  ~op_ifelse ();
 
   void reset () override;
   valfile::uptr next () override;

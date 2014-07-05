@@ -2123,6 +2123,126 @@ op_apply::name () const
 }
 
 
+struct op_ifelse::pimpl
+{
+  std::shared_ptr <op> m_upstream;
+
+  std::shared_ptr <op_origin> m_cond_origin;
+  std::shared_ptr <op> m_cond_op;
+
+  std::shared_ptr <op_origin> m_then_origin;
+  std::shared_ptr <op> m_then_op;
+
+  std::shared_ptr <op_origin> m_else_origin;
+  std::shared_ptr <op> m_else_op;
+
+  std::shared_ptr <op_origin> m_sel_origin;
+  std::shared_ptr <op> m_sel_op;
+
+  pimpl (std::shared_ptr <op> upstream,
+	 std::shared_ptr <op_origin> cond_origin,
+	 std::shared_ptr <op> cond_op,
+	 std::shared_ptr <op_origin> then_origin,
+	 std::shared_ptr <op> then_op,
+	 std::shared_ptr <op_origin> else_origin,
+	 std::shared_ptr <op> else_op)
+    : m_upstream {upstream}
+    , m_cond_origin {cond_origin}
+    , m_cond_op {cond_op}
+    , m_then_origin {then_origin}
+    , m_then_op {then_op}
+    , m_else_origin {else_origin}
+    , m_else_op {else_op}
+  {
+    reset_me ();
+  }
+
+  void
+  reset_me ()
+  {
+    m_sel_origin = nullptr;
+    m_sel_op = nullptr;
+  }
+
+  valfile::uptr
+  next ()
+  {
+    while (true)
+      {
+	if (m_sel_op == nullptr)
+	  {
+	    if (auto vf = m_upstream->next ())
+	      {
+		m_cond_op->reset ();
+		m_cond_origin->set_next (std::make_unique <valfile> (*vf));
+
+		if (m_cond_op->next () != nullptr)
+		  {
+		    m_sel_origin = m_then_origin;
+		    m_sel_op = m_then_op;
+		  }
+		else
+		  {
+		    m_sel_origin = m_else_origin;
+		    m_sel_op = m_else_op;
+		  }
+
+		m_sel_op->reset ();
+		m_sel_origin->set_next (std::move (vf));
+	      }
+	    else
+	      return nullptr;
+	  }
+
+	if (auto vf = m_sel_op->next ())
+	  return vf;
+
+	reset_me ();
+      }
+  }
+
+  void
+  reset ()
+  {
+    reset_me ();
+    m_upstream->reset ();
+  }
+};
+
+op_ifelse::op_ifelse (std::shared_ptr <op> upstream,
+		      std::shared_ptr <op_origin> cond_origin,
+		      std::shared_ptr <op> cond_op,
+		      std::shared_ptr <op_origin> then_origin,
+		      std::shared_ptr <op> then_op,
+		      std::shared_ptr <op_origin> else_origin,
+		      std::shared_ptr <op> else_op)
+  : m_pimpl {std::make_unique <pimpl> (upstream, cond_origin, cond_op,
+				       then_origin, then_op,
+				       else_origin, else_op)}
+{}
+
+op_ifelse::~op_ifelse ()
+{}
+
+void
+op_ifelse::reset ()
+{
+  m_pimpl->reset ();
+}
+
+valfile::uptr
+op_ifelse::next ()
+{
+  return m_pimpl->next ();
+}
+
+std::string
+op_ifelse::name () const
+{
+  return "ifelse";
+}
+
+
 pred_result
 pred_not::result (valfile &vf)
 {
