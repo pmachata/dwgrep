@@ -630,18 +630,11 @@
       directly to that action being performed.  ":swap" instead pushes
       the symbol to TOS.
 
-    - XXX eval -- resolve symbol on TOS to whatever it's bound to.
+      :ID value -- resolve symbol on TOS to whatever it's bound to.
 
-    - apply -- if a symbol is on TOS, then eval it.  Then expect a
-      block on TOS, which is executed.  If the result of that is again
-      a block, that block is not executed.
-
-      This is a problematic operator, as we'd need to be able to
-      figure out statically what the stack effects will be.  For
-      obvious cases it might be possible to deduce, and for the rest
-      there might be an optional effect syntax.  E.g.:
-
-      : def map { ->L (a->b)f;  ... }
+    - apply -- if a symbol is on TOS, then get its value.  Then expect
+      a block on TOS, which is executed.  If the result of that is
+      again a block, that block is not executed.
 
     - Stack shuffling operators:
       : def drop { ->a; }		# ->(a->)drop;
@@ -716,19 +709,6 @@
 
    - Examples:
      : !(child)       # keep leaf DIE's only
-
-**  EXPR → (“?all(” | “!all(”) EXPR₁ “)” — quantifier assertion
-
-   - ?all(EXPR₁) is exactly equivalent to:
-     : ?([each ?(EXPR₁)] 2/length ?eq)
-   - !all(EXPR₁) is exactly equivalent to:
-     : ?([each ?(EXPR₁)] 2/length !eq)
-
-   - I.e. it expects a list on TOS.  This list is forked into
-     individual computations by "each".  For ?all, only if each of
-     these computations yields a value does the overall predicate
-     succeed.  For !all, only if at least one fails does the overall
-     predicate succeed.  The list on TOS is kept.
 
 **  EXPR → “if” EXPR₀ “then” EXPR₁ “else” EXPR₂ — conditionals
 
@@ -893,7 +873,7 @@
    count them by hand:
    : [ child ] (length->L;) each
 
-**  EXPR → “?first” | “?second” | “?third” | “?last” — position assertion
+**  EXPR → “?first” | “?second” | “?third” — position assertion
 
    (And corresponding ! forms.)
 
@@ -906,24 +886,49 @@
      : ?(pos 0 ?eq)
      (and similarly for ?second, ?third, ...)
 
-   - ?last is exactly equivalent to:
-     : ?(-count 1 sub swap pos ?eq)
-
    - Examples:
-     : each ?last	# get last element of a list on TOS
-     : [each !first] swap each first   # split a list into head:rest
+     : [each !first] swap each ?first   # split a list into head:rest
 
-**  EXPR → “1st” | “2nd” | “3rd” | “last” | “nth” — sequence access
+**  EXPR → [EXPR₁]“:”[EXPR₂][“:”[EXPR₃]] — sequence unpacking
 
-   - nth expects a constant on TOS and a sequence or a string one
-     below TOS.  Extracts nth element of that.  (X N nth) is exactly
-     equivalent to:
-     : X each ?(pos N ?eq)
+   - The "::" operator expects a string or a sequence on TOS.  It then
+     yields all its elements that match the mask specified by the
+     three expressions start:stop:step.  Each of these expressions is
+     optional, and if not mentioned, their defaults are, respectively,
+     0, -1, and 1.
 
-   - first, second, third and last extract the given element of
-     sequence on TOS.  X Y, for Y in (first, second, third, last), is
-     exactly equivalent to:
-     : X each ?Y
+     This is intended to work like in Python.  See
+     https://tinyurl.com/o7plcaf, note 5 under the table.
+
+     Note that application of :: operator yields elements of the
+     original sequence.  To get a filtered sequence, one would do:
+     : [child] [:-1]	# snip the last element
+     : [child] [::-1]	# reverse order of children
+     ... which happens to be Python syntax.
+
+     It's worth noting that the following are equivalent:
+     : [child] each
+     : [child] :
+     : [child] ::
+     Maybe we should give up "each" and just document : as unpacking
+     operator.
+
+     The expressions noted at ::, if any, are evaluated in
+     subexpression context.  The TOS is then popped, and that's the
+     sought coordinate.  So e.g.:
+     : [child] -1:		# takes last element
+     : [child] (length 1 sub):	# likewise
+
+     XXX It's a bit annoying that we have this fancy way of slicing
+     sequences, but to get nth element, we must do either of:
+     : [child] each ?(pos N ?eq)
+     : [child] N:(N 1 add)
+     : [child] N: :1
+     The last is actually not terribly verbose, but it's far from
+     clear.
+
+   - 1sh, 2nd, 3rd and last extract the given element of sequence on
+     TOS.  XXX (1st) is really (0 nth).  That's confusing.
 
 ** •EXPR → “add” | “sub” | “mul” | “div” | “mod” — arithmetic
 
@@ -935,6 +940,32 @@
 
    - division and modulo by zero produce an error message and abort
      current computation.
+
+** ·EXPR → “hex” | “oct” | “bin” | [“u”]“int”(“32”|“64”) — casting
+   - hex, oct and bin change the domain of a constant on TOS.  If
+     "dec" is what you need, use "value".
+     : 64 hex		# gives 0x40
+     : DW_AT_name hex	# gives 0x3
+     The value remains a constant, only the way it's displayed
+     changes.  You can use "%s" to convert it to a string, in which
+     case it's rendered with the newly-selected domain.
+     : DW_AT_name "%s"		# gives "DW_AT_name"
+     : DW_AT_name hex "%s"	# gives "0x3"
+
+   - The idea behing uint32_t et.al. is that a two-complement
+     representation of a given constant is taken, if necessary, it's
+     sign-extended, and then a 32-bit or 64-bit slice of that is
+     taken, and that is reinterpreted as either a signed or unsigned
+     value:
+     : -1 hex			# gives -0x1
+     : -1 uint32_t hex		# gives 0xffffffff
+     : -1 uint64_t hex		# gives 0xffffffffffffffff
+     : 0xffffffff int32_t	# gives -1
+     : 0xffffffffff int32_t	# gives -1 as well
+     : 0xffffffff int64_t	# gives 0xffffffff
+     Maybe what we want instead is "32 uint", "64 int" etc., such that
+     bit length is configurable.  Presumably it's not a big deal with
+     GMP under the hood.
 
 ** •EXPR → (“?”|“!”)(“eq”|“ne”|“gt”|“ge”|“lt”|“le”) — comparison assertions
 
@@ -979,10 +1010,18 @@
 
    - To determine, whether a sequence contains a particular element,
      you would use the following construct:
-     : [that sequence] ?(each dup something ?eq)
+     : [that sequence] ?(each something ?eq)
      E.g.:
      : [child @name] ?(each ?"foo")
      : [child] ?(each @name ?"foo")
+
+   - To pick only those elements that match, you could do the
+     following:
+     : [child]->L; [L each ?(@name ?"foo")]
+     The above is suitable for a function that takes a list on input
+     and wants to filter it.  It is of course preferable to write this
+     sort of thing directly, if possible:
+     : [child ?(@name ?"foo")]
 
 ** •EXPR → “length” — length of a sequence or a string
 
