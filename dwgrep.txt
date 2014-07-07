@@ -593,37 +593,45 @@
      The mnemonic for this is that the list of variables describes
      stack layout, with TOS being on the right.
 
+   - When a binding is mentioned that references a closure, that
+     counts as invocation of the referenced closure.  In other words,
+     there's an implicit "apply" for bindings that reference closures.
+     : { 1 add } -> inc;
+     : 2 inc	# 3
+
 ** ·EXPR → “{” EXPR₁ “}” | “def” ID “{” EXPR₁ “}” | “:”ID | “apply” — blocks
 
     - {X} -- A block syntax.  A value representing an expression X
       is pushed to TOS.
 
-    - def ID {X} -- similar to {X} ->ID;, but binds a function.
-      Mentioning ID doesn't push the block, but directly evaluates the
-      body.  The following two are equivalent:
-      : def ID {X} ID
-      : {X} -> ID; ID apply
+      XXX -- this needs a block-local bindings.  E.g. in the following:
+      : {->F T; ?(F T ?le) F, ?(F T ?lt) F 1 add T seq apply} -> seq;
+      F and T are local to the first ALT branch.  This has to be
+      rewritten like so:
+      : {->F T; (?(F T ?le) F, ?(F T ?lt) F 1 add T seq apply)} -> seq;
+      Pretty sure this will cause problems.
 
+      When {X} is executed, this introduces a new activation record
+      (dynamic scope) inside the current scope.  Any def's bind
+      symbols in this new scope, and words are looked up in this scope
+      as well (but of course proceed upwards if the symbol is not
+      found).  Any block literals inside this execution remember the
+      scope (which in turn remembers its surrounding scope, even if
+      the execution already left it), so that they work as closures.
+
+      : {->x; {->y; x y add}} ->adder;
+      : 3 adder 2 swap apply	# 5
+
+      : def map { ->L f;  [ L elem f ] }
+      : [1, 2, 3] {1 add} map	# [2, 3, 4]
+
+    - def ID X -- equivalent to X ->ID; For functions, syntactically
+      arguably clearer than ->X.
       : def double { dup add }
-      : 3 double		# gives 6
+      : 3 double	# 6
 
-      : def fact { ->n; if n ?1 then 1 else (n n 1 sub fact mul) }
-      : 3 fact	# 6
-
-      The execution introduces a new activation record (dynamic scope)
-      inside the current scope.  Any def's bind symbols in this new
-      scope, and words are looked up in this scope as well (but of
-      course proceed upwards if the symbol is not found).  Any block
-      literals inside this execution remember the scope (which in turn
-      remembers its surrounding scope, even if the execution already
-      left it), so that they work as closures.
-
-      : def adder { ->x; { ->y;  x y add } }
-      : 2 adder 1 swap apply
-
-      : def map { ->L f;  [ L each f apply ] }
-
-      The apply as used in this context is thorny, see below.
+      : def fact { ->n; if (n ?1) then 1 else (n n 1 sub fact mul) }
+      : 3 fact		# 6
 
     - :ID -- A symbol syntax.  A value representing symbol ID is
       pushed on TOS.  Normally mentioning a word such as "swap" leads
@@ -642,60 +650,6 @@
       : def swap { ->a b; b a }		# ->(a b->b a)swap;
       : def rot { ->a b c; b c a }	# ->(a b c->b c a)rot;
       : def over { ->a b; a b a }	# ->(a b->a b a)over;
-
-    - With this all, can we still demand that stack effects be static?
-      It doesn't seem so.  Consider:
-      : def unknown { ->foo; foo apply }
-      : { drop } unknown
-      : { dup } unknown
-
-      With stack schemes, we can either postpone the deduction:
-      : def unknown { foo | foo apply }	# will be deduced on use site
-      : { drop } unknown		# ->(a (b->)->)unknown;
-      : { dup } unknown			# ->(a (b->b b)->a a)unknown;
-
-      Some of the deduction will need to be postponed anyway.  For
-      example, consider:
-      : def moo { f:(* *->* *) | f apply }
-      : def one { a b | a a }
-      : def two { a b | b b }
-      : { one } moo
-      : { two } moo
-      The two calls of moo end up having different effect on stack
-      slot ownership, which is important for separation of effects.
-      So perhaps we can just give up on stack effect declarations
-      altogether and deduce them all.
-
-      We don't know what stack will look like after "moo" is called,
-      unless we treat the definition as a template and instantiate it
-      each time (and then handling recursion becomes tricky).
-
-      Can we instantiate each block once for each block argument?
-      I.e. the above would be instantiated twice: once for 1--0, and
-      once for 0--1.  That would mean that we know how many variables
-      a block takes.  We could require that be statically
-      determinable.
-
-      If we have statically-determined variables and function
-      definitions, we can determine when a variable is used in word
-      context.  We also see that apply is used, and know it expects
-      TOS as a block.  That would allow sort-of jitting, cloning
-      functions in run time.  It wouldn't be a good design for
-      statically slicing a program in several parts that can be run
-      separately and their results combined.
-
-      : def ifelse { ->tbr fbr; (?true tbr, ?false fbr) apply }
-      : +1 +1  -2   +1  -2    +0   +1     +0    +1       +1    -2
-
-      : winfo [ child ] length 0 eq   { "empty" } { "non-empty" } ifelse
-      : +1      -1+1 +1 -1+1  +1 -2+1 +1 +1       +1 +1            
-
-      : def blah { (* ->) * -> | @ }
-      : {drop} blah	# OK: {drop} is *->
-      : 1 blah		# error: 1 is *, expected *->
-      : {1} blah	# error: {1} is ->*, expected *->
-
-      : { a b | a @name b @name ?eq } ?
 
 ** •EXPR → “?(” EXPR₁ “)” | “!(” EXPR₁ “)” — sub-expression assertions
 

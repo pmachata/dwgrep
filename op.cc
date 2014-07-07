@@ -1990,23 +1990,96 @@ op_bind::name () const
   return ss.str ();
 }
 
+
+struct op_read::pimpl
+{
+  std::shared_ptr <op> m_upstream;
+  std::shared_ptr <op> m_apply;
+  size_t m_depth;
+  var_id m_index;
+
+  pimpl (std::shared_ptr <op> upstream, size_t depth, var_id index)
+    : m_upstream {upstream}
+    , m_depth {depth}
+    , m_index {index}
+  {}
+
+  void
+  reset_me ()
+  {
+    m_apply = nullptr;
+  }
+
+  valfile::uptr
+  next ()
+  {
+    while (true)
+      {
+	if (m_apply == nullptr)
+	  {
+	    if (auto vf = m_upstream->next ())
+	      {
+		auto frame = vf->nth_frame (m_depth);
+		value &val = frame->read_value (m_index);
+		bool is_closure = val.is <value_closure> ();
+		vf->push (val.clone ());
+
+		// If a referenced value is not a closure, then the
+		// result is just that one value.
+		if (! is_closure)
+		  return vf;
+
+		// If it's a closure, then this is a function
+		// reference.  We need to execute it and fetch all the
+		// values.
+
+		auto origin = std::make_shared <op_origin> (std::move (vf));
+		m_apply = std::make_shared <op_apply> (origin);
+	      }
+	    else
+	      return nullptr;
+	  }
+
+	assert (m_apply != nullptr);
+	if (auto vf = m_apply->next ())
+	  return vf;
+
+	reset_me ();
+      }
+  }
+
+  void
+  reset ()
+  {
+    reset_me ();
+    m_upstream->reset ();
+  }
+};
+
+op_read::op_read (std::shared_ptr <op> upstream, size_t depth, var_id index)
+  : m_pimpl {std::make_unique <pimpl> (upstream, depth, index)}
+{}
+
+op_read::~op_read ()
+{}
+
+void
+op_read::reset ()
+{
+  m_pimpl->reset ();
+}
+
 valfile::uptr
 op_read::next ()
 {
-  if (auto vf = m_upstream->next ())
-    {
-      auto frame = vf->nth_frame (m_depth);
-      vf->push (frame->read_value (m_index).clone ());
-      return vf;
-    }
-  return nullptr;
+  return m_pimpl->next ();
 }
 
 std::string
 op_read::name () const
 {
   std::stringstream ss;
-  ss << "read<" << m_index << "@" << m_depth << ">";
+  ss << "read<" << m_pimpl->m_index << "@" << m_pimpl->m_depth << ">";
   return ss.str ();
 }
 

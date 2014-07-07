@@ -813,7 +813,6 @@ public:
 class op_bind
   : public op
 {
-protected:
   std::shared_ptr <op> m_upstream;
   size_t m_depth;
   var_id m_index;
@@ -831,12 +830,17 @@ public:
 };
 
 class op_read
-  : public op_bind
+  : public op
 {
+  class pimpl;
+  std::unique_ptr <pimpl> m_pimpl;
+
 public:
-  using op_bind::op_bind;
+  op_read (std::shared_ptr <op> upstream, size_t depth, var_id index);
+  ~op_read ();
 
   valfile::uptr next () override;
+  void reset () override;
   std::string name () const override;
 };
 

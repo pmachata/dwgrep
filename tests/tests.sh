@@ -187,24 +187,30 @@ expect_count 1 ./empty -e '
 expect_count 1 ./empty -e '
 	{->A; {A}} 5 swap apply apply ?(2 3 add ?eq)'
 expect_count 1 ./empty -e '
-	{dup add} -> double; 1 double apply ?(2 ?eq)'
+	{dup add} -> double; 1 double ?(2 ?eq)'
+expect_count 1 ./empty -e '
+	{->x; {->y; x y add}} ->adder;
+	3 adder 2 swap apply ?(5 ?eq)'
+expect_count 1 ./empty -e '
+	{->L f; [ L each f ] } ->map;
+	[1, 2, 3] {1 add} map ?([2, 3, 4] ?eq)'
 
 # Check recursion.
 expect_count 1 ./empty -e '
-	{->A; (?(A 10 ?ge) 0 || A 1 add F apply 1 add)} ->F;
-	0 F apply
+	{->A; (?(A 10 ?ge) 0 || A 1 add F 1 add)} ->F;
+	0 F
 	?(10 ?eq)'
 
 expect_count 1 ./empty -e '
-	{->F T; (?(F T ?le) F, ?(F T ?lt) F 1 add T seq apply) } -> seq;
-	[1 10 seq apply] ?([1, 2, 3, 4, 5, 6, 7, 8, 9, 10] ?eq)'
+	{->F T; (?(F T ?le) F, ?(F T ?lt) F 1 add T seq) } -> seq;
+	[1 10 seq] ?([1, 2, 3, 4, 5, 6, 7, 8, 9, 10] ?eq)'
 
 expect_count 1 ./empty -e '
-	{->N; (?(N 2 ?lt) 1 || N 1 sub fact apply N mul)} -> fact;
-	?(5 fact apply 120 ?eq)
-	?(6 fact apply 720 ?eq)
-	?(7 fact apply 5040 ?eq)
-	?(8 fact apply 40320 ?eq)'
+	{->N; (?(N 2 ?lt) 1 || N 1 sub fact N mul)} -> fact;
+	?(5 fact 120 ?eq)
+	?(6 fact 720 ?eq)
+	?(7 fact 5040 ?eq)
+	?(8 fact 40320 ?eq)'
 
 # Check ifelse.
 expect_count 1 ./empty -e '
