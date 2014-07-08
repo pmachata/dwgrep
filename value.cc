@@ -262,10 +262,15 @@ value_closure::get_type_const () const
 }
 
 cmp_result
-value_closure::cmp (value const &that) const
+value_closure::cmp (value const &v) const
 {
-  if (that.is <value_closure> ())
-    return compare (static_cast <value const *> (this), &that);
+  if (auto that = value::as <value_closure> (&v))
+    {
+      auto a = std::make_tuple (static_cast <tree &> (*m_t), m_scope, m_frame);
+      auto b = std::make_tuple (static_cast <tree &> (*that->m_t),
+				that->m_scope, that->m_frame);
+      return compare (a, b);
+    }
   else
     return cmp_result::fail;
 }

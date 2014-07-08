@@ -199,6 +199,8 @@ public:
 
   void push_child (tree const &t);
 
+  bool operator< (tree const &that) const;
+
   // === Build interface ===
   //
   // The following methods are implemented in build.cc.  They are for

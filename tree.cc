@@ -175,6 +175,52 @@ operator<< (std::ostream &o, tree const &t)
   return o << ")";
 }
 
+bool
+tree::operator< (tree const &that) const
+{
+  if (m_children.size () < that.m_children.size ())
+    return true;
+  else if (m_children.size () > that.m_children.size ())
+    return false;
+
+  auto it1 = m_children.begin ();
+  auto it2 = that.m_children.begin ();
+  for (; it1 != m_children.end (); ++it1, ++it2)
+    if (*it1 < *it2)
+      return true;
+    else if (*it2 < *it1)
+      return false;
+
+  switch (argtype[(int) m_tt])
+    {
+    case tree_arity_v::CST:
+      // Assume both are set.
+      assert (m_cst != nullptr);
+      assert (that.m_cst != nullptr);
+      return *m_cst < *that.m_cst;
+
+    case tree_arity_v::STR:
+      // Assume both are set.
+      assert (m_str != nullptr);
+      assert (that.m_str != nullptr);
+      return *m_str < *that.m_str;
+
+    case tree_arity_v::SCOPE:
+      // Two scopes simply always compare unequal, unless it's really
+      // the same scope.
+      return m_scope < that.m_scope;
+
+    case tree_arity_v::NULLARY:
+    case tree_arity_v::UNARY:
+    case tree_arity_v::BINARY:
+    case tree_arity_v::TERNARY:
+      return false;
+    }
+
+  assert (! "Should never be reached.");
+  abort ();
+}
+
 void
 tree::simplify ()
 {
