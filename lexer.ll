@@ -49,10 +49,6 @@ BIN [01]
 "->" return TOK_ARROW;
 "||" return TOK_DOUBLE_VBAR;
 
-"swap" return TOK_SWAP;
-"dup" return TOK_DUP;
-"over" return TOK_OVER;
-"rot" return TOK_ROT;
 "apply" return TOK_APPLY;
 "if" return TOK_IF;
 "then" return TOK_THEN;

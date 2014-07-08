@@ -25,6 +25,22 @@ public:
   virtual std::string name () const = 0;
 };
 
+// An op that's not an origin has an upstream.
+class inner_op
+  : public op
+{
+protected:
+  std::shared_ptr <op> m_upstream;
+
+public:
+  inner_op (std::shared_ptr <op> upstream)
+    : m_upstream {upstream}
+  {}
+
+  void reset () override
+  { m_upstream->reset (); }
+};
+
 // Class pred is for holding predicates.  These don't alter the
 // computations at all.
 class pred;
@@ -381,36 +397,6 @@ public:
 	     std::shared_ptr <stringer> stringer);
 
   ~op_format ();
-
-  valfile::uptr next () override;
-  std::string name () const override;
-  void reset () override;
-};
-
-class op_dup
-  : public op
-{
-  std::shared_ptr <op> m_upstream;
-
-public:
-  explicit op_dup (std::shared_ptr <op> upstream)
-    : m_upstream {upstream}
-  {}
-
-  valfile::uptr next () override;
-  std::string name () const override;
-  void reset () override;
-};
-
-class op_swap
-  : public op
-{
-  std::shared_ptr <op> m_upstream;
-
-public:
-  explicit op_swap (std::shared_ptr <op> upstream)
-    : m_upstream {upstream}
-  {}
 
   valfile::uptr next () override;
   std::string name () const override;

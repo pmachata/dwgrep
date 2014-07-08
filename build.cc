@@ -115,10 +115,6 @@ tree::build_pred (dwgrep_graph::sptr q, std::shared_ptr <scope> scope) const
     case tree_type::F_DEBUG:
     case tree_type::SEL_SECTION:
     case tree_type::SEL_UNIT:
-    case tree_type::SHF_SWAP:
-    case tree_type::SHF_DUP:
-    case tree_type::SHF_OVER:
-    case tree_type::SHF_ROT:
     case tree_type::BIND:
     case tree_type::READ:
     case tree_type::SCOPE:
@@ -246,13 +242,6 @@ tree::build_exec (std::shared_ptr <op> upstream, dwgrep_graph::sptr q,
 
 	return std::make_shared <op_format> (upstream, s_origin, strgr);
       }
-
-    case tree_type::SHF_DUP:
-    case tree_type::SHF_OVER:
-      return std::make_shared <op_dup> (upstream);
-
-    case tree_type::SHF_SWAP:
-      return std::make_shared <op_swap> (upstream);
 
     case tree_type::CONST:
       {
@@ -397,7 +386,6 @@ tree::build_exec (std::shared_ptr <op> upstream, dwgrep_graph::sptr q,
     case tree_type::F_NEXT:
     case tree_type::SEL_UNIVERSE:
     case tree_type::SEL_SECTION:
-    case tree_type::SHF_ROT:
       std::cerr << "\n\nUNHANDLED:" << *this << std::endl;
       abort ();
 

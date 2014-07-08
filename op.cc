@@ -851,56 +851,6 @@ op_format::name () const
   return "format";
 }
 
-valfile::uptr
-op_dup::next ()
-{
-  if (auto vf = m_upstream->next ())
-    {
-      vf->push (vf->top ().clone ());
-      return vf;
-    }
-  return nullptr;
-}
-
-void
-op_dup::reset ()
-{
-  m_upstream->reset ();
-}
-
-std::string
-op_dup::name () const
-{
-  return "dup";
-}
-
-
-valfile::uptr
-op_swap::next ()
-{
-  if (auto vf = m_upstream->next ())
-    {
-      auto a = vf->pop ();
-      auto b = vf->pop ();
-      vf->push (std::move (a));
-      vf->push (std::move (b));
-      return vf;
-    }
-  return nullptr;
-}
-
-void
-op_swap::reset ()
-{
-  m_upstream->reset ();
-}
-
-std::string
-op_swap::name () const
-{
-  return "swap";
-}
-
 
 valfile::uptr
 op_const::next ()

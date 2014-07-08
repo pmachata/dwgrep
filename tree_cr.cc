@@ -92,8 +92,6 @@ namespace
       case tree_type::F_APPLY: case tree_type::F_BUILTIN:
       case tree_type::SEL_UNIVERSE: case tree_type::SEL_WINFO:
       case tree_type::SEL_SECTION: case tree_type::SEL_UNIT:
-      case tree_type::SHF_SWAP: case tree_type::SHF_DUP:
-      case tree_type::SHF_OVER: case tree_type::SHF_ROT:
       case tree_type::F_DEBUG:
 	for (auto &c: t.m_children)
 	  c = ::promote_scopes (c, scp);

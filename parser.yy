@@ -178,8 +178,7 @@
 %token TOK_FORM TOK_VALUE TOK_POS TOK_ELEM
 %token TOK_LENGTH TOK_HEX TOK_OCT TOK_BIN
 
-%token TOK_SWAP TOK_DUP TOK_OVER TOK_ROT TOK_APPLY
-%token TOK_IF TOK_THEN TOK_ELSE
+%token TOK_APPLY TOK_IF TOK_THEN TOK_ELSE
 
 %token TOK_QMARK_EQ TOK_QMARK_NE TOK_QMARK_LT TOK_QMARK_GT TOK_QMARK_LE
 %token TOK_QMARK_GE TOK_QMARK_MATCH TOK_QMARK_FIND TOK_QMARK_EMPTY
@@ -508,18 +507,6 @@ Statement:
   | TOK_UNIT
   { $$ = tree::create_nullary <tree_type::SEL_UNIT> (); }
 
-
-  | TOK_SWAP
-  { $$ = tree::create_nullary <tree_type::SHF_SWAP> (); }
-
-  | TOK_DUP
-  { $$ = tree::create_nullary <tree_type::SHF_DUP> (); }
-
-  | TOK_OVER
-  { $$ = tree::create_nullary <tree_type::SHF_OVER> (); }
-
-  | TOK_ROT
-  { $$ = tree::create_nullary <tree_type::SHF_ROT> (); }
 
   | TOK_QMARK_EQ
   { $$ = positive_assert <tree_type::PRED_EQ> (); }

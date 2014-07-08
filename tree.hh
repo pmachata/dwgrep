@@ -70,8 +70,6 @@ enum class tree_arity_v
 //
 // F_CAST -- For domain casting.  The argument is a constant, whose
 // domain determines what domain to cast to.
-//
-// SHF_SWAP, SWP_DUP -- Stack shuffling words.
 
 #define TREE_TYPES				\
   TREE_TYPE (CAT, BINARY)			\
@@ -136,10 +134,6 @@ enum class tree_arity_v
   TREE_TYPE (SEL_WINFO, NULLARY)		\
   TREE_TYPE (SEL_SECTION, NULLARY)		\
   TREE_TYPE (SEL_UNIT, NULLARY)			\
-  TREE_TYPE (SHF_SWAP, NULLARY)			\
-  TREE_TYPE (SHF_DUP, NULLARY)			\
-  TREE_TYPE (SHF_OVER, NULLARY)			\
-  TREE_TYPE (SHF_ROT, NULLARY)			\
   TREE_TYPE (F_BUILTIN, BUILTIN)
 
 enum class tree_type

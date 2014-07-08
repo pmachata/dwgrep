@@ -162,10 +162,8 @@ do_tests ()
 
   test ("\"string\"", "(FORMAT (STR<string>))");
 
-  test ("swap", "(SHF_SWAP)");
-  test ("dup", "(SHF_DUP)");
-  test ("over", "(SHF_OVER)");
-  test ("rot", "(SHF_ROT)");
+  test ("swap", "(F_BUILTIN<swap>)");
+  test ("dup", "(F_BUILTIN<dup>)");
   test ("drop", "(F_BUILTIN<drop>)");
 
   test ("if () then () else ()",
@@ -250,9 +248,9 @@ do_tests ()
   test ("child*", "(CLOSE_STAR (F_CHILD))");
   test ("child+", "(CAT (F_CHILD) (CLOSE_STAR (F_CHILD)))");
   test ("child?", "(ALT (F_CHILD) (NOP))");
-  test ("swap*", "(CLOSE_STAR (SHF_SWAP))");
-  test ("swap+", "(CAT (SHF_SWAP) (CLOSE_STAR (SHF_SWAP)))");
-  test ("swap?", "(ALT (SHF_SWAP) (NOP))");
+  test ("swap*", "(CLOSE_STAR (F_BUILTIN<swap>))");
+  test ("swap+", "(CAT (F_BUILTIN<swap>) (CLOSE_STAR (F_BUILTIN<swap>)))");
+  test ("swap?", "(ALT (F_BUILTIN<swap>) (NOP))");
 
   test ("child next",
 	"(CAT (F_CHILD) (F_NEXT))");
@@ -264,9 +262,9 @@ do_tests ()
 	"(CAT (F_CHILD) (CLOSE_STAR (F_CHILD)) (F_NEXT))");
 
   test ("dup swap child",
-	"(CAT (SHF_DUP) (SHF_SWAP) (F_CHILD))");
+	"(CAT (F_BUILTIN<dup>) (F_BUILTIN<swap>) (F_CHILD))");
   test ("dup swap child next",
-	"(CAT (SHF_DUP) (SHF_SWAP) (F_CHILD) (F_NEXT))");
+	"(CAT (F_BUILTIN<dup>) (F_BUILTIN<swap>) (F_CHILD) (F_NEXT))");
 
   test ("2/child",
 	"(TRANSFORM (CONST<2>) (F_CHILD))");
@@ -285,34 +283,36 @@ do_tests ()
   test ("(child (next))",
 	"(CAT (F_CHILD) (F_NEXT))");
   test ("(dup) swap child next",
-	"(CAT (SHF_DUP) (SHF_SWAP) (F_CHILD) (F_NEXT))");
+	"(CAT (F_BUILTIN<dup>) (F_BUILTIN<swap>) (F_CHILD) (F_NEXT))");
   test ("dup (swap) child next",
-	"(CAT (SHF_DUP) (SHF_SWAP) (F_CHILD) (F_NEXT))");
+	"(CAT (F_BUILTIN<dup>) (F_BUILTIN<swap>) (F_CHILD) (F_NEXT))");
   test ("dup swap (child) next",
-	"(CAT (SHF_DUP) (SHF_SWAP) (F_CHILD) (F_NEXT))");
+	"(CAT (F_BUILTIN<dup>) (F_BUILTIN<swap>) (F_CHILD) (F_NEXT))");
   test ("dup swap child (next)",
-	"(CAT (SHF_DUP) (SHF_SWAP) (F_CHILD) (F_NEXT))");
+	"(CAT (F_BUILTIN<dup>) (F_BUILTIN<swap>) (F_CHILD) (F_NEXT))");
   test ("dup (swap (child (next)))",
-	"(CAT (SHF_DUP) (SHF_SWAP) (F_CHILD) (F_NEXT))");
+	"(CAT (F_BUILTIN<dup>) (F_BUILTIN<swap>) (F_CHILD) (F_NEXT))");
   test ("((((dup) swap) child) next)",
-	"(CAT (SHF_DUP) (SHF_SWAP) (F_CHILD) (F_NEXT))");
+	"(CAT (F_BUILTIN<dup>) (F_BUILTIN<swap>) (F_CHILD) (F_NEXT))");
   test ("((((dup) swap)) (child next))",
-	"(CAT (SHF_DUP) (SHF_SWAP) (F_CHILD) (F_NEXT))");
+	"(CAT (F_BUILTIN<dup>) (F_BUILTIN<swap>) (F_CHILD) (F_NEXT))");
 
   test ("dup, over",
-	"(ALT (SHF_DUP) (SHF_OVER))");
+	"(ALT (F_BUILTIN<dup>) (F_BUILTIN<over>))");
   test ("dup, over, child",
-	"(ALT (SHF_DUP) (SHF_OVER) (F_CHILD))");
+	"(ALT (F_BUILTIN<dup>) (F_BUILTIN<over>) (F_CHILD))");
   test ("swap,",
-	"(ALT (SHF_SWAP) (NOP))");
+	"(ALT (F_BUILTIN<swap>) (NOP))");
   test ("swap dup, over",
-	"(ALT (CAT (SHF_SWAP) (SHF_DUP)) (SHF_OVER))");
+	"(ALT (CAT (F_BUILTIN<swap>) (F_BUILTIN<dup>)) (F_BUILTIN<over>))");
   test ("swap dup, over next, parent dup",
-	"(ALT (CAT (SHF_SWAP) (SHF_DUP)) (CAT (SHF_OVER) (F_NEXT)) "
-	"(CAT (F_PARENT) (SHF_DUP)))");
+	"(ALT (CAT (F_BUILTIN<swap>) (F_BUILTIN<dup>)) "
+	"(CAT (F_BUILTIN<over>) (F_NEXT)) "
+	"(CAT (F_PARENT) (F_BUILTIN<dup>)))");
   test ("(swap dup, (over next, (parent dup)))",
-	"(ALT (CAT (SHF_SWAP) (SHF_DUP)) (CAT (SHF_OVER) (F_NEXT)) "
-	"(CAT (F_PARENT) (SHF_DUP)))");
+	"(ALT (CAT (F_BUILTIN<swap>) (F_BUILTIN<dup>))"
+	" (CAT (F_BUILTIN<over>) (F_NEXT)) "
+	"(CAT (F_PARENT) (F_BUILTIN<dup>)))");
   test ("2/next, 2/prev",
 	"(ALT (TRANSFORM (CONST<2>) (F_NEXT))"
 	" (TRANSFORM (CONST<2>) (F_PREV)))");
@@ -374,11 +374,11 @@ do_tests ()
 
   ftest (",", "(ALT (NOP) (NOP))");
   ftest ("winfo dup (swap,)",
-	 "(CAT (SEL_WINFO) (SHF_DUP)"
-	 " (ALT (SHF_SWAP) (NOP)))");
+	 "(CAT (SEL_WINFO) (F_BUILTIN<dup>)"
+	 " (ALT (F_BUILTIN<swap>) (NOP)))");
   ftest ("winfo dup (,swap)",
-	 "(CAT (SEL_WINFO) (SHF_DUP)"
-	 " (ALT (NOP) (SHF_SWAP)))");
+	 "(CAT (SEL_WINFO) (F_BUILTIN<dup>)"
+	 " (ALT (NOP) (F_BUILTIN<swap>)))");
   ftest ("winfo (drop,drop)",
 	 "(CAT (SEL_WINFO)"
 	 " (ALT (F_BUILTIN<drop>) (F_BUILTIN<drop>)))");
@@ -395,7 +395,7 @@ do_tests ()
   ftest ("winfo \"%( dup offset %): %( @name %)\"",
 	 "(CAT (SEL_WINFO)"
 	 " (FORMAT (STR<>)"
-	 " (CAT (SHF_DUP) (F_OFFSET)) (STR<: >)"
+	 " (CAT (F_BUILTIN<dup>) (F_OFFSET)) (STR<: >)"
 	 " (CAT (F_ATTR_NAMED<DW_AT_name>)"
 	 " (F_VALUE)) (STR<>)))",
 	 true);
