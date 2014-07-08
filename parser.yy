@@ -172,7 +172,6 @@
 %token TOK_ASTERISK TOK_PLUS TOK_QMARK TOK_MINUS TOK_COMMA TOK_SEMICOLON
 %token TOK_DOUBLE_VBAR TOK_SLASH TOK_ARROW
 
-%token TOK_ADD TOK_SUB TOK_MUL TOK_DIV TOK_MOD
 %token TOK_PARENT TOK_CHILD TOK_ATTRIBUTE TOK_PREV
 %token TOK_NEXT TOK_TYPE TOK_OFFSET TOK_NAME TOK_TAG
 %token TOK_FORM TOK_VALUE TOK_POS TOK_ELEM
@@ -422,23 +421,8 @@ Statement:
   }
 
 
-  | TOK_ADD
-  { $$ = tree::create_nullary <tree_type::F_ADD> (); }
-
   | TOK_DEBUG
   { $$ = tree::create_nullary <tree_type::F_DEBUG> (); }
-
-  | TOK_SUB
-  { $$ = tree::create_nullary <tree_type::F_SUB> (); }
-
-  | TOK_MUL
-  { $$ = tree::create_nullary <tree_type::F_MUL> (); }
-
-  | TOK_DIV
-  { $$ = tree::create_nullary <tree_type::F_DIV> (); }
-
-  | TOK_MOD
-  { $$ = tree::create_nullary <tree_type::F_MOD> (); }
 
   | TOK_PARENT
   { $$ = tree::create_nullary <tree_type::F_PARENT> (); }

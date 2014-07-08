@@ -90,11 +90,6 @@ tree::build_pred (dwgrep_graph::sptr q, std::shared_ptr <scope> scope) const
     case tree_type::CONST:
     case tree_type::STR:
     case tree_type::FORMAT:
-    case tree_type::F_ADD:
-    case tree_type::F_SUB:
-    case tree_type::F_MUL:
-    case tree_type::F_DIV:
-    case tree_type::F_MOD:
     case tree_type::F_PARENT:
     case tree_type::F_CHILD:
     case tree_type::F_ATTRIBUTE:
@@ -283,17 +278,6 @@ tree::build_exec (std::shared_ptr <op> upstream, dwgrep_graph::sptr q,
 	auto op = m_children.front ().build_exec (origin, q, scope);
 	return std::make_shared <op_tr_closure> (upstream, origin, op);
       }
-
-    case tree_type::F_ADD:
-      return std::make_shared <op_f_add> (upstream);
-    case tree_type::F_SUB:
-      return std::make_shared <op_f_sub> (upstream);
-    case tree_type::F_MUL:
-      return std::make_shared <op_f_mul> (upstream);
-    case tree_type::F_DIV:
-      return std::make_shared <op_f_div> (upstream);
-    case tree_type::F_MOD:
-      return std::make_shared <op_f_mod> (upstream);
 
     case tree_type::F_POS:
       return std::make_shared <op_f_pos> (upstream);

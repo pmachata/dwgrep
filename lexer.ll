@@ -54,11 +54,6 @@ BIN [01]
 "then" return TOK_THEN;
 "else" return TOK_ELSE;
 
-"add" return TOK_ADD;
-"sub" return TOK_SUB;
-"mul" return TOK_MUL;
-"div" return TOK_DIV;
-"mod" return TOK_MOD;
 "parent" return TOK_PARENT;
 "child" return TOK_CHILD;
 "attribute" return TOK_ATTRIBUTE;
