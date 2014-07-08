@@ -1065,28 +1065,6 @@
 
 ** XXX .debug_macro
 
-** XXX nested identifier names
-   currently we have to write
-   : ?(@name "a" ?eq) child ?(@name "b" ?eq) child ?(@name "c" ?eq)
-   which works, but is clumsy.  We'd much rather write something much
-   less verbose.  It's not clear what, without cluttering the
-   language.  If there were a library word, say lookup, meaning the
-   following:
-   : ?(0 (?(swap each ?(pos ?eq) @name over ?eq) 1 add rot child rot rot)*
-   :   ?(swap length ?eq))
-
-   We could use it thus:
-   : ["a", "b", "c"] lookup
-
-   : ["a", "b", "c"] ?(each first swap (?(@name ?eq) <child, next>)* )
-
-   Or:
-   : "a" ::@name "b" ::@name "c" ::@name
-   where ::X would expand to:
-   : ?(swap (X) ?eq) child
-   -- but the final child doesn't work.  It seems the original awkward
-   way of expressing this is the best one after all.
-
 ** XXX optional dwarf_attr_integrate
    - Currently we do that always for @at, ?@at etc.  Maybe it should
      be configurable.
@@ -1476,3 +1454,7 @@
      : A do @type while ?typedef ->B;
      : "[%(A offset%)] typedef %(A @name%) %(B @name%) "\
      : "(%( B @encoding || "???" %), %( B @byte_size || "???" %) bytes)"
+
+** nested identifier names
+   : ?(@name "a" ?eq) child ?(@name "b" ?eq) child ?(@name "c" ?eq)
+
