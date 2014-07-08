@@ -43,6 +43,7 @@
   #include "constant.hh"
   #include "vfcst.hh"
   #include "tree_cr.hh"
+  #include "builtin.hh"
 
   namespace
   {
@@ -177,7 +178,7 @@
 %token TOK_FORM TOK_VALUE TOK_POS TOK_ELEM
 %token TOK_LENGTH TOK_HEX TOK_OCT TOK_BIN
 
-%token TOK_SWAP TOK_DUP TOK_OVER TOK_ROT TOK_DROP TOK_APPLY
+%token TOK_SWAP TOK_DUP TOK_OVER TOK_ROT TOK_APPLY
 %token TOK_IF TOK_THEN TOK_ELSE
 
 %token TOK_QMARK_EQ TOK_QMARK_NE TOK_QMARK_LT TOK_QMARK_GT TOK_QMARK_LE
@@ -191,7 +192,7 @@
 %token TOK_AT_WORD  TOK_QMARK_AT_WORD TOK_BANG_AT_WORD
 %token TOK_QMARK_WORD TOK_BANG_WORD
 
-%token TOK_CONSTANT TOK_LIT_STR TOK_LIT_INT
+%token TOK_WORD TOK_LIT_STR TOK_LIT_INT
 
 %token TOK_UNIVERSE TOK_SECTION TOK_UNIT TOK_WINFO TOK_DEBUG
 
@@ -207,9 +208,8 @@
 %type <t> Program AltList OrList StatementList Statement
 %type <ids> IdList IdListOpt
 %type <s> TOK_LIT_INT
-%type <s> TOK_CONSTANT
+%type <s> TOK_WORD TOK_QMARK_WORD TOK_BANG_WORD
 %type <s> TOK_AT_WORD TOK_QMARK_AT_WORD TOK_BANG_AT_WORD
-%type <s> TOK_QMARK_WORD TOK_BANG_WORD
 %type <t> TOK_LIT_STR
 
 %%
@@ -263,7 +263,7 @@ IdListOpt:
   | IdList
 
 IdList:
-  TOK_CONSTANT IdListOpt
+  TOK_WORD IdListOpt
   {
     $2->push_back (std::string {$1.buf, $1.len});
     $$ = $2;
@@ -352,7 +352,7 @@ Statement:
   | TOK_LIT_INT
   { $$ = tree::create_const <tree_type::CONST> (parse_int ($1)); }
 
-  | TOK_CONSTANT
+  | TOK_WORD
   {
     std::string str {$1.buf, $1.len};
     if (str.length () > 2 && str[0] == 'T' && str[1] == '_')
@@ -388,7 +388,29 @@ Statement:
 	     && str[0] == 'D' && str[1] == 'W' && str[2] == '_')
       $$ = tree::create_const <tree_type::CONST> (constant::parse (str));
     else
-      $$ = tree::create_str <tree_type::READ> (str);
+      {
+	auto it = builtin_map.find (str);
+	if (it != builtin_map.end ())
+	  $$ = tree::create_builtin (&it->second);
+	else
+	  $$ = tree::create_str <tree_type::READ> (str);
+      }
+  }
+
+  | TOK_QMARK_WORD
+  {
+    std::string str {$1.buf + 1, $1.len - 1};
+    auto t = tree::create_const <tree_type::PRED_TAG>
+      (constant::parse_tag (str));
+    $$ = tree::create_assert (t);
+  }
+  | TOK_BANG_WORD
+  {
+    std::string str {$1.buf + 1, $1.len - 1};
+    auto t = tree::create_const <tree_type::PRED_TAG>
+      (constant::parse_tag (str));
+    auto u = tree::create_neg (t);
+    $$ = tree::create_assert (u);
   }
 
   | TOK_LIT_STR
@@ -499,9 +521,6 @@ Statement:
   | TOK_ROT
   { $$ = tree::create_nullary <tree_type::SHF_ROT> (); }
 
-  | TOK_DROP
-  { $$ = tree::create_nullary <tree_type::SHF_DROP> (); }
-
   | TOK_QMARK_EQ
   { $$ = positive_assert <tree_type::PRED_EQ> (); }
   | TOK_BANG_EQ
@@ -573,22 +592,6 @@ Statement:
     std::string str {$1.buf, $1.len};
     auto t = tree::create_const <tree_type::PRED_AT>
       (constant::parse_attr (str));
-    auto u = tree::create_neg (t);
-    $$ = tree::create_assert (u);
-  }
-
-  | TOK_QMARK_WORD
-  {
-    std::string str {$1.buf, $1.len};
-    auto t = tree::create_const <tree_type::PRED_TAG>
-      (constant::parse_tag (str));
-    $$ = tree::create_assert (t);
-  }
-  | TOK_BANG_WORD
-  {
-    std::string str {$1.buf, $1.len};
-    auto t = tree::create_const <tree_type::PRED_TAG>
-      (constant::parse_tag (str));
     auto u = tree::create_neg (t);
     $$ = tree::create_assert (u);
   }

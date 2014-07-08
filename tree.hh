@@ -8,6 +8,7 @@
 
 #include "constant.hh"
 #include "valfile.hh"
+#include "builtin.hh"
 
 // These constants describe how a tree is allowed to be constructed.
 // It's mostly present to make sure we don't inadvertently construct
@@ -31,6 +32,7 @@ enum class tree_arity_v
     STR,
     CST,
     SCOPE,
+    BUILTIN,
   };
 
 // CAT -- A node for holding concatenation (X Y Z).
@@ -68,11 +70,6 @@ enum class tree_arity_v
 //
 // F_CAST -- For domain casting.  The argument is a constant, whose
 // domain determines what domain to cast to.
-//
-// SEL_UNIVERSE, SEL_SECTION, SEL_UNIT -- Likewise.  But note that
-// SEL_UNIVERSE does NOT actually POP.  Plain "universe" is translated
-// as "SHF_DROP SEL_UNIVERSE", and "+universe" is translated as mere
-// "SEL_UNIVERSE".
 //
 // SHF_SWAP, SWP_DUP -- Stack shuffling words.
 
@@ -143,7 +140,7 @@ enum class tree_arity_v
   TREE_TYPE (SHF_DUP, NULLARY)			\
   TREE_TYPE (SHF_OVER, NULLARY)			\
   TREE_TYPE (SHF_ROT, NULLARY)			\
-  TREE_TYPE (SHF_DROP, NULLARY)			\
+  TREE_TYPE (F_BUILTIN, BUILTIN)
 
 enum class tree_type
   {
@@ -168,11 +165,12 @@ class scope;
 // and the rest of the world.  It uses naked pointers all over the
 // place, as in the %union that the lexer and parser use, we can't
 // hold smart pointers.
-class tree
+struct tree
 {
   std::unique_ptr <std::string> m_str;
   std::unique_ptr <constant> m_cst;
   std::shared_ptr <scope> m_scope;
+  builtin const *m_builtin;
 
 public:
   tree_type m_tt;
@@ -241,6 +239,8 @@ public:
   template <tree_type TT> static tree *create_str (std::string s);
   template <tree_type TT> static tree *create_const (constant c);
   template <tree_type TT> static tree *create_cat (tree *t1, tree *t2);
+
+  static tree *create_builtin (builtin const *b);
 
   static tree *create_neg (tree *t1);
   static tree *create_assert (tree *t1);

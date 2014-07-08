@@ -166,7 +166,7 @@ do_tests ()
   test ("dup", "(SHF_DUP)");
   test ("over", "(SHF_OVER)");
   test ("rot", "(SHF_ROT)");
-  test ("drop", "(SHF_DROP)");
+  test ("drop", "(F_BUILTIN<drop>)");
 
   test ("if () then () else ()",
 	"(IFELSE (NOP) (NOP) (NOP))");
@@ -381,16 +381,16 @@ do_tests ()
 	 " (ALT (NOP) (SHF_SWAP)))");
   ftest ("winfo (drop,drop)",
 	 "(CAT (SEL_WINFO)"
-	 " (ALT (SHF_DROP) (SHF_DROP)))");
+	 " (ALT (F_BUILTIN<drop>) (F_BUILTIN<drop>)))");
   ftest ("winfo (,drop 1)",
 	 "(CAT (SEL_WINFO)"
-	 " (ALT (NOP) (CAT (SHF_DROP) (CONST<1>))))");
+	 " (ALT (NOP) (CAT (F_BUILTIN<drop>) (CONST<1>))))");
   ftest ("winfo (drop 1,)",
 	 "(CAT (SEL_WINFO)"
-	 " (ALT (CAT (SHF_DROP) (CONST<1>)) (NOP)))");
+	 " (ALT (CAT (F_BUILTIN<drop>) (CONST<1>)) (NOP)))");
   ftest ("winfo drop \"foo\"",
 	 "(CAT (SEL_WINFO)"
-	 " (SHF_DROP) (FORMAT (STR<foo>)))");
+	 " (F_BUILTIN<drop>) (FORMAT (STR<foo>)))");
 
   ftest ("winfo \"%( dup offset %): %( @name %)\"",
 	 "(CAT (SEL_WINFO)"

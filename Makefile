@@ -28,9 +28,10 @@ dwgrep: override LDFLAGS += -ldw -lelf
 dwgrep test-parser: override LDFLAGS += -lgmpxx -lgmp
 
 dwgrep: dwgrep.o parser.o lexer.o tree.o tree_cr.o constant.o op.o	\
-	valfile.o value.o build.o cache.o dwcst.o vfcst.o atval.o
+	valfile.o value.o build.o cache.o dwcst.o vfcst.o atval.o	\
+	builtin.o
 test-parser: test-parser.o parser.o lexer.o tree.o tree_cr.o	\
-	constant.o dwcst.o vfcst.o
+	constant.o dwcst.o vfcst.o builtin.o
 
 test-parser.o: CXXOPTFLAGS = -O0
 

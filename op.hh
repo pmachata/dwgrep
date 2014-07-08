@@ -387,21 +387,6 @@ public:
   void reset () override;
 };
 
-class op_drop
-  : public op
-{
-  std::shared_ptr <op> m_upstream;
-
-public:
-  explicit op_drop (std::shared_ptr <op> upstream)
-    : m_upstream {upstream}
-  {}
-
-  valfile::uptr next () override;
-  std::string name () const override;
-  void reset () override;
-};
-
 class op_dup
   : public op
 {

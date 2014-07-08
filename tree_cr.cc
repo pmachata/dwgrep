@@ -2,6 +2,14 @@
 #include "tree_cr.hh"
 
 tree *
+tree::create_builtin (builtin const *b)
+{
+  auto t = new tree {tree_type::F_BUILTIN};
+  t->m_builtin = b;
+  return t;
+}
+
+tree *
 tree::create_neg (tree *t)
 {
   return tree::create_unary <tree_type::PRED_NOT> (t);
@@ -81,12 +89,12 @@ namespace
       case tree_type::F_OFFSET: case tree_type::F_NAME: case tree_type::F_TAG:
       case tree_type::F_FORM: case tree_type::F_VALUE: case tree_type::F_POS:
       case tree_type::F_ELEM: case tree_type::F_LENGTH: case tree_type::F_CAST:
-      case tree_type::F_APPLY:
+      case tree_type::F_APPLY: case tree_type::F_BUILTIN:
       case tree_type::SEL_UNIVERSE: case tree_type::SEL_WINFO:
       case tree_type::SEL_SECTION: case tree_type::SEL_UNIT:
       case tree_type::SHF_SWAP: case tree_type::SHF_DUP:
       case tree_type::SHF_OVER: case tree_type::SHF_ROT:
-      case tree_type::SHF_DROP: case tree_type::F_DEBUG:
+      case tree_type::F_DEBUG:
 	for (auto &c: t.m_children)
 	  c = ::promote_scopes (c, scp);
 	return t;

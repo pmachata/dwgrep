@@ -851,30 +851,6 @@ op_format::name () const
   return "format";
 }
 
-
-valfile::uptr
-op_drop::next ()
-{
-  if (auto vf = m_upstream->next ())
-    {
-      vf->pop ();
-      return vf;
-    }
-  return nullptr;
-}
-
-void
-op_drop::reset ()
-{
-  m_upstream->reset ();
-}
-
-std::string
-op_drop::name () const
-{
-  return "drop";
-}
-
 valfile::uptr
 op_dup::next ()
 {

@@ -67,6 +67,9 @@ tree::build_pred (dwgrep_graph::sptr q, std::shared_ptr <scope> scope) const
     case tree_type::PRED_MATCH:
       return std::make_unique <pred_match> ();
 
+    case tree_type::F_BUILTIN:
+      return m_builtin->build_pred (q, scope);
+
     case tree_type::PRED_FIND:
     case tree_type::PRED_LAST:
     case tree_type::PRED_SUBX_ALL:
@@ -116,7 +119,6 @@ tree::build_pred (dwgrep_graph::sptr q, std::shared_ptr <scope> scope) const
     case tree_type::SHF_DUP:
     case tree_type::SHF_OVER:
     case tree_type::SHF_ROT:
-    case tree_type::SHF_DROP:
     case tree_type::BIND:
     case tree_type::READ:
     case tree_type::SCOPE:
@@ -187,6 +189,15 @@ tree::build_exec (std::shared_ptr <op> upstream, dwgrep_graph::sptr q,
     case tree_type::NOP:
       return std::make_shared <op_nop> (upstream);
 
+    case tree_type::F_BUILTIN:
+      {
+	if (auto pred = build_pred (q, scope))
+	  return std::make_shared <op_assert> (upstream, std::move (pred));
+	auto op = m_builtin->build_exec (upstream, q, scope);
+	assert (op != nullptr);
+	return op;
+      }
+
     case tree_type::ASSERT:
       return std::make_shared <op_assert>
 	(upstream, m_children.front ().build_pred (q, scope));
@@ -235,9 +246,6 @@ tree::build_exec (std::shared_ptr <op> upstream, dwgrep_graph::sptr q,
 
 	return std::make_shared <op_format> (upstream, s_origin, strgr);
       }
-
-    case tree_type::SHF_DROP:
-      return std::make_shared <op_drop> (upstream);
 
     case tree_type::SHF_DUP:
     case tree_type::SHF_OVER:

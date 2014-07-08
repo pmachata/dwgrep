@@ -53,7 +53,6 @@ BIN [01]
 "dup" return TOK_DUP;
 "over" return TOK_OVER;
 "rot" return TOK_ROT;
-"drop" return TOK_DROP;
 "apply" return TOK_APPLY;
 "if" return TOK_IF;
 "then" return TOK_THEN;
@@ -111,13 +110,13 @@ BIN [01]
 "?root" return TOK_QMARK_ROOT;
 "!root" return TOK_BANG_ROOT;
 
-{ID} return pass_string (yyscanner, yylval, TOK_CONSTANT);
+{ID} return pass_string (yyscanner, yylval, TOK_WORD);
+"?"{ID} return pass_string (yyscanner, yylval, TOK_QMARK_WORD);
+"!"{ID} return pass_string (yyscanner, yylval, TOK_BANG_WORD);
 
 "@"{ID} return pass_string (yyscanner, yylval, TOK_AT_WORD, 1);
 "?@"{ID} return pass_string (yyscanner, yylval, TOK_QMARK_AT_WORD, 2);
 "!@"{ID} return pass_string (yyscanner, yylval, TOK_BANG_AT_WORD, 2);
-"?"{ID} return pass_string (yyscanner, yylval, TOK_QMARK_WORD, 1);
-"!"{ID} return pass_string (yyscanner, yylval, TOK_BANG_WORD, 1);
 
 "\"" {
   BEGIN STRING;

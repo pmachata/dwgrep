@@ -25,7 +25,8 @@ tree::tree ()
 {}
 
 tree::tree (tree_type tt)
-  : m_tt {tt}
+  : m_builtin {nullptr}
+  , m_tt {tt}
 {}
 
 namespace
@@ -45,22 +46,26 @@ tree::tree (tree const &other)
   : m_str {copy_unique (other.m_str)}
   , m_cst {copy_unique (other.m_cst)}
   , m_scope {other.m_scope}
+  , m_builtin {other.m_builtin}
   , m_tt {other.m_tt}
   , m_children {other.m_children}
 {}
 
 tree::tree (tree_type tt, std::string const &str)
   : m_str {std::make_unique <std::string> (str)}
+  , m_builtin {nullptr}
   , m_tt {tt}
 {}
 
 tree::tree (tree_type tt, constant const &cst)
   : m_cst {std::make_unique <constant> (cst)}
+  , m_builtin {nullptr}
   , m_tt {tt}
 {}
 
 tree::tree (tree_type tt, std::shared_ptr <scope> scope)
   : m_scope {scope}
+  , m_builtin {nullptr}
   , m_tt {tt}
 {}
 
@@ -77,6 +82,7 @@ tree::swap (tree &other)
   std::swap (m_str, other.m_str);
   std::swap (m_cst, other.m_cst);
   std::swap (m_scope, other.m_scope);
+  std::swap (m_builtin, other.m_builtin);
   std::swap (m_tt, other.m_tt);
   std::swap (m_children, other.m_children);
 }
@@ -167,6 +173,10 @@ operator<< (std::ostream &o, tree const &t)
     case tree_arity_v::BINARY:
     case tree_arity_v::TERNARY:
       break;
+
+    case tree_arity_v::BUILTIN:
+      o << "<" << t.m_builtin->name () << ">";
+      break;
     }
 
   for (auto const &child: t.m_children)
@@ -209,6 +219,9 @@ tree::operator< (tree const &that) const
       // Two scopes simply always compare unequal, unless it's really
       // the same scope.
       return m_scope < that.m_scope;
+
+    case tree_arity_v::BUILTIN:
+      return m_builtin < that.m_builtin;
 
     case tree_arity_v::NULLARY:
     case tree_arity_v::UNARY:
