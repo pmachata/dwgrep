@@ -194,6 +194,19 @@ expect_count 1 ./empty -e '
 expect_count 1 ./empty -e '
 	{->L f; [ L elem f ] } ->map;
 	[1, 2, 3] {1 add} map ?([2, 3, 4] ?eq)'
+expect_count 1 ./empty -e '
+	{->L B E;
+	  {->V;
+	    if (V 0 ?ge) then (V) else (L length V add) ->X;
+	    if (X 0 ?lt) then (0) else X
+	  } ->wrap;
+	  B wrap ->begin;    E wrap ->end;
+	  [L elem ?(pos ?(begin ?ge) ?(end ?lt))]
+	} -> slice;
+	[0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+	?(1 5 slice [1, 2, 3, 4] ?eq)
+	?(5 -1 slice [5, 6, 7, 8] ?eq)
+	?(-2 -1 slice [8] ?eq)'
 
 # Check recursion.
 expect_count 1 ./empty -e '
