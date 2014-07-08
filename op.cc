@@ -1112,7 +1112,7 @@ op_capture::name () const
 }
 
 
-struct op_f_each::pimpl
+struct op_f_elem::pimpl
 {
   std::shared_ptr <op> m_upstream;
   valfile::uptr m_vf;
@@ -1162,7 +1162,7 @@ struct op_f_each::pimpl
 	      if (vf->top ().is <value_seq> ())
 		m_vf = std::move (vf);
 	      else
-		std::cerr << "Error: `each' expects a T_SEQ or T_STR on TOS.\n";
+		std::cerr << "Error: `elem' expects a T_SEQ or T_STR on TOS.\n";
 	    }
 	  else
 	    return nullptr;
@@ -1186,29 +1186,29 @@ struct op_f_each::pimpl
   }
 };
 
-op_f_each::op_f_each (std::shared_ptr <op> upstream)
+op_f_elem::op_f_elem (std::shared_ptr <op> upstream)
   : m_pimpl {std::make_unique <pimpl> (upstream)}
 {}
 
-op_f_each::~op_f_each ()
+op_f_elem::~op_f_elem ()
 {}
 
 valfile::uptr
-op_f_each::next ()
+op_f_elem::next ()
 {
   return m_pimpl->next ();
 }
 
 void
-op_f_each::reset ()
+op_f_elem::reset ()
 {
   m_pimpl->reset ();
 }
 
 std::string
-op_f_each::name () const
+op_f_elem::name () const
 {
-  return "f_each";
+  return "f_elem";
 }
 
 

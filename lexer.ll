@@ -79,7 +79,7 @@ BIN [01]
 "oct" return TOK_OCT;
 "bin" return TOK_BIN;
 "pos" return TOK_POS;
-"each" return TOK_EACH;
+"elem" return TOK_ELEM;
 "length" return TOK_LENGTH;
 "universe" return TOK_UNIVERSE;
 "section" return TOK_SECTION;

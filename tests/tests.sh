@@ -47,12 +47,12 @@ expect_count 1 ./nontrivial-types.o -e '
 expect_count 11 ./nontrivial-types.o -e '
 	winfo dup unit ?(2/pos ?eq)'
 
-# Test that each annotates position.
+# Test that elem annotates position.
 expect_count 1 ./nontrivial-types.o -e '
 	winfo ?root drop [10, 11, 12]
-	?(each ?(pos 0 ?eq) ?(10 ?eq))
-	?(each ?(pos 1 ?eq) ?(11 ?eq))
-	?(each ?(pos 2 ?eq) ?(12 ?eq))'
+	?(elem ?(pos 0 ?eq) ?(10 ?eq))
+	?(elem ?(pos 1 ?eq) ?(11 ?eq))
+	?(elem ?(pos 2 ?eq) ?(12 ?eq))'
 
 # Tests star closure whose body ends with stack in a different state
 # than it starts in (different slots are taken in the valfile).
@@ -118,8 +118,8 @@ expect_count 1 ./enum.o -e '
 
 # Check decoding of huge literals.
 expect_count 1 ./empty -e '
-	[0xffffffffffffffff "%s" each !(pos (0,1) ?eq)]
-	?(length 16 ?eq) !(each "f" !eq)'
+	[0xffffffffffffffff "%s" elem !(pos (0,1) ?eq)]
+	?(length 16 ?eq) !(elem "f" !eq)'
 expect_count 1 ./empty -e '
 	18446744073709551615 0xffffffffffffffff ?eq'
 expect_count 1 ./empty -e '
@@ -192,7 +192,7 @@ expect_count 1 ./empty -e '
 	{->x; {->y; x y add}} ->adder;
 	3 adder 2 swap apply ?(5 ?eq)'
 expect_count 1 ./empty -e '
-	{->L f; [ L each f ] } ->map;
+	{->L f; [ L elem f ] } ->map;
 	[1, 2, 3] {1 add} map ?([2, 3, 4] ?eq)'
 
 # Check recursion.
@@ -219,5 +219,5 @@ expect_count 1 ./empty -e '
 	[if !(1) then (2,3) else (4,5)] ?([4,5] ?eq)'
 expect_count 6 ./typedef.o -e '
 	[winfo] ?(length 6 ?eq)
-	each if child then 1 else 0 "%s %(offset%)"
+	elem if child then 1 else 0 "%s %(offset%)"
 	?(("1 0xb","0 0x1d","0 0x28","0 0x2f","0 0x3a","0 0x45") ?eq)'

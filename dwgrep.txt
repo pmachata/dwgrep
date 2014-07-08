@@ -709,24 +709,21 @@
    should be unnecessary as well.  But they are present for
    completeness' sake.
 
-** •EXPR → “each” — pop a list, yield all its elements
+** •EXPR → “elem” — named edge between a list and its elements
 
-   - "each" pops a list, and for each element yield a stack with that
+   - "elem" pops a list, and for each element yield a stack with that
      element pushed on top
 
    - To zip contents of two top lists near TOS, do:
-     : 2/each ?(2/pos ?eq)
+     : ->A B; A elem B elem <pos>?eq
 
      This takes two lists from the stack, and produces stacks that
-     have those two elements replaced with individual elements from
-     those lists that correspond to each other.  For example:
+     have those lists replaced with individual elements that
+     correspond to each other.  For example:
      : A B [C₁, C₂, C₃] [D₁, D₂, D₃]
 
      ... would be replaced with three stacks:
      : (A B C₁ D₁, A B C₂ D₂, A B C₃ D₃)
-
-   - Similarly for deeper, three-level zip:
-     : 3/each ?(3/pos 2/?eq)
 
 ** ·EXPR → “child” | “attribute” | “parent” | “next” | “prev” — traversal
 
@@ -825,7 +822,7 @@
 
    If you wish to know the number of values produced, you have to
    count them by hand:
-   : [ child ] (length->L;) each
+   : [ child ] (length->L;) elem
 
 **  EXPR → “?first” | “?second” | “?third” — position assertion
 
@@ -841,7 +838,7 @@
      (and similarly for ?second, ?third, ...)
 
    - Examples:
-     : [each !first] swap each ?first   # split a list into head:rest
+     : [elem !first] swap elem ?first   # split a list into head:rest
 
 **  EXPR → [EXPR₁]“:”[EXPR₂][“:”[EXPR₃]] — sequence unpacking
 
@@ -861,10 +858,10 @@
      ... which happens to be Python syntax.
 
      It's worth noting that the following are equivalent:
-     : [child] each
+     : [child] elem
      : [child] :
      : [child] ::
-     Maybe we should give up "each" and just document : as unpacking
+     Maybe we should give up "elem" and just document : as unpacking
      operator.
 
      The expressions noted at ::, if any, are evaluated in
@@ -875,9 +872,9 @@
 
      XXX It's a bit annoying that we have this fancy way of slicing
      sequences, but to get nth element, we must do either of:
-     : [child] each ?(pos N ?eq)
+     : [child] elem ?(pos N ?eq)
      : [child] N:(N 1 add)
-     : [child] N: :1
+     : [child] [N:] :1
      The last is actually not terribly verbose, but it's far from
      clear.
 
@@ -964,14 +961,14 @@
 
    - To determine, whether a sequence contains a particular element,
      you would use the following construct:
-     : [that sequence] ?(each something ?eq)
+     : [that sequence] ?(elem something ?eq)
      E.g.:
-     : [child @name] ?(each ?"foo")
-     : [child] ?(each @name ?"foo")
+     : [child @name] ?(elem ?"foo")
+     : [child] ?(elem @name ?"foo")
 
    - To pick only those elements that match, you could do the
      following:
-     : [child]->L; [L each ?(@name ?"foo")]
+     : [child]->L; [L elem ?(@name ?"foo")]
      The above is suitable for a function that takes a list on input
      and wants to filter it.  It is of course preferable to write this
      sort of thing directly, if possible:
@@ -1396,10 +1393,6 @@
      The interpreter would still need smarts to realize that we access
      symtab as a storage indexed by name.
 
-     XXX I use "elem" here instead of "each", because "each" here is
-     confusing, implying we wish all the Ss to be ?STB_LOCAL.  Maybe
-     "elem" is what the function name should be.
-
    - XXX2
      : def GetSym {->X; symtab (?STT_OBJECT, ?STT_FUNC)
      :             ?(@name X @linkage_name ?eq)}
@@ -1426,7 +1419,7 @@
 ** CU A imports two PU's B and C, and both import the same third PU
 
    : ?root dup dup 2/(CU ?imported_unit @import) ?lt
-   : [2/(unit ?imported_unit @import) ?eq] each ?first
+   : [2/(unit ?imported_unit @import) ?eq] elem ?first
    : "PU %s is imported by PU's %s and %s, which are both imported by %s"
 
    - What the following XQuery really does:

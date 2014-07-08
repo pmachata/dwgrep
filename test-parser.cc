@@ -227,7 +227,7 @@ do_tests ()
   test ("form", "(F_FORM)");
   test ("value", "(F_VALUE)");
   test ("pos", "(F_POS)");
-  test ("each", "(F_EACH)");
+  test ("elem", "(F_ELEM)");
   test ("universe", "(SEL_UNIVERSE)");
   test ("section", "(SEL_SECTION)");
   test ("unit", "(SEL_UNIT)");
