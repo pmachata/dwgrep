@@ -85,7 +85,7 @@ namespace
       case tree_type::F_FORM: case tree_type::F_VALUE: case tree_type::F_POS:
       case tree_type::F_ELEM: case tree_type::F_LENGTH: case tree_type::F_CAST:
       case tree_type::F_APPLY: case tree_type::F_BUILTIN:
-      case tree_type::SEL_UNIVERSE: case tree_type::SEL_WINFO:
+      case tree_type::SEL_UNIVERSE:
       case tree_type::SEL_SECTION: case tree_type::SEL_UNIT:
       case tree_type::F_DEBUG:
 	for (auto &c: t.m_children)

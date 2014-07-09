@@ -77,21 +77,6 @@ public:
   void reset () override;
 };
 
-class op_sel_winfo
-  : public op
-{
-  class pimpl;
-  std::unique_ptr <pimpl> m_pimpl;
-
-public:
-  op_sel_winfo (std::shared_ptr <op> upstream, dwgrep_graph::sptr q);
-  ~op_sel_winfo ();
-
-  valfile::uptr next () override;
-  std::string name () const override;
-  void reset () override;
-};
-
 class op_sel_unit
   : public op
 {

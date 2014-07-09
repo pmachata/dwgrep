@@ -188,7 +188,7 @@
 
 %token TOK_WORD TOK_LIT_STR TOK_LIT_INT
 
-%token TOK_UNIVERSE TOK_SECTION TOK_UNIT TOK_WINFO TOK_DEBUG
+%token TOK_UNIVERSE TOK_SECTION TOK_UNIT TOK_DEBUG
 
 %token TOK_EOF
 
@@ -456,9 +456,6 @@ Statement:
 
   | TOK_UNIVERSE
   { $$ = tree::create_nullary <tree_type::SEL_UNIVERSE> (); }
-
-  | TOK_WINFO
-  { $$ = tree::create_nullary <tree_type::SEL_WINFO> (); }
 
   | TOK_SECTION
   { $$ = tree::create_nullary <tree_type::SEL_SECTION> (); }

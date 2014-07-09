@@ -74,8 +74,6 @@ BIN [01]
 "unit" return TOK_UNIT;
 "\\dbg" return TOK_DEBUG;
 
-"winfo" return TOK_WINFO;
-
 "?match" return TOK_QMARK_MATCH;
 "!match" return TOK_BANG_MATCH;
 "?find" return TOK_QMARK_FIND;

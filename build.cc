@@ -59,7 +59,6 @@ tree::build_pred (dwgrep_graph::sptr q, std::shared_ptr <scope> scope) const
 
     case tree_type::CAT:
     case tree_type::SEL_UNIVERSE:
-    case tree_type::SEL_WINFO:
     case tree_type::NOP:
     case tree_type::ASSERT:
     case tree_type::ALT:
@@ -151,9 +150,6 @@ tree::build_exec (std::shared_ptr <op> upstream, dwgrep_graph::sptr q,
 	  }
 	return o;
       }
-
-    case tree_type::SEL_WINFO:
-      return std::make_shared <op_sel_winfo> (upstream, q);
 
     case tree_type::SEL_UNIT:
       return std::make_shared <op_sel_unit> (upstream, q);
