@@ -380,14 +380,10 @@ Statement:
 	  t = tree::create_neg (t);
 	$$ = tree::create_assert (t);
       }
+    else if (auto bi = find_builtin (str))
+      $$ = tree::create_builtin (bi);
     else
-      {
-	auto it = builtin_map.find (str);
-	if (it != builtin_map.end ())
-	  $$ = tree::create_builtin (&it->second);
-	else
-	  $$ = tree::create_str <tree_type::READ> (str);
-      }
+      $$ = tree::create_str <tree_type::READ> (str);
   }
 
   | TOK_LIT_STR

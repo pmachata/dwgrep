@@ -24,6 +24,23 @@ public:
   virtual char const *name () const = 0;
 };
 
-extern std::map <std::string, builtin const &> builtin_map;
+class pred_builtin
+  : public builtin
+{
+protected:
+  bool m_positive;
+
+public:
+  explicit pred_builtin (bool positive)
+    : m_positive {positive}
+  {}
+
+  // Return either PRED, or PRED_NOT(PRED), depending on M_POSITIVE.
+  std::unique_ptr <pred> maybe_invert (std::unique_ptr <pred> pred) const;
+};
+
+void add_builtin (builtin &b);
+void add_builtin (builtin &b, std::string const &name);
+builtin const *find_builtin (std::string const &name);
 
 #endif /* _BUILTIN_H_ */
