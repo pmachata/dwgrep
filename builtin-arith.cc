@@ -144,7 +144,7 @@ static struct
   }
 
   char const *
-  name () const
+  name () const override
   {
     return "add";
   }
@@ -185,7 +185,7 @@ static struct
   }
 
   char const *
-  name () const
+  name () const override
   {
     return "sub";
   }
@@ -226,7 +226,7 @@ static struct
   }
 
   char const *
-  name () const
+  name () const override
   {
     return "mul";
   }
@@ -273,7 +273,7 @@ static struct
   }
 
   char const *
-  name () const
+  name () const override
   {
     return "div";
   }
@@ -320,7 +320,7 @@ static struct
   }
 
   char const *
-  name () const
+  name () const override
   {
     return "mod";
   }

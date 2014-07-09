@@ -53,8 +53,6 @@ BIN [01]
 "else" return TOK_ELSE;
 
 "parent" return TOK_PARENT;
-"child" return TOK_CHILD;
-"attribute" return TOK_ATTRIBUTE;
 "prev" return TOK_PREV;
 "next" return TOK_NEXT;
 "type" return TOK_TYPE;
@@ -71,7 +69,6 @@ BIN [01]
 "length" return TOK_LENGTH;
 "universe" return TOK_UNIVERSE;
 "section" return TOK_SECTION;
-"unit" return TOK_UNIT;
 "\\dbg" return TOK_DEBUG;
 
 "?match" return TOK_QMARK_MATCH;

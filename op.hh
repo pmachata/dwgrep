@@ -77,53 +77,6 @@ public:
   void reset () override;
 };
 
-class op_sel_unit
-  : public op
-{
-  class pimpl;
-  std::unique_ptr <pimpl> m_pimpl;
-
-public:
-  op_sel_unit (std::shared_ptr <op> upstream,
-	       dwgrep_graph::sptr q);
-  ~op_sel_unit ();
-
-  valfile::uptr next () override;
-  std::string name () const override;
-  void reset () override;
-};
-
-class op_f_child
-  : public op
-{
-  class pimpl;
-  std::unique_ptr <pimpl> m_pimpl;
-
-public:
-  op_f_child (std::shared_ptr <op> upstream,
-	       dwgrep_graph::sptr gr);
-  ~op_f_child ();
-  valfile::uptr next () override;
-  std::string name () const override;
-  void reset () override;
-};
-
-class op_f_attr
-  : public op
-{
-  class pimpl;
-  std::unique_ptr <pimpl> m_pimpl;
-
-public:
-  op_f_attr (std::shared_ptr <op> upstream,
-	     dwgrep_graph::sptr gr);
-  ~op_f_attr ();
-
-  valfile::uptr next () override;
-  std::string name () const override;
-  void reset () override;
-};
-
 class op_nop
   : public op
 {

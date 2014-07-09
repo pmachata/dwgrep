@@ -64,7 +64,7 @@ static struct
   }
 
   char const *
-  name () const
+  name () const override
   {
     if (m_positive)
       return "?eq";
@@ -105,7 +105,7 @@ static struct
   }
 
   char const *
-  name () const
+  name () const override
   {
     if (m_positive)
       return "?lt";
@@ -146,7 +146,7 @@ static struct
   }
 
   char const *
-  name () const
+  name () const override
   {
     if (m_positive)
       return "?gt";

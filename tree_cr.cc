@@ -78,15 +78,13 @@ namespace
       case tree_type::PRED_OR: case tree_type::PRED_NOT:
       case tree_type::PRED_SUBX_ANY: case tree_type::FORMAT:
       case tree_type::PRED_LAST: case tree_type::CONST: case tree_type::STR:
-      case tree_type::F_PARENT: case tree_type::F_CHILD:
-      case tree_type::F_ATTRIBUTE: case tree_type::F_ATTR_NAMED:
+      case tree_type::F_PARENT: case tree_type::F_ATTR_NAMED:
       case tree_type::F_PREV: case tree_type::F_NEXT: case tree_type::F_TYPE:
       case tree_type::F_OFFSET: case tree_type::F_NAME: case tree_type::F_TAG:
       case tree_type::F_FORM: case tree_type::F_VALUE: case tree_type::F_POS:
       case tree_type::F_ELEM: case tree_type::F_LENGTH: case tree_type::F_CAST:
       case tree_type::F_APPLY: case tree_type::F_BUILTIN:
-      case tree_type::SEL_UNIVERSE:
-      case tree_type::SEL_SECTION: case tree_type::SEL_UNIT:
+      case tree_type::SEL_UNIVERSE: case tree_type::SEL_SECTION:
       case tree_type::F_DEBUG:
 	for (auto &c: t.m_children)
 	  c = ::promote_scopes (c, scp);

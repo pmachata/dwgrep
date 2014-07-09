@@ -35,7 +35,7 @@ struct
   }
 
   char const *
-  name () const
+  name () const override
   {
     return "drop";
   }
@@ -79,7 +79,7 @@ static struct
   }
 
   char const *
-  name () const
+  name () const override
   {
     return "swap";
   }
@@ -119,7 +119,7 @@ static struct
   }
 
   char const *
-  name () const
+  name () const override
   {
     return "dup";
   }
@@ -159,7 +159,7 @@ static struct
   }
 
   char const *
-  name () const
+  name () const override
   {
     return "over";
   }

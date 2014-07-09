@@ -171,8 +171,7 @@
 %token TOK_ASTERISK TOK_PLUS TOK_QMARK TOK_MINUS TOK_COMMA TOK_SEMICOLON
 %token TOK_DOUBLE_VBAR TOK_SLASH TOK_ARROW
 
-%token TOK_PARENT TOK_CHILD TOK_ATTRIBUTE TOK_PREV
-%token TOK_NEXT TOK_TYPE TOK_OFFSET TOK_NAME TOK_TAG
+%token TOK_PARENT TOK_PREV TOK_NEXT TOK_TYPE TOK_OFFSET TOK_NAME TOK_TAG
 %token TOK_FORM TOK_VALUE TOK_POS TOK_ELEM
 %token TOK_LENGTH TOK_HEX TOK_OCT TOK_BIN
 
@@ -188,7 +187,7 @@
 
 %token TOK_WORD TOK_LIT_STR TOK_LIT_INT
 
-%token TOK_UNIVERSE TOK_SECTION TOK_UNIT TOK_DEBUG
+%token TOK_UNIVERSE TOK_SECTION TOK_DEBUG
 
 %token TOK_EOF
 
@@ -402,12 +401,6 @@ Statement:
   | TOK_PARENT
   { $$ = tree::create_nullary <tree_type::F_PARENT> (); }
 
-  | TOK_CHILD
-  { $$ = tree::create_nullary <tree_type::F_CHILD> (); }
-
-  | TOK_ATTRIBUTE
-  { $$ = tree::create_nullary <tree_type::F_ATTRIBUTE> (); }
-
   | TOK_PREV
   { $$ = tree::create_nullary <tree_type::F_PREV> (); }
 
@@ -459,9 +452,6 @@ Statement:
 
   | TOK_SECTION
   { $$ = tree::create_nullary <tree_type::SEL_SECTION> (); }
-
-  | TOK_UNIT
-  { $$ = tree::create_nullary <tree_type::SEL_UNIT> (); }
 
   | TOK_QMARK_MATCH
   { $$ = positive_assert <tree_type::PRED_MATCH> (); }
