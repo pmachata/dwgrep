@@ -243,10 +243,9 @@ namespace
 static struct
   : public builtin
 {
-  class add
+  struct add
     : public arith_op
   {
-  public:
     using arith_op::arith_op;
 
     std::unique_ptr <value>
@@ -331,10 +330,9 @@ static struct
 static struct
   : public builtin
 {
-  class sub
+  struct sub
     : public arith_op
   {
-  public:
     using arith_op::arith_op;
 
     std::unique_ptr <value>
@@ -373,10 +371,9 @@ static struct
 static struct
   : public builtin
 {
-  class mul
+  struct mul
     : public arith_op
   {
-  public:
     using arith_op::arith_op;
 
     std::unique_ptr <value>
@@ -415,10 +412,9 @@ static struct
 static struct
   : public builtin
 {
-  class div
+  struct div
     : public arith_op
   {
-  public:
     using arith_op::arith_op;
 
     std::unique_ptr <value>
@@ -463,10 +459,9 @@ static struct
 static struct
   : public builtin
 {
-  class mod
+  struct mod
     : public arith_op
   {
-  public:
     using arith_op::arith_op;
 
     std::unique_ptr <value>
@@ -508,15 +503,202 @@ static struct
   }
 } builtin_mod_obj;
 
+namespace
+{
+  class pred_builtin
+    : public builtin
+  {
+  protected:
+    bool m_positive;
+
+  public:
+    explicit pred_builtin (bool positive)
+      : m_positive {positive}
+    {}
+
+    std::unique_ptr <pred>
+    maybe_invert (std::unique_ptr <pred> pred) const
+    {
+      if (m_positive)
+	return pred;
+      else
+	return std::make_unique <pred_not> (std::move (pred));
+    }
+  };
+
+  pred_result
+  comparison_result (valfile &vf, cmp_result want)
+  {
+    if (auto va = vf.top_as <value_cst> ())
+      if (auto vb = vf.below_as <value_cst> ())
+	// For two different domains, complain about comparisons that
+	// don't have at least one comparand signed_constant_dom or
+	// unsigned_constant_dom.
+	if (va->get_constant ().dom () != vb->get_constant ().dom ()
+	    && ! va->get_constant ().dom ()->safe_arith ()
+	    && ! vb->get_constant ().dom ()->safe_arith ())
+	  std::cerr << "Warning: comparing " << *va << " to " << *vb
+		    << " is probably not meaningful (different domains).\n";
+
+    auto &va = vf.top ();
+    auto &vb = vf.below ();
+    cmp_result r = vb.cmp (va);
+    if (r == cmp_result::fail)
+      {
+	std::cerr << "Error: Can't compare `" << va << "' to `" << vb << "'\n.";
+	return pred_result::fail;
+      }
+    else
+      return pred_result (r == want);
+  }
+}
+
+static struct
+  : public pred_builtin
+{
+  using pred_builtin::pred_builtin;
+
+  struct eq
+    : public pred_binary
+  {
+    using pred_binary::pred_binary;
+
+    pred_result
+    result (valfile &vf) override
+    {
+      return comparison_result (vf, cmp_result::equal);
+    }
+
+    std::string
+    name () const override
+    {
+      return "eq";
+    }
+  };
+
+  std::unique_ptr <pred>
+  build_pred (dwgrep_graph::sptr q,
+	      std::shared_ptr <scope> scope) const override
+  {
+    return maybe_invert (std::make_unique <eq> ());
+  }
+
+  char const *
+  name () const
+  {
+    if (m_positive)
+      return "?eq";
+    else
+      return "!eq";
+  }
+} builtin_eq_obj {true}, builtin_neq_obj {false};
+
+
+static struct
+  : public pred_builtin
+{
+  using pred_builtin::pred_builtin;
+
+  struct lt
+    : public pred_binary
+  {
+    using pred_binary::pred_binary;
+
+    pred_result
+    result (valfile &vf) override
+    {
+      return comparison_result (vf, cmp_result::less);
+    }
+
+    std::string
+    name () const override
+    {
+      return "lt";
+    }
+  };
+
+  std::unique_ptr <pred>
+  build_pred (dwgrep_graph::sptr q,
+	      std::shared_ptr <scope> scope) const override
+  {
+    return maybe_invert (std::make_unique <lt> ());
+  }
+
+  char const *
+  name () const
+  {
+    if (m_positive)
+      return "?lt";
+    else
+      return "!lt";
+  }
+} builtin_lt_obj {true}, builtin_nlt_obj {false};
+
+
+static struct
+  : public pred_builtin
+{
+  using pred_builtin::pred_builtin;
+
+  struct gt
+    : public pred_binary
+  {
+    using pred_binary::pred_binary;
+
+    pred_result
+    result (valfile &vf) override
+    {
+      return comparison_result (vf, cmp_result::greater);
+    }
+
+    std::string
+    name () const override
+    {
+      return "gt";
+    }
+  };
+
+  std::unique_ptr <pred>
+  build_pred (dwgrep_graph::sptr q,
+	      std::shared_ptr <scope> scope) const override
+  {
+    return maybe_invert (std::make_unique <gt> ());
+  }
+
+  char const *
+  name () const
+  {
+    if (m_positive)
+      return "?gt";
+    else
+      return "!gt";
+  }
+} builtin_gt_obj {true}, builtin_ngt_obj {false};
+
 std::map <std::string, builtin const &> builtin_map =
   {
     {builtin_drop_obj.name (), builtin_drop_obj},
     {builtin_swap_obj.name (), builtin_swap_obj},
     {builtin_dup_obj.name (), builtin_dup_obj},
     {builtin_over_obj.name (), builtin_over_obj},
+
     {builtin_add_obj.name (), builtin_add_obj},
     {builtin_sub_obj.name (), builtin_sub_obj},
     {builtin_mul_obj.name (), builtin_mul_obj},
     {builtin_div_obj.name (), builtin_div_obj},
     {builtin_mod_obj.name (), builtin_mod_obj},
+
+    {builtin_eq_obj.name (), builtin_eq_obj},
+    {builtin_neq_obj.name (), builtin_neq_obj},
+    {builtin_lt_obj.name (), builtin_lt_obj},
+    {builtin_nlt_obj.name (), builtin_nlt_obj},
+    {builtin_gt_obj.name (), builtin_gt_obj},
+    {builtin_ngt_obj.name (), builtin_ngt_obj},
+
+    {"?ne", builtin_neq_obj},
+    {"!ne", builtin_eq_obj},
+    {"?ge", builtin_nlt_obj},
+    {"!ge", builtin_lt_obj},
+    {"?le", builtin_ngt_obj},
+    {"!le", builtin_gt_obj},
   };

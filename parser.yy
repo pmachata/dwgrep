@@ -179,16 +179,13 @@
 
 %token TOK_APPLY TOK_IF TOK_THEN TOK_ELSE
 
-%token TOK_QMARK_EQ TOK_QMARK_NE TOK_QMARK_LT TOK_QMARK_GT TOK_QMARK_LE
-%token TOK_QMARK_GE TOK_QMARK_MATCH TOK_QMARK_FIND TOK_QMARK_EMPTY
+%token TOK_QMARK_MATCH TOK_QMARK_FIND TOK_QMARK_EMPTY
 %token TOK_QMARK_ROOT
 
-%token TOK_BANG_EQ TOK_BANG_NE TOK_BANG_LT TOK_BANG_GT TOK_BANG_LE
-%token TOK_BANG_GE TOK_BANG_MATCH TOK_BANG_FIND TOK_BANG_EMPTY
+%token TOK_BANG_MATCH TOK_BANG_FIND TOK_BANG_EMPTY
 %token TOK_BANG_ROOT
 
 %token TOK_AT_WORD  TOK_QMARK_AT_WORD TOK_BANG_AT_WORD
-%token TOK_QMARK_WORD TOK_BANG_WORD
 
 %token TOK_WORD TOK_LIT_STR TOK_LIT_INT
 
@@ -206,7 +203,7 @@
 %type <t> Program AltList OrList StatementList Statement
 %type <ids> IdList IdListOpt
 %type <s> TOK_LIT_INT
-%type <s> TOK_WORD TOK_QMARK_WORD TOK_BANG_WORD
+%type <s> TOK_WORD
 %type <s> TOK_AT_WORD TOK_QMARK_AT_WORD TOK_BANG_AT_WORD
 %type <t> TOK_LIT_STR
 
@@ -385,6 +382,17 @@ Statement:
     else if (str.length () > 3
 	     && str[0] == 'D' && str[1] == 'W' && str[2] == '_')
       $$ = tree::create_const <tree_type::CONST> (constant::parse (str));
+    else if (str.length () > 5
+	     && (str[0] == '?' || str[0] == '!')
+	     && str[1] == 'T' && str[2] == 'A' && str[3] == 'G'
+	     && str[4] == '_')
+      {
+	auto t = tree::create_const <tree_type::PRED_TAG>
+	  (constant::parse_tag ({str, 5}));
+	if (str[0] == '!')
+	  t = tree::create_neg (t);
+	$$ = tree::create_assert (t);
+      }
     else
       {
 	auto it = builtin_map.find (str);
@@ -393,22 +401,6 @@ Statement:
 	else
 	  $$ = tree::create_str <tree_type::READ> (str);
       }
-  }
-
-  | TOK_QMARK_WORD
-  {
-    std::string str {$1.buf + 1, $1.len - 1};
-    auto t = tree::create_const <tree_type::PRED_TAG>
-      (constant::parse_tag (str));
-    $$ = tree::create_assert (t);
-  }
-  | TOK_BANG_WORD
-  {
-    std::string str {$1.buf + 1, $1.len - 1};
-    auto t = tree::create_const <tree_type::PRED_TAG>
-      (constant::parse_tag (str));
-    auto u = tree::create_neg (t);
-    $$ = tree::create_assert (u);
   }
 
   | TOK_LIT_STR
@@ -490,37 +482,6 @@ Statement:
 
   | TOK_UNIT
   { $$ = tree::create_nullary <tree_type::SEL_UNIT> (); }
-
-
-  | TOK_QMARK_EQ
-  { $$ = positive_assert <tree_type::PRED_EQ> (); }
-  | TOK_BANG_EQ
-  { $$ = negative_assert <tree_type::PRED_EQ> (); }
-
-  | TOK_QMARK_NE
-  { $$ = positive_assert <tree_type::PRED_NE> (); }
-  | TOK_BANG_NE
-  { $$ = negative_assert <tree_type::PRED_NE> (); }
-
-  | TOK_QMARK_LT
-  { $$ = positive_assert <tree_type::PRED_LT> (); }
-  | TOK_BANG_LT
-  { $$ = negative_assert <tree_type::PRED_LT> (); }
-
-  | TOK_QMARK_GT
-  { $$ = positive_assert <tree_type::PRED_GT> (); }
-  | TOK_BANG_GT
-  { $$ = negative_assert <tree_type::PRED_GT> (); }
-
-  | TOK_QMARK_LE
-  { $$ = positive_assert <tree_type::PRED_LE> (); }
-  | TOK_BANG_LE
-  { $$ = negative_assert <tree_type::PRED_LE> (); }
-
-  | TOK_QMARK_GE
-  { $$ = positive_assert <tree_type::PRED_GE> (); }
-  | TOK_BANG_GE
-  { $$ = negative_assert <tree_type::PRED_GE> (); }
 
   | TOK_QMARK_MATCH
   { $$ = positive_assert <tree_type::PRED_MATCH> (); }

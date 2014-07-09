@@ -15,17 +15,53 @@ expect_count ()
     fi
 }
 
-expect_count 1 ./empty -e '1 10 ?lt'
-expect_count 1 ./empty -e '10 1 ?gt'
+expect_count 1 ./empty -e '1   10 ?lt'
+expect_count 1 ./empty -e '10  10 !lt'
+expect_count 1 ./empty -e '100 10 !lt'
+expect_count 1 ./empty -e '1   10 ?le'
+expect_count 1 ./empty -e '10  10 ?le'
+expect_count 1 ./empty -e '100 10 !le'
+expect_count 1 ./empty -e '1   10 !eq'
+expect_count 1 ./empty -e '10  10 ?eq'
+expect_count 1 ./empty -e '100 10 !eq'
+expect_count 1 ./empty -e '1   10 ?ne'
+expect_count 1 ./empty -e '10  10 !ne'
+expect_count 1 ./empty -e '100 10 ?ne'
+expect_count 1 ./empty -e '1   10 !ge'
+expect_count 1 ./empty -e '10  10 ?ge'
+expect_count 1 ./empty -e '100 10 ?ge'
+expect_count 1 ./empty -e '1   10 !gt'
+expect_count 1 ./empty -e '10  10 !gt'
+expect_count 1 ./empty -e '100 10 ?gt'
+
+expect_count 0 ./empty -e '1   10 !lt'
+expect_count 0 ./empty -e '10  10 ?lt'
+expect_count 0 ./empty -e '100 10 ?lt'
+expect_count 0 ./empty -e '1   10 !le'
+expect_count 0 ./empty -e '10  10 !le'
+expect_count 0 ./empty -e '100 10 ?le'
+expect_count 0 ./empty -e '1   10 ?eq'
+expect_count 0 ./empty -e '10  10 !eq'
+expect_count 0 ./empty -e '100 10 ?eq'
+expect_count 0 ./empty -e '1   10 !ne'
+expect_count 0 ./empty -e '10  10 ?ne'
+expect_count 0 ./empty -e '100 10 !ne'
+expect_count 0 ./empty -e '1   10 ?ge'
+expect_count 0 ./empty -e '10  10 !ge'
+expect_count 0 ./empty -e '100 10 !ge'
+expect_count 0 ./empty -e '1   10 ?gt'
+expect_count 0 ./empty -e '10  10 ?gt'
+expect_count 0 ./empty -e '100 10 !gt'
 
 expect_count 1 ./duplicate-const -e '
-	winfo dup 2/child ?gt 2/(?const_type, ?volatile_type, ?restrict_type)
+	winfo dup 2/child ?gt
+	2/(?TAG_const_type, ?TAG_volatile_type, ?TAG_restrict_type)
 	?(2/tag ?eq) ?(2/@type ?eq)'
 
 expect_count 1 ./nontrivial-types.o -e '
-	winfo ?subprogram !@declaration dup child ?formal_parameter
-	?(@type ((?const_type, ?volatile_type, ?typedef) @type)*
-	  (?structure_type, ?class_type))'
+	winfo ?TAG_subprogram !@declaration dup child ?TAG_formal_parameter
+	?(@type ((?TAG_const_type, ?TAG_volatile_type, ?TAG_typedef) @type)*
+	  (?TAG_structure_type, ?TAG_class_type))'
 
 # Test that universe annotates position.
 expect_count 1 ./nontrivial-types.o -e '
@@ -58,7 +94,7 @@ expect_count 1 ./nontrivial-types.o -e '
 # than it starts in (different slots are taken in the valfile).
 expect_count 1 ./typedef.o -e '
 	winfo
-	?([] swap (@type ?typedef [()] 2/swap add swap)* drop length 3 ?eq)
+	?([] swap (@type ?TAG_typedef [()] 2/swap add swap)* drop length 3 ?eq)
 	?(offset 0x45 ?eq)'
 
 # Test decoding signed and unsigned value.
@@ -87,16 +123,16 @@ expect_count 1 ./typedef.o -e '
 
 # Test that (dup parent) doesn't change the bottom DIE as well.
 expect_count 1 ./nontrivial-types.o -e '
-	winfo ?structure_type dup parent ?(swap offset 0x2d ?eq)'
+	winfo ?TAG_structure_type dup parent ?(swap offset 0x2d ?eq)'
 
 # Check that when promoting assertions close to producers of their
 # slots, we don't move across alternation or closure.
 expect_count 3 ./nontrivial-types.o -e '
-	winfo ?subprogram child* ?formal_parameter'
+	winfo ?TAG_subprogram child* ?TAG_formal_parameter'
 expect_count 3 ./nontrivial-types.o -e '
-	winfo ?subprogram child? ?formal_parameter'
+	winfo ?TAG_subprogram child? ?TAG_formal_parameter'
 expect_count 3 ./nontrivial-types.o -e '
-	winfo ?subprogram (child,) ?formal_parameter'
+	winfo ?TAG_subprogram (child,) ?TAG_formal_parameter'
 
 # Check casting.
 expect_count 1 ./enum.o -e '

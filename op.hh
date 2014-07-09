@@ -912,36 +912,6 @@ public:
   void reset () override {}
 };
 
-class pred_eq
-  : public pred_binary
-{
-public:
-  using pred_binary::pred_binary;
-
-  pred_result result (valfile &vf) override;
-  std::string name () const override;
-};
-
-class pred_lt
-  : public pred_binary
-{
-public:
-  using pred_binary::pred_binary;
-
-  pred_result result (valfile &vf) override;
-  std::string name () const override;
-};
-
-class pred_gt
-  : public pred_binary
-{
-public:
-  using pred_binary::pred_binary;
-
-  pred_result result (valfile &vf) override;
-  std::string name () const override;
-};
-
 class pred_root
   : public pred
 {

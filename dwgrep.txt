@@ -24,7 +24,7 @@
 
   In particular, a simple expression in dwgrep might look like this:
 
-  : winfo ?subprogram child ?formal_parameter @name
+  : winfo ?TAG_subprogram child ?TAG_formal_parameter @AT_name
 
   Which (ignoring the initial colon that's part of meta-syntax) says:
   show me values of attribute DW_AT_name of DW_TAG_formal_parameter
@@ -114,7 +114,7 @@
    For example, to list all subprograms, one would use the following
    expression:
 
-   : winfo ?subprogram
+   : winfo ?TAG_subprogram
 
 ** ?@ID, !@ID — attribute presence/absence assertion
 
@@ -124,12 +124,12 @@
    for example, this is how we can get a list of all subprograms that
    have a declaration attribute:
 
-   : winfo ?subprogram ?@declaration
+   : winfo ?TAG_subprogram ?@declaration
 
    Similarly, to get subprograms that do not have declaration
    attribute, we say:
 
-   : winfo ?subprogram !@declaration
+   : winfo ?TAG_subprogram !@declaration
 
 ** child — child traversal
 
@@ -139,12 +139,12 @@
    get at the formal arguments of the subprograms from the previous
    example, one might say:
 
-   : winfo ?subprogram !@declaration child
+   : winfo ?TAG_subprogram !@declaration child
 
    If we want to make sure these children are actually formal
    parameters:
 
-   : winfo ?subprogram !@declaration child ?formal_parameter
+   : winfo ?TAG_subprogram !@declaration child ?TAG_formal_parameter
 
 ** @ID — value of attribute DW_AT_ID
 
@@ -153,7 +153,7 @@
    value of the attribute of that DIE.  E.g. we could obtain names of
    the formal parameters selected above:
 
-   : winfo ?subprogram !@declaration child ?formal_parameter @name
+   : winfo ?TAG_subprogram !@declaration child ?TAG_formal_parameter @name
 
    The result would be a set (really, multiset) of strings with names
    of all formal parameters in the program.  That's not very useful,
@@ -164,15 +164,15 @@
    rooted at given attribute.  For example, we could get types of
    formal parameters thus:
 
-   : winfo ?subprogram !@declaration child ?formal_parameter @type
+   : winfo ?TAG_subprogram !@declaration child ?TAG_formal_parameter @type
 
    ... which is a bit more useful.  We might use this to discover
    whether some formal parameters have structure types, and would
    therefore incur a potentially expensive copy when the subprogram is
    invoked:
 
-   : winfo ?subprogram !@declaration
-   : child ?formal_parameter @type ?structure_type
+   : winfo ?TAG_subprogram !@declaration
+   : child ?TAG_formal_parameter @type ?TAG_structure_type
 
    So that will let us know whether there are any offenders like that.
    That's closer to being interesting, but not quite what we need
@@ -190,22 +190,22 @@
    at least one element.  We can use it to get to DIE's that have
    arguments that are structures:
 
-   : winfo ?subprogram !@declaration
-   : ?(child ?formal_parameter @type ?structure_type)
+   : winfo ?TAG_subprogram !@declaration
+   : ?(child ?TAG_formal_parameter @type ?TAG_structure_type)
 
    This asks whether, after going to types of children that are formal
    parameters, we get a structure.  Because the initial two assertions
    have no stack effects anyway, we might say the same thing thus:
 
-   : winfo ?(?subprogram !@declaration
-   :         child ?formal_parameter @type ?structure_type)
+   : winfo ?(?TAG_subprogram !@declaration
+   :         child ?TAG_formal_parameter @type ?TAG_structure_type)
 
    The other sub-expression assertion, !(), holds if EXPR produces no
    values at all.  We don't need that, but we could use it to reword
    the query thus:
 
-   : winfo ?subprogram !(?@declaration)
-   : ?(child ?formal_parameter @type ?structure_type)
+   : winfo ?TAG_subprogram !(?@declaration)
+   : ?(child ?TAG_formal_parameter @type ?TAG_structure_type)
 
    If a DIE is a pure declaration, the expression ?@declaration yields
    unchanged incoming stack.  But !() only holds for expressions that
@@ -235,8 +235,8 @@
    the expressions are assertions, this happens to behave exactly like
    a logical or.  So:
 
-   : winfo ?subprogram !@declaration
-   : ?(child ?formal_parameter @type (?structure_type, ?class_type))
+   : winfo ?TAG_subprogram !@declaration
+   : ?(child ?TAG_formal_parameter @type (?TAG_structure_type, ?TAG_class_type))
 
    The || operator works differently.  It evaluates one expression
    after another, as long as those expressions don't yield anything.
@@ -268,10 +268,10 @@
    We can use this tool to remove const_type, volatile_type and
    typedef layers from our potential structure:
 
-   : winfo ?subprogram !@declaration
-   : ?(child ?formal_parameter
-   :   @type ((?const_type, ?volatile_type, ?typedef) @type)*
-   :   (?structure_type, ?class_type))
+   : winfo ?TAG_subprogram !@declaration
+   : ?(child ?TAG_formal_parameter
+   :   @type ((?TAG_const_type, ?TAG_volatile_type, ?TAG_typedef) @type)*
+   :   (?TAG_structure_type, ?TAG_class_type))
 
    Next on, we would like to write a message:
 
@@ -292,10 +292,10 @@
    directives.  To write a nice error message for our running example,
    we could do for example:
 
-   : winfo ?subprogram !@declaration
-   : ?(child ?formal_parameter
-   :   @type ((?const_type, ?volatile_type, ?typedef) @type)*
-   :   (?structure_type, ?class_type))
+   : winfo ?TAG_subprogram !@declaration
+   : ?(child ?TAG_formal_parameter
+   :   @type ((?TAG_const_type, ?TAG_volatile_type, ?TAG_typedef) @type)*
+   :   (?TAG_structure_type, ?TAG_class_type))
    : "%s: one of the parameters has non-trivial type."
 
    When dwgrep sees a string with formatting directives, it converts
@@ -325,10 +325,17 @@
    give value a name.  That removes that value from the stack, and
    introduces a word that, when mentioned, pushes that value to stack.
 
-   : winfo ?subprogram !@declaration ->S;
-   : S child ?formal_parameter
-   : ?(@type ((?const_type, ?volatile_type, ?typedef) @type)*
-   :   (?structure_type, ?class_type)) ->P;
+   : 1->A; A A add	# gives 2
+
+   Let's use this tool to remember the two elements that we care
+   about: the subprogram (S) and its naked structure parameter (P):
+
+   : winfo ?TAG_subprogram !@declaration ->S;
+   :
+   : S child ?TAG_formal_parameter
+   : ?(@type ((?TAG_const_type, ?TAG_volatile_type, ?TAG_typedef) @type)*
+   :   (?TAG_structure_type, ?TAG_class_type)) ->P;
+   :
    : P S "%s: Parameter %s has non-trivial type."
 
    Which is not too shabby, but having to keep track of which %s takes
@@ -345,20 +352,22 @@
    With this tool, we can make the formatting string quite a bit
    clearer:
 
-   : winfo ?subprogram !@declaration ->S;
-   : S child ?formal_parameter
-   : ?(@type ((?const_type, ?volatile_type, ?typedef) @type)*
-   :   (?structure_type, ?class_type)) ->P;
+   : winfo ?TAG_subprogram !@declaration ->S;
+   :
+   : S child ?TAG_formal_parameter
+   : ?(@type ((?TAG_const_type, ?TAG_volatile_type, ?TAG_typedef) @type)*
+   :   (?TAG_structure_type, ?TAG_class_type)) ->P;
+   :
    : "%( S %): Parameter %( P %) has non-trivial type."
 
    Ideally we'd also include source code coordinates for the function
    name, and with the interpolation, it's actually quite easy:
 
-   : winfo ?subprogram !@declaration ->S;
+   : winfo ?TAG_subprogram !@declaration ->S;
    :
-   : S child ?formal_parameter
-   : ?(@type ((?const_type, ?volatile_type, ?typedef) @type)*
-   :   (?structure_type, ?class_type)) ->P;
+   : S child ?TAG_formal_parameter
+   : ?(@type ((?TAG_const_type, ?TAG_volatile_type, ?TAG_typedef) @type)*
+   :   (?TAG_structure_type, ?TAG_class_type)) ->P;
    :
    : "%( S @decl_file %): %( S @decl_line %): note: in function "\
    : "`%( S @name %)', parameter `%( P @name %)' type is not trivial."
@@ -473,8 +482,8 @@
      : ?(2/@name ?eq)
 
    - Follow the same traversal instructions for two DIE's on TOS:
-     : child ?formal_parameter swap child ?formal_parameter
-     : 2/(child ?formal_parameter)
+     : child ?TAG_formal_parameter swap child ?TAG_formal_parameter
+     : 2/(child ?TAG_formal_parameter)
 
    - rot is exactly equivalent to:
      : 2/swap
@@ -1102,28 +1111,28 @@
 
 ** Josh Stone's nontrivial-parameters script
 
-   : ?subprogram !@declaration
+   : ?TAG_subprogram !@declaration
    : ?(@decl_file ?("^/usr/" match) !("^/usr/src/debug" match))
-   : dup child ?formal_parameter
-   : ?(@type ((?const_type, ?volatile_type, ?typedef) @type)*
-   :   (?structure_type, ?class_type)) swap
+   : dup child ?TAG_formal_parameter
+   : ?(@type ((?TAG_const_type, ?TAG_volatile_type, ?TAG_typedef) @type)*
+   :   (?TAG_structure_type, ?TAG_class_type)) swap
    : "%( dup @decl_file %): %( dup @decl_line %): note: in function "\
    : "`%( @name %)', parameter `%( @name %)' type is not trivial"
 
    - XXX
-     : winfo ?subprogram !@declaration
+     : winfo ?TAG_subprogram !@declaration
      : ?(@decl_file ?("^/usr/" ?match) ?("^/usr/src/debug" !match)) -> A;
-     : A child ?formal_parameter
-     : ?(@type while (?const_type, ?volatile_type, ?typedef)
-     :   (?structure_type, ?class_type)) -> B
+     : A child ?TAG_formal_parameter
+     : ?(@type while (?TAG_const_type, ?TAG_volatile_type, ?TAG_typedef) do @type
+     :   (?TAG_structure_type || ?TAG_class_type)) -> B;
      : "%( A @decl_file %): %( A @decl_line %): note: in function "\
      : "`%( A @name %)', parameter `%( B @name %)' type is not trivial"
 
    - What the following XQuery really does:
 
-   : ?subprogram !@declaration -child ?formal_parameter
-   : ?(@type ((?const_type, ?volatile_type, ?typedef) @type)*
-   :   (?structure_type, ?class_type)) 2/@name swap
+   : ?TAG_subprogram !@declaration dup child ?TAG_formal_parameter
+   : ?(@type ((?TAG_const_type, ?TAG_volatile_type, ?TAG_typedef) @type)*
+   :   (?TAG_structure_type, ?TAG_class_type)) 2/@name swap
    : "%s: type of parameter %s is not trivial."
 
    - In XQuery, it is actually not horrible, except for having to
@@ -1156,18 +1165,20 @@
 
 ** check_die_line_info:
 
-   : (?subprogram, ?inline_subroutine, ?entry_point, ?lexical_block,
-   :  ?label, ?with_stmt, ?try_block, ?catch_block)
+   : (?TAG_subprogram, ?TAG_inline_subroutine, ?TAG_entry_point,
+   :  ?TAG_lexical_block, ?TAG_label, ?TAG_with_stmt, ?TAG_try_block,
+   :  ?TAG_catch_block)
    : dup (@entry_pc, @low_pc, @ranges)
    : swap parent* ?root
-   : !(@stmt_list @address ?eq) swap
+   : !(@stmt_list lineaddr ?eq) swap
    : "Address %s referenced from %s not found in line table."
 
    - XXX
-     : winfo (?subprogram, ?inline_subroutine, ?entry_point, ?lexical_block,
-     :        ?label, ?with_stmt, ?try_block, ?catch_block) ->A;
+     : winfo (?TAG_subprogram, ?TAG_inline_subroutine, ?TAG_entry_point,
+     :        ?TAG_lexical_block, ?TAG_label, ?TAG_with_stmt, ?TAG_try_block,
+     :        ?TAG_catch_block) ->A;
      : A (@entry_pc, @low_pc, @ranges) ->B;
-     : A root !(@stmt_list @address B ?eq) ->C;
+     : A unit ?root !(@stmt_list lineaddr B ?eq) ->C;
      : "Address %( B %) referenced from %( C %) not found in line table."
 
 ** contains DW_OP_fbreg && ! @frame_base
@@ -1235,19 +1246,19 @@
 ** types inconsistent between instance and specification
    - http://gcc.gnu.org/bugzilla/show_bug.cgi?id=43053
 
-   : ?subprogram dup @specification 2/(child ?formal_parameter)
+   : ?TAG_subprogram dup @specification 2/(child ?TAG_formal_parameter)
    : ?(2/pos ?eq) ?(2/@type !eq)
 
    - XXX
-     : winfo ?subprogram ->A;
-     : A child ?formal_parameter ->B;
-     : A @specification child ?formal_parameter ->C;
+     : winfo ?TAG_subprogram ->A;
+     : A child ?TAG_formal_parameter ->B;
+     : A @specification child ?TAG_formal_parameter ->C;
      : • ?(B C <pos>?eq <@type>!eq) A
      : • ?(B pos C pos ?eq) ?(B @type C @type !eq) A
      : • ?(B C ?({pos} 2/ ?eq) ?({@type} 2/ !eq)) A
 
-     : <winfo ?subprogram dup @specification>
-     : child ?formal_parameter ?(pos <> ?eq) ?(@type <> !eq) <>
+     : <winfo ?TAG_subprogram dup @specification>
+     : child ?TAG_formal_parameter ?(pos <> ?eq) ?(@type <> !eq) <>
 
      - <EXPR₁ EXPR₂ … > would create a nodeset.  <> is the
        corresponding operator that pushes the individual nodes back to
@@ -1272,15 +1283,20 @@
 ** duplicat DW_TAG_const_type
    - http://gcc.gnu.org/bugzilla/show_bug.cgi?id=56740
 
-   : winfo dup unit ?gt 2/(?const_type, ?volatile_type, ?restrict_type)
+   : winfo dup unit ?gt
+   : 2/(?TAG_const_type, ?TAG_volatile_type, ?TAG_restrict_type)
    : ?(2/tag ?eq) ?(2/@type ?eq)
 
    - XXX
-     : winfo dup unit ?gt {?const_type, ?volatile_type, ?restrict_type} 2/
+     : winfo dup unit ?gt
+     : {?TAG_const_type, ?TAG_volatile_type, ?TAG_restrict_type} 2/
      : • ?({tag} 2/ ?eq) ?({@type} 2/ ?eq)
      : • <tag>?eq <@type>?eq
 
-     : def ?cvr_type { ?const_type || ?volatile_type || ?restrict_type }
+     : def ?cvr_type {
+     :   ?TAG_const_type || ?TAG_volatile_type || ?TAG_restrict_type
+     : }
+     :
      : winfo ?cvr_type -> A;
      : A unit ?gt ?cvr_type -> B;
      : A B ?(<tag>?eq <type>?eq)
@@ -1307,23 +1323,23 @@
    Check for two full DW_TAG_variable DIEs with the same DW_AT_name
    value.
 
-   : winfo dup 2/(child ?variable) ?lt ?(2/@name ?eq)
+   : winfo dup 2/(child ?TAG_variable) ?lt ?(2/@name ?eq)
 
-   : winfo dup next+ 2/?variable ?(2/@name ?eq)
+   : winfo dup next+ 2/?TAG_variable ?(2/@name ?eq)
 
    - XXX
      : winfo -> A;
-     : ?(A child ?variable -> B;
-     :   A child ?variable ?(B ?lt) -> C;
+     : ?(A child ?TAG_variable -> B;
+     :   A child ?TAG_variable ?(B ?lt) -> C;
      :   B @name C @name ?eq)
 
      : winfo -> A;
-     : ?(A child ?variable
-     :   A child ?variable ?lt <@name>?eq)
+     : ?(A child ?TAG_variable
+     :   A child ?TAG_variable ?lt <@name>?eq)
 
-     : winfo ?(dup <child ?variable>?lt <@name>?eq)
+     : winfo ?(dup <child ?TAG_variable>?lt <@name>?eq)
 
-     : winfo dup next+ <?variable @name>?eq
+     : winfo dup next+ <?TAG_variable @name>?eq
 
 ** check_linkage_external_die.cc
 
@@ -1402,22 +1418,22 @@
 
 ** CU A imports two PU's B and C, and both import the same third PU
 
-   : ?root dup dup 2/(CU ?imported_unit @import) ?lt
-   : [2/(unit ?imported_unit @import) ?eq] elem ?first
+   : ?root dup dup 2/(CU ?TAG_imported_unit @import) ?lt
+   : [2/(unit ?TAG_imported_unit @import) ?eq] elem ?first
    : "PU %s is imported by PU's %s and %s, which are both imported by %s"
 
    - What the following XQuery really does:
 
-     : ?root ?(dup 2/(unit ?imported_unit @import) ?lt
-     :             2/(unit ?imported_unit @import) ?eq)
+     : ?root ?(dup 2/(unit ?TAG_imported_unit @import) ?lt
+     :             2/(unit ?TAG_imported_unit @import) ?eq)
 
    - XXX:
      : def root {parent while !root}
      :
      : winfo ?root ->U;
-     : U child ?imported_unit @import ->A;
-     : U child ?imported_unit @import ?(A ?lt) ->B;
-     : ?(A B <root child ?imported_unit @import>?eq)
+     : U child ?TAG_imported_unit @import ->A;
+     : U child ?TAG_imported_unit @import ?(A ?lt) ->B;
+     : ?(A B <root child ?TAG_imported_unit @import>?eq)
      : U A B
 
    - XQuery:
@@ -1444,8 +1460,8 @@
      [7b] typedef __off64_t long int (signed, 8 bytes);
      [...]
 
-     : winfo ?typedef ->T;
-     : T @type (?typedef @type)* !typedef ->U;
+     : winfo ?TAG_typedef ->T;
+     : T @type (?TAG_typedef @type)* !typedef ->U;
      : "[%(T offset%)] typedef %(T @name%) %(U @name%) "\
      : "(%( U @encoding || "???" %), %( U @byte_size || "???" %) bytes)"
 
@@ -1456,8 +1472,8 @@
      [0xa7] typedef size_t long unsigned int (DW_ATE_unsigned, 8 bytes)
      [...]
 
-     : winfo ?typedef ->A;
-     : A do @type while ?typedef ->B;
+     : winfo ?TAG_typedef ->A;
+     : A do @type while ?TAG_typedef ->B;
      : "[%(A offset%)] typedef %(A @name%) %(B @name%) "\
      : "(%( B @encoding || "???" %), %( B @byte_size || "???" %) bytes)"
 

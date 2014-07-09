@@ -72,10 +72,7 @@ namespace
 
       case tree_type::CAT: case tree_type::READ: case tree_type::EMPTY_LIST:
       case tree_type::TRANSFORM: case tree_type::NOP: case tree_type::PRED_AT:
-      case tree_type::PRED_TAG: case tree_type::PRED_EQ:
-      case tree_type::PRED_NE: case tree_type::PRED_GT:
-      case tree_type::PRED_GE: case tree_type::PRED_LT:
-      case tree_type::PRED_LE: case tree_type::PRED_FIND:
+      case tree_type::PRED_TAG: case tree_type::PRED_FIND:
       case tree_type::PRED_MATCH: case tree_type::PRED_EMPTY:
       case tree_type::PRED_ROOT: case tree_type::PRED_AND:
       case tree_type::PRED_OR: case tree_type::PRED_NOT:

@@ -78,19 +78,6 @@ BIN [01]
 
 "winfo" return TOK_WINFO;
 
-"?eq" return TOK_QMARK_EQ;
-"!eq" return TOK_BANG_EQ;
-"?ne" return TOK_QMARK_NE;
-"!ne" return TOK_BANG_NE;
-"?lt" return TOK_QMARK_LT;
-"!lt" return TOK_BANG_LT;
-"?gt" return TOK_QMARK_GT;
-"!gt" return TOK_BANG_GT;
-"?le" return TOK_QMARK_LE;
-"!le" return TOK_BANG_LE;
-"?ge" return TOK_QMARK_GE;
-"!ge" return TOK_BANG_GE;
-
 "?match" return TOK_QMARK_MATCH;
 "!match" return TOK_BANG_MATCH;
 "?find" return TOK_QMARK_FIND;
@@ -101,9 +88,7 @@ BIN [01]
 "?root" return TOK_QMARK_ROOT;
 "!root" return TOK_BANG_ROOT;
 
-{ID} return pass_string (yyscanner, yylval, TOK_WORD);
-"?"{ID} return pass_string (yyscanner, yylval, TOK_QMARK_WORD);
-"!"{ID} return pass_string (yyscanner, yylval, TOK_BANG_WORD);
+[?!]?{ID} return pass_string (yyscanner, yylval, TOK_WORD);
 
 "@"{ID} return pass_string (yyscanner, yylval, TOK_AT_WORD, 1);
 "?@"{ID} return pass_string (yyscanner, yylval, TOK_QMARK_AT_WORD, 2);
