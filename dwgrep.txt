@@ -405,9 +405,9 @@
   - assertions inspect TOS (or several values on TOS), test the
     condition, and either leave the stack unchanged, or abort the
     computation.  They do not pop.  This includes ?@at, !@at, ?tag,
-    !tag, ?(), !(), ?all(), ?eq, !eq, ?gt, ?match, etc.  All
-    assertions start either with a ? (if it's positive assertion), or
-    with a ! (if it's negative assertion).
+    !tag, ?(), !(), ?eq, !eq, ?gt, ?match, etc.  All assertions start
+    either with a ? (if it's positive assertion), or with a ! (if it's
+    negative assertion).
 
   - stack shuffling operators (swap, drop, dup, ...) reorder values on
     the stack

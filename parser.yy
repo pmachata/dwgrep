@@ -167,7 +167,6 @@
 %token TOK_LPAREN TOK_RPAREN TOK_LBRACKET TOK_RBRACKET
 
 %token TOK_QMARK_LPAREN TOK_BANG_LPAREN TOK_LBRACE TOK_RBRACE
-%token TOK_QMARK_ALL_LPAREN TOK_BANG_ALL_LPAREN
 
 %token TOK_ASTERISK TOK_PLUS TOK_QMARK TOK_MINUS TOK_COMMA TOK_SEMICOLON
 %token TOK_DOUBLE_VBAR TOK_SLASH TOK_ARROW
@@ -277,18 +276,6 @@ Statement:
   | TOK_BANG_LPAREN Program TOK_RPAREN
   {
     auto t = tree::create_unary <tree_type::PRED_SUBX_ANY> ($2);
-    auto u = tree::create_neg (t);
-    $$ = tree::create_assert (u);
-  }
-
-  | TOK_QMARK_ALL_LPAREN Program TOK_RPAREN
-  {
-    auto t = tree::create_unary <tree_type::PRED_SUBX_ALL> ($2);
-    $$ = tree::create_assert (t);
-  }
-  | TOK_BANG_ALL_LPAREN Program TOK_RPAREN
-  {
-    auto t = tree::create_unary <tree_type::PRED_SUBX_ALL> ($2);
     auto u = tree::create_neg (t);
     $$ = tree::create_assert (u);
   }

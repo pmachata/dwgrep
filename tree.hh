@@ -54,8 +54,7 @@ enum class tree_arity_v
 // modeled using PRED_NOT.  In particular, IF is expanded into (!empty
 // drop), ELSE into (?empty drop).
 //
-// PRED_SUBX_ALL, PRED_SUBX_ANY -- For holding ?all{X} and ?{X}.
-// !all{X} and !{} are modeled using PRED_NOT.
+// PRED_SUBX_ANY -- For holding ?(X).  !() is modeled using PRED_NOT.
 //
 // CONST -- For holding named constants and integer literals.
 //
@@ -95,7 +94,6 @@ enum class tree_arity_v
   TREE_TYPE (PRED_AND, BINARY)			\
   TREE_TYPE (PRED_OR, BINARY)			\
   TREE_TYPE (PRED_NOT, UNARY)			\
-  TREE_TYPE (PRED_SUBX_ALL, UNARY)		\
   TREE_TYPE (PRED_SUBX_ANY, UNARY)		\
   TREE_TYPE (PRED_LAST, NULLARY)		\
   TREE_TYPE (CONST, CST)			\

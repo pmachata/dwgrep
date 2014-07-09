@@ -54,7 +54,6 @@ tree::build_pred (dwgrep_graph::sptr q, std::shared_ptr <scope> scope) const
 
     case tree_type::PRED_FIND:
     case tree_type::PRED_LAST:
-    case tree_type::PRED_SUBX_ALL:
       std::cerr << "\n\nUNHANDLED:" << *this << std::endl;
       abort ();
 
@@ -364,7 +363,6 @@ tree::build_exec (std::shared_ptr <op> upstream, dwgrep_graph::sptr q,
     case tree_type::PRED_AND:
     case tree_type::PRED_OR:
     case tree_type::PRED_NOT:
-    case tree_type::PRED_SUBX_ALL:
     case tree_type::PRED_SUBX_ANY:
     case tree_type::PRED_LAST:
       assert (! "Should never get here.");
