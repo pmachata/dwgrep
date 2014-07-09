@@ -278,15 +278,15 @@
 ** Literals, Strings, Formatting
 
    dwgrep understands roughly C-like string literals, using \ as an
-   escape character.  Hello world looks like this in dwgrep:
+   escape character.  Hello world program looks like this in dwgrep:
 
    : "Hello world!"
 
    This is an example of a string literal.  Literals in dwgrep add
-   themselves to the stack.  There are many literals in dwgrep--apart
-   from strings and usual numeric literals, dwgrep knows about all the
-   named Dwarf constants--e.g. DW_AT_name, DW_TAG_array_type,
-   DW_FORM_flag, etc. are all valid dwgrep forms.
+   themselves to the stack.  There are many types of literals in
+   dwgrep--apart from strings and usual numeric literals, dwgrep knows
+   about all the named Dwarf constants--e.g. DW_AT_name,
+   DW_TAG_array_type, DW_FORM_flag, etc. are all valid dwgrep forms.
 
    Like C printf, string literals in dwgrep allow formatting
    directives.  To write a nice error message for our running example,
@@ -317,7 +317,13 @@
 
 ** ->X; — name binding
 
-   XXX
+   Often you need to refer back to a value that was computed earlier.
+   Since this is a stack machine, one way to do this is to use stack
+   shuffling words--dup, swap, rot, over and drop--to move stuff
+   around the way you need it.  But keeping track of what is where
+   when gets old quickly.  For this reason, dwgrep allows that you
+   give value a name.  That removes that value from the stack, and
+   introduces a word that, when mentioned, pushes that value to stack.
 
    : winfo ?subprogram !@declaration ->S;
    : S child ?formal_parameter
@@ -329,7 +335,7 @@
    which value is perhaps not too comfortable.  For that reason,
    dwgrep allows interpolation of expressions in strings.
 
-** %( %) — string interpolation
+** %( %) — embedding expressions in formatting strings
 
    In formatting string, code between %( and the matching %) is
    evaluated in plain context, after which TOS of the result is popped
