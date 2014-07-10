@@ -67,7 +67,6 @@ tree::build_pred (dwgrep_graph::sptr q, std::shared_ptr <scope> scope) const
     case tree_type::CONST:
     case tree_type::STR:
     case tree_type::FORMAT:
-    case tree_type::F_ATTR_NAMED:
     case tree_type::F_PREV:
     case tree_type::F_NEXT:
     case tree_type::F_TYPE:
@@ -155,10 +154,6 @@ tree::build_exec (std::shared_ptr <op> upstream, dwgrep_graph::sptr q,
     case tree_type::ASSERT:
       return std::make_shared <op_assert>
 	(upstream, m_children.front ().build_pred (q, scope));
-
-    case tree_type::F_ATTR_NAMED:
-      return std::make_shared <op_f_attr_named>
-	(upstream, q, int (cst ().value ().get_ui ()));
 
     case tree_type::F_VALUE:
       return std::make_shared <op_f_value> (upstream, q);

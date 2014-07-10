@@ -99,26 +99,6 @@ dwop_f::next ()
   return nullptr;
 }
 
-bool
-op_f_attr_named::operate (valfile &vf, Dwarf_Die &die)
-{
-  Dwarf_Attribute attr;
-  if (dwarf_attr_integrate (&die, m_name, &attr) == nullptr)
-    return false;
-
-  vf.push (std::make_unique <value_attr> (m_g, attr, die, 0));
-  return true;
-}
-
-std::string
-op_f_attr_named::name () const
-{
-  std::stringstream ss;
-  ss << "f_attr_named<" << m_name << ">";
-  return ss.str ();
-}
-
-
 valfile::uptr
 op_f_value::next ()
 {

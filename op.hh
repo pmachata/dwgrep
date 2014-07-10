@@ -181,22 +181,6 @@ public:
   { return false; }
 };
 
-class op_f_attr_named
-  : public dwop_f
-{
-  int m_name;
-
-public:
-  op_f_attr_named (std::shared_ptr <op> upstream, dwgrep_graph::sptr g,
-		   int name)
-    : dwop_f {upstream, g}
-    , m_name {name}
-  {}
-
-  std::string name () const override;
-  bool operate (valfile &vf, Dwarf_Die &die) override;
-};
-
 // The stringer hieararchy supports op_format, which implements
 // formatting strings.  They are written similarly to op's, except
 // they send along next() a work-in-progress string in addition to

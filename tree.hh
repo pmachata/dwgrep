@@ -98,7 +98,6 @@ enum class tree_arity_v
   TREE_TYPE (CONST, CST)			\
   TREE_TYPE (STR, STR)				\
   TREE_TYPE (FORMAT, NULLARY)			\
-  TREE_TYPE (F_ATTR_NAMED, CST)			\
   TREE_TYPE (F_PREV, NULLARY)			\
   TREE_TYPE (F_NEXT, NULLARY)			\
   TREE_TYPE (F_TYPE, NULLARY)			\

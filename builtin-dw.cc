@@ -1,11 +1,13 @@
 #include <memory>
 #include "make_unique.hh"
+#include <sstream>
 
 #include "builtin.hh"
 #include "dwit.hh"
 #include "op.hh"
 #include "dwpp.hh"
 #include "dwcst.hh"
+#include "known-dwarf.h"
 
 static struct
   : public builtin
@@ -612,8 +614,70 @@ static struct
   }
 } builtin_parent;
 
+namespace
+{
+  struct builtin_attr_named
+    : public builtin
+  {
+    int m_name;
+    explicit builtin_attr_named (int name)
+      : m_name {name}
+    {}
+
+    struct o
+      : public dwop_f
+    {
+      int m_name;
+
+    public:
+      o (std::shared_ptr <op> upstream, dwgrep_graph::sptr g, int name)
+	: dwop_f {upstream, g}
+	, m_name {name}
+      {}
+
+      bool
+      operate (valfile &vf, Dwarf_Die &die) override
+      {
+	Dwarf_Attribute attr;
+	if (dwarf_attr_integrate (&die, m_name, &attr) == nullptr)
+	  return false;
+
+	vf.push (std::make_unique <value_attr> (m_g, attr, die, 0));
+	return true;
+      }
+
+      std::string
+      name () const override
+      {
+	std::stringstream ss;
+	ss << "@attr<" << m_name << ">";
+	return ss.str ();
+      }
+    };
+
+    std::shared_ptr <op>
+    build_exec (std::shared_ptr <op> upstream, dwgrep_graph::sptr q,
+		std::shared_ptr <scope> scope) const override
+    {
+      auto t = std::make_shared <o> (upstream, q, m_name);
+      return std::make_shared <op_f_value> (t, q);
+    }
+
+    char const *
+    name () const override
+    {
+      return "@attr";
+    }
+  };
+}
+
+#define ONE_KNOWN_DW_AT(NAME, CODE)		\
+  static builtin_attr_named builtin_attr_##NAME {CODE};
+ALL_KNOWN_DW_AT
+#undef ONE_KNOWN_DW_AT
+
 static struct
-: public pred_builtin
+  : public pred_builtin
 {
   using pred_builtin::pred_builtin;
 
@@ -685,6 +749,11 @@ static struct register_dw
     add_builtin (builtin_tag);
     add_builtin (builtin_form);
     add_builtin (builtin_parent);
+
+#define ONE_KNOWN_DW_AT(NAME, CODE)		\
+    add_builtin (builtin_attr_##NAME, "@" #NAME);
+    ALL_KNOWN_DW_AT
+#undef ONE_KNOWN_DW_AT
 
     add_builtin (builtin_rootp);
     add_builtin (builtin_nrootp);
