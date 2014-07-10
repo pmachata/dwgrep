@@ -71,7 +71,7 @@ namespace
 	return t;
 
       case tree_type::CAT: case tree_type::READ: case tree_type::EMPTY_LIST:
-      case tree_type::TRANSFORM: case tree_type::NOP: case tree_type::PRED_AT:
+      case tree_type::TRANSFORM: case tree_type::NOP:
       case tree_type::PRED_TAG: case tree_type::PRED_FIND:
       case tree_type::PRED_MATCH: case tree_type::PRED_EMPTY:
       case tree_type::PRED_AND:

@@ -73,10 +73,7 @@ BIN [01]
 "?empty" return TOK_QMARK_EMPTY;
 "!empty" return TOK_BANG_EMPTY;
 
-[?!@]?{ID} return pass_string (yyscanner, yylval, TOK_WORD);
-
-"?@"{ID} return pass_string (yyscanner, yylval, TOK_QMARK_AT_WORD, 2);
-"!@"{ID} return pass_string (yyscanner, yylval, TOK_BANG_AT_WORD, 2);
+[?!]?[@]?{ID} return pass_string (yyscanner, yylval, TOK_WORD);
 
 "\"" {
   BEGIN STRING;

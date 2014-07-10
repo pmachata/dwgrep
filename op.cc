@@ -76,30 +76,6 @@ op_assert::name () const
 }
 
 valfile::uptr
-dwop_f::next ()
-{
-  while (auto vf = m_upstream->next ())
-    {
-      auto vp = vf->pop ();
-      if (auto v = value::as <value_die> (&*vp))
-	{
-	  if (operate (*vf, v->get_die ()))
-	    return vf;
-	}
-      else if (auto v = value::as <value_attr> (&*vp))
-	{
-	  if (operate (*vf, v->get_attr (), v->get_die ()))
-	    return vf;
-	}
-      else
-	std::cerr << "Error: " << name ()
-		  << " expects a T_NODE or T_ATTR on TOS.\n";
-    }
-
-  return nullptr;
-}
-
-valfile::uptr
 op_f_value::next ()
 {
   while (auto vf = m_upstream->next ())
@@ -1546,32 +1522,6 @@ pred_or::name () const
 {
   std::stringstream ss;
   ss << "or<" << m_a->name () << "><" << m_b->name () << ">";
-  return ss.str ();
-}
-
-pred_result
-pred_at::result (valfile &vf)
-{
-  if (auto v = vf.top_as <value_die> ())
-    {
-      Dwarf_Die *die = &v->get_die ();
-      return pred_result (dwarf_hasattr_integrate (die, m_atname) != 0);
-    }
-  else if (auto v = vf.top_as <value_attr> ())
-    return pred_result (dwarf_whatattr (&v->get_attr ()) == m_atname);
-  else
-    {
-      std::cerr << "Error: `?@" << constant {m_atname, &dw_attr_short_dom}
-		<< "' expects a T_NODE or T_ATTR on TOS.\n";
-      return pred_result::fail;
-    }
-}
-
-std::string
-pred_at::name () const
-{
-  std::stringstream ss;
-  ss << "pred_at<" << constant {m_atname, &dw_attr_dom} << ">";
   return ss.str ();
 }
 

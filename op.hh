@@ -153,34 +153,6 @@ public:
   void reset () override;
 };
 
-class dwop_f
-  : public op
-{
-  std::shared_ptr <op> m_upstream;
-
-protected:
-  dwgrep_graph::sptr m_g;
-
-public:
-  dwop_f (std::shared_ptr <op> upstream, dwgrep_graph::sptr gr)
-    : m_upstream {upstream}
-    , m_g {gr}
-  {}
-
-  valfile::uptr next () override final;
-
-  void reset () override final
-  { m_upstream->reset (); }
-
-  virtual std::string name () const override = 0;
-
-  virtual bool operate (valfile &vf, Dwarf_Die &die)
-  { return false; }
-
-  virtual bool operate (valfile &vf, Dwarf_Attribute &attr, Dwarf_Die &die)
-  { return false; }
-};
-
 // The stringer hieararchy supports op_format, which implements
 // formatting strings.  They are written similarly to op's, except
 // they send along next() a work-in-progress string in addition to
@@ -735,21 +707,6 @@ public:
     m_a->reset ();
     m_b->reset ();
   }
-};
-
-class pred_at
-  : public pred
-{
-  unsigned m_atname;
-
-public:
-  explicit pred_at (unsigned atname)
-    : m_atname (atname)
-  {}
-
-  pred_result result (valfile &vf) override;
-  std::string name () const override;
-  void reset () override {}
 };
 
 class pred_tag

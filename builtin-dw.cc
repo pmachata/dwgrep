@@ -395,6 +395,59 @@ static struct
   }
 } builtin_attribute;
 
+namespace
+{
+  class dwop_f
+    : public op
+  {
+    std::shared_ptr <op> m_upstream;
+
+  protected:
+    dwgrep_graph::sptr m_g;
+
+  public:
+    dwop_f (std::shared_ptr <op> upstream, dwgrep_graph::sptr gr)
+      : m_upstream {upstream}
+      , m_g {gr}
+    {}
+
+    valfile::uptr
+    next () override final
+    {
+      while (auto vf = m_upstream->next ())
+	{
+	  auto vp = vf->pop ();
+	  if (auto v = value::as <value_die> (&*vp))
+	    {
+	      if (operate (*vf, v->get_die ()))
+		return vf;
+	    }
+	  else if (auto v = value::as <value_attr> (&*vp))
+	    {
+	      if (operate (*vf, v->get_attr (), v->get_die ()))
+		return vf;
+	    }
+	  else
+	    std::cerr << "Error: " << name ()
+		      << " expects a T_NODE or T_ATTR on TOS.\n";
+	}
+
+      return nullptr;
+    }
+
+    void reset () override final
+    { m_upstream->reset (); }
+
+    virtual std::string name () const override = 0;
+
+    virtual bool operate (valfile &vf, Dwarf_Die &die)
+    { return false; }
+
+    virtual bool operate (valfile &vf, Dwarf_Attribute &attr, Dwarf_Die &die)
+    { return false; }
+  };
+}
+
 static struct
   : public builtin
 {
@@ -614,68 +667,6 @@ static struct
   }
 } builtin_parent;
 
-namespace
-{
-  struct builtin_attr_named
-    : public builtin
-  {
-    int m_name;
-    explicit builtin_attr_named (int name)
-      : m_name {name}
-    {}
-
-    struct o
-      : public dwop_f
-    {
-      int m_name;
-
-    public:
-      o (std::shared_ptr <op> upstream, dwgrep_graph::sptr g, int name)
-	: dwop_f {upstream, g}
-	, m_name {name}
-      {}
-
-      bool
-      operate (valfile &vf, Dwarf_Die &die) override
-      {
-	Dwarf_Attribute attr;
-	if (dwarf_attr_integrate (&die, m_name, &attr) == nullptr)
-	  return false;
-
-	vf.push (std::make_unique <value_attr> (m_g, attr, die, 0));
-	return true;
-      }
-
-      std::string
-      name () const override
-      {
-	std::stringstream ss;
-	ss << "@attr<" << m_name << ">";
-	return ss.str ();
-      }
-    };
-
-    std::shared_ptr <op>
-    build_exec (std::shared_ptr <op> upstream, dwgrep_graph::sptr q,
-		std::shared_ptr <scope> scope) const override
-    {
-      auto t = std::make_shared <o> (upstream, q, m_name);
-      return std::make_shared <op_f_value> (t, q);
-    }
-
-    char const *
-    name () const override
-    {
-      return "@attr";
-    }
-  };
-}
-
-#define ONE_KNOWN_DW_AT(NAME, CODE)		\
-  static builtin_attr_named builtin_attr_##NAME {CODE};
-ALL_KNOWN_DW_AT
-#undef ONE_KNOWN_DW_AT
-
 static struct
   : public pred_builtin
 {
@@ -735,6 +726,142 @@ static struct
   }
 } builtin_rootp {true}, builtin_nrootp {false};
 
+namespace
+{
+  struct builtin_attr_named
+    : public builtin
+  {
+    int m_atname;
+    explicit builtin_attr_named (int atname)
+      : m_atname {atname}
+    {}
+
+    struct o
+      : public dwop_f
+    {
+      int m_atname;
+
+    public:
+      o (std::shared_ptr <op> upstream, dwgrep_graph::sptr g, int atname)
+	: dwop_f {upstream, g}
+	, m_atname {atname}
+      {}
+
+      bool
+      operate (valfile &vf, Dwarf_Die &die) override
+      {
+	Dwarf_Attribute attr;
+	if (dwarf_attr_integrate (&die, m_atname, &attr) == nullptr)
+	  return false;
+
+	vf.push (std::make_unique <value_attr> (m_g, attr, die, 0));
+	return true;
+      }
+
+      std::string
+      name () const override
+      {
+	std::stringstream ss;
+	ss << "@" << constant {m_atname, &dw_attr_dom};
+	return ss.str ();
+      }
+    };
+
+    std::shared_ptr <op>
+    build_exec (std::shared_ptr <op> upstream, dwgrep_graph::sptr q,
+		std::shared_ptr <scope> scope) const override
+    {
+      auto t = std::make_shared <o> (upstream, q, m_atname);
+      return std::make_shared <op_f_value> (t, q);
+    }
+
+    char const *
+    name () const override
+    {
+      return "@attr";
+    }
+  };
+}
+
+#define ONE_KNOWN_DW_AT(NAME, CODE)		\
+  static builtin_attr_named builtin_attr_##NAME {CODE};
+ALL_KNOWN_DW_AT
+#undef ONE_KNOWN_DW_AT
+
+namespace
+{
+  struct builtin_pred_attr
+    : public pred_builtin
+  {
+    int m_atname;
+    builtin_pred_attr (int atname, bool positive)
+      : pred_builtin {positive}
+      , m_atname {atname}
+    {}
+
+    struct p
+      : public pred
+    {
+      unsigned m_atname;
+
+      explicit p (unsigned atname)
+	: m_atname (atname)
+      {}
+
+      pred_result
+      result (valfile &vf) override
+      {
+	if (auto v = vf.top_as <value_die> ())
+	  {
+	    Dwarf_Die *die = &v->get_die ();
+	    return pred_result (dwarf_hasattr_integrate (die, m_atname) != 0);
+	  }
+	else if (auto v = vf.top_as <value_attr> ())
+	  return pred_result (dwarf_whatattr (&v->get_attr ()) == m_atname);
+	else
+	  {
+	    std::cerr << "Error: `?AT_"
+		      << constant {m_atname, &dw_attr_short_dom}
+		      << "' expects a T_NODE or T_ATTR on TOS.\n";
+	    return pred_result::fail;
+	  }
+      }
+
+      void reset () override {}
+
+      std::string
+      name () const override
+      {
+	std::stringstream ss;
+	ss << "?AT_" << constant {m_atname, &dw_attr_short_dom};
+	return ss.str ();
+      }
+    };
+
+    std::unique_ptr <pred>
+    build_pred (dwgrep_graph::sptr q,
+		std::shared_ptr <scope> scope) const override
+    {
+      return maybe_invert (std::make_unique <p> (m_atname));
+    }
+
+    char const *
+    name () const override
+    {
+      if (m_positive)
+	return "?attr";
+      else
+	return "!attr";
+    }
+  };
+}
+
+#define ONE_KNOWN_DW_AT(NAME, CODE)					\
+  static builtin_pred_attr builtin_pred_attr_##NAME {CODE, true},	\
+    builtin_pred_nattr_##NAME {CODE, false};
+ALL_KNOWN_DW_AT
+#undef ONE_KNOWN_DW_AT
+
 static struct register_dw
 {
   register_dw ()
@@ -750,8 +877,10 @@ static struct register_dw
     add_builtin (builtin_form);
     add_builtin (builtin_parent);
 
-#define ONE_KNOWN_DW_AT(NAME, CODE)		\
-    add_builtin (builtin_attr_##NAME, "@" #NAME);
+#define ONE_KNOWN_DW_AT(NAME, CODE)				\
+    add_builtin (builtin_attr_##NAME, "@" #NAME);		\
+    add_builtin (builtin_pred_attr_##NAME, "?@" #NAME);	\
+    add_builtin (builtin_pred_nattr_##NAME, "!@" #NAME);
     ALL_KNOWN_DW_AT
 #undef ONE_KNOWN_DW_AT
 

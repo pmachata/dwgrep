@@ -15,9 +15,6 @@ tree::build_pred (dwgrep_graph::sptr q, std::shared_ptr <scope> scope) const
     case tree_type::PRED_TAG:
       return std::make_unique <pred_tag> (cst ().value ().get_ui ());
 
-    case tree_type::PRED_AT:
-      return std::make_unique <pred_at> (cst ().value ().get_ui ());
-
     case tree_type::PRED_NOT:
       return std::make_unique <pred_not>
 	(m_children.front ().build_pred (q, scope));
@@ -311,7 +308,6 @@ tree::build_exec (std::shared_ptr <op> upstream, dwgrep_graph::sptr q,
       abort ();
 
     case tree_type::PRED_TAG:
-    case tree_type::PRED_AT:
     case tree_type::PRED_FIND:
     case tree_type::PRED_MATCH:
     case tree_type::PRED_EMPTY:

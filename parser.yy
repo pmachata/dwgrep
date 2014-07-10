@@ -179,8 +179,6 @@
 %token TOK_QMARK_MATCH TOK_QMARK_FIND TOK_QMARK_EMPTY
 %token TOK_BANG_MATCH TOK_BANG_FIND TOK_BANG_EMPTY
 
-%token TOK_QMARK_AT_WORD TOK_BANG_AT_WORD
-
 %token TOK_WORD TOK_LIT_STR TOK_LIT_INT
 
 %token TOK_UNIVERSE TOK_SECTION TOK_DEBUG
@@ -198,7 +196,6 @@
 %type <ids> IdList IdListOpt
 %type <s> TOK_LIT_INT
 %type <s> TOK_WORD
-%type <s> TOK_QMARK_AT_WORD TOK_BANG_AT_WORD
 %type <t> TOK_LIT_STR
 
 %%
@@ -448,22 +445,6 @@ Statement:
   { $$ = positive_assert <tree_type::PRED_EMPTY> (); }
   | TOK_BANG_EMPTY
   { $$ = negative_assert <tree_type::PRED_EMPTY> (); }
-
-  | TOK_QMARK_AT_WORD
-  {
-    std::string str {$1.buf, $1.len};
-    auto t = tree::create_const <tree_type::PRED_AT>
-      (constant::parse_attr (str));
-    $$ = tree::create_assert (t);
-  }
-  | TOK_BANG_AT_WORD
-  {
-    std::string str {$1.buf, $1.len};
-    auto t = tree::create_const <tree_type::PRED_AT>
-      (constant::parse_attr (str));
-    auto u = tree::create_neg (t);
-    $$ = tree::create_assert (u);
-  }
 
 %%
 
