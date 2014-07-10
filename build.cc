@@ -70,15 +70,10 @@ tree::build_pred (dwgrep_graph::sptr q, std::shared_ptr <scope> scope) const
     case tree_type::CONST:
     case tree_type::STR:
     case tree_type::FORMAT:
-    case tree_type::F_PARENT:
     case tree_type::F_ATTR_NAMED:
     case tree_type::F_PREV:
     case tree_type::F_NEXT:
     case tree_type::F_TYPE:
-    case tree_type::F_OFFSET:
-    case tree_type::F_NAME:
-    case tree_type::F_TAG:
-    case tree_type::F_FORM:
     case tree_type::F_VALUE:
     case tree_type::F_CAST:
     case tree_type::F_POS:
@@ -168,23 +163,8 @@ tree::build_exec (std::shared_ptr <op> upstream, dwgrep_graph::sptr q,
       return std::make_shared <op_f_attr_named>
 	(upstream, q, int (cst ().value ().get_ui ()));
 
-    case tree_type::F_OFFSET:
-      return std::make_shared <op_f_offset> (upstream, q);
-
-    case tree_type::F_NAME:
-      return std::make_shared <op_f_name> (upstream, q);
-
-    case tree_type::F_TAG:
-      return std::make_shared <op_f_tag> (upstream, q);
-
-    case tree_type::F_FORM:
-      return std::make_shared <op_f_form> (upstream, q);
-
     case tree_type::F_VALUE:
       return std::make_shared <op_f_value> (upstream, q);
-
-    case tree_type::F_PARENT:
-      return std::make_shared <op_f_parent> (upstream, q);
 
     case tree_type::FORMAT:
       {

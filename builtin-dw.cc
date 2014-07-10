@@ -5,6 +5,7 @@
 #include "dwit.hh"
 #include "op.hh"
 #include "dwpp.hh"
+#include "dwcst.hh"
 
 static struct
   : public builtin
@@ -392,13 +393,238 @@ static struct
   }
 } builtin_attribute;
 
+static struct
+  : public builtin
+{
+  struct offset
+    : public dwop_f
+  {
+    using dwop_f::dwop_f;
+
+    bool
+    operate (valfile &vf, Dwarf_Die &die) override
+    {
+      Dwarf_Off off = dwarf_dieoffset (&die);
+      auto cst = constant {off, &hex_constant_dom};
+      vf.push (std::make_unique <value_cst> (cst, 0));
+      return true;
+    }
+
+    std::string
+    name () const override
+    {
+      return "offset";
+    }
+  };
+
+  std::shared_ptr <op>
+  build_exec (std::shared_ptr <op> upstream, dwgrep_graph::sptr q,
+	      std::shared_ptr <scope> scope) const override
+  {
+    return std::make_shared <offset> (upstream, q);
+  }
+
+  char const *
+  name () const override
+  {
+    return "offset";
+  }
+} builtin_offset;
+
+namespace
+{
+  bool
+  operate_tag (valfile &vf, Dwarf_Die &die)
+  {
+    int tag = dwarf_tag (&die);
+    assert (tag >= 0);
+    constant cst {(unsigned) tag, &dw_tag_dom};
+    vf.push (std::make_unique <value_cst> (cst, 0));
+    return true;
+  }
+}
+
+static struct
+  : public builtin
+{
+  struct op
+    : public dwop_f
+  {
+    using dwop_f::dwop_f;
+
+    bool
+    operate (valfile &vf, Dwarf_Die &die) override
+    {
+      return operate_tag (vf, die);
+    }
+
+    bool
+    operate (valfile &vf, Dwarf_Attribute &attr, Dwarf_Die &die) override
+    {
+      unsigned name = dwarf_whatattr (&attr);
+      constant cst {name, &dw_attr_dom};
+      vf.push (std::make_unique <value_cst> (cst, 0));
+      return true;
+    }
+
+    std::string
+    name () const override
+    {
+      return "name";
+    }
+  };
+
+  std::shared_ptr < ::op>
+  build_exec (std::shared_ptr < ::op> upstream, dwgrep_graph::sptr q,
+	      std::shared_ptr <scope> scope) const override
+  {
+    return std::make_shared <op> (upstream, q);
+  }
+
+  char const *
+  name () const override
+  {
+    return "name";
+  }
+} builtin_name;
+
+static struct
+  : public builtin
+{
+  struct tag
+    : public dwop_f
+  {
+    using dwop_f::dwop_f;
+
+    bool
+    operate (valfile &vf, Dwarf_Die &die) override
+    {
+      return operate_tag (vf, die);
+    }
+
+    std::string
+    name () const override
+    {
+      return "tag";
+    }
+  };
+
+  std::shared_ptr <op>
+  build_exec (std::shared_ptr <op> upstream, dwgrep_graph::sptr q,
+	      std::shared_ptr <scope> scope) const override
+  {
+    return std::make_shared <tag> (upstream, q);
+  }
+
+  char const *
+  name () const override
+  {
+    return "tag";
+  }
+} builtin_tag;
+
+static struct
+  : public builtin
+{
+  struct form
+    : public dwop_f
+  {
+    using dwop_f::dwop_f;
+
+    bool
+    operate (valfile &vf, Dwarf_Attribute &attr, Dwarf_Die &die) override
+    {
+      unsigned name = dwarf_whatform (&attr);
+      constant cst {name, &dw_form_dom};
+      vf.push (std::make_unique <value_cst> (cst, 0));
+      return true;
+    }
+
+    std::string
+    name () const override
+    {
+      return "form";
+    }
+  };
+
+  std::shared_ptr <op>
+  build_exec (std::shared_ptr <op> upstream, dwgrep_graph::sptr q,
+	      std::shared_ptr <scope> scope) const override
+  {
+    return std::make_shared <form> (upstream, q);
+  }
+
+  char const *
+  name () const override
+  {
+    return "form";
+  }
+} builtin_form;
+
+static struct
+  : public builtin
+{
+  struct parent
+    : public dwop_f
+  {
+    using dwop_f::dwop_f;
+
+    bool
+    operate (valfile &vf, Dwarf_Die &die) override
+    {
+      Dwarf_Off par_off = m_g->find_parent (die);
+      if (par_off == dwgrep_graph::none_off)
+	return false;
+
+      Dwarf_Die par_die;
+      if (dwarf_offdie (&*m_g->dwarf, par_off, &par_die) == nullptr)
+	throw_libdw ();
+
+      vf.push (std::make_unique <value_die> (m_g, par_die, 0));
+      return true;
+    }
+
+    bool
+    operate (valfile &vf, Dwarf_Attribute &attr, Dwarf_Die &die) override
+    {
+      vf.push (std::make_unique <value_die> (m_g, die, 0));
+      return true;
+    }
+
+    std::string
+    name () const override
+    {
+      return "parent";
+    }
+  };
+
+  std::shared_ptr <op>
+  build_exec (std::shared_ptr <op> upstream, dwgrep_graph::sptr q,
+	      std::shared_ptr <scope> scope) const override
+  {
+    return std::make_shared <parent> (upstream, q);
+  }
+
+  char const *
+  name () const override
+  {
+    return "parent";
+  }
+} builtin_parent;
+
 static struct register_dw
 {
   register_dw ()
   {
     add_builtin (builtin_winfo);
     add_builtin (builtin_unit);
+
     add_builtin (builtin_child);
     add_builtin (builtin_attribute);
+    add_builtin (builtin_offset);
+    add_builtin (builtin_name);
+    add_builtin (builtin_tag);
+    add_builtin (builtin_form);
+    add_builtin (builtin_parent);
   }
 } register_dw;

@@ -118,82 +118,6 @@ op_f_attr_named::name () const
   return ss.str ();
 }
 
-bool
-op_f_offset::operate (valfile &vf, Dwarf_Die &die)
-{
-  Dwarf_Off off = dwarf_dieoffset (&die);
-  vf.push (std::make_unique <value_cst> (constant {off, &hex_constant_dom}, 0));
-  return true;
-}
-
-std::string
-op_f_offset::name () const
-{
-  return "f_offset";
-}
-
-namespace
-{
-  bool
-  operate_tag (valfile &vf, Dwarf_Die &die)
-  {
-    int tag = dwarf_tag (&die);
-    assert (tag >= 0);
-    constant cst {(unsigned) tag, &dw_tag_dom};
-    vf.push (std::make_unique <value_cst> (cst, 0));
-    return true;
-  }
-}
-
-bool
-op_f_name::operate (valfile &vf, Dwarf_Die &die)
-{
-  return operate_tag (vf, die);
-}
-
-bool
-op_f_name::operate (valfile &vf, Dwarf_Attribute &attr, Dwarf_Die &die)
-
-{
-  unsigned name = dwarf_whatattr (&attr);
-  constant cst {name, &dw_attr_dom};
-  vf.push (std::make_unique <value_cst> (cst, 0));
-  return true;
-}
-
-std::string
-op_f_name::name () const
-{
-  return "f_name";
-}
-
-bool
-op_f_tag::operate (valfile &vf, Dwarf_Die &die)
-{
-  return operate_tag (vf, die);
-}
-
-std::string
-op_f_tag::name () const
-{
-  return "f_tag";
-}
-
-bool
-op_f_form::operate (valfile &vf, Dwarf_Attribute &attr, Dwarf_Die &die)
-{
-  unsigned name = dwarf_whatform (&attr);
-  constant cst {name, &dw_form_dom};
-  vf.push (std::make_unique <value_cst> (cst, 0));
-  return true;
-}
-
-std::string
-op_f_form::name () const
-{
-  return "f_form";
-}
-
 
 valfile::uptr
 op_f_value::next ()
@@ -265,35 +189,6 @@ op_f_cast::name () const
   std::stringstream ss;
   ss << "f_cast<" << m_dom->name () << ">";
   return ss.str ();
-}
-
-
-bool
-op_f_parent::operate (valfile &vf, Dwarf_Attribute &attr, Dwarf_Die &die)
-{
-  vf.push (std::make_unique <value_die> (m_g, die, 0));
-  return true;
-}
-
-bool
-op_f_parent::operate (valfile &vf, Dwarf_Die &die)
-{
-  Dwarf_Off par_off = m_g->find_parent (die);
-  if (par_off == dwgrep_graph::none_off)
-    return false;
-
-  Dwarf_Die par_die;
-  if (dwarf_offdie (&*m_g->dwarf, par_off, &par_die) == nullptr)
-    throw_libdw ();
-
-  vf.push (std::make_unique <value_die> (m_g, par_die, 0));
-  return true;
-}
-
-std::string
-op_f_parent::name () const
-{
-  return "f_parent";
 }
 
 

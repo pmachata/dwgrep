@@ -52,14 +52,9 @@ BIN [01]
 "then" return TOK_THEN;
 "else" return TOK_ELSE;
 
-"parent" return TOK_PARENT;
 "prev" return TOK_PREV;
 "next" return TOK_NEXT;
 "type" return TOK_TYPE;
-"offset" return TOK_OFFSET;
-"name" return TOK_NAME;
-"tag" return TOK_TAG;
-"form" return TOK_FORM;
 "value" return TOK_VALUE;
 "hex" return TOK_HEX;
 "oct" return TOK_OCT;

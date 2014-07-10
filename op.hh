@@ -191,58 +191,6 @@ public:
   bool operate (valfile &vf, Dwarf_Die &die) override;
 };
 
-class op_f_offset
-  : public dwop_f
-{
-public:
-  using dwop_f::dwop_f;
-
-  std::string name () const override;
-  bool operate (valfile &vf, Dwarf_Die &die) override;
-};
-
-class op_f_name
-  : public dwop_f
-{
-public:
-  using dwop_f::dwop_f;
-
-  std::string name () const override;
-  bool operate (valfile &vf, Dwarf_Die &die) override;
-  bool operate (valfile &vf, Dwarf_Attribute &attr, Dwarf_Die &die) override;
-};
-
-class op_f_tag
-  : public dwop_f
-{
-public:
-  using dwop_f::dwop_f;
-
-  std::string name () const override;
-  bool operate (valfile &vf, Dwarf_Die &die) override;
-};
-
-class op_f_form
-  : public dwop_f
-{
-public:
-  using dwop_f::dwop_f;
-
-  std::string name () const override;
-  bool operate (valfile &vf, Dwarf_Attribute &attr, Dwarf_Die &die) override;
-};
-
-class op_f_parent
-  : public dwop_f
-{
-public:
-  using dwop_f::dwop_f;
-
-  std::string name () const override;
-  bool operate (valfile &vf, Dwarf_Die &die) override;
-  bool operate (valfile &vf, Dwarf_Attribute &attr, Dwarf_Die &die) override;
-};
-
 // The stringer hieararchy supports op_format, which implements
 // formatting strings.  They are written similarly to op's, except
 // they send along next() a work-in-progress string in addition to

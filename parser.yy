@@ -171,8 +171,7 @@
 %token TOK_ASTERISK TOK_PLUS TOK_QMARK TOK_MINUS TOK_COMMA TOK_SEMICOLON
 %token TOK_DOUBLE_VBAR TOK_SLASH TOK_ARROW
 
-%token TOK_PARENT TOK_PREV TOK_NEXT TOK_TYPE TOK_OFFSET TOK_NAME TOK_TAG
-%token TOK_FORM TOK_VALUE TOK_POS TOK_ELEM
+%token TOK_PREV TOK_NEXT TOK_TYPE TOK_VALUE TOK_POS TOK_ELEM
 %token TOK_LENGTH TOK_HEX TOK_OCT TOK_BIN
 
 %token TOK_APPLY TOK_IF TOK_THEN TOK_ELSE
@@ -398,9 +397,6 @@ Statement:
   | TOK_DEBUG
   { $$ = tree::create_nullary <tree_type::F_DEBUG> (); }
 
-  | TOK_PARENT
-  { $$ = tree::create_nullary <tree_type::F_PARENT> (); }
-
   | TOK_PREV
   { $$ = tree::create_nullary <tree_type::F_PREV> (); }
 
@@ -410,20 +406,8 @@ Statement:
   | TOK_TYPE
   { $$ = tree::create_nullary <tree_type::F_TYPE> (); }
 
-  | TOK_NAME
-  { $$ = tree::create_nullary <tree_type::F_NAME> (); }
-
-  | TOK_TAG
-  { $$ = tree::create_nullary <tree_type::F_TAG> (); }
-
-  | TOK_FORM
-  { $$ = tree::create_nullary <tree_type::F_FORM> (); }
-
   | TOK_VALUE
   { $$ = tree::create_nullary <tree_type::F_VALUE> (); }
-
-  | TOK_OFFSET
-  { $$ = tree::create_nullary <tree_type::F_OFFSET> (); }
 
   | TOK_APPLY
   { $$ = tree::create_nullary <tree_type::F_APPLY> (); }

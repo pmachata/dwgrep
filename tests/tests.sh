@@ -270,3 +270,29 @@ expect_count 6 ./typedef.o -e '
 	[winfo] ?(length 6 ?eq)
 	elem if child then 1 else 0 "%s %(offset%)"
 	?(("1 0xb","0 0x1d","0 0x28","0 0x2f","0 0x3a","0 0x45") ?eq)'
+
+# Check various Dwarf operators.
+expect_count 1 ./duplicate-const -e '
+	"%([winfo name]%)"
+	"[DW_TAG_compile_unit, DW_TAG_subprogram, DW_TAG_variable, "\
+	"DW_TAG_variable, DW_TAG_variable, DW_TAG_variable, "\
+	"DW_TAG_base_type, DW_TAG_pointer_type, DW_TAG_const_type, "\
+	"DW_TAG_base_type, DW_TAG_array_type, DW_TAG_subrange_type, "\
+	"DW_TAG_base_type, DW_TAG_const_type, DW_TAG_variable, "\
+	"DW_TAG_variable, DW_TAG_const_type]" ?eq
+	"%([winfo tag]%)" ?eq'
+
+expect_count 1 ./duplicate-const -e '
+	"%([winfo ?root attribute name]%)"
+	"[DW_AT_producer, DW_AT_language, DW_AT_name, DW_AT_comp_dir, "\
+	"DW_AT_low_pc, DW_AT_high_pc, DW_AT_stmt_list]" ?eq'
+
+expect_count 1 ./duplicate-const -e '
+	"%([winfo ?root attribute name]%)"
+	"[DW_AT_producer, DW_AT_language, DW_AT_name, DW_AT_comp_dir, "\
+	"DW_AT_low_pc, DW_AT_high_pc, DW_AT_stmt_list]" ?eq'
+
+expect_count 1 ./duplicate-const -e '
+	"%([winfo ?root attribute form]%)"
+	"[DW_FORM_strp, DW_FORM_data1, DW_FORM_strp, DW_FORM_strp, "\
+	"DW_FORM_addr, DW_FORM_data8, DW_FORM_sec_offset]" ?eq'
