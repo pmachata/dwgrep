@@ -32,9 +32,6 @@ tree::build_pred (dwgrep_graph::sptr q, std::shared_ptr <scope> scope) const
 	(m_children[0].build_pred (q, scope),
 	 m_children[1].build_pred (q, scope));
 
-    case tree_type::PRED_ROOT:
-      return std::make_unique <pred_root> (q);
-
     case tree_type::PRED_SUBX_ANY:
       {
 	assert (m_children.size () == 1);
@@ -323,7 +320,6 @@ tree::build_exec (std::shared_ptr <op> upstream, dwgrep_graph::sptr q,
     case tree_type::PRED_FIND:
     case tree_type::PRED_MATCH:
     case tree_type::PRED_EMPTY:
-    case tree_type::PRED_ROOT:
     case tree_type::PRED_AND:
     case tree_type::PRED_OR:
     case tree_type::PRED_NOT:

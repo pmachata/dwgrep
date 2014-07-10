@@ -612,6 +612,65 @@ static struct
   }
 } builtin_parent;
 
+static struct
+: public pred_builtin
+{
+  using pred_builtin::pred_builtin;
+
+  struct p
+    : public pred
+  {
+    dwgrep_graph::sptr m_g;
+
+    explicit p (dwgrep_graph::sptr g)
+      : m_g {g}
+    {}
+
+    pred_result
+    result (valfile &vf) override
+    {
+      if (auto v = vf.top_as <value_die> ())
+	return pred_result (m_g->is_root (v->get_die ()));
+
+      else if (vf.top ().is <value_attr> ())
+	// By definition, attributes are never root.
+	return pred_result::no;
+
+      else
+	{
+	  std::cerr << "Error: `?root' expects a T_ATTR or T_NODE on TOS.\n";
+	  return pred_result::fail;
+	}
+    }
+
+    void
+    reset () override
+    {}
+
+    std::string
+    name () const override
+    {
+      return "root";
+    }
+  };
+
+  std::unique_ptr <pred>
+  build_pred (dwgrep_graph::sptr q,
+	      std::shared_ptr <scope> scope) const override
+  {
+    return maybe_invert (std::make_unique <p> (q));
+  }
+
+  char const *
+  name () const override
+  {
+    if (m_positive)
+      return "?root";
+    else
+      return "!root";
+  }
+} builtin_rootp {true}, builtin_nrootp {false};
+
 static struct register_dw
 {
   register_dw ()
@@ -626,5 +685,8 @@ static struct register_dw
     add_builtin (builtin_tag);
     add_builtin (builtin_form);
     add_builtin (builtin_parent);
+
+    add_builtin (builtin_rootp);
+    add_builtin (builtin_nrootp);
   }
 } register_dw;

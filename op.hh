@@ -43,7 +43,13 @@ public:
 
 // Class pred is for holding predicates.  These don't alter the
 // computations at all.
-class pred;
+class pred
+{
+public:
+  virtual pred_result result (valfile &vf) = 0;
+  virtual std::string name () const = 0;
+  virtual void reset () = 0;
+};
 
 // Origin is upstream-less node that is placed at the beginning of the
 // chain of computations.  It's provided a valfile from the outside by
@@ -508,7 +514,6 @@ public:
   valfile::uptr next () override;
   std::string name () const override;
   void reset () override;
-
 };
 
 class op_f_debug
@@ -686,18 +691,6 @@ public:
   std::string name () const override;
 };
 
-class op_f_prev;
-class op_f_next;
-class op_f_form;
-class op_sel_section;
-
-class pred
-{
-public:
-  virtual pred_result result (valfile &vf) = 0;
-  virtual std::string name () const = 0;
-  virtual void reset () = 0;
-};
 
 class pred_not
   : public pred
@@ -795,19 +788,6 @@ class pred_binary
 {
 public:
   pred_binary () {}
-  void reset () override {}
-};
-
-class pred_root
-  : public pred
-{
-  dwgrep_graph::sptr m_g;
-
-public:
-  explicit pred_root (dwgrep_graph::sptr g);
-
-  pred_result result (valfile &vf) override;
-  std::string name () const override;
   void reset () override {}
 };
 

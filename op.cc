@@ -1617,33 +1617,6 @@ pred_tag::name () const
   return ss.str ();
 }
 
-pred_root::pred_root (dwgrep_graph::sptr g)
-  : m_g {g}
-{}
-
-pred_result
-pred_root::result (valfile &vf)
-{
-  if (auto v = vf.top_as <value_die> ())
-    return pred_result (m_g->is_root (v->get_die ()));
-
-  else if (vf.top ().is <value_attr> ())
-    // By definition, attributes are never root.
-    return pred_result::no;
-
-  else
-    {
-      std::cerr << "Error: `?root' expects a T_ATTR or T_NODE on TOS.\n";
-      return pred_result::fail;
-    }
-}
-
-std::string
-pred_root::name () const
-{
-  return "pred_root";
-}
-
 pred_result
 pred_subx_any::result (valfile &vf)
 {

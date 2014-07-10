@@ -177,10 +177,7 @@
 %token TOK_APPLY TOK_IF TOK_THEN TOK_ELSE
 
 %token TOK_QMARK_MATCH TOK_QMARK_FIND TOK_QMARK_EMPTY
-%token TOK_QMARK_ROOT
-
 %token TOK_BANG_MATCH TOK_BANG_FIND TOK_BANG_EMPTY
-%token TOK_BANG_ROOT
 
 %token TOK_AT_WORD  TOK_QMARK_AT_WORD TOK_BANG_AT_WORD
 
@@ -451,12 +448,6 @@ Statement:
   { $$ = positive_assert <tree_type::PRED_EMPTY> (); }
   | TOK_BANG_EMPTY
   { $$ = negative_assert <tree_type::PRED_EMPTY> (); }
-
-  | TOK_QMARK_ROOT
-  { $$ = positive_assert <tree_type::PRED_ROOT> (); }
-  | TOK_BANG_ROOT
-  { $$ = negative_assert <tree_type::PRED_ROOT> (); }
-
 
   | TOK_AT_WORD
   {
