@@ -83,6 +83,13 @@ public:
   void reset () override;
 };
 
+struct stub_op
+  : public inner_op
+{
+  using inner_op::inner_op;
+  std::string name () const override final { return "stub"; }
+};
+
 class op_nop
   : public op
 {

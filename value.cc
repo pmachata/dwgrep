@@ -23,10 +23,10 @@ namespace
   }
 
   value_type
-  alloc_vtype ()
+  alloc_vtype (char const *name)
   {
     static uint8_t last = 0;
-    value_type vt {last++};
+    value_type vt {++last, name};
     if (last == 0)
       {
 	std::cerr << "Ran out of value type identifiers." << std::endl;
@@ -34,9 +34,45 @@ namespace
       }
     return vt;
   }
+
+  std::vector <std::pair <uint8_t, char const *>> &
+  get_vtype_names ()
+  {
+    static std::vector <std::pair <uint8_t, char const *>> names;
+    return names;
+  }
+
+  char const *
+  find_vtype_name (uint8_t code)
+  {
+    auto &vtn = get_vtype_names ();
+    auto it = std::find_if (vtn.begin (), vtn.end (),
+			    [code] (std::pair <uint8_t, char const *> const &v)
+			    { return v.first == code; });
+    if (it == vtn.end ())
+      return nullptr;
+    else
+      return it->second;
+  }
 }
 
-value_type const value_type::none = alloc_vtype ();
+void
+value_type::register_name (uint8_t code, char const *name)
+{
+  auto &vtn = get_vtype_names ();
+  assert (find_vtype_name (code) == nullptr);
+  vtn.push_back (std::make_pair (code, name));
+}
+
+char const *
+value_type::name () const
+{
+  auto ret = find_vtype_name (m_code);
+  assert (ret != nullptr);
+  return ret;
+}
+
+value_type const value_type::none = alloc_vtype ("T_NONE");
 
 std::ostream &
 operator<< (std::ostream &o, value const &v)
@@ -45,7 +81,7 @@ operator<< (std::ostream &o, value const &v)
   return o;
 }
 
-value_type const value_cst::vtype = alloc_vtype ();
+value_type const value_cst::vtype = alloc_vtype ("T_CST");
 
 void
 value_cst::show (std::ostream &o) const
@@ -90,7 +126,7 @@ value_cst::cmp (value const &that) const
 }
 
 
-value_type const value_str::vtype = alloc_vtype ();
+value_type const value_str::vtype = alloc_vtype ("T_STR");
 
 void
 value_str::show (std::ostream &o) const
@@ -120,7 +156,7 @@ value_str::cmp (value const &that) const
 }
 
 
-value_type const value_seq::vtype = alloc_vtype ();
+value_type const value_seq::vtype = alloc_vtype ("T_SEQ");
 
 namespace
 {
@@ -223,7 +259,7 @@ value_seq::cmp (value const &that) const
 }
 
 
-value_type const value_closure::vtype = alloc_vtype ();
+value_type const value_closure::vtype = alloc_vtype ("T_CLOSURE");
 
 value_closure::value_closure (tree const &t, dwgrep_graph::sptr q,
 			      std::shared_ptr <scope> scope,
@@ -276,7 +312,7 @@ value_closure::cmp (value const &v) const
 }
 
 
-value_type const value_die::vtype = alloc_vtype ();
+value_type const value_die::vtype = alloc_vtype ("T_DIE");
 
 void
 value_die::show (std::ostream &o) const
@@ -320,7 +356,7 @@ value_die::cmp (value const &that) const
 }
 
 
-value_type const value_attr::vtype = alloc_vtype ();
+value_type const value_attr::vtype = alloc_vtype ("T_AT");
 
 void
 value_attr::show (std::ostream &o) const

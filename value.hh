@@ -25,6 +25,8 @@ class value_type
 {
   uint8_t m_code;
 
+  static void register_name (uint8_t code, char const *name);
+
 public:
   static value_type const none;
 
@@ -32,9 +34,18 @@ public:
     : m_code {code}
   {}
 
+  value_type (uint8_t code, char const *name)
+    : m_code {code}
+  {
+    register_name (code, name);
+  }
+
   value_type (value_type const &that)
     : m_code {that.m_code}
   {}
+
+  // Either returns non-null or crashes.
+  char const *name () const;
 
   bool
   operator< (value_type that) const
