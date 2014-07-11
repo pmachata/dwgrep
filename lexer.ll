@@ -52,8 +52,6 @@ BIN [01]
 "then" return TOK_THEN;
 "else" return TOK_ELSE;
 
-"prev" return TOK_PREV;
-"next" return TOK_NEXT;
 "type" return TOK_TYPE;
 "value" return TOK_VALUE;
 "hex" return TOK_HEX;

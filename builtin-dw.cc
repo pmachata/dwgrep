@@ -952,7 +952,6 @@ static struct register_dw
     ALL_KNOWN_DW_AT
 #undef ONE_KNOWN_DW_AT
 
-
 #define ONE_KNOWN_DW_TAG(NAME, CODE)				\
     add_builtin (builtin_pred_tag_##NAME, "?TAG_" #NAME);	\
     add_builtin (builtin_pred_ntag_##NAME, "!TAG_" #NAME);

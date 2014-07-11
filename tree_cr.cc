@@ -76,8 +76,7 @@ namespace
       case tree_type::PRED_EMPTY: case tree_type::PRED_AND:
       case tree_type::PRED_OR: case tree_type::PRED_NOT:
       case tree_type::PRED_SUBX_ANY: case tree_type::FORMAT:
-      case tree_type::PRED_LAST: case tree_type::CONST: case tree_type::STR:
-      case tree_type::F_PREV: case tree_type::F_NEXT: case tree_type::F_TYPE:
+      case tree_type::CONST: case tree_type::STR: case tree_type::F_TYPE:
       case tree_type::F_VALUE: case tree_type::F_POS:
       case tree_type::F_ELEM: case tree_type::F_LENGTH: case tree_type::F_CAST:
       case tree_type::F_APPLY: case tree_type::F_BUILTIN:

@@ -171,7 +171,7 @@
 %token TOK_ASTERISK TOK_PLUS TOK_QMARK TOK_MINUS TOK_COMMA TOK_SEMICOLON
 %token TOK_DOUBLE_VBAR TOK_SLASH TOK_ARROW
 
-%token TOK_PREV TOK_NEXT TOK_TYPE TOK_VALUE TOK_POS TOK_ELEM
+%token TOK_TYPE TOK_VALUE TOK_POS TOK_ELEM
 %token TOK_LENGTH TOK_HEX TOK_OCT TOK_BIN
 
 %token TOK_APPLY TOK_IF TOK_THEN TOK_ELSE
@@ -379,12 +379,6 @@ Statement:
 
   | TOK_DEBUG
   { $$ = tree::create_nullary <tree_type::F_DEBUG> (); }
-
-  | TOK_PREV
-  { $$ = tree::create_nullary <tree_type::F_PREV> (); }
-
-  | TOK_NEXT
-  { $$ = tree::create_nullary <tree_type::F_NEXT> (); }
 
   | TOK_TYPE
   { $$ = tree::create_nullary <tree_type::F_TYPE> (); }
