@@ -878,9 +878,9 @@ static struct register_dw
     add_builtin (builtin_parent);
 
 #define ONE_KNOWN_DW_AT(NAME, CODE)				\
-    add_builtin (builtin_attr_##NAME, "@" #NAME);		\
-    add_builtin (builtin_pred_attr_##NAME, "?@" #NAME);	\
-    add_builtin (builtin_pred_nattr_##NAME, "!@" #NAME);
+    add_builtin (builtin_attr_##NAME, "@AT_" #NAME);		\
+    add_builtin (builtin_pred_attr_##NAME, "?AT_" #NAME);	\
+    add_builtin (builtin_pred_nattr_##NAME, "!AT_" #NAME);
     ALL_KNOWN_DW_AT
 #undef ONE_KNOWN_DW_AT
 

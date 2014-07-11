@@ -56,11 +56,11 @@ expect_count 0 ./empty -e '100 10 !gt'
 expect_count 1 ./duplicate-const -e '
 	winfo dup 2/child ?gt
 	2/(?TAG_const_type, ?TAG_volatile_type, ?TAG_restrict_type)
-	?(2/tag ?eq) ?(2/@type ?eq)'
+	?(2/tag ?eq) ?(2/@AT_type ?eq)'
 
 expect_count 1 ./nontrivial-types.o -e '
-	winfo ?TAG_subprogram !@declaration dup child ?TAG_formal_parameter
-	?(@type ((?TAG_const_type, ?TAG_volatile_type, ?TAG_typedef) @type)*
+	winfo ?TAG_subprogram !AT_declaration dup child ?TAG_formal_parameter
+	?(@AT_type ((?TAG_const_type,?TAG_volatile_type,?TAG_typedef) @AT_type)*
 	  (?TAG_structure_type, ?TAG_class_type))'
 
 # Test that universe annotates position.
@@ -77,7 +77,7 @@ expect_count 1 ./nontrivial-types.o -e '
 
 # Test that attribute annotates position.
 expect_count 1 ./nontrivial-types.o -e '
-	winfo ?root attribute ?@stmt_list ?(pos 6 ?eq)'
+	winfo ?root attribute ?AT_stmt_list ?(pos 6 ?eq)'
 
 # Test that unit annotates position.
 expect_count 11 ./nontrivial-types.o -e '
@@ -94,32 +94,32 @@ expect_count 1 ./nontrivial-types.o -e '
 # than it starts in (different slots are taken in the valfile).
 expect_count 1 ./typedef.o -e '
 	winfo
-	?([] swap (@type ?TAG_typedef [()] 2/swap add swap)* drop length 3 ?eq)
+	?([] swap (@AT_type ?TAG_typedef [()] 2/swap add swap)* drop length 3 ?eq)
 	?(offset 0x45 ?eq)'
 
 # Test decoding signed and unsigned value.
 expect_count 1 ./enum.o -e '
-	winfo ?(@name "f" ?eq) child ?(@name "V" ?eq)
-	?(@const_value "%s" "-1" ?eq)'
+	winfo ?(@AT_name "f" ?eq) child ?(@AT_name "V" ?eq)
+	?(@AT_const_value "%s" "-1" ?eq)'
 expect_count 1 ./enum.o -e '
-	winfo ?(@name "e" ?eq) child ?(@name "V" ?eq)
-	?(@const_value "%s" "4294967295" ?eq)'
+	winfo ?(@AT_name "e" ?eq) child ?(@AT_name "V" ?eq)
+	?(@AT_const_value "%s" "4294967295" ?eq)'
 
 # Test match operator
 expect_count 7 ./duplicate-const -e '
-	winfo ?(@decl_file "" ?match)'
+	winfo ?(@AT_decl_file "" ?match)'
 expect_count 7 ./duplicate-const -e '
-	winfo ?(@decl_file ".*petr.*" ?match)'
+	winfo ?(@AT_decl_file ".*petr.*" ?match)'
 expect_count 1 ./nontrivial-types.o -e '
-	winfo ?(@language "%s" "DW_LANG_C89" ?match)'
+	winfo ?(@AT_language "%s" "DW_LANG_C89" ?match)'
 expect_count 1 ./nontrivial-types.o -e '
-	winfo ?(@encoding "%s" "^DW_ATE_signed$" ?match)'
+	winfo ?(@AT_encoding "%s" "^DW_ATE_signed$" ?match)'
 
 # Test true/false
 expect_count 1 ./typedef.o -e '
-	winfo ?(@external true ?eq)'
+	winfo ?(@AT_external true ?eq)'
 expect_count 1 ./typedef.o -e '
-	winfo ?(@external false !eq)'
+	winfo ?(@AT_external false !eq)'
 
 # Test that (dup parent) doesn't change the bottom DIE as well.
 expect_count 1 ./nontrivial-types.o -e '
@@ -136,21 +136,25 @@ expect_count 3 ./nontrivial-types.o -e '
 
 # Check casting.
 expect_count 1 ./enum.o -e '
-	winfo ?(@name "e" ?eq) child @const_value "%x" "0xffffffff" ?eq'
+	winfo ?(@AT_name "e" ?eq) child
+	@AT_const_value "%x" "0xffffffff" ?eq'
 expect_count 1 ./enum.o -e '
-	winfo ?(@name "e" ?eq) child @const_value hex "%s" "0xffffffff" ?eq'
+	winfo ?(@AT_name "e" ?eq) child
+	@AT_const_value hex "%s" "0xffffffff" ?eq'
 expect_count 1 ./enum.o -e '
-	winfo ?(@name "e" ?eq) child @const_value "%o" "037777777777" ?eq'
+	winfo ?(@AT_name "e" ?eq) child
+	@AT_const_value "%o" "037777777777" ?eq'
 expect_count 1 ./enum.o -e '
-	winfo ?(@name "e" ?eq) child @const_value oct "%s" "037777777777" ?eq'
+	winfo ?(@AT_name "e" ?eq) child
+	@AT_const_value oct "%s" "037777777777" ?eq'
 expect_count 1 ./enum.o -e '
-	winfo ?(@name "e" ?eq) child @const_value
+	winfo ?(@AT_name "e" ?eq) child @AT_const_value
 	"%b" "0b11111111111111111111111111111111" ?eq'
 expect_count 1 ./enum.o -e '
-	winfo ?(@name "e" ?eq) child @const_value bin
+	winfo ?(@AT_name "e" ?eq) child @AT_const_value bin
 	"%s" "0b11111111111111111111111111111111" ?eq'
 expect_count 1 ./enum.o -e '
-	winfo ?(@name "e" ?eq) child tag "%d" "40" ?eq'
+	winfo ?(@AT_name "e" ?eq) child tag "%d" "40" ?eq'
 
 # Check decoding of huge literals.
 expect_count 1 ./empty -e '
@@ -205,17 +209,17 @@ expect_count 1 ./empty -e '
 
 # Check N/(dup X)
 expect_count 5 ./typedef.o -e '
-	winfo dup child 2/(dup @name) 4/type 2/swap ?eq'
+	winfo dup child 2/(dup @AT_name) 4/type 2/swap ?eq'
 
 # Check ||.
 expect_count 6 ./typedef.o -e '
-	winfo (@decl_line || drop 42)'
+	winfo (@AT_decl_line || drop 42)'
 expect_count 2 ./typedef.o -e '
-	winfo (@decl_line || drop 42) ?(42 ?eq)'
+	winfo (@AT_decl_line || drop 42) ?(42 ?eq)'
 expect_count 6 ./typedef.o -e '
-	winfo (@decl_line || @byte_size || drop 42)'
+	winfo (@AT_decl_line || @AT_byte_size || drop 42)'
 expect_count 1 ./typedef.o -e '
-	winfo (@decl_line || @byte_size || drop 42) ?(42 ?eq)'
+	winfo (@AT_decl_line || @AT_byte_size || drop 42) ?(42 ?eq)'
 
 # Check closures.
 expect_count 1 ./empty -e '
