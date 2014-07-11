@@ -65,7 +65,6 @@ tree::build_pred (dwgrep_graph::sptr q, std::shared_ptr <scope> scope) const
     case tree_type::F_CAST:
     case tree_type::F_POS:
     case tree_type::F_ELEM:
-    case tree_type::F_LENGTH:
     case tree_type::F_APPLY:
     case tree_type::F_DEBUG:
     case tree_type::SEL_SECTION:
@@ -193,9 +192,6 @@ tree::build_exec (std::shared_ptr <op> upstream, dwgrep_graph::sptr q,
 
     case tree_type::F_ELEM:
       return std::make_shared <op_f_elem> (upstream);
-
-    case tree_type::F_LENGTH:
-      return std::make_shared <op_f_length> (upstream);
 
     case tree_type::F_TYPE:
       return std::make_shared <op_f_type> (upstream);

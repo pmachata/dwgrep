@@ -593,44 +593,6 @@ op_f_elem::name () const
 
 
 valfile::uptr
-op_f_length::next ()
-{
-  while (auto vf = m_upstream->next ())
-    {
-      auto vp = vf->pop ();
-      if (auto v = value::as <value_seq> (&*vp))
-	{
-	  constant t {v->get_seq ()->size (), &dec_constant_dom};
-	  vf->push (std::make_unique <value_cst> (t, 0));
-	  return vf;
-	}
-      else if (auto v = value::as <value_str> (&*vp))
-	{
-	  constant t {v->get_string ().length (), &dec_constant_dom};
-	  vf->push (std::make_unique <value_cst> (t, 0));
-	  return vf;
-	}
-      else
-	std::cerr << "Error: `length' expects a T_SEQ or T_STR on TOS.\n";
-    }
-
-  return nullptr;
-}
-
-void
-op_f_length::reset ()
-{
-  m_upstream->reset ();
-}
-
-std::string
-op_f_length::name () const
-{
-  return "f_length";
-}
-
-
-valfile::uptr
 op_f_type::next ()
 {
   if (auto vf = m_upstream->next ())

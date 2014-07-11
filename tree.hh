@@ -65,8 +65,6 @@ enum class tree_arity_v
 // children of type STR.  Other computation is stored as children of
 // other types.
 //
-// F_ADD, F_SUB, etc. -- For holding corresponding function words.
-//
 // F_CAST -- For domain casting.  The argument is a constant, whose
 // domain determines what domain to cast to.
 
@@ -99,7 +97,6 @@ enum class tree_arity_v
   TREE_TYPE (F_VALUE, NULLARY)			\
   TREE_TYPE (F_POS, NULLARY)			\
   TREE_TYPE (F_ELEM, NULLARY)			\
-  TREE_TYPE (F_LENGTH, NULLARY)			\
   TREE_TYPE (F_CAST, CST)			\
   TREE_TYPE (F_APPLY, NULLARY)			\
   TREE_TYPE (F_DEBUG, NULLARY)			\
