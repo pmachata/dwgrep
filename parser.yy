@@ -361,17 +361,6 @@ Statement:
     else if (str.length () > 3
 	     && str[0] == 'D' && str[1] == 'W' && str[2] == '_')
       $$ = tree::create_const <tree_type::CONST> (constant::parse (str));
-    else if (str.length () > 5
-	     && (str[0] == '?' || str[0] == '!')
-	     && str[1] == 'T' && str[2] == 'A' && str[3] == 'G'
-	     && str[4] == '_')
-      {
-	auto t = tree::create_const <tree_type::PRED_TAG>
-	  (constant::parse_tag ({str, 5}));
-	if (str[0] == '!')
-	  t = tree::create_neg (t);
-	$$ = tree::create_assert (t);
-      }
     else if (auto bi = find_builtin (str))
       $$ = tree::create_builtin (bi);
     else

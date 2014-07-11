@@ -862,6 +862,74 @@ namespace
 ALL_KNOWN_DW_AT
 #undef ONE_KNOWN_DW_AT
 
+namespace
+{
+  struct builtin_pred_tag
+    : public pred_builtin
+  {
+    int m_tag;
+    builtin_pred_tag (int tag, bool positive)
+      : pred_builtin {positive}
+      , m_tag {tag}
+    {}
+
+    struct p
+      : public pred
+    {
+      int m_tag;
+
+      explicit p (int tag)
+	: m_tag (tag)
+      {}
+
+      pred_result
+      result (valfile &vf) override
+      {
+	if (auto v = vf.top_as <value_die> ())
+	  return pred_result (dwarf_tag (&v->get_die ()) == m_tag);
+	else
+	  {
+	    std::cerr << "Error: `" << name ()
+		      << "' expects a T_NODE on TOS.\n";
+	    return pred_result::fail;
+	  }
+      }
+
+      void reset () override {}
+
+      std::string
+      name () const override
+      {
+	std::stringstream ss;
+	ss << "?TAG_" << constant {(unsigned) m_tag, &dw_tag_short_dom};
+	return ss.str ();
+      }
+    };
+
+    std::unique_ptr <pred>
+    build_pred (dwgrep_graph::sptr q,
+		std::shared_ptr <scope> scope) const override
+    {
+      return maybe_invert (std::make_unique <p> (m_tag));
+    }
+
+    char const *
+    name () const override
+    {
+      if (m_positive)
+	return "?tag";
+      else
+	return "!tag";
+    }
+  };
+}
+
+#define ONE_KNOWN_DW_TAG(NAME, CODE)					\
+  static builtin_pred_tag builtin_pred_tag_##NAME {CODE, true},	\
+    builtin_pred_ntag_##NAME {CODE, false};
+ALL_KNOWN_DW_TAG
+#undef ONE_KNOWN_DW_TAG
+
 static struct register_dw
 {
   register_dw ()
@@ -883,6 +951,13 @@ static struct register_dw
     add_builtin (builtin_pred_nattr_##NAME, "!AT_" #NAME);
     ALL_KNOWN_DW_AT
 #undef ONE_KNOWN_DW_AT
+
+
+#define ONE_KNOWN_DW_TAG(NAME, CODE)				\
+    add_builtin (builtin_pred_tag_##NAME, "?TAG_" #NAME);	\
+    add_builtin (builtin_pred_ntag_##NAME, "!TAG_" #NAME);
+    ALL_KNOWN_DW_TAG
+#undef ONE_KNOWN_DW_TAG
 
     add_builtin (builtin_rootp);
     add_builtin (builtin_nrootp);

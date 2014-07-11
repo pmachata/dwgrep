@@ -1526,28 +1526,6 @@ pred_or::name () const
 }
 
 pred_result
-pred_tag::result (valfile &vf)
-{
-  if (auto v = vf.top_as <value_die> ())
-    return pred_result (dwarf_tag (&v->get_die ()) == m_tag);
-  else
-    {
-      std::cerr << "Error: `?"
-		<< constant {(unsigned) m_tag, &dw_tag_short_dom}
-		<< "' expects a T_NODE on TOS.\n";
-      return pred_result::fail;
-    }
-}
-
-std::string
-pred_tag::name () const
-{
-  std::stringstream ss;
-  ss << "pred_tag<" << constant {(unsigned) m_tag, &dw_tag_dom} << ">";
-  return ss.str ();
-}
-
-pred_result
 pred_subx_any::result (valfile &vf)
 {
   m_op->reset ();

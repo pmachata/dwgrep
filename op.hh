@@ -709,21 +709,6 @@ public:
   }
 };
 
-class pred_tag
-  : public pred
-{
-  int m_tag;
-
-public:
-  explicit pred_tag (int tag)
-    : m_tag (tag)
-  {}
-
-  pred_result result (valfile &vf) override;
-  std::string name () const override;
-  void reset () override {}
-};
-
 class pred_binary
   : public pred
 {
