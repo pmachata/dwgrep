@@ -2,9 +2,6 @@
 #define _VALUE_H_
 
 #include <memory>
-#include <iosfwd>
-#include <vector>
-#include <string>
 #include <elfutils/libdw.h>
 
 #include "constant.hh"
@@ -18,6 +15,17 @@ enum class cmp_result
     fail,
   };
 
+template <class T>
+cmp_result
+compare (T const &a, T const &b)
+{
+  if (a < b)
+    return cmp_result::less;
+  if (b < a)
+    return cmp_result::greater;
+  return cmp_result::equal;
+}
+
 // We use this to keep track of types of instances of subclasses of
 // class value.  value::as uses this to avoid having to dynamic_cast,
 // which is needlessly flexible and slow for our purposes.
@@ -29,6 +37,8 @@ class value_type
 
 public:
   static value_type const none;
+
+  static value_type alloc (char const *name);
 
   explicit value_type (uint8_t code)
     : m_code {code}
@@ -147,64 +157,6 @@ public:
 
   constant const &get_constant () const
   { return m_cst; }
-
-  void show (std::ostream &o) const override;
-  std::unique_ptr <value> clone () const override;
-  constant get_type_const () const override;
-  cmp_result cmp (value const &that) const override;
-};
-
-class value_str
-  : public value
-{
-  std::string m_str;
-
-public:
-  static value_type const vtype;
-
-  value_str (std::string &&str, size_t pos)
-    : value {vtype, pos}
-    , m_str {std::move (str)}
-  {}
-
-  std::string const &get_string () const
-  { return m_str; }
-
-  void show (std::ostream &o) const override;
-  std::unique_ptr <value> clone () const override;
-  constant get_type_const () const override;
-  cmp_result cmp (value const &that) const override;
-};
-
-class value_seq
-  : public value
-{
-public:
-  typedef std::vector <std::unique_ptr <value> > seq_t;
-
-private:
-  std::shared_ptr <seq_t> m_seq;
-
-public:
-  static value_type const vtype;
-
-  value_seq (seq_t &&seq, size_t pos)
-    : value {vtype, pos}
-    , m_seq {std::make_shared <seq_t> (std::move (seq))}
-  {}
-
-  value_seq (std::shared_ptr <seq_t> seqp, size_t pos)
-    : value {vtype, pos}
-    , m_seq {seqp}
-  {}
-
-  value_seq (value_seq const &that);
-
-  std::shared_ptr <seq_t>
-  get_seq () const
-  {
-    return m_seq;
-  }
 
   void show (std::ostream &o) const override;
   std::unique_ptr <value> clone () const override;

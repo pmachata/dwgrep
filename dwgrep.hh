@@ -6,6 +6,8 @@
 
 #include <elfutils/libdw.h> // XXX
 
+void dwgrep_init ();
+
 // A dwgrep_graph object represents a graph that we want to explore,
 // and any associated caches.
 class dwgrep_graph

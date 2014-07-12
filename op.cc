@@ -8,6 +8,8 @@
 #include "op.hh"
 #include "vfcst.hh"
 #include "atval.hh"
+#include "value-seq.hh"
+#include "value-str.hh"
 
 valfile::uptr
 op_origin::next ()

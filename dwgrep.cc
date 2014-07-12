@@ -111,6 +111,8 @@ main(int argc, char *argv[])
 
   std::vector <std::string> to_process;
 
+  dwgrep_init ();
+
   tree query;
   bool seen_query = false;
 

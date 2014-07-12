@@ -105,4 +105,6 @@ public:
 
 std::ostream &operator<< (std::ostream &o, constant cst);
 
+void check_arith (constant const &cst_a, constant const &cst_b);
+
 #endif /* _CST_H_ */

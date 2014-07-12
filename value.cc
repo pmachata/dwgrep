@@ -9,32 +9,21 @@
 #include "value.hh"
 #include "vfcst.hh"
 
+value_type
+value_type::alloc (char const *name)
+{
+  static uint8_t last = 0;
+  value_type vt {++last, name};
+  if (last == 0)
+    {
+      std::cerr << "Ran out of value type identifiers." << std::endl;
+      std::terminate ();
+    }
+  return vt;
+}
+
 namespace
 {
-  template <class T>
-  cmp_result
-  compare (T const &a, T const &b)
-  {
-    if (a < b)
-      return cmp_result::less;
-    if (b < a)
-      return cmp_result::greater;
-    return cmp_result::equal;
-  }
-
-  value_type
-  alloc_vtype (char const *name)
-  {
-    static uint8_t last = 0;
-    value_type vt {++last, name};
-    if (last == 0)
-      {
-	std::cerr << "Ran out of value type identifiers." << std::endl;
-	std::terminate ();
-      }
-    return vt;
-  }
-
   std::vector <std::pair <uint8_t, char const *>> &
   get_vtype_names ()
   {
@@ -72,7 +61,7 @@ value_type::name () const
   return ret;
 }
 
-value_type const value_type::none = alloc_vtype ("T_NONE");
+value_type const value_type::none = value_type::alloc ("T_NONE");
 
 std::ostream &
 operator<< (std::ostream &o, value const &v)
@@ -81,7 +70,7 @@ operator<< (std::ostream &o, value const &v)
   return o;
 }
 
-value_type const value_cst::vtype = alloc_vtype ("T_CST");
+value_type const value_cst::vtype = value_type::alloc ("T_CST");
 
 void
 value_cst::show (std::ostream &o) const
@@ -126,140 +115,7 @@ value_cst::cmp (value const &that) const
 }
 
 
-value_type const value_str::vtype = alloc_vtype ("T_STR");
-
-void
-value_str::show (std::ostream &o) const
-{
-  o << m_str;
-}
-
-std::unique_ptr <value>
-value_str::clone () const
-{
-  return std::make_unique <value_str> (*this);
-}
-
-constant
-value_str::get_type_const () const
-{
-  return {(int) slot_type_id::T_STR, &slot_type_dom};
-}
-
-cmp_result
-value_str::cmp (value const &that) const
-{
-  if (auto v = value::as <value_str> (&that))
-    return compare (m_str, v->m_str);
-  else
-    return cmp_result::fail;
-}
-
-
-value_type const value_seq::vtype = alloc_vtype ("T_SEQ");
-
-namespace
-{
-  value_seq::seq_t
-  clone_seq (value_seq::seq_t const &seq)
-  {
-    value_seq::seq_t seq2;
-    for (auto const &v: seq)
-      seq2.emplace_back (std::move (v->clone ()));
-    return seq2;
-  }
-}
-
-value_seq::value_seq (value_seq const &that)
-  : value {that}
-  , m_seq {std::make_shared <seq_t> (clone_seq (*that.m_seq))}
-{}
-
-void
-value_seq::show (std::ostream &o) const
-{
-  o << "[";
-  bool seen = false;
-  for (auto const &v: *m_seq)
-    {
-      if (seen)
-	o << ", ";
-      seen = true;
-      o << *v;
-    }
-  o << "]";
-}
-
-std::unique_ptr <value>
-value_seq::clone () const
-{
-  return std::make_unique <value_seq> (*this);
-}
-
-constant
-value_seq::get_type_const () const
-{
-  return {(int) slot_type_id::T_SEQ, &slot_type_dom};
-}
-
-namespace
-{
-  template <class Callable>
-  cmp_result
-  compare_sequences (value_seq::seq_t const &sa, value_seq::seq_t const &sb,
-		     Callable cmp)
-  {
-    cmp_result ret = cmp_result::fail;
-    auto mm = std::mismatch (sa.begin (), sa.end (), sb.begin (),
-			     [&ret, cmp] (std::unique_ptr <value> const &a,
-					  std::unique_ptr <value> const &b)
-			     {
-			       ret = cmp (a, b);
-			       assert (ret != cmp_result::fail);
-			       return ret == cmp_result::equal;
-			     });
-
-    if (mm.first != sa.end ())
-      {
-	assert (mm.second != sb.end ());
-	assert (ret != cmp_result::fail);
-	return ret;
-      }
-
-    return cmp_result::equal;
-  }
-}
-
-cmp_result
-value_seq::cmp (value const &that) const
-{
-  if (auto v = value::as <value_seq> (&that))
-    {
-      cmp_result ret = compare (m_seq->size (), v->m_seq->size ());
-      if (ret != cmp_result::equal)
-	return ret;
-
-      ret = compare_sequences (*m_seq, *v->m_seq,
-			       [] (std::unique_ptr <value> const &a,
-				   std::unique_ptr <value> const &b)
-			       {
-				 return compare (a->get_type (),
-						 b->get_type ());
-			       });
-      if (ret != cmp_result::equal)
-	return ret;
-
-      return compare_sequences (*m_seq, *v->m_seq,
-				[] (std::unique_ptr <value> const &a,
-				    std::unique_ptr <value> const &b)
-				{ return a->cmp (*b); });
-    }
-  else
-    return cmp_result::fail;
-}
-
-
-value_type const value_closure::vtype = alloc_vtype ("T_CLOSURE");
+value_type const value_closure::vtype = value_type::alloc ("T_CLOSURE");
 
 value_closure::value_closure (tree const &t, dwgrep_graph::sptr q,
 			      std::shared_ptr <scope> scope,
@@ -312,7 +168,7 @@ value_closure::cmp (value const &v) const
 }
 
 
-value_type const value_die::vtype = alloc_vtype ("T_DIE");
+value_type const value_die::vtype = value_type::alloc ("T_DIE");
 
 void
 value_die::show (std::ostream &o) const
@@ -356,7 +212,7 @@ value_die::cmp (value const &that) const
 }
 
 
-value_type const value_attr::vtype = alloc_vtype ("T_AT");
+value_type const value_attr::vtype = value_type::alloc ("T_AT");
 
 void
 value_attr::show (std::ostream &o) const

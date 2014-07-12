@@ -7,6 +7,8 @@
 #include "dwpp.hh"
 #include "dwcst.hh"
 #include "atval.hh"
+#include "value-seq.hh"
+#include "value-str.hh"
 
 namespace
 {

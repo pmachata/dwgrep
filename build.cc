@@ -6,6 +6,8 @@
 #include "op.hh"
 #include "tree.hh"
 #include "scope.hh"
+#include "value-seq.hh"
+#include "value-str.hh"
 
 std::unique_ptr <pred>
 tree::build_pred (dwgrep_graph::sptr q, std::shared_ptr <scope> scope) const
