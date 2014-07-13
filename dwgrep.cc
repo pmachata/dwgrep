@@ -14,6 +14,7 @@
 #include <libdw.h>
 #include <libelf.h>
 
+#include "builtin-dw.hh"
 #include "cache.hh"
 #include "dwpp.hh"
 #include "make_unique.hh"
@@ -112,6 +113,7 @@ main(int argc, char *argv[])
   std::vector <std::string> to_process;
 
   dwgrep_init ();
+  dwgrep_init_dw ();
 
   tree query;
   bool seen_query = false;

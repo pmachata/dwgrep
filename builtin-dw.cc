@@ -930,35 +930,33 @@ namespace
 ALL_KNOWN_DW_TAG
 #undef ONE_KNOWN_DW_TAG
 
-static struct register_dw
+void
+dwgrep_init_dw ()
 {
-  register_dw ()
-  {
-    add_builtin (builtin_winfo);
-    add_builtin (builtin_unit);
+  add_builtin (builtin_winfo);
+  add_builtin (builtin_unit);
 
-    add_builtin (builtin_child);
-    add_builtin (builtin_attribute);
-    add_builtin (builtin_offset);
-    add_builtin (builtin_name);
-    add_builtin (builtin_tag);
-    add_builtin (builtin_form);
-    add_builtin (builtin_parent);
+  add_builtin (builtin_child);
+  add_builtin (builtin_attribute);
+  add_builtin (builtin_offset);
+  add_builtin (builtin_name);
+  add_builtin (builtin_tag);
+  add_builtin (builtin_form);
+  add_builtin (builtin_parent);
 
 #define ONE_KNOWN_DW_AT(NAME, CODE)				\
     add_builtin (builtin_attr_##NAME, "@AT_" #NAME);		\
     add_builtin (builtin_pred_attr_##NAME, "?AT_" #NAME);	\
     add_builtin (builtin_pred_nattr_##NAME, "!AT_" #NAME);
-    ALL_KNOWN_DW_AT
+  ALL_KNOWN_DW_AT
 #undef ONE_KNOWN_DW_AT
 
 #define ONE_KNOWN_DW_TAG(NAME, CODE)				\
     add_builtin (builtin_pred_tag_##NAME, "?TAG_" #NAME);	\
     add_builtin (builtin_pred_ntag_##NAME, "!TAG_" #NAME);
-    ALL_KNOWN_DW_TAG
+  ALL_KNOWN_DW_TAG
 #undef ONE_KNOWN_DW_TAG
 
-    add_builtin (builtin_rootp);
-    add_builtin (builtin_nrootp);
-  }
-} register_dw;
+  add_builtin (builtin_rootp);
+  add_builtin (builtin_nrootp);
+}
