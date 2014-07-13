@@ -2,6 +2,7 @@
 #include "builtin-add.hh"
 #include "builtin-length.hh"
 #include "builtin-cmp.hh"
+#include "builtin-shf.hh"
 #include "value-seq.hh"
 #include "value-str.hh"
 
@@ -20,6 +21,11 @@ namespace
   builtin_eq builtin_eq_obj {true}, builtin_neq_obj {false};
   builtin_lt builtin_lt_obj {true}, builtin_nlt_obj {false};
   builtin_gt builtin_gt_obj {true}, builtin_ngt_obj {false};
+
+  builtin_drop builtin_drop_obj;
+  builtin_swap builtin_swap_obj;
+  builtin_dup builtin_dup_obj;
+  builtin_over builtin_over_obj;
 
   builtin_length builtin_length_obj;
   overload_builtin <op_length_str> builtin_length_str_obj;
@@ -52,6 +58,11 @@ dwgrep_init ()
   add_builtin (builtin_lt_obj, "!ge");
   add_builtin (builtin_ngt_obj, "?le");
   add_builtin (builtin_gt_obj, "!le");
+
+  add_builtin (builtin_drop_obj);
+  add_builtin (builtin_swap_obj);
+  add_builtin (builtin_dup_obj);
+  add_builtin (builtin_over_obj);
 
   add_builtin (builtin_length_obj);
   ovl_tab_length ().add_overload (value_str::vtype, builtin_length_str_obj);

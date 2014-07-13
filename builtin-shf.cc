@@ -1,8 +1,7 @@
-#include "builtin.hh"
+#include "builtin-shf.hh"
 #include "op.hh"
 
-struct
-  : public builtin
+namespace
 {
   struct op_drop
     : public inner_op
@@ -27,24 +26,6 @@ struct
     }
   };
 
-  std::shared_ptr <op>
-  build_exec (std::shared_ptr <op> upstream, dwgrep_graph::sptr q,
-	      std::shared_ptr <scope> scope) const override
-  {
-    return std::make_shared <op_drop> (upstream);
-  }
-
-  char const *
-  name () const override
-  {
-    return "drop";
-  }
-} builtin_drop_obj;
-
-
-static struct
-  : public builtin
-{
   struct op_swap
     : public inner_op
   {
@@ -71,23 +52,6 @@ static struct
     }
   };
 
-  std::shared_ptr <op>
-  build_exec (std::shared_ptr <op> upstream, dwgrep_graph::sptr q,
-	      std::shared_ptr <scope> scope) const override
-  {
-    return std::make_shared <op_swap> (upstream);
-  }
-
-  char const *
-  name () const override
-  {
-    return "swap";
-  }
-} builtin_swap_obj;
-
-static struct
-  : public builtin
-{
   struct op_dup
     : public inner_op
   {
@@ -111,23 +75,6 @@ static struct
     }
   };
 
-  std::shared_ptr <op>
-  build_exec (std::shared_ptr <op> upstream, dwgrep_graph::sptr q,
-	      std::shared_ptr <scope> scope) const override
-  {
-    return std::make_shared <op_dup> (upstream);
-  }
-
-  char const *
-  name () const override
-  {
-    return "dup";
-  }
-} builtin_dup_obj;
-
-static struct
-  : public builtin
-{
   struct op_over
     : public inner_op
   {
@@ -150,28 +97,56 @@ static struct
       return "over";
     }
   };
+}
 
-  std::shared_ptr <op>
-  build_exec (std::shared_ptr <op> upstream, dwgrep_graph::sptr q,
-	      std::shared_ptr <scope> scope) const override
-  {
-    return std::make_shared <op_over> (upstream);
-  }
-
-  char const *
-  name () const override
-  {
-    return "over";
-  }
-} builtin_over_obj;
-
-static struct register_shf
+std::shared_ptr <op>
+builtin_drop::build_exec (std::shared_ptr <op> upstream, dwgrep_graph::sptr q,
+			  std::shared_ptr <scope> scope) const
 {
-  register_shf ()
-  {
-    add_builtin (builtin_drop_obj);
-    add_builtin (builtin_swap_obj);
-    add_builtin (builtin_dup_obj);
-    add_builtin (builtin_over_obj);
-  }
-} register_shf;
+  return std::make_shared <op_drop> (upstream);
+}
+
+char const *
+builtin_drop::name () const
+{
+  return "drop";
+}
+
+std::shared_ptr <op>
+builtin_swap::build_exec (std::shared_ptr <op> upstream, dwgrep_graph::sptr q,
+			  std::shared_ptr <scope> scope) const
+{
+  return std::make_shared <op_swap> (upstream);
+}
+
+char const *
+builtin_swap::name () const
+{
+  return "swap";
+}
+
+std::shared_ptr <op>
+builtin_dup::build_exec (std::shared_ptr <op> upstream, dwgrep_graph::sptr q,
+			 std::shared_ptr <scope> scope) const
+{
+  return std::make_shared <op_dup> (upstream);
+}
+
+char const *
+builtin_dup::name () const
+{
+  return "dup";
+}
+
+std::shared_ptr <op>
+builtin_over::build_exec (std::shared_ptr <op> upstream, dwgrep_graph::sptr q,
+			  std::shared_ptr <scope> scope) const
+{
+  return std::make_shared <op_over> (upstream);
+}
+
+char const *
+builtin_over::name () const
+{
+  return "over";
+}
