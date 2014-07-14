@@ -276,6 +276,15 @@ expect_count 6 ./typedef.o -e '
 	?(("1 0xb","0 0x1d","0 0x28","0 0x2f","0 0x3a","0 0x45") ?eq)'
 
 # Check various Dwarf operators.
+expect_count 1 ./empty -e '
+	[[DW_AT_name, DW_TAG_const_type, DW_FORM_ref_sig8, DW_LANG_Go,
+	  DW_INL_inlined, DW_ATE_UTF, DW_ACCESS_private, DW_VIS_exported,
+	  DW_ID_case_insensitive, DW_VIRTUALITY_virtual, DW_CC_nocall,
+	  DW_ORD_col_major, DW_DSC_range, DW_OP_bra, DW_DS_trailing_separate,
+	  DW_ADDR_none, DW_END_little] elem hex]
+	[0x3, 0x26, 0x20, 0x16, 0x1, 0x10, 0x3, 0x2, 0x3, 0x1, 0x3, 0x1, 0x1,
+	 0x28, 0x5, 0x0, 0x2] ?eq'
+
 expect_count 1 ./duplicate-const -e '
 	"%([winfo name]%)"
 	"[DW_TAG_compile_unit, DW_TAG_subprogram, DW_TAG_variable, "\

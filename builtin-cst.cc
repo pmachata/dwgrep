@@ -53,6 +53,22 @@ namespace
   };
 }
 
+
+std::shared_ptr <op>
+builtin_constant::build_exec (std::shared_ptr <op> upstream,
+			      dwgrep_graph::sptr q,
+			      std::shared_ptr <scope> scope) const
+{
+  return std::make_shared <op_const> (upstream, m_value->clone ());
+}
+
+char const *
+builtin_constant::name () const
+{
+  return "constant";
+}
+
+
 std::shared_ptr <op>
 builtin_hex::build_exec (std::shared_ptr <op> upstream, dwgrep_graph::sptr q,
 			 std::shared_ptr <scope> scope) const
@@ -65,6 +81,7 @@ builtin_hex::name () const
 {
   return "hex";
 }
+
 
 std::shared_ptr <op>
 builtin_dec::build_exec (std::shared_ptr <op> upstream, dwgrep_graph::sptr q,
@@ -79,6 +96,7 @@ builtin_dec::name () const
   return "dec";
 }
 
+
 std::shared_ptr <op>
 builtin_oct::build_exec (std::shared_ptr <op> upstream, dwgrep_graph::sptr q,
 			 std::shared_ptr <scope> scope) const
@@ -91,6 +109,7 @@ builtin_oct::name () const
 {
   return "oct";
 }
+
 
 std::shared_ptr <op>
 builtin_bin::build_exec (std::shared_ptr <op> upstream, dwgrep_graph::sptr q,

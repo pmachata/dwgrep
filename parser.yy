@@ -349,15 +349,6 @@ Statement:
 	else
 	  throw std::runtime_error ("Unknown slot type constant.");
       }
-    else if (str == "true")
-      $$ = tree::create_const <tree_type::CONST>
-	(constant (1, &bool_constant_dom));
-    else if (str == "false")
-      $$ = tree::create_const <tree_type::CONST>
-	(constant (0, &bool_constant_dom));
-    else if (str.length () > 3
-	     && str[0] == 'D' && str[1] == 'W' && str[2] == '_')
-      $$ = tree::create_const <tree_type::CONST> (constant::parse (str));
     else if (auto bi = find_builtin (str))
       $$ = tree::create_builtin (bi);
     else

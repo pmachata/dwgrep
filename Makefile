@@ -35,8 +35,8 @@ dwgrep: dwgrep.o parser.o lexer.o tree.o tree_cr.o constant.o op.o	\
 	overload.o value.o value-seq.o value-str.o init.o dwcst.o	\
 	builtin-dw.o value-dw.o
 test-parser: test-parser.o parser.o lexer.o tree.o tree_cr.o build.o	\
-	constant.o dwcst.o init.o vfcst.o builtin.o overload.o op.o	\
-	value.o valfile.o value-str.o value-seq.o builtin-shf.o		\
+	constant.o init.o vfcst.o builtin.o overload.o op.o value.o	\
+	valfile.o value-str.o value-seq.o builtin-shf.o			\
 	builtin-arith.o builtin-cmp.o builtin-cst.o builtin-add.o	\
 	builtin-length.o builtin-value.o builtin-elem.o
 

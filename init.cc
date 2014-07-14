@@ -1,3 +1,6 @@
+#include <memory>
+#include "make_unique.hh"
+
 #include "builtin-arith.hh"
 #include "builtin-cmp.hh"
 #include "builtin-cst.hh"
@@ -24,11 +27,15 @@ namespace
   builtin_lt builtin_lt_obj {true}, builtin_nlt_obj {false};
   builtin_gt builtin_gt_obj {true}, builtin_ngt_obj {false};
 
-  // casting
+  // constants
   builtin_hex builtin_hex_obj;
   builtin_dec builtin_dec_obj;
   builtin_oct builtin_oct_obj;
   builtin_bin builtin_bin_obj;
+  builtin_constant builtin_false_obj
+	{std::make_unique <value_cst> (constant (0, &bool_constant_dom), 0)};
+  builtin_constant builtin_true_obj
+	{std::make_unique <value_cst> (constant (1, &bool_constant_dom), 0)};
 
   // stack shuffling
   builtin_drop builtin_drop_obj;
@@ -84,6 +91,8 @@ dwgrep_init ()
   add_builtin (builtin_dec_obj);
   add_builtin (builtin_oct_obj);
   add_builtin (builtin_bin_obj);
+  add_builtin (builtin_false_obj, "false");
+  add_builtin (builtin_true_obj, "true");
 
   add_builtin (builtin_drop_obj);
   add_builtin (builtin_swap_obj);

@@ -88,15 +88,6 @@ public:
     return m_value;
   }
 
-  // Parse constant.
-  static constant parse (std::string str);
-
-  // Parse attribute reference.
-  static constant parse_attr (std::string str);
-
-  // Parse tag reference.
-  static constant parse_tag (std::string str);
-
   bool operator< (constant that) const;
   bool operator> (constant that) const;
   bool operator== (constant that) const;

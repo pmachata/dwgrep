@@ -35,19 +35,6 @@ dwarf_tag_string (unsigned int tag, bool shrt)
     }
 }
 
-static unsigned int
-dwarf_tag_value (std::string str)
-{
-  // XXX: This is very crude implementation, but I very much doubt
-  // parsing performance will be any kind of bottleneck ever, so just
-  // do the simplest thing that works.
-#define ONE_KNOWN_DW_TAG(NAME, CODE) if (str == #CODE) return CODE;
-  ALL_KNOWN_DW_TAG
-#undef ONE_KNOWN_DW_TAG
-
-    throw std::runtime_error (std::string ("Unknown tag: ") + str);
-}
-
 
 static const char *
 dwarf_attr_string (int attrnum, bool shrt)
@@ -61,16 +48,6 @@ dwarf_attr_string (int attrnum, bool shrt)
     default:
       return nullptr;
     }
-}
-
-static unsigned int
-dwarf_attr_value (std::string str)
-{
-#define ONE_KNOWN_DW_AT(NAME, CODE) if (str == #CODE) return CODE;
-  ALL_KNOWN_DW_AT
-#undef ONE_KNOWN_DW_AT
-
-    throw std::runtime_error (std::string ("Unknown attribute: ") + str);
 }
 
 
@@ -90,18 +67,6 @@ dwarf_form_string (int form, bool shrt)
     }
 }
 
-static unsigned int
-dwarf_form_value (std::string str)
-{
-#define ONE_KNOWN_DW_FORM_DESC(NAME, CODE, DESC) ONE_KNOWN_DW_FORM (NAME, CODE)
-#define ONE_KNOWN_DW_FORM(NAME, CODE) if (str == #CODE) return CODE;
-      ALL_KNOWN_DW_FORM
-#undef ONE_KNOWN_DW_FORM
-#undef ONE_KNOWN_DW_FORM_DESC
-
-    throw std::runtime_error (std::string ("Unknown form value: ") + str);
-}
-
 
 static const char *
 dwarf_lang_string (int lang)
@@ -114,16 +79,6 @@ dwarf_lang_string (int lang)
     default:
       return nullptr;
     }
-}
-
-static unsigned int
-dwarf_lang_value (std::string str)
-{
-#define ONE_KNOWN_DW_LANG_DESC(NAME, CODE, DESC) if (str == #CODE) return CODE;
-      ALL_KNOWN_DW_LANG
-#undef ONE_KNOWN_DW_LANG_DESC
-
-  throw std::runtime_error (std::string ("Unknown lang: ") + str);
 }
 
 
@@ -140,15 +95,6 @@ dwarf_inline_string (int code)
     }
 }
 
-static unsigned int
-dwarf_inline_value (std::string str)
-{
-#define ONE_KNOWN_DW_INL(NAME, CODE) if (str == #CODE) return CODE;
-      ALL_KNOWN_DW_INL
-#undef ONE_KNOWN_DW_INL
-  throw std::runtime_error (std::string ("Unknown inline: ") + str);
-}
-
 
 static const char *
 dwarf_encoding_string (int code)
@@ -161,16 +107,6 @@ dwarf_encoding_string (int code)
     default:
       return nullptr;
     }
-}
-
-static unsigned int
-dwarf_encoding_value (std::string str)
-{
-#define ONE_KNOWN_DW_ATE(NAME, CODE) if (str == #CODE) return CODE;
-      ALL_KNOWN_DW_ATE
-#undef ONE_KNOWN_DW_ATE
-
-  throw std::runtime_error (std::string ("Unknown encoding: ") + str);
 }
 
 
@@ -187,16 +123,6 @@ dwarf_access_string (int code)
     }
 }
 
-static unsigned int
-dwarf_access_value (std::string str)
-{
-#define ONE_KNOWN_DW_ACCESS(NAME, CODE) if (str == #CODE) return CODE;
-      ALL_KNOWN_DW_ACCESS
-#undef ONE_KNOWN_DW_ACCESS
-
-  throw std::runtime_error (std::string ("Unknown access: ") + str);
-}
-
 
 static const char *
 dwarf_visibility_string (int code)
@@ -209,16 +135,6 @@ dwarf_visibility_string (int code)
     default:
       return nullptr;
     }
-}
-
-static unsigned int
-dwarf_visibility_value (std::string str)
-{
-#define ONE_KNOWN_DW_VIS(NAME, CODE) if (str == #CODE) return CODE;
-      ALL_KNOWN_DW_VIS
-#undef ONE_KNOWN_DW_VIS
-
-  throw std::runtime_error (std::string ("Unknown visibility: ") + str);
 }
 
 
@@ -235,16 +151,6 @@ dwarf_virtuality_string (int code)
     }
 }
 
-static unsigned int
-dwarf_virtuality_value (std::string str)
-{
-#define ONE_KNOWN_DW_VIRTUALITY(NAME, CODE) if (str == #CODE) return CODE;
-      ALL_KNOWN_DW_VIRTUALITY
-#undef ONE_KNOWN_DW_VIRTUALITY
-
-  throw std::runtime_error (std::string ("Unknown virtuality: ") + str);
-}
-
 
 static const char *
 dwarf_identifier_case_string (int code)
@@ -257,16 +163,6 @@ dwarf_identifier_case_string (int code)
     default:
       return nullptr;
     }
-}
-
-static unsigned int
-dwarf_identifier_case_value (std::string str)
-{
-#define ONE_KNOWN_DW_ID(NAME, CODE) if (str == #CODE) return CODE;
-      ALL_KNOWN_DW_ID
-#undef ONE_KNOWN_DW_ID
-
-  throw std::runtime_error (std::string ("Unknown identifier case: ") + str);
 }
 
 
@@ -283,16 +179,6 @@ dwarf_calling_convention_string (int code)
     }
 }
 
-static unsigned int
-dwarf_calling_convention_value (std::string str)
-{
-#define ONE_KNOWN_DW_CC(NAME, CODE) if (str == #CODE) return CODE;
-      ALL_KNOWN_DW_CC
-#undef ONE_KNOWN_DW_CC
-
-  throw std::runtime_error (std::string ("Unknown calling convention: ") + str);
-}
-
 
 static const char *
 dwarf_ordering_string (int code)
@@ -305,16 +191,6 @@ dwarf_ordering_string (int code)
     default:
       return nullptr;
     }
-}
-
-static unsigned int
-dwarf_ordering_value (std::string str)
-{
-#define ONE_KNOWN_DW_ORD(NAME, CODE) if (str == #CODE) return CODE;
-      ALL_KNOWN_DW_ORD
-#undef ONE_KNOWN_DW_ORD
-
-  throw std::runtime_error (std::string ("Unknown ordering: ") + str);
 }
 
 
@@ -331,16 +207,6 @@ dwarf_discr_list_string (int code)
     }
 }
 
-static unsigned int
-dwarf_discr_list_value (std::string str)
-{
-#define ONE_KNOWN_DW_DSC(NAME, CODE) if (str == #CODE) return CODE;
-      ALL_KNOWN_DW_DSC
-#undef ONE_KNOWN_DW_DSC
-
-  throw std::runtime_error (std::string ("Unknown discr list: ") + str);
-}
-
 
 static const char *
 dwarf_decimal_sign_string (int code)
@@ -353,16 +219,6 @@ dwarf_decimal_sign_string (int code)
     default:
       return nullptr;
     }
-}
-
-static unsigned int
-dwarf_decimal_sign_value (std::string str)
-{
-#define ONE_KNOWN_DW_DS(NAME, CODE) if (str == #CODE) return CODE;
-      ALL_KNOWN_DW_DS
-#undef ONE_KNOWN_DW_DS
-
-  throw std::runtime_error (std::string ("Unknown decimal sign: ") + str);
 }
 
 
@@ -381,18 +237,6 @@ dwarf_locexpr_opcode_string (int code)
     }
 }
 
-static unsigned int
-dwarf_locexpr_opcode_value (std::string str)
-{
-#define ONE_KNOWN_DW_OP_DESC(NAME, CODE, DESC) ONE_KNOWN_DW_OP (NAME, CODE)
-#define ONE_KNOWN_DW_OP(NAME, CODE) if (str == #CODE) return CODE;
-      ALL_KNOWN_DW_OP
-#undef ONE_KNOWN_DW_OP
-#undef ONE_KNOWN_DW_OP_DESC
-
-  throw std::runtime_error (std::string ("Unknown locexpr opcode: ") + str);
-}
-
 
 static const char *
 dwarf_address_class_string (int code)
@@ -404,15 +248,6 @@ dwarf_address_class_string (int code)
     default:
       return nullptr;
     }
-}
-
-static unsigned int
-dwarf_address_class_value (std::string str)
-{
-  if (str == "DW_ADDR_none")
-    return 0;
-
-  throw std::runtime_error (std::string ("Unknown address class: ") + str);
 }
 
 
@@ -427,16 +262,6 @@ dwarf_endianity_string (int code)
     default:
       return nullptr;
     }
-}
-
-static unsigned int
-dwarf_endianity_value (std::string str)
-{
-#define ONE_KNOWN_DW_END(NAME, CODE) if (str == #CODE) return CODE;
-      ALL_KNOWN_DW_END
-#undef ONE_KNOWN_DW_END
-
-  throw std::runtime_error (std::string ("Unknown endianity: ") + str);
 }
 
 
@@ -850,48 +675,3 @@ static struct
 } dw_endianity_dom_obj;
 
 constant_dom const &dw_endianity_dom = dw_endianity_dom_obj;
-
-
-constant
-constant::parse (std::string str)
-{
-#define STARTSWITH(PREFIX) (str.substr (0, sizeof (PREFIX) - 1) == PREFIX)
-#define HANDLE(PREFIX, KEY)					\
-  if (STARTSWITH (PREFIX))					\
-    return constant (dwarf_##KEY##_value (str), &dw_##KEY##_dom)
-
-  HANDLE ("DW_TAG_", tag);
-  HANDLE ("DW_AT_", attr);
-  HANDLE ("DW_FORM_", form);
-  HANDLE ("DW_LANG_", lang);
-  HANDLE ("DW_INL_", inline);
-  HANDLE ("DW_ATE_", encoding);
-  HANDLE ("DW_ACCESS_", access);
-  HANDLE ("DW_VIS_", visibility);
-  HANDLE ("DW_VIRTUALITY_", virtuality);
-  HANDLE ("DW_ID_", identifier_case);
-  HANDLE ("DW_CC_", calling_convention);
-  HANDLE ("DW_ORD_", ordering);
-  HANDLE ("DW_DSC_", discr_list);
-  HANDLE ("DW_DS_", decimal_sign);
-  HANDLE ("DW_OP_", locexpr_opcode);
-  HANDLE ("DW_ADDR_", address_class);
-  HANDLE ("DW_END_", endianity);
-
-#undef HANDLE
-#undef STARTSWITH
-
-  throw std::runtime_error (std::string ("Unknown constant: ") + str);
-}
-
-constant
-constant::parse_attr (std::string str)
-{
-  return parse ("DW_AT_" + str);
-}
-
-constant
-constant::parse_tag (std::string str)
-{
-  return parse ("DW_TAG_" + str);
-}

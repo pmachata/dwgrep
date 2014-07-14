@@ -6,7 +6,6 @@
 #include "tree.hh"
 #include "parser.hh"
 #include "lexer.hh"
-#include "known-dwarf.h"
 
 static unsigned tests = 0, failed = 0;
 
@@ -85,77 +84,6 @@ ftestx (std::string parse, std::string expect_exc, bool optimize = false)
 void
 do_tests ()
 {
-#define ONE_KNOWN_DW_TAG(NAME, CODE) test (#CODE, "(CONST<" #CODE ">)");
-  ALL_KNOWN_DW_TAG;
-#undef ONE_KNOWN_DW_TAG
-
-#define ONE_KNOWN_DW_AT(NAME, CODE) test (#CODE, "(CONST<" #CODE ">)");
-  ALL_KNOWN_DW_AT;
-#undef ONE_KNOWN_DW_AT
-
-#define ONE_KNOWN_DW_FORM_DESC(NAME, CODE, DESC) ONE_KNOWN_DW_FORM (NAME, CODE)
-#define ONE_KNOWN_DW_FORM(NAME, CODE) test (#CODE, "(CONST<" #CODE ">)");
-  ALL_KNOWN_DW_FORM;
-#undef ONE_KNOWN_DW_FORM
-#undef ONE_KNOWN_DW_FORM_DESC
-
-#define ONE_KNOWN_DW_LANG_DESC(NAME, CODE, DESC)	\
-	test (#CODE, "(CONST<" #CODE ">)");
-  ALL_KNOWN_DW_LANG;
-#undef ONE_KNOWN_DW_LANG_DESC
-
-#define ONE_KNOWN_DW_INL(NAME, CODE) test (#CODE, "(CONST<" #CODE ">)");
-  ALL_KNOWN_DW_INL;
-#undef ONE_KNOWN_DW_INL
-
-#define ONE_KNOWN_DW_ATE(NAME, CODE) test (#CODE, "(CONST<" #CODE ">)");
-  ALL_KNOWN_DW_ATE;
-#undef ONE_KNOWN_DW_ATE
-
-#define ONE_KNOWN_DW_ACCESS(NAME, CODE) test (#CODE, "(CONST<" #CODE ">)");
-  ALL_KNOWN_DW_ACCESS;
-#undef ONE_KNOWN_DW_ACCESS
-
-#define ONE_KNOWN_DW_VIS(NAME, CODE) test (#CODE, "(CONST<" #CODE ">)");
-  ALL_KNOWN_DW_VIS;
-#undef ONE_KNOWN_DW_VIS
-
-#define ONE_KNOWN_DW_VIRTUALITY(NAME, CODE) test (#CODE, "(CONST<" #CODE ">)");
-  ALL_KNOWN_DW_VIRTUALITY;
-#undef ONE_KNOWN_DW_VIRTUALITY
-
-#define ONE_KNOWN_DW_ID(NAME, CODE) test (#CODE, "(CONST<" #CODE ">)");
-  ALL_KNOWN_DW_ID;
-#undef ONE_KNOWN_DW_ID
-
-#define ONE_KNOWN_DW_CC(NAME, CODE) test (#CODE, "(CONST<" #CODE ">)");
-  ALL_KNOWN_DW_CC;
-#undef ONE_KNOWN_DW_CC
-
-#define ONE_KNOWN_DW_ORD(NAME, CODE) test (#CODE, "(CONST<" #CODE ">)");
-  ALL_KNOWN_DW_ORD;
-#undef ONE_KNOWN_DW_ORD
-
-#define ONE_KNOWN_DW_DSC(NAME, CODE) test (#CODE, "(CONST<" #CODE ">)");
-  ALL_KNOWN_DW_DSC;
-#undef ONE_KNOWN_DW_DSC
-
-#define ONE_KNOWN_DW_DS(NAME, CODE) test (#CODE, "(CONST<" #CODE ">)");
-  ALL_KNOWN_DW_DS;
-#undef ONE_KNOWN_DW_DS
-
-#define ONE_KNOWN_DW_OP_DESC(NAME, CODE, DESC) ONE_KNOWN_DW_OP (NAME, CODE)
-#define ONE_KNOWN_DW_OP(NAME, CODE) test (#CODE, "(CONST<" #CODE ">)");
-  ALL_KNOWN_DW_OP;
-#undef ONE_KNOWN_DW_OP
-#undef ONE_KNOWN_DW_OP_DESC
-
-  test ("DW_ADDR_none", "(CONST<DW_ADDR_none>)");
-
-#define ONE_KNOWN_DW_END(NAME, CODE) test (#CODE, "(CONST<" #CODE ">)");
-  ALL_KNOWN_DW_END;
-#undef ONE_KNOWN_DW_END
-
   test ("17", "(CONST<17>)");
   test ("0x17", "(CONST<0x17>)");
   test ("017", "(CONST<017>)");

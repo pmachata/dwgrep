@@ -3,6 +3,7 @@
 #include <sstream>
 
 #include "atval.hh"
+#include "builtin-cst.hh"
 #include "builtin-value.hh"
 #include "builtin.hh"
 #include "dwcst.hh"
@@ -954,10 +955,120 @@ namespace
 }
 
 #define ONE_KNOWN_DW_TAG(NAME, CODE)					\
-  static builtin_pred_tag builtin_pred_tag_##NAME {CODE, true},	\
+  static builtin_pred_tag builtin_pred_tag_##NAME {CODE, true},		\
     builtin_pred_ntag_##NAME {CODE, false};
 ALL_KNOWN_DW_TAG
 #undef ONE_KNOWN_DW_TAG
+
+// Builtins for Dwarf constants.
+
+#define ONE_KNOWN_DW_TAG(NAME, CODE)					\
+  builtin_constant builtin_##CODE##_obj					\
+	{std::make_unique <value_cst> (constant (CODE, &dw_tag_dom), 0)};
+  ALL_KNOWN_DW_TAG;
+#undef ONE_KNOWN_DW_TAG
+
+#define ONE_KNOWN_DW_AT(NAME, CODE)					\
+  builtin_constant builtin_##CODE##_obj					\
+	{std::make_unique <value_cst> (constant (CODE, &dw_attr_dom), 0)};
+  ALL_KNOWN_DW_AT;
+#undef ONE_KNOWN_DW_AT
+
+#define ONE_KNOWN_DW_FORM_DESC(NAME, CODE, DESC) ONE_KNOWN_DW_FORM (NAME, CODE)
+#define ONE_KNOWN_DW_FORM(NAME, CODE)					\
+  builtin_constant builtin_##CODE##_obj					\
+	{std::make_unique <value_cst> (constant (CODE, &dw_form_dom), 0)};
+  ALL_KNOWN_DW_FORM;
+#undef ONE_KNOWN_DW_FORM
+#undef ONE_KNOWN_DW_FORM_DESC
+
+#define ONE_KNOWN_DW_LANG_DESC(NAME, CODE, DESC)			\
+  builtin_constant builtin_##CODE##_obj					\
+	{std::make_unique <value_cst> (constant (CODE, &dw_lang_dom), 0)};
+  ALL_KNOWN_DW_LANG;
+#undef ONE_KNOWN_DW_LANG_DESC
+
+#define ONE_KNOWN_DW_INL(NAME, CODE)					\
+  builtin_constant builtin_##CODE##_obj					\
+	{std::make_unique <value_cst> (constant (CODE, &dw_inline_dom), 0)};
+  ALL_KNOWN_DW_INL;
+#undef ONE_KNOWN_DW_INL
+
+#define ONE_KNOWN_DW_ATE(NAME, CODE)					\
+  builtin_constant builtin_##CODE##_obj					\
+	{std::make_unique <value_cst> (constant (CODE, &dw_encoding_dom), 0)};
+  ALL_KNOWN_DW_ATE;
+#undef ONE_KNOWN_DW_ATE
+
+#define ONE_KNOWN_DW_ACCESS(NAME, CODE)					\
+  builtin_constant builtin_##CODE##_obj					\
+	{std::make_unique <value_cst> (constant (CODE, &dw_access_dom), 0)};
+  ALL_KNOWN_DW_ACCESS;
+#undef ONE_KNOWN_DW_ACCESS
+
+#define ONE_KNOWN_DW_VIS(NAME, CODE)					\
+  builtin_constant builtin_##CODE##_obj					\
+	{std::make_unique <value_cst> (constant (CODE, &dw_visibility_dom), 0)};
+  ALL_KNOWN_DW_VIS;
+#undef ONE_KNOWN_DW_VIS
+
+#define ONE_KNOWN_DW_VIRTUALITY(NAME, CODE)				\
+  builtin_constant builtin_##CODE##_obj					\
+	{std::make_unique <value_cst> (constant (CODE, &dw_virtuality_dom), 0)};
+  ALL_KNOWN_DW_VIRTUALITY;
+#undef ONE_KNOWN_DW_VIRTUALITY
+
+#define ONE_KNOWN_DW_ID(NAME, CODE)					\
+  builtin_constant builtin_##CODE##_obj					\
+	{std::make_unique <value_cst>					\
+	    (constant (CODE, &dw_identifier_case_dom), 0)};
+  ALL_KNOWN_DW_ID;
+#undef ONE_KNOWN_DW_ID
+
+#define ONE_KNOWN_DW_CC(NAME, CODE)					\
+  builtin_constant builtin_##CODE##_obj					\
+	{std::make_unique <value_cst>					\
+	    (constant (CODE, &dw_calling_convention_dom), 0)};
+  ALL_KNOWN_DW_CC;
+#undef ONE_KNOWN_DW_CC
+
+#define ONE_KNOWN_DW_ORD(NAME, CODE)					\
+  builtin_constant builtin_##CODE##_obj					\
+	{std::make_unique <value_cst> (constant (CODE, &dw_ordering_dom), 0)};
+  ALL_KNOWN_DW_ORD;
+#undef ONE_KNOWN_DW_ORD
+
+#define ONE_KNOWN_DW_DSC(NAME, CODE)					\
+  builtin_constant builtin_##CODE##_obj					\
+	{std::make_unique <value_cst> (constant (CODE, &dw_discr_list_dom), 0)};
+  ALL_KNOWN_DW_DSC;
+#undef ONE_KNOWN_DW_DSC
+
+#define ONE_KNOWN_DW_DS(NAME, CODE)					\
+  builtin_constant builtin_##CODE##_obj					\
+	{std::make_unique <value_cst>					\
+	    (constant (CODE, &dw_decimal_sign_dom), 0)};
+  ALL_KNOWN_DW_DS;
+#undef ONE_KNOWN_DW_DS
+
+#define ONE_KNOWN_DW_OP_DESC(NAME, CODE, DESC) ONE_KNOWN_DW_OP (NAME, CODE)
+#define ONE_KNOWN_DW_OP(NAME, CODE)					\
+  builtin_constant builtin_##CODE##_obj					\
+	{std::make_unique <value_cst>					\
+	    (constant (CODE, &dw_locexpr_opcode_dom), 0)};
+  ALL_KNOWN_DW_OP;
+#undef ONE_KNOWN_DW_OP
+#undef ONE_KNOWN_DW_OP_DESC
+
+builtin_constant builtin_DW_ADDR_none_obj
+    {std::make_unique <value_cst>
+	(constant (DW_ADDR_none, &dw_address_class_dom), 0)};
+
+#define ONE_KNOWN_DW_END(NAME, CODE)					\
+  builtin_constant builtin_##CODE##_obj					\
+	{std::make_unique <value_cst> (constant (CODE, &dw_endianity_dom), 0)};
+  ALL_KNOWN_DW_END;
+#undef ONE_KNOWN_DW_END
 
 void
 dwgrep_init_dw ()
@@ -976,18 +1087,95 @@ dwgrep_init_dw ()
 #define ONE_KNOWN_DW_AT(NAME, CODE)				\
     add_builtin (builtin_attr_##NAME, "@AT_" #NAME);		\
     add_builtin (builtin_pred_attr_##NAME, "?AT_" #NAME);	\
-    add_builtin (builtin_pred_nattr_##NAME, "!AT_" #NAME);
+    add_builtin (builtin_pred_nattr_##NAME, "!AT_" #NAME);	\
+    add_builtin (builtin_##CODE##_obj, #CODE);
   ALL_KNOWN_DW_AT
 #undef ONE_KNOWN_DW_AT
 
 #define ONE_KNOWN_DW_TAG(NAME, CODE)				\
     add_builtin (builtin_pred_tag_##NAME, "?TAG_" #NAME);	\
-    add_builtin (builtin_pred_ntag_##NAME, "!TAG_" #NAME);
+    add_builtin (builtin_pred_ntag_##NAME, "!TAG_" #NAME);	\
+    add_builtin (builtin_##CODE##_obj, #CODE);
   ALL_KNOWN_DW_TAG
 #undef ONE_KNOWN_DW_TAG
 
   add_builtin (builtin_rootp);
   add_builtin (builtin_nrootp);
+
+#define ONE_KNOWN_DW_FORM_DESC(NAME, CODE, DESC) ONE_KNOWN_DW_FORM (NAME, CODE)
+#define ONE_KNOWN_DW_FORM(NAME, CODE) add_builtin (builtin_##CODE##_obj, #CODE);
+  ALL_KNOWN_DW_FORM;
+#undef ONE_KNOWN_DW_FORM
+#undef ONE_KNOWN_DW_FORM_DESC
+
+#define ONE_KNOWN_DW_LANG_DESC(NAME, CODE, DESC)	\
+    add_builtin (builtin_##CODE##_obj, #CODE);
+  ALL_KNOWN_DW_LANG;
+#undef ONE_KNOWN_DW_LANG_DESC
+
+#define ONE_KNOWN_DW_INL(NAME, CODE)		\
+    add_builtin (builtin_##CODE##_obj, #CODE);
+  ALL_KNOWN_DW_INL;
+#undef ONE_KNOWN_DW_INL
+
+#define ONE_KNOWN_DW_ATE(NAME, CODE)		\
+    add_builtin (builtin_##CODE##_obj, #CODE);
+  ALL_KNOWN_DW_ATE;
+#undef ONE_KNOWN_DW_ATE
+
+#define ONE_KNOWN_DW_ACCESS(NAME, CODE)		\
+    add_builtin (builtin_##CODE##_obj, #CODE);
+  ALL_KNOWN_DW_ACCESS;
+#undef ONE_KNOWN_DW_ACCESS
+
+#define ONE_KNOWN_DW_VIS(NAME, CODE)		\
+    add_builtin (builtin_##CODE##_obj, #CODE);
+  ALL_KNOWN_DW_VIS;
+#undef ONE_KNOWN_DW_VIS
+
+#define ONE_KNOWN_DW_VIRTUALITY(NAME, CODE)	\
+    add_builtin (builtin_##CODE##_obj, #CODE);
+  ALL_KNOWN_DW_VIRTUALITY;
+#undef ONE_KNOWN_DW_VIRTUALITY
+
+#define ONE_KNOWN_DW_ID(NAME, CODE)		\
+    add_builtin (builtin_##CODE##_obj, #CODE);
+  ALL_KNOWN_DW_ID;
+#undef ONE_KNOWN_DW_ID
+
+#define ONE_KNOWN_DW_CC(NAME, CODE)		\
+    add_builtin (builtin_##CODE##_obj, #CODE);
+  ALL_KNOWN_DW_CC;
+#undef ONE_KNOWN_DW_CC
+
+#define ONE_KNOWN_DW_ORD(NAME, CODE)		\
+    add_builtin (builtin_##CODE##_obj, #CODE);
+  ALL_KNOWN_DW_ORD;
+#undef ONE_KNOWN_DW_ORD
+
+#define ONE_KNOWN_DW_DSC(NAME, CODE)		\
+    add_builtin (builtin_##CODE##_obj, #CODE);
+  ALL_KNOWN_DW_DSC;
+#undef ONE_KNOWN_DW_DSC
+
+#define ONE_KNOWN_DW_DS(NAME, CODE)		\
+    add_builtin (builtin_##CODE##_obj, #CODE);
+  ALL_KNOWN_DW_DS;
+#undef ONE_KNOWN_DW_DS
+
+#define ONE_KNOWN_DW_OP_DESC(NAME, CODE, DESC) ONE_KNOWN_DW_OP (NAME, CODE)
+#define ONE_KNOWN_DW_OP(NAME, CODE)		\
+    add_builtin (builtin_##CODE##_obj, #CODE);
+  ALL_KNOWN_DW_OP;
+#undef ONE_KNOWN_DW_OP
+#undef ONE_KNOWN_DW_OP_DESC
+
+  add_builtin (builtin_DW_ADDR_none_obj, "DW_ADDR_none");
+
+#define ONE_KNOWN_DW_END(NAME, CODE)		\
+    add_builtin (builtin_##CODE##_obj, #CODE);
+  ALL_KNOWN_DW_END;
+#undef ONE_KNOWN_DW_END
 
   ovl_tab_value ().add_overload (value_attr::vtype, builtin_value_attr_obj);
 }
