@@ -168,163 +168,129 @@ do_tests ()
 
   test ("if () then () else ()",
 	"(IFELSE (NOP) (NOP) (NOP))");
-  test ("if child then next else prev",
-	"(IFELSE (F_CHILD) (F_NEXT) (F_PREV))");
-  test ("if if child then 1 else 2 then 3 else 4",
-	"(IFELSE (IFELSE (F_CHILD) (CONST<1>) (CONST<2>))"
+  test ("if 1 then 2 else 3",
+	"(IFELSE (CONST<1>) (CONST<2>) (CONST<3>))");
+  test ("if if 0 then 1 else 2 then 3 else 4",
+	"(IFELSE (IFELSE (CONST<0>) (CONST<1>) (CONST<2>))"
 	" (CONST<3>) (CONST<4>))");
-  test ("if 1 then if child then 2 else 3 else 4",
-	"(IFELSE (CONST<1>) (IFELSE (F_CHILD) (CONST<2>) (CONST<3>))"
+  test ("if 1 then if 0 then 2 else 3 else 4",
+	"(IFELSE (CONST<1>) (IFELSE (CONST<0>) (CONST<2>) (CONST<3>))"
 	" (CONST<4>))");
-  test ("if 1 then 2 else if child then 3 else 4",
+  test ("if 1 then 2 else if 0 then 3 else 4",
 	"(IFELSE (CONST<1>) (CONST<2>)"
-	" (IFELSE (F_CHILD) (CONST<3>) (CONST<4>)))");
+	" (IFELSE (CONST<0>) (CONST<3>) (CONST<4>)))");
   test ("if 1 then 2 "
-	"else if child then 3 "
-	"else if next then 4 "
+	"else if 0 then 3 "
+	"else if 6 then 4 "
 	"else 5 ",
 	"(IFELSE (CONST<1>) (CONST<2>)"
-	" (IFELSE (F_CHILD) (CONST<3>)"
-	" (IFELSE (F_NEXT) (CONST<4>) (CONST<5>))))");
+	" (IFELSE (CONST<0>) (CONST<3>)"
+	" (IFELSE (CONST<6>) (CONST<4>) (CONST<5>))))");
 
-  test ("?eq", "(ASSERT (PRED_EQ))");
-  test ("!eq", "(ASSERT (PRED_NOT (PRED_EQ)))");
-  test ("?ne", "(ASSERT (PRED_NE))");
-  test ("!ne", "(ASSERT (PRED_NOT (PRED_NE)))");
-  test ("?lt", "(ASSERT (PRED_LT))");
-  test ("!lt", "(ASSERT (PRED_NOT (PRED_LT)))");
-  test ("?gt", "(ASSERT (PRED_GT))");
-  test ("!gt", "(ASSERT (PRED_NOT (PRED_GT)))");
-  test ("?le", "(ASSERT (PRED_LE))");
-  test ("!le", "(ASSERT (PRED_NOT (PRED_LE)))");
-  test ("?ge", "(ASSERT (PRED_GE))");
-  test ("!ge", "(ASSERT (PRED_NOT (PRED_GE)))");
+  test ("?eq", "(F_BUILTIN<?eq>)");
+  test ("!eq", "(F_BUILTIN<!eq>)");
+  test ("?ne", "(F_BUILTIN<!eq>)");
+  test ("!ne", "(F_BUILTIN<?eq>)");
+  test ("?lt", "(F_BUILTIN<?lt>)");
+  test ("!lt", "(F_BUILTIN<!lt>)");
+  test ("?gt", "(F_BUILTIN<?gt>)");
+  test ("!gt", "(F_BUILTIN<!gt>)");
+  test ("?le", "(F_BUILTIN<!gt>)");
+  test ("!le", "(F_BUILTIN<?gt>)");
+  test ("?ge", "(F_BUILTIN<!lt>)");
+  test ("!ge", "(F_BUILTIN<?lt>)");
 
   test ("?match", "(ASSERT (PRED_MATCH))");
   test ("!match", "(ASSERT (PRED_NOT (PRED_MATCH)))");
   test ("?find", "(ASSERT (PRED_FIND))");
   test ("!find", "(ASSERT (PRED_NOT (PRED_FIND)))");
 
-  test ("?root", "(ASSERT (PRED_ROOT))");
-  test ("!root", "(ASSERT (PRED_NOT (PRED_ROOT)))");
-
-  test ("add", "(F_ADD)");
-  test ("sub", "(F_SUB)");
-  test ("mul", "(F_MUL)");
-  test ("div", "(F_DIV)");
-  test ("mod", "(F_MOD)");
-  test ("parent", "(F_PARENT)");
-  test ("child", "(F_CHILD)");
-  test ("attribute", "(F_ATTRIBUTE)");
-  test ("prev", "(F_PREV)");
-  test ("next", "(F_NEXT)");
+  test ("add", "(F_BUILTIN<add>)");
+  test ("sub", "(F_BUILTIN<sub>)");
+  test ("mul", "(F_BUILTIN<mul>)");
+  test ("div", "(F_BUILTIN<div>)");
+  test ("mod", "(F_BUILTIN<mod>)");
   test ("type", "(F_TYPE)");
-  test ("offset", "(F_OFFSET)");
-  test ("name", "(F_NAME)");
-  test ("tag", "(F_TAG)");
-  test ("form", "(F_FORM)");
-  test ("value", "(F_VALUE)");
+  test ("value", "(F_BUILTIN<value>)");
   test ("pos", "(F_POS)");
   test ("elem", "(F_ELEM)");
   test ("universe", "(SEL_UNIVERSE)");
   test ("section", "(SEL_SECTION)");
-  test ("unit", "(SEL_UNIT)");
 
-#define ONE_KNOWN_DW_AT(NAME, CODE)					\
-  test ("@"#NAME, "(CAT (F_ATTR_NAMED<" #CODE ">) (F_VALUE))");		\
-  test ("?@"#NAME, "(ASSERT (PRED_AT<" #CODE ">))");			\
-  test ("!@"#NAME, "(ASSERT (PRED_NOT (PRED_AT<" #CODE ">)))");
-
-  ALL_KNOWN_DW_AT;
-#undef ONE_KNOWN_DW_AT
-
-#define ONE_KNOWN_DW_TAG(NAME, CODE)				\
-  test ("?"#NAME, "(ASSERT (PRED_TAG<" #CODE ">))");		\
-  test ("!"#NAME, "(ASSERT (PRED_NOT (PRED_TAG<" #CODE ">)))");
-
-  ALL_KNOWN_DW_TAG;
-#undef ONE_KNOWN_DW_TAG
-
-  test ("child*", "(CLOSE_STAR (F_CHILD))");
-  test ("child+", "(CAT (F_CHILD) (CLOSE_STAR (F_CHILD)))");
-  test ("child?", "(ALT (F_CHILD) (NOP))");
+  test ("()*", "(CLOSE_STAR (NOP))");
+  test ("()+", "(CAT (NOP) (CLOSE_STAR (NOP)))");
   test ("swap*", "(CLOSE_STAR (F_BUILTIN<swap>))");
   test ("swap+", "(CAT (F_BUILTIN<swap>) (CLOSE_STAR (F_BUILTIN<swap>)))");
   test ("swap?", "(ALT (F_BUILTIN<swap>) (NOP))");
 
-  test ("child next",
-	"(CAT (F_CHILD) (F_NEXT))");
-  test ("child next*",
-	"(CAT (F_CHILD) (CLOSE_STAR (F_NEXT)))");
-  test ("child* next",
-	"(CAT (CLOSE_STAR (F_CHILD)) (F_NEXT))");
-  test ("child+ next",
-	"(CAT (F_CHILD) (CLOSE_STAR (F_CHILD)) (F_NEXT))");
+  test ("1 dup",
+	"(CAT (CONST<1>) (F_BUILTIN<dup>))");
+  test ("1 dup*",
+	"(CAT (CONST<1>) (CLOSE_STAR (F_BUILTIN<dup>)))");
+  test ("1* dup",
+	"(CAT (CLOSE_STAR (CONST<1>)) (F_BUILTIN<dup>))");
+  test ("1+ dup",
+	"(CAT (CONST<1>) (CLOSE_STAR (CONST<1>)) (F_BUILTIN<dup>))");
 
-  test ("dup swap child",
-	"(CAT (F_BUILTIN<dup>) (F_BUILTIN<swap>) (F_CHILD))");
-  test ("dup swap child next",
-	"(CAT (F_BUILTIN<dup>) (F_BUILTIN<swap>) (F_CHILD) (F_NEXT))");
+  test ("2/elem",
+	"(TRANSFORM (CONST<2>) (F_ELEM))");
+  test ("2/elem 1",
+	"(CAT (TRANSFORM (CONST<2>) (F_ELEM)) (CONST<1>))");
+  test ("2/(elem 1)",
+	"(TRANSFORM (CONST<2>) (CAT (F_ELEM) (CONST<1>)))");
+  test ("2/elem 2/1",
+	"(CAT (TRANSFORM (CONST<2>) (F_ELEM))"
+	" (TRANSFORM (CONST<2>) (CONST<1>)))");
 
-  test ("2/child",
-	"(TRANSFORM (CONST<2>) (F_CHILD))");
-  test ("2/child next",
-	"(CAT (TRANSFORM (CONST<2>) (F_CHILD)) (F_NEXT))");
-  test ("2/(child next)",
-	"(TRANSFORM (CONST<2>) (CAT (F_CHILD) (F_NEXT)))");
-  test ("2/child 2/next",
-	"(CAT (TRANSFORM (CONST<2>) (F_CHILD))"
-	" (TRANSFORM (CONST<2>) (F_NEXT)))");
-
-  test ("(child next)",
-	"(CAT (F_CHILD) (F_NEXT))");
-  test ("((child next))",
-	"(CAT (F_CHILD) (F_NEXT))");
-  test ("(child (next))",
-	"(CAT (F_CHILD) (F_NEXT))");
-  test ("(dup) swap child next",
-	"(CAT (F_BUILTIN<dup>) (F_BUILTIN<swap>) (F_CHILD) (F_NEXT))");
-  test ("dup (swap) child next",
-	"(CAT (F_BUILTIN<dup>) (F_BUILTIN<swap>) (F_CHILD) (F_NEXT))");
-  test ("dup swap (child) next",
-	"(CAT (F_BUILTIN<dup>) (F_BUILTIN<swap>) (F_CHILD) (F_NEXT))");
-  test ("dup swap child (next)",
-	"(CAT (F_BUILTIN<dup>) (F_BUILTIN<swap>) (F_CHILD) (F_NEXT))");
-  test ("dup (swap (child (next)))",
-	"(CAT (F_BUILTIN<dup>) (F_BUILTIN<swap>) (F_CHILD) (F_NEXT))");
-  test ("((((dup) swap) child) next)",
-	"(CAT (F_BUILTIN<dup>) (F_BUILTIN<swap>) (F_CHILD) (F_NEXT))");
-  test ("((((dup) swap)) (child next))",
-	"(CAT (F_BUILTIN<dup>) (F_BUILTIN<swap>) (F_CHILD) (F_NEXT))");
+  test ("(elem 1)",
+	"(CAT (F_ELEM) (CONST<1>))");
+  test ("((elem 1))",
+	"(CAT (F_ELEM) (CONST<1>))");
+  test ("(elem (1))",
+	"(CAT (F_ELEM) (CONST<1>))");
+  test ("(dup) swap elem 1",
+	"(CAT (F_BUILTIN<dup>) (F_BUILTIN<swap>) (F_ELEM) (CONST<1>))");
+  test ("dup (swap) elem 1",
+	"(CAT (F_BUILTIN<dup>) (F_BUILTIN<swap>) (F_ELEM) (CONST<1>))");
+  test ("dup swap (elem) 1",
+	"(CAT (F_BUILTIN<dup>) (F_BUILTIN<swap>) (F_ELEM) (CONST<1>))");
+  test ("dup swap elem (1)",
+	"(CAT (F_BUILTIN<dup>) (F_BUILTIN<swap>) (F_ELEM) (CONST<1>))");
+  test ("dup (swap (elem (1)))",
+	"(CAT (F_BUILTIN<dup>) (F_BUILTIN<swap>) (F_ELEM) (CONST<1>))");
+  test ("((((dup) swap) elem) 1)",
+	"(CAT (F_BUILTIN<dup>) (F_BUILTIN<swap>) (F_ELEM) (CONST<1>))");
+  test ("((((dup) swap)) (elem 1))",
+	"(CAT (F_BUILTIN<dup>) (F_BUILTIN<swap>) (F_ELEM) (CONST<1>))");
 
   test ("dup, over",
 	"(ALT (F_BUILTIN<dup>) (F_BUILTIN<over>))");
-  test ("dup, over, child",
-	"(ALT (F_BUILTIN<dup>) (F_BUILTIN<over>) (F_CHILD))");
+  test ("dup, over, elem",
+	"(ALT (F_BUILTIN<dup>) (F_BUILTIN<over>) (F_ELEM))");
   test ("swap,",
 	"(ALT (F_BUILTIN<swap>) (NOP))");
   test ("swap dup, over",
 	"(ALT (CAT (F_BUILTIN<swap>) (F_BUILTIN<dup>)) (F_BUILTIN<over>))");
-  test ("swap dup, over next, parent dup",
+  test ("swap dup, over elem, 1 dup",
 	"(ALT (CAT (F_BUILTIN<swap>) (F_BUILTIN<dup>)) "
-	"(CAT (F_BUILTIN<over>) (F_NEXT)) "
-	"(CAT (F_PARENT) (F_BUILTIN<dup>)))");
-  test ("(swap dup, (over next, (parent dup)))",
+	"(CAT (F_BUILTIN<over>) (F_ELEM)) "
+	"(CAT (CONST<1>) (F_BUILTIN<dup>)))");
+  test ("(swap dup, (over elem, (1 dup)))",
 	"(ALT (CAT (F_BUILTIN<swap>) (F_BUILTIN<dup>))"
-	" (CAT (F_BUILTIN<over>) (F_NEXT)) "
-	"(CAT (F_PARENT) (F_BUILTIN<dup>)))");
-  test ("2/next, 2/prev",
-	"(ALT (TRANSFORM (CONST<2>) (F_NEXT))"
-	" (TRANSFORM (CONST<2>) (F_PREV)))");
-  test ("next, prev*",
-	"(ALT (F_NEXT) (CLOSE_STAR (F_PREV)))");
+	" (CAT (F_BUILTIN<over>) (F_ELEM)) "
+	"(CAT (CONST<1>) (F_BUILTIN<dup>)))");
+  test ("2/elem, 2/dup",
+	"(ALT (TRANSFORM (CONST<2>) (F_ELEM))"
+	" (TRANSFORM (CONST<2>) (F_BUILTIN<dup>)))");
+  test ("elem, dup*",
+	"(ALT (F_ELEM) (CLOSE_STAR (F_BUILTIN<dup>)))");
 
   test ("[]",
 	"(EMPTY_LIST)");
   test ("[()]",
 	"(CAPTURE (NOP))");
-  test ("[child]",
-	"(CAPTURE (F_CHILD))");
+  test ("[elem]",
+	"(CAPTURE (F_ELEM))");
   test ("[,]",
 	"(CAPTURE (ALT (NOP) (NOP)))");
   test ("[,,]",
@@ -336,7 +302,7 @@ do_tests ()
   test ("\"%%\"", "(FORMAT (STR<%>))");
   test ("\"a%( \")%( [@name] %)(\" %)b\"",
 	"(FORMAT (STR<a>) (FORMAT (STR<)>)"
-	" (CAPTURE (CAT (F_ATTR_NAMED<DW_AT_name>) (F_VALUE)))"
+	" (CAPTURE (READ<@name>))"
 	" (STR<(>)) (STR<b>))");
   test ("\"abc%sdef\"",
 	"(FORMAT (STR<abc>) (NOP) (STR<def>))");
@@ -364,52 +330,35 @@ do_tests ()
   test ("\"co\\n\"\\ \"\\ti\"\\   r\"\\nued\"",
 	"(FORMAT (STR<co\n\ti\\nued>))");
 
-  ftest ("winfo ?root",
-	 "(CAT (SEL_WINFO) (ASSERT (PRED_ROOT)))");
-
-  ftest ("winfo ?compile_unit !root",
-	 "(CAT (SEL_WINFO)"
-	 " (ASSERT (PRED_TAG<DW_TAG_compile_unit>))"
-	 " (ASSERT (PRED_NOT (PRED_ROOT))))");
-
   ftest (",", "(ALT (NOP) (NOP))");
-  ftest ("winfo dup (swap,)",
-	 "(CAT (SEL_WINFO) (F_BUILTIN<dup>)"
+  ftest ("elem dup (swap,)",
+	 "(CAT (F_ELEM) (F_BUILTIN<dup>)"
 	 " (ALT (F_BUILTIN<swap>) (NOP)))");
-  ftest ("winfo dup (,swap)",
-	 "(CAT (SEL_WINFO) (F_BUILTIN<dup>)"
+  ftest ("elem dup (,swap)",
+	 "(CAT (F_ELEM) (F_BUILTIN<dup>)"
 	 " (ALT (NOP) (F_BUILTIN<swap>)))");
-  ftest ("winfo (drop,drop)",
-	 "(CAT (SEL_WINFO)"
+  ftest ("elem (drop,drop)",
+	 "(CAT (F_ELEM)"
 	 " (ALT (F_BUILTIN<drop>) (F_BUILTIN<drop>)))");
-  ftest ("winfo (,drop 1)",
-	 "(CAT (SEL_WINFO)"
+  ftest ("elem (,drop 1)",
+	 "(CAT (F_ELEM)"
 	 " (ALT (NOP) (CAT (F_BUILTIN<drop>) (CONST<1>))))");
-  ftest ("winfo (drop 1,)",
-	 "(CAT (SEL_WINFO)"
+  ftest ("elem (drop 1,)",
+	 "(CAT (F_ELEM)"
 	 " (ALT (CAT (F_BUILTIN<drop>) (CONST<1>)) (NOP)))");
-  ftest ("winfo drop \"foo\"",
-	 "(CAT (SEL_WINFO)"
+  ftest ("elem drop \"foo\"",
+	 "(CAT (F_ELEM)"
 	 " (F_BUILTIN<drop>) (FORMAT (STR<foo>)))");
 
-  ftest ("winfo \"%( dup offset %): %( @name %)\"",
-	 "(CAT (SEL_WINFO)"
+  ftest ("elem \"%( dup swap %): %( @name %)\"",
+	 "(CAT (F_ELEM)"
 	 " (FORMAT (STR<>)"
-	 " (CAT (F_BUILTIN<dup>) (F_OFFSET)) (STR<: >)"
-	 " (CAT (F_ATTR_NAMED<DW_AT_name>)"
-	 " (F_VALUE)) (STR<>)))",
+	 " (CAT (F_BUILTIN<dup>) (F_BUILTIN<swap>)) (STR<: >)"
+	 " (READ<@name>) (STR<>)))",
 	 true);
 
   test ("((1, 2), (3, 4))",
 	"(ALT (CONST<1>) (CONST<2>) (CONST<3>) (CONST<4>))");
-
-  ftest ("winfo child?",
-	 "(CAT (SEL_WINFO) (ALT (F_CHILD) (NOP)))",
-	 false);
-
-  ftest ("winfo child+",
-	 "(CAT (SEL_WINFO) (F_CHILD) (CLOSE_STAR (F_CHILD)))",
-	 false);
 
   std::cerr << tests << " tests total, " << failed << " failures." << std::endl;
   assert (failed == 0);
@@ -418,6 +367,7 @@ do_tests ()
 int
 main (int argc, char *argv[])
 {
+  dwgrep_init ();
   if (argc > 1)
     {
       tree t = parse_query (argv[1]);
