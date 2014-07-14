@@ -4,8 +4,6 @@
 #include <memory>
 #include <cassert>
 
-//#include "value.hh"
-#include "make_unique.hh"
 #include "dwgrep.hh"
 #include "valfile.hh"
 #include "pred_result.hh"

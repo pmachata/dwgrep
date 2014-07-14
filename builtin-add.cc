@@ -1,3 +1,6 @@
+#include <memory>
+#include "make_unique.hh"
+
 #include "op.hh"
 #include "builtin-add.hh"
 

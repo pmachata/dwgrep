@@ -1,4 +1,7 @@
+#include <memory>
+#include "make_unique.hh"
 #include <iostream>
+
 #include "builtin-arith.hh"
 #include "op.hh"
 

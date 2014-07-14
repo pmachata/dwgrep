@@ -1,3 +1,6 @@
+#include <memory>
+#include "make_unique.hh"
+
 #include "value-str.hh"
 #include "vfcst.hh"
 
