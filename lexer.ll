@@ -53,9 +53,6 @@ BIN [01]
 "else" return TOK_ELSE;
 
 "type" return TOK_TYPE;
-"hex" return TOK_HEX;
-"oct" return TOK_OCT;
-"bin" return TOK_BIN;
 "pos" return TOK_POS;
 "universe" return TOK_UNIVERSE;
 "section" return TOK_SECTION;

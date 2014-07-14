@@ -124,23 +124,6 @@ public:
   { m_upstream->reset (); }
 };
 
-class op_f_cast
-  : public op
-{
-  std::shared_ptr <op> m_upstream;
-  constant_dom const *m_dom;
-
-public:
-  op_f_cast (std::shared_ptr <op> upstream, constant_dom const *dom)
-    : m_upstream {upstream}
-    , m_dom {dom}
-  {}
-
-  valfile::uptr next () override;
-  std::string name () const override;
-  void reset () override;
-};
-
 // The stringer hieararchy supports op_format, which implements
 // formatting strings.  They are written similarly to op's, except
 // they send along next() a work-in-progress string in addition to

@@ -64,9 +64,6 @@ enum class tree_arity_v
 // FORMAT -- The literal parts of the format string are stored as
 // children of type STR.  Other computation is stored as children of
 // other types.
-//
-// F_CAST -- For domain casting.  The argument is a constant, whose
-// domain determines what domain to cast to.
 
 #define TREE_TYPES				\
   TREE_TYPE (CAT, BINARY)			\
@@ -95,7 +92,6 @@ enum class tree_arity_v
   TREE_TYPE (FORMAT, NULLARY)			\
   TREE_TYPE (F_TYPE, NULLARY)			\
   TREE_TYPE (F_POS, NULLARY)			\
-  TREE_TYPE (F_CAST, CST)			\
   TREE_TYPE (F_APPLY, NULLARY)			\
   TREE_TYPE (F_DEBUG, NULLARY)			\
   TREE_TYPE (SEL_UNIVERSE, NULLARY)		\

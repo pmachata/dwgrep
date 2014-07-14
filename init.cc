@@ -1,10 +1,13 @@
 #include "builtin-arith.hh"
 #include "builtin-cmp.hh"
+#include "builtin-cst.hh"
 #include "builtin-shf.hh"
+
 #include "builtin-add.hh"
+#include "builtin-elem.hh"
 #include "builtin-length.hh"
 #include "builtin-value.hh"
-#include "builtin-elem.hh"
+
 #include "value-seq.hh"
 #include "value-str.hh"
 
@@ -21,6 +24,12 @@ namespace
   builtin_lt builtin_lt_obj {true}, builtin_nlt_obj {false};
   builtin_gt builtin_gt_obj {true}, builtin_ngt_obj {false};
 
+  // casting
+  builtin_hex builtin_hex_obj;
+  builtin_dec builtin_dec_obj;
+  builtin_oct builtin_oct_obj;
+  builtin_bin builtin_bin_obj;
+
   // stack shuffling
   builtin_drop builtin_drop_obj;
   builtin_swap builtin_swap_obj;
@@ -34,6 +43,11 @@ namespace
   overload_builtin <op_add_cst> builtin_add_cst_obj;
   overload_builtin <op_add_seq> builtin_add_seq_obj;
 
+  // "elem"
+  builtin_elem builtin_elem_obj;
+  overload_builtin <op_elem_str> builtin_elem_str_obj;
+  overload_builtin <op_elem_seq> builtin_elem_seq_obj;
+
   // "length"
   builtin_length builtin_length_obj;
   overload_builtin <op_length_str> builtin_length_str_obj;
@@ -42,11 +56,6 @@ namespace
   // "value"
   builtin_value builtin_value_obj;
   overload_builtin <op_value_cst> builtin_value_cst_obj;
-
-  // "elem"
-  builtin_elem builtin_elem_obj;
-  overload_builtin <op_elem_str> builtin_elem_str_obj;
-  overload_builtin <op_elem_seq> builtin_elem_seq_obj;
 }
 
 void
@@ -70,6 +79,11 @@ dwgrep_init ()
   add_builtin (builtin_lt_obj, "!ge");
   add_builtin (builtin_ngt_obj, "?le");
   add_builtin (builtin_gt_obj, "!le");
+
+  add_builtin (builtin_hex_obj);
+  add_builtin (builtin_dec_obj);
+  add_builtin (builtin_oct_obj);
+  add_builtin (builtin_bin_obj);
 
   add_builtin (builtin_drop_obj);
   add_builtin (builtin_swap_obj);

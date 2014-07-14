@@ -171,8 +171,7 @@
 %token TOK_ASTERISK TOK_PLUS TOK_QMARK TOK_MINUS TOK_COMMA TOK_SEMICOLON
 %token TOK_DOUBLE_VBAR TOK_SLASH TOK_ARROW
 
-%token TOK_TYPE TOK_POS TOK_HEX TOK_OCT TOK_BIN
-%token TOK_APPLY TOK_IF TOK_THEN TOK_ELSE
+%token TOK_TYPE TOK_POS TOK_APPLY TOK_IF TOK_THEN TOK_ELSE
 
 %token TOK_QMARK_MATCH TOK_QMARK_FIND TOK_QMARK_EMPTY
 %token TOK_BANG_MATCH TOK_BANG_FIND TOK_BANG_EMPTY
@@ -383,14 +382,6 @@ Statement:
 
   | TOK_APPLY
   { $$ = tree::create_nullary <tree_type::F_APPLY> (); }
-
-
-  | TOK_HEX
-  { $$ = tree::create_const <tree_type::F_CAST> ({1, &hex_constant_dom}); }
-  | TOK_OCT
-  { $$ = tree::create_const <tree_type::F_CAST> ({1, &oct_constant_dom}); }
-  | TOK_BIN
-  { $$ = tree::create_const <tree_type::F_CAST> ({1, &bin_constant_dom}); }
 
 
   | TOK_POS
