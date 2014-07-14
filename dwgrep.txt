@@ -704,7 +704,7 @@
 
    - EXPR₁ has to have neutral stack effect.
 
-** ·EXPR → “swap” | “dup” | “over” | “rot” | “drop” — stack shuffling
+** •EXPR → “swap” | “dup” | “over” | “rot” | “drop” — stack shuffling
 
    These words reorder elements on stack according to the following
    schemes:

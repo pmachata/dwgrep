@@ -97,6 +97,34 @@ namespace
       return "over";
     }
   };
+
+  struct op_rot
+    : public inner_op
+  {
+    using inner_op::inner_op;
+
+    valfile::uptr
+    next () override
+    {
+      if (auto vf = m_upstream->next ())
+	{
+	  auto a = vf->pop ();
+	  auto b = vf->pop ();
+	  auto c = vf->pop ();
+	  vf->push (std::move (b));
+	  vf->push (std::move (c));
+	  vf->push (std::move (a));
+	  return vf;
+	}
+      return nullptr;
+    }
+
+    std::string
+    name () const override
+    {
+      return "rot";
+    }
+  };
 }
 
 std::shared_ptr <op>
@@ -149,4 +177,17 @@ char const *
 builtin_over::name () const
 {
   return "over";
+}
+
+std::shared_ptr <op>
+builtin_rot::build_exec (std::shared_ptr <op> upstream, dwgrep_graph::sptr q,
+			 std::shared_ptr <scope> scope) const
+{
+  return std::make_shared <op_rot> (upstream);
+}
+
+char const *
+builtin_rot::name () const
+{
+  return "rot";
 }

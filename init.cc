@@ -26,6 +26,7 @@ namespace
   builtin_swap builtin_swap_obj;
   builtin_dup builtin_dup_obj;
   builtin_over builtin_over_obj;
+  builtin_rot builtin_rot_obj;
 
   // "add"
   builtin_add builtin_add_obj;
@@ -74,6 +75,7 @@ dwgrep_init ()
   add_builtin (builtin_swap_obj);
   add_builtin (builtin_dup_obj);
   add_builtin (builtin_over_obj);
+  add_builtin (builtin_rot_obj);
 
   add_builtin (builtin_add_obj);
   ovl_tab_add ().add_overload (value_cst::vtype, builtin_add_cst_obj);

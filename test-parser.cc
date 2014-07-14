@@ -265,8 +265,8 @@ do_tests ()
 
   test ("dup, over",
 	"(ALT (F_BUILTIN<dup>) (F_BUILTIN<over>))");
-  test ("dup, over, elem",
-	"(ALT (F_BUILTIN<dup>) (F_BUILTIN<over>) (F_BUILTIN<elem>))");
+  test ("dup, over, rot",
+	"(ALT (F_BUILTIN<dup>) (F_BUILTIN<over>) (F_BUILTIN<rot>))");
   test ("swap,",
 	"(ALT (F_BUILTIN<swap>) (NOP))");
   test ("swap dup, over",
