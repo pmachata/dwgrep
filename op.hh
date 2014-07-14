@@ -381,21 +381,6 @@ public:
   std::string name () const override;
 };
 
-class op_f_elem
-  : public op
-{
-  class pimpl;
-  std::unique_ptr <pimpl> m_pimpl;
-
-public:
-  explicit op_f_elem (std::shared_ptr <op> upstream);
-  ~op_f_elem ();
-
-  valfile::uptr next () override;
-  std::string name () const override;
-  void reset () override;
-};
-
 class op_f_type
   : public op
 {
