@@ -115,19 +115,17 @@ op_add_seq::next ()
 {
   if (auto vf = m_upstream->next ())
     {
-      auto vp = vf->pop ();
-      assert (vp->is <value_seq> ());
-      auto &v = static_cast <value_seq &> (*vp);
+      auto vp = vf->pop_as <value_seq> ();
 
-      auto wp = vf->pop ();
       // XXX add arity to the framework
+      auto wp = vf->pop ();
       assert (wp->is <value_seq> ());
       auto &w = static_cast <value_seq &> (*wp);
 
       value_seq::seq_t res;
       for (auto const &x: *w.get_seq ())
 	res.emplace_back (x->clone ());
-      for (auto const &x: *v.get_seq ())
+      for (auto const &x: *vp->get_seq ())
 	res.emplace_back (x->clone ());
 
       vf->push (std::make_unique <value_seq> (std::move (res), 0));
@@ -142,10 +140,8 @@ op_length_seq::next ()
 {
   if (auto vf = m_upstream->next ())
     {
-      auto vp = vf->pop ();
-      assert (vp->is <value_seq> ());
-      auto &v = static_cast <value_seq &> (*vp);
-      constant t {v.get_seq ()->size (), &dec_constant_dom};
+      auto vp = vf->pop_as <value_seq> ();
+      constant t {vp->get_seq ()->size (), &dec_constant_dom};
       vf->push (std::make_unique <value_cst> (t, 0));
       return vf;
     }

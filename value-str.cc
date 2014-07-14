@@ -35,16 +35,14 @@ op_add_str::next ()
 {
   if (auto vf = m_upstream->next ())
     {
-      auto vp = vf->pop ();
-      assert (vp->is <value_str> ());
-      auto &v = static_cast <value_str &> (*vp);
+      auto vp = vf->pop_as <value_str> ();
 
-      auto wp = vf->pop ();
       // XXX add arity to the framework
+      auto wp = vf->pop ();
       assert (wp->is <value_str> ());
       auto &w = static_cast <value_str &> (*wp);
 
-      std::string result = w.get_string () + v.get_string ();
+      std::string result = w.get_string () + vp->get_string ();
       vf->push (std::make_unique <value_str> (std::move (result), 0));
       return vf;
     }
@@ -57,10 +55,8 @@ op_length_str::next ()
 {
   if (auto vf = m_upstream->next ())
     {
-      auto vp = vf->pop ();
-      assert (vp->is <value_str> ());
-      auto &v = static_cast <value_str &> (*vp);
-      constant t {v.get_string ().length (), &dec_constant_dom};
+      auto vp = vf->pop_as <value_str> ();
+      constant t {vp->get_string ().length (), &dec_constant_dom};
       vf->push (std::make_unique <value_cst> (t, 0));
       return vf;
     }

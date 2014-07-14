@@ -77,6 +77,15 @@ public:
     return ret;
   }
 
+  template <class T>
+  std::unique_ptr <T>
+  pop_as ()
+  {
+    auto vp = pop ();
+    assert (vp->is <T> ());
+    return std::unique_ptr <T> (static_cast <T *> (vp.release ()));
+  }
+
   value &
   top ()
   {
