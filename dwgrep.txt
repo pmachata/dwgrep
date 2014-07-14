@@ -548,8 +548,8 @@
    |----------+----------------+-----------------|
    | v        | TOS            | Meaning of ?v   |
    |----------+----------------+-----------------|
-   | DW_TAG_  | T_NODE         | ?(tag ?v)       |
-   | DW_AT_   | T_NODE         | ?(attribute ?v) |
+   | DW_TAG_  | T_DIE          | ?(tag ?v)       |
+   | DW_AT_   | T_DIE          | ?(attribute ?v) |
    | DW_AT_   | T_ATTR         | ?(name ?v)      |
    | DW_FORM_ | T_ATTR         | ?(form ?v)      |
    | any      | T_ATTR         | ?(value ?v)     |
@@ -753,9 +753,10 @@
      Note that in case of imported units, "parent" may return more
      than one DIE!  (XXX This doesn't seem desirable?)
 
-   - next is exactly equivalent to:
-     : dup parent child ?eq swap drop
-     : dup pos 1 add swap parent child ?(pos rot ?eq) swap drop
+     : def next {->D;
+     :     D parent child ?(D ?eq) pos 1 add ->next_pos;
+     :     D parent child ?(pos next_pos ?eq)
+     : }
      The first line is necessary to make sure that pos later refers
      to order in children array, not to e.g. a result of ([XYZ] each).
 
@@ -766,7 +767,7 @@
    - !root is exactly equivalent to:
      : ?(parent)
    - ?root is exactly equivalent to:
-     : ?(type T_NODE ?eq) !(parent)
+     : ?(type T_DIE ?eq) !(parent)
 
    - Examples:
      : parent* ?root        # finds a root node of node on TOS
@@ -823,8 +824,8 @@
    This produces an integer value suitable for comparison with the
    following constants:
 
-   - T_NODE — for Dwarf_Die's, and Dwarf_Line's and other pseude-DIE's
-   - T_ATTR — for Dwarf_Attribute's and other attribute-like pseudos
+   - T_DIE — for Dwarf_Die's
+   - T_ATTR — for Dwarf_Attribute's
    - T_SEQ — for sequence objects
    - T_STR — for string objects
    - T_CONST — for integer objects
@@ -840,62 +841,32 @@
    count them by hand:
    : [ child ] (length->L;) elem
 
-**  EXPR → “?first” | “?second” | “?third” — position assertion
+**  EXPR → “get” | “last” | “slice” | “reverse” — sequence transformations
 
-   (And corresponding ! forms.)
+   - def slice { ->S M N; ...}
+     S is a sequence or a string
+     M an N are coordinates of the slice
 
-   Assertion on position of tested element within expression that
-   generated it.  If an expression generates elements X, Y, and Z on
-   top of existing stack A B C, three stacks come out: A B C X, A B C
-   Y, and A B C Z.  "?first" would be true in context of A B C X, etc.
+     The "slice" operator yields a sequence (or string) with elements
+     of S that are between M (inclusive) and N (not inclusive).  If M
+     or N are negative, they are relative to the length of the
+     sequence.
 
-   - ?first is exactly equivalent to:
-     : ?(pos 0 ?eq)
-     (and similarly for ?second, ?third, ...)
+     : [child] 0 -1 slice	# snip the last element
 
-   - Examples:
-     : [elem !first] swap elem ?first   # split a list into head:rest
+   - def get { ->S N; ... }
+     S is a sequence or a string
+     N is a coordinate of an element to pick
 
-**  EXPR → [EXPR₁]“:”[EXPR₂][“:”[EXPR₃]] — sequence unpacking
+     get takes N-th element of a sequence or a string, counting
+     from 0.  Negative values are relative to the length of the
+     sequence, so that -1 is the last element, -2 the one before last,
+     etc.
 
-   - The "::" operator expects a string or a sequence on TOS.  It then
-     yields all its elements that match the mask specified by the
-     three expressions start:stop:step.  Each of these expressions is
-     optional, and if not mentioned, their defaults are, respectively,
-     0, -1, and 1.
+   - reverse expects a sequence or a string on TOS.  It produces the
+     same sequence with elements in reverse order.
 
-     This is intended to work like in Python.  See
-     https://tinyurl.com/o7plcaf, note 5 under the table.
-
-     Note that application of :: operator yields elements of the
-     original sequence.  To get a filtered sequence, one would do:
-     : [child] [:-1]	# snip the last element
-     : [child] [::-1]	# reverse order of children
-     ... which happens to be Python syntax.
-
-     It's worth noting that the following are equivalent:
-     : [child] elem
-     : [child] :
-     : [child] ::
-     Maybe we should give up "elem" and just document : as unpacking
-     operator.
-
-     The expressions noted at ::, if any, are evaluated in
-     subexpression context.  The TOS is then popped, and that's the
-     sought coordinate.  So e.g.:
-     : [child] -1:		# takes last element
-     : [child] (length 1 sub):	# likewise
-
-     XXX It's a bit annoying that we have this fancy way of slicing
-     sequences, but to get nth element, we must do either of:
-     : [child] elem ?(pos N ?eq)
-     : [child] N:(N 1 add)
-     : [child] [N:] :1
-     The last is actually not terribly verbose, but it's far from
-     clear.
-
-   - 1sh, 2nd, 3rd and last extract the given element of sequence on
-     TOS.  XXX (1st) is really (0 nth).  That's confusing.
+   - last is equivalent to (-1 get)
 
 ** •EXPR → “add” | “sub” | “mul” | “div” | “mod” — arithmetic
 
@@ -999,12 +970,22 @@
    - !empty is exactly equivalent to:
      : [] !eq drop
 
+     : def "?empty" { ?(length 0 ?eq) }
+     : def "!empty" { ?(length 0 !eq) }
+
 **  EXPR → “demangle” — demangle a string on TOS
 
 ** •EXPR → “\dbg” — debug assertion
 
    Always succeeds, but as a side effect prints some information about
    the computation in whose context it appeared.
+
+**  comma infix syntax
+    - The idea is to be more kitten-like readable without having to
+      handle the indented syntax.
+      : [10 range] sort: {->a; if (a mod: 2 ?0) then 0 else 1}
+
+    - (X : Y) would be parsed as (Y X)
 
 
 * TODO
