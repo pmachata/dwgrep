@@ -2,7 +2,6 @@
 #include "make_unique.hh"
 
 #include "value-str.hh"
-#include "vfcst.hh"
 
 value_type const value_str::vtype = value_type::alloc ("T_STR");
 
@@ -16,12 +15,6 @@ std::unique_ptr <value>
 value_str::clone () const
 {
   return std::make_unique <value_str> (*this);
-}
-
-constant
-value_str::get_type_const () const
-{
-  return {(int) slot_type_id::T_STR, &slot_type_dom};
 }
 
 cmp_result

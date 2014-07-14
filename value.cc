@@ -5,7 +5,6 @@
 #include "op.hh"
 #include "tree.hh"
 #include "value.hh"
-#include "vfcst.hh"
 
 value_type
 value_type::alloc (char const *name)
@@ -59,7 +58,43 @@ value_type::name () const
   return ret;
 }
 
-value_type const value_type::none = value_type::alloc ("T_NONE");
+static struct
+  : public constant_dom
+{
+  void
+  show (mpz_class const &v, std::ostream &o) const override
+  {
+    if (v.fits_uint_p ())
+      {
+	unsigned int ui = v.get_ui ();
+	static_assert (sizeof (value_type) == 1,
+		       "assuming value_type is 8 bits large");
+	if (ui <= 0xff)
+	  {
+	    char const *name = find_vtype_name (ui);
+	    assert (name != nullptr);
+	    o << name;
+	    return;
+	  }
+      }
+
+    assert (! "Invalid slot type constant value.");
+    abort ();
+  }
+
+  std::string name () const override
+  {
+    return "T_*";
+  }
+} slot_type_dom_obj;
+
+constant_dom const &slot_type_dom = slot_type_dom_obj;
+
+constant
+value::get_type_const () const
+{
+  return {get_type ().code (), &slot_type_dom};
+}
 
 std::ostream &
 operator<< (std::ostream &o, value const &v)
@@ -68,7 +103,7 @@ operator<< (std::ostream &o, value const &v)
   return o;
 }
 
-value_type const value_cst::vtype = value_type::alloc ("T_CST");
+value_type const value_cst::vtype = value_type::alloc ("T_CONST");
 
 void
 value_cst::show (std::ostream &o) const
@@ -80,12 +115,6 @@ std::unique_ptr <value>
 value_cst::clone () const
 {
   return std::make_unique <value_cst> (*this);
-}
-
-constant
-value_cst::get_type_const () const
-{
-  return {(int) slot_type_id::T_CONST, &slot_type_dom};
 }
 
 cmp_result
@@ -143,12 +172,6 @@ std::unique_ptr <value>
 value_closure::clone () const
 {
   return std::make_unique <value_closure> (*this);
-}
-
-constant
-value_closure::get_type_const () const
-{
-  return {(int) slot_type_id::T_CLOSURE, &slot_type_dom};
 }
 
 cmp_result

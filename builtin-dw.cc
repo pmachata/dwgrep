@@ -13,6 +13,12 @@
 #include "op.hh"
 #include "value-dw.hh"
 
+namespace
+{
+  std::unique_ptr <builtin_constant> builtin_T_DIE;
+  std::unique_ptr <builtin_constant> builtin_T_ATTR;
+}
+
 static struct
   : public builtin
 {
@@ -811,15 +817,12 @@ namespace
       return "@attr";
     }
   };
-}
 
 #define ONE_KNOWN_DW_AT(NAME, CODE)		\
-  static builtin_attr_named builtin_attr_##NAME {CODE};
+  builtin_attr_named builtin_attr_##NAME {CODE};
 ALL_KNOWN_DW_AT
 #undef ONE_KNOWN_DW_AT
 
-namespace
-{
   struct builtin_pred_attr
     : public pred_builtin
   {
@@ -884,16 +887,13 @@ namespace
 	return "!attr";
     }
   };
-}
 
 #define ONE_KNOWN_DW_AT(NAME, CODE)					\
-  static builtin_pred_attr builtin_pred_attr_##NAME {CODE, true},	\
+  builtin_pred_attr builtin_pred_attr_##NAME {CODE, true},	\
     builtin_pred_nattr_##NAME {CODE, false};
 ALL_KNOWN_DW_AT
 #undef ONE_KNOWN_DW_AT
 
-namespace
-{
   struct builtin_pred_tag
     : public pred_builtin
   {
@@ -952,10 +952,9 @@ namespace
 	return "!tag";
     }
   };
-}
 
 #define ONE_KNOWN_DW_TAG(NAME, CODE)					\
-  static builtin_pred_tag builtin_pred_tag_##NAME {CODE, true},		\
+  builtin_pred_tag builtin_pred_tag_##NAME {CODE, true},		\
     builtin_pred_ntag_##NAME {CODE, false};
 ALL_KNOWN_DW_TAG
 #undef ONE_KNOWN_DW_TAG
@@ -1069,10 +1068,22 @@ builtin_constant builtin_DW_ADDR_none_obj
 	{std::make_unique <value_cst> (constant (CODE, &dw_endianity_dom), 0)};
   ALL_KNOWN_DW_END;
 #undef ONE_KNOWN_DW_END
+}
 
 void
 dwgrep_init_dw ()
 {
+  builtin_T_DIE = std::make_unique <builtin_constant>
+    (std::make_unique <value_cst>
+     (value::get_type_const_of <value_die> (), 0));
+
+  builtin_T_ATTR = std::make_unique <builtin_constant>
+    (std::make_unique <value_cst>
+     (value::get_type_const_of <value_attr> (), 0));
+
+  add_builtin (*builtin_T_DIE, value_die::vtype.name ());
+  add_builtin (*builtin_T_ATTR, value_attr::vtype.name ());
+
   add_builtin (builtin_winfo);
   add_builtin (builtin_unit);
 

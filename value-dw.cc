@@ -5,7 +5,6 @@
 #include "value-dw.hh"
 #include "dwcst.hh"
 #include "dwit.hh"
-#include "vfcst.hh"
 #include "atval.hh"
 
 value_type const value_die::vtype = value_type::alloc ("T_DIE");
@@ -35,12 +34,6 @@ value_die::clone () const
   return std::make_unique <value_die> (*this);
 }
 
-constant
-value_die::get_type_const () const
-{
-  return {(int) slot_type_id::T_NODE, &slot_type_dom};
-}
-
 cmp_result
 value_die::cmp (value const &that) const
 {
@@ -52,7 +45,7 @@ value_die::cmp (value const &that) const
 }
 
 
-value_type const value_attr::vtype = value_type::alloc ("T_AT");
+value_type const value_attr::vtype = value_type::alloc ("T_ATTR");
 
 void
 value_attr::show (std::ostream &o) const
@@ -75,12 +68,6 @@ std::unique_ptr <value>
 value_attr::clone () const
 {
   return std::make_unique <value_attr> (*this);
-}
-
-constant
-value_attr::get_type_const () const
-{
-  return {(int) slot_type_id::T_ATTR, &slot_type_dom};
 }
 
 cmp_result

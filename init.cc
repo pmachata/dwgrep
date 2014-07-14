@@ -16,6 +16,23 @@
 
 namespace
 {
+  // value types for builtin types
+  builtin_constant builtin_T_CONST_obj
+	{std::make_unique <value_cst>
+	    (value::get_type_const_of <value_cst> (), 0)};
+
+  builtin_constant builtin_T_STR_obj
+	{std::make_unique <value_cst>
+	    (value::get_type_const_of <value_str> (), 0)};
+
+  builtin_constant builtin_T_SEQ_obj
+	{std::make_unique <value_cst>
+	    (value::get_type_const_of <value_seq> (), 0)};
+
+  builtin_constant builtin_T_CLOSURE_obj
+	{std::make_unique <value_cst>
+	    (value::get_type_const_of <value_closure> (), 0)};
+
   // arithmetic, except for add, which is an overload
   builtin_sub builtin_sub_obj;
   builtin_mul builtin_mul_obj;
@@ -68,6 +85,11 @@ namespace
 void
 dwgrep_init ()
 {
+  add_builtin (builtin_T_CONST_obj, value_cst::vtype.name ());
+  add_builtin (builtin_T_STR_obj, value_str::vtype.name ());
+  add_builtin (builtin_T_SEQ_obj, value_seq::vtype.name ());
+  add_builtin (builtin_T_CLOSURE_obj, value_closure::vtype.name ());
+
   add_builtin (builtin_sub_obj);
   add_builtin (builtin_mul_obj);
   add_builtin (builtin_div_obj);

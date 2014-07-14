@@ -36,7 +36,6 @@ public:
 
   void show (std::ostream &o) const override;
   std::unique_ptr <value> clone () const override;
-  constant get_type_const () const override;
   cmp_result cmp (value const &that) const override;
 };
 

@@ -35,8 +35,6 @@ class value_type
   static void register_name (uint8_t code, char const *name);
 
 public:
-  static value_type const none;
-
   static value_type alloc (char const *name);
 
   explicit value_type (uint8_t code)
@@ -55,6 +53,8 @@ public:
 
   // Either returns non-null or crashes.
   char const *name () const;
+
+  uint8_t code () const { return m_code; }
 
   bool
   operator< (value_type that) const
@@ -75,6 +75,9 @@ public:
   }
 };
 
+// A domain for slot type constants.
+extern constant_dom const &slot_type_dom;
+
 class value
 {
   value_type const m_type;
@@ -89,12 +92,12 @@ protected:
   value (value const &that) = default;
 
 public:
-  value_type get_type () { return m_type; }
+  value_type get_type () const { return m_type; }
+  constant get_type_const () const;
 
   virtual ~value () {}
   virtual void show (std::ostream &o) const = 0;
   virtual std::unique_ptr <value> clone () const = 0;
-  virtual constant get_type_const () const = 0;
   virtual cmp_result cmp (value const &that) const = 0;
 
   void
@@ -135,6 +138,13 @@ public:
       return nullptr;
     return static_cast <T const *> (val);
   }
+
+  template <class T>
+  static constant
+  get_type_const_of ()
+  {
+    return {T::vtype.code (), &slot_type_dom};
+  }
 };
 
 std::ostream &operator<< (std::ostream &o, value const &v);
@@ -159,7 +169,6 @@ public:
 
   void show (std::ostream &o) const override;
   std::unique_ptr <value> clone () const override;
-  constant get_type_const () const override;
   cmp_result cmp (value const &that) const override;
 };
 
@@ -198,7 +207,6 @@ public:
 
   void show (std::ostream &o) const override;
   std::unique_ptr <value> clone () const override;
-  constant get_type_const () const override;
   cmp_result cmp (value const &that) const override;
 };
 

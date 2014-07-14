@@ -309,3 +309,13 @@ expect_count 1 ./duplicate-const -e '
 	"%([winfo ?root attribute form]%)"
 	"[DW_FORM_strp, DW_FORM_data1, DW_FORM_strp, DW_FORM_strp, "\
 	"DW_FORM_addr, DW_FORM_data8, DW_FORM_sec_offset]" ?eq'
+
+# check type constants
+expect_count 1 ./empty -e '
+	?(1 type T_CONST ?eq "%s" "T_CONST" ?eq)
+	?("" type T_STR ?eq "%s" "T_STR" ?eq)
+	?([] type T_SEQ ?eq "%s" "T_SEQ" ?eq)
+	?({} type T_CLOSURE ?eq "%s" "T_CLOSURE" ?eq)'
+expect_count 1 ./duplicate-const -e '
+	?(winfo ?root type T_DIE ?eq "%s" "T_DIE" ?eq)
+	?(winfo ?root attribute ?AT_name type T_ATTR ?eq "%s" "T_ATTR" ?eq)'

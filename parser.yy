@@ -41,7 +41,6 @@
 
   #include "lexer.hh"
   #include "constant.hh"
-  #include "vfcst.hh"
   #include "tree_cr.hh"
   #include "builtin.hh"
 
@@ -326,30 +325,7 @@ Statement:
   | TOK_WORD
   {
     std::string str {$1.buf, $1.len};
-    if (str.length () > 2 && str[0] == 'T' && str[1] == '_')
-      {
-	if (str == "T_CONST")
-	  $$ = tree::create_const <tree_type::CONST>
-	    (constant ((int) slot_type_id::T_CONST, &slot_type_dom));
-	else if (str == "T_FLOAT")
-	  $$ = tree::create_const <tree_type::CONST>
-	    (constant ((int) slot_type_id::T_FLOAT, &slot_type_dom));
-	else if (str == "T_STR")
-	  $$ = tree::create_const <tree_type::CONST>
-	    (constant ((int) slot_type_id::T_STR, &slot_type_dom));
-	else if (str == "T_SEQ")
-	  $$ = tree::create_const <tree_type::CONST>
-	    (constant ((int) slot_type_id::T_SEQ, &slot_type_dom));
-	else if (str == "T_NODE")
-	  $$ = tree::create_const <tree_type::CONST>
-	    (constant ((int) slot_type_id::T_NODE, &slot_type_dom));
-	else if (str == "T_ATTR")
-	  $$ = tree::create_const <tree_type::CONST>
-	    (constant ((int) slot_type_id::T_ATTR, &slot_type_dom));
-	else
-	  throw std::runtime_error ("Unknown slot type constant.");
-      }
-    else if (auto bi = find_builtin (str))
+    if (auto bi = find_builtin (str))
       $$ = tree::create_builtin (bi);
     else
       $$ = tree::create_str <tree_type::READ> (str);

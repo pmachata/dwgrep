@@ -6,7 +6,6 @@
 #include "make_unique.hh"
 
 #include "op.hh"
-#include "vfcst.hh"
 #include "value-seq.hh"
 #include "value-str.hh"
 
@@ -720,7 +719,9 @@ simple_op::reset ()
 std::unique_ptr <value>
 op_f_pos::operate (value const &v) const
 {
-  return std::make_unique <value_cst> (constant {v.get_pos (), &pos_dom}, 0);
+  static numeric_constant_dom_t pos_dom_obj ("pos");
+  return std::make_unique <value_cst>
+    (constant {v.get_pos (), &pos_dom_obj}, 0);
 }
 
 std::string

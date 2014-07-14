@@ -3,7 +3,6 @@
 #include <iostream>
 
 #include "value-seq.hh"
-#include "vfcst.hh"
 #include "overload.hh"
 #include "builtin-add.hh"
 #include "builtin-length.hh"
@@ -47,12 +46,6 @@ std::unique_ptr <value>
 value_seq::clone () const
 {
   return std::make_unique <value_seq> (*this);
-}
-
-constant
-value_seq::get_type_const () const
-{
-  return {(int) slot_type_id::T_SEQ, &slot_type_dom};
 }
 
 namespace
