@@ -41,4 +41,18 @@ struct op_length_str
   valfile::uptr next () override;
 };
 
+struct op_elem_str
+  : public inner_op
+{
+  struct state;
+  std::unique_ptr <state> m_state;
+
+  op_elem_str (std::shared_ptr <op> upstream);
+  ~op_elem_str ();
+
+  valfile::uptr next () override;
+  std::string name () const override;
+  void reset () override;
+};
+
 #endif /* _VALUE_STR_H_ */

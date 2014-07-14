@@ -213,7 +213,7 @@ do_tests ()
   test ("type", "(F_TYPE)");
   test ("value", "(F_BUILTIN<value>)");
   test ("pos", "(F_POS)");
-  test ("elem", "(F_ELEM)");
+  test ("elem", "(F_BUILTIN<elem>)");
   test ("universe", "(SEL_UNIVERSE)");
   test ("section", "(SEL_SECTION)");
 
@@ -233,64 +233,64 @@ do_tests ()
 	"(CAT (CONST<1>) (CLOSE_STAR (CONST<1>)) (F_BUILTIN<dup>))");
 
   test ("2/elem",
-	"(TRANSFORM (CONST<2>) (F_ELEM))");
+	"(TRANSFORM (CONST<2>) (F_BUILTIN<elem>))");
   test ("2/elem 1",
-	"(CAT (TRANSFORM (CONST<2>) (F_ELEM)) (CONST<1>))");
+	"(CAT (TRANSFORM (CONST<2>) (F_BUILTIN<elem>)) (CONST<1>))");
   test ("2/(elem 1)",
-	"(TRANSFORM (CONST<2>) (CAT (F_ELEM) (CONST<1>)))");
+	"(TRANSFORM (CONST<2>) (CAT (F_BUILTIN<elem>) (CONST<1>)))");
   test ("2/elem 2/1",
-	"(CAT (TRANSFORM (CONST<2>) (F_ELEM))"
+	"(CAT (TRANSFORM (CONST<2>) (F_BUILTIN<elem>))"
 	" (TRANSFORM (CONST<2>) (CONST<1>)))");
 
   test ("(elem 1)",
-	"(CAT (F_ELEM) (CONST<1>))");
+	"(CAT (F_BUILTIN<elem>) (CONST<1>))");
   test ("((elem 1))",
-	"(CAT (F_ELEM) (CONST<1>))");
+	"(CAT (F_BUILTIN<elem>) (CONST<1>))");
   test ("(elem (1))",
-	"(CAT (F_ELEM) (CONST<1>))");
+	"(CAT (F_BUILTIN<elem>) (CONST<1>))");
   test ("(dup) swap elem 1",
-	"(CAT (F_BUILTIN<dup>) (F_BUILTIN<swap>) (F_ELEM) (CONST<1>))");
+	"(CAT (F_BUILTIN<dup>) (F_BUILTIN<swap>) (F_BUILTIN<elem>) (CONST<1>))");
   test ("dup (swap) elem 1",
-	"(CAT (F_BUILTIN<dup>) (F_BUILTIN<swap>) (F_ELEM) (CONST<1>))");
+	"(CAT (F_BUILTIN<dup>) (F_BUILTIN<swap>) (F_BUILTIN<elem>) (CONST<1>))");
   test ("dup swap (elem) 1",
-	"(CAT (F_BUILTIN<dup>) (F_BUILTIN<swap>) (F_ELEM) (CONST<1>))");
+	"(CAT (F_BUILTIN<dup>) (F_BUILTIN<swap>) (F_BUILTIN<elem>) (CONST<1>))");
   test ("dup swap elem (1)",
-	"(CAT (F_BUILTIN<dup>) (F_BUILTIN<swap>) (F_ELEM) (CONST<1>))");
+	"(CAT (F_BUILTIN<dup>) (F_BUILTIN<swap>) (F_BUILTIN<elem>) (CONST<1>))");
   test ("dup (swap (elem (1)))",
-	"(CAT (F_BUILTIN<dup>) (F_BUILTIN<swap>) (F_ELEM) (CONST<1>))");
+	"(CAT (F_BUILTIN<dup>) (F_BUILTIN<swap>) (F_BUILTIN<elem>) (CONST<1>))");
   test ("((((dup) swap) elem) 1)",
-	"(CAT (F_BUILTIN<dup>) (F_BUILTIN<swap>) (F_ELEM) (CONST<1>))");
+	"(CAT (F_BUILTIN<dup>) (F_BUILTIN<swap>) (F_BUILTIN<elem>) (CONST<1>))");
   test ("((((dup) swap)) (elem 1))",
-	"(CAT (F_BUILTIN<dup>) (F_BUILTIN<swap>) (F_ELEM) (CONST<1>))");
+	"(CAT (F_BUILTIN<dup>) (F_BUILTIN<swap>) (F_BUILTIN<elem>) (CONST<1>))");
 
   test ("dup, over",
 	"(ALT (F_BUILTIN<dup>) (F_BUILTIN<over>))");
   test ("dup, over, elem",
-	"(ALT (F_BUILTIN<dup>) (F_BUILTIN<over>) (F_ELEM))");
+	"(ALT (F_BUILTIN<dup>) (F_BUILTIN<over>) (F_BUILTIN<elem>))");
   test ("swap,",
 	"(ALT (F_BUILTIN<swap>) (NOP))");
   test ("swap dup, over",
 	"(ALT (CAT (F_BUILTIN<swap>) (F_BUILTIN<dup>)) (F_BUILTIN<over>))");
   test ("swap dup, over elem, 1 dup",
 	"(ALT (CAT (F_BUILTIN<swap>) (F_BUILTIN<dup>)) "
-	"(CAT (F_BUILTIN<over>) (F_ELEM)) "
+	"(CAT (F_BUILTIN<over>) (F_BUILTIN<elem>)) "
 	"(CAT (CONST<1>) (F_BUILTIN<dup>)))");
   test ("(swap dup, (over elem, (1 dup)))",
 	"(ALT (CAT (F_BUILTIN<swap>) (F_BUILTIN<dup>))"
-	" (CAT (F_BUILTIN<over>) (F_ELEM)) "
+	" (CAT (F_BUILTIN<over>) (F_BUILTIN<elem>)) "
 	"(CAT (CONST<1>) (F_BUILTIN<dup>)))");
   test ("2/elem, 2/dup",
-	"(ALT (TRANSFORM (CONST<2>) (F_ELEM))"
+	"(ALT (TRANSFORM (CONST<2>) (F_BUILTIN<elem>))"
 	" (TRANSFORM (CONST<2>) (F_BUILTIN<dup>)))");
   test ("elem, dup*",
-	"(ALT (F_ELEM) (CLOSE_STAR (F_BUILTIN<dup>)))");
+	"(ALT (F_BUILTIN<elem>) (CLOSE_STAR (F_BUILTIN<dup>)))");
 
   test ("[]",
 	"(EMPTY_LIST)");
   test ("[()]",
 	"(CAPTURE (NOP))");
   test ("[elem]",
-	"(CAPTURE (F_ELEM))");
+	"(CAPTURE (F_BUILTIN<elem>))");
   test ("[,]",
 	"(CAPTURE (ALT (NOP) (NOP)))");
   test ("[,,]",
@@ -332,26 +332,26 @@ do_tests ()
 
   ftest (",", "(ALT (NOP) (NOP))");
   ftest ("elem dup (swap,)",
-	 "(CAT (F_ELEM) (F_BUILTIN<dup>)"
+	 "(CAT (F_BUILTIN<elem>) (F_BUILTIN<dup>)"
 	 " (ALT (F_BUILTIN<swap>) (NOP)))");
   ftest ("elem dup (,swap)",
-	 "(CAT (F_ELEM) (F_BUILTIN<dup>)"
+	 "(CAT (F_BUILTIN<elem>) (F_BUILTIN<dup>)"
 	 " (ALT (NOP) (F_BUILTIN<swap>)))");
   ftest ("elem (drop,drop)",
-	 "(CAT (F_ELEM)"
+	 "(CAT (F_BUILTIN<elem>)"
 	 " (ALT (F_BUILTIN<drop>) (F_BUILTIN<drop>)))");
   ftest ("elem (,drop 1)",
-	 "(CAT (F_ELEM)"
+	 "(CAT (F_BUILTIN<elem>)"
 	 " (ALT (NOP) (CAT (F_BUILTIN<drop>) (CONST<1>))))");
   ftest ("elem (drop 1,)",
-	 "(CAT (F_ELEM)"
+	 "(CAT (F_BUILTIN<elem>)"
 	 " (ALT (CAT (F_BUILTIN<drop>) (CONST<1>)) (NOP)))");
   ftest ("elem drop \"foo\"",
-	 "(CAT (F_ELEM)"
+	 "(CAT (F_BUILTIN<elem>)"
 	 " (F_BUILTIN<drop>) (FORMAT (STR<foo>)))");
 
   ftest ("elem \"%( dup swap %): %( @name %)\"",
-	 "(CAT (F_ELEM)"
+	 "(CAT (F_BUILTIN<elem>)"
 	 " (FORMAT (STR<>)"
 	 " (CAT (F_BUILTIN<dup>) (F_BUILTIN<swap>)) (STR<: >)"
 	 " (READ<@name>) (STR<>)))",

@@ -7,6 +7,7 @@
 #include "overload.hh"
 #include "builtin-add.hh"
 #include "builtin-length.hh"
+#include "builtin-elem.hh"
 
 value_type const value_seq::vtype = value_type::alloc ("T_SEQ");
 
@@ -147,4 +148,78 @@ op_length_seq::next ()
     }
 
   return nullptr;
+}
+
+
+struct op_elem_seq::state
+{
+  valfile::uptr m_base;
+  std::shared_ptr <value_seq::seq_t> m_seq;
+  size_t m_idx;
+
+  state (valfile::uptr base, std::shared_ptr <value_seq::seq_t> seq)
+    : m_base {std::move (base)}
+    , m_seq {seq}
+    , m_idx {0}
+  {}
+
+  valfile::uptr
+  next ()
+  {
+    if (m_idx < m_seq->size ())
+      {
+	std::unique_ptr <value> v = (*m_seq)[m_idx]->clone ();
+	v->set_pos (m_idx);
+	m_idx++;
+	valfile::uptr vf = std::make_unique <valfile> (*m_base);
+	vf->push (std::move (v));
+	return vf;
+      }
+
+    return nullptr;
+  }
+};
+
+op_elem_seq::op_elem_seq (std::shared_ptr <op> upstream)
+  : inner_op {upstream}
+{}
+
+op_elem_seq::~op_elem_seq ()
+{}
+
+valfile::uptr
+op_elem_seq::next ()
+{
+  while (true)
+    {
+      if (m_state == nullptr)
+	{
+	  if (auto vf = m_upstream->next ())
+	    {
+	      auto vp = vf->pop_as <value_seq> ();
+	      m_state = std::make_unique <state> (std::move (vf),
+						  vp->get_seq ());
+	    }
+	  else
+	    return nullptr;
+	}
+
+      if (auto vf = m_state->next ())
+	return vf;
+
+      m_state = nullptr;
+    }
+}
+
+std::string
+op_elem_seq::name () const
+{
+  return "elem_seq";
+}
+
+void
+op_elem_seq::reset ()
+{
+  m_state = nullptr;
+  inner_op::reset ();
 }

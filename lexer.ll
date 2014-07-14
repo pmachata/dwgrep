@@ -57,7 +57,6 @@ BIN [01]
 "oct" return TOK_OCT;
 "bin" return TOK_BIN;
 "pos" return TOK_POS;
-"elem" return TOK_ELEM;
 "universe" return TOK_UNIVERSE;
 "section" return TOK_SECTION;
 "\\dbg" return TOK_DEBUG;

@@ -4,6 +4,7 @@
 #include "builtin-add.hh"
 #include "builtin-length.hh"
 #include "builtin-value.hh"
+#include "builtin-elem.hh"
 #include "value-seq.hh"
 #include "value-str.hh"
 
@@ -40,6 +41,11 @@ namespace
   // "value"
   builtin_value builtin_value_obj;
   overload_builtin <op_value_cst> builtin_value_cst_obj;
+
+  // "elem"
+  builtin_elem builtin_elem_obj;
+  overload_builtin <op_elem_str> builtin_elem_str_obj;
+  overload_builtin <op_elem_seq> builtin_elem_seq_obj;
 }
 
 void
@@ -80,4 +86,8 @@ dwgrep_init ()
 
   add_builtin (builtin_value_obj);
   ovl_tab_value ().add_overload (value_cst::vtype, builtin_value_cst_obj);
+
+  add_builtin (builtin_elem_obj);
+  ovl_tab_elem ().add_overload (value_str::vtype, builtin_elem_str_obj);
+  ovl_tab_elem ().add_overload (value_seq::vtype, builtin_elem_seq_obj);
 }

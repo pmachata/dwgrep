@@ -171,7 +171,7 @@
 %token TOK_ASTERISK TOK_PLUS TOK_QMARK TOK_MINUS TOK_COMMA TOK_SEMICOLON
 %token TOK_DOUBLE_VBAR TOK_SLASH TOK_ARROW
 
-%token TOK_TYPE TOK_POS TOK_ELEM TOK_HEX TOK_OCT TOK_BIN
+%token TOK_TYPE TOK_POS TOK_HEX TOK_OCT TOK_BIN
 %token TOK_APPLY TOK_IF TOK_THEN TOK_ELSE
 
 %token TOK_QMARK_MATCH TOK_QMARK_FIND TOK_QMARK_EMPTY
@@ -395,10 +395,6 @@ Statement:
 
   | TOK_POS
   { $$ = tree::create_nullary <tree_type::F_POS> (); }
-
-  | TOK_ELEM
-  { $$ = tree::create_nullary <tree_type::F_ELEM> (); }
-
 
   | TOK_UNIVERSE
   { $$ = tree::create_nullary <tree_type::SEL_UNIVERSE> (); }

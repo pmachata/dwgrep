@@ -54,4 +54,18 @@ struct op_length_seq
   valfile::uptr next () override;
 };
 
+struct op_elem_seq
+  : public inner_op
+{
+  struct state;
+  std::unique_ptr <state> m_state;
+
+  op_elem_seq (std::shared_ptr <op> upstream);
+  ~op_elem_seq ();
+
+  valfile::uptr next () override;
+  std::string name () const override;
+  void reset () override;
+};
+
 #endif /* _VALUE_SEQ_H_ */
