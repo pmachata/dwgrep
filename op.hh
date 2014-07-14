@@ -126,23 +126,6 @@ public:
   { m_upstream->reset (); }
 };
 
-class op_f_value
-  : public op
-{
-  std::shared_ptr <op> m_upstream;
-  dwgrep_graph::sptr m_gr;
-
-public:
-  op_f_value (std::shared_ptr <op> upstream, dwgrep_graph::sptr gr)
-    : m_upstream {upstream}
-    , m_gr {gr}
-  {}
-
-  valfile::uptr next () override;
-  std::string name () const override;
-  void reset () override;
-};
-
 class op_f_cast
   : public op
 {

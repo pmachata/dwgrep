@@ -29,10 +29,10 @@ dwgrep test-parser: override LDFLAGS += -lgmpxx -lgmp
 builtin-dw.o: override CXXFLAGS += -fno-var-tracking-assignments
 
 dwgrep: dwgrep.o parser.o lexer.o tree.o tree_cr.o constant.o op.o	\
-	valfile.o build.o cache.o dwcst.o vfcst.o atval.o builtin.o	\
-	builtin-add.o builtin-shf.o builtin-arith.o builtin-cmp.o	\
-	builtin-length.o builtin-dw.o overload.o value.o value-seq.o	\
-	value-str.o init.o
+	valfile.o build.o cache.o vfcst.o atval.o builtin.o		\
+	builtin-shf.o builtin-arith.o builtin-cmp.o builtin-add.o	\
+	builtin-length.o builtin-value.o overload.o value.o		\
+	value-seq.o value-str.o init.o dwcst.o builtin-dw.o
 test-parser: test-parser.o parser.o lexer.o tree.o tree_cr.o	\
 	constant.o dwcst.o vfcst.o builtin.o
 

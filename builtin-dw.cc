@@ -2,12 +2,15 @@
 #include "make_unique.hh"
 #include <sstream>
 
+#include "atval.hh"
+#include "builtin-value.hh"
 #include "builtin.hh"
-#include "dwit.hh"
-#include "op.hh"
-#include "dwpp.hh"
 #include "dwcst.hh"
+#include "dwit.hh"
+#include "dwpp.hh"
 #include "known-dwarf.h"
+#include "op.hh"
+#include "value-dw.hh"
 
 static struct
   : public builtin
@@ -728,6 +731,32 @@ static struct
 
 namespace
 {
+  struct op_value_attr
+    : public stub_op
+  {
+    using stub_op::stub_op;
+    dwgrep_graph::sptr m_gr;
+
+    op_value_attr (std::shared_ptr <op> m_upstream,
+		   dwgrep_graph::sptr gr)
+      : stub_op {m_upstream}
+      , m_gr {gr}
+    {}
+
+    valfile::uptr
+    next () override
+    {
+      if (auto vf = m_upstream->next ())
+	{
+	  auto vp = vf->pop_as <value_attr> ();
+	  vf->push (at_value (vp->get_attr (), vp->get_die (), m_gr));
+	  return vf;
+	}
+      return nullptr;
+    }
+  };
+  overload_builtin <op_value_attr> builtin_value_attr_obj;
+
   struct builtin_attr_named
     : public builtin
   {
@@ -772,7 +801,7 @@ namespace
 		std::shared_ptr <scope> scope) const override
     {
       auto t = std::make_shared <o> (upstream, q, m_atname);
-      return std::make_shared <op_f_value> (t, q);
+      return std::make_shared <op_value_attr> (t, q);
     }
 
     char const *
@@ -959,4 +988,6 @@ dwgrep_init_dw ()
 
   add_builtin (builtin_rootp);
   add_builtin (builtin_nrootp);
+
+  ovl_tab_value ().add_overload (value_attr::vtype, builtin_value_attr_obj);
 }

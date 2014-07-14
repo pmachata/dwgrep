@@ -7,7 +7,6 @@
 
 #include "op.hh"
 #include "vfcst.hh"
-#include "atval.hh"
 #include "value-seq.hh"
 #include "value-str.hh"
 
@@ -72,43 +71,6 @@ op_assert::name () const
   std::stringstream ss;
   ss << "assert<" << m_pred->name () << ">";
   return ss.str ();
-}
-
-valfile::uptr
-op_f_value::next ()
-{
-  while (auto vf = m_upstream->next ())
-    {
-      auto vp = vf->pop ();
-      if (auto v = value::as <value_attr> (&*vp))
-	{
-	  vf->push (at_value (v->get_attr (), v->get_die (), m_gr));
-	  return vf;
-	}
-      else if (auto v = value::as <value_cst> (&*vp))
-	{
-	  auto &cst = v->get_constant ();
-	  constant cst2 {cst.value (), &dec_constant_dom};
-	  vf->push (std::make_unique <value_cst> (cst2, 0));
-	  return vf;
-	}
-      else
-	std::cerr << "Error: `value' expects a T_ATTR or T_CONST on TOS.\n";
-    }
-
-  return nullptr;
-}
-
-void
-op_f_value::reset ()
-{
-  m_upstream->reset ();
-}
-
-std::string
-op_f_value::name () const
-{
-  return "f_value";
 }
 
 

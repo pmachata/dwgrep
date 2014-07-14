@@ -53,7 +53,6 @@ BIN [01]
 "else" return TOK_ELSE;
 
 "type" return TOK_TYPE;
-"value" return TOK_VALUE;
 "hex" return TOK_HEX;
 "oct" return TOK_OCT;
 "bin" return TOK_BIN;

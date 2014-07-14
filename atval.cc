@@ -3,10 +3,11 @@
 #include <memory>
 #include "make_unique.hh"
 
-#include "valfile.hh"
-#include "dwpp.hh"
-#include "dwcst.hh"
 #include "atval.hh"
+#include "dwcst.hh"
+#include "dwpp.hh"
+#include "valfile.hh"
+#include "value-dw.hh"
 #include "value-seq.hh"
 #include "value-str.hh"
 

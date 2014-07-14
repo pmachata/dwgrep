@@ -38,7 +38,8 @@ namespace
 void
 add_builtin (builtin &b, std::string const &name)
 {
-  get_builtin_map ().insert (std::pair <std::string, builtin const &> (name, b));
+  get_builtin_map ().insert
+    (std::pair <std::string, builtin const &> (name, b));
 }
 
 void
