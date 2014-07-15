@@ -170,7 +170,7 @@
 %token TOK_ASTERISK TOK_PLUS TOK_QMARK TOK_MINUS TOK_COMMA TOK_SEMICOLON
 %token TOK_DOUBLE_VBAR TOK_SLASH TOK_ARROW
 
-%token TOK_TYPE TOK_POS TOK_APPLY TOK_IF TOK_THEN TOK_ELSE
+%token TOK_TYPE TOK_POS TOK_IF TOK_THEN TOK_ELSE
 
 %token TOK_QMARK_MATCH TOK_QMARK_FIND TOK_QMARK_EMPTY
 %token TOK_BANG_MATCH TOK_BANG_FIND TOK_BANG_EMPTY
@@ -346,9 +346,6 @@ Statement:
 
   | TOK_TYPE
   { $$ = tree::create_nullary <tree_type::F_TYPE> (); }
-
-  | TOK_APPLY
-  { $$ = tree::create_nullary <tree_type::F_APPLY> (); }
 
 
   | TOK_POS

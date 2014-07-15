@@ -1,7 +1,12 @@
 #include <memory>
 #include "make_unique.hh"
 
+#include "value-seq.hh"
+#include "value-str.hh"
+#include "value-closure.hh"
+
 #include "builtin-arith.hh"
+#include "builtin-closure.hh"
 #include "builtin-cmp.hh"
 #include "builtin-cst.hh"
 #include "builtin-shf.hh"
@@ -10,9 +15,6 @@
 #include "builtin-elem.hh"
 #include "builtin-length.hh"
 #include "builtin-value.hh"
-
-#include "value-seq.hh"
-#include "value-str.hh"
 
 namespace
 {
@@ -38,6 +40,9 @@ namespace
   builtin_mul builtin_mul_obj;
   builtin_div builtin_div_obj;
   builtin_mod builtin_mod_obj;
+
+  // closure builtins
+  builtin_apply builtin_apply_obj;
 
   // comparison assertions
   builtin_eq builtin_eq_obj {true}, builtin_neq_obj {false};
@@ -94,6 +99,8 @@ dwgrep_init ()
   add_builtin (builtin_mul_obj);
   add_builtin (builtin_div_obj);
   add_builtin (builtin_mod_obj);
+
+  add_builtin (builtin_apply_obj);
 
   add_builtin (builtin_eq_obj);
   add_builtin (builtin_neq_obj);

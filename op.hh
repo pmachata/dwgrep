@@ -550,22 +550,6 @@ public:
   std::string name () const override;
 };
 
-// Pop closure, execute it.
-class op_apply
-  : public op
-{
-  class pimpl;
-  std::unique_ptr <pimpl> m_pimpl;
-
-public:
-  op_apply (std::shared_ptr <op> upstream);
-  ~op_apply ();
-
-  void reset () override;
-  valfile::uptr next () override;
-  std::string name () const override;
-};
-
 class op_ifelse
   : public op
 {

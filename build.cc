@@ -64,7 +64,6 @@ tree::build_pred (dwgrep_graph::sptr q, std::shared_ptr <scope> scope) const
     case tree_type::FORMAT:
     case tree_type::F_TYPE:
     case tree_type::F_POS:
-    case tree_type::F_APPLY:
     case tree_type::F_DEBUG:
     case tree_type::SEL_SECTION:
     case tree_type::BIND:
@@ -257,9 +256,6 @@ tree::build_exec (std::shared_ptr <op> upstream, dwgrep_graph::sptr q,
 	throw std::runtime_error (std::string {"Unknown identifier `"}
 				  + name + "'.");
       }
-
-    case tree_type::F_APPLY:
-      return std::make_shared <op_apply> (upstream);
 
     case tree_type::F_DEBUG:
       return std::make_shared <op_f_debug> (upstream);
