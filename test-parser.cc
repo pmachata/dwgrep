@@ -138,9 +138,9 @@ do_tests ()
   test ("mul", "(F_BUILTIN<mul>)");
   test ("div", "(F_BUILTIN<div>)");
   test ("mod", "(F_BUILTIN<mod>)");
-  test ("type", "(F_TYPE)");
+  test ("type", "(F_BUILTIN<type>)");
   test ("value", "(F_BUILTIN<value>)");
-  test ("pos", "(F_POS)");
+  test ("pos", "(F_BUILTIN<pos>)");
   test ("elem", "(F_BUILTIN<elem>)");
   test ("universe", "(SEL_UNIVERSE)");
   test ("section", "(SEL_SECTION)");

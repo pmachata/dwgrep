@@ -344,13 +344,6 @@ Statement:
   | TOK_DEBUG
   { $$ = tree::create_nullary <tree_type::F_DEBUG> (); }
 
-  | TOK_TYPE
-  { $$ = tree::create_nullary <tree_type::F_TYPE> (); }
-
-
-  | TOK_POS
-  { $$ = tree::create_nullary <tree_type::F_POS> (); }
-
   | TOK_UNIVERSE
   { $$ = tree::create_nullary <tree_type::SEL_UNIVERSE> (); }
 

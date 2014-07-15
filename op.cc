@@ -422,32 +422,6 @@ op_capture::name () const
 }
 
 
-valfile::uptr
-op_f_type::next ()
-{
-  if (auto vf = m_upstream->next ())
-    {
-      constant t = vf->pop ()->get_type_const ();
-      vf->push (std::make_unique <value_cst> (t, 0));
-      return vf;
-    }
-
-  return nullptr;
-}
-
-void
-op_f_type::reset ()
-{
-  m_upstream->reset ();
-}
-
-std::string
-op_f_type::name () const
-{
-  return "f_type";
-}
-
-
 namespace
 {
   struct deref_less
@@ -697,40 +671,6 @@ op_f_debug::reset ()
   m_upstream->reset ();
 }
 
-
-valfile::uptr
-simple_op::next ()
-{
-  if (auto vf = m_upstream->next ())
-    {
-      auto vp = vf->pop ();
-      vf->push (operate (*vp));
-      return vf;
-    }
-
-  return nullptr;
-}
-
-void
-simple_op::reset ()
-{
-  m_upstream->reset ();
-}
-
-
-std::unique_ptr <value>
-op_f_pos::operate (value const &v) const
-{
-  static numeric_constant_dom_t pos_dom_obj ("pos");
-  return std::make_unique <value_cst>
-    (constant {v.get_pos (), &pos_dom_obj}, 0);
-}
-
-std::string
-op_f_pos::name () const
-{
-  return "f_pos";
-}
 
 struct op_transform::pimpl
 {

@@ -362,21 +362,6 @@ public:
   std::string name () const override;
 };
 
-class op_f_type
-  : public op
-{
-  std::shared_ptr <op> m_upstream;
-
-public:
-  explicit op_f_type (std::shared_ptr <op> upstream)
-    : m_upstream {upstream}
-  {}
-
-  valfile::uptr next () override;
-  std::string name () const override;
-  void reset () override;
-};
-
 class op_tr_closure
   : public op
 {
@@ -426,32 +411,6 @@ public:
   valfile::uptr next () override;
   std::string name () const override;
   void reset () override;
-};
-
-class simple_op
-  : public op
-{
-  std::shared_ptr <op> m_upstream;
-
-public:
-  explicit simple_op (std::shared_ptr <op> upstream)
-    : m_upstream {upstream}
-  {}
-
-  valfile::uptr next () override;
-  void reset () override;
-
-  virtual std::unique_ptr <value> operate (value const &v) const = 0;
-};
-
-class op_f_pos
-  : public simple_op
-{
-public:
-  using simple_op::simple_op;
-
-  std::unique_ptr <value> operate (value const &v) const override;
-  std::string name () const override;
 };
 
 // Pop DEPTH slots, perform OP, and for each produced stack, push

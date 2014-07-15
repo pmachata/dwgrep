@@ -123,3 +123,90 @@ builtin_bin::name () const
 {
   return "bin";
 }
+
+
+namespace
+{
+  class op_f_type
+    : public inner_op
+  {
+    using inner_op::inner_op;
+
+    valfile::uptr
+    next () override
+    {
+      if (auto vf = m_upstream->next ())
+	{
+	  constant t = vf->pop ()->get_type_const ();
+	  vf->push (std::make_unique <value_cst> (t, 0));
+	  return vf;
+	}
+
+      return nullptr;
+    }
+
+    std::string
+    name () const override
+    {
+      return "type";
+    }
+  };
+}
+
+std::shared_ptr <op>
+builtin_type::build_exec (std::shared_ptr <op> upstream, dwgrep_graph::sptr q,
+			  std::shared_ptr <scope> scope) const
+{
+  return std::make_shared <op_f_type> (upstream);
+}
+
+char const *
+builtin_type::name () const
+{
+  return "type";
+}
+
+
+namespace
+{
+  class op_f_pos
+    : public inner_op
+  {
+  public:
+    using inner_op::inner_op;
+
+    valfile::uptr
+    next () override
+    {
+      if (auto vf = m_upstream->next ())
+	{
+	  auto vp = vf->pop ();
+	  static numeric_constant_dom_t pos_dom_obj ("pos");
+	  vf->push (std::make_unique <value_cst>
+		    (constant {vp->get_pos (), &pos_dom_obj}, 0));
+	  return vf;
+	}
+
+      return nullptr;
+    }
+
+    std::string
+    name () const override
+    {
+      return "pos";
+    }
+  };
+}
+
+std::shared_ptr <op>
+builtin_pos::build_exec (std::shared_ptr <op> upstream, dwgrep_graph::sptr q,
+			 std::shared_ptr <scope> scope) const
+{
+  return std::make_shared <op_f_pos> (upstream);
+}
+
+char const *
+builtin_pos::name () const
+{
+  return "pos";
+}

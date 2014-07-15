@@ -62,8 +62,6 @@ tree::build_pred (dwgrep_graph::sptr q, std::shared_ptr <scope> scope) const
     case tree_type::CONST:
     case tree_type::STR:
     case tree_type::FORMAT:
-    case tree_type::F_TYPE:
-    case tree_type::F_POS:
     case tree_type::F_DEBUG:
     case tree_type::SEL_SECTION:
     case tree_type::BIND:
@@ -185,18 +183,12 @@ tree::build_exec (std::shared_ptr <op> upstream, dwgrep_graph::sptr q,
 	return std::make_shared <op_capture> (upstream, origin, op);
       }
 
-    case tree_type::F_TYPE:
-      return std::make_shared <op_f_type> (upstream);
-
     case tree_type::CLOSE_STAR:
       {
 	auto origin = std::make_shared <op_origin> (nullptr);
 	auto op = m_children.front ().build_exec (origin, q, scope);
 	return std::make_shared <op_tr_closure> (upstream, origin, op);
       }
-
-    case tree_type::F_POS:
-      return std::make_shared <op_f_pos> (upstream);
 
     case tree_type::TRANSFORM:
       {

@@ -51,8 +51,6 @@ BIN [01]
 "then" return TOK_THEN;
 "else" return TOK_ELSE;
 
-"type" return TOK_TYPE;
-"pos" return TOK_POS;
 "universe" return TOK_UNIVERSE;
 "section" return TOK_SECTION;
 "\\dbg" return TOK_DEBUG;
