@@ -85,7 +85,7 @@ namespace
     {
       if (auto vf = m_upstream->next ())
 	{
-	  vf->push (vf->below ().clone ());
+	  vf->push (vf->get (1).clone ());
 	  return vf;
 	}
       return nullptr;

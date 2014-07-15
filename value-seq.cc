@@ -110,14 +110,10 @@ op_add_seq::next ()
   if (auto vf = m_upstream->next ())
     {
       auto vp = vf->pop_as <value_seq> ();
-
-      // XXX add arity to the framework
-      auto wp = vf->pop ();
-      assert (wp->is <value_seq> ());
-      auto &w = static_cast <value_seq &> (*wp);
+      auto wp = vf->pop_as <value_seq> ();
 
       value_seq::seq_t res;
-      for (auto const &x: *w.get_seq ())
+      for (auto const &x: *wp->get_seq ())
 	res.emplace_back (x->clone ());
       for (auto const &x: *vp->get_seq ())
 	res.emplace_back (x->clone ());

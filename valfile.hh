@@ -94,10 +94,10 @@ public:
   }
 
   value &
-  below ()
+  get (unsigned depth)
   {
-    assert (m_values.size () > 1);
-    return *(m_values.rbegin () + 1)->get ();
+    assert (m_values.size () > depth);
+    return *(m_values.rbegin () + depth)->get ();
   }
 
   template <class T>
@@ -110,9 +110,9 @@ public:
 
   template <class T>
   T *
-  below_as ()
+  get_as (unsigned depth)
   {
-    value const &ret = below ();
+    value const &ret = get (depth);
     return value::as <T> (const_cast <value *> (&ret));
   }
 

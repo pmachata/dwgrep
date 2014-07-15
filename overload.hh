@@ -43,22 +43,30 @@ class overload_instance
 				   std::shared_ptr <pred>>> pred_vec;
   pred_vec m_preds;
 
+  unsigned m_arity;
+
 public:
   overload_instance (std::vector <std::tuple <value_type,
 					      builtin &>> const &stencil,
-		     dwgrep_graph::sptr q, std::shared_ptr <scope> scope);
+		     dwgrep_graph::sptr q, std::shared_ptr <scope> scope,
+		     unsigned arity);
 
-  exec_vec::value_type *find_exec (value_type vt);
-  pred_vec::value_type *find_pred (value_type vt);
+  exec_vec::value_type *find_exec (valfile &vf);
+  pred_vec::value_type *find_pred (valfile &vf);
 
   void show_error (std::string const &name);
 };
 
 class overload_tab
 {
+  unsigned m_arity;
   std::vector <std::tuple <value_type, builtin &>> m_overloads;
 
 public:
+  explicit overload_tab (unsigned arity = 1)
+    : m_arity {arity}
+  {}
+
   void add_overload (value_type vt, builtin &b);
 
   overload_instance instantiate (dwgrep_graph::sptr q,

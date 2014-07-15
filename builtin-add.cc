@@ -10,14 +10,10 @@ op_add_cst::next ()
   if (auto vf = m_upstream->next ())
     {
       auto vp = vf->pop_as <value_cst> ();
-
-      // XXX add arity to the framework
-      auto wp = vf->pop ();
-      assert (wp->is <value_cst> ());
-      auto &w = static_cast <value_cst &> (*wp);
+      auto wp = vf->pop_as <value_cst> ();
 
       constant const &cst_v = vp->get_constant ();
-      constant const &cst_w = w.get_constant ();
+      constant const &cst_w = wp->get_constant ();
       check_arith (cst_v, cst_w);
 
       constant_dom const *dom = cst_v.dom ()->plain ()

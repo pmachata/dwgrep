@@ -11,8 +11,8 @@ namespace
   pred_result
   comparison_result (valfile &vf, cmp_result want)
   {
-    if (auto va = vf.top_as <value_cst> ())
-      if (auto vb = vf.below_as <value_cst> ())
+    if (auto va = vf.get_as <value_cst> (0))
+      if (auto vb = vf.get_as <value_cst> (1))
 	// For two different domains, complain about comparisons that
 	// don't have at least one comparand signed_constant_dom or
 	// unsigned_constant_dom.
@@ -22,8 +22,8 @@ namespace
 	  std::cerr << "Warning: comparing " << *va << " to " << *vb
 		    << " is probably not meaningful (different domains).\n";
 
-    auto &va = vf.top ();
-    auto &vb = vf.below ();
+    auto &va = vf.get (0);
+    auto &vb = vf.get (1);
     cmp_result r = vb.cmp (va);
     if (r == cmp_result::fail)
       {

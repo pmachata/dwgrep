@@ -32,13 +32,9 @@ op_add_str::next ()
   if (auto vf = m_upstream->next ())
     {
       auto vp = vf->pop_as <value_str> ();
+      auto wp = vf->pop_as <value_str> ();
 
-      // XXX add arity to the framework
-      auto wp = vf->pop ();
-      assert (wp->is <value_str> ());
-      auto &w = static_cast <value_str &> (*wp);
-
-      std::string result = w.get_string () + vp->get_string ();
+      std::string result = wp->get_string () + vp->get_string ();
       vf->push (std::make_unique <value_str> (std::move (result), 0));
       return vf;
     }

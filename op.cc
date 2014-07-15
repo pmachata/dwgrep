@@ -1197,7 +1197,7 @@ pred_subx_any::reset ()
 pred_result
 pred_match::result (valfile &vf)
 {
-  auto va = vf.below_as <value_str> ();
+  auto va = vf.get_as <value_str> (1);
   if (va == nullptr)
     {
       std::cerr << "Error: match: value below TOS is not a string\n";

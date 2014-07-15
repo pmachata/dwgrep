@@ -6,8 +6,10 @@
 
 overload_instance::overload_instance
 	(std::vector <std::tuple <value_type, builtin &>> const &stencil,
-	 dwgrep_graph::sptr q, std::shared_ptr <scope> scope)
+	 dwgrep_graph::sptr q, std::shared_ptr <scope> scope, unsigned arity)
+  : m_arity {arity}
 {
+  assert (m_arity > 0);
   for (auto const &v: stencil)
     {
       auto pred = std::get <1> (v).build_pred (q, scope);
@@ -25,9 +27,26 @@ overload_instance::overload_instance
     }
 }
 
-overload_instance::exec_vec::value_type *
-overload_instance::find_exec (value_type vt)
+namespace
 {
+  value_type
+  check_vt_near_top (valfile &vf, unsigned depth)
+  {
+    value_type vt = vf.top ().get_type ();
+    for (unsigned i = 1; i < depth; ++i)
+      if (vt != vf.get (i).get_type ())
+	return value_type {0};
+    return vt;
+  }
+}
+
+overload_instance::exec_vec::value_type *
+overload_instance::find_exec (valfile &vf)
+{
+  value_type vt = check_vt_near_top (vf, m_arity);
+  if (vt == value_type {0})
+    return nullptr;
+
   auto it = std::find_if (m_execs.begin (), m_execs.end (),
 			  [vt] (exec_vec::value_type const &ovl)
 			  { return std::get <0> (ovl) == vt; });
@@ -39,8 +58,12 @@ overload_instance::find_exec (value_type vt)
 }
 
 overload_instance::pred_vec::value_type *
-overload_instance::find_pred (value_type vt)
+overload_instance::find_pred (valfile &vf)
 {
+  value_type vt = check_vt_near_top (vf, m_arity);
+  if (vt == value_type {0})
+    return nullptr;
+
   auto it = std::find_if (m_preds.begin (), m_preds.end (),
 			  [vt] (pred_vec::value_type const &ovl)
 			  { return std::get <0> (ovl) == vt; });
@@ -105,7 +128,7 @@ overload_tab::add_overload (value_type vt, builtin &b)
 overload_instance
 overload_tab::instantiate (dwgrep_graph::sptr q, std::shared_ptr <scope> scope)
 {
-  return overload_instance {m_overloads, q, scope};
+  return overload_instance {m_overloads, q, scope, m_arity};
 }
 
 
@@ -136,8 +159,7 @@ struct overload_op::pimpl
 	  {
 	    if (auto vf = m_upstream->next ())
 	      {
-		value &val = vf->top ();
-		auto ovl = m_ovl_inst.find_exec (val.get_type ());
+		auto ovl = m_ovl_inst.find_exec (*vf);
 		if (ovl == nullptr)
 		  m_ovl_inst.show_error (self.name ());
 		else
@@ -189,7 +211,7 @@ overload_op::reset ()
 pred_result
 overload_pred::result (valfile &vf)
 {
-  auto ovl = m_ovl_inst.find_pred (vf.top ().get_type ());
+  auto ovl = m_ovl_inst.find_pred (vf);
   if (ovl == nullptr)
     {
       m_ovl_inst.show_error (name ());
