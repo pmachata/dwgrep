@@ -216,3 +216,10 @@ op_elem_seq::reset ()
   m_state = nullptr;
   inner_op::reset ();
 }
+
+pred_result
+pred_empty_seq::result (valfile &vf)
+{
+  auto vp = vf.top_as <value_seq> ();
+  return pred_result (vp->get_seq ()->empty ());
+}

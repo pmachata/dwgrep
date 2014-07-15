@@ -1195,28 +1195,6 @@ pred_subx_any::reset ()
 }
 
 pred_result
-pred_empty::result (valfile &vf)
-{
-  if (auto v = vf.top_as <value_str> ())
-    return pred_result (v->get_string () == "");
-
-  else if (auto v = vf.top_as <value_seq> ())
-    return pred_result (v->get_seq ()->empty ());
-
-  else
-    {
-      std::cerr << "Error: `?empty' expects a T_STR or T_SEQ on TOS.\n";
-      return pred_result::fail;
-    }
-}
-
-std::string
-pred_empty::name () const
-{
-  return "pred_empty";
-}
-
-pred_result
 pred_match::result (valfile &vf)
 {
   auto va = vf.below_as <value_str> ();

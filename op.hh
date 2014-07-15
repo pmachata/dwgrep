@@ -88,6 +88,13 @@ struct stub_op
   std::string name () const override final { return "stub"; }
 };
 
+struct stub_pred
+  : public pred
+{
+  std::string name () const override final { return "stub"; }
+  void reset () override final {}
+};
+
 class op_nop
   : public op
 {
@@ -617,17 +624,6 @@ public:
   pred_result result (valfile &vf) override;
   std::string name () const override;
   void reset () override;
-};
-
-class pred_empty
-  : public pred
-{
-public:
-  pred_empty () {}
-
-  pred_result result (valfile &vf) override;
-  std::string name () const override;
-  void reset () override {}
 };
 
 class pred_match

@@ -54,4 +54,10 @@ struct op_elem_str
   void reset () override;
 };
 
+struct pred_empty_str
+  : public stub_pred
+{
+  pred_result result (valfile &vf) override;
+};
+
 #endif /* _VALUE_STR_H_ */

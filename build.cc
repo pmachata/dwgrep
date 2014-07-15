@@ -36,9 +36,6 @@ tree::build_pred (dwgrep_graph::sptr q, std::shared_ptr <scope> scope) const
 	return std::make_unique <pred_subx_any> (op, origin);
       }
 
-    case tree_type::PRED_EMPTY:
-      return std::make_unique <pred_empty> ();
-
     case tree_type::PRED_MATCH:
       return std::make_unique <pred_match> ();
 
@@ -275,7 +272,6 @@ tree::build_exec (std::shared_ptr <op> upstream, dwgrep_graph::sptr q,
 
     case tree_type::PRED_FIND:
     case tree_type::PRED_MATCH:
-    case tree_type::PRED_EMPTY:
     case tree_type::PRED_AND:
     case tree_type::PRED_OR:
     case tree_type::PRED_NOT:

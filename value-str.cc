@@ -132,3 +132,10 @@ op_elem_str::reset ()
   m_state = nullptr;
   inner_op::reset ();
 }
+
+pred_result
+pred_empty_str::result (valfile &vf)
+{
+  auto vp = vf.top_as <value_str> ();
+  return pred_result (vp->get_string () == "");
+}

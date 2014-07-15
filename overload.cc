@@ -1,5 +1,6 @@
 #include <memory>
 #include "make_unique.hh"
+#include <set>
 
 #include "overload.hh"
 
@@ -7,25 +8,44 @@ overload_instance::overload_instance
 	(std::vector <std::tuple <value_type, builtin &>> const &stencil,
 	 dwgrep_graph::sptr q, std::shared_ptr <scope> scope)
 {
-  std::transform (stencil.begin (), stencil.end (),
-		  std::back_inserter (m_overloads),
-		  [&q, &scope] (std::tuple <value_type, builtin &> const &v)
-		  {
-		    auto origin = std::make_shared <op_origin> (nullptr);
-		    auto op = std::get <1> (v).build_exec (origin, q, scope);
-		    assert (op != nullptr);
-		    return std::make_tuple (std::get <0> (v), origin, op);
-		  });
+  for (auto const &v: stencil)
+    {
+      auto pred = std::get <1> (v).build_pred (q, scope);
+
+      auto origin = std::make_shared <op_origin> (nullptr);
+      auto op = std::get <1> (v).build_exec (origin, q, scope);
+
+      assert (op != nullptr || pred != nullptr);
+
+      if (op != nullptr)
+	m_execs.push_back (std::make_tuple (std::get <0> (v), origin, op));
+      if (pred != nullptr)
+	m_preds.push_back (std::make_tuple (std::get <0> (v),
+					    std::move (pred)));
+    }
 }
 
-overload_instance::overload_vec::value_type *
-overload_instance::find_overload (value_type vt)
+overload_instance::exec_vec::value_type *
+overload_instance::find_exec (value_type vt)
 {
-  auto it = std::find_if (m_overloads.begin (), m_overloads.end (),
-			  [vt] (overload_vec::value_type const &ovl)
+  auto it = std::find_if (m_execs.begin (), m_execs.end (),
+			  [vt] (exec_vec::value_type const &ovl)
 			  { return std::get <0> (ovl) == vt; });
 
-  if (it == m_overloads.end ())
+  if (it == m_execs.end ())
+    return nullptr;
+  else
+    return &*it;
+}
+
+overload_instance::pred_vec::value_type *
+overload_instance::find_pred (value_type vt)
+{
+  auto it = std::find_if (m_preds.begin (), m_preds.end (),
+			  [vt] (pred_vec::value_type const &ovl)
+			  { return std::get <0> (ovl) == vt; });
+
+  if (it == m_preds.end ())
     return nullptr;
   else
     return &*it;
@@ -35,7 +55,14 @@ void
 overload_instance::show_error (std::string const &name)
 {
   std::cerr << "Error: `" << name << "'";
-  if (m_overloads.empty ())
+
+  std::set <value_type> vts;
+  for (auto const &ex: m_execs)
+    vts.insert (std::get <0> (ex));
+  for (auto const &pr: m_preds)
+    vts.insert (std::get <0> (pr));
+
+  if (vts.empty ())
     {
       std::cerr << " has no registered overloads.\n";
       return;
@@ -43,17 +70,17 @@ overload_instance::show_error (std::string const &name)
 
   std::cerr << " expects ";
   size_t i = 0;
-  for (auto const &ovl: m_overloads)
+  for (auto vt: vts)
     {
       if (i == 0)
 	;
-      else if (i == m_overloads.size () - 1)
+      else if (i == m_execs.size () - 1)
 	std::cerr << " or ";
       else
 	std::cerr << ", ";
 
       ++i;
-      std::cerr << std::get <0> (ovl).name ();
+      std::cerr << vt.name ();
     }
   std::cerr << " on TOS.\n";
 }
@@ -110,7 +137,7 @@ struct overload_op::pimpl
 	    if (auto vf = m_upstream->next ())
 	      {
 		value &val = vf->top ();
-		auto ovl = m_ovl_inst.find_overload (val.get_type ());
+		auto ovl = m_ovl_inst.find_exec (val.get_type ());
 		if (ovl == nullptr)
 		  m_ovl_inst.show_error (self.name ());
 		else
@@ -157,4 +184,17 @@ void
 overload_op::reset ()
 {
   return m_pimpl->reset ();
+}
+
+pred_result
+overload_pred::result (valfile &vf)
+{
+  auto ovl = m_ovl_inst.find_pred (vf.top ().get_type ());
+  if (ovl == nullptr)
+    {
+      m_ovl_inst.show_error (name ());
+      return pred_result::fail;
+    }
+  else
+    return std::get <1> (*ovl)->result (vf);
 }

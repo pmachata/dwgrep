@@ -170,10 +170,10 @@
 %token TOK_ASTERISK TOK_PLUS TOK_QMARK TOK_MINUS TOK_COMMA TOK_SEMICOLON
 %token TOK_DOUBLE_VBAR TOK_SLASH TOK_ARROW
 
-%token TOK_TYPE TOK_POS TOK_IF TOK_THEN TOK_ELSE
+%token TOK_TYPE TOK_IF TOK_THEN TOK_ELSE
 
-%token TOK_QMARK_MATCH TOK_QMARK_FIND TOK_QMARK_EMPTY
-%token TOK_BANG_MATCH TOK_BANG_FIND TOK_BANG_EMPTY
+%token TOK_QMARK_MATCH TOK_QMARK_FIND
+%token TOK_BANG_MATCH TOK_BANG_FIND
 
 %token TOK_WORD TOK_LIT_STR TOK_LIT_INT
 
@@ -359,11 +359,6 @@ Statement:
   { $$ = positive_assert <tree_type::PRED_FIND> (); }
   | TOK_BANG_FIND
   { $$ = negative_assert <tree_type::PRED_FIND> (); }
-
-  | TOK_QMARK_EMPTY
-  { $$ = positive_assert <tree_type::PRED_EMPTY> (); }
-  | TOK_BANG_EMPTY
-  { $$ = negative_assert <tree_type::PRED_EMPTY> (); }
 
 %%
 

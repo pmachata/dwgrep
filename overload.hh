@@ -4,6 +4,7 @@
 #include <vector>
 #include <tuple>
 #include <memory>
+#include "make_unique.hh"
 
 #include "op.hh"
 #include "builtin.hh"
@@ -35,15 +36,20 @@ class overload_instance
 {
   typedef std::vector <std::tuple <value_type,
 				   std::shared_ptr <op_origin>,
-				   std::shared_ptr <op>>> overload_vec;
-  overload_vec m_overloads;
+				   std::shared_ptr <op>>> exec_vec;
+  exec_vec m_execs;
+
+  typedef std::vector <std::tuple <value_type,
+				   std::shared_ptr <pred>>> pred_vec;
+  pred_vec m_preds;
 
 public:
   overload_instance (std::vector <std::tuple <value_type,
 					      builtin &>> const &stencil,
 		     dwgrep_graph::sptr q, std::shared_ptr <scope> scope);
 
-  overload_vec::value_type *find_overload (value_type vt);
+  exec_vec::value_type *find_exec (value_type vt);
+  pred_vec::value_type *find_pred (value_type vt);
 
   void show_error (std::string const &name);
 };
@@ -73,8 +79,24 @@ public:
   void reset () override final;
 };
 
+class overload_pred
+  : public pred
+{
+  overload_instance m_ovl_inst;
+public:
+  overload_pred (overload_instance ovl_inst)
+    : m_ovl_inst {ovl_inst}
+  {}
+
+  void
+  reset () override final
+  {}
+
+  pred_result result (valfile &vf) override final;
+};
+
 template <class OP>
-struct overload_builtin
+struct overload_op_builtin
   : public builtin
 {
   std::shared_ptr <op>
@@ -82,6 +104,24 @@ struct overload_builtin
 	      std::shared_ptr <scope> scope) const override final
   {
     return std::make_shared <OP> (upstream);
+  }
+
+  char const *
+  name () const override final
+  {
+    return "overload";
+  }
+};
+
+template <class PRED>
+struct overload_pred_builtin
+  : public builtin
+{
+  std::unique_ptr <pred>
+  build_pred (dwgrep_graph::sptr q,
+	      std::shared_ptr <scope> scope) const override final
+  {
+    return std::make_unique <PRED> ();
   }
 
   char const *

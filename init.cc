@@ -13,6 +13,7 @@
 
 #include "builtin-add.hh"
 #include "builtin-elem.hh"
+#include "builtin-empty.hh"
 #include "builtin-length.hh"
 #include "builtin-value.hh"
 
@@ -70,23 +71,28 @@ namespace
 
   // "add"
   builtin_add builtin_add_obj;
-  overload_builtin <op_add_str> builtin_add_str_obj;
-  overload_builtin <op_add_cst> builtin_add_cst_obj;
-  overload_builtin <op_add_seq> builtin_add_seq_obj;
+  overload_op_builtin <op_add_str> builtin_add_str_obj;
+  overload_op_builtin <op_add_cst> builtin_add_cst_obj;
+  overload_op_builtin <op_add_seq> builtin_add_seq_obj;
 
   // "elem"
   builtin_elem builtin_elem_obj;
-  overload_builtin <op_elem_str> builtin_elem_str_obj;
-  overload_builtin <op_elem_seq> builtin_elem_seq_obj;
+  overload_op_builtin <op_elem_str> builtin_elem_str_obj;
+  overload_op_builtin <op_elem_seq> builtin_elem_seq_obj;
+
+  // "empty"
+  builtin_empty builtin_empty_obj {true}, builtin_nempty_obj {false};
+  overload_pred_builtin <pred_empty_str> builtin_empty_str_obj;
+  overload_pred_builtin <pred_empty_seq> builtin_empty_seq_obj;
 
   // "length"
   builtin_length builtin_length_obj;
-  overload_builtin <op_length_str> builtin_length_str_obj;
-  overload_builtin <op_length_seq> builtin_length_seq_obj;
+  overload_op_builtin <op_length_str> builtin_length_str_obj;
+  overload_op_builtin <op_length_seq> builtin_length_seq_obj;
 
   // "value"
   builtin_value builtin_value_obj;
-  overload_builtin <op_value_cst> builtin_value_cst_obj;
+  overload_op_builtin <op_value_cst> builtin_value_cst_obj;
 }
 
 void
@@ -148,4 +154,10 @@ dwgrep_init ()
   add_builtin (builtin_elem_obj);
   ovl_tab_elem ().add_overload (value_str::vtype, builtin_elem_str_obj);
   ovl_tab_elem ().add_overload (value_seq::vtype, builtin_elem_seq_obj);
+
+  add_builtin (builtin_empty_obj);
+  add_builtin (builtin_nempty_obj);
+  ovl_tab_empty ().add_overload (value_str::vtype, builtin_empty_str_obj);
+  ovl_tab_empty ().add_overload (value_seq::vtype, builtin_empty_seq_obj);
+
 }

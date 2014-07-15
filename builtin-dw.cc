@@ -762,7 +762,7 @@ namespace
       return nullptr;
     }
   };
-  overload_builtin <op_value_attr> builtin_value_attr_obj;
+  overload_op_builtin <op_value_attr> builtin_value_attr_obj;
 
   struct builtin_attr_named
     : public builtin

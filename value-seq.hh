@@ -67,4 +67,10 @@ struct op_elem_seq
   void reset () override;
 };
 
+struct pred_empty_seq
+  : public stub_pred
+{
+  pred_result result (valfile &vf) override;
+};
+
 #endif /* _VALUE_SEQ_H_ */

@@ -94,7 +94,7 @@ expect_count 1 ./nontrivial-types.o -e '
 # than it starts in (different slots are taken in the valfile).
 expect_count 1 ./typedef.o -e '
 	winfo
-	?([] swap (@AT_type ?TAG_typedef [()] 2/swap add swap)* drop length 3 ?eq)
+	?([] swap (@AT_type ?TAG_typedef [()] rot add swap)* drop length 3 ?eq)
 	?(offset 0x45 ?eq)'
 
 # Test decoding signed and unsigned value.
@@ -319,3 +319,13 @@ expect_count 1 ./empty -e '
 expect_count 1 ./duplicate-const -e '
 	?(winfo ?root type T_DIE ?eq "%s" "T_DIE" ?eq)
 	?(winfo ?root attribute ?AT_name type T_ATTR ?eq "%s" "T_ATTR" ?eq)'
+
+# Check some list and seq words.
+expect_count 1 ./empty -e '
+	[1] !empty !(?empty) ?(length 1 ?eq)
+	[] ?empty !(!empty) ?(length 0 ?eq)
+	"1" !empty !(?empty) ?(length 1 ?eq)
+	"" ?empty !(!empty) ?(length 0 ?eq)'
+expect_count 1 ./empty -e '
+	?([1, 2, 3] [4, 5, 6] add [1, 2, 3, 4, 5, 6] ?eq)
+	?("123" "456" add "123456" ?eq)'
