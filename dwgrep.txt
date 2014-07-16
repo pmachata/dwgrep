@@ -24,7 +24,7 @@
 
   In particular, a simple expression in dwgrep might look like this:
 
-  : winfo ?TAG_subprogram child ?TAG_formal_parameter @AT_name
+  : winfo ?DW_TAG_subprogram child ?DW_TAG_formal_parameter @DW_AT_name
 
   Which (ignoring the initial colon that's part of meta-syntax) says:
   show me values of attribute DW_AT_name of DW_TAG_formal_parameter
@@ -36,7 +36,7 @@
 
   Another example comes from dwarflint:
 
-  : winfo ?AT_decl_column !AT_decl_line
+  : winfo ?DW_AT_decl_column !DW_AT_decl_line
 
   ... which looks for DIE's that have DW_AT_decl_column, but don't
   have DW_AT_decl_line--a semantic violation that is worth reporting.
@@ -100,12 +100,17 @@
    only winfo is implemented as of now), and there are also
    designators for ELF symbol tables (XXX also not implemented yet).
 
-** ?ID — DIE tag assertion
+** ?DW_TAG_foo, ?TAG_foo — DIE tag assertion
 ** EXPR₁ EXPR₂ … — concatenation
 
-   The assertion "?ID" takes the value at top of stack (TOS).  If its
-   tag is not DW_TAG_ID, this function yields nothing.  Otherwise it
-   yields the input stack unchanged.
+   The assertion "?DW_TAG_foo" takes the value at top of stack (TOS).
+   If its tag is not DW_TAG_ID, this function yields nothing.
+   Otherwise it yields the input stack unchanged.  The functions which
+   either yield an unmodified input or nothing at all are called
+   assertions, and are very common in dwgrep expressions.
+
+   You can write ?DW_TAG_foo also as ?TAG_foo, they do the same thing.
+   In the following, that's how we will refer to this assertion.
 
    In dwgrep, function pipelines are formed by simply placing
    functions next to each other.  The stacks that the left function
@@ -116,9 +121,16 @@
 
    : winfo ?TAG_subprogram
 
-** ?A_ID, !AT_ID — attribute presence/absence assertion
+** ?DW_AT_foo, !DW_AT_foo — attribute presence/absence assertion
 
-   "?AT_ID" holds if the value on TOS is a DIE with DW_AT_ID.
+   "?DW_AT_foo" holds if the value on TOS is a DIE with an attribute
+   DW_AT_foo, or if it is an attribute with the name DW_AT_foo.  As
+   with tags (and any Dwarf-related assertions at all), you can
+   shorten this to ?AT_foo.
+
+   !DW_AT_foo similarly holds if the value on TOS is a DIE that does
+   NOT have an attribute DW_AT_foo, or if it's an attribute whose name
+   is NOT DW_AT_foo.
 
    For assertions, concatenation happens to work as a logical and, so
    for example, this is how we can get a list of all subprograms that
@@ -146,18 +158,18 @@
 
    : winfo ?TAG_subprogram !AT_declaration child ?TAG_formal_parameter
 
-** @AT_ID — value of attribute DW_AT_ID
+** @DW_AT_foo — value of attribute DW_AT_foo
 
-   This is the first example of a function that can produces something
+   This is the first example of a function that can produce something
    else than Dwarf DIE's.  This will replace the DIE at TOS with a
    value of the attribute of that DIE.  E.g. we could obtain names of
    the formal parameters selected above:
 
    : winfo ?TAG_subprogram !AT_declaration child ?TAG_formal_parameter @AT_name
 
-   The result would be a set (really, multiset) of strings with names
-   of all formal parameters in the program.  That's not very useful,
-   as that just lists a bunch of names.
+   The results would be strings with names of all formal parameters in
+   the program.  That's not very useful, as that just lists a bunch of
+   names.
 
    But there's another use of this same feature: for attributes with
    reference form, we get the effect of traversing over the edge
@@ -222,6 +234,10 @@
 
    : ?(@AT_declaration true ?eq)
 
+   The meaning of ?eq is hopefully clear--it's an equivalence
+   assertion.  If top two stack slots are equivalent, it yields the
+   stack unchanged, otherwise doesn't yield anything.
+
    Back to the problem at hand--there's more than
    DW_TAG_structure_type, we care about DW_TAG_class_type as well!  We
    can express "and" easily simply by juxtaposing the assertions, but
@@ -238,6 +254,12 @@
    : winfo ?TAG_subprogram !AT_declaration
    : ?(child ?TAG_formal_parameter @AT_type
    :   (?TAG_structure_type, ?TAG_class_type))
+
+   But the applicability is wider.  Since the semantics are
+   essentially those of a fork, one can for example ask, whether an
+   attribute has one of a number of values:
+
+   : @AT_name ?(("foo", "bar") ?eq)
 
    The || operator works differently.  It evaluates one expression
    after another, as long as those expressions don't yield anything.
@@ -324,7 +346,8 @@
    around the way you need it.  But keeping track of what is where
    when gets old quickly.  For this reason, dwgrep allows that you
    give value a name.  That removes that value from the stack, and
-   introduces a word that, when mentioned, pushes that value to stack.
+   introduces a word that, when mentioned, pushes the bound value back
+   to stack.
 
    : 1->A; A A add	# gives 2
 
@@ -504,7 +527,7 @@
      Any whitespace (but only whitespace) is allowed between "\ and
      the followig ".
 
-** ·EXPR → (“?”|“!”)TAG_, AT_, etc. — named constant assertions
+** ·EXPR → (“?”|“!”) “DW_”? “TAG_”, “AT_”, etc. — named constant assertions
 
    Since majority of comparisons are ?eq or !eq anyway, and many of
    those are vs. constants, there's a number of words for asserting
@@ -513,30 +536,34 @@
    According to a value on TOS, and a constant family, the following
    rewrire rules define the semantics of a value assertion:
 
-   |---+-----------+---------------+--------------------|
-   | ? | v         | TOS           | Meaning of ?v      |
-   |---+-----------+---------------+--------------------|
-   |   | T_*       | any           | ?(type ?v)         |
-   | • | TAG_*     | T_DIE         | ?(tag ?v)          |
-   | • | TAG_*     | T_CONST       | ?(DW_v ?eq)        |
-   | • | AT_*      | T_DIE         | ?(attribute ?v)    |
-   | • | AT_*      | T_ATTR        | ?(name ?v)         |
-   | • | AT_*      | T_CONST       | ?(DW_v ?eq)        |
-   | • | FORM_*    | T_ATTR        | ?(form ?v)         |
-   | • | FORM_*    | T_CONST       | ?(DW_v ?eq)        |
-   |   | LANG_*    | winfo ?root   | ?(@AT_language ?v) |
-   |   | LANG_*    | @AT_language  | ?(value ?v)        |
-   |   | ATE_*     | @AT_encoding  | ?(value ?v)        |
-   |   | OP_*      | XXX locexpr   |                    |
-   |   | LNE_*     | XXX linetab   |                    |
-   |   | LNS_*     | XXX linetab   |                    |
-   |   | MACINFO_* | XXX macinfo   |                    |
-   |   | MACRO_*   | XXX macro     |                    |
-   |   | CFA_*     | XXX CFI       |                    |
-   |   | CIE_*     | XXX CFI       |                    |
-   |   | EH_*      | XXX .eh_frame |                    |
-   |   | any       | T_CONST       | ?(DW_v ?eq)        |
-   |---+-----------+---------------+--------------------|
+   |---+--------------+---------------+--------------------------|
+   | ? | v            | TOS           | Meaning of ?v            |
+   |---+--------------+---------------+--------------------------|
+   |   | T_*          | any           | ?(type ?v)               |
+   | • | DW_TAG_*     | T_DIE         | ?(tag ?v)                |
+   | • | DW_TAG_*     | T_CONST       | ?(v ?eq)                 |
+   | • | DW_AT_*      | T_DIE         | ?(attribute ?v)          |
+   | • | DW_AT_*      | T_ATTR        | ?(name ?v)               |
+   | • | DW_AT_*      | T_CONST       | ?(v ?eq)                 |
+   | • | DW_FORM_*    | T_ATTR        | ?(form ?v)               |
+   | • | DW_FORM_*    | T_CONST       | ?(v ?eq)                 |
+   |   | DW_LANG_*    | T_DIE         | ?(@AT_language ?v)       |
+   |   | DW_LANG_*    | T_ATTR        | ?(?AT_language value ?v) |
+   |   | DW_LANG_*    | T_CONST       | ?(v ?eq)                 |
+   |   | DW_ATE_*     | @AT_encoding  | ?(value ?v)              |
+   |   | DW_OP_*      | XXX locexpr   |                          |
+   |   | DW_LNE_*     | XXX linetab   |                          |
+   |   | DW_LNS_*     | XXX linetab   |                          |
+   |   | DW_MACINFO_* | XXX macinfo   |                          |
+   |   | DW_MACRO_*   | XXX macro     |                          |
+   |   | DW_CFA_*     | XXX CFI       |                          |
+   |   | DW_CIE_*     | XXX CFI       |                          |
+   |   | DW_EH_*      | XXX .eh_frame |                          |
+   |   | any          | T_CONST       | ?(v ?eq)                 |
+   |---+--------------+---------------+--------------------------|
+
+   The prefix DW_ is optional.  There's no harm spelling it out, but
+   since it's so common, you can leave it out.
 
    For example, ?ATE_unsigned is applicable to an attribute that is
    DW_AT_encoding, or a constant of that domain.
@@ -1110,8 +1137,8 @@
 
 ** whether it uses a deref operator
 
-   : ?(@AT_location @atom (DW_OP_deref, DW_OP_xderef, DW_OP_deref_size,
-   :                       DW_OP_xderef_size, DW_OP_GNU_deref_type) ?eq)
+   : ?(@AT_location @atom (?OP_deref, ?OP_xderef, ?OP_deref_size,
+   :                       ?OP_xderef_size, ?OP_GNU_deref_type))
 
    : ?(@AT_location @atom "%s" "deref" ?find)
 

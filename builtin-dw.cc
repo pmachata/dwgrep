@@ -919,7 +919,7 @@ ALL_KNOWN_DW_AT
     }
   };
 
-#define ONE_KNOWN_DW_AT(NAME, CODE)					\
+#define ONE_KNOWN_DW_AT(NAME, CODE)				\
   builtin_pred_attr builtin_pred_attr_##NAME {CODE, true},	\
     builtin_pred_nattr_##NAME {CODE, false};
 ALL_KNOWN_DW_AT
@@ -1215,6 +1215,9 @@ dwgrep_init_dw ()
     add_builtin (builtin_attr_##NAME, "@AT_" #NAME);		\
     add_builtin (builtin_pred_attr_##NAME, "?AT_" #NAME);	\
     add_builtin (builtin_pred_nattr_##NAME, "!AT_" #NAME);	\
+    add_builtin (builtin_attr_##NAME, "@" #CODE);		\
+    add_builtin (builtin_pred_attr_##NAME, "?" #CODE);		\
+    add_builtin (builtin_pred_nattr_##NAME, "!" #CODE);		\
     add_builtin (builtin_##CODE##_obj, #CODE);
   ALL_KNOWN_DW_AT
 #undef ONE_KNOWN_DW_AT
@@ -1222,6 +1225,8 @@ dwgrep_init_dw ()
 #define ONE_KNOWN_DW_TAG(NAME, CODE)				\
     add_builtin (builtin_pred_tag_##NAME, "?TAG_" #NAME);	\
     add_builtin (builtin_pred_ntag_##NAME, "!TAG_" #NAME);	\
+    add_builtin (builtin_pred_tag_##NAME, "?" #CODE);		\
+    add_builtin (builtin_pred_ntag_##NAME, "!" #CODE);		\
     add_builtin (builtin_##CODE##_obj, #CODE);
   ALL_KNOWN_DW_TAG
 #undef ONE_KNOWN_DW_TAG
@@ -1230,6 +1235,8 @@ dwgrep_init_dw ()
 #define ONE_KNOWN_DW_FORM(NAME, CODE)				\
     add_builtin (builtin_pred_form_##NAME, "?FORM_" #NAME);	\
     add_builtin (builtin_pred_nform_##NAME, "!FORM_" #NAME);	\
+    add_builtin (builtin_pred_form_##NAME, "?" #CODE);		\
+    add_builtin (builtin_pred_nform_##NAME, "!" #CODE);		\
     add_builtin (builtin_##CODE##_obj, #CODE);
   ALL_KNOWN_DW_FORM;
 #undef ONE_KNOWN_DW_FORM

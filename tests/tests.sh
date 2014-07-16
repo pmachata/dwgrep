@@ -315,6 +315,14 @@ expect_count 1 ./empty -e '
 	attribute ?(?AT_name name ?AT_name) !(!AT_name || name !AT_name)
 	?(?FORM_strp form ?FORM_strp) !(!FORM_strp || form !FORM_strp)'
 
+expect_count 1 ./empty -e '
+	winfo ?root ?(tag ?DW_TAG_compile_unit) !(tag !DW_TAG_compile_unit)
+	?DW_AT_name !(!DW_AT_name)
+	attribute ?(?DW_AT_name name ?DW_AT_name)
+	!(!DW_AT_name || name !DW_AT_name)
+	?(?DW_FORM_strp form ?DW_FORM_strp)
+	!(!DW_FORM_strp || form !DW_FORM_strp)'
+
 # check type constants
 expect_count 1 ./empty -e '
 	?(1 type T_CONST ?eq "%s" "T_CONST" ?eq)
