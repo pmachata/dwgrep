@@ -17,6 +17,31 @@ namespace
 {
   std::unique_ptr <builtin_constant> builtin_T_DIE;
   std::unique_ptr <builtin_constant> builtin_T_ATTR;
+
+  void
+  show_expects (std::string const &name, value_type const &vt1)
+  {
+    std::cerr << "Error: `" << name << "' expects a "
+	      << vt1.name () << "on TOS.\n";
+  }
+
+  void
+  show_expects (std::string const &name,
+		value_type const &vt1, value_type const &vt2)
+  {
+    std::cerr << "Error: `" << name << "' expects a "
+	      << vt1.name () << " or " << vt2.name ()
+	      << "on TOS.\n";
+  }
+
+  void
+  show_expects (std::string const &name, value_type const &vt1,
+		value_type const &vt2, value_type const &vt3)
+  {
+    std::cerr << "Error: `" << name << "' expects a "
+	      << vt1.name () << ", " << vt2.name () << " or " << vt3.name ()
+	      << "on TOS.\n";
+  }
 }
 
 static struct
@@ -161,8 +186,7 @@ static struct
 		      m_vf = std::move (vf);
 		    }
 		  else
-		    std::cerr << "Error: `unit' expects a T_NODE or "
-		      "T_ATTR on TOS.\n";
+		    show_expects (name (), value_die::vtype, value_attr::vtype);
 		}
 	      else
 		return nullptr;
@@ -258,7 +282,7 @@ static struct
 			}
 		    }
 		  else
-		    std::cerr << "Error: `child' expects a T_NODE on TOS.\n";
+		    show_expects (name (), value_die::vtype);
 		}
 	      else
 		return nullptr;
@@ -357,8 +381,7 @@ static struct
 		      m_vf = std::move (vf);
 		    }
 		  else
-		    std::cerr
-		      << "Error: `attribute' expects a T_NODE on TOS.\n";
+		    show_expects (name (), value_die::vtype);
 		}
 	      else
 		return nullptr;
@@ -438,8 +461,7 @@ namespace
 		return vf;
 	    }
 	  else
-	    std::cerr << "Error: " << name ()
-		      << " expects a T_NODE or T_ATTR on TOS.\n";
+	    show_expects (name (), value_die::vtype, value_attr::vtype);
 	}
 
       return nullptr;
@@ -703,7 +725,7 @@ static struct
 
       else
 	{
-	  std::cerr << "Error: `?root' expects a T_ATTR or T_NODE on TOS.\n";
+	  show_expects (name (), value_die::vtype, value_attr::vtype);
 	  return pred_result::fail;
 	}
     }
@@ -715,7 +737,7 @@ static struct
     std::string
     name () const override
     {
-      return "root";
+      return "?root";
     }
   };
 
@@ -836,9 +858,11 @@ ALL_KNOWN_DW_AT
       : public pred
     {
       unsigned m_atname;
+      constant m_const;
 
       explicit p (unsigned atname)
-	: m_atname (atname)
+	: m_atname {atname}
+	, m_const {atname, &dw_attr_dom}
       {}
 
       pred_result
@@ -849,13 +873,20 @@ ALL_KNOWN_DW_AT
 	    Dwarf_Die *die = &v->get_die ();
 	    return pred_result (dwarf_hasattr_integrate (die, m_atname) != 0);
 	  }
+
+	else if (auto v = vf.top_as <value_cst> ())
+	  {
+	    check_constants_comparable (m_const, v->get_constant ());
+	    return pred_result (m_const == v->get_constant ());
+	  }
+
 	else if (auto v = vf.top_as <value_attr> ())
 	  return pred_result (dwarf_whatattr (&v->get_attr ()) == m_atname);
+
 	else
 	  {
-	    std::cerr << "Error: `?AT_"
-		      << constant {m_atname, &dw_attr_short_dom}
-		      << "' expects a T_NODE or T_ATTR on TOS.\n";
+	    show_expects (name (), value_die::vtype,
+			  value_attr::vtype, value_cst::vtype);
 	    return pred_result::fail;
 	  }
       }
@@ -907,9 +938,11 @@ ALL_KNOWN_DW_AT
       : public pred
     {
       int m_tag;
+      constant m_const;
 
       explicit p (int tag)
-	: m_tag (tag)
+	: m_tag {tag}
+	, m_const {(unsigned) tag, &dw_tag_dom}
       {}
 
       pred_result
@@ -917,10 +950,16 @@ ALL_KNOWN_DW_AT
       {
 	if (auto v = vf.top_as <value_die> ())
 	  return pred_result (dwarf_tag (&v->get_die ()) == m_tag);
+
+	else if (auto v = vf.top_as <value_cst> ())
+	  {
+	    check_constants_comparable (m_const, v->get_constant ());
+	    return pred_result (m_const == v->get_constant ());
+	  }
+
 	else
 	  {
-	    std::cerr << "Error: `" << name ()
-		      << "' expects a T_NODE on TOS.\n";
+	    show_expects (name (), value_die::vtype, value_cst::vtype);
 	    return pred_result::fail;
 	  }
       }
@@ -931,7 +970,7 @@ ALL_KNOWN_DW_AT
       name () const override
       {
 	std::stringstream ss;
-	ss << "?TAG_" << constant {(unsigned) m_tag, &dw_tag_short_dom};
+	ss << "?" << m_const;
 	return ss.str ();
       }
     };
@@ -959,6 +998,83 @@ ALL_KNOWN_DW_AT
 ALL_KNOWN_DW_TAG
 #undef ONE_KNOWN_DW_TAG
 
+
+  struct builtin_pred_form
+    : public pred_builtin
+  {
+    unsigned m_form;
+    builtin_pred_form (unsigned form, bool positive)
+      : pred_builtin {positive}
+      , m_form {form}
+    {}
+
+    struct p
+      : public pred
+    {
+      unsigned m_form;
+      constant m_const;
+
+      explicit p (unsigned form)
+	: m_form {form}
+	, m_const {m_form, &dw_form_dom}
+      {}
+
+      pred_result
+      result (valfile &vf) override
+      {
+	if (auto v = vf.top_as <value_attr> ())
+	  return pred_result (dwarf_whatform (&v->get_attr ()) == m_form);
+
+	else if (auto v = vf.top_as <value_cst> ())
+	  {
+	    check_constants_comparable (m_const, v->get_constant ());
+	    return pred_result (m_const == v->get_constant ());
+	  }
+
+	else
+	  {
+	    show_expects (name (), value_attr::vtype, value_cst::vtype);
+	    return pred_result::fail;
+	  }
+      }
+
+      void reset () override {}
+
+      std::string
+      name () const override
+      {
+	std::stringstream ss;
+	ss << "?" << m_const;
+	return ss.str ();
+      }
+    };
+
+    std::unique_ptr <pred>
+    build_pred (dwgrep_graph::sptr q,
+		std::shared_ptr <scope> scope) const override
+    {
+      return maybe_invert (std::make_unique <p> (m_form));
+    }
+
+    char const *
+    name () const override
+    {
+      if (m_positive)
+	return "?form";
+      else
+	return "!form";
+    }
+  };
+
+#define ONE_KNOWN_DW_FORM_DESC(NAME, CODE, DESC) ONE_KNOWN_DW_FORM (NAME, CODE)
+#define ONE_KNOWN_DW_FORM(NAME, CODE)					\
+  builtin_pred_form builtin_pred_form_##NAME {CODE, true},		\
+    builtin_pred_nform_##NAME {CODE, false};
+  ALL_KNOWN_DW_FORM;
+#undef ONE_KNOWN_DW_FORM
+#undef ONE_KNOWN_DW_FORM_DESC
+
+// ----------------------------
 // Builtins for Dwarf constants.
 
 #define ONE_KNOWN_DW_TAG(NAME, CODE)					\
@@ -1110,14 +1226,17 @@ dwgrep_init_dw ()
   ALL_KNOWN_DW_TAG
 #undef ONE_KNOWN_DW_TAG
 
-  add_builtin (builtin_rootp);
-  add_builtin (builtin_nrootp);
-
 #define ONE_KNOWN_DW_FORM_DESC(NAME, CODE, DESC) ONE_KNOWN_DW_FORM (NAME, CODE)
-#define ONE_KNOWN_DW_FORM(NAME, CODE) add_builtin (builtin_##CODE##_obj, #CODE);
+#define ONE_KNOWN_DW_FORM(NAME, CODE)				\
+    add_builtin (builtin_pred_form_##NAME, "?FORM_" #NAME);	\
+    add_builtin (builtin_pred_nform_##NAME, "!FORM_" #NAME);	\
+    add_builtin (builtin_##CODE##_obj, #CODE);
   ALL_KNOWN_DW_FORM;
 #undef ONE_KNOWN_DW_FORM
 #undef ONE_KNOWN_DW_FORM_DESC
+
+  add_builtin (builtin_rootp);
+  add_builtin (builtin_nrootp);
 
 #define ONE_KNOWN_DW_LANG_DESC(NAME, CODE, DESC)	\
     add_builtin (builtin_##CODE##_obj, #CODE);

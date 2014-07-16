@@ -504,7 +504,7 @@
      Any whitespace (but only whitespace) is allowed between "\ and
      the followig ".
 
-**  EXPR → (“?”|“!”)TAG_, AT_, etc. — named constant assertions
+** ·EXPR → (“?”|“!”)TAG_, AT_, etc. — named constant assertions
 
    Since majority of comparisons are ?eq or !eq anyway, and many of
    those are vs. constants, there's a number of words for asserting
@@ -513,28 +513,30 @@
    According to a value on TOS, and a constant family, the following
    rewrire rules define the semantics of a value assertion:
 
-   |-----------+---------------+--------------------|
-   | v         | TOS           | Meaning of ?v      |
-   |-----------+---------------+--------------------|
-   | T_*       | any           | ?(type ?v)         |
-   | TAG_*     | T_DIE         | ?(tag ?v)          |
-   | LANG_*    | winfo ?root   | ?(@AT_language ?v) |
-   | LANG_*    | @AT_language  | ?(value ?v)        |
-   | AT_*      | T_DIE         | ?(attribute ?v)    |
-   | AT_*      | T_ATTR        | ?(name ?v)         |
-   | ATE_*     | @AT_encoding  | ?(value ?v)        |
-   | FORM_*    | T_ATTR        | ?(form ?v)         |
-   | OP_*      | XXX locexpr   |                    |
-   | LNE_*     | XXX linetab   |                    |
-   | LNS_*     | XXX linetab   |                    |
-   | MACINFO_* | XXX macinfo   |                    |
-   | MACRO_*   | XXX macro     |                    |
-   | CFA_*     | XXX CFI       |                    |
-   | CIE_*     | XXX CFI       |                    |
-   | EH_*      | XXX .eh_frame |                    |
-   | any       | T_ATTR        | ?(value ?v)        |
-   | any       | T_CONST       | ?(DW_v ?eq)        |
-   |-----------+---------------+--------------------|
+   |---+-----------+---------------+--------------------|
+   | ? | v         | TOS           | Meaning of ?v      |
+   |---+-----------+---------------+--------------------|
+   |   | T_*       | any           | ?(type ?v)         |
+   | • | TAG_*     | T_DIE         | ?(tag ?v)          |
+   | • | TAG_*     | T_CONST       | ?(DW_v ?eq)        |
+   | • | AT_*      | T_DIE         | ?(attribute ?v)    |
+   | • | AT_*      | T_ATTR        | ?(name ?v)         |
+   | • | AT_*      | T_CONST       | ?(DW_v ?eq)        |
+   | • | FORM_*    | T_ATTR        | ?(form ?v)         |
+   | • | FORM_*    | T_CONST       | ?(DW_v ?eq)        |
+   |   | LANG_*    | winfo ?root   | ?(@AT_language ?v) |
+   |   | LANG_*    | @AT_language  | ?(value ?v)        |
+   |   | ATE_*     | @AT_encoding  | ?(value ?v)        |
+   |   | OP_*      | XXX locexpr   |                    |
+   |   | LNE_*     | XXX linetab   |                    |
+   |   | LNS_*     | XXX linetab   |                    |
+   |   | MACINFO_* | XXX macinfo   |                    |
+   |   | MACRO_*   | XXX macro     |                    |
+   |   | CFA_*     | XXX CFI       |                    |
+   |   | CIE_*     | XXX CFI       |                    |
+   |   | EH_*      | XXX .eh_frame |                    |
+   |   | any       | T_CONST       | ?(DW_v ?eq)        |
+   |---+-----------+---------------+--------------------|
 
    For example, ?ATE_unsigned is applicable to an attribute that is
    DW_AT_encoding, or a constant of that domain.

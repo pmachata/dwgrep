@@ -13,14 +13,7 @@ namespace
   {
     if (auto va = vf.get_as <value_cst> (0))
       if (auto vb = vf.get_as <value_cst> (1))
-	// For two different domains, complain about comparisons that
-	// don't have at least one comparand signed_constant_dom or
-	// unsigned_constant_dom.
-	if (va->get_constant ().dom () != vb->get_constant ().dom ()
-	    && ! va->get_constant ().dom ()->safe_arith ()
-	    && ! vb->get_constant ().dom ()->safe_arith ())
-	  std::cerr << "Warning: comparing " << *va << " to " << *vb
-		    << " is probably not meaningful (different domains).\n";
+	check_constants_comparable (va->get_constant (), vb->get_constant ());
 
     auto &va = vf.get (0);
     auto &vb = vf.get (1);
