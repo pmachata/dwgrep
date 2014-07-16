@@ -504,34 +504,40 @@
      Any whitespace (but only whitespace) is allowed between "\ and
      the followig ".
 
-**  EXPR → (“?”|“!”)(literal) | (“?”|“!”)(named constant) — value assertions
+**  EXPR → (“?”|“!”)TAG_, AT_, etc. — named constant assertions
 
    Since majority of comparisons are ?eq or !eq anyway, and many of
-   those are vs. constants, there's a syntax for asserting a value.
-   This is allowed for string literals, numeric literals, or named
-   constants.
+   those are vs. constants, there's a number of words for asserting
+   value on TOS.
 
    According to a value on TOS, and a constant family, the following
    rewrire rules define the semantics of a value assertion:
 
-   |----------+----------------+-----------------|
-   | v        | TOS            | Meaning of ?v   |
-   |----------+----------------+-----------------|
-   | DW_TAG_  | T_DIE          | ?(tag ?v)       |
-   | DW_AT_   | T_DIE          | ?(attribute ?v) |
-   | DW_AT_   | T_ATTR         | ?(name ?v)      |
-   | DW_FORM_ | T_ATTR         | ?(form ?v)      |
-   | any      | T_ATTR         | ?(value ?v)     |
-   | any      | T_CONST, T_STR | ?(v ?eq)        |
-   |----------+----------------+-----------------|
+   |-----------+---------------+--------------------|
+   | v         | TOS           | Meaning of ?v      |
+   |-----------+---------------+--------------------|
+   | T_*       | any           | ?(type ?v)         |
+   | TAG_*     | T_DIE         | ?(tag ?v)          |
+   | LANG_*    | winfo ?root   | ?(@AT_language ?v) |
+   | LANG_*    | @AT_language  | ?(value ?v)        |
+   | AT_*      | T_DIE         | ?(attribute ?v)    |
+   | AT_*      | T_ATTR        | ?(name ?v)         |
+   | ATE_*     | @AT_encoding  | ?(value ?v)        |
+   | FORM_*    | T_ATTR        | ?(form ?v)         |
+   | OP_*      | XXX locexpr   |                    |
+   | LNE_*     | XXX linetab   |                    |
+   | LNS_*     | XXX linetab   |                    |
+   | MACINFO_* | XXX macinfo   |                    |
+   | MACRO_*   | XXX macro     |                    |
+   | CFA_*     | XXX CFI       |                    |
+   | CIE_*     | XXX CFI       |                    |
+   | EH_*      | XXX .eh_frame |                    |
+   | any       | T_ATTR        | ?(value ?v)        |
+   | any       | T_CONST       | ?(DW_v ?eq)        |
+   |-----------+---------------+--------------------|
 
-   For example, ?DW_ATE_unsigned is applicable to an attribute that is
-   DW_AT_encoding, or a constant of that domain.  ?"foo" is applicable
-   to a DW_FORM_string or DW_FORM_strp attribute, or another string.
-   Etc.
-
-   - Example: asking for a qualified name:
-     : ?(@AT_name ?"a") child ?(@AT_name ?"b") child ?(@AT_name ?"c")
+   For example, ?ATE_unsigned is applicable to an attribute that is
+   DW_AT_encoding, or a constant of that domain.
 
 ** ·EXPR → (“universe” | “section” | “unit” | “winfo” )
 
@@ -1068,87 +1074,35 @@
 
 ** Josh Stone's nontrivial-parameters script
 
-   : ?TAG_subprogram !AT_declaration
-   : ?(@AT_decl_file ?("^/usr/" match) !("^/usr/src/debug" match))
-   : dup child ?TAG_formal_parameter
-   : ?(@AT_type ((?TAG_const_type, ?TAG_volatile_type, ?TAG_typedef) @AT_type)*
-   :   (?TAG_structure_type, ?TAG_class_type)) swap
-   : "%( dup @AT_decl_file %): %( dup @AT_decl_line %): note: in function "\
-   : "`%( @AT_name %)', parameter `%( @AT_name %)' type is not trivial"
-
-   - XXX
-     : winfo ?TAG_subprogram !AT_declaration
-     : ?(@AT_decl_file ?("^/usr/" ?match) ?("^/usr/src/debug" !match)) -> A;
-     : A child ?TAG_formal_parameter
-     : ?(@AT_type ((?TAG_const_type, ?TAG_volatile_type, ?TAG_typedef) @AT_type)*
-     :   (?TAG_structure_type, ?TAG_class_type)) -> B;
-     : "%( A @AT_decl_file %): %( A @AT_decl_line %): note: in function "\
-     : "`%( A @AT_name %)', parameter `%( B @AT_name %)' type is not trivial"
-
-   - What the following XQuery really does:
-
-   : ?TAG_subprogram !AT_declaration dup child ?TAG_formal_parameter
-   : ?(@AT_type ((?TAG_const_type, ?TAG_volatile_type, ?TAG_typedef) @AT_type)*
-   :   (?TAG_structure_type, ?TAG_class_type)) 2/@AT_name swap
-   : "%s: type of parameter %s is not trivial."
-
-   - In XQuery, it is actually not horrible, except for having to
-     write the closure by hand:
-
-   : declare function local:cvPeeledType($root, $node) {
-   :     let $T := $root//*[@id = $node/at_type] return
-   :     if ($T/name() = "tag_const_type"
-   :         or $T/name() = "tag_volatile_type"
-   :         or $T/name() = "tag_typedef")
-   :     then local:cvPeeledType($root, $T)
-   :     else $T
-   : };
+   : winfo ?TAG_subprogram !AT_declaration
+   : ?(@AT_decl_file ?("^/usr/" ?match) ?("^/usr/src/debug" !match)) -> A;
    :
-   : //tag_subprogram/tag_formal_parameter/
-   : (let $T := local:cvPeeledType(/, .)/name()
-   :  where $T = "tag_structure_type"
-   :  return concat (../at_name/text(), ": type of parameter ",
-   :                 $A/at_name/text(), " is not trivial."))
+   : A child ?TAG_formal_parameter
+   : ?(@AT_type ((?TAG_const_type, ?TAG_volatile_type, ?TAG_typedef) @AT_type)*
+   :   (?TAG_structure_type, ?TAG_class_type)) -> B;
+   :
+   : "%( A @AT_decl_file %): %( A @AT_decl_line %): note: in function "\
+   : "`%( A @AT_name %)', parameter `%( B @AT_name %)' type is not trivial"
 
 ** check_die_decl_call:
-
    : ( ?AT_decl_column !AT_decl_line "%s has decl_column, but NOT decl_line"
    : , etc.)
 
-   - XQuery:
-
-   : //at_decl_column[not(../at_decl_line)]/
-   : concat(../@id, ": has decl_column, but NOT decl_line")
-
 ** check_die_line_info:
-
-   : (?TAG_subprogram, ?TAG_inline_subroutine, ?TAG_entry_point,
-   :  ?TAG_lexical_block, ?TAG_label, ?TAG_with_stmt, ?TAG_try_block,
-   :  ?TAG_catch_block)
-   : dup (@AT_entry_pc, @AT_low_pc, @AT_ranges)
-   : swap parent* ?root
-   : !(@AT_stmt_list lineaddr ?eq) swap
-   : "Address %s referenced from %s not found in line table."
-
-   - XXX
-     : winfo (?TAG_subprogram, ?TAG_inline_subroutine, ?TAG_entry_point,
-     :        ?TAG_lexical_block, ?TAG_label, ?TAG_with_stmt, ?TAG_try_block,
-     :        ?TAG_catch_block) ->A;
-     : A (@AT_entry_pc, @AT_low_pc, @AT_ranges) ->B;
-     : A unit ?root !(@AT_stmt_list lineaddr B ?eq) ->C;
-     : "Address %( B %) referenced from %( C %) not found in line table."
+   : winfo (?TAG_subprogram, ?TAG_inline_subroutine, ?TAG_entry_point,
+   :        ?TAG_lexical_block, ?TAG_label, ?TAG_with_stmt, ?TAG_try_block,
+   :        ?TAG_catch_block) ->A;
+   : A (@AT_entry_pc, @AT_low_pc, @AT_ranges) ->B;
+   : A parent* ?root !(@AT_stmt_list lineaddr B ?eq) ->C;
+   : "Address %( B %) referenced from %( C %) not found in line table."
 
 ** contains DW_OP_fbreg && ! @frame_base
 
    : !AT_frame_base ?(@AT_location @atom DW_OP_fbreg ?eq)
 
-   - XQuery:
-
-   : //at_location[loc_expr/loc_op/@op = "fbreg"][not(../../at_frame_base)]
-
 ** uses register based operators
 
-   : ?(@AT_location @atom (?DW_OP_bregx, ?(DW_OP_reg0 ?ge) ?(DW_OP_regx ?le)))
+   : ?(@AT_location @atom (DW_OP_bregx ?eq, ?(DW_OP_reg0 ?ge) ?(DW_OP_regx ?le)))
 
    : ?(@AT_location @atom "%s" "_b?reg" ?find)
 
@@ -1159,135 +1113,45 @@
 
    : ?(@AT_location @atom "%s" "deref" ?find)
 
-   - XQuery:
-
-   : //.[at_location//loc_op/(.[@op="deref_size" or @op="deref" or @op="xderef"
-   :                            or @op="xderef_size" or @op="GNU_deref_type])]
-
-   : //.[at_location//loc_op[contains(@op, "deref")]]
-
 ** contains DW_OP_call_frame_cfa && $@low_pc == 0
 
-   : winfo ?(@AT_low_pc ?0) ?(@AT_frame_base @atom ?DW_OP_call_frame_cfa)
-
-   - XQuery (note this matches @AT_low_pc as text, not as number):
-
-   : //.[at_low_pc/text() = "0x0"][at_frame_base//@op = "call_frame_cfa"]
+   : winfo ?(@AT_low_pc ?0) ?(@AT_frame_base ?OP_call_frame_cfa)
 
 ** is an empty location expression
 
    : winfo ?AT_location !(@AT_location)
-
-   - XQuery:
-
-   : //at_location[loc_expr[not(loc_op)]]
 
 ** location expression ends with implicit_value or stack_value
 
    : winfo ?([@AT_location] last @atom
    : (?DW_OP_implicit_value, ?DW_OP_stack_value))
 
-   - XQuery:
-
-   : //.[at_location//.[last()]/
-   :     (.[@op = "implicit_value" or @op = "stack_value"])]
-
 ** types inconsistent between instance and specification
    - http://gcc.gnu.org/bugzilla/show_bug.cgi?id=43053
 
-   : ?TAG_subprogram dup @AT_specification 2/(child ?TAG_formal_parameter)
-   : ?(2/pos ?eq) ?(2/@AT_type !eq)
-
-   - XXX
      : winfo ?TAG_subprogram ->A;
      : A child ?TAG_formal_parameter ->B;
      : A @AT_specification child ?TAG_formal_parameter ->C;
-     : • ?(B C <pos>?eq <@AT_type>!eq) A
-     : • ?(B pos C pos ?eq) ?(B @AT_type C @AT_type !eq) A
-     : • ?(B C ?({pos} 2/ ?eq) ?({@AT_type} 2/ !eq)) A
-
-     : <winfo ?TAG_subprogram dup @AT_specification>
-     : child ?TAG_formal_parameter ?(pos <> ?eq) ?(@AT_type <> !eq) <>
-
-     - <EXPR₁ EXPR₂ … > would create a nodeset.  <> is the
-       corresponding operator that pushes the individual nodes back to
-       stack.
-
-       Nodeset is similar to list, but operations are applied to each
-       node in turn instead of to the set as a whole.  It would
-       remember stack contents on entry to <>-operator, then let the
-       expression inside produce a bunch of stacks, take each of them,
-       and create a nodeset from the top elements.
-
-       This mode of operation is in stark contrast to how lists
-       operate, which is necessary so that the corresponding unpack
-       operation produces meaningful results.
-
-   - XQuery:
-
-   : for $x at $pos in //tag_subprogram[at_specification]/tag_formal_parameter
-   : return //.[@id=$x/../at_specification/text()]/tag_formal_parameter
-   :        [position() = $pos] [at_type/text() != $x/at_type/text()]
+     : ?(B pos C pos ?eq) ?(B @AT_type C @AT_type !eq) A
 
 ** duplicat DW_TAG_const_type
    - http://gcc.gnu.org/bugzilla/show_bug.cgi?id=56740
 
-   : winfo dup unit ?gt
-   : 2/(?TAG_const_type, ?TAG_volatile_type, ?TAG_restrict_type)
-   : ?(2/tag ?eq) ?(2/@AT_type ?eq)
-
-   - XXX
-     : winfo dup unit ?gt
-     : {?TAG_const_type, ?TAG_volatile_type, ?TAG_restrict_type} 2/
-     : • ?({tag} 2/ ?eq) ?({@AT_type} 2/ ?eq)
-     : • <tag>?eq <@AT_type>?eq
-
-     : def ?cvr_type {
-     :   ?TAG_const_type || ?TAG_volatile_type || ?TAG_restrict_type
-     : }
-     :
-     : winfo ?cvr_type -> A;
-     : A unit ?gt ?cvr_type -> B;
-     : A B ?(<tag>?eq <type>?eq)
-
-   - XQuery:
-
-   : for $x in (//tag_const_type | //tag_volatile_type | //tag_restrict_type)
-   : return (//tag_const_type | //tag_volatile_type | //tag_restrict_type)
-   : [@id != $x/@id][name() = $x/name()][at_type/text() = $x/at_type/text()]
+     : { ?TAG_const_type, ?TAG_volatile_type, ?TAG_restrict_type } -> ?cvr_type;
+     : winfo ?cvr_type ->A;
+     : A unit ?gt ?cvr_type ->B;
+     : A B ?(tag swap tag ?eq) ?(@AT_type swap @AT_type ?eq)
 
 ** find any attribute with value "blah"
-
    : attribute ?(value "blah" ?eq)
-
-   - XXX
-     : winfo attribute ?(value ?"blah")
-     : winfo attribute <value>?"blah"
-
-   - XQuery:
-
-   : //.[text()="blah"]
 
 ** check_duplicate_DW_tag_variable.cc
    Check for two full DW_TAG_variable DIEs with the same DW_AT_name
    value.
 
-   : winfo dup 2/(child ?TAG_variable) ?lt ?(2/@AT_name ?eq)
-
-   : winfo dup next+ 2/?TAG_variable ?(2/@AT_name ?eq)
+   : winfo ?TAG_variable dup next+ ?TAG_variable ?(@AT_name swap @AT_name ?eq)
 
    - XXX
-     : winfo -> A;
-     : ?(A child ?TAG_variable -> B;
-     :   A child ?TAG_variable ?(B ?lt) -> C;
-     :   B @AT_name C @AT_name ?eq)
-
-     : winfo -> A;
-     : ?(A child ?TAG_variable
-     :   A child ?TAG_variable ?lt <@AT_name>?eq)
-
-     : winfo ?(dup <child ?TAG_variable>?lt <@AT_name>?eq)
-
      : winfo dup next+ <?TAG_variable @AT_name>?eq
 
 ** check_linkage_external_die.cc
@@ -1367,34 +1231,14 @@
 
 ** CU A imports two PU's B and C, and both import the same third PU
 
-   : ?root dup dup 2/(CU ?TAG_imported_unit @AT_import) ?lt
-   : [2/(unit ?TAG_imported_unit @AT_import) ?eq] elem ?first
-   : "PU %s is imported by PU's %s and %s, which are both imported by %s"
-
-   - What the following XQuery really does:
-
-     : ?root ?(dup 2/(unit ?TAG_imported_unit @AT_import) ?lt
-     :             2/(unit ?TAG_imported_unit @AT_import) ?eq)
-
-   - XXX:
-     : def root {parent while !root}
-     :
-     : winfo ?root ->U;
-     : U child ?TAG_imported_unit @AT_import ->A;
-     : U child ?TAG_imported_unit @AT_import ?(A ?lt) ->B;
-     : ?(A B <root child ?TAG_imported_unit @AT_import>?eq)
-     : U A B
-
-   - XQuery:
-
-     : for $u in //.[../name() = "debug_info"]
-     : for $a in $u//tag_imported_unit
-     : for $b in $u//tag_imported_unit
-     : let $c := //.[@id=$a/at_import/text()]
-     : let $d := //.[@id=$b/at_import/text()]
-     : where $a/@id < $b/@id and $c//tag_imported_unit/at_import/text()
-     :                         = $d//tag_imported_unit/at_import/text()
-     : return $u
+   : {parent* ?root child ?TAG_imported_unit @AT_import} ->imports;
+   :
+   : winfo ?root ->U;
+   : U child ?TAG_imported_unit @AT_import ->A;
+   : U child ?TAG_imported_unit @AT_import ?(A ?lt) ->B;
+   : A imports B imports ?eq
+   : "PU %(offset%) is imported by PU's %(A offset%) and %(B offset%), "\
+   : "which are both imported by %(U offset%)."
 
 ** typedef resolution
    - dsmith asked for a way to get typedef "resolution" from DWARF
