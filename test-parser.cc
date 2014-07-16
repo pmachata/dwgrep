@@ -162,16 +162,6 @@ do_tests ()
   test ("1+ dup",
 	"(CAT (CONST<1>) (CLOSE_STAR (CONST<1>)) (F_BUILTIN<dup>))");
 
-  test ("2/elem",
-	"(TRANSFORM (CONST<2>) (F_BUILTIN<elem>))");
-  test ("2/elem 1",
-	"(CAT (TRANSFORM (CONST<2>) (F_BUILTIN<elem>)) (CONST<1>))");
-  test ("2/(elem 1)",
-	"(TRANSFORM (CONST<2>) (CAT (F_BUILTIN<elem>) (CONST<1>)))");
-  test ("2/elem 2/1",
-	"(CAT (TRANSFORM (CONST<2>) (F_BUILTIN<elem>))"
-	" (TRANSFORM (CONST<2>) (CONST<1>)))");
-
   test ("(elem 1)",
 	"(CAT (F_BUILTIN<elem>) (CONST<1>))");
   test ("((elem 1))",
@@ -209,9 +199,6 @@ do_tests ()
 	"(ALT (CAT (F_BUILTIN<swap>) (F_BUILTIN<dup>))"
 	" (CAT (F_BUILTIN<over>) (F_BUILTIN<elem>)) "
 	"(CAT (CONST<1>) (F_BUILTIN<dup>)))");
-  test ("2/elem, 2/dup",
-	"(ALT (TRANSFORM (CONST<2>) (F_BUILTIN<elem>))"
-	" (TRANSFORM (CONST<2>) (F_BUILTIN<dup>)))");
   test ("elem, dup*",
 	"(ALT (F_BUILTIN<elem>) (CLOSE_STAR (F_BUILTIN<dup>)))");
 

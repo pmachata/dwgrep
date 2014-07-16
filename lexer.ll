@@ -42,7 +42,6 @@ BIN [01]
 "?" return TOK_QMARK;
 "-" return TOK_MINUS;
 "," return TOK_COMMA;
-"/" return TOK_SLASH;
 ":" return TOK_COLON;
 ";" return TOK_SEMICOLON;
 "->" return TOK_ARROW;

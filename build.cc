@@ -54,7 +54,6 @@ tree::build_pred (dwgrep_graph::sptr q, std::shared_ptr <scope> scope) const
     case tree_type::OR:
     case tree_type::CAPTURE:
     case tree_type::EMPTY_LIST:
-    case tree_type::TRANSFORM:
     case tree_type::CLOSE_STAR:
     case tree_type::CONST:
     case tree_type::STR:
@@ -185,25 +184,6 @@ tree::build_exec (std::shared_ptr <op> upstream, dwgrep_graph::sptr q,
 	auto origin = std::make_shared <op_origin> (nullptr);
 	auto op = m_children.front ().build_exec (origin, q, scope);
 	return std::make_shared <op_tr_closure> (upstream, origin, op);
-      }
-
-    case tree_type::TRANSFORM:
-      {
-	// OK, now we translate N/E into N of E's, each operating in
-	// a different depth.
-	uint64_t depth = child (0).cst ().value ().get_ui ();
-	assert (static_cast <unsigned> (depth) == depth);
-
-	for (unsigned u = depth; u > 1; --u)
-	  {
-	    auto origin = std::make_shared <op_origin> (nullptr);
-	    auto op = child (1).build_exec (origin, q, scope);
-	    upstream = std::make_shared <op_transform> (upstream,
-							origin, op, u);
-	  }
-
-	// Now we attach the operation itself for the case of DEPTH==1.
-	return child (1).build_exec (upstream, q, scope);
       }
 
     case tree_type::SCOPE:

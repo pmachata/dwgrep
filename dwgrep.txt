@@ -461,37 +461,6 @@
    EXPR yields all the values of the first expression that yields
    anything.
 
-** •EXPR → NUM “/” EXPR₁ — pathset exploration
-
-   The effect is as if the topmost NUM elements were removed from
-   stack and remembered as X₁ to Xₙ, with Xₙ the original TOS.  Then
-   X₁ is pushed, and EXPR₁ executed.  Then X₂ is pushed, and EXPR₁
-   executed again.  Etc.
-
-   (This semantics were chosen to make the operator widely applicable,
-   but the particular problem that this addresses is simultaneous
-   exploration of several paths, and we may revert to semantics where
-   the only stack effects allowed (apart from nothing at all) are a
-   single pop followed by a single push.)
-
-   The idiom whereby an operator is applied, values swapped, and the
-   same operator is applied again, comes up very often.  Clearly there
-   should be syntax for it.
-
-   - Compare names of two DIE's on TOS:
-     : ?(@AT_name swap @AT_name ?eq)
-     : ?(2/@AT_name ?eq)
-
-   - Follow the same traversal instructions for two DIE's on TOS:
-     : child ?TAG_formal_parameter swap child ?TAG_formal_parameter
-     : 2/(child ?TAG_formal_parameter)
-
-   - rot is exactly equivalent to:
-     : 2/swap
-     It is thus easy to achieve deep rotation: top four items are
-     rotated by 3/swap etc.  This relies on the above liberal
-     definition of N/expr.
-
 ** •EXPR → EXPR₁ “*” | EXPR₁ “+” | EXPR₁ “?” — iterate
 
    EXPR₁ shall have a stack effect of +n,-n (number of slots pushed

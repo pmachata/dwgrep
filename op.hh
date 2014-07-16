@@ -420,26 +420,6 @@ public:
   void reset () override;
 };
 
-// Pop DEPTH slots, perform OP, and for each produced stack, push
-// those slots back and yield that stack.
-class op_transform
-  : public op
-{
-  struct pimpl;
-  std::unique_ptr <pimpl> m_pimpl;
-
-public:
-  op_transform (std::shared_ptr <op> upstream,
-		std::shared_ptr <op_origin> origin,
-		std::shared_ptr <op> op,
-		unsigned depth);
-  ~op_transform ();
-
-  valfile::uptr next () override;
-  void reset () override;
-  std::string name () const override;
-};
-
 class op_scope
   : public op
 {

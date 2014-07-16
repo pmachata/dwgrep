@@ -176,7 +176,7 @@
 %token TOK_QMARK_LPAREN TOK_BANG_LPAREN
 
 %token TOK_ASTERISK TOK_PLUS TOK_QMARK TOK_MINUS TOK_COMMA TOK_COLON
-%token TOK_SEMICOLON TOK_DOUBLE_VBAR TOK_SLASH TOK_ARROW
+%token TOK_SEMICOLON TOK_DOUBLE_VBAR TOK_ARROW
 
 %token TOK_IF TOK_THEN TOK_ELSE TOK_WORD TOK_LIT_STR TOK_LIT_INT
 
@@ -314,12 +314,6 @@ Statement:
   {
     auto t = tree::create_nullary <tree_type::NOP> ();
     $$ = tree::create_cat <tree_type::ALT> ($1, t);
-  }
-
-  | TOK_LIT_INT TOK_SLASH Statement
-  {
-    auto t = tree::create_const <tree_type::CONST> (parse_int ($1));
-    $$ = tree::create_binary <tree_type::TRANSFORM> (t, $3);
   }
 
   | TOK_IF Statement TOK_THEN Statement TOK_ELSE Statement

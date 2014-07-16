@@ -40,9 +40,6 @@ enum class tree_arity_v
 // CAPTURE -- For holding [X].
 // OR -- For holding first-match alternation (X || Y || Z)
 //
-// TRANSFORM -- For holding NUM/X.  The first child is a constant
-// representing application depth, the second is the X.
-//
 // NOP -- For holding a no-op that comes up in "%s" and (,X).
 //
 // CLOSE_STAR -- For holding X*.  X is the only child.  X+ is emulated
@@ -75,7 +72,6 @@ enum class tree_arity_v
   TREE_TYPE (BLOCK, UNARY)			\
   TREE_TYPE (BIND, STR)				\
   TREE_TYPE (READ, STR)				\
-  TREE_TYPE (TRANSFORM, BINARY)			\
   TREE_TYPE (NOP, NULLARY)			\
   TREE_TYPE (CLOSE_STAR, UNARY)			\
   TREE_TYPE (ASSERT, UNARY)			\

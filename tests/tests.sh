@@ -54,9 +54,12 @@ expect_count 0 ./empty -e '10  10 ?gt'
 expect_count 0 ./empty -e '100 10 !gt'
 
 expect_count 1 ./duplicate-const -e '
-	winfo dup 2/child ?gt
-	2/(?TAG_const_type, ?TAG_volatile_type, ?TAG_restrict_type)
-	?(2/tag ?eq) ?(2/@AT_type ?eq)'
+	{?TAG_const_type, ?TAG_volatile_type, ?TAG_restrict_type} ->?cvr_type;
+	winfo ->P;
+	P child ?cvr_type ->A;
+	P child ?cvr_type ?(?lt: A) ->B;
+	?((A tag) ?eq: (B tag))
+	?((A @AT_type) ?eq: (B @AT_type))'
 
 expect_count 1 ./nontrivial-types.o -e '
 	winfo ?TAG_subprogram !AT_declaration dup child ?TAG_formal_parameter
@@ -81,7 +84,7 @@ expect_count 1 ./nontrivial-types.o -e '
 
 # Test that unit annotates position.
 expect_count 11 ./nontrivial-types.o -e '
-	winfo dup unit ?(2/pos ?eq)'
+	winfo ->A; A unit ->B; ?(A pos B pos ?eq)'
 
 # Test that elem annotates position.
 expect_count 1 ./nontrivial-types.o -e '
@@ -206,10 +209,6 @@ expect_count 1 ./empty -e '-2 -10 mul ?(20 ?eq)'
 # Check iterating over empty compile unit.
 expect_count 1 ./empty -e '
 	winfo offset'
-
-# Check N/(dup X)
-expect_count 5 ./typedef.o -e '
-	winfo dup child 2/(dup @AT_name) 4/type 2/swap ?eq'
 
 # Check ||.
 expect_count 6 ./typedef.o -e '
