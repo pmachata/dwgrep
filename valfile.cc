@@ -1,5 +1,4 @@
 #include "valfile.hh"
-#include <iostream>
 
 void
 frame::bind_value (var_id index, std::unique_ptr <value> val)
@@ -98,9 +97,6 @@ namespace
 	      break;
 	    }
     }
-
-    std::cerr << "XXX compare VF frames as well\n";
-    // And drop #include <iostream> afterwards.
 
     // The stacks are the same!
     return 0;
