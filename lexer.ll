@@ -43,6 +43,7 @@ BIN [01]
 "-" return TOK_MINUS;
 "," return TOK_COMMA;
 "/" return TOK_SLASH;
+":" return TOK_COLON;
 ";" return TOK_SEMICOLON;
 "->" return TOK_ARROW;
 "||" return TOK_DOUBLE_VBAR;
@@ -60,7 +61,7 @@ BIN [01]
 "?find" return TOK_QMARK_FIND;
 "!find" return TOK_BANG_FIND;
 
-[?!]?[@]?{ID} return pass_string (yyscanner, yylval, TOK_WORD);
+[?!@.\\]?{ID} return pass_string (yyscanner, yylval, TOK_WORD);
 
 "\"" {
   BEGIN STRING;

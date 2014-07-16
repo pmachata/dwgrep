@@ -132,6 +132,15 @@
 
       return constant {val, dom};
     }
+
+    tree *
+    parse_word (std::string str)
+    {
+      if (auto bi = find_builtin (str))
+	return tree::create_builtin (bi);
+      else
+	return tree::create_str <tree_type::READ> (str);
+    }
   }
 
   fmtlit::fmtlit (bool a_raw)
@@ -163,21 +172,18 @@
 %parse-param { void *yyscanner }
 %lex-param { yyscanner }
 
-%token TOK_LPAREN TOK_RPAREN TOK_LBRACKET TOK_RBRACKET
+%token TOK_LPAREN TOK_RPAREN TOK_LBRACKET TOK_RBRACKET TOK_LBRACE TOK_RBRACE
+%token TOK_QMARK_LPAREN TOK_BANG_LPAREN
 
-%token TOK_QMARK_LPAREN TOK_BANG_LPAREN TOK_LBRACE TOK_RBRACE
+%token TOK_ASTERISK TOK_PLUS TOK_QMARK TOK_MINUS TOK_COMMA TOK_COLON
+%token TOK_SEMICOLON TOK_DOUBLE_VBAR TOK_SLASH TOK_ARROW
 
-%token TOK_ASTERISK TOK_PLUS TOK_QMARK TOK_MINUS TOK_COMMA TOK_SEMICOLON
-%token TOK_DOUBLE_VBAR TOK_SLASH TOK_ARROW
+%token TOK_IF TOK_THEN TOK_ELSE TOK_WORD TOK_LIT_STR TOK_LIT_INT
 
-%token TOK_TYPE TOK_IF TOK_THEN TOK_ELSE
-
+   // XXX These should eventually be moved to builtins.
+%token TOK_TYPE TOK_UNIVERSE TOK_SECTION TOK_DEBUG
 %token TOK_QMARK_MATCH TOK_QMARK_FIND
 %token TOK_BANG_MATCH TOK_BANG_FIND
-
-%token TOK_WORD TOK_LIT_STR TOK_LIT_INT
-
-%token TOK_UNIVERSE TOK_SECTION TOK_DEBUG
 
 %token TOK_EOF
 
@@ -323,12 +329,11 @@ Statement:
   { $$ = tree::create_const <tree_type::CONST> (parse_int ($1)); }
 
   | TOK_WORD
+  { $$ = parse_word ({$1.buf, $1.len}); }
+
+  | TOK_WORD TOK_COLON Statement
   {
-    std::string str {$1.buf, $1.len};
-    if (auto bi = find_builtin (str))
-      $$ = tree::create_builtin (bi);
-    else
-      $$ = tree::create_str <tree_type::READ> (str);
+    $$ = tree::create_cat <tree_type::CAT> ($3, parse_word ({$1.buf, $1.len}));
   }
 
   | TOK_LIT_STR

@@ -963,13 +963,7 @@
 
 ** •EXPR → “length” — length of a sequence or a string
 
-**  EXPR → (“?”|“!”)“empty” — list/string emptiness assertion
-
-   - ?empty is exactly equivalent to:
-     : [] ?eq drop
-   - !empty is exactly equivalent to:
-     : [] !eq drop
-
+** •EXPR → (“?”|“!”)“empty” — list/string emptiness assertion
      : def "?empty" { ?(length 0 ?eq) }
      : def "!empty" { ?(length 0 !eq) }
 
@@ -980,13 +974,12 @@
    Always succeeds, but as a side effect prints some information about
    the computation in whose context it appeared.
 
-**  comma infix syntax
-    - The idea is to be more kitten-like readable without having to
-      handle the indented syntax.
+** •colon infix syntax
+    - When a word is followed by a colon, the following statement is
+      executed before that word.  That can be used for writing the
+      operators, where it makes sense, in infix form.  For example:
+      : 10 add: 1	# equivalent to (10 1 add)
       : [10 range] sort: {->a; if (a mod: 2 ?0) then 0 else 1}
-
-    - (X : Y) would be parsed as (Y X)
-
 
 * TODO
 

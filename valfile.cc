@@ -19,7 +19,7 @@ frame::read_value (var_id index)
   // XXX this might actually be an assertion.  Cases of this should be
   // statically determinable.
   if (m_values[index] == nullptr)
-    throw std::runtime_error ("attempt to reand an unbound variable");
+    throw std::runtime_error ("attempt to read an unbound variable");
 
   return *m_values[index];
 }

@@ -145,6 +145,8 @@ do_tests ()
   test ("universe", "(SEL_UNIVERSE)");
   test ("section", "(SEL_SECTION)");
 
+  test ("1 add: 2", "(CAT (CONST<1>) (CONST<2>) (F_BUILTIN<add>))");
+
   test ("()*", "(CLOSE_STAR (NOP))");
   test ("()+", "(CAT (NOP) (CLOSE_STAR (NOP)))");
   test ("swap*", "(CLOSE_STAR (F_BUILTIN<swap>))");
