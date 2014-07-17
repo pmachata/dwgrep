@@ -760,31 +760,81 @@ static struct
 
 namespace
 {
-  struct op_value_attr
-    : public stub_op
+  struct builtin_value_attr
+    : public builtin
   {
-    using stub_op::stub_op;
-    dwgrep_graph::sptr m_gr;
-
-    op_value_attr (std::shared_ptr <op> m_upstream,
-		   dwgrep_graph::sptr gr)
-      : stub_op {m_upstream}
-      , m_gr {gr}
-    {}
-
-    valfile::uptr
-    next () override
+    struct o
+      : public inner_op
     {
-      if (auto vf = m_upstream->next ())
-	{
-	  auto vp = vf->pop_as <value_attr> ();
-	  vf->push (at_value (vp->get_attr (), vp->get_die (), m_gr));
-	  return vf;
-	}
-      return nullptr;
+      dwgrep_graph::sptr m_gr;
+      std::unique_ptr <value_producer> m_vpr;
+      valfile::uptr m_vf;
+
+      o (std::shared_ptr <op> m_upstream, dwgrep_graph::sptr gr)
+	: inner_op {m_upstream}
+	, m_gr {gr}
+      {}
+
+      void
+      reset_me ()
+      {
+	m_vf = nullptr;
+	m_vpr = nullptr;
+      }
+
+      valfile::uptr
+      next () override
+      {
+	while (true)
+	  {
+	    while (m_vpr == nullptr)
+	      if (m_vf = m_upstream->next ())
+		{
+		  auto vp = m_vf->pop_as <value_attr> ();
+		  m_vpr = at_value (vp->get_attr (), vp->get_die (), m_gr);
+		}
+	      else
+		return nullptr;
+
+	    if (auto v = m_vpr->next ())
+	      {
+		auto vf = std::make_unique <valfile> (*m_vf);
+		vf->push (std::move (v));
+		return vf;
+	      }
+
+	    reset_me ();
+	  }
+      }
+
+      void
+      reset () override
+      {
+	reset_me ();
+	m_upstream->reset ();
+      }
+
+      std::string
+      name () const
+      {
+	return "value";
+      }
+    };
+
+    std::shared_ptr <op>
+    build_exec (std::shared_ptr <op> upstream, dwgrep_graph::sptr q,
+		std::shared_ptr <scope> scope) const override
+    {
+      return std::make_shared <o> (upstream, q);
+    }
+
+    char const *
+    name () const override final
+    {
+      return "overload";
     }
   };
-  overload_op_builtin <op_value_attr> builtin_value_attr_obj;
+  builtin_value_attr builtin_value_attr_obj;
 
   struct builtin_attr_named
     : public builtin
@@ -830,7 +880,7 @@ namespace
 		std::shared_ptr <scope> scope) const override
     {
       auto t = std::make_shared <o> (upstream, q, m_atname);
-      return std::make_shared <op_value_attr> (t, q);
+      return std::make_shared <builtin_value_attr::o> (t, q);
     }
 
     char const *

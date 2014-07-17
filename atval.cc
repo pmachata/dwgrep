@@ -13,31 +13,57 @@
 
 namespace
 {
-  std::unique_ptr <value>
+  struct single_value
+    : public value_producer
+  {
+    std::unique_ptr <value> m_value;
+
+    single_value (std::unique_ptr <value> value)
+      : m_value {std::move (value)}
+    {
+      assert (m_value != nullptr);
+    }
+
+    std::unique_ptr <value>
+    next () override
+    {
+      return std::move (m_value);
+    }
+  };
+
+  std::unique_ptr <value_producer>
+  pass_single_value (std::unique_ptr <value> value)
+  {
+    return std::make_unique <single_value> (std::move (value));
+  }
+
+  std::unique_ptr <value_producer>
   atval_unsigned_with_domain (Dwarf_Attribute attr, constant_dom const &dom)
   {
     Dwarf_Word uval;
     if (dwarf_formudata (&attr, &uval) != 0)
       throw_libdw ();
-    return std::make_unique <value_cst> (constant {uval, &dom}, 0);
+    return pass_single_value
+      (std::make_unique <value_cst> (constant {uval, &dom}, 0));
   }
 
-  std::unique_ptr <value>
+  std::unique_ptr <value_producer>
   atval_unsigned (Dwarf_Attribute attr)
   {
     return atval_unsigned_with_domain (attr, dec_constant_dom);
   }
 
-  std::unique_ptr <value>
+  std::unique_ptr <value_producer>
   atval_signed (Dwarf_Attribute attr)
   {
     Dwarf_Sword sval;
     if (dwarf_formsdata (&attr, &sval) != 0)
       throw_libdw ();
-    return std::make_unique <value_cst> (constant {sval, &dec_constant_dom}, 0);
+    return pass_single_value
+      (std::make_unique <value_cst> (constant {sval, &dec_constant_dom}, 0));
   }
 
-  std::unique_ptr <value>
+  std::unique_ptr <value_producer>
   atval_addr (Dwarf_Attribute attr)
   {
     // XXX Eventually we might want to have a dedicated type that
@@ -46,10 +72,11 @@ namespace
     Dwarf_Addr addr;
     if (dwarf_formaddr (&attr, &addr) != 0)
       throw_libdw ();
-    return std::make_unique <value_cst> (constant {addr, &hex_constant_dom}, 0);
+    return pass_single_value
+      (std::make_unique <value_cst> (constant {addr, &hex_constant_dom}, 0));
   }
 
-  std::unique_ptr <value>
+  std::unique_ptr <value_producer>
   handle_at_dependent_value (Dwarf_Attribute attr, Dwarf_Die die,
 			     dwgrep_graph &gr)
   {
@@ -119,7 +146,7 @@ namespace
 	  if (fn == nullptr)
 	    throw_libdw ();
 
-	  return std::make_unique <value_str> (fn, 0);
+	  return pass_single_value (std::make_unique <value_str> (fn, 0));
 	}
 
       case DW_AT_const_value:
@@ -247,7 +274,6 @@ namespace
       case DW_AT_bit_size:
       case DW_AT_bit_offset:
       case DW_AT_data_bit_offset:
-      case DW_AT_data_member_location:
       case DW_AT_lower_bound:
       case DW_AT_upper_bound:
       case DW_AT_count:
@@ -262,11 +288,17 @@ namespace
 	return atval_unsigned_with_domain (attr, hex_constant_dom);
 
       case DW_AT_location:
+      case DW_AT_data_member_location:
+      case DW_AT_vtable_elem_location:
 	std::cerr << "location lists NIY\n";
 	return atval_unsigned_with_domain (attr, hex_constant_dom);
 
       case DW_AT_ranges:
 	std::cerr << "address ranges NIY\n";
+	return atval_unsigned_with_domain (attr, hex_constant_dom);
+
+      case DW_AT_GNU_macros:
+	std::cerr << "GNU macros NIY\n";
 	return atval_unsigned_with_domain (attr, hex_constant_dom);
 
       case DW_AT_discr_value:
@@ -283,7 +315,7 @@ namespace
   }
 }
 
-std::unique_ptr <value>
+std::unique_ptr <value_producer>
 at_value (Dwarf_Attribute attr, Dwarf_Die die, dwgrep_graph::sptr gr)
 {
   switch (dwarf_whatform (&attr))
@@ -295,7 +327,7 @@ at_value (Dwarf_Attribute attr, Dwarf_Die die, dwgrep_graph::sptr gr)
 	const char *str = dwarf_formstring (&attr);
 	if (str == nullptr)
 	  throw_libdw ();
-	return std::make_unique <value_str> (str, 0);
+	return pass_single_value (std::make_unique <value_str> (str, 0));
       }
 
     case DW_FORM_ref_addr:
@@ -308,7 +340,7 @@ at_value (Dwarf_Attribute attr, Dwarf_Die die, dwgrep_graph::sptr gr)
 	Dwarf_Die die;
 	if (dwarf_formref_die (&attr, &die) == nullptr)
 	  throw_libdw ();
-	return std::make_unique <value_die> (gr, die, 0);
+	return pass_single_value (std::make_unique <value_die> (gr, die, 0));
       }
 
     case DW_FORM_sdata:
@@ -326,14 +358,16 @@ at_value (Dwarf_Attribute attr, Dwarf_Die die, dwgrep_graph::sptr gr)
 	bool flag;
 	if (dwarf_formflag (&attr, &flag) != 0)
 	  throw_libdw ();
-	return std::make_unique <value_cst>
-	  (constant {static_cast <unsigned> (flag), &bool_constant_dom}, 0);
+	return pass_single_value
+	  (std::make_unique <value_cst>
+	   (constant {static_cast <unsigned> (flag), &bool_constant_dom}, 0));
       }
 
     case DW_FORM_data1:
     case DW_FORM_data2:
     case DW_FORM_data4:
     case DW_FORM_data8:
+    case DW_FORM_sec_offset:
       return handle_at_dependent_value (attr, die, *gr);
 
     case DW_FORM_block1:
@@ -352,11 +386,9 @@ at_value (Dwarf_Attribute attr, Dwarf_Die die, dwgrep_graph::sptr gr)
 	for (Dwarf_Word i = 0; i < block.length; ++i)
 	  vv.push_back (std::make_unique <value_cst>
 			(constant { block.data[i], &hex_constant_dom }, 0));
-	return std::make_unique <value_seq> (std::move (vv), 0);
+	return pass_single_value
+	  (std::make_unique <value_seq> (std::move (vv), 0));
       }
-
-    case DW_FORM_sec_offset:
-      return atval_unsigned_with_domain (attr, hex_constant_dom);
 
     case DW_FORM_exprloc:
     case DW_FORM_ref_sig8:
@@ -364,7 +396,8 @@ at_value (Dwarf_Attribute attr, Dwarf_Die die, dwgrep_graph::sptr gr)
       std::cerr << "Form unhandled: "
 		<< constant (dwarf_whatform (&attr), &dw_form_dom)
 		<< std::endl;
-      return std::make_unique <value_str> ("(form unhandled)", 0);
+      return pass_single_value
+	(std::make_unique <value_str> ("(form unhandled)", 0));
 
     case DW_FORM_indirect:
       assert (! "Form unhandled.");

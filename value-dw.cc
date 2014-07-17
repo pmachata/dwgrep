@@ -55,12 +55,16 @@ value_attr::show (std::ostream &o) const
   std::ios::fmtflags f {o.flags ()};
   o << constant (name, &dw_attr_short_dom) << " ("
     << constant (form, &dw_form_short_dom) << ")\t";
-  auto v = at_value (m_attr, m_die, m_gr);
-  if (auto d = value::as <value_die> (v.get ()))
-    o << "[" << std::hex
-      << dwarf_dieoffset ((Dwarf_Die *) &d->get_die ()) << "]";
-  else
-    v->show (o);
+  auto vpr = at_value (m_attr, m_die, m_gr);
+  while (auto v = vpr->next ())
+    {
+      if (auto d = value::as <value_die> (v.get ()))
+	o << "[" << std::hex
+	  << dwarf_dieoffset ((Dwarf_Die *) &d->get_die ()) << "]";
+      else
+	v->show (o);
+      o << ";";
+    }
   o.flags (f);
 }
 
