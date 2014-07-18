@@ -1024,17 +1024,20 @@
    The operators that return a boolean constant come also in assertion
    variant so that it's easy to filter interesting line table entries.
 
-** @AT_location
+** location expressions
 
-   @AT_location yields a number of pseudo-DIE's of type
+   Some attributes refer to a location expression.  These are
+   represented as a number of pseudo-DIE's of type
    location_list_entry.  Each has an attribute: @address.
 
    The children of location_list_entry are pseudo-DIE's of type
    location_list_op.  Each has the following attributes: @atom (which
    contains opcode), and possibly @number or also @number2 (with
-   operands).
+   operands).  offset is applicable to location expression nodes and
+   extracts the offset of the operand inside the expression.
 
-   - XXX possibly a means of evaluating?
+   - XXX possibly a means of evaluating?  (Could we use the in-program
+     stack for evaluating the Dwarf expression?)
 
 ** ELF symbols
 

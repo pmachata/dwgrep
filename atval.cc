@@ -76,6 +76,64 @@ namespace
       (std::make_unique <value_cst> (constant {addr, &hex_constant_dom}, 0));
   }
 
+  struct locexpr_producer
+    : public value_producer
+  {
+    Dwarf_Attribute m_attr;
+    Dwarf_Addr m_base;
+    ptrdiff_t m_offset;
+
+    explicit locexpr_producer (Dwarf_Attribute attr)
+      : m_attr (attr)
+      , m_offset {0}
+    {}
+
+    std::unique_ptr <value>
+    next () override
+    {
+      Dwarf_Addr start, end;
+      Dwarf_Op *expr;
+      size_t exprlen;
+
+      switch (m_offset = dwarf_getlocations (&m_attr, m_offset, &m_base,
+					     &start, &end, &expr, &exprlen))
+	{
+	case -1:
+	  throw_libdw ();
+	case 0:
+	  return nullptr;
+	default:
+	  {
+	    value_seq::seq_t ops;
+	    for (size_t i = 0; i < exprlen; ++i)
+	      {
+		auto op = std::make_unique <value_loclist_op>
+		  (2, constant {expr[i].atom, &dw_locexpr_opcode_short_dom},
+		   constant {expr[i].number, &dec_constant_dom},
+		   constant {expr[i].number2, &dec_constant_dom},
+		   constant {expr[i].offset, &hex_constant_dom}, i);
+		ops.push_back (std::move (op));
+	      }
+
+	    value_seq::seq_t ret;
+	    ret.push_back (std::make_unique <value_cst>
+			   (constant {start, &hex_constant_dom}, 0));
+	    ret.push_back (std::make_unique <value_cst>
+			   (constant {end, &hex_constant_dom}, 0));
+	    ret.push_back (std::make_unique <value_seq> (std::move (ops), 0));
+
+	    return std::make_unique <value_seq> (std::move (ret), 0);
+	  }
+	}
+    }
+  };
+
+  std::unique_ptr <value_producer>
+  atval_locexpr (Dwarf_Attribute attr)
+  {
+    return std::make_unique <locexpr_producer> (attr);
+  }
+
   std::unique_ptr <value_producer>
   handle_at_dependent_value (Dwarf_Attribute attr, Dwarf_Die die,
 			     dwgrep_graph &gr)
@@ -391,6 +449,8 @@ at_value (Dwarf_Attribute attr, Dwarf_Die die, dwgrep_graph::sptr gr)
       }
 
     case DW_FORM_exprloc:
+      return atval_locexpr (attr);
+
     case DW_FORM_ref_sig8:
     case DW_FORM_GNU_ref_alt:
       std::cerr << "Form unhandled: "

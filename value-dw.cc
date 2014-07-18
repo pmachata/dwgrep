@@ -90,3 +90,45 @@ value_attr::cmp (value const &that) const
   else
     return cmp_result::fail;
 }
+
+value_type const value_loclist_op::vtype = value_type::alloc ("T_LOCLIST_OP");
+
+void
+value_loclist_op::show (std::ostream &o) const
+{
+  o << m_offset << ':' << m_atom << ' ' << m_v1 << ' ' << m_v2;
+}
+
+std::unique_ptr <value>
+value_loclist_op::clone () const
+{
+  return std::make_unique <value_loclist_op> (*this);
+}
+
+cmp_result
+value_loclist_op::cmp (value const &that) const
+{
+  if (auto v = value::as <value_loclist_op> (&that))
+    {
+      auto ret = compare (std::make_tuple (m_arity, m_atom),
+			  std::make_tuple (v->m_arity, v->m_atom));
+      if (ret != cmp_result::equal)
+	return ret;
+
+      switch (m_arity)
+	{
+	case 0:
+	  return cmp_result::equal;
+	case 1:
+	  return compare (m_v1, v->m_v1);
+	case 2:
+	  return compare (std::make_tuple (m_v1, m_v2),
+			  std::make_tuple (v->m_v1, v->m_v2));
+	}
+
+      assert (m_arity >= 0 && m_arity <= 2);
+      std::abort ();
+    }
+  else
+    return cmp_result::fail;
+}

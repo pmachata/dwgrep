@@ -223,12 +223,12 @@ dwarf_decimal_sign_string (int code)
 
 
 static const char *
-dwarf_locexpr_opcode_string (int code)
+dwarf_locexpr_opcode_string (int code, bool shrt)
 {
   switch (code)
     {
 #define ONE_KNOWN_DW_OP_DESC(NAME, CODE, DESC) ONE_KNOWN_DW_OP (NAME, CODE)
-#define ONE_KNOWN_DW_OP(NAME, CODE) case CODE: return #CODE;
+#define ONE_KNOWN_DW_OP(NAME, CODE) case CODE: return #CODE + (shrt ? 6 : 0);
       ALL_KNOWN_DW_OP
 #undef ONE_KNOWN_DW_OP
 #undef ONE_KNOWN_DW_OP_DESC
@@ -616,14 +616,20 @@ static struct
 constant_dom const &dw_decimal_sign_dom = dw_decimal_sign_dom_obj;
 
 
-static struct
+static struct dw_locexpr_op_t
   : public constant_dom
 {
+  bool m_short;
+
+  explicit dw_locexpr_op_t (bool shrt)
+    : m_short {shrt}
+  {}
+
   virtual void
   show (mpz_class const &v, std::ostream &o) const
   {
     int code = positive_int_from_mpz (v);
-    const char *ret = dwarf_locexpr_opcode_string (code);
+    const char *ret = dwarf_locexpr_opcode_string (code, m_short);
     o << string_or_unknown (ret, "DW_OP_",
 			    code, DW_OP_lo_user, DW_OP_hi_user, true);
   }
@@ -632,9 +638,11 @@ static struct
   {
     return "DW_OP_*";
   }
-} dw_locexpr_opcode_dom_obj;
+} dw_locexpr_opcode_dom_obj {false}, dw_locexpr_opcode_short_dom_obj {true};
 
 constant_dom const &dw_locexpr_opcode_dom = dw_locexpr_opcode_dom_obj;
+constant_dom const &dw_locexpr_opcode_short_dom
+	= dw_locexpr_opcode_short_dom_obj;
 
 
 static struct

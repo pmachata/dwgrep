@@ -17,6 +17,7 @@ namespace
 {
   std::unique_ptr <builtin_constant> builtin_T_DIE;
   std::unique_ptr <builtin_constant> builtin_T_ATTR;
+  std::unique_ptr <builtin_constant> builtin_T_LOCLIST_OP;
 
   void
   show_expects (std::string const &name, value_type const &vt1)
@@ -455,13 +456,22 @@ namespace
 	      if (operate (*vf, v->get_die ()))
 		return vf;
 	    }
+
 	  else if (auto v = value::as <value_attr> (&*vp))
 	    {
 	      if (operate (*vf, v->get_attr (), v->get_die ()))
 		return vf;
 	    }
+
+	  else if (auto v = value::as <value_loclist_op> (&*vp))
+	    {
+	      if (operate (*vf, *v))
+		return vf;
+	    }
+
 	  else
-	    show_expects (name (), value_die::vtype, value_attr::vtype);
+	    show_expects (name (), value_die::vtype, value_attr::vtype,
+			  value_loclist_op::vtype);
 	}
 
       return nullptr;
@@ -476,6 +486,9 @@ namespace
     { return false; }
 
     virtual bool operate (valfile &vf, Dwarf_Attribute &attr, Dwarf_Die &die)
+    { return false; }
+
+    virtual bool operate (valfile &vf, value_loclist_op &op)
     { return false; }
   };
 }
@@ -494,6 +507,13 @@ static struct
       Dwarf_Off off = dwarf_dieoffset (&die);
       auto cst = constant {off, &hex_constant_dom};
       vf.push (std::make_unique <value_cst> (cst, 0));
+      return true;
+    }
+
+    bool
+    operate (valfile &vf, value_loclist_op &op)
+    {
+      vf.push (std::make_unique <value_cst> (op.offset (), 0));
       return true;
     }
 
@@ -698,6 +718,81 @@ static struct
     return "parent";
   }
 } builtin_parent;
+
+namespace
+{
+  template <std::unique_ptr <value> F (value_loclist_op &), char const *Name>
+  struct loclist_op_builtin
+    : public builtin
+  {
+    struct o
+      : public dwop_f
+    {
+      using dwop_f::dwop_f;
+
+      bool
+      operate (valfile &vf, value_loclist_op &op)
+      {
+	vf.push (F (op));
+	return true;
+      }
+
+      std::string
+      name () const override
+      {
+	return Name;
+      }
+    };
+
+    std::shared_ptr <op>
+    build_exec (std::shared_ptr <op> upstream, dwgrep_graph::sptr q,
+		std::shared_ptr <scope> scope) const override
+    {
+      return std::make_shared <o> (upstream, q);
+    }
+
+    char const *
+    name () const override
+    {
+      return Name;
+    }
+  };
+
+
+  constexpr char const at_atom_name[] = "@atom";
+
+  std::unique_ptr <value>
+  loclist_operate_atom (value_loclist_op &v)
+  {
+    return std::make_unique <value_cst> (v.atom (), 0);
+  }
+
+  loclist_op_builtin <loclist_operate_atom, at_atom_name> builtin_at_atom;
+
+
+  constexpr char const at_number_name[] = "@number";
+
+ std::unique_ptr <value>
+  loclist_operate_number (value_loclist_op &v)
+  {
+    return std::make_unique <value_cst> (v.v1 (), 0);
+  }
+
+  loclist_op_builtin <loclist_operate_number,
+		      at_number_name> builtin_at_number;
+
+
+  constexpr char const at_number2_name[] = "@number2";
+
+  std::unique_ptr <value>
+  loclist_operate_number2 (value_loclist_op &v)
+  {
+    return std::make_unique <value_cst> (v.v2 (), 0);
+  }
+
+  loclist_op_builtin <loclist_operate_number2,
+		      at_number2_name> builtin_at_number2;
+}
 
 static struct
   : public pred_builtin
@@ -1247,8 +1342,13 @@ dwgrep_init_dw ()
     (std::make_unique <value_cst>
      (value::get_type_const_of <value_attr> (), 0));
 
+  builtin_T_LOCLIST_OP = std::make_unique <builtin_constant>
+    (std::make_unique <value_cst>
+     (value::get_type_const_of <value_loclist_op> (), 0));
+
   add_builtin (*builtin_T_DIE, value_die::vtype.name ());
   add_builtin (*builtin_T_ATTR, value_attr::vtype.name ());
+  add_builtin (*builtin_T_LOCLIST_OP, value_loclist_op::vtype.name ());
 
   add_builtin (builtin_winfo);
   add_builtin (builtin_unit);
@@ -1260,6 +1360,9 @@ dwgrep_init_dw ()
   add_builtin (builtin_tag);
   add_builtin (builtin_form);
   add_builtin (builtin_parent);
+  add_builtin (builtin_at_atom);
+  add_builtin (builtin_at_number);
+  add_builtin (builtin_at_number2);
 
 #define ONE_KNOWN_DW_AT(NAME, CODE)				\
     add_builtin (builtin_attr_##NAME, "@AT_" #NAME);		\
