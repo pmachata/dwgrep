@@ -96,7 +96,15 @@ value_type const value_loclist_op::vtype = value_type::alloc ("T_LOCLIST_OP");
 void
 value_loclist_op::show (std::ostream &o) const
 {
-  o << m_offset << ':' << m_atom << ' ' << m_v1 << ' ' << m_v2;
+  o << m_dwop.offset << ':'
+    << constant {m_dwop.atom, &dw_locexpr_opcode_short_dom};
+  auto prod1 = dwop_number (m_dwop, m_attr);
+  while (auto v = prod1->next ())
+    {
+      o << "<";
+      v->show (o);
+      o << ">";
+    }
 }
 
 std::unique_ptr <value>
@@ -110,24 +118,11 @@ value_loclist_op::cmp (value const &that) const
 {
   if (auto v = value::as <value_loclist_op> (&that))
     {
-      auto ret = compare (std::make_tuple (m_arity, m_atom),
-			  std::make_tuple (v->m_arity, v->m_atom));
+      auto ret = compare (m_attr.valp, v->m_attr.valp);
       if (ret != cmp_result::equal)
 	return ret;
 
-      switch (m_arity)
-	{
-	case 0:
-	  return cmp_result::equal;
-	case 1:
-	  return compare (m_v1, v->m_v1);
-	case 2:
-	  return compare (std::make_tuple (m_v1, m_v2),
-			  std::make_tuple (v->m_v1, v->m_v2));
-	}
-
-      assert (m_arity >= 0 && m_arity <= 2);
-      std::abort ();
+      return compare (m_dwop.offset, v->m_dwop.offset);
     }
   else
     return cmp_result::fail;

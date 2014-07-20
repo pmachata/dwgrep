@@ -465,7 +465,7 @@ namespace
 
 	  else if (auto v = value::as <value_loclist_op> (&*vp))
 	    {
-	      if (operate (*vf, *v))
+	      if (operate (*vf, v->get_dwop (), v->get_attr ()))
 		return vf;
 	    }
 
@@ -488,7 +488,7 @@ namespace
     virtual bool operate (valfile &vf, Dwarf_Attribute &attr, Dwarf_Die &die)
     { return false; }
 
-    virtual bool operate (valfile &vf, value_loclist_op &op)
+    virtual bool operate (valfile &vf, Dwarf_Op &op, Dwarf_Attribute &attr)
     { return false; }
   };
 }
@@ -513,7 +513,9 @@ static struct
     bool
     operate (valfile &vf, value_loclist_op &op)
     {
-      vf.push (std::make_unique <value_cst> (op.offset (), 0));
+      Dwarf_Op const &dwop = op.get_dwop ();
+      constant c {dwop.offset, &hex_constant_dom};
+      vf.push (std::make_unique <value_cst> (c, 0));
       return true;
     }
 
@@ -570,6 +572,14 @@ static struct
     {
       unsigned name = dwarf_whatattr (&attr);
       constant cst {name, &dw_attr_dom};
+      vf.push (std::make_unique <value_cst> (cst, 0));
+      return true;
+    }
+
+    bool
+    operate (valfile &vf, Dwarf_Op &op, Dwarf_Attribute &attr)
+    {
+      constant cst {op.atom, &dw_locexpr_opcode_short_dom};
       vf.push (std::make_unique <value_cst> (cst, 0));
       return true;
     }
@@ -721,34 +731,82 @@ static struct
 
 namespace
 {
-  template <std::unique_ptr <value> F (value_loclist_op &), char const *Name>
+  struct op_loclist_op
+    : public inner_op
+  {
+    typedef std::function <std::unique_ptr <value_producer>
+			   (value_loclist_op &)> cb_t;
+    cb_t m_cb;
+    char const *m_name;
+    std::unique_ptr <value_producer> m_vp;
+    valfile::uptr m_vf;
+
+    op_loclist_op (std::shared_ptr <op> upstream, cb_t cb, char const *name)
+      : inner_op {upstream}
+      , m_cb {cb}
+      , m_name {name}
+    {}
+
+    void
+    reset_me ()
+    {
+      m_vp = nullptr;
+      m_vf = nullptr;
+    }
+
+    valfile::uptr
+    next () override final
+    {
+      while (true)
+	{
+	  while (m_vp == nullptr)
+	    if (auto vf = m_upstream->next ())
+	      {
+		auto v = vf->pop ();
+		if (auto vlo = value::as <value_loclist_op> (&*v))
+		  {
+		    m_vp = m_cb (*vlo);
+		    m_vf = std::move (vf);
+		  }
+	      }
+	    else
+	      return nullptr;
+
+	  if (auto val = m_vp->next ())
+	    {
+	      auto ret = std::make_unique <valfile> (*m_vf);
+	      ret->push (std::move (val));
+	      return ret;
+	    }
+
+	  reset_me ();
+	}
+    }
+
+    std::string
+    name () const override
+    {
+      return m_name;
+    }
+
+    void
+    reset ()
+    {
+      reset_me ();
+      inner_op::reset ();
+    }
+  };
+
+  template <std::unique_ptr <value_producer> F (value_loclist_op &),
+	    char const *Name>
   struct loclist_op_builtin
     : public builtin
   {
-    struct o
-      : public dwop_f
-    {
-      using dwop_f::dwop_f;
-
-      bool
-      operate (valfile &vf, value_loclist_op &op)
-      {
-	vf.push (F (op));
-	return true;
-      }
-
-      std::string
-      name () const override
-      {
-	return Name;
-      }
-    };
-
     std::shared_ptr <op>
     build_exec (std::shared_ptr <op> upstream, dwgrep_graph::sptr q,
 		std::shared_ptr <scope> scope) const override
     {
-      return std::make_shared <o> (upstream, q);
+      return std::make_shared <op_loclist_op> (upstream, F, Name);
     }
 
     char const *
@@ -758,24 +816,12 @@ namespace
     }
   };
 
-
-  constexpr char const at_atom_name[] = "@atom";
-
-  std::unique_ptr <value>
-  loclist_operate_atom (value_loclist_op &v)
-  {
-    return std::make_unique <value_cst> (v.atom (), 0);
-  }
-
-  loclist_op_builtin <loclist_operate_atom, at_atom_name> builtin_at_atom;
-
-
   constexpr char const at_number_name[] = "@number";
 
- std::unique_ptr <value>
+  std::unique_ptr <value_producer>
   loclist_operate_number (value_loclist_op &v)
   {
-    return std::make_unique <value_cst> (v.v1 (), 0);
+    return dwop_number (v.get_dwop (), v.get_attr ());
   }
 
   loclist_op_builtin <loclist_operate_number,
@@ -784,10 +830,10 @@ namespace
 
   constexpr char const at_number2_name[] = "@number2";
 
-  std::unique_ptr <value>
+  std::unique_ptr <value_producer>
   loclist_operate_number2 (value_loclist_op &v)
   {
-    return std::make_unique <value_cst> (v.v2 (), 0);
+    return dwop_number2 (v.get_dwop (), v.get_attr ());
   }
 
   loclist_op_builtin <loclist_operate_number2,
@@ -1360,7 +1406,6 @@ dwgrep_init_dw ()
   add_builtin (builtin_tag);
   add_builtin (builtin_form);
   add_builtin (builtin_parent);
-  add_builtin (builtin_at_atom);
   add_builtin (builtin_at_number);
   add_builtin (builtin_at_number2);
 

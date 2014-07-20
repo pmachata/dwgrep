@@ -18,4 +18,10 @@ struct value_producer
 std::unique_ptr <value_producer> at_value (Dwarf_Attribute attr, Dwarf_Die die,
 					   dwgrep_graph::sptr gr);
 
+std::unique_ptr <value_producer> dwop_number (Dwarf_Op const &op,
+					      Dwarf_Attribute const &attr);
+
+std::unique_ptr <value_producer> dwop_number2 (Dwarf_Op const &op,
+					       Dwarf_Attribute const &attr);
+
 #endif /* _ATVAL_H_ */

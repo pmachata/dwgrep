@@ -31,6 +31,16 @@ namespace
     }
   };
 
+  struct null_producer
+    : public value_producer
+  {
+    std::unique_ptr <value>
+    next () override
+    {
+      return nullptr;
+    }
+  };
+
   std::unique_ptr <value_producer>
   pass_single_value (std::unique_ptr <value> value)
   {
@@ -106,14 +116,8 @@ namespace
 	  {
 	    value_seq::seq_t ops;
 	    for (size_t i = 0; i < exprlen; ++i)
-	      {
-		auto op = std::make_unique <value_loclist_op>
-		  (2, constant {expr[i].atom, &dw_locexpr_opcode_short_dom},
-		   constant {expr[i].number, &dec_constant_dom},
-		   constant {expr[i].number2, &dec_constant_dom},
-		   constant {expr[i].offset, &hex_constant_dom}, i);
-		ops.push_back (std::move (op));
-	      }
+	      ops.push_back (std::make_unique <value_loclist_op>
+			     (expr[i], m_attr, i));
 
 	    value_seq::seq_t ret;
 	    ret.push_back (std::make_unique <value_cst>
@@ -466,4 +470,137 @@ at_value (Dwarf_Attribute attr, Dwarf_Die die, dwgrep_graph::sptr gr)
 
   assert (! "Unhandled DWARF form type.");
   abort ();
+}
+
+namespace
+{
+  template <unsigned N>
+  std::unique_ptr <value_producer>
+  select (std::unique_ptr <value_producer> a,
+	  std::unique_ptr <value_producer> b);
+
+  template <>
+  std::unique_ptr <value_producer>
+  select<0> (std::unique_ptr <value_producer> a,
+	     std::unique_ptr <value_producer> b)
+  {
+    return a;
+  }
+
+  template <>
+  std::unique_ptr <value_producer>
+  select<1> (std::unique_ptr <value_producer> a,
+	     std::unique_ptr <value_producer> b)
+  {
+    return b;
+  }
+
+  // Return up to two constants.  One or both may be default constants
+  // (sans domain).  If the former is default, the latter shall be as
+  // well.  Both default represent nullary operands, one non-default
+  // represents unary, both non-default represent binary op.
+  template <unsigned N>
+  std::unique_ptr <value_producer>
+  locexpr_op_numbers (Dwarf_Op const &op, Dwarf_Attribute const &at)
+  {
+    auto signed_cst = [] (Dwarf_Word w, constant_dom const *dom)
+      {
+	return constant {(Dwarf_Sword) w, dom};
+      };
+
+    auto single_constant = [] (constant const &cst)
+      {
+	return select <N> (pass_single_value
+				(std::make_unique <value_cst> (cst, 0)),
+			   std::make_unique <null_producer> ());
+      };
+
+    auto two_constants = [] (constant const &a, constant const &b)
+      {
+	return select <N> (pass_single_value
+				(std::make_unique <value_cst> (a, 0)),
+			   pass_single_value
+				(std::make_unique <value_cst> (b, 0)));
+      };
+
+    switch (op.atom)
+      {
+      default:
+	return std::make_unique <null_producer> ();
+
+      case DW_OP_addr:
+      case DW_OP_call_ref:	// XXX yield a DIE?
+	return single_constant ({op.number, &hex_constant_dom});
+
+      case DW_OP_deref_size:
+      case DW_OP_xderef_size:
+      case DW_OP_pick:
+      case DW_OP_const1u:
+      case DW_OP_const2u:
+      case DW_OP_const4u:
+      case DW_OP_const8u:
+      case DW_OP_piece:
+      case DW_OP_regx:
+      case DW_OP_plus_uconst:
+      case DW_OP_constu:
+      case DW_OP_call2:
+      case DW_OP_call4:
+      case DW_OP_GNU_convert:		// XXX CU-relative offset to DIE
+      case DW_OP_GNU_reinterpret:	// XXX CU-relative offset to DIE
+      case DW_OP_GNU_parameter_ref:	// XXX CU-relative offset to DIE
+	return single_constant ({op.number, &dec_constant_dom});
+
+      case DW_OP_const1s:
+      case DW_OP_const2s:
+      case DW_OP_const4s:
+      case DW_OP_const8s:
+      case DW_OP_fbreg:
+      case DW_OP_breg0 ... DW_OP_breg31:
+      case DW_OP_consts:
+      case DW_OP_skip:	// XXX readelf translates to absolute address
+      case DW_OP_bra:	// XXX this one as well
+	return single_constant (signed_cst (op.number, &dec_constant_dom));
+
+      case DW_OP_bit_piece:
+      case DW_OP_GNU_regval_type:
+      case DW_OP_GNU_deref_type:
+	return two_constants ({op.number, &dec_constant_dom},
+			      {op.number2, &dec_constant_dom});
+
+      case DW_OP_bregx:
+	return two_constants ({op.number, &dec_constant_dom},
+			      signed_cst (op.number2, &dec_constant_dom));
+
+      case DW_OP_implicit_value:
+	// XXX unsigned and a block that needs to be obtained by
+	// dwarf_getlocation_implicit_value
+	assert (! "DW_OP_implicit_value");
+	std::abort ();
+
+      case DW_OP_GNU_implicit_pointer:
+	// XXX similar to above, dwarf_getlocation_implicit_pointer
+	assert (! "DW_OP_GNU_implicit_pointer");
+	std::abort ();
+
+      case DW_OP_GNU_entry_value:
+      case DW_OP_GNU_const_type:
+	{
+	  Dwarf_Attribute result;
+	  if (dwarf_getlocation_attr (&at, &op, &result) != 0)
+	    throw_libdw ();
+	}
+      }
+  }
+}
+
+std::unique_ptr <value_producer>
+dwop_number (Dwarf_Op const &op, Dwarf_Attribute const &attr)
+{
+  return locexpr_op_numbers <0> (op, attr);
+}
+
+std::unique_ptr <value_producer>
+dwop_number2 (Dwarf_Op const &op, Dwarf_Attribute const &attr)
+{
+  return locexpr_op_numbers <1> (op, attr);
 }

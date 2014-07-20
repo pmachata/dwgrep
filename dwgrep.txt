@@ -985,6 +985,7 @@
       : 10 add: 1	# equivalent to (10 1 add)
       : [10 range] sort: {->a; if (a mod: 2 ?0) then 0 else 1}
 
+
 * TODO
 
 ** @AT_decl_file — represented as actual string including path
@@ -1031,10 +1032,12 @@
    location_list_entry.  Each has an attribute: @address.
 
    The children of location_list_entry are pseudo-DIE's of type
-   location_list_op.  Each has the following attributes: @atom (which
-   contains opcode), and possibly @number or also @number2 (with
-   operands).  offset is applicable to location expression nodes and
-   extracts the offset of the operand inside the expression.
+   location_list_op.  Each has the following attributes: @number and
+   @number2 (with operands; each of these might not yield anything if
+   the corresponding number is not meaningful for given op).  offset
+   is applicable to location expression nodes and extracts the offset
+   of the operand inside the expression.  name is applicable and
+   contains operation opcode.
 
    - XXX possibly a means of evaluating?  (Could we use the in-program
      stack for evaluating the Dwarf expression?)
