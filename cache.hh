@@ -18,7 +18,7 @@ class parent_cache
   struct unit_key
   {
     unit_type ut;
-    Dwarf_Off off;
+    Dwarf_Off off;	// CU offset.
 
     bool
     operator< (unit_key other) const
