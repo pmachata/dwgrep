@@ -63,16 +63,22 @@ public:
 class value_loclist_op
   : public value
 {
-  Dwarf_Op m_dwop;
+  // This apparently wild pointer points into libdw-private data.  We
+  // actually need to carry a pointer, as some functions require that
+  // they be called with the original pointer, not our own copy.
+  Dwarf_Op *m_dwop;
   Dwarf_Attribute m_attr;
+  dwgrep_graph::sptr m_gr;
 
 public:
   static value_type const vtype;
 
-  value_loclist_op (Dwarf_Op dwop, Dwarf_Attribute attr, size_t pos)
+  value_loclist_op (dwgrep_graph::sptr gr,
+		    Dwarf_Op *dwop, Dwarf_Attribute attr, size_t pos)
     : value {vtype, pos}
     , m_dwop (dwop)
     , m_attr (attr)
+    , m_gr {gr}
   {}
 
   value_loclist_op (value_loclist_op const &that) = default;
@@ -80,7 +86,7 @@ public:
   Dwarf_Attribute &get_attr ()
   { return m_attr; }
 
-  Dwarf_Op &get_dwop ()
+  Dwarf_Op *get_dwop ()
   { return m_dwop; }
 
   void show (std::ostream &o) const override;

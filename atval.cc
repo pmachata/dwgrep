@@ -48,6 +48,17 @@ namespace
   }
 
   std::unique_ptr <value_producer>
+  pass_block (Dwarf_Block const &block)
+  {
+    value_seq::seq_t vv;
+    for (Dwarf_Word i = 0; i < block.length; ++i)
+      vv.push_back (std::make_unique <value_cst>
+		    (constant { block.data[i], &hex_constant_dom }, 0));
+    return pass_single_value
+      (std::make_unique <value_seq> (std::move (vv), 0));
+  }
+
+  std::unique_ptr <value_producer>
   atval_unsigned_with_domain (Dwarf_Attribute attr, constant_dom const &dom)
   {
     Dwarf_Word uval;
@@ -92,10 +103,12 @@ namespace
     Dwarf_Attribute m_attr;
     Dwarf_Addr m_base;
     ptrdiff_t m_offset;
+    dwgrep_graph::sptr m_gr;
 
-    explicit locexpr_producer (Dwarf_Attribute attr)
+    explicit locexpr_producer (dwgrep_graph::sptr gr, Dwarf_Attribute attr)
       : m_attr (attr)
       , m_offset {0}
+      , m_gr {gr}
     {}
 
     std::unique_ptr <value>
@@ -117,7 +130,7 @@ namespace
 	    value_seq::seq_t ops;
 	    for (size_t i = 0; i < exprlen; ++i)
 	      ops.push_back (std::make_unique <value_loclist_op>
-			     (expr[i], m_attr, i));
+				(m_gr, &expr[i], m_attr, i));
 
 	    value_seq::seq_t ret;
 	    ret.push_back (std::make_unique <value_cst>
@@ -133,9 +146,9 @@ namespace
   };
 
   std::unique_ptr <value_producer>
-  atval_locexpr (Dwarf_Attribute attr)
+  atval_locexpr (dwgrep_graph::sptr gr, Dwarf_Attribute attr)
   {
-    return std::make_unique <locexpr_producer> (attr);
+    return std::make_unique <locexpr_producer> (gr, attr);
   }
 
   std::unique_ptr <value_producer>
@@ -444,16 +457,11 @@ at_value (Dwarf_Attribute attr, Dwarf_Die die, dwgrep_graph::sptr gr)
 	if (dwarf_formblock (&attr, &block) != 0)
 	  throw_libdw ();
 
-	value_seq::seq_t vv;
-	for (Dwarf_Word i = 0; i < block.length; ++i)
-	  vv.push_back (std::make_unique <value_cst>
-			(constant { block.data[i], &hex_constant_dom }, 0));
-	return pass_single_value
-	  (std::make_unique <value_seq> (std::move (vv), 0));
+	return pass_block (block);
       }
 
     case DW_FORM_exprloc:
-      return atval_locexpr (attr);
+      return atval_locexpr (gr, attr);
 
     case DW_FORM_ref_sig8:
     case DW_FORM_GNU_ref_alt:
@@ -501,7 +509,8 @@ namespace
   // represents unary, both non-default represent binary op.
   template <unsigned N>
   std::unique_ptr <value_producer>
-  locexpr_op_numbers (Dwarf_Op const &op, Dwarf_Attribute const &at)
+  locexpr_op_values (Dwarf_Op const *op, Dwarf_Attribute const &at,
+		     dwgrep_graph::sptr gr)
   {
     auto signed_cst = [] (Dwarf_Word w, constant_dom const *dom)
       {
@@ -523,14 +532,14 @@ namespace
 				(std::make_unique <value_cst> (b, 0)));
       };
 
-    switch (op.atom)
+    switch (op->atom)
       {
       default:
 	return std::make_unique <null_producer> ();
 
       case DW_OP_addr:
       case DW_OP_call_ref:	// XXX yield a DIE?
-	return single_constant ({op.number, &hex_constant_dom});
+	return single_constant ({op->number, &hex_constant_dom});
 
       case DW_OP_deref_size:
       case DW_OP_xderef_size:
@@ -548,7 +557,7 @@ namespace
       case DW_OP_GNU_convert:		// XXX CU-relative offset to DIE
       case DW_OP_GNU_reinterpret:	// XXX CU-relative offset to DIE
       case DW_OP_GNU_parameter_ref:	// XXX CU-relative offset to DIE
-	return single_constant ({op.number, &dec_constant_dom});
+	return single_constant ({op->number, &dec_constant_dom});
 
       case DW_OP_const1s:
       case DW_OP_const2s:
@@ -559,48 +568,62 @@ namespace
       case DW_OP_consts:
       case DW_OP_skip:	// XXX readelf translates to absolute address
       case DW_OP_bra:	// XXX this one as well
-	return single_constant (signed_cst (op.number, &dec_constant_dom));
+	return single_constant (signed_cst (op->number, &dec_constant_dom));
 
       case DW_OP_bit_piece:
       case DW_OP_GNU_regval_type:
       case DW_OP_GNU_deref_type:
-	return two_constants ({op.number, &dec_constant_dom},
-			      {op.number2, &dec_constant_dom});
+	return two_constants ({op->number, &dec_constant_dom},
+			      {op->number2, &dec_constant_dom});
 
       case DW_OP_bregx:
-	return two_constants ({op.number, &dec_constant_dom},
-			      signed_cst (op.number2, &dec_constant_dom));
-
-      case DW_OP_implicit_value:
-	// XXX unsigned and a block that needs to be obtained by
-	// dwarf_getlocation_implicit_value
-	assert (! "DW_OP_implicit_value");
-	std::abort ();
+	return two_constants ({op->number, &dec_constant_dom},
+			      signed_cst (op->number2, &dec_constant_dom));
 
       case DW_OP_GNU_implicit_pointer:
-	// XXX similar to above, dwarf_getlocation_implicit_pointer
-	assert (! "DW_OP_GNU_implicit_pointer");
-	std::abort ();
+	{
+	  Dwarf_Die die;
+	  if (dwarf_getlocation_die
+	      (const_cast <Dwarf_Attribute *> (&at), op, &die) != 0)
+	    throw_libdw ();
+
+	  return pass_single_value (std::make_unique <value_die> (gr, die, 0));
+	}
+
+      case DW_OP_implicit_value:
+	{
+	  Dwarf_Block block;
+	  if (dwarf_getlocation_implicit_value
+	      (const_cast <Dwarf_Attribute *> (&at), op, &block) != 0)
+	    throw_libdw ();
+
+	  return pass_block (block);
+	}
 
       case DW_OP_GNU_entry_value:
       case DW_OP_GNU_const_type:
 	{
 	  Dwarf_Attribute result;
-	  if (dwarf_getlocation_attr (&at, &op, &result) != 0)
+	  if (dwarf_getlocation_attr
+	      (const_cast <Dwarf_Attribute *> (&at), op, &result) != 0)
 	    throw_libdw ();
+
+	  return atval_locexpr (gr, result);
 	}
       }
   }
 }
 
 std::unique_ptr <value_producer>
-dwop_number (Dwarf_Op const &op, Dwarf_Attribute const &attr)
+dwop_number (Dwarf_Op const *op, Dwarf_Attribute const &attr,
+	     dwgrep_graph::sptr gr)
 {
-  return locexpr_op_numbers <0> (op, attr);
+  return locexpr_op_values <0> (op, attr, gr);
 }
 
 std::unique_ptr <value_producer>
-dwop_number2 (Dwarf_Op const &op, Dwarf_Attribute const &attr)
+dwop_number2 (Dwarf_Op const *op, Dwarf_Attribute const &attr,
+	      dwgrep_graph::sptr gr)
 {
-  return locexpr_op_numbers <1> (op, attr);
+  return locexpr_op_values <1> (op, attr, gr);
 }

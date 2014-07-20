@@ -488,7 +488,7 @@ namespace
     virtual bool operate (valfile &vf, Dwarf_Attribute &attr, Dwarf_Die &die)
     { return false; }
 
-    virtual bool operate (valfile &vf, Dwarf_Op &op, Dwarf_Attribute &attr)
+    virtual bool operate (valfile &vf, Dwarf_Op *op, Dwarf_Attribute &attr)
     { return false; }
   };
 }
@@ -513,8 +513,8 @@ static struct
     bool
     operate (valfile &vf, value_loclist_op &op)
     {
-      Dwarf_Op const &dwop = op.get_dwop ();
-      constant c {dwop.offset, &hex_constant_dom};
+      Dwarf_Op const *dwop = op.get_dwop ();
+      constant c {dwop->offset, &hex_constant_dom};
       vf.push (std::make_unique <value_cst> (c, 0));
       return true;
     }
@@ -577,9 +577,9 @@ static struct
     }
 
     bool
-    operate (valfile &vf, Dwarf_Op &op, Dwarf_Attribute &attr)
+    operate (valfile &vf, Dwarf_Op *op, Dwarf_Attribute &attr)
     {
-      constant cst {op.atom, &dw_locexpr_opcode_short_dom};
+      constant cst {op->atom, &dw_locexpr_opcode_short_dom};
       vf.push (std::make_unique <value_cst> (cst, 0));
       return true;
     }
@@ -735,14 +735,17 @@ namespace
     : public inner_op
   {
     typedef std::function <std::unique_ptr <value_producer>
-			   (value_loclist_op &)> cb_t;
+			   (value_loclist_op &, dwgrep_graph::sptr gr)> cb_t;
+    dwgrep_graph::sptr m_gr;
     cb_t m_cb;
     char const *m_name;
     std::unique_ptr <value_producer> m_vp;
     valfile::uptr m_vf;
 
-    op_loclist_op (std::shared_ptr <op> upstream, cb_t cb, char const *name)
+    op_loclist_op (std::shared_ptr <op> upstream, dwgrep_graph::sptr gr,
+		   cb_t cb, char const *name)
       : inner_op {upstream}
+      , m_gr {gr}
       , m_cb {cb}
       , m_name {name}
     {}
@@ -765,7 +768,7 @@ namespace
 		auto v = vf->pop ();
 		if (auto vlo = value::as <value_loclist_op> (&*v))
 		  {
-		    m_vp = m_cb (*vlo);
+		    m_vp = m_cb (*vlo, m_gr);
 		    m_vf = std::move (vf);
 		  }
 	      }
@@ -797,7 +800,8 @@ namespace
     }
   };
 
-  template <std::unique_ptr <value_producer> F (value_loclist_op &),
+  template <std::unique_ptr <value_producer> F (value_loclist_op &,
+						dwgrep_graph::sptr),
 	    char const *Name>
   struct loclist_op_builtin
     : public builtin
@@ -806,7 +810,7 @@ namespace
     build_exec (std::shared_ptr <op> upstream, dwgrep_graph::sptr q,
 		std::shared_ptr <scope> scope) const override
     {
-      return std::make_shared <op_loclist_op> (upstream, F, Name);
+      return std::make_shared <op_loclist_op> (upstream, q, F, Name);
     }
 
     char const *
@@ -819,9 +823,9 @@ namespace
   constexpr char const at_number_name[] = "@number";
 
   std::unique_ptr <value_producer>
-  loclist_operate_number (value_loclist_op &v)
+  loclist_operate_number (value_loclist_op &v, dwgrep_graph::sptr gr)
   {
-    return dwop_number (v.get_dwop (), v.get_attr ());
+    return dwop_number (v.get_dwop (), v.get_attr (), gr);
   }
 
   loclist_op_builtin <loclist_operate_number,
@@ -831,9 +835,9 @@ namespace
   constexpr char const at_number2_name[] = "@number2";
 
   std::unique_ptr <value_producer>
-  loclist_operate_number2 (value_loclist_op &v)
+  loclist_operate_number2 (value_loclist_op &v, dwgrep_graph::sptr gr)
   {
-    return dwop_number2 (v.get_dwop (), v.get_attr ());
+    return dwop_number2 (v.get_dwop (), v.get_attr (), gr);
   }
 
   loclist_op_builtin <loclist_operate_number2,

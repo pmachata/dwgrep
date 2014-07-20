@@ -96,15 +96,34 @@ value_type const value_loclist_op::vtype = value_type::alloc ("T_LOCLIST_OP");
 void
 value_loclist_op::show (std::ostream &o) const
 {
-  o << m_dwop.offset << ':'
-    << constant {m_dwop.atom, &dw_locexpr_opcode_short_dom};
-  auto prod1 = dwop_number (m_dwop, m_attr);
-  while (auto v = prod1->next ())
-    {
-      o << "<";
-      v->show (o);
-      o << ">";
-    }
+  o << m_dwop->offset << ':'
+    << constant {m_dwop->atom, &dw_locexpr_opcode_short_dom};
+  {
+    auto prod = dwop_number (m_dwop, m_attr, m_gr);
+    while (auto v = prod->next ())
+      {
+	o << "<";
+	v->show (o);
+	o << ">";
+      }
+  }
+
+  {
+    bool sep = false;
+    auto prod = dwop_number (m_dwop, m_attr, m_gr);
+    while (auto v = prod->next ())
+      {
+	if (! sep)
+	  {
+	    o << "; ";
+	    sep = true;
+	  }
+
+	o << "<";
+	v->show (o);
+	o << ">";
+      }
+  }
 }
 
 std::unique_ptr <value>
@@ -122,7 +141,7 @@ value_loclist_op::cmp (value const &that) const
       if (ret != cmp_result::equal)
 	return ret;
 
-      return compare (m_dwop.offset, v->m_dwop.offset);
+      return compare (m_dwop->offset, v->m_dwop->offset);
     }
   else
     return cmp_result::fail;
