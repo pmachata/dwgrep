@@ -137,7 +137,12 @@ operator<< (std::ostream &o, constant cst)
 bool
 constant::operator< (constant that) const
 {
-  if (dom ()->safe_arith () && that.dom ()->safe_arith ())
+  if (dom () == nullptr && that.dom () != nullptr)
+    return true;
+  if (dom () != nullptr && that.dom () == nullptr)
+    return false;
+
+  if (dom () != nullptr && dom ()->safe_arith () && that.dom ()->safe_arith ())
     return value () < that.value ();
   else
     return std::make_pair (dom (), value ())
