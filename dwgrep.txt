@@ -835,7 +835,7 @@
    - T_CONST — for integer objects
    - T_FLOAT — for floats
 
-** •EXPR → “pos” — pos of element within producing expression
+** •EXPR → “pos” | “nth” — pos of element within producing expression
 
    Each function numbers elements that it produces, and stores number
    of each element along with the element.  That number can be
@@ -843,7 +843,9 @@
 
    If you wish to know the number of values produced, you have to
    count them by hand:
-   : [ child ] (length->L;) elem
+   : [ child ] dup length->L; elem
+
+   - def nth { ->E N; E ?(pos N ?eq) }
 
 **  EXPR → “get” | “last” | “slice” | “reverse” — sequence transformations
 
@@ -1032,12 +1034,13 @@
    location_list_entry.  Each has an attribute: @address.
 
    The children of location_list_entry are pseudo-DIE's of type
-   location_list_op.  Each has the following attributes: @number and
-   @number2 (with operands; each of these might not yield anything if
-   the corresponding number is not meaningful for given op).  offset
-   is applicable to location expression nodes and extracts the offset
-   of the operand inside the expression.  name is applicable and
-   contains operation opcode.
+   location_list_op.  offset is applicable to location expression
+   nodes and extracts the offset of the operand inside the expression.
+   name is applicable and contains operation opcode.  value is
+   applicable and yields either nothing (for nullary op's), one value
+   (for unary) or two values (for binary).  Assertions on pos can be
+   used to pick one particular value.  XXX this really needs
+   positional assertions.
 
    - XXX possibly a means of evaluating?  (Could we use the in-program
      stack for evaluating the Dwarf expression?)
@@ -1289,7 +1292,7 @@
      [...]
 
      : winfo ?TAG_typedef ->T;
-     : T @AT_type (?TAG_typedef @AT_type)* !typedef ->U;
+     : T @AT_type (?TAG_typedef @AT_type)* !TAG_typedef ->U;
      : "[%(T offset%)] typedef %(T @AT_name%) %(U @AT_name%) "\
      : "(%( U @AT_encoding || "???" %), %( U @AT_byte_size || "???" %) bytes)"
 

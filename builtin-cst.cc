@@ -210,3 +210,49 @@ builtin_pos::name () const
 {
   return "pos";
 }
+
+
+namespace
+{
+  class op_f_nth
+    : public inner_op
+  {
+  public:
+    using inner_op::inner_op;
+
+    valfile::uptr
+    next () override
+    {
+      while (auto vf = m_upstream->next ())
+	if (auto n = vf->pop_as <value_cst> ())
+	  {
+	    constant pos {vf->top ().get_pos (), &dec_constant_dom};
+	    constant const &nc = n->get_constant ();
+	    check_constants_comparable (nc, pos);
+	    if (pos == nc)
+	      return vf;
+	  }
+
+      return nullptr;
+    }
+
+    std::string
+    name () const override
+    {
+      return "nth";
+    }
+  };
+}
+
+std::shared_ptr <op>
+builtin_nth::build_exec (std::shared_ptr <op> upstream, dwgrep_graph::sptr q,
+			 std::shared_ptr <scope> scope) const
+{
+  return std::make_shared <op_f_nth> (upstream);
+}
+
+char const *
+builtin_nth::name () const
+{
+  return "nth";
+}

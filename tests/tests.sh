@@ -92,6 +92,8 @@ expect_count 1 ./nontrivial-types.o -e '
 	?(elem ?(pos 0 ?eq) ?(10 ?eq))
 	?(elem ?(pos 1 ?eq) ?(11 ?eq))
 	?(elem ?(pos 2 ?eq) ?(12 ?eq))'
+expect_count 3 ./empty -e '
+	[0, 1, 2] elem dup nth'
 
 # Tests star closure whose body ends with stack in a different state
 # than it starts in (different slots are taken in the valfile).
@@ -246,6 +248,9 @@ expect_count 1 ./empty -e '
 	?(1 5 slice [1, 2, 3, 4] ?eq)
 	?(5 -1 slice [5, 6, 7, 8] ?eq)
 	?(-2 -1 slice [8] ?eq)'
+# Check that bindings remember position.
+expect_count 3 ./empty -e '
+	[0, 1, 2] elem ->E; E dup pos ?eq'
 
 # Check recursion.
 expect_count 1 ./empty -e '
