@@ -153,7 +153,7 @@ namespace
 
   std::unique_ptr <value_producer>
   handle_at_dependent_value (Dwarf_Attribute attr, Dwarf_Die die,
-			     dwgrep_graph &gr)
+			     dwgrep_graph::sptr gr)
   {
     switch (dwarf_whatattr (&attr))
       {
@@ -239,7 +239,7 @@ namespace
 	  else
 	    {
 	      // Get DW_TAG_enumeration_type.
-	      if (dwarf_offdie (&*gr.dwarf, gr.find_parent (die),
+	      if (dwarf_offdie (&*gr->dwarf, gr->find_parent (die),
 				&type_die) == nullptr)
 		throw_libdw ();
 
@@ -365,8 +365,7 @@ namespace
       case DW_AT_location:
       case DW_AT_data_member_location:
       case DW_AT_vtable_elem_location:
-	std::cerr << "location lists NIY\n";
-	return atval_unsigned_with_domain (attr, hex_constant_dom);
+	return atval_locexpr (gr, attr);
 
       case DW_AT_ranges:
 	std::cerr << "address ranges NIY\n";
@@ -443,7 +442,7 @@ at_value (Dwarf_Attribute attr, Dwarf_Die die, dwgrep_graph::sptr gr)
     case DW_FORM_data4:
     case DW_FORM_data8:
     case DW_FORM_sec_offset:
-      return handle_at_dependent_value (attr, die, *gr);
+      return handle_at_dependent_value (attr, die, gr);
 
     case DW_FORM_block1:
     case DW_FORM_block2:
