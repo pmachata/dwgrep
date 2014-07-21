@@ -135,3 +135,12 @@ pred_empty_str::result (valfile &vf)
   auto vp = vf.top_as <value_str> ();
   return pred_result (vp->get_string () == "");
 }
+
+pred_result
+pred_find_str::result (valfile &vf)
+{
+  auto needle = vf.get_as <value_str> (0);
+  auto haystack = vf.get_as <value_str> (1);
+  return pred_result (haystack->get_string ().find (needle->get_string ())
+		      != std::string::npos);
+}

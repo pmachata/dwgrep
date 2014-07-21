@@ -73,4 +73,10 @@ struct pred_empty_seq
   pred_result result (valfile &vf) override;
 };
 
+struct pred_find_seq
+  : public stub_pred
+{
+  pred_result result (valfile &vf) override;
+};
+
 #endif /* _VALUE_SEQ_H_ */

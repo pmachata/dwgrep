@@ -60,4 +60,10 @@ struct pred_empty_str
   pred_result result (valfile &vf) override;
 };
 
+struct pred_find_str
+  : public stub_pred
+{
+  pred_result result (valfile &vf) override;
+};
+
 #endif /* _VALUE_STR_H_ */

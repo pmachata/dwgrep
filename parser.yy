@@ -182,8 +182,8 @@
 
    // XXX These should eventually be moved to builtins.
 %token TOK_TYPE TOK_UNIVERSE TOK_SECTION TOK_DEBUG
-%token TOK_QMARK_MATCH TOK_QMARK_FIND
-%token TOK_BANG_MATCH TOK_BANG_FIND
+%token TOK_QMARK_MATCH
+%token TOK_BANG_MATCH
 
 %token TOK_EOF
 
@@ -353,11 +353,6 @@ Statement:
   { $$ = positive_assert <tree_type::PRED_MATCH> (); }
   | TOK_BANG_MATCH
   { $$ = negative_assert <tree_type::PRED_MATCH> (); }
-
-  | TOK_QMARK_FIND
-  { $$ = positive_assert <tree_type::PRED_FIND> (); }
-  | TOK_BANG_FIND
-  { $$ = negative_assert <tree_type::PRED_FIND> (); }
 
 %%
 

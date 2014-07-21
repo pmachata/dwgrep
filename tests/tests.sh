@@ -347,3 +347,10 @@ expect_count 1 ./empty -e '
 expect_count 1 ./empty -e '
 	?([1, 2, 3] [4, 5, 6] add [1, 2, 3, 4, 5, 6] ?eq)
 	?("123" "456" add "123456" ?eq)'
+expect_count 1 ./empty -e '
+	?("123456" ?("234" ?find) ?("123" ?find) ?("456" ?find) ?(dup ?find)
+		   !("234" !find) !("123" !find) !("456" !find) !(dup !find))
+	?([1,2,3,4,5,6] ?([2,3,4] ?find) ?([1,2,3] ?find)
+			?([4,5,6] ?find) ?(dup ?find)
+			!([2,3,4] !find) !([1,2,3] !find)
+			!([4,5,6] !find) !(dup !find))'

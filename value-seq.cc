@@ -1,6 +1,7 @@
 #include <memory>
 #include "make_unique.hh"
 #include <iostream>
+#include <algorithm>
 
 #include "value-seq.hh"
 #include "overload.hh"
@@ -218,4 +219,18 @@ pred_empty_seq::result (valfile &vf)
 {
   auto vp = vf.top_as <value_seq> ();
   return pred_result (vp->get_seq ()->empty ());
+}
+
+pred_result
+pred_find_seq::result (valfile &vf)
+{
+  auto needle = vf.get_as <value_seq> (0)->get_seq ();
+  auto haystack = vf.get_as <value_seq> (1)->get_seq ();
+  return pred_result (std::search (haystack->begin (), haystack->end (),
+				   needle->begin (), needle->end (),
+				   [] (std::unique_ptr <value> const &a,
+				       std::unique_ptr <value> const &b)
+				   {
+				     return a->cmp (*b) == cmp_result::equal;
+				   }) != haystack->end ());
 }

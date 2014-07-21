@@ -14,6 +14,7 @@
 #include "builtin-add.hh"
 #include "builtin-elem.hh"
 #include "builtin-empty.hh"
+#include "builtin-find.hh"
 #include "builtin-length.hh"
 #include "builtin-value.hh"
 
@@ -85,6 +86,11 @@ namespace
   builtin_empty builtin_empty_obj {true}, builtin_nempty_obj {false};
   overload_pred_builtin <pred_empty_str> builtin_empty_str_obj;
   overload_pred_builtin <pred_empty_seq> builtin_empty_seq_obj;
+
+  // "find"
+  builtin_find builtin_find_obj {true}, builtin_nfind_obj {false};
+  overload_pred_builtin <pred_find_str> builtin_find_str_obj;
+  overload_pred_builtin <pred_find_seq> builtin_find_seq_obj;
 
   // "length"
   builtin_length builtin_length_obj;
@@ -162,4 +168,8 @@ dwgrep_init ()
   ovl_tab_empty ().add_overload (value_str::vtype, builtin_empty_str_obj);
   ovl_tab_empty ().add_overload (value_seq::vtype, builtin_empty_seq_obj);
 
+  add_builtin (builtin_find_obj);
+  add_builtin (builtin_nfind_obj);
+  ovl_tab_find ().add_overload (value_str::vtype, builtin_find_str_obj);
+  ovl_tab_find ().add_overload (value_seq::vtype, builtin_find_seq_obj);
 }

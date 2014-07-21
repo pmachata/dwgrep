@@ -886,8 +886,7 @@
      current computation.
 
 ** ·EXPR → “hex” | “oct” | “bin” | [“u”]“int”(“32”|“64”) — casting
-   - hex, oct and bin change the domain of a constant on TOS.  If
-     "dec" is what you need, use "value".
+   - hex, oct and bin change the domain of a constant on TOS.
      : 64 hex		# gives 0x40
      : DW_AT_name hex	# gives 0x3
      The value remains a constant, only the way it's displayed
@@ -947,12 +946,13 @@
 
    - "match" does a full-string match
 
-**  EXPR → (“?”|“!”)“find” — search in a sequence
+** •EXPR → (“?”|“!”)“find” — search in a sequence
 
    - A B find looks for sub-sequence or sub-string B inside A
-     (e.g. "haystack" "needle" find or [hay stack] [needle] find).
+     (e.g. "haystack" ?("needle" ?find) or [hay stack] ?([needle]
+     ?find)).
 
-   - To determine, whether a sequence contains a particular element,
+   - To determine whether a sequence contains a particular element,
      you would use the following construct:
      : [that sequence] ?(elem something ?eq)
      E.g.:
@@ -1136,24 +1136,24 @@
 
 ** contains DW_OP_fbreg && ! @frame_base
 
-   : !AT_frame_base ?(@AT_location @atom DW_OP_fbreg ?eq)
+   : !AT_frame_base ?(@AT_location name DW_OP_fbreg ?eq)
 
 ** uses register based operators
 
-   : ?(@AT_location @atom (DW_OP_bregx ?eq, ?(DW_OP_reg0 ?ge) ?(DW_OP_regx ?le)))
+   : ?(@AT_location name (DW_OP_bregx ?eq, ?(DW_OP_reg0 ?ge) ?(DW_OP_regx ?le)))
 
-   : ?(@AT_location @atom "%s" "_b?reg" ?find)
+   : ?(@AT_location name "%s" "_b?reg" ?find)
 
 ** whether it uses a deref operator
 
-   : ?(@AT_location @atom (?OP_deref, ?OP_xderef, ?OP_deref_size,
+   : ?(@AT_location name (?OP_deref, ?OP_xderef, ?OP_deref_size,
    :                       ?OP_xderef_size, ?OP_GNU_deref_type))
 
-   : ?(@AT_location @atom "%s" "deref" ?find)
+   : ?(@AT_location name "%s" "deref" ?find)
 
 ** contains DW_OP_call_frame_cfa && $@low_pc == 0
 
-   : winfo ?(@AT_low_pc ?0) ?(@AT_frame_base ?OP_call_frame_cfa)
+   : winfo ?(@AT_low_pc 0 nth) ?(@AT_frame_base ?OP_call_frame_cfa)
 
 ** is an empty location expression
 
@@ -1161,7 +1161,7 @@
 
 ** location expression ends with implicit_value or stack_value
 
-   : winfo ?([@AT_location] last @atom
+   : winfo ?([@AT_location] last name
    : (?DW_OP_implicit_value, ?DW_OP_stack_value))
 
 ** types inconsistent between instance and specification
@@ -1177,8 +1177,9 @@
 
      : { ?TAG_const_type, ?TAG_volatile_type, ?TAG_restrict_type } -> ?cvr_type;
      : winfo ?cvr_type ->A;
-     : A unit ?gt ?cvr_type ->B;
-     : A B ?(tag swap tag ?eq) ?(@AT_type swap @AT_type ?eq)
+     : A unit ?(A ?gt) ?cvr_type ->B;
+     : ?(A tag B tag ?eq) ?(A @AT_type B @AT_type ?eq)
+     : A B
 
 ** find any attribute with value "blah"
    : attribute ?(value "blah" ?eq)

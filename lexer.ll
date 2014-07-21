@@ -57,8 +57,6 @@ BIN [01]
 
 "?match" return TOK_QMARK_MATCH;
 "!match" return TOK_BANG_MATCH;
-"?find" return TOK_QMARK_FIND;
-"!find" return TOK_BANG_FIND;
 
 [?!@.\\]?{ID} return pass_string (yyscanner, yylval, TOK_WORD);
 

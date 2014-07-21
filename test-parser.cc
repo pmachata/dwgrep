@@ -127,11 +127,11 @@ do_tests ()
   test ("!le", "(F_BUILTIN<?gt>)");
   test ("?ge", "(F_BUILTIN<!lt>)");
   test ("!ge", "(F_BUILTIN<?lt>)");
+  test ("?find", "(F_BUILTIN<?find>)");
+  test ("!find", "(F_BUILTIN<!find>)");
 
   test ("?match", "(ASSERT (PRED_MATCH))");
   test ("!match", "(ASSERT (PRED_NOT (PRED_MATCH)))");
-  test ("?find", "(ASSERT (PRED_FIND))");
-  test ("!find", "(ASSERT (PRED_NOT (PRED_FIND)))");
 
   test ("add", "(F_BUILTIN<add>)");
   test ("sub", "(F_BUILTIN<sub>)");
