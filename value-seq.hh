@@ -34,7 +34,7 @@ public:
     return m_seq;
   }
 
-  void show (std::ostream &o) const override;
+  void show (std::ostream &o, bool full) const override;
   std::unique_ptr <value> clone () const override;
   cmp_result cmp (value const &that) const override;
 };

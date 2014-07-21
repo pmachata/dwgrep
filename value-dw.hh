@@ -24,7 +24,7 @@ public:
   Dwarf_Die &get_die ()
   { return m_die; }
 
-  void show (std::ostream &o) const override;
+  void show (std::ostream &o, bool full) const override;
   std::unique_ptr <value> clone () const override;
   cmp_result cmp (value const &that) const override;
 };
@@ -55,7 +55,7 @@ public:
   Dwarf_Die &get_die ()
   { return m_die; }
 
-  void show (std::ostream &o) const override;
+  void show (std::ostream &o, bool full) const override;
   std::unique_ptr <value> clone () const override;
   cmp_result cmp (value const &that) const override;
 };
@@ -89,7 +89,7 @@ public:
   Dwarf_Op *get_dwop ()
   { return m_dwop; }
 
-  void show (std::ostream &o) const override;
+  void show (std::ostream &o, bool full) const override;
   std::unique_ptr <value> clone () const override;
   cmp_result cmp (value const &that) const override;
 };

@@ -26,7 +26,7 @@ value_closure::~value_closure()
 {}
 
 void
-value_closure::show (std::ostream &o) const
+value_closure::show (std::ostream &o, bool full) const
 {
   o << "closure(" << *m_t << ")";
 }

@@ -586,7 +586,9 @@ namespace
 	      (const_cast <Dwarf_Attribute *> (&at), op, &die) != 0)
 	    throw_libdw ();
 
-	  return pass_single_value (std::make_unique <value_die> (gr, die, 0));
+	  return select <N>
+	    (pass_single_value (std::make_unique <value_die> (gr, die, 0)),
+	     std::make_unique <null_producer> ());
 	}
 
       case DW_OP_implicit_value:
@@ -596,7 +598,8 @@ namespace
 	      (const_cast <Dwarf_Attribute *> (&at), op, &block) != 0)
 	    throw_libdw ();
 
-	  return pass_block (block);
+	  return select <N> (pass_block (block),
+			     std::make_unique <null_producer> ());
 	}
 
       case DW_OP_GNU_entry_value:
@@ -607,7 +610,8 @@ namespace
 	      (const_cast <Dwarf_Attribute *> (&at), op, &result) != 0)
 	    throw_libdw ();
 
-	  return atval_locexpr (gr, result);
+	  return select <N> (atval_locexpr (gr, result),
+			     std::make_unique <null_producer> ());
 	}
       }
   }

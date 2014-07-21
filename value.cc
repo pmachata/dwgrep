@@ -99,14 +99,14 @@ value::get_type_const () const
 std::ostream &
 operator<< (std::ostream &o, value const &v)
 {
-  v.show (o);
+  v.show (o, true);
   return o;
 }
 
 value_type const value_cst::vtype = value_type::alloc ("T_CONST");
 
 void
-value_cst::show (std::ostream &o) const
+value_cst::show (std::ostream &o, bool full) const
 {
   o << m_cst;
 }

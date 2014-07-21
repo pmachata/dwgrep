@@ -10,20 +10,22 @@
 value_type const value_die::vtype = value_type::alloc ("T_DIE");
 
 void
-value_die::show (std::ostream &o) const
+value_die::show (std::ostream &o, bool full) const
 {
   std::ios::fmtflags f {o.flags ()};
 
   Dwarf_Die *die = const_cast <Dwarf_Die *> (&m_die);
-  o << "[" << std::hex << dwarf_dieoffset (die) << "]\t"
+  o << '[' << std::hex << dwarf_dieoffset (die) << ']'
+    << (full ? '\t' : ' ')
     << constant (dwarf_tag (die), &dw_tag_short_dom);
 
-  for (auto it = attr_iterator {die}; it != attr_iterator::end (); ++it)
-    {
-      o << "\n\t";
-      o.flags (f);
-      value_attr {m_gr, **it, m_die, 0}.show (o);
-    }
+  if (full)
+    for (auto it = attr_iterator {die}; it != attr_iterator::end (); ++it)
+      {
+	o << "\n\t";
+	o.flags (f);
+	value_attr {m_gr, **it, m_die, 0}.show (o, full);
+      }
 
   o.flags (f);
 }
@@ -48,7 +50,7 @@ value_die::cmp (value const &that) const
 value_type const value_attr::vtype = value_type::alloc ("T_ATTR");
 
 void
-value_attr::show (std::ostream &o) const
+value_attr::show (std::ostream &o, bool full) const
 {
   unsigned name = (unsigned) dwarf_whatattr ((Dwarf_Attribute *) &m_attr);
   unsigned form = dwarf_whatform ((Dwarf_Attribute *) &m_attr);
@@ -62,7 +64,7 @@ value_attr::show (std::ostream &o) const
 	o << "[" << std::hex
 	  << dwarf_dieoffset ((Dwarf_Die *) &d->get_die ()) << "]";
       else
-	v->show (o);
+	v->show (o, full);
       o << ";";
     }
   o.flags (f);
@@ -94,7 +96,7 @@ value_attr::cmp (value const &that) const
 value_type const value_loclist_op::vtype = value_type::alloc ("T_LOCLIST_OP");
 
 void
-value_loclist_op::show (std::ostream &o) const
+value_loclist_op::show (std::ostream &o, bool full) const
 {
   o << m_dwop->offset << ':'
     << constant {m_dwop->atom, &dw_locexpr_opcode_short_dom};
@@ -103,14 +105,14 @@ value_loclist_op::show (std::ostream &o) const
     while (auto v = prod->next ())
       {
 	o << "<";
-	v->show (o);
+	v->show (o, false);
 	o << ">";
       }
   }
 
   {
     bool sep = false;
-    auto prod = dwop_number (m_dwop, m_attr, m_gr);
+    auto prod = dwop_number2 (m_dwop, m_attr, m_gr);
     while (auto v = prod->next ())
       {
 	if (! sep)
@@ -120,7 +122,7 @@ value_loclist_op::show (std::ostream &o) const
 	  }
 
 	o << "<";
-	v->show (o);
+	v->show (o, false);
 	o << ">";
       }
   }

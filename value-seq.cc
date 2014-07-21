@@ -28,7 +28,7 @@ value_seq::value_seq (value_seq const &that)
 {}
 
 void
-value_seq::show (std::ostream &o) const
+value_seq::show (std::ostream &o, bool full) const
 {
   o << "[";
   bool seen = false;
@@ -37,7 +37,7 @@ value_seq::show (std::ostream &o) const
       if (seen)
 	o << ", ";
       seen = true;
-      o << *v;
+      v->show (o, full);
     }
   o << "]";
 }
