@@ -294,10 +294,14 @@ Statement:
     assert ($2->size () > 0);
     $$ = nullptr;
     for (auto const &s: *$2)
-      {
-	auto t = tree::create_str <tree_type::BIND> (s);
-	$$ = tree::create_cat <tree_type::CAT> ($$, t);
-      }
+      if (find_builtin (s) == nullptr)
+	{
+	  auto t = tree::create_str <tree_type::BIND> (s);
+	  $$ = tree::create_cat <tree_type::CAT> ($$, t);
+	}
+      else
+	throw std::runtime_error
+	    (std::string ("Can't rebind a builtin: `") + s + "'");
   }
 
   | Statement TOK_ASTERISK
