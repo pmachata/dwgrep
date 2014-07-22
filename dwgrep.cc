@@ -90,8 +90,10 @@ main(int argc, char *argv[])
 {
   elf_version (EV_CURRENT);
 
+  constexpr int verbose_flag = 257;
   static option long_options[] = {
     {"quiet", no_argument, nullptr, 'q'},
+    {"verbose", no_argument, nullptr, verbose_flag},
     {"silent", no_argument, nullptr, 'q'},
     {"no-messages", no_argument, nullptr, 's'},
     {"expr", required_argument, nullptr, 'e'},
@@ -103,7 +105,7 @@ main(int argc, char *argv[])
   };
   static char const *options = "ce:Hhqsf:O:";
 
-  bool quiet = false;
+  int verbosity = 0;
   bool no_messages = false;
   bool show_count = false;
   bool with_filename = false;
@@ -144,7 +146,11 @@ main(int argc, char *argv[])
 	  break;
 
 	case 'q':
-	  quiet = true;
+	  verbosity = -1;
+	  break;
+
+	case verbose_flag:
+	  verbosity = 1;
 	  break;
 
 	case 's':
@@ -195,7 +201,7 @@ main(int argc, char *argv[])
   if (optimize)
     query.simplify ();
 
-  if (! quiet)
+  if (verbosity > 0)
     std::cerr << query << std::endl;
 
   if (argc == 0)
@@ -226,7 +232,7 @@ main(int argc, char *argv[])
 	{
 	  if (! no_messages)
 	    std::cout << "dwgrep: " << fn << ": " << e.what () << std::endl;
-	  if (! quiet)
+	  if (verbosity >= 0)
 	    errors = true;
 	  continue;
 	}
@@ -238,7 +244,7 @@ main(int argc, char *argv[])
 	{
 	  // grep: Exit immediately with zero status if any match
 	  // is found, even if an error was detected.
-	  if (quiet)
+	  if (verbosity < 0)
 	    std::exit (0);
 
 	  match = true;
