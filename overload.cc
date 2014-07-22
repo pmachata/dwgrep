@@ -75,15 +75,9 @@ overload_instance::find_pred (valfile &vf)
 }
 
 void
-overload_instance::show_error (std::string const &name)
+show_expects (std::string const &name, std::vector <value_type> vts)
 {
   std::cerr << "Error: `" << name << "'";
-
-  std::set <value_type> vts;
-  for (auto const &ex: m_execs)
-    vts.insert (std::get <0> (ex));
-  for (auto const &pr: m_preds)
-    vts.insert (std::get <0> (pr));
 
   if (vts.empty ())
     {
@@ -97,7 +91,7 @@ overload_instance::show_error (std::string const &name)
     {
       if (i == 0)
 	;
-      else if (i == m_execs.size () - 1)
+      else if (i == vts.size () - 1)
 	std::cerr << " or ";
       else
 	std::cerr << ", ";
@@ -108,6 +102,18 @@ overload_instance::show_error (std::string const &name)
   std::cerr << " on TOS.\n";
 }
 
+void
+overload_instance::show_error (std::string const &name)
+{
+  std::set <value_type> vts;
+  for (auto const &ex: m_execs)
+    vts.insert (std::get <0> (ex));
+  for (auto const &pr: m_preds)
+    vts.insert (std::get <0> (pr));
+
+  return show_expects (name,
+		       std::vector <value_type> (vts.begin (), vts.end ()));
+}
 
 void
 overload_tab::add_overload (value_type vt, builtin &b)

@@ -18,31 +18,6 @@ namespace
   std::unique_ptr <builtin_constant> builtin_T_DIE;
   std::unique_ptr <builtin_constant> builtin_T_ATTR;
   std::unique_ptr <builtin_constant> builtin_T_LOCLIST_OP;
-
-  void
-  show_expects (std::string const &name, value_type const &vt1)
-  {
-    std::cerr << "Error: `" << name << "' expects a "
-	      << vt1.name () << "on TOS.\n";
-  }
-
-  void
-  show_expects (std::string const &name,
-		value_type const &vt1, value_type const &vt2)
-  {
-    std::cerr << "Error: `" << name << "' expects a "
-	      << vt1.name () << " or " << vt2.name ()
-	      << "on TOS.\n";
-  }
-
-  void
-  show_expects (std::string const &name, value_type const &vt1,
-		value_type const &vt2, value_type const &vt3)
-  {
-    std::cerr << "Error: `" << name << "' expects a "
-	      << vt1.name () << ", " << vt2.name () << " or " << vt3.name ()
-	      << "on TOS.\n";
-  }
 }
 
 static struct
@@ -187,7 +162,8 @@ static struct
 		      m_vf = std::move (vf);
 		    }
 		  else
-		    show_expects (name (), value_die::vtype, value_attr::vtype);
+		    show_expects (name (),
+				  {value_die::vtype, value_attr::vtype});
 		}
 	      else
 		return nullptr;
@@ -283,7 +259,7 @@ static struct
 			}
 		    }
 		  else
-		    show_expects (name (), value_die::vtype);
+		    show_expects (name (), {value_die::vtype});
 		}
 	      else
 		return nullptr;
@@ -382,7 +358,7 @@ static struct
 		      m_vf = std::move (vf);
 		    }
 		  else
-		    show_expects (name (), value_die::vtype);
+		    show_expects (name (), {value_die::vtype});
 		}
 	      else
 		return nullptr;
@@ -470,8 +446,9 @@ namespace
 	    }
 
 	  else
-	    show_expects (name (), value_die::vtype, value_attr::vtype,
-			  value_loclist_op::vtype);
+	    show_expects (name (),
+			  {value_die::vtype, value_attr::vtype,
+			   value_loclist_op::vtype});
 	}
 
       return nullptr;
@@ -870,7 +847,7 @@ static struct
 
       else
 	{
-	  show_expects (name (), value_die::vtype, value_attr::vtype);
+	  show_expects (name (), {value_die::vtype, value_attr::vtype});
 	  return pred_result::fail;
 	}
     }
@@ -1080,8 +1057,9 @@ ALL_KNOWN_DW_AT
 
 	else
 	  {
-	    show_expects (name (), value_die::vtype,
-			  value_attr::vtype, value_cst::vtype);
+	    show_expects (name (),
+			  {value_die::vtype,
+			   value_attr::vtype, value_cst::vtype});
 	    return pred_result::fail;
 	  }
       }
@@ -1154,7 +1132,7 @@ ALL_KNOWN_DW_AT
 
 	else
 	  {
-	    show_expects (name (), value_die::vtype, value_cst::vtype);
+	    show_expects (name (), {value_die::vtype, value_cst::vtype});
 	    return pred_result::fail;
 	  }
       }
@@ -1228,7 +1206,7 @@ ALL_KNOWN_DW_TAG
 
 	else
 	  {
-	    show_expects (name (), value_attr::vtype, value_cst::vtype);
+	    show_expects (name (), {value_attr::vtype, value_cst::vtype});
 	    return pred_result::fail;
 	  }
       }

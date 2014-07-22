@@ -9,6 +9,10 @@
 #include "op.hh"
 #include "builtin.hh"
 
+// Format an error message detailing what types a given operator
+// needs.
+void show_expects (std::string const &name, std::vector <value_type> vts);
+
 // Some operators are generically applicable.  In order to allow
 // adding new value types, and reuse the same operators for them, this
 // overloading infrastructure is provided.
