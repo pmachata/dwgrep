@@ -83,9 +83,6 @@ BIN [01]
 "section" return TOK_SECTION;
 "\\dbg" return TOK_DEBUG;
 
-"?match" return TOK_QMARK_MATCH;
-"!match" return TOK_BANG_MATCH;
-
 [?!@.\\]?{ID} return pass_string (yyscanner, yylval, TOK_WORD);
 
 "\"" {

@@ -56,10 +56,8 @@ namespace
   }
 
   struct pred_eq
-    : public pred_binary
+    : public pred
   {
-    using pred_binary::pred_binary;
-
     pred_result
     result (valfile &vf) override
     {
@@ -71,13 +69,13 @@ namespace
     {
       return "eq";
     }
+
+    void reset () override {}
   };
 
   struct pred_lt
-    : public pred_binary
+    : public pred
   {
-    using pred_binary::pred_binary;
-
     pred_result
     result (valfile &vf) override
     {
@@ -89,13 +87,13 @@ namespace
     {
       return "lt";
     }
+
+    void reset () override {}
   };
 
   struct pred_gt
-    : public pred_binary
+    : public pred
   {
-    using pred_binary::pred_binary;
-
     pred_result
     result (valfile &vf) override
     {
@@ -107,6 +105,8 @@ namespace
     {
       return "gt";
     }
+
+    void reset () override {}
   };
 }
 

@@ -608,14 +608,6 @@ public:
   }
 };
 
-class pred_binary
-  : public pred
-{
-public:
-  pred_binary () {}
-  void reset () override {}
-};
-
 class pred_subx_any
   : public pred
 {
@@ -648,16 +640,6 @@ public:
   std::string name () const override;
 
   void reset () override {}
-};
-
-class pred_match
-  : public pred_binary
-{
-public:
-    using pred_binary::pred_binary;
-
-    pred_result result (valfile &vf) override;
-    std::string name () const override;
 };
 
 #endif /* _OP_H_ */

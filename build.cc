@@ -64,9 +64,6 @@ tree::build_pred (dwgrep_graph::sptr q, std::shared_ptr <scope> scope) const
 	return std::make_unique <pred_subx_any> (op, origin);
       }
 
-    case tree_type::PRED_MATCH:
-      return std::make_unique <pred_match> ();
-
     case tree_type::F_BUILTIN:
       return m_builtin->build_pred (q, scope);
 
@@ -274,7 +271,6 @@ tree::build_exec (std::shared_ptr <op> upstream, dwgrep_graph::sptr q,
       std::cerr << "\n\nUNHANDLED:" << *this << std::endl;
       abort ();
 
-    case tree_type::PRED_MATCH:
     case tree_type::PRED_AND:
     case tree_type::PRED_OR:
     case tree_type::PRED_NOT:

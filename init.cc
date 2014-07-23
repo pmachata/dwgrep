@@ -98,6 +98,9 @@ namespace
   builtin_over builtin_over_obj;
   builtin_rot builtin_rot_obj;
 
+  // strings
+  builtin_match builtin_match_obj {true}, builtin_nmatch_obj {false};
+
   // "add"
   builtin_add builtin_add_obj;
   overload_op_builtin <op_add_str> builtin_add_str_obj;
@@ -172,6 +175,9 @@ dwgrep_init ()
   add_builtin (builtin_dup_obj);
   add_builtin (builtin_over_obj);
   add_builtin (builtin_rot_obj);
+
+  add_builtin (builtin_match_obj);
+  add_builtin (builtin_nmatch_obj);
 
   add_builtin (builtin_add_obj);
   ovl_tab_add ().add_overload (value_cst::vtype, builtin_add_cst_obj);

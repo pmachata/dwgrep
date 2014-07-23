@@ -30,7 +30,6 @@
 #include <sstream>
 #include <memory>
 #include <set>
-#include <regex.h>
 #include "make_unique.hh"
 
 #include "op.hh"
@@ -1152,56 +1151,4 @@ pred_constant::name () const
   std::stringstream ss;
   ss << "?" << m_const;
   return ss.str ();
-}
-
-
-pred_result
-pred_match::result (valfile &vf)
-{
-  auto va = vf.get_as <value_str> (1);
-  if (va == nullptr)
-    {
-      std::cerr << "Error: match: value below TOS is not a string\n";
-      return pred_result::fail;
-    }
-
-  auto vb = vf.top_as <value_str> ();
-  if (vb == nullptr)
-    {
-      std::cerr << "Error: match: value on TOS is not a string\n";
-      return pred_result::fail;
-    }
-
-  regex_t re;
-  if (regcomp(&re, vb->get_string ().c_str(), REG_EXTENDED | REG_NOSUB) != 0)
-    {
-      std::cerr << "Error: could not compile regular expression: '"
-		<< vb->get_string () << "'\n";
-      return pred_result::fail;
-    }
-
-  const int reti = regexec(&re, va->get_string ().c_str (),
-		   /* nmatch: size of pmatch array */ 0,
-		   /* pmatch: array of matches */ NULL,
-		   /* no extra flags */ 0);
-
-  pred_result retval = pred_result::fail;
-  if (reti == 0)
-    retval = pred_result::yes;
-  else if (reti == REG_NOMATCH)
-    retval = pred_result::no;
-  else
-    {
-      char msgbuf[100];
-      regerror(reti, &re, msgbuf, sizeof(msgbuf));
-      std::cerr << "Error: match failed: " << msgbuf << "\n";
-    }
-
-  regfree(&re);
-  return retval;
-}
-
-std::string pred_match::name () const
-{
-    return "pred_match";
 }

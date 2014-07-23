@@ -158,8 +158,8 @@ do_tests ()
   test ("?find", "(F_BUILTIN<?find>)");
   test ("!find", "(F_BUILTIN<!find>)");
 
-  test ("?match", "(ASSERT (PRED_MATCH))");
-  test ("!match", "(ASSERT (PRED_NOT (PRED_MATCH)))");
+  test ("?match", "(F_BUILTIN<?match>)");
+  test ("!match", "(F_BUILTIN<!match>)");
 
   test ("add", "(F_BUILTIN<add>)");
   test ("sub", "(F_BUILTIN<sub>)");
