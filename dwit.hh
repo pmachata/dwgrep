@@ -1,6 +1,6 @@
 /*
    Copyright (C) 2009, 2010, 2011, 2012, 2014 Red Hat, Inc.
-   This file is part of dwlocstat.
+   This file is part of dwgrep.
 
    This file is free software; you can redistribute it and/or modify
    it under the terms of either
@@ -17,7 +17,7 @@
 
    or both in parallel, as here.
 
-   elfutils is distributed in the hope that it will be useful, but
+   dwgrep is distributed in the hope that it will be useful, but
    WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
    General Public License for more details.
