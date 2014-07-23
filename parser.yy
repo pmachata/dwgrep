@@ -178,7 +178,8 @@
 %token TOK_ASTERISK TOK_PLUS TOK_QMARK TOK_MINUS TOK_COMMA TOK_COLON
 %token TOK_SEMICOLON TOK_DOUBLE_VBAR TOK_ARROW
 
-%token TOK_IF TOK_THEN TOK_ELSE TOK_WORD TOK_LIT_STR TOK_LIT_INT
+%token TOK_IF TOK_THEN TOK_ELSE TOK_WORD TOK_LIT_STR
+%token TOK_LIT_INT TOK_QMARK_LIT_INT TOK_BANG_LIT_INT
 
    // XXX These should eventually be moved to builtins.
 %token TOK_TYPE TOK_UNIVERSE TOK_SECTION TOK_DEBUG
@@ -196,7 +197,7 @@
 
 %type <t> Program AltList OrList StatementList Statement
 %type <ids> IdList IdListOpt
-%type <s> TOK_LIT_INT
+%type <s> TOK_LIT_INT TOK_QMARK_LIT_INT TOK_BANG_LIT_INT
 %type <s> TOK_WORD
 %type <t> TOK_LIT_STR
 
@@ -325,6 +326,24 @@ Statement:
 
   | TOK_LIT_INT
   { $$ = tree::create_const <tree_type::CONST> (parse_int ($1)); }
+
+  | TOK_QMARK_LIT_INT
+  {
+    auto t = tree::create_const <tree_type::CONST> (parse_int ($1));
+    auto u = tree::create_builtin (find_builtin ("?eq"));
+    auto v = tree::create_builtin (find_builtin ("drop"));
+    $$ = tree::create_cat <tree_type::CAT> (t, u);
+    $$ = tree::create_cat <tree_type::CAT> ($$, v);
+  }
+
+  | TOK_BANG_LIT_INT
+  {
+    auto t = tree::create_const <tree_type::CONST> (parse_int ($1));
+    auto u = tree::create_builtin (find_builtin ("!eq"));
+    auto v = tree::create_builtin (find_builtin ("drop"));
+    $$ = tree::create_cat <tree_type::CAT> (t, u);
+    $$ = tree::create_cat <tree_type::CAT> ($$, v);
+  }
 
   | TOK_WORD
   { $$ = parse_word ({$1.buf, $1.len}); }

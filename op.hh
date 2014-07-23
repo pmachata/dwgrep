@@ -606,6 +606,22 @@ public:
   void reset () override;
 };
 
+class pred_constant
+  : public pred
+{
+  constant m_const;
+
+public:
+  explicit pred_constant (constant cst)
+    : m_const {cst}
+  {}
+
+  pred_result result (valfile &vf) override;
+  std::string name () const override;
+
+  void reset () override {}
+};
+
 class pred_match
   : public pred_binary
 {
@@ -615,8 +631,5 @@ public:
     pred_result result (valfile &vf) override;
     std::string name () const override;
 };
-
-class pred_find;
-
 
 #endif /* _OP_H_ */

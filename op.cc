@@ -10,6 +10,7 @@
 #include "value-str.hh"
 #include "value-closure.hh"
 #include "builtin-closure.hh"
+#include "overload.hh"
 
 valfile::uptr
 op_origin::next ()
@@ -1099,6 +1100,32 @@ pred_subx_any::reset ()
 {
   m_op->reset ();
 }
+
+
+pred_result
+pred_constant::result (valfile &vf)
+{
+  if (auto v = vf.top_as <value_cst> ())
+    {
+      check_constants_comparable (m_const, v->get_constant ());
+      return pred_result (m_const == v->get_constant ());
+    }
+
+  else
+    {
+      show_expects (name (), {value_cst::vtype});
+      return pred_result::fail;
+    }
+}
+
+std::string
+pred_constant::name () const
+{
+  std::stringstream ss;
+  ss << "?" << m_const;
+  return ss.str ();
+}
+
 
 pred_result
 pred_match::result (valfile &vf)

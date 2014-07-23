@@ -62,7 +62,6 @@ namespace
 	{std::make_unique <value_cst> (constant (1, &bool_constant_dom), 0)};
   builtin_type builtin_type_obj;
   builtin_pos builtin_pos_obj;
-  builtin_nth builtin_nth_obj;
 
   // stack shuffling
   builtin_drop builtin_drop_obj;
@@ -139,7 +138,6 @@ dwgrep_init ()
   add_builtin (builtin_true_obj, "true");
   add_builtin (builtin_type_obj);
   add_builtin (builtin_pos_obj);
-  add_builtin (builtin_nth_obj);
 
   add_builtin (builtin_drop_obj);
   add_builtin (builtin_swap_obj);

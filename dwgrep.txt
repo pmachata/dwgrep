@@ -499,6 +499,14 @@
     - Without prefix, decimal base is assumed.  Valid digits are [0-9].
     - An initial "-" means the number is negative.
 
+** ·EXPR → (“?”|“!”) literal — literal assertion
+    - This is applicable to string and numeric literals.  ?X expands
+      to (X ?eq drop), !X similarly to (X !eq drop).
+
+      : [stuff] elem ?(pos ?0)		# pick first element of a list
+      : winfo ?(@AT_low_pc ?0)		# select DIE's whose low_pc is 0
+      : winfo ?(@AT_name ?"foo")	# select DIE's whose name is "foo"
+
 ** •EXPR → “r”? “"” (formatting string) “"”
    - %( and %) enclose an EXPR that's evaluated in plain context, and
      whose input is whatever is the input to the string literal
@@ -835,7 +843,7 @@
    - T_CONST — for integer objects
    - T_FLOAT — for floats
 
-** •EXPR → “pos” | “nth” — pos of element within producing expression
+** •EXPR → “pos” — position of element within producing expression
 
    Each function numbers elements that it produces, and stores number
    of each element along with the element.  That number can be
@@ -844,8 +852,6 @@
    If you wish to know the number of values produced, you have to
    count them by hand:
    : [ child ] dup length->L; elem
-
-   - def nth { ->E N; E ?(pos N ?eq) }
 
 **  EXPR → “get” | “last” | “slice” | “reverse” — sequence transformations
 
@@ -1153,7 +1159,7 @@
 
 ** contains DW_OP_call_frame_cfa && $@low_pc == 0
 
-   : winfo ?(@AT_low_pc 0 nth) ?(@AT_frame_base ?OP_call_frame_cfa)
+   : winfo ?(@AT_low_pc ?0) ?(@AT_frame_base ?OP_call_frame_cfa)
 
 ** is an empty location expression
 

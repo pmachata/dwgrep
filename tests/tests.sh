@@ -93,7 +93,17 @@ expect_count 1 ./nontrivial-types.o -e '
 	?(elem ?(pos 1 ?eq) ?(11 ?eq))
 	?(elem ?(pos 2 ?eq) ?(12 ?eq))'
 expect_count 3 ./empty -e '
-	[0, 1, 2] elem dup nth'
+	[0, 1, 2] elem dup ?(pos ?eq)'
+
+# Check literal assertions.
+expect_count 1 ./empty -e '
+	?([1, 3, 5] elem ?(pos ?0) ?(1 ?eq))
+	?([1, 3, 5] elem ?(pos ?1) ?(3 ?eq))
+	?([1, 3, 5] elem ?(pos ?2) ?(5 ?eq))'
+expect_count 1 ./empty -e '
+	?([[1, 3, 5] elem ?(pos !0) ?((3,5) ?eq)] length ?2)
+	?([[1, 3, 5] elem ?(pos !1) ?((1,5) ?eq)] length ?2)
+	?([[1, 3, 5] elem ?(pos !2) ?((1,3) ?eq)] length ?2)'
 
 # Tests star closure whose body ends with stack in a different state
 # than it starts in (different slots are taken in the valfile).
