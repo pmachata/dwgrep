@@ -83,6 +83,34 @@ dwarf_lang_string (int lang)
 
 
 static const char *
+dwarf_macinfo_string (int code)
+{
+  switch (code)
+    {
+#define ONE_KNOWN_DW_MACINFO(NAME, CODE) case CODE: return #CODE;
+      ALL_KNOWN_DW_MACINFO
+#undef ONE_KNOWN_DW_MACINFO
+    default:
+      return nullptr;
+    }
+}
+
+
+static const char *
+dwarf_macro_string (int code)
+{
+  switch (code)
+    {
+#define ONE_KNOWN_DW_MACRO_GNU(NAME, CODE) case CODE: return #CODE;
+      ALL_KNOWN_DW_MACRO_GNU
+#undef ONE_KNOWN_DW_MACRO_GNU
+    default:
+      return nullptr;
+    }
+}
+
+
+static const char *
 dwarf_inline_string (int code)
 {
   switch (code)
@@ -412,6 +440,46 @@ static struct
 } dw_lang_dom_obj;
 
 constant_dom const &dw_lang_dom = dw_lang_dom_obj;
+
+
+static struct
+  : public constant_dom
+{
+  virtual void
+  show (mpz_class const &v, std::ostream &o) const
+  {
+    int code = positive_int_from_mpz (v);
+    const char *ret = dwarf_macinfo_string (code);
+    o << string_or_unknown (ret, "DW_MACINFO_", code, 0, 0, false);
+  }
+
+  std::string name () const override
+  {
+    return "DW_MACINFO_*";
+  }
+} dw_macinfo_dom_obj;
+
+constant_dom const &dw_macinfo_dom = dw_macinfo_dom_obj;
+
+
+static struct
+  : public constant_dom
+{
+  virtual void
+  show (mpz_class const &v, std::ostream &o) const
+  {
+    int code = positive_int_from_mpz (v);
+    const char *ret = dwarf_macro_string (code);
+    o << string_or_unknown (ret, "DW_MACRO_", code, 0, 0, false);
+  }
+
+  std::string name () const override
+  {
+    return "DW_MACRO_*";
+  }
+} dw_macro_dom_obj;
+
+constant_dom const &dw_macro_dom = dw_macro_dom_obj;
 
 
 static struct

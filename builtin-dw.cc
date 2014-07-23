@@ -1260,6 +1260,18 @@ ALL_KNOWN_DW_TAG
   ALL_KNOWN_DW_LANG;
 #undef ONE_KNOWN_DW_LANG_DESC
 
+#define ONE_KNOWN_DW_MACINFO(NAME, CODE)				\
+  builtin_constant builtin_##CODE##_obj					\
+	{std::make_unique <value_cst> (constant (CODE, &dw_macinfo_dom), 0)};
+  ALL_KNOWN_DW_MACINFO;
+#undef ONE_KNOWN_DW_MACINFO
+
+#define ONE_KNOWN_DW_MACRO_GNU(NAME, CODE)				\
+  builtin_constant builtin_##CODE##_obj					\
+	{std::make_unique <value_cst> (constant (CODE, &dw_macro_dom), 0)};
+  ALL_KNOWN_DW_MACRO_GNU;
+#undef ONE_KNOWN_DW_MACRO_GNU
+
 #define ONE_KNOWN_DW_INL(NAME, CODE)					\
   builtin_constant builtin_##CODE##_obj					\
 	{std::make_unique <value_cst> (constant (CODE, &dw_inline_dom), 0)};
@@ -1412,6 +1424,16 @@ dwgrep_init_dw ()
     add_builtin (builtin_##CODE##_obj, #CODE);
   ALL_KNOWN_DW_LANG;
 #undef ONE_KNOWN_DW_LANG_DESC
+
+#define ONE_KNOWN_DW_MACINFO(NAME, CODE)	\
+    add_builtin (builtin_##CODE##_obj, #CODE);
+  ALL_KNOWN_DW_MACINFO;
+#undef ONE_KNOWN_DW_MACINFO
+
+#define ONE_KNOWN_DW_MACRO_GNU(NAME, CODE)	\
+    add_builtin (builtin_##CODE##_obj, #CODE);
+  ALL_KNOWN_DW_MACRO_GNU;
+#undef ONE_KNOWN_DW_MACRO_GNU
 
 #define ONE_KNOWN_DW_INL(NAME, CODE)		\
     add_builtin (builtin_##CODE##_obj, #CODE);

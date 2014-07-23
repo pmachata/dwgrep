@@ -40,6 +40,8 @@ extern constant_dom const &dw_attr_short_dom;
 extern constant_dom const &dw_form_short_dom;
 
 extern constant_dom const &dw_lang_dom;
+extern constant_dom const &dw_macinfo_dom;
+extern constant_dom const &dw_macro_dom;
 extern constant_dom const &dw_inline_dom;
 extern constant_dom const &dw_encoding_dom;
 extern constant_dom const &dw_access_dom;

@@ -295,9 +295,10 @@ expect_count 1 ./empty -e '
 	  DW_INL_inlined, DW_ATE_UTF, DW_ACCESS_private, DW_VIS_exported,
 	  DW_ID_case_insensitive, DW_VIRTUALITY_virtual, DW_CC_nocall,
 	  DW_ORD_col_major, DW_DSC_range, DW_OP_bra, DW_DS_trailing_separate,
-	  DW_ADDR_none, DW_END_little] elem hex]
+	  DW_ADDR_none, DW_END_little, DW_MACINFO_start_file,
+	  DW_MACRO_GNU_undef_indirect] elem hex]
 	[0x3, 0x26, 0x20, 0x16, 0x1, 0x10, 0x3, 0x2, 0x3, 0x1, 0x3, 0x1, 0x1,
-	 0x28, 0x5, 0x0, 0x2] ?eq'
+	 0x28, 0x5, 0x0, 0x2, 0x3, 0x6] ?eq'
 
 expect_count 1 ./duplicate-const -e '
 	"%([winfo label]%)"
