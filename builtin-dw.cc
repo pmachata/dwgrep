@@ -517,19 +517,6 @@ static struct
   }
 } builtin_offset;
 
-namespace
-{
-  bool
-  operate_tag (valfile &vf, Dwarf_Die &die)
-  {
-    int tag = dwarf_tag (&die);
-    assert (tag >= 0);
-    constant cst {(unsigned) tag, &dw_tag_dom};
-    vf.push (std::make_unique <value_cst> (cst, 0));
-    return true;
-  }
-}
-
 static struct
   : public builtin
 {
@@ -541,7 +528,11 @@ static struct
     bool
     operate (valfile &vf, Dwarf_Die &die) override
     {
-      return operate_tag (vf, die);
+      int tag = dwarf_tag (&die);
+      assert (tag >= 0);
+      constant cst {(unsigned) tag, &dw_tag_dom};
+      vf.push (std::make_unique <value_cst> (cst, 0));
+      return true;
     }
 
     bool
@@ -564,7 +555,7 @@ static struct
     std::string
     name () const override
     {
-      return "name";
+      return "label";
     }
   };
 
@@ -578,44 +569,9 @@ static struct
   char const *
   name () const override
   {
-    return "name";
+    return "label";
   }
-} builtin_name;
-
-static struct
-  : public builtin
-{
-  struct tag
-    : public dwop_f
-  {
-    using dwop_f::dwop_f;
-
-    bool
-    operate (valfile &vf, Dwarf_Die &die) override
-    {
-      return operate_tag (vf, die);
-    }
-
-    std::string
-    name () const override
-    {
-      return "tag";
-    }
-  };
-
-  std::shared_ptr <op>
-  build_exec (std::shared_ptr <op> upstream, dwgrep_graph::sptr q,
-	      std::shared_ptr <scope> scope) const override
-  {
-    return std::make_shared <tag> (upstream, q);
-  }
-
-  char const *
-  name () const override
-  {
-    return "tag";
-  }
-} builtin_tag;
+} builtin_label;
 
 static struct
   : public builtin
@@ -1384,8 +1340,7 @@ dwgrep_init_dw ()
   add_builtin (builtin_child);
   add_builtin (builtin_attribute);
   add_builtin (builtin_offset);
-  add_builtin (builtin_name);
-  add_builtin (builtin_tag);
+  add_builtin (builtin_label);
   add_builtin (builtin_form);
   add_builtin (builtin_parent);
   add_builtin (builtin_at_number);

@@ -58,7 +58,7 @@ expect_count 1 ./duplicate-const -e '
 	winfo ->P;
 	P child ?cvr_type ->A;
 	P child ?cvr_type ?(?lt: A) ->B;
-	?((A tag) ?eq: (B tag))
+	?((A label) ?eq: (B label))
 	?((A @AT_type) ?eq: (B @AT_type))'
 
 expect_count 1 ./nontrivial-types.o -e '
@@ -169,7 +169,7 @@ expect_count 1 ./enum.o -e '
 	winfo ?(@AT_name "e" ?eq) child @AT_const_value bin
 	"%s" "0b11111111111111111111111111111111" ?eq'
 expect_count 1 ./enum.o -e '
-	winfo ?(@AT_name "e" ?eq) child tag "%d" "40" ?eq'
+	winfo ?(@AT_name "e" ?eq) child label "%d" "40" ?eq'
 
 # Check decoding of huge literals.
 expect_count 1 ./empty -e '
@@ -300,22 +300,22 @@ expect_count 1 ./empty -e '
 	 0x28, 0x5, 0x0, 0x2] ?eq'
 
 expect_count 1 ./duplicate-const -e '
-	"%([winfo name]%)"
+	"%([winfo label]%)"
 	"[DW_TAG_compile_unit, DW_TAG_subprogram, DW_TAG_variable, "\
 	"DW_TAG_variable, DW_TAG_variable, DW_TAG_variable, "\
 	"DW_TAG_base_type, DW_TAG_pointer_type, DW_TAG_const_type, "\
 	"DW_TAG_base_type, DW_TAG_array_type, DW_TAG_subrange_type, "\
 	"DW_TAG_base_type, DW_TAG_const_type, DW_TAG_variable, "\
 	"DW_TAG_variable, DW_TAG_const_type]" ?eq
-	"%([winfo tag]%)" ?eq'
+	"%([winfo label]%)" ?eq'
 
 expect_count 1 ./duplicate-const -e '
-	"%([winfo ?root attribute name]%)"
+	"%([winfo ?root attribute label]%)"
 	"[DW_AT_producer, DW_AT_language, DW_AT_name, DW_AT_comp_dir, "\
 	"DW_AT_low_pc, DW_AT_high_pc, DW_AT_stmt_list]" ?eq'
 
 expect_count 1 ./duplicate-const -e '
-	"%([winfo ?root attribute name]%)"
+	"%([winfo ?root attribute label]%)"
 	"[DW_AT_producer, DW_AT_language, DW_AT_name, DW_AT_comp_dir, "\
 	"DW_AT_low_pc, DW_AT_high_pc, DW_AT_stmt_list]" ?eq'
 
@@ -325,16 +325,16 @@ expect_count 1 ./duplicate-const -e '
 	"DW_FORM_addr, DW_FORM_data8, DW_FORM_sec_offset]" ?eq'
 
 expect_count 1 ./empty -e '
-	winfo ?root ?(tag ?TAG_compile_unit) !(tag !TAG_compile_unit)
+	winfo ?root ?(label ?TAG_compile_unit) !(label !TAG_compile_unit)
 	?AT_name !(!AT_name)
-	attribute ?(?AT_name name ?AT_name) !(!AT_name || name !AT_name)
+	attribute ?(?AT_name label ?AT_name) !(!AT_name || label !AT_name)
 	?(?FORM_strp form ?FORM_strp) !(!FORM_strp || form !FORM_strp)'
 
 expect_count 1 ./empty -e '
-	winfo ?root ?(tag ?DW_TAG_compile_unit) !(tag !DW_TAG_compile_unit)
+	winfo ?root ?(label ?DW_TAG_compile_unit) !(label !DW_TAG_compile_unit)
 	?DW_AT_name !(!DW_AT_name)
-	attribute ?(?DW_AT_name name ?DW_AT_name)
-	!(!DW_AT_name || name !DW_AT_name)
+	attribute ?(?DW_AT_name label ?DW_AT_name)
+	!(!DW_AT_name || label !DW_AT_name)
 	?(?DW_FORM_strp form ?DW_FORM_strp)
 	!(!DW_FORM_strp || form !DW_FORM_strp)'
 

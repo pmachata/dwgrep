@@ -792,15 +792,17 @@
 
    : attribute ?AT_ID
 
-** •EXPR → “offset”|“name”|“tag”|“form”|“value” — Dwarf tree introspection
+** •EXPR → “offset” | “label” | “form” | “value” — Dwarf tree introspection
 
-   - "offset" pops DIE or Attribute on TOS and pushes a value
-     representing offset of the object in Dwarf file.
+   - "offset" pops a graph node on TOS and pushes a value representing
+     offset of the object.  The interpretation of offset differs by
+     node type.  For example, location expression operations yield
+     offset relative to the start of location expression, DIE's offset
+     is relative to start of Dwarf file.
 
-   - "name" pops DIE or Attribute on TOS and pushes a value
-     representing, respectively, a tag or attribute name.
-
-   - "tag" is like "name", but only valid for DIE's.
+   - "label" pops a graph node on TOS and pushes a value representing
+     and identifier of node kind.  This would be a DIE tag, an
+     attribute name, a location expression operation, or similar.
 
    - "form" pops Attribute on TOS and pushes back a value
      representing its form.
@@ -929,8 +931,8 @@
      it even makes a good sense.
 
    - Certain integer values have enum-like characteristics.  These
-     include those produced by "tag", "name", "form", those produced
-     by access to certain attributes (such as @AT_language), and
+     include those produced by "label", "form", those produced by
+     access to certain attributes (such as @AT_language), and
      constants (e.g. DW_AT_name, DW_TAG_class_type, etc.).  For these
      values, dwgrep remembers their domain.  If two values are
      compared such that both have a domain assigned, and those domains
@@ -1042,7 +1044,7 @@
    The children of location_list_entry are pseudo-DIE's of type
    location_list_op.  offset is applicable to location expression
    nodes and extracts the offset of the operand inside the expression.
-   name is applicable and contains operation opcode.  value is
+   label is applicable and contains operation opcode.  value is
    applicable and yields either nothing (for nullary op's), one value
    (for unary) or two values (for binary).  Assertions on pos can be
    used to pick one particular value.  XXX this really needs
@@ -1055,10 +1057,10 @@
 
    Each symbol table entry (in SHT_SYMTAB, SHT_DYNSYM and minisymtab)
    is represented by a pseudo-DIE of type DW_TAG_symbol.  It has the
-   following attributes: @value, @size, @type, @bind, @visibility,
-   @name, and @index.
+   following attributes: @size, @bind, @visibility, @name, and @index.
+   label yields symbol type.  value yields symbol value.
 
-   Instead of @index we'd like to have a @section which links to a
+   XXX Instead of @index we'd like to have a @section which links to a
    pseudo-DIE representing a section.
 
    DW_FORM_addr -- maybe we should handle them similarly to
@@ -1073,7 +1075,7 @@
      ?AT_at form)
    - would a link from a DIE to its abbreviation be useful?
 
-** XXX integrating aadr2line
+** XXX integrating addr2line
    - low_pc and high_pc should be convertible to symbol name on
      request (possibly manually by cross-matching with ELF symtabs).
 
@@ -1142,20 +1144,20 @@
 
 ** contains DW_OP_fbreg && ! @frame_base
 
-   : !AT_frame_base ?(@AT_location name DW_OP_fbreg ?eq)
+   : !AT_frame_base ?(@AT_location label DW_OP_fbreg ?eq)
 
 ** uses register based operators
 
-   : ?(@AT_location name (DW_OP_bregx ?eq, ?(DW_OP_reg0 ?ge) ?(DW_OP_regx ?le)))
+   : ?(@AT_location label (DW_OP_bregx ?eq, ?(DW_OP_reg0 ?ge) ?(DW_OP_regx ?le)))
 
-   : ?(@AT_location name "%s" "_b?reg" ?find)
+   : ?(@AT_location label "%s" "_b?reg" ?find)
 
 ** whether it uses a deref operator
 
-   : ?(@AT_location name (?OP_deref, ?OP_xderef, ?OP_deref_size,
+   : ?(@AT_location label (?OP_deref, ?OP_xderef, ?OP_deref_size,
    :                       ?OP_xderef_size, ?OP_GNU_deref_type))
 
-   : ?(@AT_location name "%s" "deref" ?find)
+   : ?(@AT_location label "%s" "deref" ?find)
 
 ** contains DW_OP_call_frame_cfa && $@low_pc == 0
 
@@ -1167,7 +1169,7 @@
 
 ** location expression ends with implicit_value or stack_value
 
-   : winfo ?([@AT_location] last name
+   : winfo ?([@AT_location] -1 get label
    : (?DW_OP_implicit_value, ?DW_OP_stack_value))
 
 ** types inconsistent between instance and specification
@@ -1201,59 +1203,8 @@
 
 ** check_linkage_external_die.cc
 
-   : symtab ?symbol ?(@AT_type (?STT_OBJECT, ?STT_FUNC)) ?(@AT_name !"")
-   : winfo ?AT_linkage_name [@AT_linkage_name swap @AT_name ?eq]
-   :
-   : ((if !AT_declaration !AT_const_value
-   :   (!structure_type !enumeration_type !union_type, ?AT_name)
-   :   "%s has linkage_name attribute that's not in symtab, "\
-   :   "but is not marked as declaration"),
-   :
-   :  (else [swap @AT_binding STB_LOCAL !eq]
-   :   (if !AT_declaration ?AT_external
-   :    "%s has linkage_name attribute, "\
-   :    "but the corresponding symbol is local"),
-   :   (else !AT_external
-   :    "%s has linkage_name attribute, but no external attribute")))
-
-   This is still 1:10 vs. dwarflint C++ (i.e., say 1:20 if we had to
-   explore the DIE tree by hand), but fairly involved.
-
-   The interpreter would need to notice the ?symbol nodes are used as
-   a sort of global variable for cross-referencing, otherwise this
-   would lead to an ugly combinatorial explosion of states.  Noticing
-   that we look at the bottom slot and cross-reference @AT_name with
-   @AT_linkage_name should be possible.
-
-   Actually, this is broken.  symtab forks N×, winfo M×, and for some
-   of those combinations the if will succeed, for others it will
-   fail--but some of these computations are meaningless, comparing a
-   DIE with an unrelated symbol.
-
-   - XXX
-     : winfo ?AT_linkage_name -> A;
-     : [symtab ?(@AT_type (?STT_OBJECT, ?STT_FUNC))
-     :  ?(@AT_name A @AT_linkage_name ?eq)] -> Ss;
-     : if Ss ?empty then (
-     :     A !AT_declaration !AT_const_value
-     :     (!structure_type !enumeration_type !union_type, ?AT_name)
-     :     "%s has linkage_name attribute that's not in symtab, "\
-     :     "but is not marked as declaration"
-     : ) else if Ss elem @AT_binding ?STB_LOCAL then (
-     :     A !AT_declaration ?AT_external
-     :     "%s has linkage_name attribute, "\
-     :     "but the corresponding symbol is local"
-     : ) else (
-     :     A !AT_external
-     :     "%s has linkage_name attribute, but no external attribute"
-     : )
-
-     The interpreter would still need smarts to realize that we access
-     symtab as a storage indexed by name.
-
-   - XXX2
      : def GetSym {->X; symtab (?STT_OBJECT, ?STT_FUNC)
-     :             ?(@AT_name X @AT_linkage_name ?eq)}
+     :             ?(@name X @AT_linkage_name ?eq)}
      : winfo ?AT_linkage_name if !(GetSym) then (
      :     !AT_declaration !AT_const_value
      :     (!structure_type !enumeration_type !union_type, ?AT_name)
@@ -1268,11 +1219,14 @@
      :     "%s has linkage_name attribute, but no external attribute"
      : )
 
-     Instead of using list, why not use a function that yields all
-     matching symbols?  If it yields nothing, the if passes, otherwise
-     we check in the next branch that the stuff that it produces isn't
-     ?STB_LOCAL.  N.B. additionally here we use constant assertions to
-     make a couple tests more compact.
+   This is still 1:10 vs. dwarflint C++ (i.e., say 1:20 if we had to
+   explore the DIE tree by hand), but fairly involved.
+
+   The interpreter would need to notice the ?symbol nodes are used as
+   a sort of global variable for cross-referencing, otherwise this
+   would lead to an ugly combinatorial explosion of states.  Noticing
+   that we look at the bottom slot and cross-reference @AT_name with
+   @AT_linkage_name should be possible.
 
 ** CU A imports two PU's B and C, and both import the same third PU
 
