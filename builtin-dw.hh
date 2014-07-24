@@ -30,6 +30,6 @@
 #define _BUILTIN_DW_H_
 
 struct builtin_dict;
-std::unique_ptr <builtin_dict> dwgrep_builtins_dw ();
+void dwgrep_builtins_dw (builtin_dict &dict);
 
 #endif /* _BUILTIN_DW_H_ */

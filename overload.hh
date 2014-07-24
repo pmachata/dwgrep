@@ -78,8 +78,9 @@ class overload_instance
   unsigned m_arity;
 
 public:
-  overload_instance (std::vector <std::tuple <value_type,
-					      builtin &>> const &stencil,
+  overload_instance (std::vector
+			<std::tuple <value_type,
+				     std::shared_ptr <builtin>>> const &stencil,
 		     dwgrep_graph::sptr q, std::shared_ptr <scope> scope,
 		     unsigned arity);
 
@@ -92,14 +93,14 @@ public:
 class overload_tab
 {
   unsigned m_arity;
-  std::vector <std::tuple <value_type, builtin &>> m_overloads;
+  std::vector <std::tuple <value_type, std::shared_ptr <builtin>>> m_overloads;
 
 public:
   explicit overload_tab (unsigned arity = 1)
     : m_arity {arity}
   {}
 
-  void add_overload (value_type vt, builtin &b);
+  void add_overload (value_type vt, std::shared_ptr <builtin> b);
 
   overload_instance instantiate (dwgrep_graph::sptr q,
 				 std::shared_ptr <scope> scope);
@@ -135,6 +136,54 @@ public:
   pred_result result (valfile &vf) override final;
 };
 
+// Base class for overloaded builtins.
+class overloaded_builtin
+  : public builtin
+{
+  char const *m_name;
+  std::shared_ptr <overload_tab> m_ovl_tab;
+
+public:
+  overloaded_builtin (char const *name,
+		      std::shared_ptr <overload_tab> ovl_tab)
+    : m_name {name}
+    , m_ovl_tab {ovl_tab}
+  {}
+
+  explicit overloaded_builtin (char const *name)
+    : overloaded_builtin {name, std::make_shared <overload_tab> ()}
+  {}
+
+  std::shared_ptr <overload_tab> get_overload_tab () const
+  { return m_ovl_tab; }
+
+  char const *name () const override final { return m_name; }
+};
+
+// Base class for overloaded operation builtins.
+struct overloaded_op_builtin
+  : public overloaded_builtin
+{
+  using overloaded_builtin::overloaded_builtin;
+
+  std::shared_ptr <op> build_exec (std::shared_ptr <op> upstream,
+				   dwgrep_graph::sptr q,
+				   std::shared_ptr <scope> scope)
+    const override final;
+};
+
+// Base class for overloaded predicate builtins.
+struct overloaded_pred_builtin
+  : public overloaded_builtin
+{
+  using overloaded_builtin::overloaded_builtin;
+
+  std::unique_ptr <pred> build_pred (dwgrep_graph::sptr q,
+				     std::shared_ptr <scope> scope)
+    const override final;
+};
+
+// Base class for individual overloads that produce an op.
 template <class OP>
 struct overload_op_builtin
   : public builtin
@@ -153,6 +202,7 @@ struct overload_op_builtin
   }
 };
 
+// Base class for individual overloads that produce a pred.
 template <class PRED>
 struct overload_pred_builtin
   : public builtin

@@ -35,7 +35,6 @@
 #include "overload.hh"
 #include "builtin-add.hh"
 #include "builtin-length.hh"
-#include "builtin-elem.hh"
 
 value_type const value_seq::vtype = value_type::alloc ("T_SEQ");
 

@@ -33,17 +33,18 @@
 #include "overload.hh"
 
 overload_instance::overload_instance
-	(std::vector <std::tuple <value_type, builtin &>> const &stencil,
+	(std::vector <std::tuple <value_type,
+				  std::shared_ptr <builtin>>> const &stencil,
 	 dwgrep_graph::sptr q, std::shared_ptr <scope> scope, unsigned arity)
   : m_arity {arity}
 {
   assert (m_arity > 0);
   for (auto const &v: stencil)
     {
-      auto pred = std::get <1> (v).build_pred (q, scope);
+      auto pred = std::get <1> (v)->build_pred (q, scope);
 
       auto origin = std::make_shared <op_origin> (nullptr);
-      auto op = std::get <1> (v).build_exec (origin, q, scope);
+      auto op = std::get <1> (v)->build_exec (origin, q, scope);
 
       assert (op != nullptr || pred != nullptr);
 
@@ -144,7 +145,7 @@ overload_instance::show_error (std::string const &name)
 }
 
 void
-overload_tab::add_overload (value_type vt, builtin &b)
+overload_tab::add_overload (value_type vt, std::shared_ptr <builtin> b)
 {
   // If this assert fails, the likely suspect is static initialization
   // order fiasco.
@@ -152,11 +153,12 @@ overload_tab::add_overload (value_type vt, builtin &b)
 
   // Check someone didn't order overload for this type yet.
   assert (std::find_if (m_overloads.begin (), m_overloads.end (),
-			[vt] (std::tuple <value_type, builtin &> const &p)
+			[vt] (std::tuple <value_type,
+					  std::shared_ptr <builtin>> const &p)
 			{ return std::get <0> (p) == vt; })
 	  == m_overloads.end ());
 
-  m_overloads.push_back (std::tuple <value_type, builtin &> {vt, b});
+  m_overloads.push_back (std::make_tuple (vt, b));
 }
 
 overload_instance
@@ -253,4 +255,71 @@ overload_pred::result (valfile &vf)
     }
   else
     return std::get <1> (*ovl)->result (vf);
+}
+
+namespace
+{
+  struct named_overload_op
+    : public overload_op
+  {
+    char const *m_name;
+
+    named_overload_op (std::shared_ptr <op> upstream,
+		       overload_instance ovl_inst,
+		       char const *name)
+      : overload_op {upstream, ovl_inst}
+      , m_name {name}
+    {}
+
+    std::string
+    name () const override
+    {
+      return m_name;
+    }
+  };
+}
+
+std::shared_ptr <op>
+overloaded_op_builtin::build_exec (std::shared_ptr <op> upstream,
+				   dwgrep_graph::sptr q,
+				   std::shared_ptr <scope> scope) const
+{
+  return std::make_shared <named_overload_op>
+    (upstream, get_overload_tab ()->instantiate (q, scope), name ());
+}
+
+namespace
+{
+  struct named_overload_pred
+    : public overload_pred
+  {
+    char const *m_name;
+
+    named_overload_pred (overload_instance ovl_inst, char const *name)
+      : overload_pred {ovl_inst}
+      , m_name {name}
+    {}
+
+    std::string
+    name () const override
+    {
+      return m_name;
+    }
+  };
+}
+
+std::unique_ptr <pred>
+overloaded_pred_builtin::build_pred (dwgrep_graph::sptr q,
+				     std::shared_ptr <scope> scope) const
+{
+  assert (name ()[0] == '?' || name ()[0] == '!');
+  bool positive = name ()[0] == '?';
+
+  auto pred = std::make_unique <named_overload_pred>
+    (get_overload_tab ()->instantiate (q, scope), name ());
+
+  if (positive)
+    return std::move (pred);
+  else
+    return std::make_unique <pred_not> (std::move (pred));
 }

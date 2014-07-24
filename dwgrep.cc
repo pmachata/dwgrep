@@ -142,7 +142,8 @@ main(int argc, char *argv[])
 
   std::vector <std::string> to_process;
 
-  builtin_dict builtins {*dwgrep_builtins_core (), *dwgrep_builtins_dw ()};
+  auto builtins = dwgrep_builtins_core ();
+  dwgrep_builtins_dw (*builtins);
 
   tree query;
   bool seen_query = false;
@@ -156,7 +157,7 @@ main(int argc, char *argv[])
       switch (c)
 	{
 	case 'e':
-	  query = parse_query (builtins, optarg);
+	  query = parse_query (*builtins, optarg);
 	  seen_query = true;
 	  break;
 
@@ -189,7 +190,7 @@ main(int argc, char *argv[])
 	    std::ifstream ifs {optarg};
 	    std::string str {std::istreambuf_iterator <char> {ifs},
 			     std::istreambuf_iterator <char> {}};
-	    query = parse_query (builtins, str);
+	    query = parse_query (*builtins, str);
 	    seen_query = true;
 	    break;
 	  }
@@ -221,7 +222,7 @@ main(int argc, char *argv[])
 	  std::cerr << "No query specified.\n";
 	  return 2;
 	}
-      query = parse_query (builtins, *argv++);
+      query = parse_query (*builtins, *argv++);
       argc--;
     }
 

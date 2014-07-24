@@ -54,36 +54,3 @@ op_add_cst::next ()
 
   return nullptr;
 }
-
-overload_tab &
-ovl_tab_add ()
-{
-  static overload_tab tab;
-  return tab;
-}
-
-struct builtin_add::o
-  : public overload_op
-{
-  using overload_op::overload_op;
-
-  std::string
-  name () const override
-  {
-    return "add";
-  }
-};
-
-std::shared_ptr <op>
-builtin_add::build_exec (std::shared_ptr <op> upstream, dwgrep_graph::sptr q,
-			 std::shared_ptr <scope> scope) const
-{
-  return std::make_shared <o> (upstream,
-			       ovl_tab_add ().instantiate (q, scope));
-}
-
-char const *
-builtin_add::name () const
-{
-  return "add";
-}

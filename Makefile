@@ -31,8 +31,7 @@ builtin-dw.o: override CXXFLAGS += -fno-var-tracking-assignments
 dwgrep: dwgrep.o parser.o lexer.o tree.o tree_cr.o constant.o op.o	\
 	valfile.o build.o cache.o atval.o builtin.o builtin-shf.o	\
 	builtin-arith.o builtin-closure.o builtin-cmp.o builtin-cst.o	\
-	builtin-add.o builtin-elem.o builtin-empty.o builtin-find.o	\
-	builtin-length.o builtin-value.o overload.o value.o		\
+	builtin-add.o builtin-value.o overload.o value.o		\
 	value-closure.o value-seq.o value-str.o init.o dwcst.o		\
 	builtin-dw.o value-dw.o
 
@@ -40,8 +39,7 @@ test-parser: test-parser.o parser.o lexer.o tree.o tree_cr.o build.o	\
 	constant.o init.o builtin.o overload.o op.o value.o valfile.o	\
 	value-closure.o value-str.o value-seq.o builtin-shf.o		\
 	builtin-arith.o builtin-closure.o builtin-cmp.o builtin-cst.o	\
-	builtin-add.o builtin-length.o builtin-value.o builtin-elem.o	\
-	builtin-empty.o builtin-find.o
+	builtin-add.o builtin-value.o
 
 test-parser.o: CXXOPTFLAGS = -O0
 

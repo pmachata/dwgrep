@@ -29,6 +29,8 @@
 #include <memory>
 #include "make_unique.hh"
 
+#include "overload.hh"
+
 #include "value-seq.hh"
 #include "value-str.hh"
 #include "value-closure.hh"
@@ -39,12 +41,8 @@
 #include "builtin-cst.hh"
 #include "builtin-shf.hh"
 
-#include "builtin-add.hh"
-#include "builtin-elem.hh"
-#include "builtin-empty.hh"
-#include "builtin-find.hh"
-#include "builtin-length.hh"
 #include "builtin-value.hh"
+#include "builtin-add.hh"
 
 std::unique_ptr <builtin_dict>
 dwgrep_builtins_core ()
@@ -113,66 +111,84 @@ dwgrep_builtins_core ()
   dict->add (std::make_shared <builtin_match> (false));
 
   // "add"
-  dict->add (std::make_shared <builtin_add> ());
   {
-    // XXX
-    static overload_op_builtin <op_add_str> builtin_add_str_obj;
-    static overload_op_builtin <op_add_cst> builtin_add_cst_obj;
-    static overload_op_builtin <op_add_seq> builtin_add_seq_obj;
-    ovl_tab_add ().add_overload (value_cst::vtype, builtin_add_cst_obj);
-    ovl_tab_add ().add_overload (value_str::vtype, builtin_add_str_obj);
-    ovl_tab_add ().add_overload (value_seq::vtype, builtin_add_seq_obj);
+    auto t = std::make_shared <overload_tab> ();
+
+    t->add_overload (value_cst::vtype,
+		       std::make_shared <overload_op_builtin <op_add_cst>> ());
+    t->add_overload (value_str::vtype,
+		       std::make_shared <overload_op_builtin <op_add_str>> ());
+    t->add_overload (value_seq::vtype,
+		       std::make_shared <overload_op_builtin <op_add_seq>> ());
+
+    dict->add (std::make_shared <overloaded_op_builtin> ("add", t));
   }
 
   // "elem"
-  dict->add (std::make_shared <builtin_elem> ());
   {
-    // XXX
-    static overload_op_builtin <op_elem_str> builtin_elem_str_obj;
-    static overload_op_builtin <op_elem_seq> builtin_elem_seq_obj;
-    ovl_tab_elem ().add_overload (value_str::vtype, builtin_elem_str_obj);
-    ovl_tab_elem ().add_overload (value_seq::vtype, builtin_elem_seq_obj);
+    auto t = std::make_shared <overload_tab> ();
+
+    t->add_overload (value_str::vtype,
+		     std::make_shared <overload_op_builtin <op_elem_str>> ());
+    t->add_overload (value_seq::vtype,
+		     std::make_shared <overload_op_builtin <op_elem_seq>> ());
+
+    dict->add (std::make_shared <overloaded_op_builtin> ("elem", t));
   }
 
   // "empty"
-  dict->add (std::make_shared <builtin_empty> (true));
-  dict->add (std::make_shared <builtin_empty> (false));
   {
-    // XXX -- note that the overload table is shared among the two
-    // builtins
-    static overload_pred_builtin <pred_empty_str> builtin_empty_str_obj;
-    static overload_pred_builtin <pred_empty_seq> builtin_empty_seq_obj;
-    ovl_tab_empty ().add_overload (value_str::vtype, builtin_empty_str_obj);
-    ovl_tab_empty ().add_overload (value_seq::vtype, builtin_empty_seq_obj);
+    auto t = std::make_shared <overload_tab> ();
+
+    t->add_overload
+      (value_str::vtype,
+       std::make_shared <overload_pred_builtin <pred_empty_str>> ());
+    t->add_overload
+      (value_seq::vtype,
+       std::make_shared <overload_pred_builtin <pred_empty_seq>> ());
+
+    dict->add (std::make_shared <overloaded_pred_builtin> ("?empty", t));
+    dict->add (std::make_shared <overloaded_pred_builtin> ("!empty", t));
   }
 
   // "find"
-  dict->add (std::make_shared <builtin_find> (true));
-  dict->add (std::make_shared <builtin_find> (false));
   {
-    // XXX
-    static overload_pred_builtin <pred_find_str> builtin_find_str_obj;
-    static overload_pred_builtin <pred_find_seq> builtin_find_seq_obj;
-    ovl_tab_find ().add_overload (value_str::vtype, builtin_find_str_obj);
-    ovl_tab_find ().add_overload (value_seq::vtype, builtin_find_seq_obj);
+    auto t = std::make_shared <overload_tab> ();
+
+    t->add_overload
+      (value_str::vtype,
+       std::make_shared <overload_pred_builtin <pred_find_str>> ());
+    t->add_overload
+      (value_seq::vtype,
+       std::make_shared <overload_pred_builtin <pred_find_seq>> ());
+
+    dict->add (std::make_shared <overloaded_pred_builtin> ("?find", t));
+    dict->add (std::make_shared <overloaded_pred_builtin> ("!find", t));
   }
 
   // "length"
-  dict->add (std::make_shared <builtin_length> ());
   {
-    // XXX
-    static overload_op_builtin <op_length_str> builtin_length_str_obj;
-    static overload_op_builtin <op_length_seq> builtin_length_seq_obj;
-    ovl_tab_length ().add_overload (value_str::vtype, builtin_length_str_obj);
-    ovl_tab_length ().add_overload (value_seq::vtype, builtin_length_seq_obj);
+    auto t = std::make_shared <overload_tab> ();
+
+    t->add_overload
+      (value_str::vtype,
+       std::make_shared <overload_op_builtin <op_length_str>> ());
+    t->add_overload
+      (value_seq::vtype,
+       std::make_shared <overload_op_builtin <op_length_seq>> ());
+
+    dict->add (std::make_shared <overloaded_op_builtin> ("length", t));
   }
 
   // "value"
-  dict->add (std::make_shared <builtin_value> ());
   {
-    // XXX
-    static overload_op_builtin <op_value_cst> builtin_value_cst_obj;
-    ovl_tab_value ().add_overload (value_cst::vtype, builtin_value_cst_obj);
+    auto t = std::make_shared <overload_tab> ();
+
+    t->add_overload
+      (value_cst::vtype,
+       std::make_shared <overload_op_builtin <op_value_cst>> ());
+
+    dict->add (std::make_shared <overloaded_op_builtin> ("value", t));
   }
 
   return dict;

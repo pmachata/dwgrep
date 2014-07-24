@@ -39,6 +39,7 @@
 #include "dwpp.hh"
 #include "known-dwarf.h"
 #include "op.hh"
+#include "overload.hh"
 #include "value-dw.hh"
 
 namespace
@@ -1290,43 +1291,41 @@ namespace
   };
 }
 
-std::unique_ptr <builtin_dict>
-dwgrep_builtins_dw ()
+void
+dwgrep_builtins_dw (builtin_dict &dict)
 {
-  auto dict = std::make_unique <builtin_dict> ();
+  add_builtin_type_constant <value_die> (dict);
+  add_builtin_type_constant <value_attr> (dict);
+  add_builtin_type_constant <value_loclist_op> (dict);
 
-  add_builtin_type_constant <value_die> (*dict);
-  add_builtin_type_constant <value_attr> (*dict);
-  add_builtin_type_constant <value_loclist_op> (*dict);
+  dict.add (std::make_shared <builtin_winfo> ());
+  dict.add (std::make_shared <builtin_unit> ());
 
-  dict->add (std::make_shared <builtin_winfo> ());
-  dict->add (std::make_shared <builtin_unit> ());
+  dict.add (std::make_shared <builtin_child> ());
+  dict.add (std::make_shared <builtin_attribute> ());
+  dict.add (std::make_shared <builtin_offset> ());
+  dict.add (std::make_shared <builtin_label> ());
+  dict.add (std::make_shared <builtin_form> ());
+  dict.add (std::make_shared <builtin_parent> ());
+  dict.add (std::make_shared <builtin_integrate> ());
+  dict.add (std::make_shared <builtin_at_number> ());
+  dict.add (std::make_shared <builtin_at_number2> ());
 
-  dict->add (std::make_shared <builtin_child> ());
-  dict->add (std::make_shared <builtin_attribute> ());
-  dict->add (std::make_shared <builtin_offset> ());
-  dict->add (std::make_shared <builtin_label> ());
-  dict->add (std::make_shared <builtin_form> ());
-  dict->add (std::make_shared <builtin_parent> ());
-  dict->add (std::make_shared <builtin_integrate> ());
-  dict->add (std::make_shared <builtin_at_number> ());
-  dict->add (std::make_shared <builtin_at_number2> ());
-
-  dict->add (std::make_shared <builtin_rootp> (true));
-  dict->add (std::make_shared <builtin_rootp> (false));
+  dict.add (std::make_shared <builtin_rootp> (true));
+  dict.add (std::make_shared <builtin_rootp> (false));
 
 #define ONE_KNOWN_DW_AT(NAME, CODE)					\
   {									\
     auto b1 = std::make_shared <builtin_attr_named> (CODE);		\
-    dict->add (b1, "@AT_" #NAME);					\
-    dict->add (b1, "@" #CODE);						\
+    dict.add (b1, "@AT_" #NAME);					\
+    dict.add (b1, "@" #CODE);						\
     auto b2 = std::make_shared <builtin_pred_attr> (CODE, true);	\
     auto nb2 = std::make_shared <builtin_pred_attr> (CODE, false);	\
-    dict->add (b2, "?AT_" #NAME);					\
-    dict->add (nb2, "!AT_" #NAME);					\
-    dict->add (b2, "?" #CODE);						\
-    dict->add (nb2, "!" #CODE);						\
-    add_builtin_constant (*dict, constant (CODE, &dw_attr_dom), #CODE);	\
+    dict.add (b2, "?AT_" #NAME);					\
+    dict.add (nb2, "!AT_" #NAME);					\
+    dict.add (b2, "?" #CODE);						\
+    dict.add (nb2, "!" #CODE);						\
+    add_builtin_constant (dict, constant (CODE, &dw_attr_dom), #CODE);	\
   }
   ALL_KNOWN_DW_AT;
 #undef ONE_KNOWN_DW_AT
@@ -1335,11 +1334,11 @@ dwgrep_builtins_dw ()
   {									\
     auto b1 = std::make_shared <builtin_pred_tag> (CODE, true);		\
     auto nb1 = std::make_shared <builtin_pred_tag> (CODE, false);	\
-    dict->add (b1, "?TAG_" #NAME);					\
-    dict->add (nb1, "!TAG_" #NAME);					\
-    dict->add (b1, "?" #CODE);						\
-    dict->add (nb1, "!" #CODE);						\
-    add_builtin_constant (*dict, constant (CODE, &dw_tag_dom), #CODE);	\
+    dict.add (b1, "?TAG_" #NAME);					\
+    dict.add (nb1, "!TAG_" #NAME);					\
+    dict.add (b1, "?" #CODE);						\
+    dict.add (nb1, "!" #CODE);						\
+    add_builtin_constant (dict, constant (CODE, &dw_tag_dom), #CODE);	\
   }
   ALL_KNOWN_DW_TAG;
 #undef ONE_KNOWN_DW_TAG
@@ -1349,11 +1348,11 @@ dwgrep_builtins_dw ()
   {									\
     auto b1 = std::make_shared <builtin_pred_form> (CODE, true);	\
     auto nb1 = std::make_shared <builtin_pred_form> (CODE, false);	\
-    dict->add (b1, "?FORM_" #NAME);					\
-    dict->add (nb1, "!FORM_" #NAME);					\
-    dict->add (b1, "?" #CODE);						\
-    dict->add (nb1, "!" #CODE);						\
-    add_builtin_constant (*dict, constant (CODE, &dw_form_dom), #CODE);	\
+    dict.add (b1, "?FORM_" #NAME);					\
+    dict.add (nb1, "!FORM_" #NAME);					\
+    dict.add (b1, "?" #CODE);						\
+    dict.add (nb1, "!" #CODE);						\
+    add_builtin_constant (dict, constant (CODE, &dw_form_dom), #CODE);	\
   }
   ALL_KNOWN_DW_FORM;
 #undef ONE_KNOWN_DW_FORM
@@ -1361,63 +1360,63 @@ dwgrep_builtins_dw ()
 
 #define ONE_KNOWN_DW_LANG_DESC(NAME, CODE, DESC)			\
   {									\
-    add_builtin_constant (*dict, constant (CODE, &dw_lang_dom), #CODE);	\
+    add_builtin_constant (dict, constant (CODE, &dw_lang_dom), #CODE);	\
   }
   ALL_KNOWN_DW_LANG;
 #undef ONE_KNOWN_DW_LANG_DESC
 
 #define ONE_KNOWN_DW_MACINFO(NAME, CODE)				\
   {									\
-    add_builtin_constant (*dict, constant (CODE, &dw_macinfo_dom), #CODE); \
+    add_builtin_constant (dict, constant (CODE, &dw_macinfo_dom), #CODE); \
   }
   ALL_KNOWN_DW_MACINFO;
 #undef ONE_KNOWN_DW_MACINFO
 
 #define ONE_KNOWN_DW_MACRO_GNU(NAME, CODE)				\
   {									\
-    add_builtin_constant (*dict, constant (CODE, &dw_macro_dom), #CODE); \
+    add_builtin_constant (dict, constant (CODE, &dw_macro_dom), #CODE); \
   }
   ALL_KNOWN_DW_MACRO_GNU;
 #undef ONE_KNOWN_DW_MACRO_GNU
 
 #define ONE_KNOWN_DW_INL(NAME, CODE)					\
   {									\
-    add_builtin_constant (*dict, constant (CODE, &dw_inline_dom), #CODE); \
+    add_builtin_constant (dict, constant (CODE, &dw_inline_dom), #CODE); \
   }
   ALL_KNOWN_DW_INL;
 #undef ONE_KNOWN_DW_INL
 
 #define ONE_KNOWN_DW_ATE(NAME, CODE)					\
   {									\
-    add_builtin_constant (*dict, constant (CODE, &dw_encoding_dom), #CODE); \
+    add_builtin_constant (dict, constant (CODE, &dw_encoding_dom), #CODE); \
   }
   ALL_KNOWN_DW_ATE;
 #undef ONE_KNOWN_DW_ATE
 
 #define ONE_KNOWN_DW_ACCESS(NAME, CODE)					\
   {									\
-    add_builtin_constant (*dict, constant (CODE, &dw_access_dom), #CODE); \
+    add_builtin_constant (dict, constant (CODE, &dw_access_dom), #CODE); \
   }
   ALL_KNOWN_DW_ACCESS;
 #undef ONE_KNOWN_DW_ACCESS
 
 #define ONE_KNOWN_DW_VIS(NAME, CODE)					\
   {									\
-    add_builtin_constant (*dict, constant (CODE, &dw_visibility_dom), #CODE); \
+    add_builtin_constant (dict, constant (CODE, &dw_visibility_dom), #CODE); \
   }
   ALL_KNOWN_DW_VIS;
 #undef ONE_KNOWN_DW_VIS
 
 #define ONE_KNOWN_DW_VIRTUALITY(NAME, CODE)				\
   {									\
-    add_builtin_constant (*dict, constant (CODE, &dw_virtuality_dom), #CODE); \
+    add_builtin_constant (dict, constant (CODE, &dw_virtuality_dom), #CODE); \
   }
   ALL_KNOWN_DW_VIRTUALITY;
 #undef ONE_KNOWN_DW_VIRTUALITY
 
 #define ONE_KNOWN_DW_ID(NAME, CODE)					\
   {									\
-    add_builtin_constant (*dict,					\
+    add_builtin_constant (dict,						\
 			  constant (CODE, &dw_identifier_case_dom), #CODE); \
   }
   ALL_KNOWN_DW_ID;
@@ -1425,7 +1424,7 @@ dwgrep_builtins_dw ()
 
 #define ONE_KNOWN_DW_CC(NAME, CODE)					\
   {									\
-    add_builtin_constant (*dict,					\
+    add_builtin_constant (dict,						\
 			  constant (CODE, &dw_calling_convention_dom), #CODE); \
   }
   ALL_KNOWN_DW_CC;
@@ -1433,21 +1432,21 @@ dwgrep_builtins_dw ()
 
 #define ONE_KNOWN_DW_ORD(NAME, CODE)					\
   {									\
-    add_builtin_constant (*dict, constant (CODE, &dw_ordering_dom), #CODE); \
+    add_builtin_constant (dict, constant (CODE, &dw_ordering_dom), #CODE); \
   }
   ALL_KNOWN_DW_ORD;
 #undef ONE_KNOWN_DW_ORD
 
 #define ONE_KNOWN_DW_DSC(NAME, CODE)					\
   {									\
-    add_builtin_constant (*dict, constant (CODE, &dw_discr_list_dom), #CODE); \
+    add_builtin_constant (dict, constant (CODE, &dw_discr_list_dom), #CODE); \
   }
   ALL_KNOWN_DW_DSC;
 #undef ONE_KNOWN_DW_DSC
 
 #define ONE_KNOWN_DW_DS(NAME, CODE)					\
   {									\
-    add_builtin_constant (*dict,					\
+    add_builtin_constant (dict,						\
 			  constant (CODE, &dw_decimal_sign_dom), #CODE); \
   }
   ALL_KNOWN_DW_DS;
@@ -1456,27 +1455,29 @@ dwgrep_builtins_dw ()
 #define ONE_KNOWN_DW_OP_DESC(NAME, CODE, DESC) ONE_KNOWN_DW_OP (NAME, CODE)
 #define ONE_KNOWN_DW_OP(NAME, CODE)					\
   {									\
-    add_builtin_constant (*dict,					\
+    add_builtin_constant (dict,						\
 			  constant (CODE, &dw_locexpr_opcode_dom), #CODE); \
   }
   ALL_KNOWN_DW_OP;
 #undef ONE_KNOWN_DW_OP
 #undef ONE_KNOWN_DW_OP_DESC
 
-  add_builtin_constant (*dict, constant (DW_ADDR_none, &dw_address_class_dom),
+  add_builtin_constant (dict, constant (DW_ADDR_none, &dw_address_class_dom),
 			"DW_ADDR_none");
 
 #define ONE_KNOWN_DW_END(NAME, CODE)					\
   {									\
-    add_builtin_constant (*dict, constant (CODE, &dw_endianity_dom), #CODE); \
+    add_builtin_constant (dict, constant (CODE, &dw_endianity_dom), #CODE); \
   }
   ALL_KNOWN_DW_END;
 #undef ONE_KNOWN_DW_END
 
   {
-    static builtin_value_attr builtin_value_attr_obj;
-    ovl_tab_value ().add_overload (value_attr::vtype, builtin_value_attr_obj);
-  }
+    auto bi = dict.find ("value");
+    assert (dynamic_cast <overloaded_builtin const *> (&*bi) != nullptr);
+    auto t = ((overloaded_builtin *)(&* bi))->get_overload_tab ();
 
-  return dict;
+    t->add_overload (value_attr::vtype,
+		     std::make_shared <builtin_value_attr> ());
+  }
 }
