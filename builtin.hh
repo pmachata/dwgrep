@@ -73,7 +73,7 @@ class builtin_dict
 
 public:
   builtin_dict ();
-  builtin_dict (builtin_dict &a, builtin_dict &b);
+  builtin_dict (builtin_dict const &a, builtin_dict const &b);
   ~builtin_dict ();
 
   void add (std::shared_ptr <builtin const> b);

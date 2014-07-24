@@ -29,9 +29,11 @@
 #include <memory>
 #include "make_unique.hh"
 #include <map>
+#include <set>
 
 #include "builtin.hh"
 #include "builtin-cst.hh"
+#include "overload.hh"
 #include "op.hh"
 
 std::unique_ptr <pred>
@@ -64,13 +66,47 @@ builtin_dict::builtin_dict ()
   : m_builtins {std::make_unique <builtins> ()}
 {}
 
-builtin_dict::builtin_dict (builtin_dict &a, builtin_dict &b)
+builtin_dict::builtin_dict (builtin_dict const &a, builtin_dict const &b)
   : builtin_dict {}
 {
+  std::set <std::string> all_names;
   for (auto const &builtin: *a.m_builtins)
-    add (builtin.second, builtin.first);
+    all_names.insert (builtin.first);
   for (auto const &builtin: *b.m_builtins)
-    add (builtin.second, builtin.first);
+    all_names.insert (builtin.first);
+
+  for (auto const &name: all_names)
+    {
+      auto ba = a.find (name);
+      auto bb = b.find (name);
+      assert (ba != nullptr || bb != nullptr);
+
+      if (ba == nullptr || bb == nullptr)
+	add (ba != nullptr ? ba : bb, name);
+      else
+	{
+	  // Both A and B have this builtin.  If both are overloads,
+	  // and each of them has a different set of specializations,
+	  // we can merge.
+	  auto ola = std::dynamic_pointer_cast <const overloaded_builtin> (ba);
+	  assert (ola != nullptr);
+
+	  auto olb = std::dynamic_pointer_cast <const overloaded_builtin> (bb);
+	  assert (olb != nullptr);
+
+	  auto ta = ola->get_overload_tab ();
+	  auto tb = olb->get_overload_tab ();
+
+	  // Note: overload tables can be shared.  But when we
+	  // are merging dicts, they are already a done deal and
+	  // nothing should be added to them, so it shouldn't be
+	  // a problem that we unsare some of the tables.
+	  auto tc = std::make_shared <overload_tab> (*ta, *tb);
+
+	  // XXX we assume OP here.
+	  add (std::make_shared <overloaded_op_builtin> (name.c_str (), tc));
+	}
+    }
 }
 
 builtin_dict::~builtin_dict ()

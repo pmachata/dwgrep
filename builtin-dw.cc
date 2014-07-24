@@ -1291,9 +1291,12 @@ namespace
   };
 }
 
-void
-dwgrep_builtins_dw (builtin_dict &dict)
+std::unique_ptr <builtin_dict>
+dwgrep_builtins_dw ()
 {
+  auto ret = std::make_unique <builtin_dict> ();
+  builtin_dict &dict = *ret;
+
   add_builtin_type_constant <value_die> (dict);
   add_builtin_type_constant <value_attr> (dict);
   add_builtin_type_constant <value_loclist_op> (dict);
@@ -1473,11 +1476,13 @@ dwgrep_builtins_dw (builtin_dict &dict)
 #undef ONE_KNOWN_DW_END
 
   {
-    auto bi = dict.find ("value");
-    assert (dynamic_cast <overloaded_builtin const *> (&*bi) != nullptr);
-    auto t = ((overloaded_builtin *)(&* bi))->get_overload_tab ();
+    auto t = std::make_shared <overload_tab> ();
 
     t->add_overload (value_attr::vtype,
 		     std::make_shared <builtin_value_attr> ());
+
+    dict.add (std::make_shared <overloaded_op_builtin> ("value", t));
   }
+
+  return ret;
 }

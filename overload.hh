@@ -100,6 +100,8 @@ public:
     : m_arity {arity}
   {}
 
+  overload_tab (overload_tab const &a, overload_tab const &b);
+
   void add_overload (value_type vt, std::shared_ptr <builtin> b);
 
   overload_instance instantiate (dwgrep_graph::sptr q,

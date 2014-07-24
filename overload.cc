@@ -144,6 +144,27 @@ overload_instance::show_error (std::string const &name)
 		       std::vector <value_type> (vts.begin (), vts.end ()));
 }
 
+overload_tab::overload_tab (overload_tab const &a, overload_tab const &b)
+  : overload_tab {a.m_arity}
+{
+  assert (a.m_arity == b.m_arity);
+
+  std::set <value_type> vts;
+  auto add_all = [this, &vts] (overload_tab const &t)
+    {
+      for (auto const &overload: t.m_overloads)
+	{
+	  value_type vt = std::get <0> (overload);
+	  assert (vts.find (vt) == vts.end ());
+	  vts.insert (vt);
+	  add_overload (vt, std::get <1> (overload));
+	}
+    };
+
+  add_all (a);
+  add_all (b);
+}
+
 void
 overload_tab::add_overload (value_type vt, std::shared_ptr <builtin> b)
 {
