@@ -88,10 +88,10 @@ builtin_dict::builtin_dict (builtin_dict const &a, builtin_dict const &b)
 	  // Both A and B have this builtin.  If both are overloads,
 	  // and each of them has a different set of specializations,
 	  // we can merge.
-	  auto ola = std::dynamic_pointer_cast <const overloaded_builtin> (ba);
+	  auto ola = std::dynamic_pointer_cast <overloaded_builtin const> (ba);
 	  assert (ola != nullptr);
 
-	  auto olb = std::dynamic_pointer_cast <const overloaded_builtin> (bb);
+	  auto olb = std::dynamic_pointer_cast <overloaded_builtin const> (bb);
 	  assert (olb != nullptr);
 
 	  auto ta = ola->get_overload_tab ();
@@ -102,9 +102,7 @@ builtin_dict::builtin_dict (builtin_dict const &a, builtin_dict const &b)
 	  // nothing should be added to them, so it shouldn't be
 	  // a problem that we unsare some of the tables.
 	  auto tc = std::make_shared <overload_tab> (*ta, *tb);
-
-	  // XXX we assume OP here.
-	  add (std::make_shared <overloaded_op_builtin> (name.c_str (), tc));
+	  add (ola->create_merged (tc), name);
 	}
     }
 }

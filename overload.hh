@@ -160,6 +160,9 @@ public:
   { return m_ovl_tab; }
 
   char const *name () const override final { return m_name; }
+
+  virtual std::shared_ptr <overloaded_builtin>
+  create_merged (std::shared_ptr <overload_tab> tab) const = 0;
 };
 
 // Base class for overloaded operation builtins.
@@ -172,6 +175,9 @@ struct overloaded_op_builtin
 				   dwgrep_graph::sptr q,
 				   std::shared_ptr <scope> scope)
     const override final;
+
+  std::shared_ptr <overloaded_builtin>
+  create_merged (std::shared_ptr <overload_tab> tab) const override final;
 };
 
 // Base class for overloaded predicate builtins.
@@ -183,6 +189,9 @@ struct overloaded_pred_builtin
   std::unique_ptr <pred> build_pred (dwgrep_graph::sptr q,
 				     std::shared_ptr <scope> scope)
     const override final;
+
+  std::shared_ptr <overloaded_builtin>
+  create_merged (std::shared_ptr <overload_tab> tab) const override final;
 };
 
 // Base class for individual overloads that produce an op.

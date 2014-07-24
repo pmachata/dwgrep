@@ -309,6 +309,12 @@ overloaded_op_builtin::build_exec (std::shared_ptr <op> upstream,
     (upstream, get_overload_tab ()->instantiate (q, scope), name ());
 }
 
+std::shared_ptr <overloaded_builtin>
+overloaded_op_builtin::create_merged (std::shared_ptr <overload_tab> tab) const
+{
+  return std::make_shared <overloaded_op_builtin> (name (), tab);
+}
+
 namespace
 {
   struct named_overload_pred
@@ -343,4 +349,10 @@ overloaded_pred_builtin::build_pred (dwgrep_graph::sptr q,
     return std::move (pred);
   else
     return std::make_unique <pred_not> (std::move (pred));
+}
+
+std::shared_ptr <overloaded_builtin>
+overloaded_pred_builtin::create_merged (std::shared_ptr <overload_tab> tab) const
+{
+  return std::make_shared <overloaded_pred_builtin> (name (), tab);
 }
