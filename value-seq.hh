@@ -87,7 +87,8 @@ struct op_elem_seq
   struct state;
   std::unique_ptr <state> m_state;
 
-  op_elem_seq (std::shared_ptr <op> upstream);
+  op_elem_seq (std::shared_ptr <op> upstream, dwgrep_graph::sptr q,
+	       std::shared_ptr <scope> scope);
   ~op_elem_seq ();
 
   valfile::uptr next () override;
@@ -98,12 +99,14 @@ struct op_elem_seq
 struct pred_empty_seq
   : public stub_pred
 {
+  using stub_pred::stub_pred;
   pred_result result (valfile &vf) override;
 };
 
 struct pred_find_seq
   : public stub_pred
 {
+  using stub_pred::stub_pred;
   pred_result result (valfile &vf) override;
 };
 

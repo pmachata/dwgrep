@@ -34,7 +34,6 @@
 #include "value-seq.hh"
 #include "overload.hh"
 #include "builtin-add.hh"
-#include "builtin-length.hh"
 
 value_type const value_seq::vtype = value_type::alloc ("T_SEQ");
 
@@ -197,7 +196,8 @@ struct op_elem_seq::state
   }
 };
 
-op_elem_seq::op_elem_seq (std::shared_ptr <op> upstream)
+op_elem_seq::op_elem_seq (std::shared_ptr <op> upstream, dwgrep_graph::sptr q,
+			  std::shared_ptr <scope> scope)
   : inner_op {upstream}
 {}
 

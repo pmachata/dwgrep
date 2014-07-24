@@ -203,7 +203,7 @@ struct overload_op_builtin
   build_exec (std::shared_ptr <op> upstream, dwgrep_graph::sptr q,
 	      std::shared_ptr <scope> scope) const override final
   {
-    return std::make_shared <OP> (upstream);
+    return std::make_shared <OP> (upstream, q, scope);
   }
 
   char const *
@@ -222,7 +222,7 @@ struct overload_pred_builtin
   build_pred (dwgrep_graph::sptr q,
 	      std::shared_ptr <scope> scope) const override final
   {
-    return std::make_unique <PRED> ();
+    return std::make_unique <PRED> (q, scope);
   }
 
   char const *

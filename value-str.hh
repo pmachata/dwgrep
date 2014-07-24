@@ -74,7 +74,8 @@ struct op_elem_str
   struct state;
   std::unique_ptr <state> m_state;
 
-  op_elem_str (std::shared_ptr <op> upstream);
+  op_elem_str (std::shared_ptr <op> upstream, dwgrep_graph::sptr q,
+	      std::shared_ptr <scope> scope);
   ~op_elem_str ();
 
   valfile::uptr next () override;
@@ -85,12 +86,14 @@ struct op_elem_str
 struct pred_empty_str
   : public stub_pred
 {
+  using stub_pred::stub_pred;
   pred_result result (valfile &vf) override;
 };
 
 struct pred_find_str
   : public stub_pred
 {
+  using stub_pred::stub_pred;
   pred_result result (valfile &vf) override;
 };
 

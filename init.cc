@@ -115,11 +115,11 @@ dwgrep_builtins_core ()
     auto t = std::make_shared <overload_tab> ();
 
     t->add_overload (value_cst::vtype,
-		       std::make_shared <overload_op_builtin <op_add_cst>> ());
+		     std::make_shared <overload_op_builtin <op_add_cst>> ());
     t->add_overload (value_str::vtype,
-		       std::make_shared <overload_op_builtin <op_add_str>> ());
+		     std::make_shared <overload_op_builtin <op_add_str>> ());
     t->add_overload (value_seq::vtype,
-		       std::make_shared <overload_op_builtin <op_add_seq>> ());
+		     std::make_shared <overload_op_builtin <op_add_seq>> ());
 
     dict->add (std::make_shared <overloaded_op_builtin> ("add", t));
   }

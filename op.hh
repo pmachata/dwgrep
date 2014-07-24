@@ -112,13 +112,20 @@ public:
 struct stub_op
   : public inner_op
 {
-  using inner_op::inner_op;
+  stub_op (std::shared_ptr <op> upstream, dwgrep_graph::sptr q,
+	   std::shared_ptr <scope> scope)
+    : inner_op {upstream}
+  {}
+
   std::string name () const override final { return "stub"; }
 };
 
 struct stub_pred
   : public pred
 {
+  stub_pred (dwgrep_graph::sptr q,  std::shared_ptr <scope> scope)
+  {}
+
   std::string name () const override final { return "stub"; }
   void reset () override final {}
 };

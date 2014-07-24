@@ -940,78 +940,62 @@ namespace
 
 namespace
 {
-  struct builtin_value_attr
-    : public builtin
+  struct op_value_attr
+    : public inner_op
   {
-    struct o
-      : public inner_op
+    dwgrep_graph::sptr m_gr;
+    std::unique_ptr <value_producer> m_vpr;
+    valfile::uptr m_vf;
+
+    op_value_attr (std::shared_ptr <op> upstream, dwgrep_graph::sptr gr,
+		   std::shared_ptr <scope> scope)
+      : inner_op {upstream}
+      , m_gr {gr}
+    {}
+
+    void
+    reset_me ()
     {
-      dwgrep_graph::sptr m_gr;
-      std::unique_ptr <value_producer> m_vpr;
-      valfile::uptr m_vf;
-
-      o (std::shared_ptr <op> m_upstream, dwgrep_graph::sptr gr)
-	: inner_op {m_upstream}
-	, m_gr {gr}
-      {}
-
-      void
-      reset_me ()
-      {
-	m_vf = nullptr;
-	m_vpr = nullptr;
-      }
-
-      valfile::uptr
-      next () override
-      {
-	while (true)
-	  {
-	    while (m_vpr == nullptr)
-	      if (m_vf = m_upstream->next ())
-		{
-		  auto vp = m_vf->pop_as <value_attr> ();
-		  m_vpr = at_value (vp->get_attr (), vp->get_die (), m_gr);
-		}
-	      else
-		return nullptr;
-
-	    if (auto v = m_vpr->next ())
-	      {
-		auto vf = std::make_unique <valfile> (*m_vf);
-		vf->push (std::move (v));
-		return vf;
-	      }
-
-	    reset_me ();
-	  }
-      }
-
-      void
-      reset () override
-      {
-	reset_me ();
-	m_upstream->reset ();
-      }
-
-      std::string
-      name () const
-      {
-	return "value";
-      }
-    };
-
-    std::shared_ptr <op>
-    build_exec (std::shared_ptr <op> upstream, dwgrep_graph::sptr q,
-		std::shared_ptr <scope> scope) const override
-    {
-      return std::make_shared <o> (upstream, q);
+      m_vf = nullptr;
+      m_vpr = nullptr;
     }
 
-    char const *
-    name () const override final
+    valfile::uptr
+    next () override
     {
-      return "overload";
+      while (true)
+	{
+	  while (m_vpr == nullptr)
+	    if (m_vf = m_upstream->next ())
+	      {
+		auto vp = m_vf->pop_as <value_attr> ();
+		m_vpr = at_value (vp->get_attr (), vp->get_die (), m_gr);
+	      }
+	    else
+	      return nullptr;
+
+	  if (auto v = m_vpr->next ())
+	    {
+	      auto vf = std::make_unique <valfile> (*m_vf);
+	      vf->push (std::move (v));
+	      return vf;
+	    }
+
+	  reset_me ();
+	}
+    }
+
+    void
+    reset () override
+    {
+      reset_me ();
+      m_upstream->reset ();
+    }
+
+    std::string
+    name () const
+    {
+      return "value";
     }
   };
 }
@@ -1062,7 +1046,7 @@ namespace
 		std::shared_ptr <scope> scope) const override
     {
       auto t = std::make_shared <o> (upstream, q, m_atname);
-      return std::make_shared <builtin_value_attr::o> (t, q);
+      return std::make_shared <op_value_attr> (t, q, scope);
     }
 
     char const *
@@ -1479,7 +1463,7 @@ dwgrep_builtins_dw ()
     auto t = std::make_shared <overload_tab> ();
 
     t->add_overload (value_attr::vtype,
-		     std::make_shared <builtin_value_attr> ());
+		     std::make_shared <overload_op_builtin <op_value_attr>> ());
 
     dict.add (std::make_shared <overloaded_op_builtin> ("value", t));
   }
