@@ -66,7 +66,7 @@ value_seq::show (std::ostream &o, bool full) const
       if (seen)
 	o << ", ";
       seen = true;
-      v->show (o, full);
+      v->show (o, false);
     }
   o << "]";
 }
