@@ -753,14 +753,14 @@
      ... would be replaced with three stacks:
      : (A B C₁ D₁, A B C₂ D₂, A B C₃ D₃)
 
-** ·EXPR → “child” | “attribute” | “parent” | “next” | “prev” — traversal
+** ·EXPR → “child”|“attribute”|“parent”|“next”|“prev”|“integrate” — traversal
 
    - "child" pops DIE on TOS and yields one stack for each child,
      with that child pushed to TOS.
 
    - "attribute" does the same with attributes instead of children
 
-   - parent is exactly equivalent to:
+   - "parent" is exactly equivalent to:
      : universe ?(child ?eq) swap drop
      Note that in case of imported units, "parent" may return more
      than one DIE!  (XXX This doesn't seem desirable?)
@@ -772,7 +772,34 @@
      The first line is necessary to make sure that pos later refers
      to order in children array, not to e.g. a result of ([XYZ] each).
 
-   - prev can be defined in manner similar to next.
+   - "prev" can be defined in manner similar to next.
+
+   - "integrate" is equivalent to the following:
+     : (@AT_abstract_origin || @AT_specification)
+
+     It is meant to be used as named edge between a DIE and its
+     abstract instance(s).  In particular, the following idioms might
+     be useful:
+     : integrate* ?AT_xyz		# find DIE's with DW_AT_xyz
+     : integrate* @AT_xyz		# all AT_xyz's in chain
+     : [integrate*]			# the whole integration chain
+     :
+     : (!AT_xyz integrate)* ?AT_xyz	# find closest DIE with DW_AT_xyz
+     : ?(integrate* ?AT_xyz)		# dwarf_hasattr_integrate
+     : (!AT_xyz integrate)* attribute ?AT_xyz	# dwarf_attr_integrate
+     : (!AT_xyz integrate)* @AT_xyz	# value of integrated DW_AT_xyz
+
+   - Given the above as "integrate1", this would be useful as well:
+     : {->Op; (!(Op) integrate1)* Op} -> integrate;
+
+     This then can be used as follows:
+     : {?AT_xyz} integrate		# find closest DIE with DW_AT_xyz
+     : ?({?AT_xyz} integrate)		# dwarf_hasattr_integrate
+     : {attribute ?AT_xyz} integrate	# dwarf_attr_integrate
+     : {@AT_xyz} integrate		# value of integrated DW_AT_xyz
+
+     We could actually switch between this and the above thus:
+     : if ?(type T_CLOSURE ?eq) then integrate else integrate1
 
 ** •EXPR → “?root” | “!root” — root node assertion
 
@@ -1088,17 +1115,6 @@
      attributes.
 
 ** XXX .debug_macro
-
-** XXX optional dwarf_attr_integrate
-   - Currently we do that always for @AT_at, ?AT_at etc.  Maybe it
-     should be configurable.
-     - It definitely should.  For things like ?AT_declaration you care
-       about whether the DIE itself is a declaration, not that some
-       @AT_specification somewhere is (it obviously is...).
-
-   - XXX "attribute" function should also consistently yield either
-     only attributes at the DIE itself, or integrated attributes as
-     well.
 
 ** XXX optional inlining of DW_TAG_partial unit
    - We don't interpret DW_TAG_imported_unit at all currently.

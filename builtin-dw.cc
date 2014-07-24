@@ -690,6 +690,55 @@ static struct
   }
 } builtin_parent;
 
+static struct
+  : public builtin
+{
+  struct integrate
+    : public dwop_f
+  {
+    using dwop_f::dwop_f;
+
+    bool
+    operate (valfile &vf, Dwarf_Die &die) override
+    {
+      Dwarf_Attribute attr_mem, *attr
+	= dwarf_attr (&die, DW_AT_abstract_origin, &attr_mem);
+
+      if (attr == nullptr)
+	attr = dwarf_attr (&die, DW_AT_specification, &attr_mem);
+
+      if (attr == nullptr)
+	return false;
+
+      Dwarf_Die die_mem, *die2 = dwarf_formref_die (attr, &die_mem);
+      if (die2 == nullptr)
+	throw_libdw ();
+
+      vf.push (std::make_unique <value_die> (m_g, *die2, 0));
+      return true;
+    }
+
+    std::string
+    name () const override
+    {
+      return "integrate";
+    }
+  };
+
+  std::shared_ptr <op>
+  build_exec (std::shared_ptr <op> upstream, dwgrep_graph::sptr q,
+	      std::shared_ptr <scope> scope) const override
+  {
+    return std::make_shared <integrate> (upstream, q);
+  }
+
+  char const *
+  name () const override
+  {
+    return "integrate";
+  }
+} builtin_integrate;
+
 namespace
 {
   struct op_loclist_op
@@ -941,7 +990,10 @@ namespace
     }
   };
   builtin_value_attr builtin_value_attr_obj;
+}
 
+namespace
+{
   struct builtin_attr_named
     : public builtin
   {
@@ -965,7 +1017,7 @@ namespace
       operate (valfile &vf, Dwarf_Die &die) override
       {
 	Dwarf_Attribute attr;
-	if (dwarf_attr_integrate (&die, m_atname, &attr) == nullptr)
+	if (dwarf_attr (&die, m_atname, &attr) == nullptr)
 	  return false;
 
 	vf.push (std::make_unique <value_attr> (m_g, attr, die, 0));
@@ -1000,7 +1052,10 @@ namespace
   builtin_attr_named builtin_attr_##NAME {CODE};
 ALL_KNOWN_DW_AT
 #undef ONE_KNOWN_DW_AT
+}
 
+namespace
+{
   struct builtin_pred_attr
     : public pred_builtin
   {
@@ -1027,7 +1082,7 @@ ALL_KNOWN_DW_AT
 	if (auto v = vf.top_as <value_die> ())
 	  {
 	    Dwarf_Die *die = &v->get_die ();
-	    return pred_result (dwarf_hasattr_integrate (die, m_atname) != 0);
+	    return pred_result (dwarf_hasattr (die, m_atname) != 0);
 	  }
 
 	else if (auto v = vf.top_as <value_cst> ())
@@ -1081,7 +1136,10 @@ ALL_KNOWN_DW_AT
     builtin_pred_nattr_##NAME {CODE, false};
 ALL_KNOWN_DW_AT
 #undef ONE_KNOWN_DW_AT
+}
 
+namespace
+{
   struct builtin_pred_tag
     : public pred_builtin
   {
@@ -1154,8 +1212,10 @@ ALL_KNOWN_DW_AT
     builtin_pred_ntag_##NAME {CODE, false};
 ALL_KNOWN_DW_TAG
 #undef ONE_KNOWN_DW_TAG
+}
 
-
+namespace
+{
   struct builtin_pred_form
     : public pred_builtin
   {
@@ -1230,7 +1290,10 @@ ALL_KNOWN_DW_TAG
   ALL_KNOWN_DW_FORM;
 #undef ONE_KNOWN_DW_FORM
 #undef ONE_KNOWN_DW_FORM_DESC
+}
 
+namespace
+{
 // ----------------------------
 // Builtins for Dwarf constants.
 
@@ -1383,6 +1446,7 @@ dwgrep_init_dw ()
   add_builtin (builtin_label);
   add_builtin (builtin_form);
   add_builtin (builtin_parent);
+  add_builtin (builtin_integrate);
   add_builtin (builtin_at_number);
   add_builtin (builtin_at_number2);
 
