@@ -34,7 +34,8 @@
 
 #include <elfutils/libdw.h> // XXX
 
-void dwgrep_init ();
+struct builtin_dict;
+std::unique_ptr <builtin_dict> dwgrep_builtins_core ();
 
 // A dwgrep_graph object represents a graph that we want to explore,
 // and any associated caches.

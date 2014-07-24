@@ -28,7 +28,10 @@
 
 #include <memory>
 #include "make_unique.hh"
+#include <map>
+
 #include "builtin.hh"
+#include "builtin-cst.hh"
 #include "op.hh"
 
 std::unique_ptr <pred>
@@ -53,35 +56,53 @@ pred_builtin::maybe_invert (std::unique_ptr <pred> pred) const
     return std::make_unique <pred_not> (std::move (pred));
 }
 
-namespace
+struct builtin_dict::builtins
+  : public std::map <std::string, std::shared_ptr <builtin const>>
+{};
+
+builtin_dict::builtin_dict ()
+  : m_builtins {std::make_unique <builtins> ()}
+{}
+
+builtin_dict::builtin_dict (builtin_dict &a, builtin_dict &b)
+  : builtin_dict {}
 {
-  std::map <std::string, builtin const &> &
-  get_builtin_map ()
-  {
-    static std::map <std::string, builtin const &> bi_map;
-    return bi_map;
-  }
+  for (auto const &builtin: *a.m_builtins)
+    add (builtin.second, builtin.first);
+  for (auto const &builtin: *b.m_builtins)
+    add (builtin.second, builtin.first);
+}
+
+builtin_dict::~builtin_dict ()
+{}
+
+void
+builtin_dict::add (std::shared_ptr <builtin const> b)
+{
+  add (b, b->name ());
 }
 
 void
-add_builtin (builtin &b, std::string const &name)
+builtin_dict::add (std::shared_ptr <builtin const> b, std::string const &name)
 {
-  get_builtin_map ().insert
-    (std::pair <std::string, builtin const &> (name, b));
+  assert (find (name) == nullptr);
+  m_builtins->insert (std::make_pair (name, b));
 }
 
-void
-add_builtin (builtin &b)
+std::shared_ptr <builtin const>
+builtin_dict::find (std::string const &name) const
 {
-  add_builtin (b, b.name ());
-}
-
-builtin const *
-find_builtin (std::string const &name)
-{
-  auto it = get_builtin_map ().find (name);
-  if (it != get_builtin_map ().end ())
-    return &it->second;
-  else
+  auto it = m_builtins->find (name);
+  if (it == m_builtins->end ())
     return nullptr;
+  else
+    return it->second;
+}
+
+void
+add_builtin_constant (builtin_dict &dict, constant cst, char const *name)
+{
+  auto builtin = std::make_shared <builtin_constant>
+    (std::make_unique <value_cst> (cst, 0));
+  dict.add (builtin, name);
 }

@@ -59,8 +59,9 @@
 
 %code provides {
   // These two are for sub-expression parsing.
-  tree parse_query (std::string str);
-  tree parse_query (char const *begin, char const *end);
+  tree parse_query (builtin_dict const &builtins, std::string str);
+  tree parse_query (builtin_dict const &builtins,
+		    char const *begin, char const *end);
 }
 
 %{
@@ -75,7 +76,8 @@
   namespace
   {
     void
-    yyerror (std::unique_ptr <tree> &t, yyscan_t lex, char const *s)
+    yyerror (std::unique_ptr <tree> &t, yyscan_t lex,
+	     builtin_dict const &builtins, char const *s)
     {
       fprintf (stderr, "%s\n", s);
     }
@@ -162,9 +164,9 @@
     }
 
     tree *
-    parse_word (std::string str)
+    parse_word (builtin_dict const &builtins, std::string str)
     {
-      if (auto bi = find_builtin (str))
+      if (auto bi = builtins.find (str))
 	return tree::create_builtin (bi);
       else
 	return tree::create_str <tree_type::READ> (str);
@@ -198,6 +200,7 @@
 %error-verbose
 %parse-param { std::unique_ptr <tree> &ret }
 %parse-param { void *yyscanner }
+%parse-param { builtin_dict const &builtins }
 %lex-param { yyscanner }
 
 %token TOK_LPAREN TOK_RPAREN TOK_LBRACKET TOK_RBRACKET TOK_LBRACE TOK_RBRACE
@@ -210,7 +213,7 @@
 %token TOK_LIT_INT TOK_QMARK_LIT_INT TOK_BANG_LIT_INT
 
    // XXX These should eventually be moved to builtins.
-%token TOK_TYPE TOK_DEBUG
+%token TOK_DEBUG
 
 %token TOK_EOF
 
@@ -321,7 +324,7 @@ Statement:
     assert ($2->size () > 0);
     $$ = nullptr;
     for (auto const &s: *$2)
-      if (find_builtin (s) == nullptr)
+      if (builtins.find (s) == nullptr)
 	{
 	  auto t = tree::create_str <tree_type::BIND> (s);
 	  $$ = tree::create_cat <tree_type::CAT> ($$, t);
@@ -356,8 +359,8 @@ Statement:
   | TOK_QMARK_LIT_INT
   {
     auto t = tree::create_const <tree_type::CONST> (parse_int ($1));
-    auto u = tree::create_builtin (find_builtin ("?eq"));
-    auto v = tree::create_builtin (find_builtin ("drop"));
+    auto u = tree::create_builtin (builtins.find ("?eq"));
+    auto v = tree::create_builtin (builtins.find ("drop"));
     $$ = tree::create_cat <tree_type::CAT> (t, u);
     $$ = tree::create_cat <tree_type::CAT> ($$, v);
   }
@@ -365,18 +368,19 @@ Statement:
   | TOK_BANG_LIT_INT
   {
     auto t = tree::create_const <tree_type::CONST> (parse_int ($1));
-    auto u = tree::create_builtin (find_builtin ("!eq"));
-    auto v = tree::create_builtin (find_builtin ("drop"));
+    auto u = tree::create_builtin (builtins.find ("!eq"));
+    auto v = tree::create_builtin (builtins.find ("drop"));
     $$ = tree::create_cat <tree_type::CAT> (t, u);
     $$ = tree::create_cat <tree_type::CAT> ($$, v);
   }
 
   | TOK_WORD
-  { $$ = parse_word ({$1.buf, $1.len}); }
+  { $$ = parse_word (builtins, {$1.buf, $1.len}); }
 
   | TOK_WORD TOK_COLON Statement
   {
-    $$ = tree::create_cat <tree_type::CAT> ($3, parse_word ({$1.buf, $1.len}));
+    $$ = tree::create_cat <tree_type::CAT>
+	($3, parse_word (builtins, {$1.buf, $1.len}));
   }
 
   | TOK_LIT_STR
@@ -398,9 +402,10 @@ struct lexer
 {
   yyscan_t m_sc;
 
-  explicit lexer (char const *begin, char const *end)
+  explicit lexer (builtin_dict const &builtins,
+		  char const *begin, char const *end)
   {
-    if (yylex_init (&m_sc) != 0)
+    if (yylex_init_extra (&builtins, &m_sc) != 0)
       throw std::runtime_error ("Can't init lexer.");
     yy_scan_bytes (begin, end - begin, m_sc);
   }
@@ -414,18 +419,18 @@ struct lexer
 };
 
 tree
-parse_query (std::string str)
+parse_query (builtin_dict const &builtins, std::string str)
 {
   char const *buf = str.c_str ();
-  return parse_query (buf, buf + str.length ());
+  return parse_query (builtins, buf, buf + str.length ());
 }
 
 tree
-parse_query (char const *begin, char const *end)
+parse_query (builtin_dict const &builtins, char const *begin, char const *end)
 {
-  lexer lex (begin, end);
+  lexer lex {builtins, begin, end};
   std::unique_ptr <tree> t;
-  if (yyparse (t, lex.m_sc) == 0)
+  if (yyparse (t, lex.m_sc, builtins) == 0)
     return tree::promote_scopes (*t);
   throw std::runtime_error ("syntax error");
 }

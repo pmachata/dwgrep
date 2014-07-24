@@ -30,7 +30,7 @@
 #include "tree_cr.hh"
 
 tree *
-tree::create_builtin (builtin const *b)
+tree::create_builtin (std::shared_ptr <builtin const> b)
 {
   auto t = new tree {tree_type::F_BUILTIN};
   t->m_builtin = b;

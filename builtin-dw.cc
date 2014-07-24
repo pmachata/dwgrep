@@ -43,395 +43,401 @@
 
 namespace
 {
-  std::unique_ptr <builtin_constant> builtin_T_DIE;
-  std::unique_ptr <builtin_constant> builtin_T_ATTR;
-  std::unique_ptr <builtin_constant> builtin_T_LOCLIST_OP;
-}
-
-static struct
-  : public builtin
-{
-  struct winfo
-    : public op
+  struct builtin_winfo
+    : public builtin
   {
-    std::shared_ptr <op> m_upstream;
-    dwgrep_graph::sptr m_gr;
-    all_dies_iterator m_it;
-    valfile::uptr m_vf;
-    size_t m_pos;
-
-    winfo (std::shared_ptr <op> upstream, dwgrep_graph::sptr gr)
-      : m_upstream {upstream}
-      , m_gr {gr}
-      , m_it {all_dies_iterator::end ()}
-      , m_pos {0}
-    {}
-
-    void
-    reset_me ()
+    struct winfo
+      : public op
     {
-      m_vf = nullptr;
-      m_pos = 0;
+      std::shared_ptr <op> m_upstream;
+      dwgrep_graph::sptr m_gr;
+      all_dies_iterator m_it;
+      valfile::uptr m_vf;
+      size_t m_pos;
+
+      winfo (std::shared_ptr <op> upstream, dwgrep_graph::sptr gr)
+	: m_upstream {upstream}
+	, m_gr {gr}
+	, m_it {all_dies_iterator::end ()}
+	, m_pos {0}
+      {}
+
+      void
+      reset_me ()
+      {
+	m_vf = nullptr;
+	m_pos = 0;
+      }
+
+      valfile::uptr
+      next () override
+      {
+	while (true)
+	  {
+	    if (m_vf == nullptr)
+	      {
+		m_vf = m_upstream->next ();
+		if (m_vf == nullptr)
+		  return nullptr;
+		m_it = all_dies_iterator (&*m_gr->dwarf);
+	      }
+
+	    if (m_it != all_dies_iterator::end ())
+	      {
+		auto ret = std::make_unique <valfile> (*m_vf);
+		auto v = std::make_unique <value_die> (m_gr, **m_it, m_pos++);
+		ret->push (std::move (v));
+		++m_it;
+		return ret;
+	      }
+
+	    reset_me ();
+	  }
+      }
+
+      void
+      reset () override
+      {
+	reset_me ();
+	m_upstream->reset ();
+      }
+
+      std::string
+      name () const override
+      {
+	return "winfo";
+      }
+    };
+
+    std::shared_ptr <op>
+    build_exec (std::shared_ptr <op> upstream, dwgrep_graph::sptr q,
+		std::shared_ptr <scope> scope) const override
+    {
+      return std::make_shared <winfo> (upstream, q);
     }
 
-    valfile::uptr
-    next () override
-    {
-      while (true)
-	{
-	  if (m_vf == nullptr)
-	    {
-	      m_vf = m_upstream->next ();
-	      if (m_vf == nullptr)
-		return nullptr;
-	      m_it = all_dies_iterator (&*m_gr->dwarf);
-	    }
-
-	  if (m_it != all_dies_iterator::end ())
-	    {
-	      auto ret = std::make_unique <valfile> (*m_vf);
-	      auto v = std::make_unique <value_die> (m_gr, **m_it, m_pos++);
-	      ret->push (std::move (v));
-	      ++m_it;
-	      return ret;
-	    }
-
-	  reset_me ();
-	}
-    }
-
-    void
-    reset () override
-    {
-      reset_me ();
-      m_upstream->reset ();
-    }
-
-    std::string
+    char const *
     name () const override
     {
       return "winfo";
     }
   };
+}
 
-  std::shared_ptr <op>
-  build_exec (std::shared_ptr <op> upstream, dwgrep_graph::sptr q,
-	      std::shared_ptr <scope> scope) const override
-  {
-    return std::make_shared <winfo> (upstream, q);
-  }
-
-  char const *
-  name () const override
-  {
-    return "winfo";
-  }
-} builtin_winfo;
-
-static struct
-  : public builtin
+namespace
 {
-  struct unit
-    : public op
+  struct builtin_unit
+    : public builtin
   {
-    std::shared_ptr <op> m_upstream;
-    dwgrep_graph::sptr m_gr;
-    valfile::uptr m_vf;
-    all_dies_iterator m_it;
-    all_dies_iterator m_end;
-    size_t m_pos;
-
-    unit (std::shared_ptr <op> upstream, dwgrep_graph::sptr gr)
-      : m_upstream {upstream}
-      , m_gr {gr}
-      , m_it {all_dies_iterator::end ()}
-      , m_end {all_dies_iterator::end ()}
-      , m_pos {0}
-    {}
-
-    void
-    init_from_die (Dwarf_Die die)
+    struct unit
+      : public op
     {
-      Dwarf_Die cudie;
-      if (dwarf_diecu (&die, &cudie, nullptr, nullptr) == nullptr)
-	throw_libdw ();
+      std::shared_ptr <op> m_upstream;
+      dwgrep_graph::sptr m_gr;
+      valfile::uptr m_vf;
+      all_dies_iterator m_it;
+      all_dies_iterator m_end;
+      size_t m_pos;
 
-      cu_iterator cuit {&*m_gr->dwarf, cudie};
-      m_it = all_dies_iterator (cuit);
-      m_end = all_dies_iterator (++cuit);
+      unit (std::shared_ptr <op> upstream, dwgrep_graph::sptr gr)
+	: m_upstream {upstream}
+	, m_gr {gr}
+	, m_it {all_dies_iterator::end ()}
+	, m_end {all_dies_iterator::end ()}
+	, m_pos {0}
+      {}
+
+      void
+      init_from_die (Dwarf_Die die)
+      {
+	Dwarf_Die cudie;
+	if (dwarf_diecu (&die, &cudie, nullptr, nullptr) == nullptr)
+	  throw_libdw ();
+
+	cu_iterator cuit {&*m_gr->dwarf, cudie};
+	m_it = all_dies_iterator (cuit);
+	m_end = all_dies_iterator (++cuit);
+      }
+
+      void
+      reset_me ()
+      {
+	m_vf = nullptr;
+	m_it = all_dies_iterator::end ();
+	m_pos = 0;
+      }
+
+      valfile::uptr
+      next () override
+      {
+	while (true)
+	  {
+	    while (m_vf == nullptr)
+	      {
+		if (auto vf = m_upstream->next ())
+		  {
+		    auto vp = vf->pop ();
+		    if (auto v = value::as <value_die> (&*vp))
+		      {
+			init_from_die (v->get_die ());
+			m_vf = std::move (vf);
+		      }
+		    else if (auto v = value::as <value_attr> (&*vp))
+		      {
+			init_from_die (v->get_die ());
+			m_vf = std::move (vf);
+		      }
+		    else
+		      show_expects (name (),
+				    {value_die::vtype, value_attr::vtype});
+		  }
+		else
+		  return nullptr;
+	      }
+
+	    if (m_it != m_end)
+	      {
+		auto ret = std::make_unique <valfile> (*m_vf);
+		ret->push (std::make_unique <value_die>
+				(m_gr, **m_it, m_pos++));
+		++m_it;
+		return ret;
+	      }
+
+	    reset_me ();
+	  }
+      }
+
+      void
+      reset () override
+      {
+	reset_me ();
+	m_upstream->reset ();
+      }
+
+      std::string
+      name () const override
+      {
+	return "unit";
+      }
+    };
+
+    std::shared_ptr <op>
+    build_exec (std::shared_ptr <op> upstream, dwgrep_graph::sptr q,
+		std::shared_ptr <scope> scope) const override
+    {
+      return std::make_shared <unit> (upstream, q);
     }
 
-    void
-    reset_me ()
-    {
-      m_vf = nullptr;
-      m_it = all_dies_iterator::end ();
-      m_pos = 0;
-    }
-
-    valfile::uptr
-    next () override
-    {
-      while (true)
-	{
-	  while (m_vf == nullptr)
-	    {
-	      if (auto vf = m_upstream->next ())
-		{
-		  auto vp = vf->pop ();
-		  if (auto v = value::as <value_die> (&*vp))
-		    {
-		      init_from_die (v->get_die ());
-		      m_vf = std::move (vf);
-		    }
-		  else if (auto v = value::as <value_attr> (&*vp))
-		    {
-		      init_from_die (v->get_die ());
-		      m_vf = std::move (vf);
-		    }
-		  else
-		    show_expects (name (),
-				  {value_die::vtype, value_attr::vtype});
-		}
-	      else
-		return nullptr;
-	    }
-
-	  if (m_it != m_end)
-	    {
-	      auto ret = std::make_unique <valfile> (*m_vf);
-	      ret->push (std::make_unique <value_die> (m_gr, **m_it, m_pos++));
-	      ++m_it;
-	      return ret;
-	    }
-
-	  reset_me ();
-	}
-    }
-
-    void
-    reset () override
-    {
-      reset_me ();
-      m_upstream->reset ();
-    }
-
-    std::string
+    char const *
     name () const override
     {
       return "unit";
     }
   };
+}
 
-  std::shared_ptr <op>
-  build_exec (std::shared_ptr <op> upstream, dwgrep_graph::sptr q,
-	      std::shared_ptr <scope> scope) const override
-  {
-    return std::make_shared <unit> (upstream, q);
-  }
-
-  char const *
-  name () const override
-  {
-    return "unit";
-  }
-} builtin_unit;
-
-static struct
-  : public builtin
+namespace
 {
-  struct child
-    : public op
+  struct builtin_child
+    : public builtin
   {
-    std::shared_ptr <op> m_upstream;
-    dwgrep_graph::sptr m_gr;
-    valfile::uptr m_vf;
-    Dwarf_Die m_child;
-
-    size_t m_pos;
-
-    child (std::shared_ptr <op> upstream, dwgrep_graph::sptr gr)
-      : m_upstream {upstream}
-      , m_gr {gr}
-      , m_child {}
-      , m_pos {0}
-    {}
-
-    void
-    reset_me ()
+    struct child
+      : public op
     {
-      m_vf = nullptr;
-      m_pos = 0;
+      std::shared_ptr <op> m_upstream;
+      dwgrep_graph::sptr m_gr;
+      valfile::uptr m_vf;
+      Dwarf_Die m_child;
+
+      size_t m_pos;
+
+      child (std::shared_ptr <op> upstream, dwgrep_graph::sptr gr)
+	: m_upstream {upstream}
+	, m_gr {gr}
+	, m_child {}
+	, m_pos {0}
+      {}
+
+      void
+      reset_me ()
+      {
+	m_vf = nullptr;
+	m_pos = 0;
+      }
+
+      valfile::uptr
+      next () override
+      {
+	while (true)
+	  {
+	    while (m_vf == nullptr)
+	      {
+		if (auto vf = m_upstream->next ())
+		  {
+		    auto vp = vf->pop ();
+		    if (auto v = value::as <value_die> (&*vp))
+		      {
+			Dwarf_Die *die = &v->get_die ();
+			if (dwarf_haschildren (die))
+			  {
+			    if (dwarf_child (die, &m_child) != 0)
+			      throw_libdw ();
+
+			    // We found our guy.
+			    m_vf = std::move (vf);
+			  }
+		      }
+		    else
+		      show_expects (name (), {value_die::vtype});
+		  }
+		else
+		  return nullptr;
+	      }
+
+	    auto ret = std::make_unique <valfile> (*m_vf);
+	    ret->push (std::make_unique <value_die> (m_gr, m_child, m_pos++));
+
+	    switch (dwarf_siblingof (&m_child, &m_child))
+	      {
+	      case -1:
+		throw_libdw ();
+	      case 1:
+		// No more siblings.
+		reset_me ();
+		break;
+	      case 0:
+		break;
+	      }
+
+	    return ret;
+	  }
+      }
+
+      void
+      reset () override
+      {
+	reset_me ();
+	m_upstream->reset ();
+      }
+
+      std::string
+      name () const override
+      {
+	return "child";
+      }
+    };
+
+    std::shared_ptr <op>
+    build_exec (std::shared_ptr <op> upstream, dwgrep_graph::sptr q,
+		std::shared_ptr <scope> scope) const override
+    {
+      return std::make_shared <child> (upstream, q);
     }
 
-    valfile::uptr
-    next () override
-    {
-      while (true)
-	{
-	  while (m_vf == nullptr)
-	    {
-	      if (auto vf = m_upstream->next ())
-		{
-		  auto vp = vf->pop ();
-		  if (auto v = value::as <value_die> (&*vp))
-		    {
-		      Dwarf_Die *die = &v->get_die ();
-		      if (dwarf_haschildren (die))
-			{
-			  if (dwarf_child (die, &m_child) != 0)
-			    throw_libdw ();
-
-			  // We found our guy.
-			  m_vf = std::move (vf);
-			}
-		    }
-		  else
-		    show_expects (name (), {value_die::vtype});
-		}
-	      else
-		return nullptr;
-	    }
-
-	  auto ret = std::make_unique <valfile> (*m_vf);
-	  ret->push (std::make_unique <value_die> (m_gr, m_child, m_pos++));
-
-	  switch (dwarf_siblingof (&m_child, &m_child))
-	    {
-	    case -1:
-	      throw_libdw ();
-	    case 1:
-	      // No more siblings.
-	      reset_me ();
-	      break;
-	    case 0:
-	      break;
-	    }
-
-	  return ret;
-	}
-    }
-
-    void
-    reset () override
-    {
-      reset_me ();
-      m_upstream->reset ();
-    }
-
-    std::string
+    char const *
     name () const override
     {
       return "child";
     }
   };
+}
 
-  std::shared_ptr <op>
-  build_exec (std::shared_ptr <op> upstream, dwgrep_graph::sptr q,
-	      std::shared_ptr <scope> scope) const override
-  {
-    return std::make_shared <child> (upstream, q);
-  }
-
-  char const *
-  name () const override
-  {
-    return "child";
-  }
-} builtin_child;
-
-static struct
-  : public builtin
+namespace
 {
-  struct attribute
-    : public op
+  struct builtin_attribute
+    : public builtin
   {
-    std::shared_ptr <op> m_upstream;
-    dwgrep_graph::sptr m_gr;
-    Dwarf_Die m_die;
-    valfile::uptr m_vf;
-    attr_iterator m_it;
-
-    size_t m_pos;
-
-    attribute (std::shared_ptr <op> upstream, dwgrep_graph::sptr gr)
-      : m_upstream {upstream}
-      , m_gr {gr}
-      , m_die {}
-      , m_it {attr_iterator::end ()}
-      , m_pos {0}
-    {}
-
-    void
-    reset_me ()
+    struct attribute
+      : public op
     {
-      m_vf = nullptr;
-      m_pos = 0;
+      std::shared_ptr <op> m_upstream;
+      dwgrep_graph::sptr m_gr;
+      Dwarf_Die m_die;
+      valfile::uptr m_vf;
+      attr_iterator m_it;
+
+      size_t m_pos;
+
+      attribute (std::shared_ptr <op> upstream, dwgrep_graph::sptr gr)
+	: m_upstream {upstream}
+	, m_gr {gr}
+	, m_die {}
+	, m_it {attr_iterator::end ()}
+	, m_pos {0}
+      {}
+
+      void
+      reset_me ()
+      {
+	m_vf = nullptr;
+	m_pos = 0;
+      }
+
+      valfile::uptr
+      next ()
+      {
+	while (true)
+	  {
+	    while (m_vf == nullptr)
+	      {
+		if (auto vf = m_upstream->next ())
+		  {
+		    auto vp = vf->pop ();
+		    if (auto v = value::as <value_die> (&*vp))
+		      {
+			m_die = v->get_die ();
+			m_it = attr_iterator (&m_die);
+			m_vf = std::move (vf);
+		      }
+		    else
+		      show_expects (name (), {value_die::vtype});
+		  }
+		else
+		  return nullptr;
+	      }
+
+	    if (m_it != attr_iterator::end ())
+	      {
+		auto ret = std::make_unique <valfile> (*m_vf);
+		ret->push (std::make_unique <value_attr>
+			   (m_gr, **m_it, m_die, m_pos++));
+		++m_it;
+		return ret;
+	      }
+
+	    reset_me ();
+	  }
+      }
+
+      void
+      reset ()
+      {
+	reset_me ();
+	m_upstream->reset ();
+      }
+
+      std::string
+      name () const override
+      {
+	return "attribute";
+      }
+    };
+
+    std::shared_ptr <op>
+    build_exec (std::shared_ptr <op> upstream, dwgrep_graph::sptr q,
+		std::shared_ptr <scope> scope) const override
+    {
+      return std::make_shared <attribute> (upstream, q);
     }
 
-    valfile::uptr
-    next ()
-    {
-      while (true)
-	{
-	  while (m_vf == nullptr)
-	    {
-	      if (auto vf = m_upstream->next ())
-		{
-		  auto vp = vf->pop ();
-		  if (auto v = value::as <value_die> (&*vp))
-		    {
-		      m_die = v->get_die ();
-		      m_it = attr_iterator (&m_die);
-		      m_vf = std::move (vf);
-		    }
-		  else
-		    show_expects (name (), {value_die::vtype});
-		}
-	      else
-		return nullptr;
-	    }
-
-	  if (m_it != attr_iterator::end ())
-	    {
-	      auto ret = std::make_unique <valfile> (*m_vf);
-	      ret->push (std::make_unique <value_attr>
-			 (m_gr, **m_it, m_die, m_pos++));
-	      ++m_it;
-	      return ret;
-	    }
-
-	  reset_me ();
-	}
-    }
-
-    void
-    reset ()
-    {
-      reset_me ();
-      m_upstream->reset ();
-    }
-
-    std::string
+    char const *
     name () const override
     {
       return "attribute";
     }
   };
-
-  std::shared_ptr <op>
-  build_exec (std::shared_ptr <op> upstream, dwgrep_graph::sptr q,
-	      std::shared_ptr <scope> scope) const override
-  {
-    return std::make_shared <attribute> (upstream, q);
-  }
-
-  char const *
-  name () const override
-  {
-    return "attribute";
-  }
-} builtin_attribute;
+}
 
 namespace
 {
@@ -498,246 +504,261 @@ namespace
   };
 }
 
-static struct
-  : public builtin
+namespace
 {
-  struct offset
-    : public dwop_f
+  struct builtin_offset
+    : public builtin
   {
-    using dwop_f::dwop_f;
-
-    bool
-    operate (valfile &vf, Dwarf_Die &die) override
+    struct offset
+      : public dwop_f
     {
-      Dwarf_Off off = dwarf_dieoffset (&die);
-      auto cst = constant {off, &hex_constant_dom};
-      vf.push (std::make_unique <value_cst> (cst, 0));
-      return true;
+      using dwop_f::dwop_f;
+
+      bool
+      operate (valfile &vf, Dwarf_Die &die) override
+      {
+	Dwarf_Off off = dwarf_dieoffset (&die);
+	auto cst = constant {off, &hex_constant_dom};
+	vf.push (std::make_unique <value_cst> (cst, 0));
+	return true;
+      }
+
+      bool
+      operate (valfile &vf, value_loclist_op &op)
+      {
+	Dwarf_Op const *dwop = op.get_dwop ();
+	constant c {dwop->offset, &hex_constant_dom};
+	vf.push (std::make_unique <value_cst> (c, 0));
+	return true;
+      }
+
+      std::string
+      name () const override
+      {
+	return "offset";
+      }
+    };
+
+    std::shared_ptr <op>
+    build_exec (std::shared_ptr <op> upstream, dwgrep_graph::sptr q,
+		std::shared_ptr <scope> scope) const override
+    {
+      return std::make_shared <offset> (upstream, q);
     }
 
-    bool
-    operate (valfile &vf, value_loclist_op &op)
-    {
-      Dwarf_Op const *dwop = op.get_dwop ();
-      constant c {dwop->offset, &hex_constant_dom};
-      vf.push (std::make_unique <value_cst> (c, 0));
-      return true;
-    }
-
-    std::string
+    char const *
     name () const override
     {
       return "offset";
     }
   };
+}
 
-  std::shared_ptr <op>
-  build_exec (std::shared_ptr <op> upstream, dwgrep_graph::sptr q,
-	      std::shared_ptr <scope> scope) const override
-  {
-    return std::make_shared <offset> (upstream, q);
-  }
-
-  char const *
-  name () const override
-  {
-    return "offset";
-  }
-} builtin_offset;
-
-static struct
-  : public builtin
+namespace
 {
-  struct op
-    : public dwop_f
+  struct builtin_label
+    : public builtin
   {
-    using dwop_f::dwop_f;
-
-    bool
-    operate (valfile &vf, Dwarf_Die &die) override
+    struct op
+      : public dwop_f
     {
-      int tag = dwarf_tag (&die);
-      assert (tag >= 0);
-      constant cst {(unsigned) tag, &dw_tag_dom};
-      vf.push (std::make_unique <value_cst> (cst, 0));
-      return true;
+      using dwop_f::dwop_f;
+
+      bool
+      operate (valfile &vf, Dwarf_Die &die) override
+      {
+	int tag = dwarf_tag (&die);
+	assert (tag >= 0);
+	constant cst {(unsigned) tag, &dw_tag_dom};
+	vf.push (std::make_unique <value_cst> (cst, 0));
+	return true;
+      }
+
+      bool
+      operate (valfile &vf, Dwarf_Attribute &attr, Dwarf_Die &die) override
+      {
+	unsigned name = dwarf_whatattr (&attr);
+	constant cst {name, &dw_attr_dom};
+	vf.push (std::make_unique <value_cst> (cst, 0));
+	return true;
+      }
+
+      bool
+      operate (valfile &vf, Dwarf_Op *op, Dwarf_Attribute &attr)
+      {
+	constant cst {op->atom, &dw_locexpr_opcode_short_dom};
+	vf.push (std::make_unique <value_cst> (cst, 0));
+	return true;
+      }
+
+      std::string
+      name () const override
+      {
+	return "label";
+      }
+    };
+
+    std::shared_ptr < ::op>
+    build_exec (std::shared_ptr < ::op> upstream, dwgrep_graph::sptr q,
+		std::shared_ptr <scope> scope) const override
+    {
+      return std::make_shared <op> (upstream, q);
     }
 
-    bool
-    operate (valfile &vf, Dwarf_Attribute &attr, Dwarf_Die &die) override
-    {
-      unsigned name = dwarf_whatattr (&attr);
-      constant cst {name, &dw_attr_dom};
-      vf.push (std::make_unique <value_cst> (cst, 0));
-      return true;
-    }
-
-    bool
-    operate (valfile &vf, Dwarf_Op *op, Dwarf_Attribute &attr)
-    {
-      constant cst {op->atom, &dw_locexpr_opcode_short_dom};
-      vf.push (std::make_unique <value_cst> (cst, 0));
-      return true;
-    }
-
-    std::string
+    char const *
     name () const override
     {
       return "label";
     }
   };
+}
 
-  std::shared_ptr < ::op>
-  build_exec (std::shared_ptr < ::op> upstream, dwgrep_graph::sptr q,
-	      std::shared_ptr <scope> scope) const override
-  {
-    return std::make_shared <op> (upstream, q);
-  }
-
-  char const *
-  name () const override
-  {
-    return "label";
-  }
-} builtin_label;
-
-static struct
-  : public builtin
+namespace
 {
-  struct form
-    : public dwop_f
+  struct builtin_form
+    : public builtin
   {
-    using dwop_f::dwop_f;
-
-    bool
-    operate (valfile &vf, Dwarf_Attribute &attr, Dwarf_Die &die) override
+    struct form
+      : public dwop_f
     {
-      unsigned name = dwarf_whatform (&attr);
-      constant cst {name, &dw_form_dom};
-      vf.push (std::make_unique <value_cst> (cst, 0));
-      return true;
+      using dwop_f::dwop_f;
+
+      bool
+      operate (valfile &vf, Dwarf_Attribute &attr, Dwarf_Die &die) override
+      {
+	unsigned name = dwarf_whatform (&attr);
+	constant cst {name, &dw_form_dom};
+	vf.push (std::make_unique <value_cst> (cst, 0));
+	return true;
+      }
+
+      std::string
+      name () const override
+      {
+	return "form";
+      }
+    };
+
+    std::shared_ptr <op>
+    build_exec (std::shared_ptr <op> upstream, dwgrep_graph::sptr q,
+		std::shared_ptr <scope> scope) const override
+    {
+      return std::make_shared <form> (upstream, q);
     }
 
-    std::string
+    char const *
     name () const override
     {
       return "form";
     }
   };
+}
 
-  std::shared_ptr <op>
-  build_exec (std::shared_ptr <op> upstream, dwgrep_graph::sptr q,
-	      std::shared_ptr <scope> scope) const override
-  {
-    return std::make_shared <form> (upstream, q);
-  }
-
-  char const *
-  name () const override
-  {
-    return "form";
-  }
-} builtin_form;
-
-static struct
-  : public builtin
+namespace
 {
-  struct parent
-    : public dwop_f
+  struct builtin_parent
+    : public builtin
   {
-    using dwop_f::dwop_f;
-
-    bool
-    operate (valfile &vf, Dwarf_Die &die) override
+    struct parent
+      : public dwop_f
     {
-      Dwarf_Off par_off = m_g->find_parent (die);
-      if (par_off == dwgrep_graph::none_off)
-	return false;
+      using dwop_f::dwop_f;
 
-      Dwarf_Die par_die;
-      if (dwarf_offdie (&*m_g->dwarf, par_off, &par_die) == nullptr)
-	throw_libdw ();
+      bool
+      operate (valfile &vf, Dwarf_Die &die) override
+      {
+	Dwarf_Off par_off = m_g->find_parent (die);
+	if (par_off == dwgrep_graph::none_off)
+	  return false;
 
-      vf.push (std::make_unique <value_die> (m_g, par_die, 0));
-      return true;
+	Dwarf_Die par_die;
+	if (dwarf_offdie (&*m_g->dwarf, par_off, &par_die) == nullptr)
+	  throw_libdw ();
+
+	vf.push (std::make_unique <value_die> (m_g, par_die, 0));
+	return true;
+      }
+
+      bool
+      operate (valfile &vf, Dwarf_Attribute &attr, Dwarf_Die &die) override
+      {
+	vf.push (std::make_unique <value_die> (m_g, die, 0));
+	return true;
+      }
+
+      std::string
+      name () const override
+      {
+	return "parent";
+      }
+    };
+
+    std::shared_ptr <op>
+    build_exec (std::shared_ptr <op> upstream, dwgrep_graph::sptr q,
+		std::shared_ptr <scope> scope) const override
+    {
+      return std::make_shared <parent> (upstream, q);
     }
 
-    bool
-    operate (valfile &vf, Dwarf_Attribute &attr, Dwarf_Die &die) override
-    {
-      vf.push (std::make_unique <value_die> (m_g, die, 0));
-      return true;
-    }
-
-    std::string
+    char const *
     name () const override
     {
       return "parent";
     }
   };
+}
 
-  std::shared_ptr <op>
-  build_exec (std::shared_ptr <op> upstream, dwgrep_graph::sptr q,
-	      std::shared_ptr <scope> scope) const override
-  {
-    return std::make_shared <parent> (upstream, q);
-  }
-
-  char const *
-  name () const override
-  {
-    return "parent";
-  }
-} builtin_parent;
-
-static struct
-  : public builtin
+namespace
 {
-  struct integrate
-    : public dwop_f
+  struct builtin_integrate
+    : public builtin
   {
-    using dwop_f::dwop_f;
-
-    bool
-    operate (valfile &vf, Dwarf_Die &die) override
+    struct integrate
+      : public dwop_f
     {
-      Dwarf_Attribute attr_mem, *attr
-	= dwarf_attr (&die, DW_AT_abstract_origin, &attr_mem);
+      using dwop_f::dwop_f;
 
-      if (attr == nullptr)
-	attr = dwarf_attr (&die, DW_AT_specification, &attr_mem);
+      bool
+      operate (valfile &vf, Dwarf_Die &die) override
+      {
+	Dwarf_Attribute attr_mem, *attr
+	  = dwarf_attr (&die, DW_AT_abstract_origin, &attr_mem);
 
-      if (attr == nullptr)
-	return false;
+	if (attr == nullptr)
+	  attr = dwarf_attr (&die, DW_AT_specification, &attr_mem);
 
-      Dwarf_Die die_mem, *die2 = dwarf_formref_die (attr, &die_mem);
-      if (die2 == nullptr)
-	throw_libdw ();
+	if (attr == nullptr)
+	  return false;
 
-      vf.push (std::make_unique <value_die> (m_g, *die2, 0));
-      return true;
+	Dwarf_Die die_mem, *die2 = dwarf_formref_die (attr, &die_mem);
+	if (die2 == nullptr)
+	  throw_libdw ();
+
+	vf.push (std::make_unique <value_die> (m_g, *die2, 0));
+	return true;
+      }
+
+      std::string
+      name () const override
+      {
+	return "integrate";
+      }
+    };
+
+    std::shared_ptr <op>
+    build_exec (std::shared_ptr <op> upstream, dwgrep_graph::sptr q,
+		std::shared_ptr <scope> scope) const override
+    {
+      return std::make_shared <integrate> (upstream, q);
     }
 
-    std::string
+    char const *
     name () const override
     {
       return "integrate";
     }
   };
-
-  std::shared_ptr <op>
-  build_exec (std::shared_ptr <op> upstream, dwgrep_graph::sptr q,
-	      std::shared_ptr <scope> scope) const override
-  {
-    return std::make_shared <integrate> (upstream, q);
-  }
-
-  char const *
-  name () const override
-  {
-    return "integrate";
-  }
-} builtin_integrate;
+}
 
 namespace
 {
@@ -838,8 +859,8 @@ namespace
     return dwop_number (v.get_dwop (), v.get_attr (), gr);
   }
 
-  loclist_op_builtin <loclist_operate_number,
-		      at_number_name> builtin_at_number;
+  typedef loclist_op_builtin <loclist_operate_number,
+			      at_number_name> builtin_at_number;
 
 
   constexpr char const at_number2_name[] = "@number2";
@@ -850,68 +871,71 @@ namespace
     return dwop_number2 (v.get_dwop (), v.get_attr (), gr);
   }
 
-  loclist_op_builtin <loclist_operate_number2,
-		      at_number2_name> builtin_at_number2;
+  typedef loclist_op_builtin <loclist_operate_number2,
+			      at_number2_name> builtin_at_number2;
 }
 
-static struct
-  : public pred_builtin
+namespace
 {
-  using pred_builtin::pred_builtin;
-
-  struct p
-    : public pred
+  struct builtin_rootp
+    : public pred_builtin
   {
-    dwgrep_graph::sptr m_g;
+    using pred_builtin::pred_builtin;
 
-    explicit p (dwgrep_graph::sptr g)
-      : m_g {g}
-    {}
-
-    pred_result
-    result (valfile &vf) override
+    struct p
+      : public pred
     {
-      if (auto v = vf.top_as <value_die> ())
-	return pred_result (m_g->is_root (v->get_die ()));
+      dwgrep_graph::sptr m_g;
 
-      else if (vf.top ().is <value_attr> ())
-	// By definition, attributes are never root.
-	return pred_result::no;
+      explicit p (dwgrep_graph::sptr g)
+	: m_g {g}
+      {}
 
-      else
-	{
-	  show_expects (name (), {value_die::vtype, value_attr::vtype});
-	  return pred_result::fail;
-	}
+      pred_result
+      result (valfile &vf) override
+      {
+	if (auto v = vf.top_as <value_die> ())
+	  return pred_result (m_g->is_root (v->get_die ()));
+
+	else if (vf.top ().is <value_attr> ())
+	  // By definition, attributes are never root.
+	  return pred_result::no;
+
+	else
+	  {
+	    show_expects (name (), {value_die::vtype, value_attr::vtype});
+	    return pred_result::fail;
+	  }
+      }
+
+      void
+      reset () override
+      {}
+
+      std::string
+      name () const override
+      {
+	return "?root";
+      }
+    };
+
+    std::unique_ptr <pred>
+    build_pred (dwgrep_graph::sptr q,
+		std::shared_ptr <scope> scope) const override
+    {
+      return maybe_invert (std::make_unique <p> (q));
     }
 
-    void
-    reset () override
-    {}
-
-    std::string
+    char const *
     name () const override
     {
-      return "?root";
+      if (m_positive)
+	return "?root";
+      else
+	return "!root";
     }
   };
-
-  std::unique_ptr <pred>
-  build_pred (dwgrep_graph::sptr q,
-	      std::shared_ptr <scope> scope) const override
-  {
-    return maybe_invert (std::make_unique <p> (q));
-  }
-
-  char const *
-  name () const override
-  {
-    if (m_positive)
-      return "?root";
-    else
-      return "!root";
-  }
-} builtin_rootp {true}, builtin_nrootp {false};
+}
 
 namespace
 {
@@ -989,7 +1013,6 @@ namespace
       return "overload";
     }
   };
-  builtin_value_attr builtin_value_attr_obj;
 }
 
 namespace
@@ -1047,11 +1070,6 @@ namespace
       return "@attr";
     }
   };
-
-#define ONE_KNOWN_DW_AT(NAME, CODE)		\
-  builtin_attr_named builtin_attr_##NAME {CODE};
-ALL_KNOWN_DW_AT
-#undef ONE_KNOWN_DW_AT
 }
 
 namespace
@@ -1130,12 +1148,6 @@ namespace
 	return "!attr";
     }
   };
-
-#define ONE_KNOWN_DW_AT(NAME, CODE)				\
-  builtin_pred_attr builtin_pred_attr_##NAME {CODE, true},	\
-    builtin_pred_nattr_##NAME {CODE, false};
-ALL_KNOWN_DW_AT
-#undef ONE_KNOWN_DW_AT
 }
 
 namespace
@@ -1206,12 +1218,6 @@ namespace
 	return "!tag";
     }
   };
-
-#define ONE_KNOWN_DW_TAG(NAME, CODE)					\
-  builtin_pred_tag builtin_pred_tag_##NAME {CODE, true},		\
-    builtin_pred_ntag_##NAME {CODE, false};
-ALL_KNOWN_DW_TAG
-#undef ONE_KNOWN_DW_TAG
 }
 
 namespace
@@ -1282,286 +1288,195 @@ namespace
 	return "!form";
     }
   };
-
-#define ONE_KNOWN_DW_FORM_DESC(NAME, CODE, DESC) ONE_KNOWN_DW_FORM (NAME, CODE)
-#define ONE_KNOWN_DW_FORM(NAME, CODE)					\
-  builtin_pred_form builtin_pred_form_##NAME {CODE, true},		\
-    builtin_pred_nform_##NAME {CODE, false};
-  ALL_KNOWN_DW_FORM;
-#undef ONE_KNOWN_DW_FORM
-#undef ONE_KNOWN_DW_FORM_DESC
 }
 
-namespace
+std::unique_ptr <builtin_dict>
+dwgrep_builtins_dw ()
 {
-// ----------------------------
-// Builtins for Dwarf constants.
+  auto dict = std::make_unique <builtin_dict> ();
 
-#define ONE_KNOWN_DW_TAG(NAME, CODE)					\
-  builtin_constant builtin_##CODE##_obj					\
-	{std::make_unique <value_cst> (constant (CODE, &dw_tag_dom), 0)};
-  ALL_KNOWN_DW_TAG;
-#undef ONE_KNOWN_DW_TAG
+  add_builtin_type_constant <value_die> (*dict);
+  add_builtin_type_constant <value_attr> (*dict);
+  add_builtin_type_constant <value_loclist_op> (*dict);
+
+  dict->add (std::make_shared <builtin_winfo> ());
+  dict->add (std::make_shared <builtin_unit> ());
+
+  dict->add (std::make_shared <builtin_child> ());
+  dict->add (std::make_shared <builtin_attribute> ());
+  dict->add (std::make_shared <builtin_offset> ());
+  dict->add (std::make_shared <builtin_label> ());
+  dict->add (std::make_shared <builtin_form> ());
+  dict->add (std::make_shared <builtin_parent> ());
+  dict->add (std::make_shared <builtin_integrate> ());
+  dict->add (std::make_shared <builtin_at_number> ());
+  dict->add (std::make_shared <builtin_at_number2> ());
+
+  dict->add (std::make_shared <builtin_rootp> (true));
+  dict->add (std::make_shared <builtin_rootp> (false));
 
 #define ONE_KNOWN_DW_AT(NAME, CODE)					\
-  builtin_constant builtin_##CODE##_obj					\
-	{std::make_unique <value_cst> (constant (CODE, &dw_attr_dom), 0)};
+  {									\
+    auto b1 = std::make_shared <builtin_attr_named> (CODE);		\
+    dict->add (b1, "@AT_" #NAME);					\
+    dict->add (b1, "@" #CODE);						\
+    auto b2 = std::make_shared <builtin_pred_attr> (CODE, true);	\
+    auto nb2 = std::make_shared <builtin_pred_attr> (CODE, false);	\
+    dict->add (b2, "?AT_" #NAME);					\
+    dict->add (nb2, "!AT_" #NAME);					\
+    dict->add (b2, "?" #CODE);						\
+    dict->add (nb2, "!" #CODE);						\
+    add_builtin_constant (*dict, constant (CODE, &dw_attr_dom), #CODE);	\
+  }
   ALL_KNOWN_DW_AT;
 #undef ONE_KNOWN_DW_AT
 
+#define ONE_KNOWN_DW_TAG(NAME, CODE)					\
+  {									\
+    auto b1 = std::make_shared <builtin_pred_tag> (CODE, true);		\
+    auto nb1 = std::make_shared <builtin_pred_tag> (CODE, false);	\
+    dict->add (b1, "?TAG_" #NAME);					\
+    dict->add (nb1, "!TAG_" #NAME);					\
+    dict->add (b1, "?" #CODE);						\
+    dict->add (nb1, "!" #CODE);						\
+    add_builtin_constant (*dict, constant (CODE, &dw_tag_dom), #CODE);	\
+  }
+  ALL_KNOWN_DW_TAG;
+#undef ONE_KNOWN_DW_TAG
+
 #define ONE_KNOWN_DW_FORM_DESC(NAME, CODE, DESC) ONE_KNOWN_DW_FORM (NAME, CODE)
 #define ONE_KNOWN_DW_FORM(NAME, CODE)					\
-  builtin_constant builtin_##CODE##_obj					\
-	{std::make_unique <value_cst> (constant (CODE, &dw_form_dom), 0)};
+  {									\
+    auto b1 = std::make_shared <builtin_pred_form> (CODE, true);	\
+    auto nb1 = std::make_shared <builtin_pred_form> (CODE, false);	\
+    dict->add (b1, "?FORM_" #NAME);					\
+    dict->add (nb1, "!FORM_" #NAME);					\
+    dict->add (b1, "?" #CODE);						\
+    dict->add (nb1, "!" #CODE);						\
+    add_builtin_constant (*dict, constant (CODE, &dw_form_dom), #CODE);	\
+  }
   ALL_KNOWN_DW_FORM;
 #undef ONE_KNOWN_DW_FORM
 #undef ONE_KNOWN_DW_FORM_DESC
 
 #define ONE_KNOWN_DW_LANG_DESC(NAME, CODE, DESC)			\
-  builtin_constant builtin_##CODE##_obj					\
-	{std::make_unique <value_cst> (constant (CODE, &dw_lang_dom), 0)};
+  {									\
+    add_builtin_constant (*dict, constant (CODE, &dw_lang_dom), #CODE);	\
+  }
   ALL_KNOWN_DW_LANG;
 #undef ONE_KNOWN_DW_LANG_DESC
 
 #define ONE_KNOWN_DW_MACINFO(NAME, CODE)				\
-  builtin_constant builtin_##CODE##_obj					\
-	{std::make_unique <value_cst> (constant (CODE, &dw_macinfo_dom), 0)};
+  {									\
+    add_builtin_constant (*dict, constant (CODE, &dw_macinfo_dom), #CODE); \
+  }
   ALL_KNOWN_DW_MACINFO;
 #undef ONE_KNOWN_DW_MACINFO
 
 #define ONE_KNOWN_DW_MACRO_GNU(NAME, CODE)				\
-  builtin_constant builtin_##CODE##_obj					\
-	{std::make_unique <value_cst> (constant (CODE, &dw_macro_dom), 0)};
+  {									\
+    add_builtin_constant (*dict, constant (CODE, &dw_macro_dom), #CODE); \
+  }
   ALL_KNOWN_DW_MACRO_GNU;
 #undef ONE_KNOWN_DW_MACRO_GNU
 
 #define ONE_KNOWN_DW_INL(NAME, CODE)					\
-  builtin_constant builtin_##CODE##_obj					\
-	{std::make_unique <value_cst> (constant (CODE, &dw_inline_dom), 0)};
+  {									\
+    add_builtin_constant (*dict, constant (CODE, &dw_inline_dom), #CODE); \
+  }
   ALL_KNOWN_DW_INL;
 #undef ONE_KNOWN_DW_INL
 
 #define ONE_KNOWN_DW_ATE(NAME, CODE)					\
-  builtin_constant builtin_##CODE##_obj					\
-	{std::make_unique <value_cst> (constant (CODE, &dw_encoding_dom), 0)};
+  {									\
+    add_builtin_constant (*dict, constant (CODE, &dw_encoding_dom), #CODE); \
+  }
   ALL_KNOWN_DW_ATE;
 #undef ONE_KNOWN_DW_ATE
 
 #define ONE_KNOWN_DW_ACCESS(NAME, CODE)					\
-  builtin_constant builtin_##CODE##_obj					\
-	{std::make_unique <value_cst> (constant (CODE, &dw_access_dom), 0)};
+  {									\
+    add_builtin_constant (*dict, constant (CODE, &dw_access_dom), #CODE); \
+  }
   ALL_KNOWN_DW_ACCESS;
 #undef ONE_KNOWN_DW_ACCESS
 
 #define ONE_KNOWN_DW_VIS(NAME, CODE)					\
-  builtin_constant builtin_##CODE##_obj					\
-	{std::make_unique <value_cst> (constant (CODE, &dw_visibility_dom), 0)};
+  {									\
+    add_builtin_constant (*dict, constant (CODE, &dw_visibility_dom), #CODE); \
+  }
   ALL_KNOWN_DW_VIS;
 #undef ONE_KNOWN_DW_VIS
 
 #define ONE_KNOWN_DW_VIRTUALITY(NAME, CODE)				\
-  builtin_constant builtin_##CODE##_obj					\
-	{std::make_unique <value_cst> (constant (CODE, &dw_virtuality_dom), 0)};
+  {									\
+    add_builtin_constant (*dict, constant (CODE, &dw_virtuality_dom), #CODE); \
+  }
   ALL_KNOWN_DW_VIRTUALITY;
 #undef ONE_KNOWN_DW_VIRTUALITY
 
 #define ONE_KNOWN_DW_ID(NAME, CODE)					\
-  builtin_constant builtin_##CODE##_obj					\
-	{std::make_unique <value_cst>					\
-	    (constant (CODE, &dw_identifier_case_dom), 0)};
+  {									\
+    add_builtin_constant (*dict,					\
+			  constant (CODE, &dw_identifier_case_dom), #CODE); \
+  }
   ALL_KNOWN_DW_ID;
 #undef ONE_KNOWN_DW_ID
 
 #define ONE_KNOWN_DW_CC(NAME, CODE)					\
-  builtin_constant builtin_##CODE##_obj					\
-	{std::make_unique <value_cst>					\
-	    (constant (CODE, &dw_calling_convention_dom), 0)};
+  {									\
+    add_builtin_constant (*dict,					\
+			  constant (CODE, &dw_calling_convention_dom), #CODE); \
+  }
   ALL_KNOWN_DW_CC;
 #undef ONE_KNOWN_DW_CC
 
 #define ONE_KNOWN_DW_ORD(NAME, CODE)					\
-  builtin_constant builtin_##CODE##_obj					\
-	{std::make_unique <value_cst> (constant (CODE, &dw_ordering_dom), 0)};
+  {									\
+    add_builtin_constant (*dict, constant (CODE, &dw_ordering_dom), #CODE); \
+  }
   ALL_KNOWN_DW_ORD;
 #undef ONE_KNOWN_DW_ORD
 
 #define ONE_KNOWN_DW_DSC(NAME, CODE)					\
-  builtin_constant builtin_##CODE##_obj					\
-	{std::make_unique <value_cst> (constant (CODE, &dw_discr_list_dom), 0)};
+  {									\
+    add_builtin_constant (*dict, constant (CODE, &dw_discr_list_dom), #CODE); \
+  }
   ALL_KNOWN_DW_DSC;
 #undef ONE_KNOWN_DW_DSC
 
 #define ONE_KNOWN_DW_DS(NAME, CODE)					\
-  builtin_constant builtin_##CODE##_obj					\
-	{std::make_unique <value_cst>					\
-	    (constant (CODE, &dw_decimal_sign_dom), 0)};
+  {									\
+    add_builtin_constant (*dict,					\
+			  constant (CODE, &dw_decimal_sign_dom), #CODE); \
+  }
   ALL_KNOWN_DW_DS;
 #undef ONE_KNOWN_DW_DS
 
 #define ONE_KNOWN_DW_OP_DESC(NAME, CODE, DESC) ONE_KNOWN_DW_OP (NAME, CODE)
 #define ONE_KNOWN_DW_OP(NAME, CODE)					\
-  builtin_constant builtin_##CODE##_obj					\
-	{std::make_unique <value_cst>					\
-	    (constant (CODE, &dw_locexpr_opcode_dom), 0)};
+  {									\
+    add_builtin_constant (*dict,					\
+			  constant (CODE, &dw_locexpr_opcode_dom), #CODE); \
+  }
   ALL_KNOWN_DW_OP;
 #undef ONE_KNOWN_DW_OP
 #undef ONE_KNOWN_DW_OP_DESC
 
-builtin_constant builtin_DW_ADDR_none_obj
-    {std::make_unique <value_cst>
-	(constant (DW_ADDR_none, &dw_address_class_dom), 0)};
+  add_builtin_constant (*dict, constant (DW_ADDR_none, &dw_address_class_dom),
+			"DW_ADDR_none");
 
 #define ONE_KNOWN_DW_END(NAME, CODE)					\
-  builtin_constant builtin_##CODE##_obj					\
-	{std::make_unique <value_cst> (constant (CODE, &dw_endianity_dom), 0)};
-  ALL_KNOWN_DW_END;
-#undef ONE_KNOWN_DW_END
-}
-
-void
-dwgrep_init_dw ()
-{
-  builtin_T_DIE = std::make_unique <builtin_constant>
-    (std::make_unique <value_cst>
-     (value::get_type_const_of <value_die> (), 0));
-
-  builtin_T_ATTR = std::make_unique <builtin_constant>
-    (std::make_unique <value_cst>
-     (value::get_type_const_of <value_attr> (), 0));
-
-  builtin_T_LOCLIST_OP = std::make_unique <builtin_constant>
-    (std::make_unique <value_cst>
-     (value::get_type_const_of <value_loclist_op> (), 0));
-
-  add_builtin (*builtin_T_DIE, value_die::vtype.name ());
-  add_builtin (*builtin_T_ATTR, value_attr::vtype.name ());
-  add_builtin (*builtin_T_LOCLIST_OP, value_loclist_op::vtype.name ());
-
-  add_builtin (builtin_winfo);
-  add_builtin (builtin_unit);
-
-  add_builtin (builtin_child);
-  add_builtin (builtin_attribute);
-  add_builtin (builtin_offset);
-  add_builtin (builtin_label);
-  add_builtin (builtin_form);
-  add_builtin (builtin_parent);
-  add_builtin (builtin_integrate);
-  add_builtin (builtin_at_number);
-  add_builtin (builtin_at_number2);
-
-#define ONE_KNOWN_DW_AT(NAME, CODE)				\
-    add_builtin (builtin_attr_##NAME, "@AT_" #NAME);		\
-    add_builtin (builtin_pred_attr_##NAME, "?AT_" #NAME);	\
-    add_builtin (builtin_pred_nattr_##NAME, "!AT_" #NAME);	\
-    add_builtin (builtin_attr_##NAME, "@" #CODE);		\
-    add_builtin (builtin_pred_attr_##NAME, "?" #CODE);		\
-    add_builtin (builtin_pred_nattr_##NAME, "!" #CODE);		\
-    add_builtin (builtin_##CODE##_obj, #CODE);
-  ALL_KNOWN_DW_AT
-#undef ONE_KNOWN_DW_AT
-
-#define ONE_KNOWN_DW_TAG(NAME, CODE)				\
-    add_builtin (builtin_pred_tag_##NAME, "?TAG_" #NAME);	\
-    add_builtin (builtin_pred_ntag_##NAME, "!TAG_" #NAME);	\
-    add_builtin (builtin_pred_tag_##NAME, "?" #CODE);		\
-    add_builtin (builtin_pred_ntag_##NAME, "!" #CODE);		\
-    add_builtin (builtin_##CODE##_obj, #CODE);
-  ALL_KNOWN_DW_TAG
-#undef ONE_KNOWN_DW_TAG
-
-#define ONE_KNOWN_DW_FORM_DESC(NAME, CODE, DESC) ONE_KNOWN_DW_FORM (NAME, CODE)
-#define ONE_KNOWN_DW_FORM(NAME, CODE)				\
-    add_builtin (builtin_pred_form_##NAME, "?FORM_" #NAME);	\
-    add_builtin (builtin_pred_nform_##NAME, "!FORM_" #NAME);	\
-    add_builtin (builtin_pred_form_##NAME, "?" #CODE);		\
-    add_builtin (builtin_pred_nform_##NAME, "!" #CODE);		\
-    add_builtin (builtin_##CODE##_obj, #CODE);
-  ALL_KNOWN_DW_FORM;
-#undef ONE_KNOWN_DW_FORM
-#undef ONE_KNOWN_DW_FORM_DESC
-
-  add_builtin (builtin_rootp);
-  add_builtin (builtin_nrootp);
-
-#define ONE_KNOWN_DW_LANG_DESC(NAME, CODE, DESC)	\
-    add_builtin (builtin_##CODE##_obj, #CODE);
-  ALL_KNOWN_DW_LANG;
-#undef ONE_KNOWN_DW_LANG_DESC
-
-#define ONE_KNOWN_DW_MACINFO(NAME, CODE)	\
-    add_builtin (builtin_##CODE##_obj, #CODE);
-  ALL_KNOWN_DW_MACINFO;
-#undef ONE_KNOWN_DW_MACINFO
-
-#define ONE_KNOWN_DW_MACRO_GNU(NAME, CODE)	\
-    add_builtin (builtin_##CODE##_obj, #CODE);
-  ALL_KNOWN_DW_MACRO_GNU;
-#undef ONE_KNOWN_DW_MACRO_GNU
-
-#define ONE_KNOWN_DW_INL(NAME, CODE)		\
-    add_builtin (builtin_##CODE##_obj, #CODE);
-  ALL_KNOWN_DW_INL;
-#undef ONE_KNOWN_DW_INL
-
-#define ONE_KNOWN_DW_ATE(NAME, CODE)		\
-    add_builtin (builtin_##CODE##_obj, #CODE);
-  ALL_KNOWN_DW_ATE;
-#undef ONE_KNOWN_DW_ATE
-
-#define ONE_KNOWN_DW_ACCESS(NAME, CODE)		\
-    add_builtin (builtin_##CODE##_obj, #CODE);
-  ALL_KNOWN_DW_ACCESS;
-#undef ONE_KNOWN_DW_ACCESS
-
-#define ONE_KNOWN_DW_VIS(NAME, CODE)		\
-    add_builtin (builtin_##CODE##_obj, #CODE);
-  ALL_KNOWN_DW_VIS;
-#undef ONE_KNOWN_DW_VIS
-
-#define ONE_KNOWN_DW_VIRTUALITY(NAME, CODE)	\
-    add_builtin (builtin_##CODE##_obj, #CODE);
-  ALL_KNOWN_DW_VIRTUALITY;
-#undef ONE_KNOWN_DW_VIRTUALITY
-
-#define ONE_KNOWN_DW_ID(NAME, CODE)		\
-    add_builtin (builtin_##CODE##_obj, #CODE);
-  ALL_KNOWN_DW_ID;
-#undef ONE_KNOWN_DW_ID
-
-#define ONE_KNOWN_DW_CC(NAME, CODE)		\
-    add_builtin (builtin_##CODE##_obj, #CODE);
-  ALL_KNOWN_DW_CC;
-#undef ONE_KNOWN_DW_CC
-
-#define ONE_KNOWN_DW_ORD(NAME, CODE)		\
-    add_builtin (builtin_##CODE##_obj, #CODE);
-  ALL_KNOWN_DW_ORD;
-#undef ONE_KNOWN_DW_ORD
-
-#define ONE_KNOWN_DW_DSC(NAME, CODE)		\
-    add_builtin (builtin_##CODE##_obj, #CODE);
-  ALL_KNOWN_DW_DSC;
-#undef ONE_KNOWN_DW_DSC
-
-#define ONE_KNOWN_DW_DS(NAME, CODE)		\
-    add_builtin (builtin_##CODE##_obj, #CODE);
-  ALL_KNOWN_DW_DS;
-#undef ONE_KNOWN_DW_DS
-
-#define ONE_KNOWN_DW_OP_DESC(NAME, CODE, DESC) ONE_KNOWN_DW_OP (NAME, CODE)
-#define ONE_KNOWN_DW_OP(NAME, CODE)		\
-    add_builtin (builtin_##CODE##_obj, #CODE);
-  ALL_KNOWN_DW_OP;
-#undef ONE_KNOWN_DW_OP
-#undef ONE_KNOWN_DW_OP_DESC
-
-  add_builtin (builtin_DW_ADDR_none_obj, "DW_ADDR_none");
-
-#define ONE_KNOWN_DW_END(NAME, CODE)		\
-    add_builtin (builtin_##CODE##_obj, #CODE);
+  {									\
+    add_builtin_constant (*dict, constant (CODE, &dw_endianity_dom), #CODE); \
+  }
   ALL_KNOWN_DW_END;
 #undef ONE_KNOWN_DW_END
 
-  ovl_tab_value ().add_overload (value_attr::vtype, builtin_value_attr_obj);
+  {
+    static builtin_value_attr builtin_value_attr_obj;
+    ovl_tab_value ().add_overload (value_attr::vtype, builtin_value_attr_obj);
+  }
+
+  return dict;
 }

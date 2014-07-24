@@ -142,7 +142,7 @@ struct tree
   std::unique_ptr <std::string> m_str;
   std::unique_ptr <constant> m_cst;
   std::shared_ptr <scope> m_scope;
-  builtin const *m_builtin;
+  std::shared_ptr <builtin const> m_builtin;
 
 public:
   tree_type m_tt;
@@ -212,7 +212,7 @@ public:
   template <tree_type TT> static tree *create_const (constant c);
   template <tree_type TT> static tree *create_cat (tree *t1, tree *t2);
 
-  static tree *create_builtin (builtin const *b);
+  static tree *create_builtin (std::shared_ptr <builtin const> b);
 
   static tree *create_neg (tree *t1);
   static tree *create_assert (tree *t1);

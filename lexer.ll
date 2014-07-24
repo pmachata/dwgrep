@@ -43,6 +43,7 @@
 %option noyywrap nounput batch noinput
 
 %option reentrant
+%option extra-type="builtin_dict const *"
 
 ID  [_a-zA-Z][_a-zA-Z0-9]*
 HEX [a-fA-F0-9]
@@ -164,27 +165,27 @@ BIN [01]
 
 <STRING>"%s" {
   yylval->f->flush_str ();
-  yylval->f->t.push_child (parse_query (""));
+  yylval->f->t.push_child (parse_query (*yyextra, ""));
 }
 
 <STRING>"%x" {
   yylval->f->flush_str ();
-  yylval->f->t.push_child (parse_query ("value hex"));
+  yylval->f->t.push_child (parse_query (*yyextra, "value hex"));
 }
 
 <STRING>"%o" {
   yylval->f->flush_str ();
-  yylval->f->t.push_child (parse_query ("value oct"));
+  yylval->f->t.push_child (parse_query (*yyextra, "value oct"));
 }
 
 <STRING>"%b" {
   yylval->f->flush_str ();
-  yylval->f->t.push_child (parse_query ("value bin"));
+  yylval->f->t.push_child (parse_query (*yyextra, "value bin"));
 }
 
 <STRING>"%d" {
   yylval->f->flush_str ();
-  yylval->f->t.push_child (parse_query ("value"));
+  yylval->f->t.push_child (parse_query (*yyextra, "value"));
 }
 
 <STRING>. {
@@ -224,7 +225,7 @@ BIN [01]
   yylval->f->in_string = true;
   if (yylval->f->level == 0)
     {
-      yylval->f->t.push_child (parse_query (yylval->f->yank_str ()));
+      yylval->f->t.push_child (parse_query (*yyextra, yylval->f->yank_str ()));
       BEGIN STRING;
     }
   else

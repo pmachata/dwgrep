@@ -30,7 +30,6 @@
 #define _BUILTIN_H_
 
 #include <memory>
-#include <map>
 #include <string>
 
 #include "dwgrep.hh"
@@ -67,8 +66,29 @@ public:
   std::unique_ptr <pred> maybe_invert (std::unique_ptr <pred> pred) const;
 };
 
-void add_builtin (builtin &b);
-void add_builtin (builtin &b, std::string const &name);
-builtin const *find_builtin (std::string const &name);
+class builtin_dict
+{
+  struct builtins;
+  std::unique_ptr <builtins> m_builtins;
+
+public:
+  builtin_dict ();
+  builtin_dict (builtin_dict &a, builtin_dict &b);
+  ~builtin_dict ();
+
+  void add (std::shared_ptr <builtin const> b);
+  void add (std::shared_ptr <builtin const> b, std::string const &name);
+  std::shared_ptr <builtin const> find (std::string const &name) const;
+};
+
+void add_builtin_constant (builtin_dict &dict, constant cst, char const *name);
+
+template <class T>
+void
+add_builtin_type_constant (builtin_dict &dict)
+{
+  add_builtin_constant (dict, value::get_type_const_of <T> (),
+			T::vtype.name ());
+}
 
 #endif /* _BUILTIN_H_ */

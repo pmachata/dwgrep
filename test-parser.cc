@@ -37,6 +37,8 @@
 
 static unsigned tests = 0, failed = 0;
 
+std::unique_ptr <builtin_dict> builtins;
+
 void
 fail (std::string parse)
 {
@@ -52,7 +54,7 @@ test (std::string parse, std::string expect,
   tree t;
   try
     {
-      t = parse_query (parse);
+      t = parse_query (*builtins, parse);
       if (full && optimize)
 	  t.simplify ();
     }
@@ -310,10 +312,11 @@ do_tests ()
 int
 main (int argc, char *argv[])
 {
-  dwgrep_init ();
+  builtins = dwgrep_builtins_core ();
+
   if (argc > 1)
     {
-      tree t = parse_query (argv[1]);
+      tree t = parse_query (*builtins, argv[1]);
       std::cerr << t << std::endl;
     }
   else

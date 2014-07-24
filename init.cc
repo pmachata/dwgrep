@@ -46,162 +46,134 @@
 #include "builtin-length.hh"
 #include "builtin-value.hh"
 
-namespace
+std::unique_ptr <builtin_dict>
+dwgrep_builtins_core ()
 {
-  // value types for builtin types
-  builtin_constant builtin_T_CONST_obj
-	{std::make_unique <value_cst>
-	    (value::get_type_const_of <value_cst> (), 0)};
+  auto dict = std::make_unique <builtin_dict> ();
 
-  builtin_constant builtin_T_STR_obj
-	{std::make_unique <value_cst>
-	    (value::get_type_const_of <value_str> (), 0)};
-
-  builtin_constant builtin_T_SEQ_obj
-	{std::make_unique <value_cst>
-	    (value::get_type_const_of <value_seq> (), 0)};
-
-  builtin_constant builtin_T_CLOSURE_obj
-	{std::make_unique <value_cst>
-	    (value::get_type_const_of <value_closure> (), 0)};
+  add_builtin_type_constant <value_cst> (*dict);
+  add_builtin_type_constant <value_str> (*dict);
+  add_builtin_type_constant <value_seq> (*dict);
+  add_builtin_type_constant <value_closure> (*dict);
 
   // arithmetic, except for add, which is an overload
-  builtin_sub builtin_sub_obj;
-  builtin_mul builtin_mul_obj;
-  builtin_div builtin_div_obj;
-  builtin_mod builtin_mod_obj;
+  dict->add (std::make_shared <builtin_sub> ());
+  dict->add (std::make_shared <builtin_mul> ());
+  dict->add (std::make_shared <builtin_div> ());
+  dict->add (std::make_shared <builtin_mod> ());
 
   // closure builtins
-  builtin_apply builtin_apply_obj;
+  dict->add (std::make_shared <builtin_apply> ());
 
   // comparison assertions
-  builtin_eq builtin_eq_obj {true}, builtin_neq_obj {false};
-  builtin_lt builtin_lt_obj {true}, builtin_nlt_obj {false};
-  builtin_gt builtin_gt_obj {true}, builtin_ngt_obj {false};
+  {
+    auto eq = std::make_shared <builtin_eq> (true);
+    auto neq = std::make_shared <builtin_eq> (false);
+
+    auto lt = std::make_shared <builtin_lt> (true);
+    auto nlt = std::make_shared <builtin_lt> (false);
+
+    auto gt = std::make_shared <builtin_gt> (true);
+    auto ngt = std::make_shared <builtin_gt> (false);
+
+    dict->add (eq);
+    dict->add (neq);
+    dict->add (lt);
+    dict->add (nlt);
+    dict->add (gt);
+    dict->add (ngt);
+
+    dict->add (neq, "?ne");
+    dict->add (eq, "!ne");
+    dict->add (nlt, "?ge");
+    dict->add (lt, "!ge");
+    dict->add (ngt, "?le");
+    dict->add (gt, "!le");
+  }
 
   // constants
-  builtin_hex builtin_hex_obj;
-  builtin_dec builtin_dec_obj;
-  builtin_oct builtin_oct_obj;
-  builtin_bin builtin_bin_obj;
-  builtin_constant builtin_false_obj
-	{std::make_unique <value_cst> (constant (0, &bool_constant_dom), 0)};
-  builtin_constant builtin_true_obj
-	{std::make_unique <value_cst> (constant (1, &bool_constant_dom), 0)};
-  builtin_type builtin_type_obj;
-  builtin_pos builtin_pos_obj;
+  dict->add (std::make_shared <builtin_hex> ());
+  dict->add (std::make_shared <builtin_dec> ());
+  dict->add (std::make_shared <builtin_oct> ());
+  dict->add (std::make_shared <builtin_bin> ());
+  add_builtin_constant (*dict, constant (0, &bool_constant_dom), "false");
+  add_builtin_constant (*dict, constant (1, &bool_constant_dom), "true");
+  dict->add (std::make_shared <builtin_type> ());
+  dict->add (std::make_shared <builtin_pos> ());
 
   // stack shuffling
-  builtin_drop builtin_drop_obj;
-  builtin_swap builtin_swap_obj;
-  builtin_dup builtin_dup_obj;
-  builtin_over builtin_over_obj;
-  builtin_rot builtin_rot_obj;
+  dict->add (std::make_shared <builtin_drop> ());
+  dict->add (std::make_shared <builtin_swap> ());
+  dict->add (std::make_shared <builtin_dup> ());
+  dict->add (std::make_shared <builtin_over> ());
+  dict->add (std::make_shared <builtin_rot> ());
 
   // strings
-  builtin_match builtin_match_obj {true}, builtin_nmatch_obj {false};
+  dict->add (std::make_shared <builtin_match> (true));
+  dict->add (std::make_shared <builtin_match> (false));
 
   // "add"
-  builtin_add builtin_add_obj;
-  overload_op_builtin <op_add_str> builtin_add_str_obj;
-  overload_op_builtin <op_add_cst> builtin_add_cst_obj;
-  overload_op_builtin <op_add_seq> builtin_add_seq_obj;
+  dict->add (std::make_shared <builtin_add> ());
+  {
+    // XXX
+    static overload_op_builtin <op_add_str> builtin_add_str_obj;
+    static overload_op_builtin <op_add_cst> builtin_add_cst_obj;
+    static overload_op_builtin <op_add_seq> builtin_add_seq_obj;
+    ovl_tab_add ().add_overload (value_cst::vtype, builtin_add_cst_obj);
+    ovl_tab_add ().add_overload (value_str::vtype, builtin_add_str_obj);
+    ovl_tab_add ().add_overload (value_seq::vtype, builtin_add_seq_obj);
+  }
 
   // "elem"
-  builtin_elem builtin_elem_obj;
-  overload_op_builtin <op_elem_str> builtin_elem_str_obj;
-  overload_op_builtin <op_elem_seq> builtin_elem_seq_obj;
+  dict->add (std::make_shared <builtin_elem> ());
+  {
+    // XXX
+    static overload_op_builtin <op_elem_str> builtin_elem_str_obj;
+    static overload_op_builtin <op_elem_seq> builtin_elem_seq_obj;
+    ovl_tab_elem ().add_overload (value_str::vtype, builtin_elem_str_obj);
+    ovl_tab_elem ().add_overload (value_seq::vtype, builtin_elem_seq_obj);
+  }
 
   // "empty"
-  builtin_empty builtin_empty_obj {true}, builtin_nempty_obj {false};
-  overload_pred_builtin <pred_empty_str> builtin_empty_str_obj;
-  overload_pred_builtin <pred_empty_seq> builtin_empty_seq_obj;
+  dict->add (std::make_shared <builtin_empty> (true));
+  dict->add (std::make_shared <builtin_empty> (false));
+  {
+    // XXX -- note that the overload table is shared among the two
+    // builtins
+    static overload_pred_builtin <pred_empty_str> builtin_empty_str_obj;
+    static overload_pred_builtin <pred_empty_seq> builtin_empty_seq_obj;
+    ovl_tab_empty ().add_overload (value_str::vtype, builtin_empty_str_obj);
+    ovl_tab_empty ().add_overload (value_seq::vtype, builtin_empty_seq_obj);
+  }
 
   // "find"
-  builtin_find builtin_find_obj {true}, builtin_nfind_obj {false};
-  overload_pred_builtin <pred_find_str> builtin_find_str_obj;
-  overload_pred_builtin <pred_find_seq> builtin_find_seq_obj;
+  dict->add (std::make_shared <builtin_find> (true));
+  dict->add (std::make_shared <builtin_find> (false));
+  {
+    // XXX
+    static overload_pred_builtin <pred_find_str> builtin_find_str_obj;
+    static overload_pred_builtin <pred_find_seq> builtin_find_seq_obj;
+    ovl_tab_find ().add_overload (value_str::vtype, builtin_find_str_obj);
+    ovl_tab_find ().add_overload (value_seq::vtype, builtin_find_seq_obj);
+  }
 
   // "length"
-  builtin_length builtin_length_obj;
-  overload_op_builtin <op_length_str> builtin_length_str_obj;
-  overload_op_builtin <op_length_seq> builtin_length_seq_obj;
+  dict->add (std::make_shared <builtin_length> ());
+  {
+    // XXX
+    static overload_op_builtin <op_length_str> builtin_length_str_obj;
+    static overload_op_builtin <op_length_seq> builtin_length_seq_obj;
+    ovl_tab_length ().add_overload (value_str::vtype, builtin_length_str_obj);
+    ovl_tab_length ().add_overload (value_seq::vtype, builtin_length_seq_obj);
+  }
 
   // "value"
-  builtin_value builtin_value_obj;
-  overload_op_builtin <op_value_cst> builtin_value_cst_obj;
-}
+  dict->add (std::make_shared <builtin_value> ());
+  {
+    // XXX
+    static overload_op_builtin <op_value_cst> builtin_value_cst_obj;
+    ovl_tab_value ().add_overload (value_cst::vtype, builtin_value_cst_obj);
+  }
 
-void
-dwgrep_init ()
-{
-  add_builtin (builtin_T_CONST_obj, value_cst::vtype.name ());
-  add_builtin (builtin_T_STR_obj, value_str::vtype.name ());
-  add_builtin (builtin_T_SEQ_obj, value_seq::vtype.name ());
-  add_builtin (builtin_T_CLOSURE_obj, value_closure::vtype.name ());
-
-  add_builtin (builtin_sub_obj);
-  add_builtin (builtin_mul_obj);
-  add_builtin (builtin_div_obj);
-  add_builtin (builtin_mod_obj);
-
-  add_builtin (builtin_apply_obj);
-
-  add_builtin (builtin_eq_obj);
-  add_builtin (builtin_neq_obj);
-  add_builtin (builtin_lt_obj);
-  add_builtin (builtin_nlt_obj);
-  add_builtin (builtin_gt_obj);
-  add_builtin (builtin_ngt_obj);
-
-  add_builtin (builtin_neq_obj, "?ne");
-  add_builtin (builtin_eq_obj, "!ne");
-  add_builtin (builtin_nlt_obj, "?ge");
-  add_builtin (builtin_lt_obj, "!ge");
-  add_builtin (builtin_ngt_obj, "?le");
-  add_builtin (builtin_gt_obj, "!le");
-
-  add_builtin (builtin_hex_obj);
-  add_builtin (builtin_dec_obj);
-  add_builtin (builtin_oct_obj);
-  add_builtin (builtin_bin_obj);
-  add_builtin (builtin_false_obj, "false");
-  add_builtin (builtin_true_obj, "true");
-  add_builtin (builtin_type_obj);
-  add_builtin (builtin_pos_obj);
-
-  add_builtin (builtin_drop_obj);
-  add_builtin (builtin_swap_obj);
-  add_builtin (builtin_dup_obj);
-  add_builtin (builtin_over_obj);
-  add_builtin (builtin_rot_obj);
-
-  add_builtin (builtin_match_obj);
-  add_builtin (builtin_nmatch_obj);
-
-  add_builtin (builtin_add_obj);
-  ovl_tab_add ().add_overload (value_cst::vtype, builtin_add_cst_obj);
-  ovl_tab_add ().add_overload (value_str::vtype, builtin_add_str_obj);
-  ovl_tab_add ().add_overload (value_seq::vtype, builtin_add_seq_obj);
-
-  add_builtin (builtin_length_obj);
-  ovl_tab_length ().add_overload (value_str::vtype, builtin_length_str_obj);
-  ovl_tab_length ().add_overload (value_seq::vtype, builtin_length_seq_obj);
-
-  add_builtin (builtin_value_obj);
-  ovl_tab_value ().add_overload (value_cst::vtype, builtin_value_cst_obj);
-
-  add_builtin (builtin_elem_obj);
-  ovl_tab_elem ().add_overload (value_str::vtype, builtin_elem_str_obj);
-  ovl_tab_elem ().add_overload (value_seq::vtype, builtin_elem_seq_obj);
-
-  add_builtin (builtin_empty_obj);
-  add_builtin (builtin_nempty_obj);
-  ovl_tab_empty ().add_overload (value_str::vtype, builtin_empty_str_obj);
-  ovl_tab_empty ().add_overload (value_seq::vtype, builtin_empty_seq_obj);
-
-  add_builtin (builtin_find_obj);
-  add_builtin (builtin_nfind_obj);
-  ovl_tab_find ().add_overload (value_str::vtype, builtin_find_str_obj);
-  ovl_tab_find ().add_overload (value_seq::vtype, builtin_find_seq_obj);
+  return dict;
 }
