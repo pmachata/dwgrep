@@ -102,8 +102,7 @@ namespace
       case tree_type::PRED_SUBX_ANY: case tree_type::PRED_NOT:
       case tree_type::PRED_AND: case tree_type::NOP: case tree_type::PRED_OR:
       case tree_type::CONST: case tree_type::STR: case tree_type::FORMAT:
-      case tree_type::F_BUILTIN: case tree_type::SEL_UNIVERSE:
-      case tree_type::SEL_SECTION: case tree_type::F_DEBUG:
+      case tree_type::F_BUILTIN: case tree_type::F_DEBUG:
 	for (auto &c: t.m_children)
 	  c = ::promote_scopes (c, scp);
 	return t;

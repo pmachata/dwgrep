@@ -210,7 +210,7 @@
 %token TOK_LIT_INT TOK_QMARK_LIT_INT TOK_BANG_LIT_INT
 
    // XXX These should eventually be moved to builtins.
-%token TOK_TYPE TOK_UNIVERSE TOK_SECTION TOK_DEBUG
+%token TOK_TYPE TOK_DEBUG
 
 %token TOK_EOF
 
@@ -391,12 +391,6 @@ Statement:
 
   | TOK_DEBUG
   { $$ = tree::create_nullary <tree_type::F_DEBUG> (); }
-
-  | TOK_UNIVERSE
-  { $$ = tree::create_nullary <tree_type::SEL_UNIVERSE> (); }
-
-  | TOK_SECTION
-  { $$ = tree::create_nullary <tree_type::SEL_SECTION> (); }
 
 %%
 

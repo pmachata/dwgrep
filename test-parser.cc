@@ -170,8 +170,6 @@ do_tests ()
   test ("value", "(F_BUILTIN<value>)");
   test ("pos", "(F_BUILTIN<pos>)");
   test ("elem", "(F_BUILTIN<elem>)");
-  test ("universe", "(SEL_UNIVERSE)");
-  test ("section", "(SEL_SECTION)");
 
   test ("1 add: 2", "(CAT (CONST<1>) (CONST<2>) (F_BUILTIN<add>))");
 

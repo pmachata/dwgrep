@@ -79,8 +79,6 @@ BIN [01]
 "then" return TOK_THEN;
 "else" return TOK_ELSE;
 
-"universe" return TOK_UNIVERSE;
-"section" return TOK_SECTION;
 "\\dbg" return TOK_DEBUG;
 
 [?!@.\\]?{ID} return pass_string (yyscanner, yylval, TOK_WORD);

@@ -68,7 +68,6 @@ tree::build_pred (dwgrep_graph::sptr q, std::shared_ptr <scope> scope) const
       return m_builtin->build_pred (q, scope);
 
     case tree_type::CAT:
-    case tree_type::SEL_UNIVERSE:
     case tree_type::NOP:
     case tree_type::ASSERT:
     case tree_type::ALT:
@@ -80,7 +79,6 @@ tree::build_pred (dwgrep_graph::sptr q, std::shared_ptr <scope> scope) const
     case tree_type::STR:
     case tree_type::FORMAT:
     case tree_type::F_DEBUG:
-    case tree_type::SEL_SECTION:
     case tree_type::BIND:
     case tree_type::READ:
     case tree_type::SCOPE:
@@ -265,11 +263,6 @@ tree::build_exec (std::shared_ptr <op> upstream, dwgrep_graph::sptr q,
 					     then_origin, then_op,
 					     else_origin, else_op);
       }
-
-    case tree_type::SEL_UNIVERSE:
-    case tree_type::SEL_SECTION:
-      std::cerr << "\n\nUNHANDLED:" << *this << std::endl;
-      abort ();
 
     case tree_type::PRED_AND:
     case tree_type::PRED_OR:

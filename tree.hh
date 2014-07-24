@@ -112,8 +112,6 @@ enum class tree_arity_v
   TREE_TYPE (STR, STR)				\
   TREE_TYPE (FORMAT, NULLARY)			\
   TREE_TYPE (F_DEBUG, NULLARY)			\
-  TREE_TYPE (SEL_UNIVERSE, NULLARY)		\
-  TREE_TYPE (SEL_SECTION, NULLARY)		\
   TREE_TYPE (F_BUILTIN, BUILTIN)
 
 enum class tree_type
