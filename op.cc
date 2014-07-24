@@ -33,11 +33,12 @@
 #include "make_unique.hh"
 
 #include "op.hh"
-#include "value-seq.hh"
-#include "value-str.hh"
-#include "value-closure.hh"
 #include "builtin-closure.hh"
 #include "overload.hh"
+#include "value-closure.hh"
+#include "value-cst.hh"
+#include "value-seq.hh"
+#include "value-str.hh"
 
 valfile::uptr
 op_origin::next ()

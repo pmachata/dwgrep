@@ -30,9 +30,9 @@
 #include "make_unique.hh"
 #include <sstream>
 
+#include "builtin-dw.hh"
 #include "atval.hh"
 #include "builtin-cst.hh"
-#include "builtin-value.hh"
 #include "builtin.hh"
 #include "dwcst.hh"
 #include "dwit.hh"
@@ -40,6 +40,7 @@
 #include "known-dwarf.h"
 #include "op.hh"
 #include "overload.hh"
+#include "value-cst.hh"
 #include "value-dw.hh"
 
 namespace

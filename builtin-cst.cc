@@ -32,6 +32,7 @@
 
 #include "builtin-cst.hh"
 #include "op.hh"
+#include "value-cst.hh"
 
 namespace
 {

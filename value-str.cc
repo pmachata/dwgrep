@@ -32,6 +32,7 @@
 
 #include "value-str.hh"
 #include "overload.hh"
+#include "value-cst.hh"
 
 value_type const value_str::vtype = value_type::alloc ("T_STR");
 

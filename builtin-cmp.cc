@@ -31,8 +31,9 @@
 #include <iostream>
 
 #include "builtin-cmp.hh"
-#include "pred_result.hh"
 #include "op.hh"
+#include "pred_result.hh"
+#include "value-cst.hh"
 
 namespace
 {

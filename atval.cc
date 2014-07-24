@@ -35,6 +35,7 @@
 #include "dwcst.hh"
 #include "dwpp.hh"
 #include "valfile.hh"
+#include "value-cst.hh"
 #include "value-dw.hh"
 #include "value-seq.hh"
 #include "value-str.hh"

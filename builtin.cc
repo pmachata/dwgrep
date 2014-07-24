@@ -33,8 +33,9 @@
 
 #include "builtin.hh"
 #include "builtin-cst.hh"
-#include "overload.hh"
 #include "op.hh"
+#include "overload.hh"
+#include "value-cst.hh"
 
 std::unique_ptr <pred>
 builtin::build_pred (dwgrep_graph::sptr q, std::shared_ptr <scope> scope) const

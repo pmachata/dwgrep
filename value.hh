@@ -177,27 +177,4 @@ public:
 
 std::ostream &operator<< (std::ostream &o, value const &v);
 
-class value_cst
-  : public value
-{
-  constant m_cst;
-
-public:
-  static value_type const vtype;
-
-  value_cst (constant cst, size_t pos)
-    : value {vtype, pos}
-    , m_cst {cst}
-  {}
-
-  value_cst (value_cst const &that) = default;
-
-  constant const &get_constant () const
-  { return m_cst; }
-
-  void show (std::ostream &o, bool full) const override;
-  std::unique_ptr <value> clone () const override;
-  cmp_result cmp (value const &that) const override;
-};
-
 #endif /* _VALUE_H_ */

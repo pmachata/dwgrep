@@ -26,10 +26,34 @@
    the GNU Lesser General Public License along with this program.  If
    not, see <http://www.gnu.org/licenses/>.  */
 
-#ifndef _BUILTIN_ADD_H_
-#define _BUILTIN_ADD_H_
+#ifndef _VALUE_CST_H_
+#define _VALUE_CST_H_
 
+#include "value.hh"
 #include "op.hh"
+
+class value_cst
+  : public value
+{
+  constant m_cst;
+
+public:
+  static value_type const vtype;
+
+  value_cst (constant cst, size_t pos)
+    : value {vtype, pos}
+    , m_cst {cst}
+  {}
+
+  value_cst (value_cst const &that) = default;
+
+  constant const &get_constant () const
+  { return m_cst; }
+
+  void show (std::ostream &o, bool full) const override;
+  std::unique_ptr <value> clone () const override;
+  cmp_result cmp (value const &that) const override;
+};
 
 struct op_add_cst
   : public stub_op
@@ -38,4 +62,11 @@ struct op_add_cst
   valfile::uptr next () override;
 };
 
-#endif /* _BUILTIN_ADD_H_ */
+struct op_value_cst
+  : public stub_op
+{
+  using stub_op::stub_op;
+  valfile::uptr next () override;
+};
+
+#endif /* _VALUE_CST_H_ */

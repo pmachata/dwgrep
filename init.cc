@@ -31,18 +31,16 @@
 
 #include "overload.hh"
 
+#include "value-closure.hh"
+#include "value-cst.hh"
 #include "value-seq.hh"
 #include "value-str.hh"
-#include "value-closure.hh"
 
 #include "builtin-arith.hh"
 #include "builtin-closure.hh"
 #include "builtin-cmp.hh"
 #include "builtin-cst.hh"
 #include "builtin-shf.hh"
-
-#include "builtin-value.hh"
-#include "builtin-add.hh"
 
 std::unique_ptr <builtin_dict>
 dwgrep_builtins_core ()

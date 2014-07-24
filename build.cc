@@ -29,11 +29,12 @@
 #include <algorithm>
 #include <iostream>
 #include <memory>
-
 #include "make_unique.hh"
+
 #include "op.hh"
-#include "tree.hh"
 #include "scope.hh"
+#include "tree.hh"
+#include "value-cst.hh"
 #include "value-seq.hh"
 #include "value-str.hh"
 

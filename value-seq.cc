@@ -33,7 +33,7 @@
 
 #include "value-seq.hh"
 #include "overload.hh"
-#include "builtin-add.hh"
+#include "value-cst.hh"
 
 value_type const value_seq::vtype = value_type::alloc ("T_SEQ");
 
