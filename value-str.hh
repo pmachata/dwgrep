@@ -116,19 +116,15 @@ struct pred_find_str
   pred_result result (valfile &vf) override;
 };
 
-class builtin_match
-  : public pred_builtin
+struct pred_match_str
+  : public stub_pred
 {
-  struct p;
+  using stub_pred::stub_pred;
 
-public:
-  using pred_builtin::pred_builtin;
+  static value_type get_value_type ()
+  { return value_str::vtype; }
 
-  std::unique_ptr <pred> build_pred (dwgrep_graph::sptr q,
-				     std::shared_ptr <scope> scope)
-    const override;
-
-  char const *name () const override;
+  pred_result result (valfile &vf) override;
 };
 
 #endif /* _VALUE_STR_H_ */

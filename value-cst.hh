@@ -55,7 +55,7 @@ public:
   cmp_result cmp (value const &that) const override;
 };
 
-struct op_add_cst
+struct op_value_cst
   : public stub_op
 {
   using stub_op::stub_op;
@@ -66,15 +66,78 @@ struct op_add_cst
   valfile::uptr next () override;
 };
 
-struct op_value_cst
+
+// Arithmetic operator overloads.
+
+struct cst_arith_op
   : public stub_op
 {
   using stub_op::stub_op;
 
+  valfile::uptr next () override;
+
+  virtual std::unique_ptr <value>
+  operate (value_cst const &a, value_cst const &b) const = 0;
+};
+
+struct op_add_cst
+  : public cst_arith_op
+{
+  using cst_arith_op::cst_arith_op;
+
   static value_type get_value_type ()
   { return value_cst::vtype; }
 
-  valfile::uptr next () override;
+  std::unique_ptr <value>
+  operate (value_cst const &a, value_cst const &b) const override;
+};
+
+struct op_sub_cst
+  : public cst_arith_op
+{
+  using cst_arith_op::cst_arith_op;
+
+  static value_type get_value_type ()
+  { return value_cst::vtype; }
+
+  std::unique_ptr <value>
+  operate (value_cst const &a, value_cst const &b) const override;
+};
+
+struct op_mul_cst
+  : public cst_arith_op
+{
+  using cst_arith_op::cst_arith_op;
+
+  static value_type get_value_type ()
+  { return value_cst::vtype; }
+
+  std::unique_ptr <value>
+  operate (value_cst const &a, value_cst const &b) const override;
+};
+
+struct op_div_cst
+  : public cst_arith_op
+{
+  using cst_arith_op::cst_arith_op;
+
+  static value_type get_value_type ()
+  { return value_cst::vtype; }
+
+  std::unique_ptr <value>
+  operate (value_cst const &a, value_cst const &b) const override;
+};
+
+struct op_mod_cst
+  : public cst_arith_op
+{
+  using cst_arith_op::cst_arith_op;
+
+  static value_type get_value_type ()
+  { return value_cst::vtype; }
+
+  std::unique_ptr <value>
+  operate (value_cst const &a, value_cst const &b) const override;
 };
 
 #endif /* _VALUE_CST_H_ */

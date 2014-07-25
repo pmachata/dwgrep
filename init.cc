@@ -36,7 +36,6 @@
 #include "value-seq.hh"
 #include "value-str.hh"
 
-#include "builtin-arith.hh"
 #include "builtin-closure.hh"
 #include "builtin-cmp.hh"
 #include "builtin-cst.hh"
@@ -51,12 +50,6 @@ dwgrep_builtins_core ()
   add_builtin_type_constant <value_str> (*dict);
   add_builtin_type_constant <value_seq> (*dict);
   add_builtin_type_constant <value_closure> (*dict);
-
-  // arithmetic, except for add, which is an overload
-  dict->add (std::make_shared <builtin_sub> ());
-  dict->add (std::make_shared <builtin_mul> ());
-  dict->add (std::make_shared <builtin_div> ());
-  dict->add (std::make_shared <builtin_mod> ());
 
   // closure builtins
   dict->add (std::make_shared <builtin_apply> ());
@@ -104,19 +97,43 @@ dwgrep_builtins_core ()
   dict->add (std::make_shared <builtin_over> ());
   dict->add (std::make_shared <builtin_rot> ());
 
-  // strings
-  dict->add (std::make_shared <builtin_match> (true));
-  dict->add (std::make_shared <builtin_match> (false));
-
   // "add"
   {
-    auto t = std::make_shared <overload_tab> ();
+    auto t = std::make_shared <overload_tab> (2);
 
     t->add_simple_op_overload <op_add_cst> ();
     t->add_simple_op_overload <op_add_str> ();
     t->add_simple_op_overload <op_add_seq> ();
 
     dict->add (std::make_shared <overloaded_op_builtin> ("add", t));
+  }
+
+  // "sub"
+  {
+    auto t = std::make_shared <overload_tab> (2);
+    t->add_simple_op_overload <op_sub_cst> ();
+    dict->add (std::make_shared <overloaded_op_builtin> ("sub", t));
+  }
+
+  // "mul"
+  {
+    auto t = std::make_shared <overload_tab> (2);
+    t->add_simple_op_overload <op_mul_cst> ();
+    dict->add (std::make_shared <overloaded_op_builtin> ("mul", t));
+  }
+
+  // "div"
+  {
+    auto t = std::make_shared <overload_tab> (2);
+    t->add_simple_op_overload <op_div_cst> ();
+    dict->add (std::make_shared <overloaded_op_builtin> ("div", t));
+  }
+
+  // "mod"
+  {
+    auto t = std::make_shared <overload_tab> (2);
+    t->add_simple_op_overload <op_mod_cst> ();
+    dict->add (std::make_shared <overloaded_op_builtin> ("mod", t));
   }
 
   // "elem"
@@ -142,13 +159,23 @@ dwgrep_builtins_core ()
 
   // "find"
   {
-    auto t = std::make_shared <overload_tab> ();
+    auto t = std::make_shared <overload_tab> (2);
 
     t->add_simple_pred_overload <pred_find_str> ();
     t->add_simple_pred_overload <pred_find_seq> ();
 
     dict->add (std::make_shared <overloaded_pred_builtin> ("?find", t));
     dict->add (std::make_shared <overloaded_pred_builtin> ("!find", t));
+  }
+
+  // "match"
+  {
+    auto t = std::make_shared <overload_tab> (2);
+
+    t->add_simple_pred_overload <pred_match_str> ();
+
+    dict->add (std::make_shared <overloaded_pred_builtin> ("?match", t));
+    dict->add (std::make_shared <overloaded_pred_builtin> ("!match", t));
   }
 
   // "length"

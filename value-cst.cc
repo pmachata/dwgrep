@@ -70,29 +70,6 @@ value_cst::cmp (value const &that) const
 }
 
 valfile::uptr
-op_add_cst::next ()
-{
-  if (auto vf = m_upstream->next ())
-    {
-      auto vp = vf->pop_as <value_cst> ();
-      auto wp = vf->pop_as <value_cst> ();
-
-      constant const &cst_v = vp->get_constant ();
-      constant const &cst_w = wp->get_constant ();
-      check_arith (cst_v, cst_w);
-
-      constant_dom const *dom = cst_v.dom ()->plain ()
-	? cst_w.dom () : cst_v.dom ();
-
-      constant result {cst_v.value () + cst_w.value (), dom};
-      vf->push (std::make_unique <value_cst> (result, 0));
-      return vf;
-    }
-
-  return nullptr;
-}
-
-valfile::uptr
 op_value_cst::next ()
 {
   if (auto vf = m_upstream->next ())
@@ -104,4 +81,116 @@ op_value_cst::next ()
     }
 
   return nullptr;
+}
+
+valfile::uptr
+cst_arith_op::next ()
+{
+  while (auto vf = m_upstream->next ())
+    {
+      auto bp = vf->pop_as <value_cst> ();
+      auto ap = vf->pop_as <value_cst> ();
+      if (auto cp = operate (*ap, *bp))
+	{
+	  vf->push (std::move (cp));
+	  return vf;
+	}
+    }
+
+  return nullptr;
+}
+
+namespace
+{
+  template <class F>
+  std::unique_ptr <value>
+  simple_arith_op (value_cst const &a, value_cst const &b, F f)
+  {
+    constant const &cst_a = a.get_constant ();
+    constant const &cst_b = b.get_constant ();
+
+    check_arith (cst_a, cst_b);
+
+    constant_dom const *d = cst_a.dom ()->plain ()
+      ? cst_b.dom () : cst_a.dom ();
+
+    return f (cst_a, cst_b, d);
+  }
+}
+
+std::unique_ptr <value>
+op_add_cst::operate (value_cst const &a, value_cst const &b) const
+{
+  return simple_arith_op
+    (a, b,
+     [] (constant const &cst_a, constant const &cst_b,
+	 constant_dom const *d)
+     {
+       constant r {cst_a.value () + cst_b.value (), d};
+       return std::make_unique <value_cst> (r, 0);
+     });
+}
+
+std::unique_ptr <value>
+op_sub_cst::operate (value_cst const &a, value_cst const &b) const
+{
+  return simple_arith_op
+    (a, b,
+     [] (constant const &cst_a, constant const &cst_b,
+	 constant_dom const *d)
+     {
+       constant r {cst_a.value () - cst_b.value (), d};
+       return std::make_unique <value_cst> (r, 0);
+     });
+}
+
+std::unique_ptr <value>
+op_mul_cst::operate (value_cst const &a, value_cst const &b) const
+{
+  return simple_arith_op
+    (a, b,
+     [] (constant const &cst_a, constant const &cst_b,
+	 constant_dom const *d)
+     {
+       constant r {cst_a.value () * cst_b.value (), d};
+       return std::make_unique <value_cst> (r, 0);
+     });
+}
+
+std::unique_ptr <value>
+op_div_cst::operate (value_cst const &a, value_cst const &b) const
+{
+  return simple_arith_op
+    (a, b,
+     [] (constant const &cst_a, constant const &cst_b,
+	 constant_dom const *d) -> std::unique_ptr <value>
+     {
+       if (cst_b.value () == 0)
+	 {
+	   std::cerr << "Error: `div': division by zero.\n";
+	   return nullptr;
+	 }
+
+       constant r {cst_a.value () / cst_b.value (), d};
+       return std::make_unique <value_cst> (r, 0);
+     });
+}
+
+std::unique_ptr <value>
+op_mod_cst::operate (value_cst const &a, value_cst const &b) const
+{
+  return simple_arith_op
+    (a, b,
+     [] (constant const &cst_a, constant const &cst_b,
+	 constant_dom const *d) -> std::unique_ptr <value>
+     {
+       if (cst_b.value () == 0)
+	 {
+	   std::cerr << "Error: `mod': division by zero.\n";
+	   return nullptr;
+	 }
+
+       constant r {cst_a.value () % cst_b.value (), d};
+       return std::make_unique <value_cst> (r, 0);
+     });
 }

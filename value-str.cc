@@ -177,72 +177,38 @@ pred_find_str::result (valfile &vf)
 		      != std::string::npos);
 }
 
-struct builtin_match::p
-  : public pred
+pred_result
+pred_match_str::result (valfile &vf)
 {
-  pred_result
-  result (valfile &vf) override
-  {
-    if (auto vb = vf.get_as <value_str> (0))
-      if (auto va = vf.get_as <value_str> (1))
-	{
-	  regex_t re;
-	  if (regcomp (&re, vb->get_string ().c_str(),
-		       REG_EXTENDED | REG_NOSUB) != 0)
-	    {
-	      std::cerr << "Error: could not compile regular expression: '"
-			<< vb->get_string () << "'\n";
-	      return pred_result::fail;
-	    }
+  auto needle = vf.get_as <value_str> (0);
+  auto haystack = vf.get_as <value_str> (1);
 
-	  const int reti = regexec (&re, va->get_string ().c_str (),
-				    /* nmatch: size of pmatch array */ 0,
-				    /* pmatch: array of matches */ NULL,
-				    /* no extra flags */ 0);
+  regex_t re;
+  if (regcomp (&re, needle->get_string ().c_str(),
+	       REG_EXTENDED | REG_NOSUB) != 0)
+    {
+      std::cerr << "Error: could not compile regular expression: '"
+		<< needle->get_string () << "'\n";
+      return pred_result::fail;
+    }
 
-	  pred_result retval = pred_result::fail;
-	  if (reti == 0)
-	    retval = pred_result::yes;
-	  else if (reti == REG_NOMATCH)
-	    retval = pred_result::no;
-	  else
-	    {
-	      char msgbuf[100];
-	      regerror (reti, &re, msgbuf, sizeof(msgbuf));
-	      std::cerr << "Error: match failed: " << msgbuf << "\n";
-	    }
+  const int reti = regexec (&re, haystack->get_string ().c_str (),
+			    /* nmatch: size of pmatch array */ 0,
+			    /* pmatch: array of matches */ NULL,
+			    /* no extra flags */ 0);
 
-	  regfree (&re);
-	  return retval;
-	}
-
-    show_expects (name (), {value_str::vtype});
-    return pred_result::fail;
-  }
-
-  void
-  reset () override
-  {}
-
-  std::string
-  name () const override
-  {
-    return "?match";
-  }
-};
-
-std::unique_ptr <pred>
-builtin_match::build_pred (dwgrep_graph::sptr q,
-			   std::shared_ptr <scope> scope) const
-{
-  return maybe_invert (std::make_unique <p> ());
-}
-
-char const *
-builtin_match::name () const
-{
-  if (m_positive)
-    return "?match";
+  pred_result retval = pred_result::fail;
+  if (reti == 0)
+    retval = pred_result::yes;
+  else if (reti == REG_NOMATCH)
+    retval = pred_result::no;
   else
-    return "!match";
+    {
+      char msgbuf[100];
+      regerror (reti, &re, msgbuf, sizeof(msgbuf));
+      std::cerr << "Error: match failed: " << msgbuf << "\n";
+    }
+
+  regfree (&re);
+  return retval;
 }
