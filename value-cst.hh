@@ -59,6 +59,10 @@ struct op_add_cst
   : public stub_op
 {
   using stub_op::stub_op;
+
+  static value_type get_value_type ()
+  { return value_cst::vtype; }
+
   valfile::uptr next () override;
 };
 
@@ -66,6 +70,10 @@ struct op_value_cst
   : public stub_op
 {
   using stub_op::stub_op;
+
+  static value_type get_value_type ()
+  { return value_cst::vtype; }
+
   valfile::uptr next () override;
 };
 

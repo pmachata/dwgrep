@@ -112,12 +112,9 @@ dwgrep_builtins_core ()
   {
     auto t = std::make_shared <overload_tab> ();
 
-    t->add_overload (value_cst::vtype,
-		     std::make_shared <overload_op_builtin <op_add_cst>> ());
-    t->add_overload (value_str::vtype,
-		     std::make_shared <overload_op_builtin <op_add_str>> ());
-    t->add_overload (value_seq::vtype,
-		     std::make_shared <overload_op_builtin <op_add_seq>> ());
+    t->add_simple_op_overload <op_add_cst> ();
+    t->add_simple_op_overload <op_add_str> ();
+    t->add_simple_op_overload <op_add_seq> ();
 
     dict->add (std::make_shared <overloaded_op_builtin> ("add", t));
   }
@@ -126,10 +123,8 @@ dwgrep_builtins_core ()
   {
     auto t = std::make_shared <overload_tab> ();
 
-    t->add_overload (value_str::vtype,
-		     std::make_shared <overload_op_builtin <op_elem_str>> ());
-    t->add_overload (value_seq::vtype,
-		     std::make_shared <overload_op_builtin <op_elem_seq>> ());
+    t->add_simple_op_overload <op_elem_str> ();
+    t->add_simple_op_overload <op_elem_seq> ();
 
     dict->add (std::make_shared <overloaded_op_builtin> ("elem", t));
   }
@@ -138,12 +133,8 @@ dwgrep_builtins_core ()
   {
     auto t = std::make_shared <overload_tab> ();
 
-    t->add_overload
-      (value_str::vtype,
-       std::make_shared <overload_pred_builtin <pred_empty_str>> ());
-    t->add_overload
-      (value_seq::vtype,
-       std::make_shared <overload_pred_builtin <pred_empty_seq>> ());
+    t->add_simple_pred_overload <pred_empty_str> ();
+    t->add_simple_pred_overload <pred_empty_seq> ();
 
     dict->add (std::make_shared <overloaded_pred_builtin> ("?empty", t));
     dict->add (std::make_shared <overloaded_pred_builtin> ("!empty", t));
@@ -153,12 +144,8 @@ dwgrep_builtins_core ()
   {
     auto t = std::make_shared <overload_tab> ();
 
-    t->add_overload
-      (value_str::vtype,
-       std::make_shared <overload_pred_builtin <pred_find_str>> ());
-    t->add_overload
-      (value_seq::vtype,
-       std::make_shared <overload_pred_builtin <pred_find_seq>> ());
+    t->add_simple_pred_overload <pred_find_str> ();
+    t->add_simple_pred_overload <pred_find_seq> ();
 
     dict->add (std::make_shared <overloaded_pred_builtin> ("?find", t));
     dict->add (std::make_shared <overloaded_pred_builtin> ("!find", t));
@@ -168,12 +155,8 @@ dwgrep_builtins_core ()
   {
     auto t = std::make_shared <overload_tab> ();
 
-    t->add_overload
-      (value_str::vtype,
-       std::make_shared <overload_op_builtin <op_length_str>> ());
-    t->add_overload
-      (value_seq::vtype,
-       std::make_shared <overload_op_builtin <op_length_seq>> ());
+    t->add_simple_op_overload <op_length_str> ();
+    t->add_simple_op_overload <op_length_seq> ();
 
     dict->add (std::make_shared <overloaded_op_builtin> ("length", t));
   }
@@ -181,11 +164,7 @@ dwgrep_builtins_core ()
   // "value"
   {
     auto t = std::make_shared <overload_tab> ();
-
-    t->add_overload
-      (value_cst::vtype,
-       std::make_shared <overload_op_builtin <op_value_cst>> ());
-
+    t->add_simple_op_overload <op_value_cst> ();
     dict->add (std::make_shared <overloaded_op_builtin> ("value", t));
   }
 

@@ -71,6 +71,10 @@ struct op_add_seq
   : public stub_op
 {
   using stub_op::stub_op;
+
+  static value_type get_value_type ()
+  { return value_seq::vtype; }
+
   valfile::uptr next () override;
 };
 
@@ -78,6 +82,10 @@ struct op_length_seq
   : public stub_op
 {
   using stub_op::stub_op;
+
+  static value_type get_value_type ()
+  { return value_seq::vtype; }
+
   valfile::uptr next () override;
 };
 
@@ -94,12 +102,19 @@ struct op_elem_seq
   valfile::uptr next () override;
   std::string name () const override;
   void reset () override;
+
+  static value_type get_value_type ()
+  { return value_seq::vtype; }
 };
 
 struct pred_empty_seq
   : public stub_pred
 {
   using stub_pred::stub_pred;
+
+  static value_type get_value_type ()
+  { return value_seq::vtype; }
+
   pred_result result (valfile &vf) override;
 };
 
@@ -107,6 +122,10 @@ struct pred_find_seq
   : public stub_pred
 {
   using stub_pred::stub_pred;
+
+  static value_type get_value_type ()
+  { return value_seq::vtype; }
+
   pred_result result (valfile &vf) override;
 };
 

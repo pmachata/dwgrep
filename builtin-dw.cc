@@ -998,6 +998,9 @@ namespace
     {
       return "value";
     }
+
+    static value_type get_value_type ()
+    { return value_attr::vtype; }
   };
 }
 
@@ -1462,10 +1465,7 @@ dwgrep_builtins_dw ()
 
   {
     auto t = std::make_shared <overload_tab> ();
-
-    t->add_overload (value_attr::vtype,
-		     std::make_shared <overload_op_builtin <op_value_attr>> ());
-
+    t->add_simple_op_overload <op_value_attr> ();
     dict.add (std::make_shared <overloaded_op_builtin> ("value", t));
   }
 

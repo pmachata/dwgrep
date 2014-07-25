@@ -104,6 +104,9 @@ public:
 
   void add_overload (value_type vt, std::shared_ptr <builtin> b);
 
+  template <class T> void add_simple_op_overload ();
+  template <class T> void add_simple_pred_overload ();
+
   overload_instance instantiate (dwgrep_graph::sptr q,
 				 std::shared_ptr <scope> scope);
 };
@@ -231,5 +234,21 @@ struct overload_pred_builtin
     return "overload";
   }
 };
+
+template <class T>
+void
+overload_tab::add_simple_op_overload ()
+{
+  add_overload (T::get_value_type (),
+		std::make_shared <overload_op_builtin <T>> ());
+}
+
+template <class T>
+void
+overload_tab::add_simple_pred_overload ()
+{
+  add_overload (T::get_value_type (),
+		std::make_shared <overload_pred_builtin <T>> ());
+}
 
 #endif /* _OVERLOAD_H_ */
