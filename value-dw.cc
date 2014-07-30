@@ -145,7 +145,7 @@ value_loclist_op::show (std::ostream &o, brevity brv) const
       {
 	if (! sep)
 	  {
-	    o << "; ";
+	    o << "/";
 	    sep = true;
 	  }
 

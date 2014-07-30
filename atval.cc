@@ -617,7 +617,9 @@ namespace
 
 	  return select <N>
 	    (pass_single_value (std::make_unique <value_die> (gr, die, 0)),
-	     std::make_unique <null_producer> ());
+	     pass_single_value (std::make_unique <value_cst>
+				(signed_cst (op->number2,
+					     &dec_constant_dom), 0)));
 	}
 
       case DW_OP_implicit_value:
