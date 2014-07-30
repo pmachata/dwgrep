@@ -80,11 +80,12 @@ dwgrep_builtins_core ()
     dict->add (gt, "!le");
   }
 
-  // constants
+  // domain conversions
   dict->add (std::make_shared <builtin_hex> ());
   dict->add (std::make_shared <builtin_dec> ());
   dict->add (std::make_shared <builtin_oct> ());
   dict->add (std::make_shared <builtin_bin> ());
+
   add_builtin_constant (*dict, constant (0, &bool_constant_dom), "false");
   add_builtin_constant (*dict, constant (1, &bool_constant_dom), "true");
   dict->add (std::make_shared <builtin_type> ());

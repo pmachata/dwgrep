@@ -33,7 +33,8 @@
 #include "constant.hh"
 
 void
-numeric_constant_dom_t::show (mpz_class const &v, std::ostream &o) const
+numeric_constant_dom_t::show (mpz_class const &v,
+			      std::ostream &o, brevity brv) const
 {
   o << v;
 }
@@ -52,10 +53,12 @@ static struct
   : public constant_dom
 {
   void
-  show (mpz_class const &v, std::ostream &o) const override
+  show (mpz_class const &v, std::ostream &o, brevity brv) const override
   {
     std::ios::fmtflags f {o.flags ()};
-    o << std::hex << std::showbase << v;
+    if (brv == brevity::full)
+      o << std::showbase;
+    o << std::hex << v;
     o.flags (f);
   }
 
@@ -78,10 +81,12 @@ static struct
   : public constant_dom
 {
   void
-  show (mpz_class const &v, std::ostream &o) const override
+  show (mpz_class const &v, std::ostream &o, brevity brv) const override
   {
     std::ios::fmtflags f {o.flags ()};
-    o << std::oct << std::showbase << v;
+    if (brv == brevity::full)
+      o << std::showbase;
+    o << std::oct << v;
     o.flags (f);
   }
 
@@ -104,7 +109,7 @@ static struct
   : public constant_dom
 {
   void
-  show (mpz_class const &t, std::ostream &o) const override
+  show (mpz_class const &t, std::ostream &o, brevity brv) const override
   {
     if (t == 0)
       o << '0';
@@ -116,7 +121,9 @@ static struct
 	for (size_t i = 0; i < sz; ++i)
 	  *(chars.rbegin () + i + 1)
 	    = mpz_tstbit (v.get_mpz_t (), i) == 0 ? '0' : '1';
-	o << (t < 0 ? "-" : "") << "0b" << &*chars.begin ();
+	o << (t < 0 ? "-" : "")
+	  << (brv == brevity::full ? "0b" : "")
+	  << &*chars.begin ();
       }
   }
 
@@ -139,7 +146,7 @@ static struct
   : public constant_dom
 {
   void
-  show (mpz_class const &v, std::ostream &o) const override
+  show (mpz_class const &v, std::ostream &o, brevity brv) const override
   {
     std::ios::fmtflags f {o.flags ()};
     o << std::boolalpha << (v != 0);
@@ -158,7 +165,7 @@ constant_dom const &bool_constant_dom = bool_constant_dom_obj;
 std::ostream &
 operator<< (std::ostream &o, constant cst)
 {
-  cst.dom ()->show (cst.value (), o);
+  cst.dom ()->show (cst.value (), o, cst.m_brv);
   return o;
 }
 

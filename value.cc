@@ -90,7 +90,7 @@ static struct
   : public constant_dom
 {
   void
-  show (mpz_class const &v, std::ostream &o) const override
+  show (mpz_class const &v, std::ostream &o, brevity brv) const override
   {
     if (v.fits_uint_p ())
       {
@@ -101,7 +101,8 @@ static struct
 	  {
 	    char const *name = find_vtype_name (ui);
 	    assert (name != nullptr);
-	    o << name;
+	    assert (name[0] == 'T' && name[1] == '_');
+	    o << (&name[brv == brevity::full ? 0 : 2]);
 	    return;
 	  }
       }

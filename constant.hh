@@ -37,11 +37,18 @@
 
 class constant;
 
+enum class brevity
+  {
+    full,
+    brief,
+  };
+
 class constant_dom
 {
 public:
   virtual ~constant_dom () {}
-  virtual void show (mpz_class const &c, std::ostream &o) const = 0;
+  virtual void show (mpz_class const &c, std::ostream &o,
+		     brevity brv) const = 0;
   virtual std::string name () const = 0;
 
   // Whether this domain is considered safe for integer arithmetic.
@@ -64,7 +71,7 @@ public:
     : m_name {name}
   {}
 
-  void show (mpz_class const &v, std::ostream &o) const override;
+  void show (mpz_class const &v, std::ostream &o, brevity brv) const override;
   bool safe_arith () const override { return true; }
   bool plain () const override { return true; }
 
@@ -91,17 +98,19 @@ class constant
 {
   mpz_class m_value;
   constant_dom const *m_dom;
+  brevity m_brv;
 
 public:
   constant ()
-    : m_value {0}
-    , m_dom {nullptr}
+    : constant (0, nullptr)
   {}
 
   template <class T>
-  constant (T const &value, constant_dom const *dom)
+  constant (T const &value, constant_dom const *dom,
+	    brevity brv = brevity::full)
     : m_value (value)
     , m_dom {dom}
+    , m_brv {brv}
   {}
 
   constant (constant const &copy) = default;
@@ -120,6 +129,8 @@ public:
   bool operator> (constant that) const;
   bool operator== (constant that) const;
   bool operator!= (constant that) const;
+
+  friend std::ostream &operator<< (std::ostream &, constant);
 };
 
 std::ostream &operator<< (std::ostream &o, constant cst);

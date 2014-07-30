@@ -45,7 +45,7 @@ value_die::show (std::ostream &o, bool full) const
   Dwarf_Die *die = const_cast <Dwarf_Die *> (&m_die);
   o << '[' << std::hex << dwarf_dieoffset (die) << ']'
     << (full ? '\t' : ' ')
-    << constant (dwarf_tag (die), &dw_tag_short_dom);
+    << constant (dwarf_tag (die), &dw_tag_dom, brevity::brief);
 
   if (full)
     for (auto it = attr_iterator {die}; it != attr_iterator::end (); ++it)
@@ -83,8 +83,8 @@ value_attr::show (std::ostream &o, bool full) const
   unsigned name = (unsigned) dwarf_whatattr ((Dwarf_Attribute *) &m_attr);
   unsigned form = dwarf_whatform ((Dwarf_Attribute *) &m_attr);
   std::ios::fmtflags f {o.flags ()};
-  o << constant (name, &dw_attr_short_dom) << " ("
-    << constant (form, &dw_form_short_dom) << ")\t";
+  o << constant (name, &dw_attr_dom, brevity::brief) << " ("
+    << constant (form, &dw_form_dom, brevity::brief) << ")\t";
   auto vpr = at_value (m_attr, m_die, m_gr);
   while (auto v = vpr->next ())
     {
@@ -127,7 +127,7 @@ void
 value_loclist_op::show (std::ostream &o, bool full) const
 {
   o << m_dwop->offset << ':'
-    << constant {m_dwop->atom, &dw_locexpr_opcode_short_dom};
+    << constant {m_dwop->atom, &dw_locexpr_opcode_dom, brevity::brief};
   {
     auto prod = dwop_number (m_dwop, m_attr, m_gr);
     while (auto v = prod->next ())

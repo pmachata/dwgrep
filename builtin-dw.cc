@@ -588,7 +588,7 @@ namespace
       bool
       operate (valfile &vf, Dwarf_Op *op, Dwarf_Attribute &attr)
       {
-	constant cst {op->atom, &dw_locexpr_opcode_short_dom};
+	constant cst {op->atom, &dw_locexpr_opcode_dom, brevity::brief};
 	vf.push (std::make_unique <value_cst> (cst, 0));
 	return true;
       }
@@ -1040,7 +1040,7 @@ namespace
       name () const override
       {
 	std::stringstream ss;
-	ss << "@" << constant {m_atname, &dw_attr_dom};
+	ss << "@" << constant {m_atname, &dw_attr_dom, brevity::brief};
 	return ss.str ();
       }
     };
@@ -1116,7 +1116,7 @@ namespace
       name () const override
       {
 	std::stringstream ss;
-	ss << "?AT_" << constant {m_atname, &dw_attr_short_dom};
+	ss << "?AT_" << constant {m_atname, &dw_attr_dom};
 	return ss.str ();
       }
     };

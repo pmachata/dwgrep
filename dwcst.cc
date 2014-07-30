@@ -22,12 +22,18 @@
 #include "constant.hh"
 
 static const char *
-dwarf_tag_string (unsigned int tag, bool shrt)
+abbreviate (char const *name, size_t prefix_len, brevity brv)
+{
+  return name + (brv == brevity::full ? 0 : prefix_len);
+}
+
+static const char *
+dwarf_tag_string (unsigned int tag, brevity brv)
 {
   switch (tag)
     {
-#define ONE_KNOWN_DW_TAG(NAME, CODE)			\
-	case CODE: return #CODE + (shrt ? 7 : 0);
+#define ONE_KNOWN_DW_TAG(NAME, CODE)					\
+      case CODE: return abbreviate (#CODE, sizeof "DW_TAG", brv);
       ALL_KNOWN_DW_TAG
 #undef ONE_KNOWN_DW_TAG
     default:
@@ -37,12 +43,12 @@ dwarf_tag_string (unsigned int tag, bool shrt)
 
 
 static const char *
-dwarf_attr_string (int attrnum, bool shrt)
+dwarf_attr_string (int attrnum, brevity brv)
 {
   switch (attrnum)
     {
-#define ONE_KNOWN_DW_AT(NAME, CODE) \
-	case CODE: return #CODE + (shrt ? 6 : 0);
+#define ONE_KNOWN_DW_AT(NAME, CODE)					\
+      case CODE: return abbreviate (#CODE, sizeof "DW_AT", brv);
       ALL_KNOWN_DW_AT
 #undef ONE_KNOWN_DW_AT
     default:
@@ -52,13 +58,13 @@ dwarf_attr_string (int attrnum, bool shrt)
 
 
 static const char *
-dwarf_form_string (int form, bool shrt)
+dwarf_form_string (int form, brevity brv)
 {
   switch (form)
     {
 #define ONE_KNOWN_DW_FORM_DESC(NAME, CODE, DESC) ONE_KNOWN_DW_FORM (NAME, CODE)
-#define ONE_KNOWN_DW_FORM(NAME, CODE) \
-	case CODE: return #CODE + (shrt ? 8 : 0);
+#define ONE_KNOWN_DW_FORM(NAME, CODE)					\
+      case CODE: return abbreviate (#CODE, sizeof "DW_FORM", brv);
       ALL_KNOWN_DW_FORM
 #undef ONE_KNOWN_DW_FORM
 #undef ONE_KNOWN_DW_FORM_DESC
@@ -69,11 +75,12 @@ dwarf_form_string (int form, bool shrt)
 
 
 static const char *
-dwarf_lang_string (int lang)
+dwarf_lang_string (int lang, brevity brv)
 {
   switch (lang)
     {
-#define ONE_KNOWN_DW_LANG_DESC(NAME, CODE, DESC) case CODE: return #CODE;
+#define ONE_KNOWN_DW_LANG_DESC(NAME, CODE, DESC)			\
+      case CODE: return abbreviate (#CODE, sizeof "DW_LANG", brv);
       ALL_KNOWN_DW_LANG
 #undef ONE_KNOWN_DW_LANG_DESC
     default:
@@ -83,11 +90,12 @@ dwarf_lang_string (int lang)
 
 
 static const char *
-dwarf_macinfo_string (int code)
+dwarf_macinfo_string (int code, brevity brv)
 {
   switch (code)
     {
-#define ONE_KNOWN_DW_MACINFO(NAME, CODE) case CODE: return #CODE;
+#define ONE_KNOWN_DW_MACINFO(NAME, CODE)				\
+      case CODE: return abbreviate (#CODE, sizeof "DW_MACINFO", brv);
       ALL_KNOWN_DW_MACINFO
 #undef ONE_KNOWN_DW_MACINFO
     default:
@@ -97,11 +105,14 @@ dwarf_macinfo_string (int code)
 
 
 static const char *
-dwarf_macro_string (int code)
+dwarf_macro_string (int code, brevity brv)
 {
   switch (code)
     {
-#define ONE_KNOWN_DW_MACRO_GNU(NAME, CODE) case CODE: return #CODE;
+#define ONE_KNOWN_DW_MACRO_GNU(NAME, CODE)				\
+      /* N.B. don't snip the GNU_ part, that belongs to the constant,	\
+	 not to the domain.  */						\
+    case CODE: return abbreviate (#CODE, sizeof "DW_MACRO", brv);
       ALL_KNOWN_DW_MACRO_GNU
 #undef ONE_KNOWN_DW_MACRO_GNU
     default:
@@ -111,11 +122,12 @@ dwarf_macro_string (int code)
 
 
 static const char *
-dwarf_inline_string (int code)
+dwarf_inline_string (int code, brevity brv)
 {
   switch (code)
     {
-#define ONE_KNOWN_DW_INL(NAME, CODE) case CODE: return #CODE;
+#define ONE_KNOWN_DW_INL(NAME, CODE)					\
+      case CODE: return abbreviate (#CODE, sizeof "DW_INL", brv);
       ALL_KNOWN_DW_INL
 #undef ONE_KNOWN_DW_INL
     default:
@@ -125,11 +137,12 @@ dwarf_inline_string (int code)
 
 
 static const char *
-dwarf_encoding_string (int code)
+dwarf_encoding_string (int code, brevity brv)
 {
   switch (code)
     {
-#define ONE_KNOWN_DW_ATE(NAME, CODE) case CODE: return #CODE;
+#define ONE_KNOWN_DW_ATE(NAME, CODE)					\
+      case CODE: return abbreviate (#CODE, sizeof "DW_ATE", brv);
       ALL_KNOWN_DW_ATE
 #undef ONE_KNOWN_DW_ATE
     default:
@@ -139,11 +152,12 @@ dwarf_encoding_string (int code)
 
 
 static const char *
-dwarf_access_string (int code)
+dwarf_access_string (int code, brevity brv)
 {
   switch (code)
     {
-#define ONE_KNOWN_DW_ACCESS(NAME, CODE) case CODE: return #CODE;
+#define ONE_KNOWN_DW_ACCESS(NAME, CODE)					\
+      case CODE: return abbreviate (#CODE, sizeof "DW_ACCESS", brv);
       ALL_KNOWN_DW_ACCESS
 #undef ONE_KNOWN_DW_ACCESS
     default:
@@ -153,11 +167,12 @@ dwarf_access_string (int code)
 
 
 static const char *
-dwarf_visibility_string (int code)
+dwarf_visibility_string (int code, brevity brv)
 {
   switch (code)
     {
-#define ONE_KNOWN_DW_VIS(NAME, CODE) case CODE: return #CODE;
+#define ONE_KNOWN_DW_VIS(NAME, CODE)					\
+      case CODE: return abbreviate (#CODE, sizeof "DW_VIS", brv);
       ALL_KNOWN_DW_VIS
 #undef ONE_KNOWN_DW_VIS
     default:
@@ -167,11 +182,12 @@ dwarf_visibility_string (int code)
 
 
 static const char *
-dwarf_virtuality_string (int code)
+dwarf_virtuality_string (int code, brevity brv)
 {
   switch (code)
     {
-#define ONE_KNOWN_DW_VIRTUALITY(NAME, CODE) case CODE: return #CODE;
+#define ONE_KNOWN_DW_VIRTUALITY(NAME, CODE)				\
+      case CODE: return abbreviate (#CODE, sizeof "DW_VIRTUALITY", brv);
       ALL_KNOWN_DW_VIRTUALITY
 #undef ONE_KNOWN_DW_VIRTUALITY
     default:
@@ -181,11 +197,12 @@ dwarf_virtuality_string (int code)
 
 
 static const char *
-dwarf_identifier_case_string (int code)
+dwarf_identifier_case_string (int code, brevity brv)
 {
   switch (code)
     {
-#define ONE_KNOWN_DW_ID(NAME, CODE) case CODE: return #CODE;
+#define ONE_KNOWN_DW_ID(NAME, CODE)					\
+      case CODE: return abbreviate (#CODE, sizeof "DW_ID", brv);
       ALL_KNOWN_DW_ID
 #undef ONE_KNOWN_DW_ID
     default:
@@ -195,11 +212,12 @@ dwarf_identifier_case_string (int code)
 
 
 static const char *
-dwarf_calling_convention_string (int code)
+dwarf_calling_convention_string (int code, brevity brv)
 {
   switch (code)
     {
-#define ONE_KNOWN_DW_CC(NAME, CODE) case CODE: return #CODE;
+#define ONE_KNOWN_DW_CC(NAME, CODE)					\
+      case CODE: return abbreviate (#CODE, sizeof "DW_CC", brv);
       ALL_KNOWN_DW_CC
 #undef ONE_KNOWN_DW_CC
     default:
@@ -209,11 +227,12 @@ dwarf_calling_convention_string (int code)
 
 
 static const char *
-dwarf_ordering_string (int code)
+dwarf_ordering_string (int code, brevity brv)
 {
   switch (code)
     {
-#define ONE_KNOWN_DW_ORD(NAME, CODE) case CODE: return #CODE;
+#define ONE_KNOWN_DW_ORD(NAME, CODE)					\
+      case CODE: return abbreviate (#CODE, sizeof "DW_ORD", brv);
       ALL_KNOWN_DW_ORD
 #undef ONE_KNOWN_DW_ORD
     default:
@@ -223,11 +242,12 @@ dwarf_ordering_string (int code)
 
 
 static const char *
-dwarf_discr_list_string (int code)
+dwarf_discr_list_string (int code, brevity brv)
 {
   switch (code)
     {
-#define ONE_KNOWN_DW_DSC(NAME, CODE) case CODE: return #CODE;
+#define ONE_KNOWN_DW_DSC(NAME, CODE)					\
+      case CODE: return abbreviate (#CODE, sizeof "DW_DSC", brv);
       ALL_KNOWN_DW_DSC
 #undef ONE_KNOWN_DW_DSC
     default:
@@ -237,11 +257,12 @@ dwarf_discr_list_string (int code)
 
 
 static const char *
-dwarf_decimal_sign_string (int code)
+dwarf_decimal_sign_string (int code, brevity brv)
 {
   switch (code)
     {
-#define ONE_KNOWN_DW_DS(NAME, CODE) case CODE: return #CODE;
+#define ONE_KNOWN_DW_DS(NAME, CODE)					\
+      case CODE: return abbreviate (#CODE, sizeof "DW_DS", brv);
       ALL_KNOWN_DW_DS
 #undef ONE_KNOWN_DW_DS
     default:
@@ -251,12 +272,13 @@ dwarf_decimal_sign_string (int code)
 
 
 static const char *
-dwarf_locexpr_opcode_string (int code, bool shrt)
+dwarf_locexpr_opcode_string (int code, brevity brv)
 {
   switch (code)
     {
 #define ONE_KNOWN_DW_OP_DESC(NAME, CODE, DESC) ONE_KNOWN_DW_OP (NAME, CODE)
-#define ONE_KNOWN_DW_OP(NAME, CODE) case CODE: return #CODE + (shrt ? 6 : 0);
+#define ONE_KNOWN_DW_OP(NAME, CODE)					\
+      case CODE: return abbreviate (#CODE, sizeof "DW_OP", brv);
       ALL_KNOWN_DW_OP
 #undef ONE_KNOWN_DW_OP
 #undef ONE_KNOWN_DW_OP_DESC
@@ -267,12 +289,12 @@ dwarf_locexpr_opcode_string (int code, bool shrt)
 
 
 static const char *
-dwarf_address_class_string (int code)
+dwarf_address_class_string (int code, brevity brv)
 {
   switch (code)
     {
     case DW_ADDR_none:
-      return "DW_ADDR_none";
+      return abbreviate ("DW_ADDR_none", sizeof "DW_ADDR", brv);
     default:
       return nullptr;
     }
@@ -280,11 +302,12 @@ dwarf_address_class_string (int code)
 
 
 static const char *
-dwarf_endianity_string (int code)
+dwarf_endianity_string (int code, brevity brv)
 {
   switch (code)
     {
-#define ONE_KNOWN_DW_END(NAME, CODE) case CODE: return #CODE;
+#define ONE_KNOWN_DW_END(NAME, CODE)					\
+      case CODE: return abbreviate (#CODE, sizeof "DW_END", brv);
       ALL_KNOWN_DW_END
 #undef ONE_KNOWN_DW_END
     default:
@@ -293,9 +316,8 @@ dwarf_endianity_string (int code)
 }
 
 
-/* Used by all dwarf_foo_name functions.  */
 static const char *
-string_or_unknown (const char *known, const char *prefix,
+string_or_unknown (const char *known, const char *prefix, brevity brv,
 		   unsigned int code,
                    unsigned int lo_user, unsigned int hi_user,
 		   bool print_unknown_num)
@@ -314,7 +336,8 @@ string_or_unknown (const char *known, const char *prefix,
 
   if (print_unknown_num)
     {
-      snprintf (unknown_buf, sizeof unknown_buf, "%s??? (%#x)", prefix, code);
+      snprintf (unknown_buf, sizeof unknown_buf,
+		"%s??? (%#x)", brv == brevity::full ? prefix : "", code);
       return unknown_buf;
     }
 
@@ -335,22 +358,15 @@ namespace
   }
 }
 
-static class dw_tag_dom_t
+static struct
   : public constant_dom
 {
-  bool m_short;
-
-public:
-  dw_tag_dom_t (bool shrt)
-    : m_short {shrt}
-  {}
-
   void
-  show (mpz_class const &v, std::ostream &o) const override
+  show (mpz_class const &v, std::ostream &o, brevity brv) const override
   {
     int tag = positive_int_from_mpz (v);
-    const char *ret = dwarf_tag_string (tag, m_short);
-    o << string_or_unknown (ret, "DW_TAG_",
+    const char *ret = dwarf_tag_string (tag, brv);
+    o << string_or_unknown (ret, "DW_TAG_", brv,
 			    tag, DW_TAG_lo_user, DW_TAG_hi_user, true);
   }
 
@@ -358,28 +374,20 @@ public:
   {
     return "DW_TAG_*";
   }
-} dw_tag_dom_obj {false}, dw_tag_short_dom_obj {true};
+} dw_tag_dom_obj;
 
 constant_dom const &dw_tag_dom = dw_tag_dom_obj;
-constant_dom const &dw_tag_short_dom = dw_tag_short_dom_obj;
 
 
-static class dw_attr_dom_t
+static struct
   : public constant_dom
 {
-  bool m_short;
-
-public:
-  dw_attr_dom_t (bool shrt)
-    : m_short {shrt}
-  {}
-
-  virtual void
-  show (mpz_class const &v, std::ostream &o) const
+  void
+  show (mpz_class const &v, std::ostream &o, brevity brv) const override
   {
     int attr = positive_int_from_mpz (v);
-    const char *ret = dwarf_attr_string (attr, m_short);
-    o << string_or_unknown (ret, "DW_AT_",
+    const char *ret = dwarf_attr_string (attr, brv);
+    o << string_or_unknown (ret, "DW_AT_", brv,
 			    attr, DW_AT_lo_user, DW_AT_hi_user, true);
   }
 
@@ -387,49 +395,40 @@ public:
   {
     return "DW_ATTR_*";
   }
-} dw_attr_dom_obj {false}, dw_attr_short_dom_obj {true};
+} dw_attr_dom_obj;
 
 constant_dom const &dw_attr_dom = dw_attr_dom_obj;
-constant_dom const &dw_attr_short_dom = dw_attr_short_dom_obj;
 
 
-static struct dw_form_dom_t
+static struct
   : public constant_dom
 {
-  bool m_short;
-
-public:
-  dw_form_dom_t (bool shrt)
-    : m_short {shrt}
-  {}
-
-  virtual void
-  show (mpz_class const &v, std::ostream &o) const
+  void
+  show (mpz_class const &v, std::ostream &o, brevity brv) const override
   {
     int form = positive_int_from_mpz (v);
-    const char *ret = dwarf_form_string (form, m_short);
-    o << string_or_unknown (ret, "DW_FORM_", form, 0, 0, true);
+    const char *ret = dwarf_form_string (form, brv);
+    o << string_or_unknown (ret, "DW_FORM_", brv, form, 0, 0, true);
   }
 
   std::string name () const override
   {
     return "DW_FORM_*";
   }
-} dw_form_dom_obj {false}, dw_form_short_dom_obj {true};
+} dw_form_dom_obj;
 
 constant_dom const &dw_form_dom = dw_form_dom_obj;
-constant_dom const &dw_form_short_dom = dw_form_short_dom_obj;
 
 
 static struct
   : public constant_dom
 {
-  virtual void
-  show (mpz_class const &v, std::ostream &o) const
+  void
+  show (mpz_class const &v, std::ostream &o, brevity brv) const override
   {
     int lang = positive_int_from_mpz (v);
-    const char *ret = dwarf_lang_string (lang);
-    o << string_or_unknown (ret, "DW_LANG_",
+    const char *ret = dwarf_lang_string (lang, brv);
+    o << string_or_unknown (ret, "DW_LANG_", brv,
 			    lang, DW_LANG_lo_user, DW_LANG_hi_user, false);
   }
 
@@ -445,12 +444,12 @@ constant_dom const &dw_lang_dom = dw_lang_dom_obj;
 static struct
   : public constant_dom
 {
-  virtual void
-  show (mpz_class const &v, std::ostream &o) const
+  void
+  show (mpz_class const &v, std::ostream &o, brevity brv) const override
   {
     int code = positive_int_from_mpz (v);
-    const char *ret = dwarf_macinfo_string (code);
-    o << string_or_unknown (ret, "DW_MACINFO_", code, 0, 0, false);
+    const char *ret = dwarf_macinfo_string (code, brv);
+    o << string_or_unknown (ret, "DW_MACINFO_", brv, code, 0, 0, false);
   }
 
   std::string name () const override
@@ -465,12 +464,12 @@ constant_dom const &dw_macinfo_dom = dw_macinfo_dom_obj;
 static struct
   : public constant_dom
 {
-  virtual void
-  show (mpz_class const &v, std::ostream &o) const
+  void
+  show (mpz_class const &v, std::ostream &o, brevity brv) const override
   {
     int code = positive_int_from_mpz (v);
-    const char *ret = dwarf_macro_string (code);
-    o << string_or_unknown (ret, "DW_MACRO_", code, 0, 0, false);
+    const char *ret = dwarf_macro_string (code, brv);
+    o << string_or_unknown (ret, "DW_MACRO_", brv, code, 0, 0, false);
   }
 
   std::string name () const override
@@ -485,12 +484,12 @@ constant_dom const &dw_macro_dom = dw_macro_dom_obj;
 static struct
   : public constant_dom
 {
-  virtual void
-  show (mpz_class const &v, std::ostream &o) const
+  void
+  show (mpz_class const &v, std::ostream &o, brevity brv) const override
   {
     int code = positive_int_from_mpz (v);
-    const char *ret = dwarf_inline_string (code);
-    o << string_or_unknown (ret, "DW_INL_", code, 0, 0, false);
+    const char *ret = dwarf_inline_string (code, brv);
+    o << string_or_unknown (ret, "DW_INL_", brv, code, 0, 0, false);
   }
 
   std::string name () const override
@@ -505,12 +504,12 @@ constant_dom const &dw_inline_dom = dw_inline_dom_obj;
 static struct
   : public constant_dom
 {
-  virtual void
-  show (mpz_class const &v, std::ostream &o) const
+  void
+  show (mpz_class const &v, std::ostream &o, brevity brv) const override
   {
     int code = positive_int_from_mpz (v);
-    const char *ret = dwarf_encoding_string (code);
-    o << string_or_unknown (ret, "DW_ATE_",
+    const char *ret = dwarf_encoding_string (code, brv);
+    o << string_or_unknown (ret, "DW_ATE_", brv,
 			    code, DW_ATE_lo_user, DW_ATE_hi_user, false);
   }
 
@@ -526,12 +525,12 @@ constant_dom const &dw_encoding_dom = dw_encoding_dom_obj;
 static struct
   : public constant_dom
 {
-  virtual void
-  show (mpz_class const &v, std::ostream &o) const
+  void
+  show (mpz_class const &v, std::ostream &o, brevity brv) const override
   {
     int code = positive_int_from_mpz (v);
-    const char *ret = dwarf_access_string (code);
-    o << string_or_unknown (ret, "DW_ACCESS_", code, 0, 0, false);
+    const char *ret = dwarf_access_string (code, brv);
+    o << string_or_unknown (ret, "DW_ACCESS_", brv, code, 0, 0, false);
   }
 
   std::string name () const override
@@ -546,12 +545,12 @@ constant_dom const &dw_access_dom = dw_access_dom_obj;
 static struct
   : public constant_dom
 {
-  virtual void
-  show (mpz_class const &v, std::ostream &o) const
+  void
+  show (mpz_class const &v, std::ostream &o, brevity brv) const override
   {
     int code = positive_int_from_mpz (v);
-    const char *ret = dwarf_visibility_string (code);
-    o << string_or_unknown (ret, "DW_VIS_", code, 0, 0, false);
+    const char *ret = dwarf_visibility_string (code, brv);
+    o << string_or_unknown (ret, "DW_VIS_", brv, code, 0, 0, false);
   }
 
   std::string name () const override
@@ -566,12 +565,12 @@ constant_dom const &dw_visibility_dom = dw_visibility_dom_obj;
 static struct
   : public constant_dom
 {
-  virtual void
-  show (mpz_class const &v, std::ostream &o) const
+  void
+  show (mpz_class const &v, std::ostream &o, brevity brv) const override
   {
     int code = positive_int_from_mpz (v);
-    const char *ret = dwarf_virtuality_string (code);
-    o << string_or_unknown (ret, "DW_VIRTUALITY_", code, 0, 0, false);
+    const char *ret = dwarf_virtuality_string (code, brv);
+    o << string_or_unknown (ret, "DW_VIRTUALITY_", brv, code, 0, 0, false);
   }
 
   std::string name () const override
@@ -586,12 +585,12 @@ constant_dom const &dw_virtuality_dom = dw_virtuality_dom_obj;
 static struct
   : public constant_dom
 {
-  virtual void
-  show (mpz_class const &v, std::ostream &o) const
+  void
+  show (mpz_class const &v, std::ostream &o, brevity brv) const override
   {
     int code = positive_int_from_mpz (v);
-    const char *ret = dwarf_identifier_case_string (code);
-    o << string_or_unknown (ret, "DW_ID_", code, 0, 0, false);
+    const char *ret = dwarf_identifier_case_string (code, brv);
+    o << string_or_unknown (ret, "DW_ID_", brv, code, 0, 0, false);
   }
 
   std::string name () const override
@@ -606,12 +605,12 @@ constant_dom const &dw_identifier_case_dom = dw_identifier_case_dom_obj;
 static struct
   : public constant_dom
 {
-  virtual void
-  show (mpz_class const &v, std::ostream &o) const
+  void
+  show (mpz_class const &v, std::ostream &o, brevity brv) const override
   {
     int code = positive_int_from_mpz (v);
-    const char *ret = dwarf_calling_convention_string (code);
-    o << string_or_unknown (ret, "DW_CC_",
+    const char *ret = dwarf_calling_convention_string (code, brv);
+    o << string_or_unknown (ret, "DW_CC_", brv,
 			    code, DW_CC_lo_user, DW_CC_hi_user, false);
   }
 
@@ -627,12 +626,12 @@ constant_dom const &dw_calling_convention_dom = dw_calling_convention_dom_obj;
 static struct
   : public constant_dom
 {
-  virtual void
-  show (mpz_class const &v, std::ostream &o) const
+  void
+  show (mpz_class const &v, std::ostream &o, brevity brv) const override
   {
     int code = positive_int_from_mpz (v);
-    const char *ret = dwarf_ordering_string (code);
-    o << string_or_unknown (ret, "DW_ORD_", code, 0, 0, false);
+    const char *ret = dwarf_ordering_string (code, brv);
+    o << string_or_unknown (ret, "DW_ORD_", brv, code, 0, 0, false);
   }
 
   std::string name () const override
@@ -647,12 +646,12 @@ constant_dom const &dw_ordering_dom = dw_ordering_dom_obj;
 static struct
   : public constant_dom
 {
-  virtual void
-  show (mpz_class const &v, std::ostream &o) const
+  void
+  show (mpz_class const &v, std::ostream &o, brevity brv) const override
   {
     int code = positive_int_from_mpz (v);
-    const char *ret = dwarf_discr_list_string (code);
-    o << string_or_unknown (ret, "DW_DSC_", code, 0, 0, false);
+    const char *ret = dwarf_discr_list_string (code, brv);
+    o << string_or_unknown (ret, "DW_DSC_", brv, code, 0, 0, false);
   }
 
   std::string name () const override
@@ -667,12 +666,12 @@ constant_dom const &dw_discr_list_dom = dw_discr_list_dom_obj;
 static struct
   : public constant_dom
 {
-  virtual void
-  show (mpz_class const &v, std::ostream &o) const
+  void
+  show (mpz_class const &v, std::ostream &o, brevity brv) const override
   {
     int code = positive_int_from_mpz (v);
-    const char *ret = dwarf_decimal_sign_string (code);
-    o << string_or_unknown (ret, "DW_DS_", code, 0, 0, false);
+    const char *ret = dwarf_decimal_sign_string (code, brv);
+    o << string_or_unknown (ret, "DW_DS_", brv, code, 0, 0, false);
   }
 
   std::string name () const override
@@ -684,21 +683,15 @@ static struct
 constant_dom const &dw_decimal_sign_dom = dw_decimal_sign_dom_obj;
 
 
-static struct dw_locexpr_op_t
+static struct
   : public constant_dom
 {
-  bool m_short;
-
-  explicit dw_locexpr_op_t (bool shrt)
-    : m_short {shrt}
-  {}
-
-  virtual void
-  show (mpz_class const &v, std::ostream &o) const
+  void
+  show (mpz_class const &v, std::ostream &o, brevity brv) const override
   {
     int code = positive_int_from_mpz (v);
-    const char *ret = dwarf_locexpr_opcode_string (code, m_short);
-    o << string_or_unknown (ret, "DW_OP_",
+    const char *ret = dwarf_locexpr_opcode_string (code, brv);
+    o << string_or_unknown (ret, "DW_OP_", brv,
 			    code, DW_OP_lo_user, DW_OP_hi_user, true);
   }
 
@@ -706,22 +699,20 @@ static struct dw_locexpr_op_t
   {
     return "DW_OP_*";
   }
-} dw_locexpr_opcode_dom_obj {false}, dw_locexpr_opcode_short_dom_obj {true};
+} dw_locexpr_opcode_dom_obj;
 
 constant_dom const &dw_locexpr_opcode_dom = dw_locexpr_opcode_dom_obj;
-constant_dom const &dw_locexpr_opcode_short_dom
-	= dw_locexpr_opcode_short_dom_obj;
 
 
 static struct
   : public constant_dom
 {
-  virtual void
-  show (mpz_class const &v, std::ostream &o) const
+  void
+  show (mpz_class const &v, std::ostream &o, brevity brv) const override
   {
     int code = positive_int_from_mpz (v);
-    const char *ret = dwarf_address_class_string (code);
-    o << string_or_unknown (ret, "DW_ADDR_", code, 0, 0, false);
+    const char *ret = dwarf_address_class_string (code, brv);
+    o << string_or_unknown (ret, "DW_ADDR_", brv, code, 0, 0, false);
   }
 
   std::string name () const override
@@ -736,12 +727,12 @@ constant_dom const &dw_address_class_dom = dw_address_class_dom_obj;
 static struct
   : public constant_dom
 {
-  virtual void
-  show (mpz_class const &v, std::ostream &o) const
+  void
+  show (mpz_class const &v, std::ostream &o, brevity brv) const override
   {
     int code = positive_int_from_mpz (v);
-    const char *ret = dwarf_endianity_string (code);
-    o << string_or_unknown (ret, "DW_END_", code, 0, 0, false);
+    const char *ret = dwarf_endianity_string (code, brv);
+    o << string_or_unknown (ret, "DW_END_", brv, code, 0, 0, false);
   }
 
   std::string name () const override
