@@ -37,7 +37,7 @@
 value_type const value_str::vtype = value_type::alloc ("T_STR");
 
 void
-value_str::show (std::ostream &o, bool full) const
+value_str::show (std::ostream &o, brevity brv) const
 {
   o << m_str;
 }

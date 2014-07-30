@@ -50,7 +50,7 @@ public:
   constant const &get_constant () const
   { return m_cst; }
 
-  void show (std::ostream &o, bool full) const override;
+  void show (std::ostream &o, brevity brv) const override;
   std::unique_ptr <value> clone () const override;
   cmp_result cmp (value const &that) const override;
 };

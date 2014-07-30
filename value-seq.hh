@@ -62,7 +62,7 @@ public:
     return m_seq;
   }
 
-  void show (std::ostream &o, bool full) const override;
+  void show (std::ostream &o, brevity brv) const override;
   std::unique_ptr <value> clone () const override;
   cmp_result cmp (value const &that) const override;
 };

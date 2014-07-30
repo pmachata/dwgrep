@@ -281,7 +281,7 @@ op_const::name () const
 {
   std::stringstream ss;
   ss << "const<";
-  m_value->show (ss, false);
+  m_value->show (ss, brevity::brief);
   ss << ">";
   return ss.str ();
 }
@@ -664,7 +664,7 @@ op_f_debug::next ()
 	std::cerr << "<";
 	std::for_each (stk.rbegin (), stk.rend (),
 		       [&vf] (std::unique_ptr <value> &v) {
-			 v->show ((std::cerr << ' '), false);
+			 v->show ((std::cerr << ' '), brevity::brief);
 			 vf->push (std::move (v));
 		       });
 	std::cerr << " > (";
@@ -676,7 +676,7 @@ op_f_debug::next ()
 	  std::cerr << frame;
 	  std::cerr << "{";
 	  for (auto const &v: frame->m_values)
-	    v->show ((std::cerr << ' '), false);
+	    v->show ((std::cerr << ' '), brevity::brief);
 	  std::cerr << " }  ";
 
 	  frame = frame->m_parent;

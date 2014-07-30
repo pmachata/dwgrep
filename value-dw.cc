@@ -38,21 +38,21 @@
 value_type const value_die::vtype = value_type::alloc ("T_DIE");
 
 void
-value_die::show (std::ostream &o, bool full) const
+value_die::show (std::ostream &o, brevity brv) const
 {
   std::ios::fmtflags f {o.flags ()};
 
   Dwarf_Die *die = const_cast <Dwarf_Die *> (&m_die);
   o << '[' << std::hex << dwarf_dieoffset (die) << ']'
-    << (full ? '\t' : ' ')
+    << (brv == brevity::full ? '\t' : ' ')
     << constant (dwarf_tag (die), &dw_tag_dom, brevity::brief);
 
-  if (full)
+  if (brv == brevity::full)
     for (auto it = attr_iterator {die}; it != attr_iterator::end (); ++it)
       {
 	o << "\n\t";
 	o.flags (f);
-	value_attr {m_gr, **it, m_die, 0}.show (o, full);
+	value_attr {m_gr, **it, m_die, 0}.show (o, brevity::full);
       }
 
   o.flags (f);
@@ -78,7 +78,7 @@ value_die::cmp (value const &that) const
 value_type const value_attr::vtype = value_type::alloc ("T_ATTR");
 
 void
-value_attr::show (std::ostream &o, bool full) const
+value_attr::show (std::ostream &o, brevity brv) const
 {
   unsigned name = (unsigned) dwarf_whatattr ((Dwarf_Attribute *) &m_attr);
   unsigned form = dwarf_whatform ((Dwarf_Attribute *) &m_attr);
@@ -92,7 +92,7 @@ value_attr::show (std::ostream &o, bool full) const
 	o << "[" << std::hex
 	  << dwarf_dieoffset ((Dwarf_Die *) &d->get_die ()) << "]";
       else
-	v->show (o, full);
+	v->show (o, brv);
       o << ";";
     }
   o.flags (f);
@@ -124,7 +124,7 @@ value_attr::cmp (value const &that) const
 value_type const value_loclist_op::vtype = value_type::alloc ("T_LOCLIST_OP");
 
 void
-value_loclist_op::show (std::ostream &o, bool full) const
+value_loclist_op::show (std::ostream &o, brevity brv) const
 {
   o << m_dwop->offset << ':'
     << constant {m_dwop->atom, &dw_locexpr_opcode_dom, brevity::brief};
@@ -133,7 +133,7 @@ value_loclist_op::show (std::ostream &o, bool full) const
     while (auto v = prod->next ())
       {
 	o << "<";
-	v->show (o, false);
+	v->show (o, brevity::brief);
 	o << ">";
       }
   }
@@ -150,7 +150,7 @@ value_loclist_op::show (std::ostream &o, bool full) const
 	  }
 
 	o << "<";
-	v->show (o, false);
+	v->show (o, brevity::brief);
 	o << ">";
       }
   }

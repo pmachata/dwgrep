@@ -54,7 +54,7 @@ value_closure::~value_closure()
 {}
 
 void
-value_closure::show (std::ostream &o, bool full) const
+value_closure::show (std::ostream &o, brevity brv) const
 {
   o << "closure(" << *m_t << ")";
 }

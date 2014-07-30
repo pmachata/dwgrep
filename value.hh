@@ -124,7 +124,7 @@ public:
   constant get_type_const () const;
 
   virtual ~value () {}
-  virtual void show (std::ostream &o, bool full) const = 0;
+  virtual void show (std::ostream &o, brevity brv) const = 0;
   virtual std::unique_ptr <value> clone () const = 0;
   virtual cmp_result cmp (value const &that) const = 0;
 

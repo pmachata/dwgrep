@@ -128,6 +128,6 @@ value::get_type_const () const
 std::ostream &
 operator<< (std::ostream &o, value const &v)
 {
-  v.show (o, true);
+  v.show (o, brevity::full);
   return o;
 }

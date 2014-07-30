@@ -55,7 +55,7 @@ value_seq::value_seq (value_seq const &that)
 {}
 
 void
-value_seq::show (std::ostream &o, bool full) const
+value_seq::show (std::ostream &o, brevity brv) const
 {
   o << "[";
   bool seen = false;
@@ -64,7 +64,7 @@ value_seq::show (std::ostream &o, bool full) const
       if (seen)
 	o << ", ";
       seen = true;
-      v->show (o, false);
+      v->show (o, brevity::brief);
     }
   o << "]";
 }
