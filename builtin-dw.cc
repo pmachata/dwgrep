@@ -583,95 +583,51 @@ namespace
 
 namespace
 {
-  struct builtin_form
-    : public builtin
+  struct op_form_attr
+    : public op_unary_overload <value_attr>
   {
-    struct form
-      : public dwop_f
+    using op_unary_overload::op_unary_overload;
+
+    std::unique_ptr <value>
+    operate (std::unique_ptr <value_attr> val) override
     {
-      using dwop_f::dwop_f;
-
-      bool
-      operate (valfile &vf, Dwarf_Attribute &attr, Dwarf_Die &die) override
-      {
-	unsigned name = dwarf_whatform (&attr);
-	constant cst {name, &dw_form_dom};
-	vf.push (std::make_unique <value_cst> (cst, 0));
-	return true;
-      }
-
-      std::string
-      name () const override
-      {
-	return "form";
-      }
-    };
-
-    std::shared_ptr <op>
-    build_exec (std::shared_ptr <op> upstream, dwgrep_graph::sptr q,
-		std::shared_ptr <scope> scope) const override
-    {
-      return std::make_shared <form> (upstream, q);
-    }
-
-    char const *
-    name () const override
-    {
-      return "form";
+      constant cst {dwarf_whatform (&val->get_attr ()), &dw_form_dom};
+      return std::make_unique <value_cst> (cst, 0);
     }
   };
 }
 
 namespace
 {
-  struct builtin_parent
-    : public builtin
+  struct op_parent_die
+    : public op_unary_overload <value_die>
   {
-    struct parent
-      : public dwop_f
+    using op_unary_overload::op_unary_overload;
+
+    std::unique_ptr <value>
+    operate (std::unique_ptr <value_die> val) override
     {
-      using dwop_f::dwop_f;
+      Dwarf_Off par_off = m_gr->find_parent (val->get_die ());
+      if (par_off == dwgrep_graph::none_off)
+	return nullptr;
 
-      bool
-      operate (valfile &vf, Dwarf_Die &die) override
-      {
-	Dwarf_Off par_off = m_g->find_parent (die);
-	if (par_off == dwgrep_graph::none_off)
-	  return false;
+      Dwarf_Die par_die;
+      if (dwarf_offdie (&*m_gr->dwarf, par_off, &par_die) == nullptr)
+	throw_libdw ();
 
-	Dwarf_Die par_die;
-	if (dwarf_offdie (&*m_g->dwarf, par_off, &par_die) == nullptr)
-	  throw_libdw ();
-
-	vf.push (std::make_unique <value_die> (m_g, par_die, 0));
-	return true;
-      }
-
-      bool
-      operate (valfile &vf, Dwarf_Attribute &attr, Dwarf_Die &die) override
-      {
-	vf.push (std::make_unique <value_die> (m_g, die, 0));
-	return true;
-      }
-
-      std::string
-      name () const override
-      {
-	return "parent";
-      }
-    };
-
-    std::shared_ptr <op>
-    build_exec (std::shared_ptr <op> upstream, dwgrep_graph::sptr q,
-		std::shared_ptr <scope> scope) const override
-    {
-      return std::make_shared <parent> (upstream, q);
+      return std::make_unique <value_die> (m_gr, par_die, 0);
     }
+  };
 
-    char const *
-    name () const override
+  struct op_parent_attr
+    : public op_unary_overload <value_attr>
+  {
+    using op_unary_overload::op_unary_overload;
+
+    std::unique_ptr <value>
+    operate (std::unique_ptr <value_attr> val) override
     {
-      return "parent";
+      return std::make_unique <value_die> (m_gr, val->get_die (), 0);
     }
   };
 }
@@ -1260,8 +1216,6 @@ dwgrep_builtins_dw ()
 
   dict.add (std::make_shared <builtin_child> ());
   dict.add (std::make_shared <builtin_attribute> ());
-  dict.add (std::make_shared <builtin_form> ());
-  dict.add (std::make_shared <builtin_parent> ());
   dict.add (std::make_shared <builtin_integrate> ());
   dict.add (std::make_shared <builtin_at_number> ());
   dict.add (std::make_shared <builtin_at_number2> ());
@@ -1271,7 +1225,9 @@ dwgrep_builtins_dw ()
 
   {
     auto t = std::make_shared <overload_tab> ();
+
     t->add_simple_op_overload <op_value_attr> ();
+
     dict.add (std::make_shared <overloaded_op_builtin> ("value", t));
   }
 
@@ -1292,6 +1248,23 @@ dwgrep_builtins_dw ()
     t->add_simple_op_overload <op_label_loclist_op> ();
 
     dict.add (std::make_shared <overloaded_op_builtin> ("label", t));
+  }
+
+  {
+    auto t = std::make_shared <overload_tab> ();
+
+    t->add_simple_op_overload <op_form_attr> ();
+
+    dict.add (std::make_shared <overloaded_op_builtin> ("form", t));
+  }
+
+  {
+    auto t = std::make_shared <overload_tab> ();
+
+    t->add_simple_op_overload <op_parent_die> ();
+    t->add_simple_op_overload <op_parent_attr> ();
+
+    dict.add (std::make_shared <overloaded_op_builtin> ("parent", t));
   }
 
 #define ONE_KNOWN_DW_AT(NAME, CODE)					\
