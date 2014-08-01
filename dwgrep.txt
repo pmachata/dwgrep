@@ -819,13 +819,25 @@
 
    : attribute ?AT_ID
 
-** •EXPR → “offset” | “label” | “form” | “value” — Dwarf tree introspection
+** ·EXPR → “offset” | “address”
 
    - "offset" pops a graph node on TOS and pushes a value representing
      offset of the object.  The interpretation of offset differs by
      node type.  For example, location expression operations yield
      offset relative to the start of location expression, DIE's offset
      is relative to start of Dwarf file.
+
+   - "address" works similarly, but instead of a file- or node- based
+     offset, it yields address within client address space.
+
+     For DIE's, this is like calling dwarf_ranges, i.e. yields
+     addresses where the DIE has valid PC.
+
+     Applied to an attribute that's either DW_AT_high_pc or
+     DW_AT_entry_pc with non-DW_FORM_addr form, this might maybe
+     convert them to address.
+
+** •EXPR →  “label” | “form” | “value” — Dwarf tree introspection
 
    - "label" pops a graph node on TOS and pushes a value representing
      and identifier of node kind.  This would be a DIE tag, an
@@ -1047,7 +1059,7 @@
    The following words (which are thin wrappers around similarly named
    libdw functions) are applicable to individual line table entries:
 
-   : @lineaddr
+   : address
    : @lineop_index
    : @lineno
    : @linecol
@@ -1279,11 +1291,6 @@
      [0x9c] typedef __intptr_t long int (DW_ATE_signed, 8 bytes)
      [0xa7] typedef size_t long unsigned int (DW_ATE_unsigned, 8 bytes)
      [...]
-
-     : winfo ?TAG_typedef ->A;
-     : A do @AT_type while ?TAG_typedef ->B;
-     : "[%(A offset%)] typedef %(A @AT_name%) %(B @AT_name%) "\
-     : "(%( B @AT_encoding || "???" %), %( B @AT_byte_size || "???" %) bytes)"
 
 ** nested identifier names
    : ?(@AT_name "a" ?eq) child ?(@AT_name "b" ?eq) child ?(@AT_name "c" ?eq)

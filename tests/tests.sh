@@ -365,3 +365,10 @@ expect_count 1 ./empty -e '
 			?([4,5,6] ?find) ?(dup ?find)
 			!([2,3,4] !find) !([1,2,3] !find)
 			!([4,5,6] !find) !(dup !find))'
+
+# Check location expression support.
+
+#	XXX update for actual location expression value type.  The
+#	"elem ?(pos ?2)" bit should become "value" or something.
+expect_count 1 ./typedef.o -e '
+	winfo ?(@AT_location elem ?(pos ?2) elem label DW_OP_addr ?eq)'

@@ -412,6 +412,22 @@ namespace
 	abort ();
       }
 
+    switch (dwarf_whatform (&attr))
+    case DW_FORM_block1:
+    case DW_FORM_block2:
+    case DW_FORM_block4:
+    case DW_FORM_block:
+      {
+	// XXX even for blocks, we need to look at the @type to
+	// figure out whether there's a better way to represent this
+	// item.  Some of these might be e.g. floats.  NIY.
+	Dwarf_Block block;
+	if (dwarf_formblock (&attr, &block) != 0)
+	  throw_libdw ();
+
+	return pass_block (block);
+      }
+
     std::cerr << dwarf_whatattr (&attr) << std::endl << std::flush;
     assert (! "signedness of attribute unhandled");
     abort ();
@@ -471,22 +487,11 @@ at_value (Dwarf_Attribute attr, Dwarf_Die die, dwgrep_graph::sptr gr)
     case DW_FORM_data4:
     case DW_FORM_data8:
     case DW_FORM_sec_offset:
-      return handle_at_dependent_value (attr, die, gr);
-
     case DW_FORM_block1:
     case DW_FORM_block2:
     case DW_FORM_block4:
     case DW_FORM_block:
-      {
-	// XXX even for blocks, we need to look at the @type to
-	// figure out whether there's a better way to represent this
-	// item.  Some of these might be e.g. floats.  NIY.
-	Dwarf_Block block;
-	if (dwarf_formblock (&attr, &block) != 0)
-	  throw_libdw ();
-
-	return pass_block (block);
-      }
+      return handle_at_dependent_value (attr, die, gr);
 
     case DW_FORM_exprloc:
       return atval_locexpr (gr, attr);
@@ -500,8 +505,8 @@ at_value (Dwarf_Attribute attr, Dwarf_Die die, dwgrep_graph::sptr gr)
 	(std::make_unique <value_str> ("(form unhandled)", 0));
 
     case DW_FORM_indirect:
-      assert (! "Form unhandled.");
-      abort  ();
+      assert (! "Unexpected DW_FORM_indirect");
+      abort ();
     }
 
   assert (! "Unhandled DWARF form type.");
