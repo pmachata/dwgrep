@@ -251,4 +251,31 @@ overload_tab::add_simple_pred_overload ()
 		std::make_shared <overload_pred_builtin <T>> ());
 }
 
+template <class VT>
+struct op_unary_overload
+  : public stub_op
+{
+  using stub_op::stub_op;
+
+  static value_type get_value_type ()
+  { return VT::vtype; }
+
+  valfile::uptr next () override final
+  {
+    while (auto vf = m_upstream->next ())
+      {
+	auto dv = vf->pop_as <VT> ();
+	assert (dv != nullptr);
+	if (auto nv = operate (std::move (dv)))
+	  {
+	    vf->push (std::move (nv));
+	    return vf;
+	  }
+      }
+    return nullptr;
+  }
+
+  virtual std::unique_ptr <value> operate (std::unique_ptr <VT> val) = 0;
+};
+
 #endif /* _OVERLOAD_H_ */

@@ -508,50 +508,30 @@ namespace
 
 namespace
 {
-  struct builtin_offset
-    : public builtin
+  struct op_offset_die
+    : public op_unary_overload <value_die>
   {
-    struct offset
-      : public dwop_f
+    using op_unary_overload::op_unary_overload;
+
+    std::unique_ptr <value>
+    operate (std::unique_ptr <value_die> val) override
     {
-      using dwop_f::dwop_f;
-
-      bool
-      operate (valfile &vf, Dwarf_Die &die) override
-      {
-	Dwarf_Off off = dwarf_dieoffset (&die);
-	auto cst = constant {off, &hex_constant_dom};
-	vf.push (std::make_unique <value_cst> (cst, 0));
-	return true;
-      }
-
-      bool
-      operate (valfile &vf, value_loclist_op &op)
-      {
-	Dwarf_Op const *dwop = op.get_dwop ();
-	constant c {dwop->offset, &hex_constant_dom};
-	vf.push (std::make_unique <value_cst> (c, 0));
-	return true;
-      }
-
-      std::string
-      name () const override
-      {
-	return "offset";
-      }
-    };
-
-    std::shared_ptr <op>
-    build_exec (std::shared_ptr <op> upstream, dwgrep_graph::sptr q,
-		std::shared_ptr <scope> scope) const override
-    {
-      return std::make_shared <offset> (upstream, q);
+      constant c {dwarf_dieoffset (&val->get_die ()), &hex_constant_dom};
+      return std::make_unique <value_cst> (c, 0);
     }
+  };
 
-    char const *
-    name () const override
+  struct op_offset_loclist_op
+    : public op_unary_overload <value_loclist_op>
+  {
+    using op_unary_overload::op_unary_overload;
+
+    std::unique_ptr <value>
+    operate (std::unique_ptr <value_loclist_op> val) override
     {
-      return "offset";
+      Dwarf_Op const *dwop = val->get_dwop ();
+      constant c {dwop->offset, &hex_constant_dom};
+      return std::make_unique <value_cst> (c, 0);
     }
   };
 }
@@ -1294,7 +1274,6 @@ dwgrep_builtins_dw ()
 
   dict.add (std::make_shared <builtin_child> ());
   dict.add (std::make_shared <builtin_attribute> ());
-  dict.add (std::make_shared <builtin_offset> ());
   dict.add (std::make_shared <builtin_label> ());
   dict.add (std::make_shared <builtin_form> ());
   dict.add (std::make_shared <builtin_parent> ());
@@ -1304,6 +1283,21 @@ dwgrep_builtins_dw ()
 
   dict.add (std::make_shared <builtin_rootp> (true));
   dict.add (std::make_shared <builtin_rootp> (false));
+
+  {
+    auto t = std::make_shared <overload_tab> ();
+    t->add_simple_op_overload <op_value_attr> ();
+    dict.add (std::make_shared <overloaded_op_builtin> ("value", t));
+  }
+
+  {
+    auto t = std::make_shared <overload_tab> ();
+
+    t->add_simple_op_overload <op_offset_die> ();
+    t->add_simple_op_overload <op_offset_loclist_op> ();
+
+    dict.add (std::make_shared <overloaded_op_builtin> ("offset", t));
+  }
 
 #define ONE_KNOWN_DW_AT(NAME, CODE)					\
   {									\
@@ -1462,12 +1456,6 @@ dwgrep_builtins_dw ()
   }
   ALL_KNOWN_DW_END;
 #undef ONE_KNOWN_DW_END
-
-  {
-    auto t = std::make_shared <overload_tab> ();
-    t->add_simple_op_overload <op_value_attr> ();
-    dict.add (std::make_shared <overloaded_op_builtin> ("value", t));
-  }
 
   return ret;
 }
