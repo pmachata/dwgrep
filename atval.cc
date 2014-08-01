@@ -133,11 +133,13 @@ namespace
     Dwarf_Addr m_base;
     ptrdiff_t m_offset;
     dwgrep_graph::sptr m_gr;
+    size_t m_i;
 
     explicit locexpr_producer (dwgrep_graph::sptr gr, Dwarf_Attribute attr)
       : m_attr (attr)
       , m_offset {0}
       , m_gr {gr}
+      , m_i {0}
     {}
 
     std::unique_ptr <value>
@@ -168,7 +170,7 @@ namespace
 			   (constant {end, &hex_constant_dom}, 0));
 	    ret.push_back (std::make_unique <value_seq> (std::move (ops), 0));
 
-	    return std::make_unique <value_seq> (std::move (ret), 0);
+	    return std::make_unique <value_seq> (std::move (ret), m_i++);
 	  }
 	}
     }
