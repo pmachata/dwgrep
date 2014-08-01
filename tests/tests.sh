@@ -370,5 +370,10 @@ expect_count 1 ./empty -e '
 
 #	XXX update for actual location expression value type.  The
 #	"elem ?(pos ?2)" bit should become "value" or something.
+
+#   Support of DW_AT_location with DW_FORM_block*.
 expect_count 1 ./typedef.o -e '
+	winfo ?(@AT_location elem ?(pos ?2) elem label DW_OP_addr ?eq)'
+#   Support of DW_AT_location with DW_FORM_exprloc
+expect_count 2 ./enum.o -e '
 	winfo ?(@AT_location elem ?(pos ?2) elem label DW_OP_addr ?eq)'
