@@ -32,7 +32,6 @@
 #include <vector>
 #include <string>
 #include <iosfwd>
-#include <boost/optional.hpp>
 
 #include "constant.hh"
 #include "valfile.hh"

@@ -33,7 +33,6 @@
 #include <memory>
 #include <set>
 #include <stdexcept>
-#include <boost/optional.hpp>
 
 #include "make_unique.hh"
 #include "tree.hh"
