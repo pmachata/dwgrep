@@ -538,59 +538,45 @@ namespace
 
 namespace
 {
-  struct builtin_label
-    : public builtin
+  struct op_label_die
+    : public op_unary_overload <value_die>
   {
-    struct op
-      : public dwop_f
+    using op_unary_overload::op_unary_overload;
+
+    std::unique_ptr <value>
+    operate (std::unique_ptr <value_die> val) override
     {
-      using dwop_f::dwop_f;
-
-      bool
-      operate (valfile &vf, Dwarf_Die &die) override
-      {
-	int tag = dwarf_tag (&die);
-	assert (tag >= 0);
-	constant cst {(unsigned) tag, &dw_tag_dom};
-	vf.push (std::make_unique <value_cst> (cst, 0));
-	return true;
-      }
-
-      bool
-      operate (valfile &vf, Dwarf_Attribute &attr, Dwarf_Die &die) override
-      {
-	unsigned name = dwarf_whatattr (&attr);
-	constant cst {name, &dw_attr_dom};
-	vf.push (std::make_unique <value_cst> (cst, 0));
-	return true;
-      }
-
-      bool
-      operate (valfile &vf, Dwarf_Op *op, Dwarf_Attribute &attr)
-      {
-	constant cst {op->atom, &dw_locexpr_opcode_dom, brevity::brief};
-	vf.push (std::make_unique <value_cst> (cst, 0));
-	return true;
-      }
-
-      std::string
-      name () const override
-      {
-	return "label";
-      }
-    };
-
-    std::shared_ptr < ::op>
-    build_exec (std::shared_ptr < ::op> upstream, dwgrep_graph::sptr q,
-		std::shared_ptr <scope> scope) const override
-    {
-      return std::make_shared <op> (upstream, q);
+      int tag = dwarf_tag (&val->get_die ());
+      assert (tag >= 0);
+      constant cst {(unsigned) tag, &dw_tag_dom};
+      return std::make_unique <value_cst> (cst, 0);
     }
+  };
 
-    char const *
-    name () const override
+  struct op_label_attr
+    : public op_unary_overload <value_attr>
+  {
+    using op_unary_overload::op_unary_overload;
+
+    std::unique_ptr <value>
+    operate (std::unique_ptr <value_attr> val) override
     {
-      return "label";
+      constant cst {dwarf_whatattr (&val->get_attr ()), &dw_attr_dom};
+      return std::make_unique <value_cst> (cst, 0);
+    }
+  };
+
+  struct op_label_loclist_op
+    : public op_unary_overload <value_loclist_op>
+  {
+    using op_unary_overload::op_unary_overload;
+
+    std::unique_ptr <value>
+    operate (std::unique_ptr <value_loclist_op> val) override
+    {
+      constant cst {val->get_dwop ()->atom, &dw_locexpr_opcode_dom,
+		    brevity::brief};
+      return std::make_unique <value_cst> (cst, 0);
     }
   };
 }
@@ -1274,7 +1260,6 @@ dwgrep_builtins_dw ()
 
   dict.add (std::make_shared <builtin_child> ());
   dict.add (std::make_shared <builtin_attribute> ());
-  dict.add (std::make_shared <builtin_label> ());
   dict.add (std::make_shared <builtin_form> ());
   dict.add (std::make_shared <builtin_parent> ());
   dict.add (std::make_shared <builtin_integrate> ());
@@ -1297,6 +1282,16 @@ dwgrep_builtins_dw ()
     t->add_simple_op_overload <op_offset_loclist_op> ();
 
     dict.add (std::make_shared <overloaded_op_builtin> ("offset", t));
+  }
+
+  {
+    auto t = std::make_shared <overload_tab> ();
+
+    t->add_simple_op_overload <op_label_die> ();
+    t->add_simple_op_overload <op_label_attr> ();
+    t->add_simple_op_overload <op_label_loclist_op> ();
+
+    dict.add (std::make_shared <overloaded_op_builtin> ("label", t));
   }
 
 #define ONE_KNOWN_DW_AT(NAME, CODE)					\
