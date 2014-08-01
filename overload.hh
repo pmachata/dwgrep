@@ -255,7 +255,15 @@ template <class VT>
 struct op_unary_overload
   : public stub_op
 {
-  using stub_op::stub_op;
+protected:
+  dwgrep_graph::sptr m_gr;
+
+public:
+  op_unary_overload (std::shared_ptr <op> upstream, dwgrep_graph::sptr gr,
+		     std::shared_ptr <scope> scope)
+    : stub_op {upstream, gr, scope}
+    , m_gr {gr}
+  {}
 
   static value_type get_value_type ()
   { return VT::vtype; }

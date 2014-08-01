@@ -443,18 +443,18 @@ namespace
 
 namespace
 {
-  class dwop_f
+  class die_op_f
     : public op
   {
     std::shared_ptr <op> m_upstream;
 
   protected:
-    dwgrep_graph::sptr m_g;
+    dwgrep_graph::sptr m_gr;
 
   public:
-    dwop_f (std::shared_ptr <op> upstream, dwgrep_graph::sptr gr)
+    die_op_f (std::shared_ptr <op> upstream, dwgrep_graph::sptr gr)
       : m_upstream {upstream}
-      , m_g {gr}
+      , m_gr {gr}
     {}
 
     valfile::uptr
@@ -469,22 +469,8 @@ namespace
 		return vf;
 	    }
 
-	  else if (auto v = value::as <value_attr> (&*vp))
-	    {
-	      if (operate (*vf, v->get_attr (), v->get_die ()))
-		return vf;
-	    }
-
-	  else if (auto v = value::as <value_loclist_op> (&*vp))
-	    {
-	      if (operate (*vf, v->get_dwop (), v->get_attr ()))
-		return vf;
-	    }
-
 	  else
-	    show_expects (name (),
-			  {value_die::vtype, value_attr::vtype,
-			   value_loclist_op::vtype});
+	    show_expects (name (), {value_die::vtype});
 	}
 
       return nullptr;
@@ -496,12 +482,6 @@ namespace
     virtual std::string name () const override = 0;
 
     virtual bool operate (valfile &vf, Dwarf_Die &die)
-    { return false; }
-
-    virtual bool operate (valfile &vf, Dwarf_Attribute &attr, Dwarf_Die &die)
-    { return false; }
-
-    virtual bool operate (valfile &vf, Dwarf_Op *op, Dwarf_Attribute &attr)
     { return false; }
   };
 }
@@ -638,9 +618,9 @@ namespace
     : public builtin
   {
     struct integrate
-      : public dwop_f
+      : public die_op_f
     {
-      using dwop_f::dwop_f;
+      using die_op_f::die_op_f;
 
       bool
       operate (valfile &vf, Dwarf_Die &die) override
@@ -658,7 +638,7 @@ namespace
 	if (die2 == nullptr)
 	  throw_libdw ();
 
-	vf.push (std::make_unique <value_die> (m_g, *die2, 0));
+	vf.push (std::make_unique <value_die> (m_gr, *die2, 0));
 	return true;
       }
 
@@ -809,17 +789,17 @@ namespace
     struct p
       : public pred
     {
-      dwgrep_graph::sptr m_g;
+      dwgrep_graph::sptr m_gr;
 
       explicit p (dwgrep_graph::sptr g)
-	: m_g {g}
+	: m_gr {g}
       {}
 
       pred_result
       result (valfile &vf) override
       {
 	if (auto v = vf.top_as <value_die> ())
-	  return pred_result (m_g->is_root (v->get_die ()));
+	  return pred_result (m_gr->is_root (v->get_die ()));
 
 	else if (vf.top ().is <value_attr> ())
 	  // By definition, attributes are never root.
@@ -937,13 +917,13 @@ namespace
     {}
 
     struct o
-      : public dwop_f
+      : public die_op_f
     {
       int m_atname;
 
     public:
       o (std::shared_ptr <op> upstream, dwgrep_graph::sptr g, int atname)
-	: dwop_f {upstream, g}
+	: die_op_f {upstream, g}
 	, m_atname {atname}
       {}
 
@@ -954,7 +934,7 @@ namespace
 	if (dwarf_attr (&die, m_atname, &attr) == nullptr)
 	  return false;
 
-	vf.push (std::make_unique <value_attr> (m_g, attr, die, 0));
+	vf.push (std::make_unique <value_attr> (m_gr, attr, die, 0));
 	return true;
       }
 

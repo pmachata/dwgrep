@@ -112,7 +112,7 @@ public:
 struct stub_op
   : public inner_op
 {
-  stub_op (std::shared_ptr <op> upstream, dwgrep_graph::sptr q,
+  stub_op (std::shared_ptr <op> upstream, dwgrep_graph::sptr gr,
 	   std::shared_ptr <scope> scope)
     : inner_op {upstream}
   {}
