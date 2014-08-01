@@ -119,39 +119,112 @@ value_attr::cmp (value const &that) const
     return cmp_result::fail;
 }
 
+
+namespace
+{
+  void
+  show_loclist_op (std::ostream &o, brevity brv,
+		   Dwarf_Op *dwop, Dwarf_Attribute const &attr,
+		   dwgrep_graph::sptr gr)
+  {
+    o << dwop->offset << ':'
+      << constant {dwop->atom, &dw_locexpr_opcode_dom, brevity::brief};
+    {
+      auto prod = dwop_number (dwop, attr, gr);
+      while (auto v = prod->next ())
+	{
+	  o << "<";
+	  v->show (o, brevity::brief);
+	  o << ">";
+	}
+    }
+
+    {
+      bool sep = false;
+      auto prod = dwop_number2 (dwop, attr, gr);
+      while (auto v = prod->next ())
+	{
+	  if (! sep)
+	    {
+	      o << "/";
+	      sep = true;
+	    }
+
+	  o << "<";
+	  v->show (o, brevity::brief);
+	  o << ">";
+	}
+    }
+  }
+}
+
+value_type const value_loclist_elem::vtype
+	= value_type::alloc ("T_LOCLIST_ELEM");
+
+void
+value_loclist_elem::show (std::ostream &o, brevity brv) const
+{
+  {
+    ios_flag_saver s {o};
+    o << std::hex << std::showbase << m_low << ".." << m_high;
+  }
+
+  o << ":[";
+  for (size_t i = 0; i < m_exprlen; ++i)
+    {
+      if (i > 0)
+	o << ", ";
+      show_loclist_op (o, brv, m_expr + i, m_attr, m_gr);
+    }
+  o << "]";
+}
+
+std::unique_ptr <value>
+value_loclist_elem::clone () const
+{
+  return std::make_unique <value_loclist_elem> (*this);
+}
+
+cmp_result
+value_loclist_elem::cmp (value const &that) const
+{
+  assert (! "value_loclist_elem::cmp");//XXX
+  abort ();
+}
+
+
+value_type const value_addr_range::vtype = value_type::alloc ("T_ADDR_RANGE");
+
+void
+value_addr_range::show (std::ostream &o, brevity brv) const
+{
+  ios_flag_saver s {o};
+  o << std::hex << std::showbase << m_low << ".." << m_high;
+}
+
+std::unique_ptr <value>
+value_addr_range::clone () const
+{
+  return std::make_unique <value_addr_range> (*this);
+}
+
+cmp_result
+value_addr_range::cmp (value const &that) const
+{
+  if (auto v = value::as <value_addr_range> (&that))
+    return compare (std::make_tuple (m_low, m_high),
+		    std::make_tuple (v->m_low, v->m_high));
+  else
+    return cmp_result::fail;
+}
+
+
 value_type const value_loclist_op::vtype = value_type::alloc ("T_LOCLIST_OP");
 
 void
 value_loclist_op::show (std::ostream &o, brevity brv) const
 {
-  o << m_dwop->offset << ':'
-    << constant {m_dwop->atom, &dw_locexpr_opcode_dom, brevity::brief};
-  {
-    auto prod = dwop_number (m_dwop, m_attr, m_gr);
-    while (auto v = prod->next ())
-      {
-	o << "<";
-	v->show (o, brevity::brief);
-	o << ">";
-      }
-  }
-
-  {
-    bool sep = false;
-    auto prod = dwop_number2 (m_dwop, m_attr, m_gr);
-    while (auto v = prod->next ())
-      {
-	if (! sep)
-	  {
-	    o << "/";
-	    sep = true;
-	  }
-
-	o << "<";
-	v->show (o, brevity::brief);
-	o << ">";
-      }
-  }
+  show_loclist_op (o, brv, m_dwop, m_attr, m_gr);
 }
 
 std::unique_ptr <value>

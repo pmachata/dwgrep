@@ -88,6 +88,81 @@ public:
   cmp_result cmp (value const &that) const override;
 };
 
+class value_loclist_elem
+  : public value
+{
+  dwgrep_graph::sptr m_gr;
+  Dwarf_Addr m_low;
+  Dwarf_Addr m_high;
+  Dwarf_Op *m_expr;
+  size_t m_exprlen;
+  Dwarf_Attribute m_attr;
+
+public:
+  static value_type const vtype;
+
+  value_loclist_elem (dwgrep_graph::sptr gr, Dwarf_Addr low, Dwarf_Addr high,
+		      Dwarf_Op *expr, size_t exprlen, Dwarf_Attribute attr,
+		      size_t pos)
+    : value {vtype, pos}
+    , m_gr {gr}
+    , m_low {low}
+    , m_high {high}
+    , m_expr {expr}
+    , m_exprlen {exprlen}
+    , m_attr (attr)
+  {}
+
+  value_loclist_elem (value_loclist_elem const &that) = default;
+
+  Dwarf_Addr get_low () const
+  { return m_low; }
+
+  Dwarf_Addr get_high () const
+  { return m_high; }
+
+  Dwarf_Op *get_expr () const
+  { return m_expr; }
+
+  size_t get_exprlen () const
+  { return m_exprlen; }
+
+  Dwarf_Attribute &get_attr ()
+  { return m_attr; }
+
+  void show (std::ostream &o, brevity brv) const override;
+  std::unique_ptr <value> clone () const override;
+  cmp_result cmp (value const &that) const override;
+};
+
+class value_addr_range
+  : public value
+{
+  constant m_low;
+  constant m_high;
+
+public:
+  static value_type const vtype;
+
+  value_addr_range (constant const &low, constant const &high, size_t pos)
+    : value {vtype, pos}
+    , m_low {low}
+    , m_high {high}
+  {}
+
+  value_addr_range (value_addr_range const &that) = default;
+
+  constant const &get_low () const
+  { return m_low; }
+
+  constant const &get_high () const
+  { return m_high; }
+
+  void show (std::ostream &o, brevity brv) const override;
+  std::unique_ptr <value> clone () const override;
+  cmp_result cmp (value const &that) const override;
+};
+
 class value_loclist_op
   : public value
 {

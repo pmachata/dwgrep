@@ -1089,7 +1089,7 @@
    - XXX possibly a means of evaluating?  (Could we use the in-program
      stack for evaluating the Dwarf expression?)
 
-***  T_LOCLIST_ELEM
+*** •T_LOCLIST_ELEM
 
     - "address" yields a value of type T_ADDR_RANGE where given
       location expression applies.

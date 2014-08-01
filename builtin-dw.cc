@@ -272,28 +272,21 @@ namespace
       while (true)
 	{
 	  while (m_vf == nullptr)
-	    {
-	      if (auto vf = m_upstream->next ())
-		{
-		  auto vp = vf->pop ();
-		  if (auto v = value::as <value_die> (&*vp))
-		    {
-		      Dwarf_Die *die = &v->get_die ();
-		      if (dwarf_haschildren (die))
-			{
-			  if (dwarf_child (die, &m_child) != 0)
-			    throw_libdw ();
+	    if (auto vf = m_upstream->next ())
+	      {
+		auto vp = vf->pop_as <value_die> ();
+		Dwarf_Die *die = &vp->get_die ();
+		if (dwarf_haschildren (die))
+		  {
+		    if (dwarf_child (die, &m_child) != 0)
+		      throw_libdw ();
 
-			  // We found our guy.
-			  m_vf = std::move (vf);
-			}
-		    }
-		  else
-		    show_expects (name (), {value_die::vtype});
-		}
-	      else
-		return nullptr;
-	    }
+		    // We found our guy.
+		    m_vf = std::move (vf);
+		  }
+	      }
+	    else
+	      return nullptr;
 
 	  auto ret = std::make_unique <valfile> (*m_vf);
 	  ret->push (std::make_unique <value_die> (m_gr, m_child, m_pos++));
@@ -329,6 +322,75 @@ namespace
 
     static value_type get_value_type ()
     { return value_die::vtype; }
+  };
+
+  struct op_child_loclist_elem
+    : public op
+  {
+    std::shared_ptr <op> m_upstream;
+    dwgrep_graph::sptr m_gr;
+    valfile::uptr m_vf;
+    std::unique_ptr <value_loclist_elem> m_val;
+
+    size_t m_i;
+
+    op_child_loclist_elem (std::shared_ptr <op> upstream, dwgrep_graph::sptr gr,
+			   std::shared_ptr <scope> scope)
+      : m_upstream {upstream}
+      , m_gr {gr}
+      , m_i {0}
+    {}
+
+    void
+    reset_me ()
+    {
+      m_vf = nullptr;
+      m_i = 0;
+    }
+
+    valfile::uptr
+    next () override
+    {
+      while (true)
+	{
+	  while (m_vf == nullptr)
+	    if (auto vf = m_upstream->next ())
+	      {
+		m_val = vf->pop_as <value_loclist_elem> ();
+		m_vf = std::move (vf);
+	      }
+	    else
+	      return nullptr;
+
+	  if (m_i < m_val->get_exprlen ())
+	    {
+	      auto ret = std::make_unique <valfile> (*m_vf);
+	      ret->push (std::make_unique <value_loclist_op>
+			 (m_gr, m_val->get_expr () + m_i,
+			  m_val->get_attr (), m_i));
+	      m_i++;
+	      return ret;
+	    }
+
+	  reset_me ();
+	}
+    }
+
+    void
+    reset () override
+    {
+      reset_me ();
+      m_upstream->reset ();
+    }
+
+    std::string
+    name () const override
+    {
+      return "child:loclist_elem";
+    }
+
+    static value_type get_value_type ()
+    { return value_loclist_elem::vtype; }
   };
 }
 
@@ -499,6 +561,23 @@ namespace
       Dwarf_Op const *dwop = val->get_dwop ();
       constant c {dwop->offset, &hex_constant_dom};
       return std::make_unique <value_cst> (c, 0);
+    }
+  };
+}
+
+namespace
+{
+  struct op_address_loclist_elem
+    : public op_unary_overload <value_loclist_elem>
+  {
+    using op_unary_overload::op_unary_overload;
+
+    std::unique_ptr <value>
+    operate (std::unique_ptr <value_loclist_elem> val) override
+    {
+      return std::make_unique <value_addr_range>
+	(constant {val->get_low (), &hex_constant_dom},
+	 constant {val->get_high (), &hex_constant_dom}, 0);
     }
   };
 }
@@ -1144,6 +1223,7 @@ dwgrep_builtins_dw ()
     auto t = std::make_shared <overload_tab> ();
 
     t->add_simple_op_overload <op_child_die> ();
+    t->add_simple_op_overload <op_child_loclist_elem> ();
 
     dict.add (std::make_shared <overloaded_op_builtin> ("child", t));
   }
@@ -1164,6 +1244,14 @@ dwgrep_builtins_dw ()
     t->add_simple_op_overload <op_offset_loclist_op> ();
 
     dict.add (std::make_shared <overloaded_op_builtin> ("offset", t));
+  }
+
+  {
+    auto t = std::make_shared <overload_tab> ();
+
+    t->add_simple_op_overload <op_address_loclist_elem> ();
+
+    dict.add (std::make_shared <overloaded_op_builtin> ("address", t));
   }
 
   {

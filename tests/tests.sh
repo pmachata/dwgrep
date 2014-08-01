@@ -373,10 +373,10 @@ expect_count 1 ./empty -e '
 
 #   Support of DW_AT_location with DW_FORM_block*.
 expect_count 1 ./typedef.o -e '
-	winfo ?(@AT_location elem ?(pos ?2) elem label DW_OP_addr ?eq)'
+	winfo ?(@AT_location child label DW_OP_addr ?eq)'
 #   Support of DW_AT_location with DW_FORM_exprloc
 expect_count 2 ./enum.o -e '
-	winfo ?(@AT_location elem ?(pos ?2) elem label DW_OP_addr ?eq)'
+	winfo ?(@AT_location child label DW_OP_addr ?eq)'
 
 #   Numbering of elements of location list.
 expect_count 1 ./bitcount.o -e '

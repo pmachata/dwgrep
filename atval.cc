@@ -157,21 +157,8 @@ namespace
 	case 0:
 	  return nullptr;
 	default:
-	  {
-	    value_seq::seq_t ops;
-	    for (size_t i = 0; i < exprlen; ++i)
-	      ops.push_back (std::make_unique <value_loclist_op>
-				(m_gr, &expr[i], m_attr, i));
-
-	    value_seq::seq_t ret;
-	    ret.push_back (std::make_unique <value_cst>
-			   (constant {start, &hex_constant_dom}, 0));
-	    ret.push_back (std::make_unique <value_cst>
-			   (constant {end, &hex_constant_dom}, 0));
-	    ret.push_back (std::make_unique <value_seq> (std::move (ops), 0));
-
-	    return std::make_unique <value_seq> (std::move (ret), m_i++);
-	  }
+	  return std::make_unique <value_loclist_elem>
+	    (m_gr, start, end, expr, exprlen, m_attr, m_i++);
 	}
     }
   };
