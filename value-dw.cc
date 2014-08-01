@@ -188,8 +188,33 @@ value_loclist_elem::clone () const
 cmp_result
 value_loclist_elem::cmp (value const &that) const
 {
-  assert (! "value_loclist_elem::cmp");//XXX
-  abort ();
+  if (auto v = value::as <value_loclist_elem> (&that))
+    {
+      auto ret = compare (m_attr.valp, v->m_attr.valp);
+      if (ret != cmp_result::equal)
+	return ret;
+
+      auto r = compare (std::make_tuple (m_low, m_high, m_exprlen),
+			std::make_tuple (v->m_low, v->m_high, v->m_exprlen));
+      if (r != cmp_result::equal)
+	return r;
+
+      for (size_t i = 0; i < m_exprlen; ++i)
+	{
+	  Dwarf_Op *a = m_expr + i;
+	  Dwarf_Op *b = v->m_expr + i;
+	  r = compare (std::make_tuple (a->atom, a->number,
+					a->number2, a->offset),
+		       std::make_tuple (b->atom, b->number,
+					b->number2, b->offset));
+	  if (r != cmp_result::equal)
+	    return r;
+	}
+
+      return cmp_result::equal;
+    }
+  else
+    return cmp_result::fail;
 }
 
 
