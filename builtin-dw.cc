@@ -30,9 +30,9 @@
 #include "make_unique.hh"
 #include <sstream>
 
-#include "builtin-dw.hh"
 #include "atval.hh"
 #include "builtin-cst.hh"
+#include "builtin-dw.hh"
 #include "builtin.hh"
 #include "dwcst.hh"
 #include "dwit.hh"
@@ -666,121 +666,6 @@ namespace
 
 namespace
 {
-  struct op_loclist_op
-    : public inner_op
-  {
-    typedef std::function <std::unique_ptr <value_producer>
-			   (value_loclist_op &, dwgrep_graph::sptr gr)> cb_t;
-    dwgrep_graph::sptr m_gr;
-    cb_t m_cb;
-    char const *m_name;
-    std::unique_ptr <value_producer> m_vp;
-    valfile::uptr m_vf;
-
-    op_loclist_op (std::shared_ptr <op> upstream, dwgrep_graph::sptr gr,
-		   cb_t cb, char const *name)
-      : inner_op {upstream}
-      , m_gr {gr}
-      , m_cb {cb}
-      , m_name {name}
-    {}
-
-    void
-    reset_me ()
-    {
-      m_vp = nullptr;
-      m_vf = nullptr;
-    }
-
-    valfile::uptr
-    next () override final
-    {
-      while (true)
-	{
-	  while (m_vp == nullptr)
-	    if (auto vf = m_upstream->next ())
-	      {
-		auto v = vf->pop ();
-		if (auto vlo = value::as <value_loclist_op> (&*v))
-		  {
-		    m_vp = m_cb (*vlo, m_gr);
-		    m_vf = std::move (vf);
-		  }
-	      }
-	    else
-	      return nullptr;
-
-	  if (auto val = m_vp->next ())
-	    {
-	      auto ret = std::make_unique <valfile> (*m_vf);
-	      ret->push (std::move (val));
-	      return ret;
-	    }
-
-	  reset_me ();
-	}
-    }
-
-    std::string
-    name () const override
-    {
-      return m_name;
-    }
-
-    void
-    reset ()
-    {
-      reset_me ();
-      inner_op::reset ();
-    }
-  };
-
-  template <std::unique_ptr <value_producer> F (value_loclist_op &,
-						dwgrep_graph::sptr),
-	    char const *Name>
-  struct loclist_op_builtin
-    : public builtin
-  {
-    std::shared_ptr <op>
-    build_exec (std::shared_ptr <op> upstream, dwgrep_graph::sptr q,
-		std::shared_ptr <scope> scope) const override
-    {
-      return std::make_shared <op_loclist_op> (upstream, q, F, Name);
-    }
-
-    char const *
-    name () const override
-    {
-      return Name;
-    }
-  };
-
-  constexpr char const at_number_name[] = "@number";
-
-  std::unique_ptr <value_producer>
-  loclist_operate_number (value_loclist_op &v, dwgrep_graph::sptr gr)
-  {
-    return dwop_number (v.get_dwop (), v.get_attr (), gr);
-  }
-
-  typedef loclist_op_builtin <loclist_operate_number,
-			      at_number_name> builtin_at_number;
-
-
-  constexpr char const at_number2_name[] = "@number2";
-
-  std::unique_ptr <value_producer>
-  loclist_operate_number2 (value_loclist_op &v, dwgrep_graph::sptr gr)
-  {
-    return dwop_number2 (v.get_dwop (), v.get_attr (), gr);
-  }
-
-  typedef loclist_op_builtin <loclist_operate_number2,
-			      at_number2_name> builtin_at_number2;
-}
-
-namespace
-{
   struct builtin_rootp
     : public pred_builtin
   {
@@ -898,11 +783,79 @@ namespace
     std::string
     name () const
     {
-      return "value";
+      return "value:attr";
     }
 
     static value_type get_value_type ()
     { return value_attr::vtype; }
+  };
+
+  struct op_value_loclist_op
+    : public inner_op
+  {
+    dwgrep_graph::sptr m_gr;
+    std::unique_ptr <value_producer> m_vpr1;
+    std::unique_ptr <value_producer> m_vpr2;
+    valfile::uptr m_vf;
+
+    op_value_loclist_op (std::shared_ptr <op> upstream, dwgrep_graph::sptr gr,
+			 std::shared_ptr <scope> scope)
+      : inner_op {upstream}
+      , m_gr {gr}
+    {}
+
+    void
+    reset_me ()
+    {
+      m_vf = nullptr;
+      m_vpr1 = nullptr;
+      m_vpr2 = nullptr;
+    }
+
+    valfile::uptr
+    next () override
+    {
+      while (true)
+	{
+	  while (m_vpr1 == nullptr)
+	    if (m_vf = m_upstream->next ())
+	      {
+		auto vp = m_vf->pop_as <value_loclist_op> ();
+		m_vpr1 = dwop_number (vp->get_dwop (), vp->get_attr (), m_gr);
+		m_vpr2 = dwop_number2 (vp->get_dwop (), vp->get_attr (), m_gr);
+	      }
+	    else
+	      return nullptr;
+
+	  while (m_vpr1 != nullptr)
+	    if (auto v = m_vpr1->next ())
+	      {
+		auto vf = std::make_unique <valfile> (*m_vf);
+		vf->push (std::move (v));
+		return vf;
+	      }
+	    else
+	      m_vpr1 = std::move (m_vpr2);
+
+	  reset_me ();
+	}
+    }
+
+    void
+    reset () override
+    {
+      reset_me ();
+      m_upstream->reset ();
+    }
+
+    std::string
+    name () const
+    {
+      return "value:loclist_op";
+    }
+
+    static value_type get_value_type ()
+    { return value_loclist_op::vtype; }
   };
 }
 
@@ -1197,8 +1150,6 @@ dwgrep_builtins_dw ()
   dict.add (std::make_shared <builtin_child> ());
   dict.add (std::make_shared <builtin_attribute> ());
   dict.add (std::make_shared <builtin_integrate> ());
-  dict.add (std::make_shared <builtin_at_number> ());
-  dict.add (std::make_shared <builtin_at_number2> ());
 
   dict.add (std::make_shared <builtin_rootp> (true));
   dict.add (std::make_shared <builtin_rootp> (false));
@@ -1207,6 +1158,7 @@ dwgrep_builtins_dw ()
     auto t = std::make_shared <overload_tab> ();
 
     t->add_simple_op_overload <op_value_attr> ();
+    t->add_simple_op_overload <op_value_loclist_op> ();
 
     dict.add (std::make_shared <overloaded_op_builtin> ("value", t));
   }

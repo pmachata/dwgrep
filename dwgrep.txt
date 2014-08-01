@@ -942,7 +942,7 @@
      : DW_AT_name "%s"		# gives "DW_AT_name"
      : DW_AT_name hex "%s"	# gives "0x3"
 
-   - The idea behing uint32_t et.al. is that a two-complement
+   - The idea behind uint32_t et.al. is that a two-complement
      representation of a given constant is taken, if necessary, it's
      sign-extended, and then a 32-bit or 64-bit slice of that is
      taken, and that is reinterpreted as either a signed or unsigned
@@ -1074,23 +1074,54 @@
    The operators that return a boolean constant come also in assertion
    variant so that it's easy to filter interesting line table entries.
 
+   XXX That's however not entirely consistent with how DW_FORM_flag*
+   attributes behave.  For those, ?AT_* always means, is this
+   attribute present, and never, is the value true.  Needs some more
+   thinking to consolidate this.
+
 ** location expressions
 
    Some attributes refer to a location expression.  These are
-   represented as a number of pseudo-DIE's of type
-   location_list_entry.  Each has an attribute: @address.
-
-   The children of location_list_entry are pseudo-DIE's of type
-   location_list_op.  offset is applicable to location expression
-   nodes and extracts the offset of the operand inside the expression.
-   label is applicable and contains operation opcode.  value is
-   applicable and yields either nothing (for nullary op's), one value
-   (for unary) or two values (for binary).  Assertions on pos can be
-   used to pick one particular value.  XXX this really needs
-   positional assertions.
+   represented as a number of pseudo-DIE's of type T_LOCLIST_ELEM.
+   Children of these nodes are T_LOCLIST_OP, individual operations of
+   location expression.
 
    - XXX possibly a means of evaluating?  (Could we use the in-program
      stack for evaluating the Dwarf expression?)
+
+***  T_LOCLIST_ELEM
+
+    - "address" yields a value of type T_ADDR_RANGE where given
+      location expression applies.
+
+    - "child" yields individual location expression operators
+      (T_LOCLIST_OP).
+
+*** •T_LOCLIST_OP
+
+    - "offset" yields an offset of this op within the location
+      expression.
+
+    - "label" yields operation opcode (a DW_OP_* constant)
+
+    - "value" is applicable, and yields operands associated with this
+      location expression operation.
+
+    [4e] variable
+         [...]
+         location (exprloc) [0x0..0xffffffffffffffff, [0:fbreg<-18>]]
+
+    Here we have only one T_LOCLIST_OP, and that has an offset of 0, a
+    label of DW_OP_fbreg, and yields one value, -18.
+
+***  T_ADDR_RANGE
+
+    - "low" ???
+    - "high" ???
+    - "in" ??? (for T_ADDR_RANGE x T_CONST, T_ADDR_RANGE x T_ADDR_RANGE)
+
+    - "add", "sub" ???  Do we need a general "coverage" sort of value
+      (like what dwarflint used to have)?
 
 ** ELF symbols
 
