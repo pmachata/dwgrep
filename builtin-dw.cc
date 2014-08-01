@@ -241,107 +241,94 @@ namespace
 
 namespace
 {
-  struct builtin_child
-    : public builtin
+  struct op_child_die
+    : public op
   {
-    struct child
-      : public op
+    std::shared_ptr <op> m_upstream;
+    dwgrep_graph::sptr m_gr;
+    valfile::uptr m_vf;
+    Dwarf_Die m_child;
+
+    size_t m_pos;
+
+    op_child_die (std::shared_ptr <op> upstream, dwgrep_graph::sptr gr,
+		  std::shared_ptr <scope> scope)
+      : m_upstream {upstream}
+      , m_gr {gr}
+      , m_child {}
+      , m_pos {0}
+    {}
+
+    void
+    reset_me ()
     {
-      std::shared_ptr <op> m_upstream;
-      dwgrep_graph::sptr m_gr;
-      valfile::uptr m_vf;
-      Dwarf_Die m_child;
-
-      size_t m_pos;
-
-      child (std::shared_ptr <op> upstream, dwgrep_graph::sptr gr)
-	: m_upstream {upstream}
-	, m_gr {gr}
-	, m_child {}
-	, m_pos {0}
-      {}
-
-      void
-      reset_me ()
-      {
-	m_vf = nullptr;
-	m_pos = 0;
-      }
-
-      valfile::uptr
-      next () override
-      {
-	while (true)
-	  {
-	    while (m_vf == nullptr)
-	      {
-		if (auto vf = m_upstream->next ())
-		  {
-		    auto vp = vf->pop ();
-		    if (auto v = value::as <value_die> (&*vp))
-		      {
-			Dwarf_Die *die = &v->get_die ();
-			if (dwarf_haschildren (die))
-			  {
-			    if (dwarf_child (die, &m_child) != 0)
-			      throw_libdw ();
-
-			    // We found our guy.
-			    m_vf = std::move (vf);
-			  }
-		      }
-		    else
-		      show_expects (name (), {value_die::vtype});
-		  }
-		else
-		  return nullptr;
-	      }
-
-	    auto ret = std::make_unique <valfile> (*m_vf);
-	    ret->push (std::make_unique <value_die> (m_gr, m_child, m_pos++));
-
-	    switch (dwarf_siblingof (&m_child, &m_child))
-	      {
-	      case -1:
-		throw_libdw ();
-	      case 1:
-		// No more siblings.
-		reset_me ();
-		break;
-	      case 0:
-		break;
-	      }
-
-	    return ret;
-	  }
-      }
-
-      void
-      reset () override
-      {
-	reset_me ();
-	m_upstream->reset ();
-      }
-
-      std::string
-      name () const override
-      {
-	return "child";
-      }
-    };
-
-    std::shared_ptr <op>
-    build_exec (std::shared_ptr <op> upstream, dwgrep_graph::sptr q,
-		std::shared_ptr <scope> scope) const override
-    {
-      return std::make_shared <child> (upstream, q);
+      m_vf = nullptr;
+      m_pos = 0;
     }
 
-    char const *
+    valfile::uptr
+    next () override
+    {
+      while (true)
+	{
+	  while (m_vf == nullptr)
+	    {
+	      if (auto vf = m_upstream->next ())
+		{
+		  auto vp = vf->pop ();
+		  if (auto v = value::as <value_die> (&*vp))
+		    {
+		      Dwarf_Die *die = &v->get_die ();
+		      if (dwarf_haschildren (die))
+			{
+			  if (dwarf_child (die, &m_child) != 0)
+			    throw_libdw ();
+
+			  // We found our guy.
+			  m_vf = std::move (vf);
+			}
+		    }
+		  else
+		    show_expects (name (), {value_die::vtype});
+		}
+	      else
+		return nullptr;
+	    }
+
+	  auto ret = std::make_unique <valfile> (*m_vf);
+	  ret->push (std::make_unique <value_die> (m_gr, m_child, m_pos++));
+
+	  switch (dwarf_siblingof (&m_child, &m_child))
+	    {
+	    case -1:
+	      throw_libdw ();
+	    case 1:
+	      // No more siblings.
+	      reset_me ();
+	      break;
+	    case 0:
+	      break;
+	    }
+
+	  return ret;
+	}
+    }
+
+    void
+    reset () override
+    {
+      reset_me ();
+      m_upstream->reset ();
+    }
+
+    std::string
     name () const override
     {
-      return "child";
+      return "child:die";
     }
+
+    static value_type get_value_type ()
+    { return value_die::vtype; }
   };
 }
 
@@ -1147,12 +1134,19 @@ dwgrep_builtins_dw ()
   dict.add (std::make_shared <builtin_winfo> ());
   dict.add (std::make_shared <builtin_unit> ());
 
-  dict.add (std::make_shared <builtin_child> ());
   dict.add (std::make_shared <builtin_attribute> ());
   dict.add (std::make_shared <builtin_integrate> ());
 
   dict.add (std::make_shared <builtin_rootp> (true));
   dict.add (std::make_shared <builtin_rootp> (false));
+
+  {
+    auto t = std::make_shared <overload_tab> ();
+
+    t->add_simple_op_overload <op_child_die> ();
+
+    dict.add (std::make_shared <overloaded_op_builtin> ("child", t));
+  }
 
   {
     auto t = std::make_shared <overload_tab> ();
