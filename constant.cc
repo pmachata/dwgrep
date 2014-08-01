@@ -31,6 +31,7 @@
 #include <bitset>
 #include <vector>
 #include "constant.hh"
+#include "flag_saver.hh"
 
 void
 numeric_constant_dom_t::show (mpz_class const &v,
@@ -55,11 +56,10 @@ static struct
   void
   show (mpz_class const &v, std::ostream &o, brevity brv) const override
   {
-    std::ios::fmtflags f {o.flags ()};
+    ios_flag_saver s {o};
     if (brv == brevity::full)
       o << std::showbase;
     o << std::hex << v;
-    o.flags (f);
   }
 
   bool
@@ -83,11 +83,10 @@ static struct
   void
   show (mpz_class const &v, std::ostream &o, brevity brv) const override
   {
-    std::ios::fmtflags f {o.flags ()};
+    ios_flag_saver s {o};
     if (brv == brevity::full)
       o << std::showbase;
     o << std::oct << v;
-    o.flags (f);
   }
 
   bool
@@ -148,9 +147,8 @@ static struct
   void
   show (mpz_class const &v, std::ostream &o, brevity brv) const override
   {
-    std::ios::fmtflags f {o.flags ()};
+    ios_flag_saver s {o};
     o << std::boolalpha << (v != 0);
-    o.flags (f);
   }
 
   std::string name () const override

@@ -26,6 +26,7 @@
    the GNU Lesser General Public License along with this program.  If
    not, see <http://www.gnu.org/licenses/>.  */
 
+#include "flag_saver.hh"
 #include <iostream>
 #include <memory>
 #include "make_unique.hh"
@@ -40,7 +41,7 @@ value_type const value_die::vtype = value_type::alloc ("T_DIE");
 void
 value_die::show (std::ostream &o, brevity brv) const
 {
-  std::ios::fmtflags f {o.flags ()};
+  ios_flag_saver fs {o};
 
   Dwarf_Die *die = const_cast <Dwarf_Die *> (&m_die);
   o << '[' << std::hex << dwarf_dieoffset (die) << ']'
@@ -51,11 +52,8 @@ value_die::show (std::ostream &o, brevity brv) const
     for (auto it = attr_iterator {die}; it != attr_iterator::end (); ++it)
       {
 	o << "\n\t";
-	o.flags (f);
 	value_attr {m_gr, **it, m_die, 0}.show (o, brevity::full);
       }
-
-  o.flags (f);
 }
 
 std::unique_ptr <value>
@@ -82,7 +80,8 @@ value_attr::show (std::ostream &o, brevity brv) const
 {
   unsigned name = (unsigned) dwarf_whatattr ((Dwarf_Attribute *) &m_attr);
   unsigned form = dwarf_whatform ((Dwarf_Attribute *) &m_attr);
-  std::ios::fmtflags f {o.flags ()};
+
+  ios_flag_saver s {o};
   o << constant (name, &dw_attr_dom, brevity::brief) << " ("
     << constant (form, &dw_form_dom, brevity::brief) << ")\t";
   auto vpr = at_value (m_attr, m_die, m_gr);
@@ -95,7 +94,6 @@ value_attr::show (std::ostream &o, brevity brv) const
 	v->show (o, brv);
       o << ";";
     }
-  o.flags (f);
 }
 
 std::unique_ptr <value>
