@@ -171,6 +171,46 @@
       else
 	return tree::create_str <tree_type::READ> (str);
     }
+
+    tree *
+    parse_cmp (builtin_dict const &builtins, tree *a, tree *b, char const *word)
+    {
+      // A <op> B → ?([A] elem ->.tmp; [B] elem .tmp swap <WORD>)
+      auto bi_elem = builtins.find ("elem");
+      auto bi_swap = builtins.find ("swap");
+      auto bi_cmp = builtins.find (word);
+
+      if (a == nullptr)
+	a = tree::create_nullary <tree_type::NOP> ();
+      if (b == nullptr)
+	b = tree::create_nullary <tree_type::NOP> ();
+
+      tree *ret = nullptr;
+
+      ret = tree::create_cat <tree_type::CAT>
+		(ret, tree::create_unary <tree_type::CAPTURE> (a));
+      ret = tree::create_cat <tree_type::CAT>
+		(ret, tree::create_builtin (bi_elem));
+      ret = tree::create_cat <tree_type::CAT>
+		(ret, tree::create_str <tree_type::BIND> (".tmp"));
+
+      ret = tree::create_cat <tree_type::CAT>
+		(ret, tree::create_unary <tree_type::CAPTURE> (b));
+      ret = tree::create_cat <tree_type::CAT>
+		(ret, tree::create_builtin (bi_elem));
+
+      ret = tree::create_cat <tree_type::CAT>
+		(ret, tree::create_str <tree_type::READ> (".tmp"));
+      ret = tree::create_cat <tree_type::CAT>
+		(ret, tree::create_builtin (bi_swap));
+      ret = tree::create_cat <tree_type::CAT>
+		(ret, tree::create_builtin (bi_cmp));
+
+      ret = tree::create_unary <tree_type::PRED_SUBX_ANY> (ret);
+      ret = tree::create_assert (ret);
+
+      return ret;
+    }
   }
 
   fmtlit::fmtlit (bool a_raw)
@@ -208,6 +248,7 @@
 
 %token TOK_ASTERISK TOK_PLUS TOK_QMARK TOK_MINUS TOK_COMMA TOK_COLON
 %token TOK_SEMICOLON TOK_DOUBLE_VBAR TOK_ARROW
+%token TOK_EQ TOK_NE TOK_LT TOK_LE TOK_GT TOK_GE
 
 %token TOK_IF TOK_THEN TOK_ELSE TOK_WORD TOK_LIT_STR
 %token TOK_LIT_INT TOK_QMARK_LIT_INT TOK_BANG_LIT_INT
@@ -224,7 +265,7 @@
   std::vector <std::string> *ids;
  }
 
-%type <t> Program AltList OrList StatementList Statement
+%type <t> Program AltList OrList EqList StatementList Statement
 %type <ids> IdList IdListOpt
 %type <s> TOK_LIT_INT TOK_QMARK_LIT_INT TOK_BANG_LIT_INT
 %type <s> TOK_WORD
@@ -254,14 +295,35 @@ AltList:
    }
 
 OrList:
-  StatementList
+  EqList
 
-  | StatementList TOK_DOUBLE_VBAR OrList
+  | EqList TOK_DOUBLE_VBAR OrList
   {
     $$ = tree::create_cat <tree_type::OR>
        ($1 != nullptr ? $1 : tree::create_nullary <tree_type::NOP> (),
 	$3 != nullptr ? $3 : tree::create_nullary <tree_type::NOP> ());
   }
+
+EqList:
+  StatementList
+
+  | StatementList TOK_EQ StatementList
+  { $$ = parse_cmp (builtins, $1, $3, "?eq"); }
+
+  | StatementList TOK_NE StatementList
+  { $$ = parse_cmp (builtins, $1, $3, "?ne"); }
+
+  | StatementList TOK_LT StatementList
+  { $$ = parse_cmp (builtins, $1, $3, "?lt"); }
+
+  | StatementList TOK_LE StatementList
+  { $$ = parse_cmp (builtins, $1, $3, "?le"); }
+
+  | StatementList TOK_GT StatementList
+  { $$ = parse_cmp (builtins, $1, $3, "?gt"); }
+
+  | StatementList TOK_GE StatementList
+  { $$ = parse_cmp (builtins, $1, $3, "?ge"); }
 
 StatementList:
   /* eps. */

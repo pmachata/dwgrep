@@ -53,6 +53,23 @@ expect_count 0 ./empty -e '1   10 ?gt'
 expect_count 0 ./empty -e '10  10 ?gt'
 expect_count 0 ./empty -e '100 10 !gt'
 
+
+expect_count 1 ./empty -e '1   != 10'
+expect_count 1 ./empty -e '10  == 10'
+expect_count 1 ./empty -e '100 != 10'
+expect_count 1 ./empty -e '1   <  10'
+expect_count 1 ./empty -e '10  <= 10'
+expect_count 1 ./empty -e '10  >= 10'
+expect_count 1 ./empty -e '100 >  10'
+
+expect_count 0 ./empty -e '1   == 10'
+expect_count 0 ./empty -e '10  != 10'
+expect_count 0 ./empty -e '100 == 10'
+expect_count 0 ./empty -e '1   >  10'
+expect_count 0 ./empty -e '10  < 10'
+expect_count 0 ./empty -e '10  > 10'
+expect_count 0 ./empty -e '100 < 10'
+
 expect_count 1 ./duplicate-const -e '
 	{?TAG_const_type, ?TAG_volatile_type, ?TAG_restrict_type} ->?cvr_type;
 	winfo ->P;
@@ -68,23 +85,23 @@ expect_count 1 ./nontrivial-types.o -e '
 
 # Test that universe annotates position.
 expect_count 1 ./nontrivial-types.o -e '
-	winfo ?(offset 0xb8 ?eq) ?(pos 10 ?eq)'
+	winfo (offset == 0xb8) (pos == 10)'
 
 # Test that child annotates position.
 expect_count 1 ./nontrivial-types.o -e '
-	winfo ?root child ?(offset 0xb8 ?eq) ?(pos 6 ?eq)'
+	winfo ?root child (offset == 0xb8) (pos == 6)'
 
 # Test that format annotates position.
 expect_count 1 ./nontrivial-types.o -e '
-	winfo ?root "%( child offset %)" ?("0xb8" ?eq) ?(pos 6 ?eq)'
+	winfo ?root "%( child offset %)" (== "0xb8") (pos == 6)'
 
 # Test that attribute annotates position.
 expect_count 1 ./nontrivial-types.o -e '
-	winfo ?root attribute ?AT_stmt_list ?(pos 6 ?eq)'
+	winfo ?root attribute ?AT_stmt_list (pos == 6)'
 
 # Test that unit annotates position.
 expect_count 11 ./nontrivial-types.o -e '
-	winfo ->A; A unit ->B; ?(A pos B pos ?eq)'
+	winfo ->A; A unit ->B; (A pos == B pos)'
 
 # Test a bug with scope promotion.
 expect_count 1 ./empty -e '
@@ -93,21 +110,21 @@ expect_count 1 ./empty -e '
 # Test that elem annotates position.
 expect_count 1 ./nontrivial-types.o -e '
 	winfo ?root drop [10, 11, 12]
-	?(elem ?(pos 0 ?eq) ?(10 ?eq))
-	?(elem ?(pos 1 ?eq) ?(11 ?eq))
-	?(elem ?(pos 2 ?eq) ?(12 ?eq))'
+	?(elem (pos == 0) (== 10))
+	?(elem (pos == 1) (== 11))
+	?(elem (pos == 2) (== 12))'
 expect_count 3 ./empty -e '
-	[0, 1, 2] elem dup ?(pos ?eq)'
+	[0, 1, 2] elem dup (== pos)'
 
 # Check literal assertions.
 expect_count 1 ./empty -e '
-	?([1, 3, 5] elem ?(pos ?0) ?(1 ?eq))
-	?([1, 3, 5] elem ?(pos ?1) ?(3 ?eq))
-	?([1, 3, 5] elem ?(pos ?2) ?(5 ?eq))'
+	?([1, 3, 5] elem ?(pos ?0) (== 1))
+	?([1, 3, 5] elem ?(pos ?1) (== 3))
+	?([1, 3, 5] elem ?(pos ?2) (== 5))'
 expect_count 1 ./empty -e '
-	?([[1, 3, 5] elem ?(pos !0) ?((3,5) ?eq)] length ?2)
-	?([[1, 3, 5] elem ?(pos !1) ?((1,5) ?eq)] length ?2)
-	?([[1, 3, 5] elem ?(pos !2) ?((1,3) ?eq)] length ?2)'
+	?([[1, 3, 5] elem ?(pos !0) ((3,5) ==)] length ?2)
+	?([[1, 3, 5] elem ?(pos !1) ((1,5) ==)] length ?2)
+	?([[1, 3, 5] elem ?(pos !2) ((1,3) ==)] length ?2)'
 
 # Tests star closure whose body ends with stack in a different state
 # than it starts in (different slots are taken in the valfile).
@@ -118,11 +135,11 @@ expect_count 1 ./typedef.o -e '
 
 # Test decoding signed and unsigned value.
 expect_count 1 ./enum.o -e '
-	winfo ?(@AT_name "f" ?eq) child ?(@AT_name "V" ?eq)
-	?(@AT_const_value "%s" "-1" ?eq)'
+	winfo (@AT_name == "f") child (@AT_name == "V")
+	(@AT_const_value "%s" == "-1")'
 expect_count 1 ./enum.o -e '
-	winfo ?(@AT_name "e" ?eq) child ?(@AT_name "V" ?eq)
-	?(@AT_const_value "%s" "4294967295" ?eq)'
+	winfo (@AT_name == "e") child (@AT_name == "V")
+	(@AT_const_value "%s" == "4294967295")'
 
 # Test match operator
 expect_count 7 ./duplicate-const -e '
@@ -136,13 +153,13 @@ expect_count 1 ./nontrivial-types.o -e '
 
 # Test true/false
 expect_count 1 ./typedef.o -e '
-	winfo ?(@AT_external true ?eq)'
+	winfo ?(@AT_external == true)'
 expect_count 1 ./typedef.o -e '
-	winfo ?(@AT_external false !eq)'
+	winfo ?(@AT_external != false)'
 
 # Test that (dup parent) doesn't change the bottom DIE as well.
 expect_count 1 ./nontrivial-types.o -e '
-	winfo ?TAG_structure_type dup parent ?(swap offset 0x2d ?eq)'
+	winfo ?TAG_structure_type dup parent ?(swap offset == 0x2d)'
 
 # Check that when promoting assertions close to producers of their
 # slots, we don't move across alternation or closure.
@@ -155,72 +172,72 @@ expect_count 3 ./nontrivial-types.o -e '
 
 # Check casting.
 expect_count 1 ./enum.o -e '
-	winfo ?(@AT_name "e" ?eq) child
+	winfo (@AT_name == "e") child
 	@AT_const_value "%x" "0xffffffff" ?eq'
 expect_count 1 ./enum.o -e '
-	winfo ?(@AT_name "e" ?eq) child
+	winfo (@AT_name == "e") child
 	@AT_const_value hex "%s" "0xffffffff" ?eq'
 expect_count 1 ./enum.o -e '
-	winfo ?(@AT_name "e" ?eq) child
+	winfo (@AT_name == "e") child
 	@AT_const_value "%o" "037777777777" ?eq'
 expect_count 1 ./enum.o -e '
-	winfo ?(@AT_name "e" ?eq) child
+	winfo (@AT_name == "e") child
 	@AT_const_value oct "%s" "037777777777" ?eq'
 expect_count 1 ./enum.o -e '
-	winfo ?(@AT_name "e" ?eq) child @AT_const_value
+	winfo (@AT_name == "e") child @AT_const_value
 	"%b" "0b11111111111111111111111111111111" ?eq'
 expect_count 1 ./enum.o -e '
-	winfo ?(@AT_name "e" ?eq) child @AT_const_value bin
+	winfo (@AT_name == "e") child @AT_const_value bin
 	"%s" "0b11111111111111111111111111111111" ?eq'
 expect_count 1 ./enum.o -e '
-	winfo ?(@AT_name "e" ?eq) child label "%d" "40" ?eq'
+	winfo (@AT_name == "e") child label "%d" "40" ?eq'
 
 # Check decoding of huge literals.
 expect_count 1 ./empty -e '
-	[0xffffffffffffffff "%s" elem !(pos (0,1) ?eq)]
-	?(length 16 ?eq) !(elem "f" !eq)'
+	[0xffffffffffffffff "%s" elem !(pos == (0,1))]
+	(length == 16) !(elem != "f")'
 expect_count 1 ./empty -e '
-	18446744073709551615 0xffffffffffffffff ?eq'
+	18446744073709551615 == 0xffffffffffffffff'
 expect_count 1 ./empty -e '
-	01777777777777777777777 0xffffffffffffffff ?eq'
+	01777777777777777777777 == 0xffffffffffffffff'
 expect_count 1 ./empty -e '
 	0b1111111111111111111111111111111111111111111111111111111111111111
-	0xffffffffffffffff ?eq'
+	== 0xffffffffffffffff'
 expect_count 1 ./empty -e'
-	-0xff dup dup dup "%s %d %b %o" "-0xff -255 -0b11111111 -0377" ?eq'
+	-0xff dup dup dup "%s %d %b %o" == "-0xff -255 -0b11111111 -0377"'
 expect_count 1 ./empty -e'
-	-0377 dup dup dup "%x %d %b %s" "-0xff -255 -0b11111111 -0377" ?eq'
+	-0377 dup dup dup "%x %d %b %s" == "-0xff -255 -0b11111111 -0377"'
 expect_count 1 ./empty -e'
-	-255 dup dup dup "%x %s %b %o" "-0xff -255 -0b11111111 -0377" ?eq'
+	-255 dup dup dup "%x %s %b %o" == "-0xff -255 -0b11111111 -0377"'
 expect_count 1 ./empty -e'
 	-0b11111111 dup dup dup "%x %d %s %o"
-	"-0xff -255 -0b11111111 -0377" ?eq'
+	== "-0xff -255 -0b11111111 -0377"'
 
 # Check arithmetic.
-expect_count 1 ./empty -e '-1 1 add ?(0 ?eq)'
-expect_count 1 ./empty -e '-1 10 add ?(9 ?eq)'
-expect_count 1 ./empty -e '1 -10 add ?(-9 ?eq)'
-expect_count 1 ./empty -e '-10 1 add ?(-9 ?eq)'
-expect_count 1 ./empty -e '10 -1 add ?(9 ?eq)'
+expect_count 1 ./empty -e '-1 1 add (== 0)'
+expect_count 1 ./empty -e '-1 10 add (== 9)'
+expect_count 1 ./empty -e '1 -10 add (== -9)'
+expect_count 1 ./empty -e '-10 1 add (== -9)'
+expect_count 1 ./empty -e '10 -1 add (== 9)'
 
 expect_count 1 ./empty -e '
-	-1 0xffffffffffffffff add "%s" "0xfffffffffffffffe" ?eq'
+	-1 0xffffffffffffffff add "%s" == "0xfffffffffffffffe"'
 expect_count 1 ./empty -e '
-	0xffffffffffffffff -1 add "%s" "0xfffffffffffffffe" ?eq'
+	0xffffffffffffffff -1 add "%s" == "0xfffffffffffffffe"'
 
-expect_count 1 ./empty -e '-1 1 sub ?(-2 ?eq)'
-expect_count 1 ./empty -e '-1 10 sub ?(-11 ?eq)'
-expect_count 1 ./empty -e '1 -10 sub ?(11 ?eq)'
-expect_count 1 ./empty -e '-10 1 sub ?(-11 ?eq)'
-expect_count 1 ./empty -e '10 -1 sub ?(11 ?eq)'
+expect_count 1 ./empty -e '-1 1 sub (== -2)'
+expect_count 1 ./empty -e '-1 10 sub (== -11)'
+expect_count 1 ./empty -e '1 -10 sub (== 11)'
+expect_count 1 ./empty -e '-10 1 sub (== -11)'
+expect_count 1 ./empty -e '10 -1 sub (== 11)'
 
-expect_count 1 ./empty -e '-2 2 mul ?(-4 ?eq)'
-expect_count 1 ./empty -e '-2 10 mul ?(-20 ?eq)'
-expect_count 1 ./empty -e '2 -10 mul ?(-20 ?eq)'
-expect_count 1 ./empty -e '-10 2 mul ?(-20 ?eq)'
-expect_count 1 ./empty -e '10 -2 mul ?(-20 ?eq)'
-expect_count 1 ./empty -e '-10 -2 mul ?(20 ?eq)'
-expect_count 1 ./empty -e '-2 -10 mul ?(20 ?eq)'
+expect_count 1 ./empty -e '-2 2 mul (== -4)'
+expect_count 1 ./empty -e '-2 10 mul (== -20)'
+expect_count 1 ./empty -e '2 -10 mul (== -20)'
+expect_count 1 ./empty -e '-10 2 mul (== -20)'
+expect_count 1 ./empty -e '10 -2 mul (== -20)'
+expect_count 1 ./empty -e '-10 -2 mul (== 20)'
+expect_count 1 ./empty -e '-2 -10 mul (== 20)'
 
 # Check iterating over empty compile unit.
 expect_count 1 ./empty -e '
@@ -230,24 +247,24 @@ expect_count 1 ./empty -e '
 expect_count 6 ./typedef.o -e '
 	winfo (@AT_decl_line || drop 42)'
 expect_count 2 ./typedef.o -e '
-	winfo (@AT_decl_line || drop 42) ?(42 ?eq)'
+	winfo (@AT_decl_line || drop 42) (== 42)'
 expect_count 6 ./typedef.o -e '
 	winfo (@AT_decl_line || @AT_byte_size || drop 42)'
 expect_count 1 ./typedef.o -e '
-	winfo (@AT_decl_line || @AT_byte_size || drop 42) ?(42 ?eq)'
+	winfo (@AT_decl_line || @AT_byte_size || drop 42) (== 42)'
 expect_count 1 ./empty -e '
 	(0, 1, 20) (?10 || ?20)'
 
 # Check closures.
 expect_count 1 ./empty -e '
-	{->A; {->B; A}} 2 swap apply 9 swap apply ?(1 1 add ?eq)'
+	{->A; {->B; A}} 2 swap apply 9 swap apply (== 1 1 add)'
 expect_count 1 ./empty -e '
-	{->A; {A}} 5 swap apply apply ?(2 3 add ?eq)'
+	{->A; {A}} 5 swap apply apply (== 2 3 add)'
 expect_count 1 ./empty -e '
-	{dup add} -> double; 1 double ?(2 ?eq)'
+	{dup add} -> double; 1 double (== 2)'
 expect_count 1 ./empty -e '
 	{->x; {->y; x y add}} ->adder;
-	3 adder 2 swap apply ?(5 ?eq)'
+	3 adder 2 swap apply (== 5)'
 expect_count 1 ./empty -e '
 	{->L f; [ L elem f ] } ->map;
 	[1, 2, 3] {1 add} map ?([2, 3, 4] ?eq)'
@@ -264,6 +281,7 @@ expect_count 1 ./empty -e '
 	?(1 5 slice [1, 2, 3, 4] ?eq)
 	?(5 -1 slice [5, 6, 7, 8] ?eq)
 	?(-2 -1 slice [8] ?eq)'
+
 # Check that bindings remember position.
 expect_count 3 ./empty -e '
 	[0, 1, 2] elem ->E; E dup pos ?eq'

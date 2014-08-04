@@ -232,11 +232,19 @@
    look at DW_AT_declaration's value.  So instead of ?AT_declaration, we
    should be writing something along the lines of:
 
-   : ?(@AT_declaration true ?eq)
+   : (@AT_declaration == true)
 
-   The meaning of ?eq is hopefully clear--it's an equivalence
-   assertion.  If top two stack slots are equivalent, it yields the
-   stack unchanged, otherwise doesn't yield anything.
+   This intuitively-looking construct actually deserves a closer
+   attention.  Comparison operators are always evaluated in
+   sub-expression context.  The mode of operation is as if each side
+   has been evaluated separately, and then if the comparison holds for
+   any of the pair of produced values, the overall assertion holds.
+
+   dwgrep has a full suite of these operators--!=, <, <=, etc.  Their
+   precedence is lower than that of concatenation, so you can write a
+   couple words on each side of the operator.  For that reason,
+   comparisons are typically enclosed in parens.  Their precedence is
+   however above "," and "||" that are introduced further.
 
    Back to the problem at hand--there's more than
    DW_TAG_structure_type, we care about DW_TAG_class_type as well!  We
@@ -256,15 +264,15 @@
    :   (?TAG_structure_type, ?TAG_class_type))
 
    But the applicability is wider.  Since the semantics are
-   essentially those of a fork, one can for example ask, whether an
+   essentially those of a fork, one can for example ask whether an
    attribute has one of a number of values:
 
-   : @AT_name ?(("foo", "bar") ?eq)
+   : @AT_name == ("foo", "bar")
 
    The || operator works differently.  It evaluates one expression
    after another, as long as those expressions don't yield anything.
    It thus yields whatever the first expression that actually yields
-   anything yields.  It thus operates in a manner similar to the
+   anything yields.  It therefore operates in a manner similar to the
    operator || in C language.  The typical use would be in fallbacks.
    For example if we prefer DW_AT_MIPS_linkage_name to DW_AT_name, but
    can make do with the latter, that would be encoded as follows:
@@ -428,9 +436,9 @@
 
   - assertions inspect TOS (or several values on TOS), test the
     condition, and either leave the stack unchanged, or abort the
-    computation.  They do not pop.  This includes ?AT_at, !AT_at, ?tag,
-    !tag, ?(), !(), ?eq, !eq, ?gt, ?match, etc.  All assertions start
-    either with a ? (if it's positive assertion), or with a ! (if it's
+    computation.  They do not pop.  This includes ?AT_at, !AT_at,
+    ?tag, !tag, ?(), !(), ?match, etc.  All assertions start either
+    with a ? (if it's positive assertion), or with a ! (if it's
     negative assertion).
 
   - stack shuffling operators (swap, drop, dup, ...) reorder values on
@@ -483,6 +491,18 @@
 
    EXPR yields all the values of the first expression that yields
    anything.
+
+** •EXPR → EXPR₁ (“==” | “!=” | “<” | “<=” | “>” | “>=”) EXPR₂ — comparisons
+
+    EXPR is evaluated in subexpression context.  The semantics of (X
+    op Y) are:
+    : ?([X] elem -> .tmp; [Y] elem .tmp swap OP)
+    ... where OP is depending on the operator in question,
+    respectively, ?eq, ?ne, ?lt, ?le, ?gt, and ?ge.
+
+    In plain English, X and Y are both evaluated in separate
+    sub-expression contexts.  Their TOS's are gathered and compared
+    using a comparison assertion word.
 
 ** •EXPR → EXPR₁ “*” | EXPR₁ “+” | EXPR₁ “?” — iterate
 
@@ -607,7 +627,7 @@
 
    [] is a literal that produces an empty list.  It is exactly
    equivalent to (among others):
-   : [ 0 1 ?eq ]
+   : [ 0 == 1 ]
 
 ** •EXPR → “->” ID₀ [ID₁ …] “;” — binding
 
@@ -743,7 +763,7 @@
      element pushed on top
 
    - To zip contents of two top lists near TOS, do:
-     : ->A B; A elem B elem <pos>?eq
+     : ->A B; A elem B elem (pos == swap pos)
 
      This takes two lists from the stack, and produces stacks that
      have those lists replaced with individual elements that
@@ -766,8 +786,8 @@
      than one DIE!  (XXX This doesn't seem desirable?)
 
      : def next {->D;
-     :     D parent child ?(D ?eq) pos 1 add ->next_pos;
-     :     D parent child ?(pos next_pos ?eq)
+     :     D parent child (== D) pos 1 add ->next_pos;
+     :     D parent child (pos == next_pos)
      : }
      The first line is necessary to make sure that pos later refers
      to order in children array, not to e.g. a result of ([XYZ] each).
@@ -799,14 +819,13 @@
      : {@AT_xyz} integrate		# value of integrated DW_AT_xyz
 
      We could actually switch between this and the above thus:
-     : if ?(type T_CLOSURE ?eq) then integrate else integrate1
+     : if (type == T_CLOSURE) then integrate else integrate1
 
 ** •EXPR → “?root” | “!root” — root node assertion
 
    - !root is exactly equivalent to:
-     : ?(parent)
    - ?root is exactly equivalent to:
-     : ?(type T_DIE ?eq) !(parent)
+     : (type == T_DIE) !(parent)
 
    - Examples:
      : parent* ?root        # finds a root node of node on TOS
@@ -855,9 +874,9 @@
 ** •EXPR → “?”ID | “!”ID — DIE tag assertion
 
    - ?ID is exactly equivalent to:
-     : ?(tag DW_TAG_ID ?eq)
+     : (tag == DW_TAG_ID)
    - !ID is exactly equivalent to:
-     : ?(tag DW_TAG_ID !eq)
+     : (tag == DW_TAG_ID)
    - Note that either form fails when applied to a non-DIE value.
 
 ** •EXPR → “?AT_”ID | “!AT_”ID — attribute presence/absence assertions
@@ -1001,7 +1020,7 @@
 
    - To determine whether a sequence contains a particular element,
      you would use the following construct:
-     : [that sequence] ?(elem something ?eq)
+     : [that sequence] (elem == something)
      E.g.:
      : [child @AT_name] ?(elem ?"foo")
      : [child] ?(elem @AT_name ?"foo")
@@ -1017,8 +1036,8 @@
 ** •EXPR → “length” — length of a sequence or a string
 
 ** •EXPR → (“?”|“!”)“empty” — list/string emptiness assertion
-     : def "?empty" { ?(length 0 ?eq) }
-     : def "!empty" { ?(length 0 !eq) }
+     : def "?empty" { length == 0 }
+     : def "!empty" { length != 0 }
 
 **  EXPR → “demangle” — demangle a string on TOS
 
@@ -1077,7 +1096,9 @@
    XXX That's however not entirely consistent with how DW_FORM_flag*
    attributes behave.  For those, ?AT_* always means, is this
    attribute present, and never, is the value true.  Needs some more
-   thinking to consolidate this.
+   thinking to consolidate this.  Maybe we could abandon the @op's for
+   these and just expose ?op's.  When ?x is present, it implies that
+   @op is true.
 
 ** location expressions
 
@@ -1116,12 +1137,31 @@
 
 ***  T_ADDR_RANGE
 
-    - "low" ???
-    - "high" ???
-    - "in" ??? (for T_ADDR_RANGE x T_CONST, T_ADDR_RANGE x T_ADDR_RANGE)
+    - "low" ??? -- applicable to T_DIE as well, with meaning of dwarf_lowpc.
+    - "high" ??? -- likewise for dwarf_highpc
+    - "?contains" ??? (for T_ADDR_RANGE x T_CONST, T_ADDR_RANGE x
+      T_ADDR_RANGE) Or maybe ?lt, ?gt and others?
+    - "?eq" ??? (for T_ADDR_RANGE x T_CONST, T_CONST x T_ADDR_RANGE,
+      T_ADDR_RANGE x T_ADDR_RANGE) -- consts would be considered a
+      one-element range
+    - a way of constructing this (X Y arange ???  or a syntax X..Y???)
 
     - "add", "sub" ???  Do we need a general "coverage" sort of value
-      (like what dwarflint used to have)?
+      (like what dwarflint used to have)?  What if 'sub' that pokes a
+      hole in just produces a bunch of T_ADDR_RANGE's.  Coverage would
+      then be something like [something sub: (X Y arange)] -- i.e. we
+      would capture the constituents.  Membership test would be
+      ?(elem ?contains: X).  But then arithmetic over these lists becomes
+      hell.
+
+    - T_ADDR_RANGE actually behaves pretty much like a sequence of
+      integers.  Maybe sequence could have an optimization whereby if
+      it contains all integers, it just stores low×high pairs instead
+      of listing each value separately.
+
+    - We would still need a way of promoting assertions directly to
+      "elem" such that it can do something clever instead of
+      enumerating all 64 bits of adress space or some such.
 
 ** ELF symbols
 
@@ -1140,7 +1180,7 @@
 ** XXX Dwarf CU version -- an artificial attribute?
    - https://stackoverflow.com/questions/16169864
 
-** XXX abbreviation section?  (libdw doesn't have interfaces for this)
+** XXX abbreviation section?
    - note that one can look for attribute form by saying (attribute
      ?AT_at form)
    - would a link from a DIE to its abbreviation be useful?
@@ -1190,7 +1230,7 @@
    : "`%( A @AT_name %)', parameter `%( B @AT_name %)' type is not trivial"
 
 ** check_die_decl_call:
-   : ( ?AT_decl_column !AT_decl_line "%s has decl_column, but NOT decl_line"
+   : (winfo ?AT_decl_column !AT_decl_line "%s has decl_column, but NOT decl_line"
    : , etc.)
 
 ** check_die_line_info:
@@ -1198,16 +1238,15 @@
    :        ?TAG_lexical_block, ?TAG_label, ?TAG_with_stmt, ?TAG_try_block,
    :        ?TAG_catch_block) ->A;
    : A (@AT_entry_pc, @AT_low_pc, @AT_ranges) ->B;
-   : A parent* ?root !(@AT_stmt_list lineaddr B ?eq) ->C;
+   : A parent* ?root !(@AT_stmt_list @lineaddr == B) ->C;
    : "Address %( B %) referenced from %( C %) not found in line table."
 
 ** contains DW_OP_fbreg && ! @frame_base
-
-   : !AT_frame_base ?(@AT_location label DW_OP_fbreg ?eq)
+   : !AT_frame_base (@AT_location label == DW_OP_fbreg)
 
 ** uses register based operators
 
-   : ?(@AT_location label (DW_OP_bregx ?eq, ?(DW_OP_reg0 ?ge) ?(DW_OP_regx ?le)))
+   : ?(@AT_location label (== DW_OP_bregx || (>= DW_OP_reg0) (<= DW_OP_regx)))
 
    : ?(@AT_location label "%s" "_b?reg" ?find)
 
@@ -1221,6 +1260,8 @@
 ** contains DW_OP_call_frame_cfa && $@low_pc == 0
 
    : winfo ?(@AT_low_pc ?0) ?(@AT_frame_base ?OP_call_frame_cfa)
+
+   : winfo (@AT_low_pc == 0) ?(@AT_frame_base ?OP_call_frame_cfa)
 
 ** is an empty location expression
 
@@ -1237,25 +1278,25 @@
      : winfo ?TAG_subprogram ->A;
      : A child ?TAG_formal_parameter ->B;
      : A @AT_specification child ?TAG_formal_parameter ->C;
-     : ?(B pos C pos ?eq) ?(B @AT_type C @AT_type !eq) A
+     : (B pos == C pos) (B @AT_type != C @AT_type) A
 
 ** duplicat DW_TAG_const_type
    - http://gcc.gnu.org/bugzilla/show_bug.cgi?id=56740
 
      : { ?TAG_const_type, ?TAG_volatile_type, ?TAG_restrict_type } -> ?cvr_type;
      : winfo ?cvr_type ->A;
-     : A unit ?(A ?gt) ?cvr_type ->B;
-     : ?(A tag B tag ?eq) ?(A @AT_type B @AT_type ?eq)
+     : A unit ?(> A) ?cvr_type ->B;
+     : (A tag == B tag) (A @AT_type == B @AT_type)
      : A B
 
 ** find any attribute with value "blah"
-   : attribute ?(value "blah" ?eq)
+   : attribute (value == "blah")
 
 ** check_duplicate_DW_tag_variable.cc
    Check for two full DW_TAG_variable DIEs with the same DW_AT_name
    value.
 
-   : winfo ?TAG_variable dup next+ ?TAG_variable ?(@AT_name swap @AT_name ?eq)
+   : winfo ?TAG_variable dup next+ ?TAG_variable (@AT_name == swap @AT_name)
 
    - XXX
      : winfo dup next+ <?TAG_variable @AT_name>?eq
@@ -1263,7 +1304,7 @@
 ** check_linkage_external_die.cc
 
      : def GetSym {->X; symtab (?STT_OBJECT, ?STT_FUNC)
-     :             ?(@name X @AT_linkage_name ?eq)}
+     :             (@name == X @AT_linkage_name)}
      : winfo ?AT_linkage_name if !(GetSym) then (
      :     !AT_declaration !AT_const_value
      :     (!structure_type !enumeration_type !union_type, ?AT_name)
@@ -1324,5 +1365,4 @@
      [...]
 
 ** nested identifier names
-   : ?(@AT_name "a" ?eq) child ?(@AT_name "b" ?eq) child ?(@AT_name "c" ?eq)
-
+   : (@AT_name == "a") child (@AT_name == "b") child (@AT_name == "c")

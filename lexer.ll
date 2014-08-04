@@ -76,6 +76,13 @@ BIN [01]
 "->" return TOK_ARROW;
 "||" return TOK_DOUBLE_VBAR;
 
+"==" return TOK_EQ;
+"!=" return TOK_NE;
+"<" return TOK_LT;
+"<=" return TOK_LE;
+">" return TOK_GT;
+">=" return TOK_GE;
+
 "if" return TOK_IF;
 "then" return TOK_THEN;
 "else" return TOK_ELSE;
