@@ -231,6 +231,8 @@ expect_count 6 ./typedef.o -e '
 	winfo (@AT_decl_line || @AT_byte_size || drop 42)'
 expect_count 1 ./typedef.o -e '
 	winfo (@AT_decl_line || @AT_byte_size || drop 42) ?(42 ?eq)'
+expect_count 1 ./empty -e '
+	(0, 1, 20) (?10 || ?20)'
 
 # Check closures.
 expect_count 1 ./empty -e '

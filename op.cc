@@ -377,7 +377,7 @@ op_or::next ()
 {
   while (true)
     {
-      if (m_branch_it == m_branches.end ())
+      while (m_branch_it == m_branches.end ())
 	{
 	  if (auto vf = m_upstream->next ())
 	    for (m_branch_it = m_branches.begin ();
@@ -388,7 +388,8 @@ op_or::next ()
 		if (auto vf2 = m_branch_it->second->next ())
 		  return vf2;
 	      }
-	  return nullptr;
+	  else
+	    return nullptr;
 	}
 
       if (auto vf2 = m_branch_it->second->next ())
