@@ -219,37 +219,60 @@
    : winfo ?TAG_subprogram !(?AT_declaration)
    : ?(child ?TAG_formal_parameter @AT_type ?TAG_structure_type)
 
-   If a DIE is a pure declaration, the expression ?AT_declaration yields
-   unchanged incoming stack.  But !() only holds for expressions that
-   yield nothing at all, thus such DIE's are rejected.
+   If a DIE is a pure declaration, the expression ?AT_declaration
+   yields unchanged incoming stack.  But !() only holds for
+   expressions that yield nothing at all, thus such DIE's are
+   rejected.  More interesting uses of this feature include for
+   example selecting child-less DIE's:
 
-   There's one more use of ?().  Mere ?AT_declaration doesn't tell us
-   whether a DIE is a pure declaration.  We can probably safely assume
-   that when a compiler produces that attribute, it will actually have
-   a value of true, so most of the time ?AT_declaration (and
-   !AT_declaration) is all you need to write.  But if we are paranoid,
-   or have grounds for suspicion this is not so, we need to actually
-   look at DW_AT_declaration's value.  So instead of ?AT_declaration, we
-   should be writing something along the lines of:
+   : !(child)
+
+** EXPR == EXPR, EXPR != EXPR — comparisons
+
+   But actually mere ?AT_declaration doesn't tell us whether a DIE is
+   a pure declaration.  We can probably safely assume that when a
+   compiler produces that attribute, it will have a value of true (and
+   a form of DW_FORM_flag_present), so most of the time
+   ?AT_declaration (and !AT_declaration) is all you need to write.
+   But if we are paranoid, or have grounds for suspicion this is not
+   so, we need to actually look at DW_AT_declaration's value.  So
+   instead of ?AT_declaration, we should be writing this:
 
    : (@AT_declaration == true)
 
    This intuitively-looking construct actually deserves a closer
    attention.  Comparison operators are always evaluated in
-   sub-expression context.  The mode of operation is as if each side
-   has been evaluated separately, and then if the comparison holds for
-   any of the pair of produced values, the overall assertion holds.
+   sub-expression context.  The mode of operation is that each side is
+   evaluated separately with the same incoming stack.  Then if the
+   comparison holds for any pair of produced values, the overall
+   assertion holds.  dwgrep has a full suite of these operators--!=,
+   <, <=, etc.
 
-   dwgrep has a full suite of these operators--!=, <, <=, etc.  Their
-   precedence is lower than that of concatenation, so you can write a
-   couple words on each side of the operator.  For that reason,
-   comparisons are typically enclosed in parens.  Their precedence is
-   however above "," and "||" that are introduced further.
+   Importantly, comparisons are assertions.  If they hold, they
+   produce unchanged incoming stack, otherwise they produce nothing at
+   all.  Thus expressions such as ((A > B) == (C > D)) don't mean what
+   they seem to.  This one for example is just ((A > B) (C > D))--i.e.
+   two independent conditions.  But e.g. ((A > B) != (C > D)), if the
+   two >'s hold, reduces to (!=) (inequality of two nops), which
+   simply never holds.
 
-   Back to the problem at hand--there's more than
-   DW_TAG_structure_type, we care about DW_TAG_class_type as well!  We
-   can express "and" easily simply by juxtaposing the assertions, but
-   we would like a way of expressing "or" as well.
+   Precedence of comparison operators is lower than that of
+   concatenation, so you can write a couple words on each side of the
+   operator.  For example, to check whether one of the children has a
+   specific name, you could say:
+
+   : (child @AT_name == "foo")
+
+   Due to this precedence, comparisons are typically enclosed in
+   parens, so that they don't force too much of your computation into
+   sub-expression context.  The precedence is however above "," and
+   "||" that are introduced further, so those need to be parenthesized
+   further if they should be a comparison operand.
+
+   Back to the problem at hand--besides DW_TAG_structure_type, we care
+   about DW_TAG_class_type as well!  We can express "and" easily
+   simply by juxtaposing the assertions, but we would like a way of
+   expressing "or" as well.
 
 ** EXPR, EXPR — alternative paths
 ** EXPR || EXPR — C-style fallback
@@ -267,7 +290,11 @@
    essentially those of a fork, one can for example ask whether an
    attribute has one of a number of values:
 
-   : @AT_name == ("foo", "bar")
+   : (@AT_name == ("foo", "bar"))
+
+   ... which is the same as:
+
+   : (@AT_name == "foo", @AT_name == "bar")
 
    The || operator works differently.  It evaluates one expression
    after another, as long as those expressions don't yield anything.
@@ -337,10 +364,9 @@
 
    : "%s"
 
-   The output that our running example above gives would print
-   something like this:
+   The output that our running example above gives would be:
 
-   :  .debug_info@0x420: type of one of the parameters is not trivial.
+   :  [6c] subprogram: one of the parameters has non-trivial type.
 
    We would like to improve on that a bit.  We'd like to mention which
    parameter it is, and we'd like to tell the user the name of the
@@ -392,8 +418,12 @@
    :
    : "%( S %): Parameter %( P %) has non-trivial type."
 
-   Ideally we'd also include source code coordinates for the function
-   name, and with the interpolation, it's actually quite easy:
+   But that still gives something like:
+   : [6c] subprogram: Parameter [8f] formal_parameter has non-trivial type.
+
+   Ideally we'd mention names and source code corrdinates instead of
+   Dwarf offsets and tag names.  With interpolation, it's actually
+   quite easy:
 
    : winfo ?TAG_subprogram !AT_declaration ->S;
    :
