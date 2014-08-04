@@ -84,8 +84,8 @@ namespace
       case tree_type::SCOPE:
       case tree_type::BLOCK:
       case tree_type::CLOSE_STAR:
-      case tree_type::ASSERT:
       case tree_type::IFELSE:
+      case tree_type::PRED_SUBX_ANY:
 	for (auto &c: t.m_children)
 	  c = tree::promote_scopes (c, scp);
 	return t;
@@ -98,8 +98,9 @@ namespace
 	assert (t.m_children.size () == 0);
 	return t;
 
+      case tree_type::ASSERT:
       case tree_type::CAT: case tree_type::READ: case tree_type::EMPTY_LIST:
-      case tree_type::PRED_SUBX_ANY: case tree_type::PRED_NOT:
+      case tree_type::PRED_NOT:
       case tree_type::PRED_AND: case tree_type::NOP: case tree_type::PRED_OR:
       case tree_type::CONST: case tree_type::STR: case tree_type::FORMAT:
       case tree_type::F_BUILTIN: case tree_type::F_DEBUG:

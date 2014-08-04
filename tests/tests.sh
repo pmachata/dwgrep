@@ -86,6 +86,10 @@ expect_count 1 ./nontrivial-types.o -e '
 expect_count 11 ./nontrivial-types.o -e '
 	winfo ->A; A unit ->B; ?(A pos B pos ?eq)'
 
+# Test a bug with scope promotion.
+expect_count 1 ./empty -e '
+	1->A; ?(A->X;)'
+
 # Test that elem annotates position.
 expect_count 1 ./nontrivial-types.o -e '
 	winfo ?root drop [10, 11, 12]
