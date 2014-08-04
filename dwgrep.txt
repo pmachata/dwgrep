@@ -1052,8 +1052,8 @@
      you would use the following construct:
      : [that sequence] (elem == something)
      E.g.:
-     : [child @AT_name] ?(elem ?"foo")
-     : [child] ?(elem @AT_name ?"foo")
+     : [child @AT_name] ?(elem == "foo")
+     : [child] ?(elem @AT_name == "foo")
 
    - To pick only those elements that match, you could do the
      following:
@@ -1268,7 +1268,7 @@
    :        ?TAG_lexical_block, ?TAG_label, ?TAG_with_stmt, ?TAG_try_block,
    :        ?TAG_catch_block) ->A;
    : A (@AT_entry_pc, @AT_low_pc, @AT_ranges) ->B;
-   : A parent* ?root !(@AT_stmt_list @lineaddr == B) ->C;
+   : A parent* ?root !(@AT_stmt_list address == B) ->C;
    : "Address %( B %) referenced from %( C %) not found in line table."
 
 ** contains DW_OP_fbreg && ! @frame_base

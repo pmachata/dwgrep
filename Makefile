@@ -23,7 +23,9 @@ check: dwgrep test-parser
 	./test-parser
 	(cd ./tests/; ./tests.sh)
 
-%.cc-dep $(TARGETS): override CXXFLAGS = -g3 $(CXXOPTFLAGS) -Wall -std=c++14 -I /usr/include/elfutils/
+%.cc-dep $(TARGETS): override CXXFLAGS = -g3 $(CXXOPTFLAGS) -Wall	\
+	-std=c++14 -I /usr/include/elfutils/
+
 dwgrep: override LDFLAGS += -ldw -lelf
 dwgrep test-parser: override LDFLAGS += -lgmpxx -lgmp
 builtin-dw.o: override CXXFLAGS += -fno-var-tracking-assignments
