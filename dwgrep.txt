@@ -462,40 +462,43 @@
   fact the stack is that context).  Various expressions treat the
   stack in various ways.  In particular
 
-  - initially the stack is composed of a single value of type DIE
+  - Initially the stack is empty.
 
-  - assertions inspect TOS (or several values on TOS), test the
+  - Graph entry points push values to stack without popping any.
+
+  - Assertions inspect TOS (or several values on TOS), test a
     condition, and either leave the stack unchanged, or abort the
     computation.  They do not pop.  This includes ?AT_at, !AT_at,
-    ?tag, !tag, ?(), !(), ?match, etc.  All assertions start either
-    with a ? (if it's positive assertion), or with a ! (if it's
-    negative assertion).
+    ?tag, !tag, ?(), !(), ?match, etc.  Assertions typically start
+    either with a ? (if it's positive assertion), or with a ! (if it's
+    negative assertion), although comparison operators (==, !=) also
+    have assertion-like semantics.
 
-  - stack shuffling operators (swap, drop, dup, ...) reorder values on
-    the stack
+  - Stack shuffling operators (swap, drop, dup, ...) reorder values on
+    the stack.
 
-  - literals push a new value on stack
-    - integers (1, 0x20, -7)
+  - Literals push a new value on stack:
+    - constants (1, 0x20, -7)
     - strings ("Ahoj!")
     - sequences ([1, 2, 3])
     - constants (DW_AT_name, DW_FORM_ref_addr, ...)
 
-  - all other forms are called functions.  They pop TOS (possibly
-    several times) and push another value depending on those values
-    that were popped.  This includes traversal forms (@AT_at, child,
-    parent, etc.) and operators (sub, add, etc.).
-
-  dwgrep expressions make it possible to determine stack size
-  statically.  dwgrep uses this extensively to remove stack shuffling
-  where possible, and to remove stack copying for sub-expression
-  evaluation (i.e. <X> <Y> <protect <add a=0;b=1;dst=0> a=0;dst=2> can
-  be replaced with <X> <Y> <add a=0;b=1;dst=2>).
+  - All other forms are called functions.  They pop one or more values
+    from TOS and push another value back.  This includes traversal
+    forms (@AT_at, child, parent, etc.) and operators (sub, add,
+    etc.).
 
 
 * Overview of dwgrep language
 
   - • means implemented
   - · means partially implemented
+
+** •EXPR → word
+    Most actions are performed not through syntax, but trough words.
+    Some word types were mentioned above in "stack maintained"
+    (e.g. stack shuffling words, functions, etc.).  All internal words
+    are specified in the following sections.
 
 ** •EXPR → EXPR₁ EXPR₂ — concatenate
 
@@ -533,6 +536,19 @@
     In plain English, X and Y are both evaluated in separate
     sub-expression contexts.  Their TOS's are gathered and compared
     using a comparison assertion word.
+
+    Certain integer values have enum-like characteristics.  These
+    include those produced by "label", "form", those produced by
+    access to certain attributes (such as @AT_language), and constants
+    (e.g. DW_AT_name, DW_TAG_class_type, etc.).  For these values,
+    dwgrep remembers their domain.  If two values are compared such
+    that both have a domain assigned, and those domains differ, a
+    warning is produced, because that's likely a flaw in the
+    expression.
+
+    Examples:
+     : A B swap? (drop>) drop    # "max" -- keep the greater number on stack
+     : A B swap? (drop<) drop    # "min"
 
 ** •EXPR → EXPR₁ “*” | EXPR₁ “+” | EXPR₁ “?” — iterate
 
@@ -585,64 +601,6 @@
      Any whitespace (but only whitespace) is allowed between "\ and
      the followig ".
 
-** ·EXPR → (“?”|“!”) “DW_”? “TAG_”, “AT_”, etc. — named constant assertions
-
-   Since majority of comparisons are ?eq or !eq anyway, and many of
-   those are vs. constants, there's a number of words for asserting
-   value on TOS.
-
-   According to a value on TOS, and a constant family, the following
-   rewrire rules define the semantics of a value assertion:
-
-   |---+--------------+---------------+--------------------------|
-   | ? | v            | TOS           | Meaning of ?v            |
-   |---+--------------+---------------+--------------------------|
-   |   | T_*          | any           | ?(type ?v)               |
-   | • | DW_TAG_*     | T_DIE         | ?(tag ?v)                |
-   | • | DW_TAG_*     | T_CONST       | ?(v ?eq)                 |
-   | • | DW_AT_*      | T_DIE         | ?(attribute ?v)          |
-   | • | DW_AT_*      | T_ATTR        | ?(name ?v)               |
-   | • | DW_AT_*      | T_CONST       | ?(v ?eq)                 |
-   | • | DW_FORM_*    | T_ATTR        | ?(form ?v)               |
-   | • | DW_FORM_*    | T_CONST       | ?(v ?eq)                 |
-   |   | DW_LANG_*    | T_DIE         | ?(@AT_language ?v)       |
-   |   | DW_LANG_*    | T_ATTR        | ?(?AT_language value ?v) |
-   |   | DW_LANG_*    | T_CONST       | ?(v ?eq)                 |
-   |   | DW_ATE_*     | @AT_encoding  | ?(value ?v)              |
-   |   | DW_OP_*      | XXX locexpr   |                          |
-   |   | DW_LNE_*     | XXX linetab   |                          |
-   |   | DW_LNS_*     | XXX linetab   |                          |
-   |   | DW_MACINFO_* | XXX macinfo   |                          |
-   |   | DW_MACRO_*   | XXX macro     |                          |
-   |   | DW_CFA_*     | XXX CFI       |                          |
-   |   | DW_CIE_*     | XXX CFI       |                          |
-   |   | DW_EH_*      | XXX .eh_frame |                          |
-   |   | any          | T_CONST       | ?(v ?eq)                 |
-   |---+--------------+---------------+--------------------------|
-
-   The prefix DW_ is optional.  There's no harm spelling it out, but
-   since it's so common, you can leave it out.
-
-   For example, ?ATE_unsigned is applicable to an attribute that is
-   DW_AT_encoding, or a constant of that domain.
-
-** ·EXPR → (“universe” | “section” | “unit” | “winfo” )
-
-   - "universe" stands for every DIE (and pseudo-DIE) in Dwarf graph.
-     Unlike section and unit, it doesn't drop.
-
-   - "section" is similar, but selects only DIE's (or pseudo-DIE's)
-     that come from the same section as value on TOS -- e.g. from
-     .debug_info, from symbol table, etc.
-
-   - "unit" selects objects belonging to the same logical unit.  This
-     may mean a CU, a current line table, etc.
-
-   - "winfo" selects .debug_info.  XXX The rest is not yet in.
-
-   - XXX We might need "unit" to mean "the CU that we came from" and
-     something else to mean "local set of entities".
-
 ** •EXPR → “(” EXPR₁ “)” — grouping, precedence
 
 ** •EXPR → “[” EXPR₁ “]” | “[” “]” — sub-expression capture
@@ -659,7 +617,7 @@
    equivalent to (among others):
    : [ 0 == 1 ]
 
-** •EXPR → “->” ID₀ [ID₁ …] “;” — binding
+** ·EXPR → “->” ID₀ [ID₁ …] “;” — binding
 
    - This pops a bunch of values from TOS and binds each of them to
      one identifier ID.  From that point on, mentioning ID is the same
@@ -677,7 +635,7 @@
      : { 1 add } -> inc;
      : 2 inc	# 3
 
-** ·EXPR → “{” EXPR₁ “}” | “def” ID “{” EXPR₁ “}” | “:”ID | “apply” — blocks
+** ·EXPR → “{” EXPR₁ “}” | “def” ID “{” EXPR₁ “}” | “:”ID — blocks
 
     - {X} -- A block syntax.  A value representing an expression X
       is pushed to TOS.
@@ -718,10 +676,6 @@
 
       :ID value -- resolve symbol on TOS to whatever it's bound to.
 
-    - apply -- if a symbol is on TOS, then get its value.  Then expect
-      a block on TOS, which is executed.  If the result of that is
-      again a block, that block is not executed.
-
     - Stack shuffling operators:
       : def drop { ->a; }		# ->(a->)drop;
       : def dup { ->a; a a }		# ->(a->a a)dup;
@@ -748,26 +702,33 @@
      anything, EXPR₁ is evaluated in plain context.  Otherwise EXPR₂
      is evaluated in plain context.
 
-**  EXPR → EXPR₁ (“while” | “until”) EXPR₀
+**  EXPR → “while” EXPR₀ “do” EXPR₁ | “do” EXPR₁ “while” EXPR₀
 
-   - The "while" loop evaluates EXPR₁ as long as EXPR₀ holds.  In each
-     iteration, it checks whether EXPR₀ holds for every computation
-     under consideration.  The computations for which EXPR₀ doesn't
-     hold are yielded unchanged.  To others, EXPR₁ is applied and what
-     this yields is added into consideration.  Then another iteration
-     is done.
+   - The "while..do" loop checks whether EXPR₀ yields anything.  If
+     yes, it evaluates EXPR₁ and repeats; otherwise it doesn't do
+     anything.
 
-     : (if EXPR₀ then EXPR₁ else ())* !(EXPR₀)
+     "do..while" works similarly, but it first evaluates EXPR₁ and
+     then tests whether EXPR₀ yields anything.
 
-   - The "until" loop has the same mode of operation, but meaning of
-     EXPR₀ is reversed.
+   - EXPR₀ is evaluated in sub-expression context.
+   - EXPR₁ shall have neutral stack effect.
 
-     : (if EXPR₀ then () else EXPR₁)* ?(EXPR₀)
+** •EXPR → “\dbg” — debug assertion
 
-   - EXPR₁ has to have neutral stack effect.
+   Always succeeds, but as a side effect prints some information about
+   the computation in whose context it appeared.
 
-** •EXPR → “swap” | “dup” | “over” | “rot” | “drop” — stack shuffling
+** •colon infix syntax
+    - When a word is followed by a colon, the following statement is
+      executed before that word.  That can be used for writing the
+      operators, where it makes sense, in infix form.  For example:
+      : 10 add: 1	# equivalent to (10 1 add)
+      : [10 range] sort: {->a; if (a mod: 2 ?0) then 0 else 1}
 
+
+* Fundamental words
+** •dup, over, swap, rot, drop — stack shuffling
    These words reorder elements on stack according to the following
    schemes:
 
@@ -787,12 +748,91 @@
    should be unnecessary as well.  But they are present for
    completeness' sake.
 
-** •EXPR → “elem” — named edge between a list and its elements
+** •type :: ?() -> ?T_CONST
+   This produces a constant according to the type of value on TOS
+   (such as T_CONST, T_DIE, T_STR, etc.).
 
-   - "elem" pops a list, and for each element yield a stack with that
-     element pushed on top
+** •pos :: ?() -> ?T_CONST
+    Each function numbers elements that it produces, and stores number
+    of each element along with the element.  That number can be
+    recalled by saying "pos".
 
-   - To zip contents of two top lists near TOS, do:
+    If you wish to know the number of values produced, you have to
+    count them by hand:
+    : [ child ] dup length->L; elem
+
+** •?eq, ?ne, ?gt, ?ge, ?lt, ?le :: ?() ?()
+    These are low-level assertions that are currently used for
+    implementation of ==, !=, etc., though in future those are likely
+    to get optimized dedicated operators and these would be displaced.
+
+    Two elements are inspected: TOS and one below that (B and A,
+    respectively).  The assertion holds if A op B is true.  Comparing
+    values of different types is not defined, and such assertions fail
+    as well.
+
+    Note that there is both !eq and ?ne, !lt and ?ge, etc.  These are
+    mostly for symmetry--the assertions need "?" to denote that they
+    are assertions, so why not have "!" forms as well.  For !eq it
+    even makes a good sense.
+
+
+* Words for intrinsic types
+** ·T_CONST
+*** •value :: ?T_CONST -> ?T_CONST
+     Returns underlying value of the constant, with plain domain.
+     : DW_FORM_flag value	# gives 12
+
+*** •add, sub, mul, div, mod :: ?T_CONST ?T_CONST -> ?T_CONST
+     Two elements are popped: A and B, with B the original TOS, and "A
+     op B" is pushed again.
+
+     division and modulo by zero produce an error message and abort
+     current computation.
+
+*** •hex, oct, bin :: ?T_CONST -> ?T_CONST
+     These yield incoming stack, except the domain of constant on TOS
+     is changed.
+     : 64 hex		# gives 0x40
+     : DW_AT_name hex	# gives 0x3
+
+     The value remains a constant, only the way it's displayed
+     changes.  You can use "%s" to convert it to a string, in which
+     case it's rendered with the newly-selected domain.
+     : DW_AT_name "%s"		# gives "DW_AT_name"
+     : DW_AT_name hex "%s"	# gives "0x3"
+
+***  int32_t, uint32_t, int64_t, uint64_t :: ?T_CONST -> ?T_CONST
+     The idea behind uint32_t et.al. is that a two-complement
+     representation of a given constant is taken, if necessary, it's
+     sign-extended, and then a 32-bit or 64-bit slice of that is
+     taken, and that is reinterpreted as either a signed or unsigned
+     value:
+
+     : -1 hex			# gives -0x1
+     : -1 uint32_t hex		# gives 0xffffffff
+     : -1 uint64_t hex		# gives 0xffffffffffffffff
+     : 0xffffffff int32_t	# gives -1
+     : 0xffffffffff int32_t	# gives -1 as well
+     : 0xffffffff int64_t	# gives 0xffffffff
+
+     Maybe what we want instead is "32 uint", "64 int" etc., such that
+     bit length is configurable.
+
+***  intptr_t, uintptr_t :: ?T_CONST -> ?T_CONST
+     {,u}intptr_t then expands to either of {,u}int{64,32}_t depending
+     on address size of CU.  XXX how to get to that size?  What
+     should, say, "17 uintptr_t" do?  There's no CU in sight...
+
+** ·T_SEQ
+*** •add :: ?T_SEQ ?T_SEQ -> ?T_SEQ
+     Concatenates two sequences.
+
+*** •elem :: ?T_SEQ ->* ?()
+     Pops a list, and for each element yield a stack with that element
+     pushed on top.
+
+     To zip contents of two top lists near TOS, do:
      : ->A B; A elem B elem (pos == swap pos)
 
      This takes two lists from the stack, and produces stacks that
@@ -803,43 +843,196 @@
      ... would be replaced with three stacks:
      : (A B C₁ D₁, A B C₂ D₂, A B C₃ D₃)
 
-** ·EXPR → “child”|“attribute”|“parent”|“next”|“prev”|“integrate” — traversal
+***  relem :: ?T_SEQ ->* ?()
+     This is like elem, but yields elements in reverse order.
 
-   - "child" pops DIE on TOS and yields one stack for each child,
-     with that child pushed to TOS.
+*** •length :: ?T_SEQ -> ?T_CONST
+     Yields length of sequence on TOS.
 
-   - "attribute" does the same with attributes instead of children
+*** •?empty :: ?T_SEQ
+     Asserts whether a sequence on TOS is empty.
 
-   - "parent" is exactly equivalent to:
-     : universe ?(child ?eq) swap drop
-     Note that in case of imported units, "parent" may return more
-     than one DIE!  (XXX This doesn't seem desirable?)
+*** •?find :: ?T_SEQ ?T_SEQ
+    (A B find) asserts that the sequence A contains sub-sequence B
+    (e.g. [hay stack] ?([needle] ?find)).
 
-     : def next {->D;
-     :     D parent child (== D) pos 1 add ->next_pos;
-     :     D parent child (pos == next_pos)
-     : }
+    To determine whether a sequence contains a particular element, you
+    would use the following construct:
+    : [that sequence] (elem == something)
+
+    E.g.:
+    : [child @AT_name] ?(elem == "foo")
+    : [child] ?(elem @AT_name == "foo")
+
+    To pick only those elements that match, you could do the
+    following:
+    : [child]->L; [L elem ?(@AT_name ?"foo")]
+
+    The above is suitable for a function that takes a list on input
+    and wants to filter it.  It is of course preferable to write this
+    sort of thing directly, if possible:
+    : [child ?(@AT_name ?"foo")]
+
+*** Element access
+    : [some seq] elem (pos == 0)	# first
+    : [some seq] relem (pos == 0)	# last
+    : [some seq] elem (pos != 0)	# rest
+    : [some seq] elem (pos >= 3) (pos <= 5)	# slice
+
+    This is not widely used, so maybe this is just fine.  Most of the
+    time, instead of producing a sequence, you would just assert
+    position on the producing expression directly.  If necessary, we
+    can adopt words like (get :: ?T_SEQ ?T_CONST -> ?()) (that would
+    allow Python-like negative indices as well), (last :: ?T_SEQ ->
+    ?()), etc.  Especially slices of the sort [:-1] are ugly with this
+    approach.
+
+** ·T_STR
+    Any word that is applicable to sequences is applicable to a string
+    as well.  The semantics are as if the string was a sequence of all
+    the constituent characters (the characters themselves are again of
+    type T_STR).  The prototypes are as if T_SEQ was replaced with
+    T_STR.
+
+*** •?match :: ?T_STR ?T_STR
+     This asserts that TOS (which is a string with a regular
+     expression) matches the value below TOS.  The whole string has to
+     match.  If you want to look for a regular expression inside the
+     string, you can say ("haystack" ?(".*needle.*" ?match)).
+
+***  demangle :: ?T_STR -> ?T_STR
+
+** •T_CLOSURE
+*** •apply :: T_CLOSURE ->
+     The block on TOS is executed.
+
+
+* Representation of Dwarf graph
+** Common words
+   Quite a few words are reused to be aplicable to objects of
+   different types.  These include label, offset, address, high, low,
+   name and value.
+
+** ·Entry points
+*** ·winfo :: ->* ?T_DIE
+     Yields all DIE's in a .debug_info section.  In produces values of
+     type T_DIE.
+
+     XXX How do we handle DW_TAG_partial_unit?
+
+***  symtab :: ->* ?T_ELFSYM
+     Yields all symbols in .symtab, or minisymtab, or .dynsym.  It
+     produces values of type T_ELFSYM.
+
+** ·?DW_TAG_*, !DW_TAG_*, ?DW_AT_*, — named constant assertions
+
+    Since majority of comparisons are == against some Dwarf constant
+    anyway, there's a number of words for asserting value on TOS.
+
+    According to a value on TOS, and a constant family, the following
+    rewrire rules define the semantics of a value assertion:
+
+    |---+--------------+---------------+--------------------------|
+    | ? | v            | TOS           | Meaning of ?v            |
+    |---+--------------+---------------+--------------------------|
+    | • | DW_TAG_*     | T_DIE         | ?(tag ?v)                |
+    | • | DW_TAG_*     | T_CONST       | ?(v ?eq)                 |
+    | • | DW_AT_*      | T_DIE         | ?(attribute ?v)          |
+    | • | DW_AT_*      | T_ATTR        | ?(name ?v)               |
+    | • | DW_AT_*      | T_CONST       | ?(v ?eq)                 |
+    | • | DW_FORM_*    | T_ATTR        | ?(form ?v)               |
+    | • | DW_FORM_*    | T_CONST       | ?(v ?eq)                 |
+    |   | DW_LANG_*    | T_DIE         | ?(@AT_language ?v)       |
+    |   | DW_LANG_*    | T_ATTR        | ?(?AT_language value ?v) |
+    |   | DW_LANG_*    | T_CONST       | ?(v ?eq)                 |
+    |   | DW_ATE_*     | @AT_encoding  | ?(value ?v)              |
+    |   | DW_OP_*      | XXX locexpr   |                          |
+    |   | DW_LNE_*     | XXX linetab   |                          |
+    |   | DW_LNS_*     | XXX linetab   |                          |
+    |   | DW_MACINFO_* | XXX macinfo   |                          |
+    |   | DW_MACRO_*   | XXX macro     |                          |
+    |   | DW_CFA_*     | XXX CFI       |                          |
+    |   | DW_CIE_*     | XXX CFI       |                          |
+    |   | DW_EH_*      | XXX .eh_frame |                          |
+    |   | any          | T_CONST       | ?(== v)                  |
+    |---+--------------+---------------+--------------------------|
+
+   The prefix DW_ is optional.  There's no harm spelling it out, but
+   since it's so common, you can leave it out.
+
+   For example, ?ATE_unsigned is applicable to an attribute that is
+   DW_AT_encoding, or a constant of that domain.
+
+** ·T_DIE
+***  label :: ?T_DIE -> ?T_CONST
+     Yields DIE tag.
+
+*** •offset :: ?T_DIE -> ?T_CONST
+     Like dwarf_dieoffset.
+
+*** ·unit :: ?T_DIE ->* ?T_DIE
+     Selects objects belonging to the same logical unit.
+
+     XXX how do we solve logical vs. low-level access to
+     DW_TAG_partial_unit?
+
+***  low :: ?T_DIE ->? ?T_CONST
+     : @AT_lowpc
+
+***  high :: ?T_DIE ->? ?T_CONST
+     : attribute ?AT_highpc address
+
+***  address :: ?T_DIE ->* ?T_ADDR_RANGE
+     Like dwarf_ranges.
+
+*** •child :: ?T_DIE ->* ?T_DIE
+     Yields children of the DIE.
+
+*** •attribute :: ?T_DIE ->* ?T_ATTR
+     Yields attributes of the DIE.
+
+*** •parent :: ?T_DIE ->? ?T_DIE
+     Yields the parent of the DIE, if there's any.
+
+     XXX DW_TAG_partial_unit
+
+*** •?root, !root :: ?T_DIE
+     ?root holds if the DIE is a root node.  Equivalent to !(parent).
+
+     : parent* ?root        # finds a root node of node on TOS
+
+***  next :: ?T_DIE ->? ?T_DIE
+     Like dwarf_siblingof, returns next sibling of the DIE.
+
+     : def next {->D; D parent child (pos == D parent child (== D) pos 1 add)}
+
      The first line is necessary to make sure that pos later refers
      to order in children array, not to e.g. a result of ([XYZ] each).
 
-   - "prev" can be defined in manner similar to next.
+***  prev :: ?T_DIE ->? ?T_DIE
+     The opposite of next.
 
-   - "integrate" is equivalent to the following:
+*** •integrate :: ?T_DIE ->? ?T_DIE
+     Equivalent to the following:
      : (@AT_abstract_origin || @AT_specification)
 
      It is meant to be used as named edge between a DIE and its
      abstract instance(s).  In particular, the following idioms might
      be useful:
+
      : integrate* ?AT_xyz		# find DIE's with DW_AT_xyz
      : integrate* @AT_xyz		# all AT_xyz's in chain
      : [integrate*]			# the whole integration chain
-     :
+
      : (!AT_xyz integrate)* ?AT_xyz	# find closest DIE with DW_AT_xyz
      : ?(integrate* ?AT_xyz)		# dwarf_hasattr_integrate
      : (!AT_xyz integrate)* attribute ?AT_xyz	# dwarf_attr_integrate
      : (!AT_xyz integrate)* @AT_xyz	# value of integrated DW_AT_xyz
 
-   - Given the above as "integrate1", this would be useful as well:
+***  integrate :: ?T_DIE ?T_CLOSURE ->* ?()
+     Given the above as "integrate1", the behavior of this "integrate"
+     can be specified thus:
+
      : {->Op; (!(Op) integrate1)* Op} -> integrate;
 
      This then can be used as follows:
@@ -848,260 +1041,148 @@
      : {attribute ?AT_xyz} integrate	# dwarf_attr_integrate
      : {@AT_xyz} integrate		# value of integrated DW_AT_xyz
 
-     We could actually switch between this and the above thus:
-     : if (type == T_CLOSURE) then integrate else integrate1
+*** •AT_decl_file
+     Value of this attribute is represented as actual string including
+     path.
 
-** •EXPR → “?root” | “!root” — root node assertion
+     (XXX we ignore mtime and size.  Those aren't stored anyway, but
+     maybe it would be useful to have them so that one can do this
+     sort of querying in the first place--do we have any files where
+     this is stored?  Or after it gets to be stored in general, where
+     this is _not_ stored?)
 
-   - !root is exactly equivalent to:
-   - ?root is exactly equivalent to:
-     : (type == T_DIE) !(parent)
+***  handling DW_AT_high_pc, DW_AT_entry_pc with constant form
+     Should we convert to full address?
+     http://dwarfstd.org/ShowIssue.php?issue=120719.1
 
-   - Examples:
-     : parent* ?root        # finds a root node of node on TOS
+     It seems "low", "high" and "address" should do this, but
 
-** ·EXPR → “@”AT_ID — attribute value
+     This could be optionally interpreted, i.e. @AT_high_pc whose form
+     is DW_FORM_data* would actually yield a value computed from
+     DW_AT_ranges or DW_AT_low_pc.
 
-   This function pops a DIE off TOS and pushes a value of its
-   attribute DW_AT_ID.  If you want to access the attribute object
-   itself instead, use:
+***  abbrev :: ?T_DIE -> T_ABBREV
+*** •@AT_* :: ?T_DIE ->* ?()
+     Syntactic sugar for (attribute ?(label == AT_*) value).
 
-   : attribute ?AT_ID
+** ·T_ATTR
+*** •label :: ?T_ATTR -> ?T_CONST
+     Yield an attribute name.
 
-** ·EXPR → “offset” | “address”
+*** •value :: ?T_ATTR ->* ?()
+     Yields value(s) of attribute on TOS.
 
-   - "offset" pops a graph node on TOS and pushes a value representing
-     offset of the object.  The interpretation of offset differs by
-     node type.  For example, location expression operations yield
-     offset relative to the start of location expression, DIE's offset
-     is relative to start of Dwarf file.
+     Some attributes refer to a location expression.  These are
+     represented as a number of nodes of type T_LOCLIST_ELEM.
+     Children of these nodes are T_LOCLIST_OP, individual operations
+     of location expression.
 
-   - "address" works similarly, but instead of a file- or node- based
-     offset, it yields address within client address space.
+***  address :: (?T_ATTR (?AT_high_pc, ?AT_low_pc, ?FORM_addr)) -> ?T_CONST
+     - For DW_AT_high_pc, DW_AT_entry_pc with constant forms, this
+       converts the value to address.
 
-     For DIE's, this is like calling dwarf_ranges, i.e. yields
-     addresses where the DIE has valid PC.
+     - For attributes with address form, this is like calling "value".
 
-     Applied to an attribute that's either DW_AT_high_pc or
-     DW_AT_entry_pc with non-DW_FORM_addr form, this might maybe
-     convert them to address.
+     - Otherwise it is an error to use this.
 
-** •EXPR →  “label” | “form” | “value” — Dwarf tree introspection
+*** •form :: ?T_ATTR -> ?T_CONST
+     Yield a form of an attribute.
 
-   - "label" pops a graph node on TOS and pushes a value representing
-     and identifier of node kind.  This would be a DIE tag, an
-     attribute name, a location expression operation, or similar.
+**  T_ABBREV
+***  label :: ?T_ABBREV -> ?T_CONST
+***  offset :: ?T_ABBREV -> ?T_CONST
+***  attribute :: ?T_ABBREV ->* T_ABBREV_ATTR
+**  T_ABBREV_ATTR
+***  label :: ?T_ABBREV_ATTR -> ?T_CONST
+     Yields attribute name.
 
-   - "form" pops Attribute on TOS and pushes back a value
-     representing its form.
+***  offset :: ?T_ABBREV_ATTR -> ?T_CONST
+     Yields offset of attribute within abbreviation.
 
-   - "value" pops Attribute on TOS and yields one stack for each
-     value associated with this Attribute, with that value pushed to
-     TOS.  Typically this would yield a single stack with a string or
-     integer on top, but it may yield e.g. several pseudo-DIEs for
-     things like @AT_stmt_list.
+***  form :: ?T_ABBREV_ATTR -> ?T_CONST
+     Yields attribute form.
 
-** •EXPR → “?”ID | “!”ID — DIE tag assertion
+**  T_SYMBOL
+***  label :: ?T_ELFSYM -> ?T_CONST
+     Yields symbol type, such as STT_FUNC.
 
-   - ?ID is exactly equivalent to:
-     : (tag == DW_TAG_ID)
-   - !ID is exactly equivalent to:
-     : (tag == DW_TAG_ID)
-   - Note that either form fails when applied to a non-DIE value.
+***  value, address :: ?T_ELFSYM -> ?T_CONST
+     Yield symbol value.
 
-** •EXPR → “?AT_”ID | “!AT_”ID — attribute presence/absence assertions
+***  @name :: ?T_ELFSYM -> ?T_STR
+***  @size :: ?T_ELFSYM -> ?T_CONST
+***  @bind :: ?T_ELFSYM -> ?T_CONST
+***  @visibility :: ?T_ELFSYM -> ?T_CONST
+***  @index :: ?T_ELFSYM ->? ?T_CONST
+     XXX or maybe @section?
 
-   - If the value on TOS is a DIE, these forms assert that they have
-     (don't have) an attribute with a given name.
+***  symbol :: ?T_CONST ->? T_ELFSYM
+     This find a symbol associated with an address on TOS.  The match
+     doesn't have to be exact, offset would then be:
+     : some addr ->A; A symbol dup address A sub
+     :  # now TOS has offset and below TOS is symbol
 
-     - Instead of using "?AT_ID", one can also simply access the
-       attribute value with "@AT_ID".  If such attribute is not
-       available, that computation is aborted.
+     XXX some of this is fairly easy to get by cross-matching like
+     this:
+     : some addr ->A; symtab (address == A)
+     fuzzy matching (getting symbol/offset) would be more involved.
 
-   - If the value on TOS is an Attribute, these forms assert that the
-     attribute has a given name.
+** •T_LOCLIST_ELEM
+    XXX possibly a means of evaluating?  (Could we use the in-program
+    stack for evaluating the Dwarf expression?)
 
-** •EXPR → “type” — TOS introspection
+*** •address :: ?T_LOCLIST_ELEM -> ?T_ADDR_RANGE
+     Yields where given location expression applies.
 
-   This produces an integer value suitable for comparison with the
-   following constants:
+*** •child :: ?T_LOCLIST_ELEM ->* ?T_LOCLIST_OP
+     Yields individual location expression operators.
 
-   - T_DIE — for Dwarf_Die's
-   - T_ATTR — for Dwarf_Attribute's
-   - T_SEQ — for sequence objects
-   - T_STR — for string objects
-   - T_CONST — for integer objects
-   - T_FLOAT — for floats
+** •T_LOCLIST_OP
+*** •label :: ?T_LOCLIST_OP -> ?T_CONST
+     Yields operation opcode (a DW_OP_* constant).
 
-** •EXPR → “pos” — position of element within producing expression
+*** •offset :: ?T_LOCLIST_OP -> ?T_CONST
+     Yields an offset of this op within the location expression.
 
-   Each function numbers elements that it produces, and stores number
-   of each element along with the element.  That number can be
-   recalled by saying "pos".
+*** •value :: ?T_LOCLIST_OP ->* ?()
+     Yields operands associated with this location expression
+     operation.  Operands have anywhere between zero and two operands
+     of various types (some are e.g. T_DIE references).
 
-   If you wish to know the number of values produced, you have to
-   count them by hand:
-   : [ child ] dup length->L; elem
+     For example:
 
-**  EXPR → “get” | “last” | “slice” | “reverse” — sequence transformations
+     : [4e] variable
+     :      [...]
+     :      location (exprloc) [0x0..0xffffffffffffffff, [0:fbreg<-18>]]
 
-   - def slice { ->S M N; ...}
-     S is a sequence or a string
-     M an N are coordinates of the slice
+     Here we have only one T_LOCLIST_OP, and that has an offset of 0, a
+     label of DW_OP_fbreg, and yields one value, -18.
 
-     The "slice" operator yields a sequence (or string) with elements
-     of S that are between M (inclusive) and N (not inclusive).  If M
-     or N are negative, they are relative to the length of the
-     sequence.
+**  T_ADDR_RANGE
+    - T_ADDR_RANGE actually behaves pretty much like a sequence of
+      integers.  Maybe sequence could have an optimization whereby if
+      it contains all integers, it just stores low×high pairs instead
+      of listing each value separately.
 
-     : [child] 0 -1 slice	# snip the last element
+    - We would still need a way of promoting assertions directly to
+      "elem" such that it can do something clever instead of
+      enumerating all 64 bits of adress space or some such.
 
-   - def get { ->S N; ... }
-     S is a sequence or a string
-     N is a coordinate of an element to pick
+***  low :: ?T_ADDR_RANGE -> ?T_CONST
+***  high :: ?T_ADDR_RANGE -> ?T_CONST
+***  arange :: ?T_CONST ?T_CONST -> ?T_ADDR_RANGE
+***  ?contains :: ?T_ADDR_RANGE ?T_CONST
+***  ?contains :: ?T_ADDR_RANGE ?T_ADDR_RANGE
+     Whether TOS is contained within below TOS.
 
-     get takes N-th element of a sequence or a string, counting
-     from 0.  Negative values are relative to the length of the
-     sequence, so that -1 is the last element, -2 the one before last,
-     etc.
+***  ?overlaps :: ?T_ADDR_RANGE ?T_ADDR_RANGE
+     Whether TOS and below TOS overlap.
 
-   - reverse expects a sequence or a string on TOS.  It produces the
-     same sequence with elements in reverse order.
-
-   - last is equivalent to (-1 get)
-
-** •EXPR → “add” | “sub” | “mul” | “div” | “mod” — arithmetic
-
-   - Two elements are popped: A and B, with B the original TOS, and "A
-     op B" is pushed again.
-
-   - "add" is meaningful for two constants, two strings or two
-     sequences.  Other operators are only meaningful for constants.
-
-   - division and modulo by zero produce an error message and abort
-     current computation.
-
-** ·EXPR → “hex” | “oct” | “bin” | [“u”]“int”(“32”|“64”) — casting
-   - hex, oct and bin change the domain of a constant on TOS.
-     : 64 hex		# gives 0x40
-     : DW_AT_name hex	# gives 0x3
-     The value remains a constant, only the way it's displayed
-     changes.  You can use "%s" to convert it to a string, in which
-     case it's rendered with the newly-selected domain.
-     : DW_AT_name "%s"		# gives "DW_AT_name"
-     : DW_AT_name hex "%s"	# gives "0x3"
-
-   - The idea behind uint32_t et.al. is that a two-complement
-     representation of a given constant is taken, if necessary, it's
-     sign-extended, and then a 32-bit or 64-bit slice of that is
-     taken, and that is reinterpreted as either a signed or unsigned
-     value:
-     : -1 hex			# gives -0x1
-     : -1 uint32_t hex		# gives 0xffffffff
-     : -1 uint64_t hex		# gives 0xffffffffffffffff
-     : 0xffffffff int32_t	# gives -1
-     : 0xffffffffff int32_t	# gives -1 as well
-     : 0xffffffff int64_t	# gives 0xffffffff
-     Maybe what we want instead is "32 uint", "64 int" etc., such that
-     bit length is configurable.  Presumably it's not a big deal with
-     GMP under the hood.
-
-** •EXPR → (“?”|“!”)(“eq”|“ne”|“gt”|“ge”|“lt”|“le”) — comparison assertions
-
-   - Two elements are inspected: TOS and one below that (B and A,
-     respectively).  The assertion holds if A op B is true.  Comparing
-     values of different types is not defined, and such assertions
-     fail as well.
-
-   - Note that there is both !eq and ?ne, !lt and ?ge, etc.  These
-     are mostly for symmetry--the assertions need "?" to denote that
-     they are assertions, so why not have "!" forms as well.  For !eq
-     it even makes a good sense.
-
-   - Certain integer values have enum-like characteristics.  These
-     include those produced by "label", "form", those produced by
-     access to certain attributes (such as @AT_language), and
-     constants (e.g. DW_AT_name, DW_TAG_class_type, etc.).  For these
-     values, dwgrep remembers their domain.  If two values are
-     compared such that both have a domain assigned, and those domains
-     differ, a warning is produced, because that's likely a flaw in
-     the expression.
-
-   - Examples:
-     : A B swap? ?lt drop    # "max" -- keep the greater number on stack
-     : A B swap? ?gt drop    # "min"
-
-** •EXPR → (“?”|“!”)“match” — regex assertion
-
-   This produces nothing when applied to non-string values.  Use "%s"
-   to convert other value types to string.
-
-   This is similar to “?eq” and “!eq”, except asserts that TOS (which
-   is a string with a regular expression) matches the value below
-   TOS.
-
-   - "match" does a full-string match
-
-** •EXPR → (“?”|“!”)“find” — search in a sequence
-
-   - A B find looks for sub-sequence or sub-string B inside A
-     (e.g. "haystack" ?("needle" ?find) or [hay stack] ?([needle]
-     ?find)).
-
-   - To determine whether a sequence contains a particular element,
-     you would use the following construct:
-     : [that sequence] (elem == something)
-     E.g.:
-     : [child @AT_name] ?(elem == "foo")
-     : [child] ?(elem @AT_name == "foo")
-
-   - To pick only those elements that match, you could do the
-     following:
-     : [child]->L; [L elem ?(@AT_name ?"foo")]
-     The above is suitable for a function that takes a list on input
-     and wants to filter it.  It is of course preferable to write this
-     sort of thing directly, if possible:
-     : [child ?(@AT_name ?"foo")]
-
-** •EXPR → “length” — length of a sequence or a string
-
-** •EXPR → (“?”|“!”)“empty” — list/string emptiness assertion
-     : def "?empty" { length == 0 }
-     : def "!empty" { length != 0 }
-
-**  EXPR → “demangle” — demangle a string on TOS
-
-** •EXPR → “\dbg” — debug assertion
-
-   Always succeeds, but as a side effect prints some information about
-   the computation in whose context it appeared.
-
-** •colon infix syntax
-    - When a word is followed by a colon, the following statement is
-      executed before that word.  That can be used for writing the
-      operators, where it makes sense, in infix form.  For example:
-      : 10 add: 1	# equivalent to (10 1 add)
-      : [10 range] sort: {->a; if (a mod: 2 ?0) then 0 else 1}
 
 
 * TODO
 
-** @AT_decl_file — represented as actual string including path
-   (XXX we ignore mtime and size.  Those aren't stored anyway, but
-   maybe it would be useful to have them so that one can do this sort
-   of querying in the first place--do we have any files where this is
-   stored?  Or after it gets to be stored in general, where this is
-   _not_ stored?)
-
-** @AT_high_pc constant, @AT_entry_pc constant — convert to full address???
-   http://dwarfstd.org/ShowIssue.php?issue=120719.1
-
-   This could be optionally interpreted, i.e. @AT_high_pc whose form
-   is DW_FORM_data* would actually yield a value computed from
-   DW_AT_ranges or DW_AT_low_pc.
-
 ** @AT_MIPS_linkage_name — translated to @AT_linkage_name automatically
-
 ** XXX @AT_stmt_list
 
    @AT_stmt_list yields a number of nodes of type line_table_entry.
@@ -1110,8 +1191,8 @@
 
    : address
    : @lineop_index
-   : @lineno
-   : @linecol
+   : @lineno (or @AT_decl_line ???)
+   : @linecol (or @AT_decl_column ???)
    : @linebeginstatement, ?linebeginstatement, !linebeginstatement
    : @lineendsequence, ?lineendsequence, !lineendsequence
    : @lineblock, ?lineblock, !lineblock
@@ -1130,94 +1211,8 @@
    these and just expose ?op's.  When ?x is present, it implies that
    @op is true.
 
-** location expressions
-
-   Some attributes refer to a location expression.  These are
-   represented as a number of pseudo-DIE's of type T_LOCLIST_ELEM.
-   Children of these nodes are T_LOCLIST_OP, individual operations of
-   location expression.
-
-   - XXX possibly a means of evaluating?  (Could we use the in-program
-     stack for evaluating the Dwarf expression?)
-
-*** •T_LOCLIST_ELEM
-
-    - "address" yields a value of type T_ADDR_RANGE where given
-      location expression applies.
-
-    - "child" yields individual location expression operators
-      (T_LOCLIST_OP).
-
-*** •T_LOCLIST_OP
-
-    - "offset" yields an offset of this op within the location
-      expression.
-
-    - "label" yields operation opcode (a DW_OP_* constant)
-
-    - "value" is applicable, and yields operands associated with this
-      location expression operation.
-
-    [4e] variable
-         [...]
-         location (exprloc) [0x0..0xffffffffffffffff, [0:fbreg<-18>]]
-
-    Here we have only one T_LOCLIST_OP, and that has an offset of 0, a
-    label of DW_OP_fbreg, and yields one value, -18.
-
-***  T_ADDR_RANGE
-
-    - "low" ??? -- applicable to T_DIE as well, with meaning of dwarf_lowpc.
-    - "high" ??? -- likewise for dwarf_highpc
-    - "?contains" ??? (for T_ADDR_RANGE x T_CONST, T_ADDR_RANGE x
-      T_ADDR_RANGE) Or maybe ?lt, ?gt and others?
-    - "?eq" ??? (for T_ADDR_RANGE x T_CONST, T_CONST x T_ADDR_RANGE,
-      T_ADDR_RANGE x T_ADDR_RANGE) -- consts would be considered a
-      one-element range
-    - a way of constructing this (X Y arange ???  or a syntax X..Y???)
-
-    - "add", "sub" ???  Do we need a general "coverage" sort of value
-      (like what dwarflint used to have)?  What if 'sub' that pokes a
-      hole in just produces a bunch of T_ADDR_RANGE's.  Coverage would
-      then be something like [something sub: (X Y arange)] -- i.e. we
-      would capture the constituents.  Membership test would be
-      ?(elem ?contains: X).  But then arithmetic over these lists becomes
-      hell.
-
-    - T_ADDR_RANGE actually behaves pretty much like a sequence of
-      integers.  Maybe sequence could have an optimization whereby if
-      it contains all integers, it just stores low×high pairs instead
-      of listing each value separately.
-
-    - We would still need a way of promoting assertions directly to
-      "elem" such that it can do something clever instead of
-      enumerating all 64 bits of adress space or some such.
-
-** ELF symbols
-
-   Each symbol table entry (in SHT_SYMTAB, SHT_DYNSYM and minisymtab)
-   is represented by a pseudo-DIE of type DW_TAG_symbol.  It has the
-   following attributes: @size, @bind, @visibility, @name, and @index.
-   label yields symbol type.  value yields symbol value.
-
-   XXX Instead of @index we'd like to have a @section which links to a
-   pseudo-DIE representing a section.
-
-   DW_FORM_addr -- maybe we should handle them similarly to
-   readelf...?  Have a domain for addresses, and possibly (unless -N)
-   translate addresses to symbols on output?
-
 ** XXX Dwarf CU version -- an artificial attribute?
    - https://stackoverflow.com/questions/16169864
-
-** XXX abbreviation section?
-   - note that one can look for attribute form by saying (attribute
-     ?AT_at form)
-   - would a link from a DIE to its abbreviation be useful?
-
-** XXX integrating addr2line
-   - low_pc and high_pc should be convertible to symbol name on
-     request (possibly manually by cross-matching with ELF symtabs).
 
 ** XXX .debug_frame, .eh_frame
    - do we need an overarching "theory" for both of these?
@@ -1299,7 +1294,7 @@
 
 ** location expression ends with implicit_value or stack_value
 
-   : winfo ?([@AT_location] -1 get label
+   : winfo ?([@AT_location] relem (pos == 0) label
    : (?DW_OP_implicit_value, ?DW_OP_stack_value))
 
 ** types inconsistent between instance and specification
