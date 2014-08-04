@@ -30,7 +30,6 @@
 #define _TREE_CR_H_
 
 #include "tree.hh"
-#include "make_unique.hh"
 
 template <tree_type TT>
 tree *

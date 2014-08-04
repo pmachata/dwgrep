@@ -45,7 +45,6 @@
 #include "builtin-dw.hh"
 #include "cache.hh"
 #include "dwpp.hh"
-#include "make_unique.hh"
 #include "op.hh"
 #include "parser.hh"
 #include "tree.hh"

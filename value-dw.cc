@@ -29,7 +29,6 @@
 #include "flag_saver.hh"
 #include <iostream>
 #include <memory>
-#include "make_unique.hh"
 
 #include "value-dw.hh"
 #include "dwcst.hh"

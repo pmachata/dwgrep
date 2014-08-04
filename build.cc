@@ -29,7 +29,6 @@
 #include <algorithm>
 #include <iostream>
 #include <memory>
-#include "make_unique.hh"
 
 #include "op.hh"
 #include "scope.hh"

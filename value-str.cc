@@ -28,7 +28,6 @@
 
 #include <iostream>
 #include <memory>
-#include "make_unique.hh"
 #include <regex.h>
 
 #include "value-str.hh"

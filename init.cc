@@ -27,7 +27,6 @@
    not, see <http://www.gnu.org/licenses/>.  */
 
 #include <memory>
-#include "make_unique.hh"
 
 #include "overload.hh"
 

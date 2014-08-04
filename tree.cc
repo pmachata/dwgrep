@@ -34,7 +34,6 @@
 #include <set>
 #include <stdexcept>
 
-#include "make_unique.hh"
 #include "tree.hh"
 #include "scope.hh"
 

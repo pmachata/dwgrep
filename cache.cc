@@ -29,7 +29,6 @@
 #include <cassert>
 #include <algorithm>
 #include <memory>
-#include "make_unique.hh"
 
 #include "cache.hh"
 #include "dwpp.hh"

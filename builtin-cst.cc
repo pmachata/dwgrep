@@ -29,7 +29,6 @@
 #include <iostream>
 #include <sstream>
 #include <memory>
-#include "make_unique.hh"
 
 #include "builtin-cst.hh"
 #include "op.hh"
