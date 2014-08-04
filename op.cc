@@ -166,7 +166,7 @@ stringer_op::next ()
       if (auto op_vf = m_op->next ())
 	{
 	  std::stringstream ss;
-	  ss << *op_vf->pop ();
+	  (op_vf->pop ())->show (ss, brevity::brief);
 	  return std::make_pair (std::move (op_vf), m_str + ss.str ());
 	}
 
