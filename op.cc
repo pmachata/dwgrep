@@ -677,7 +677,10 @@ op_f_debug::next ()
 	  std::cerr << frame;
 	  std::cerr << "{";
 	  for (auto const &v: frame->m_values)
-	    v->show ((std::cerr << ' '), brevity::brief);
+	    if (v == nullptr)
+	      std::cerr << " (unbound)";
+	    else
+	      v->show ((std::cerr << ' '), brevity::brief);
 	  std::cerr << " }  ";
 
 	  frame = frame->m_parent;
