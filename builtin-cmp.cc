@@ -49,7 +49,7 @@ namespace
     cmp_result r = vb.cmp (va);
     if (r == cmp_result::fail)
       {
-	std::cerr << "Error: Can't compare `" << va << "' to `" << vb << "'\n.";
+	std::cerr << "Error: Can't compare `" << va << "' to `" << vb << "'.\n";
 	return pred_result::fail;
       }
     else
