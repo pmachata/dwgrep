@@ -51,6 +51,14 @@ public:
   virtual std::string name () const = 0;
 };
 
+struct value_producer
+{
+  virtual ~value_producer () {}
+
+  // Produce next value.
+  virtual std::unique_ptr <value> next () = 0;
+};
+
 // An op that's not an origin has an upstream.
 class inner_op
   : public op

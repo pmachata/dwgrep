@@ -30,10 +30,11 @@
 #include <iostream>
 #include <memory>
 
-#include "value-dw.hh"
+#include "atval.hh"
 #include "dwcst.hh"
 #include "dwit.hh"
-#include "atval.hh"
+#include "op.hh"
+#include "value-dw.hh"
 
 value_type const value_die::vtype = value_type::alloc ("T_DIE");
 
