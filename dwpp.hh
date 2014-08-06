@@ -31,7 +31,7 @@
 
 #include <cassert>
 
-inline void
+inline __attribute__ ((noreturn)) void
 throw_libdw (int dwerr = 0)
 {
   if (dwerr == 0)
@@ -40,7 +40,7 @@ throw_libdw (int dwerr = 0)
   throw std::runtime_error (dwarf_errmsg (dwerr));
 }
 
-inline void
+inline __attribute__ ((noreturn)) void
 throw_libelf ()
 {
   int elferr = elf_errno ();
