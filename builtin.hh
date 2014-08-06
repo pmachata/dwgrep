@@ -91,4 +91,51 @@ add_builtin_type_constant (builtin_dict &dict)
 			T::vtype.name ());
 }
 
+template <class Op>
+void
+add_simple_exec_builtin (builtin_dict &dict, char const *name)
+{
+  struct this_op
+    : public Op
+  {
+    char const *m_name;
+    this_op (std::shared_ptr <op> upstream, dwgrep_graph::sptr gr,
+	     std::shared_ptr <scope> scope, char const *name)
+      : Op {upstream, gr, scope}
+      , m_name {name}
+    {}
+
+    std::string
+    name () const override final
+    {
+      return m_name;
+    }
+  };
+
+  struct simple_exec_builtin
+    : public builtin
+  {
+    char const *m_name;
+
+    simple_exec_builtin (char const *name)
+      : m_name {name}
+    {}
+
+    std::shared_ptr <op>
+    build_exec (std::shared_ptr <op> upstream, dwgrep_graph::sptr gr,
+		std::shared_ptr <scope> scope) const override final
+    {
+      return std::make_shared <this_op> (upstream, gr, scope, m_name);
+    }
+
+    char const *
+    name () const override final
+    {
+      return m_name;
+    }
+  };
+
+  dict.add (std::make_shared <simple_exec_builtin> (name));
+}
+
 #endif /* _BUILTIN_H_ */

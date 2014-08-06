@@ -45,196 +45,150 @@
 
 namespace
 {
-  struct builtin_winfo
-    : public builtin
+  struct op_winfo
+    : public inner_op
   {
-    struct winfo
-      : public op
+    dwgrep_graph::sptr m_gr;
+    all_dies_iterator m_it;
+    valfile::uptr m_vf;
+    size_t m_pos;
+
+    op_winfo (std::shared_ptr <op> upstream, dwgrep_graph::sptr gr,
+	   std::shared_ptr <scope> scope)
+      : inner_op {upstream}
+      , m_gr {gr}
+      , m_it {all_dies_iterator::end ()}
+      , m_pos {0}
+    {}
+
+    void
+    reset_me ()
     {
-      std::shared_ptr <op> m_upstream;
-      dwgrep_graph::sptr m_gr;
-      all_dies_iterator m_it;
-      valfile::uptr m_vf;
-      size_t m_pos;
-
-      winfo (std::shared_ptr <op> upstream, dwgrep_graph::sptr gr)
-	: m_upstream {upstream}
-	, m_gr {gr}
-	, m_it {all_dies_iterator::end ()}
-	, m_pos {0}
-      {}
-
-      void
-      reset_me ()
-      {
-	m_vf = nullptr;
-	m_pos = 0;
-      }
-
-      valfile::uptr
-      next () override
-      {
-	while (true)
-	  {
-	    if (m_vf == nullptr)
-	      {
-		m_vf = m_upstream->next ();
-		if (m_vf == nullptr)
-		  return nullptr;
-		m_it = all_dies_iterator (&*m_gr->dwarf);
-	      }
-
-	    if (m_it != all_dies_iterator::end ())
-	      {
-		auto ret = std::make_unique <valfile> (*m_vf);
-		auto v = std::make_unique <value_die> (m_gr, **m_it, m_pos++);
-		ret->push (std::move (v));
-		++m_it;
-		return ret;
-	      }
-
-	    reset_me ();
-	  }
-      }
-
-      void
-      reset () override
-      {
-	reset_me ();
-	m_upstream->reset ();
-      }
-
-      std::string
-      name () const override
-      {
-	return "winfo";
-      }
-    };
-
-    std::shared_ptr <op>
-    build_exec (std::shared_ptr <op> upstream, dwgrep_graph::sptr q,
-		std::shared_ptr <scope> scope) const override
-    {
-      return std::make_shared <winfo> (upstream, q);
+      m_vf = nullptr;
+      m_pos = 0;
     }
 
-    char const *
-    name () const override
+    valfile::uptr
+    next () override
     {
-      return "winfo";
+      while (true)
+	{
+	  if (m_vf == nullptr)
+	    {
+	      m_vf = m_upstream->next ();
+	      if (m_vf == nullptr)
+		return nullptr;
+	      m_it = all_dies_iterator (&*m_gr->dwarf);
+	    }
+
+	  if (m_it != all_dies_iterator::end ())
+	    {
+	      auto ret = std::make_unique <valfile> (*m_vf);
+	      auto v = std::make_unique <value_die> (m_gr, **m_it, m_pos++);
+	      ret->push (std::move (v));
+	      ++m_it;
+	      return ret;
+	    }
+
+	  reset_me ();
+	}
+    }
+
+    void
+    reset () override
+    {
+      reset_me ();
+      m_upstream->reset ();
     }
   };
 }
 
 namespace
 {
-  struct builtin_unit
-    : public builtin
+  struct op_unit
+    : public inner_op
   {
-    struct unit
-      : public op
+    dwgrep_graph::sptr m_gr;
+    valfile::uptr m_vf;
+    all_dies_iterator m_it;
+    all_dies_iterator m_end;
+    size_t m_pos;
+
+    op_unit (std::shared_ptr <op> upstream, dwgrep_graph::sptr gr,
+	     std::shared_ptr <scope> scope)
+      : inner_op {upstream}
+      , m_gr {gr}
+      , m_it {all_dies_iterator::end ()}
+      , m_end {all_dies_iterator::end ()}
+      , m_pos {0}
+    {}
+
+    void
+    init_from_die (Dwarf_Die die)
     {
-      std::shared_ptr <op> m_upstream;
-      dwgrep_graph::sptr m_gr;
-      valfile::uptr m_vf;
-      all_dies_iterator m_it;
-      all_dies_iterator m_end;
-      size_t m_pos;
+      Dwarf_Die cudie;
+      if (dwarf_diecu (&die, &cudie, nullptr, nullptr) == nullptr)
+	throw_libdw ();
 
-      unit (std::shared_ptr <op> upstream, dwgrep_graph::sptr gr)
-	: m_upstream {upstream}
-	, m_gr {gr}
-	, m_it {all_dies_iterator::end ()}
-	, m_end {all_dies_iterator::end ()}
-	, m_pos {0}
-      {}
-
-      void
-      init_from_die (Dwarf_Die die)
-      {
-	Dwarf_Die cudie;
-	if (dwarf_diecu (&die, &cudie, nullptr, nullptr) == nullptr)
-	  throw_libdw ();
-
-	cu_iterator cuit {&*m_gr->dwarf, cudie};
-	m_it = all_dies_iterator (cuit);
-	m_end = all_dies_iterator (++cuit);
-      }
-
-      void
-      reset_me ()
-      {
-	m_vf = nullptr;
-	m_it = all_dies_iterator::end ();
-	m_pos = 0;
-      }
-
-      valfile::uptr
-      next () override
-      {
-	while (true)
-	  {
-	    while (m_vf == nullptr)
-	      {
-		if (auto vf = m_upstream->next ())
-		  {
-		    auto vp = vf->pop ();
-		    if (auto v = value::as <value_die> (&*vp))
-		      {
-			init_from_die (v->get_die ());
-			m_vf = std::move (vf);
-		      }
-		    else if (auto v = value::as <value_attr> (&*vp))
-		      {
-			init_from_die (v->get_die ());
-			m_vf = std::move (vf);
-		      }
-		    else
-		      show_expects (name (),
-				    {value_die::vtype, value_attr::vtype});
-		  }
-		else
-		  return nullptr;
-	      }
-
-	    if (m_it != m_end)
-	      {
-		auto ret = std::make_unique <valfile> (*m_vf);
-		ret->push (std::make_unique <value_die>
-				(m_gr, **m_it, m_pos++));
-		++m_it;
-		return ret;
-	      }
-
-	    reset_me ();
-	  }
-      }
-
-      void
-      reset () override
-      {
-	reset_me ();
-	m_upstream->reset ();
-      }
-
-      std::string
-      name () const override
-      {
-	return "unit";
-      }
-    };
-
-    std::shared_ptr <op>
-    build_exec (std::shared_ptr <op> upstream, dwgrep_graph::sptr q,
-		std::shared_ptr <scope> scope) const override
-    {
-      return std::make_shared <unit> (upstream, q);
+      cu_iterator cuit {&*m_gr->dwarf, cudie};
+      m_it = all_dies_iterator (cuit);
+      m_end = all_dies_iterator (++cuit);
     }
 
-    char const *
-    name () const override
+    void
+    reset_me ()
     {
-      return "unit";
+      m_vf = nullptr;
+      m_it = all_dies_iterator::end ();
+      m_pos = 0;
+    }
+
+    valfile::uptr
+    next () override
+    {
+      while (true)
+	{
+	  while (m_vf == nullptr)
+	    {
+	      if (auto vf = m_upstream->next ())
+		{
+		  auto vp = vf->pop ();
+		  if (auto v = value::as <value_die> (&*vp))
+		    {
+		      init_from_die (v->get_die ());
+		      m_vf = std::move (vf);
+		    }
+		  else if (auto v = value::as <value_attr> (&*vp))
+		    {
+		      init_from_die (v->get_die ());
+		      m_vf = std::move (vf);
+		    }
+		  else
+		    show_expects (name (),
+				  {value_die::vtype, value_attr::vtype});
+		}
+	      else
+		return nullptr;
+	    }
+
+	  if (m_it != m_end)
+	    {
+	      auto ret = std::make_unique <valfile> (*m_vf);
+	      ret->push (std::make_unique <value_die>
+			 (m_gr, **m_it, m_pos++));
+	      ++m_it;
+	      return ret;
+	    }
+
+	  reset_me ();
+	}
+    }
+
+    void
+    reset () override
+    {
+      reset_me ();
+      m_upstream->reset ();
     }
   };
 }
@@ -242,9 +196,8 @@ namespace
 namespace
 {
   struct op_child_die
-    : public op
+    : public stub_op
   {
-    std::shared_ptr <op> m_upstream;
     dwgrep_graph::sptr m_gr;
     valfile::uptr m_vf;
     Dwarf_Die m_child;
@@ -253,7 +206,7 @@ namespace
 
     op_child_die (std::shared_ptr <op> upstream, dwgrep_graph::sptr gr,
 		  std::shared_ptr <scope> scope)
-      : m_upstream {upstream}
+      : stub_op {upstream, gr, scope}
       , m_gr {gr}
       , m_child {}
       , m_pos {0}
@@ -314,20 +267,13 @@ namespace
       m_upstream->reset ();
     }
 
-    std::string
-    name () const override
-    {
-      return "child:die";
-    }
-
     static selector get_selector ()
     { return {value_die::vtype}; }
   };
 
   struct op_child_loclist_elem
-    : public op
+    : public stub_op
   {
-    std::shared_ptr <op> m_upstream;
     dwgrep_graph::sptr m_gr;
     valfile::uptr m_vf;
     std::unique_ptr <value_loclist_elem> m_val;
@@ -336,7 +282,7 @@ namespace
 
     op_child_loclist_elem (std::shared_ptr <op> upstream, dwgrep_graph::sptr gr,
 			   std::shared_ptr <scope> scope)
-      : m_upstream {upstream}
+      : stub_op {upstream, gr, scope}
       , m_gr {gr}
       , m_i {0}
     {}
@@ -383,12 +329,6 @@ namespace
       m_upstream->reset ();
     }
 
-    std::string
-    name () const override
-    {
-      return "child:loclist_elem";
-    }
-
     static selector get_selector ()
     { return {value_loclist_elem::vtype}; }
   };
@@ -396,113 +336,91 @@ namespace
 
 namespace
 {
-  struct builtin_attribute
-    : public builtin
+  struct op_attribute_die
+    : public stub_op
   {
-    struct attribute
-      : public op
+    dwgrep_graph::sptr m_gr;
+    Dwarf_Die m_die;
+    valfile::uptr m_vf;
+    attr_iterator m_it;
+
+    size_t m_pos;
+
+    op_attribute_die (std::shared_ptr <op> upstream, dwgrep_graph::sptr gr,
+		      std::shared_ptr <scope> scope)
+      : stub_op {upstream, gr, scope}
+      , m_gr {gr}
+      , m_die {}
+      , m_it {attr_iterator::end ()}
+      , m_pos {0}
+    {}
+
+    void
+    reset_me ()
     {
-      std::shared_ptr <op> m_upstream;
-      dwgrep_graph::sptr m_gr;
-      Dwarf_Die m_die;
-      valfile::uptr m_vf;
-      attr_iterator m_it;
-
-      size_t m_pos;
-
-      attribute (std::shared_ptr <op> upstream, dwgrep_graph::sptr gr)
-	: m_upstream {upstream}
-	, m_gr {gr}
-	, m_die {}
-	, m_it {attr_iterator::end ()}
-	, m_pos {0}
-      {}
-
-      void
-      reset_me ()
-      {
-	m_vf = nullptr;
-	m_pos = 0;
-      }
-
-      valfile::uptr
-      next ()
-      {
-	while (true)
-	  {
-	    while (m_vf == nullptr)
-	      {
-		if (auto vf = m_upstream->next ())
-		  {
-		    auto vp = vf->pop ();
-		    if (auto v = value::as <value_die> (&*vp))
-		      {
-			m_die = v->get_die ();
-			m_it = attr_iterator (&m_die);
-			m_vf = std::move (vf);
-		      }
-		    else
-		      show_expects (name (), {value_die::vtype});
-		  }
-		else
-		  return nullptr;
-	      }
-
-	    if (m_it != attr_iterator::end ())
-	      {
-		auto ret = std::make_unique <valfile> (*m_vf);
-		ret->push (std::make_unique <value_attr>
-			   (m_gr, **m_it, m_die, m_pos++));
-		++m_it;
-		return ret;
-	      }
-
-	    reset_me ();
-	  }
-      }
-
-      void
-      reset ()
-      {
-	reset_me ();
-	m_upstream->reset ();
-      }
-
-      std::string
-      name () const override
-      {
-	return "attribute";
-      }
-    };
-
-    std::shared_ptr <op>
-    build_exec (std::shared_ptr <op> upstream, dwgrep_graph::sptr q,
-		std::shared_ptr <scope> scope) const override
-    {
-      return std::make_shared <attribute> (upstream, q);
+      m_vf = nullptr;
+      m_pos = 0;
     }
 
-    char const *
-    name () const override
+    valfile::uptr
+    next ()
     {
-      return "attribute";
+      while (true)
+	{
+	  while (m_vf == nullptr)
+	    {
+	      if (auto vf = m_upstream->next ())
+		{
+		  auto vp = vf->pop ();
+		  if (auto v = value::as <value_die> (&*vp))
+		    {
+		      m_die = v->get_die ();
+		      m_it = attr_iterator (&m_die);
+		      m_vf = std::move (vf);
+		    }
+		  else
+		    show_expects (name (), {value_die::vtype});
+		}
+	      else
+		return nullptr;
+	    }
+
+	  if (m_it != attr_iterator::end ())
+	    {
+	      auto ret = std::make_unique <valfile> (*m_vf);
+	      ret->push (std::make_unique <value_attr>
+			 (m_gr, **m_it, m_die, m_pos++));
+	      ++m_it;
+	      return ret;
+	    }
+
+	  reset_me ();
+	}
     }
+
+    void
+    reset ()
+    {
+      reset_me ();
+      m_upstream->reset ();
+    }
+
+    static selector get_selector ()
+    { return {value_die::vtype}; }
   };
 }
 
 namespace
 {
   class die_op_f
-    : public op
+    : public inner_op
   {
-    std::shared_ptr <op> m_upstream;
-
   protected:
     dwgrep_graph::sptr m_gr;
 
   public:
     die_op_f (std::shared_ptr <op> upstream, dwgrep_graph::sptr gr)
-      : m_upstream {upstream}
+      : inner_op {upstream}
       , m_gr {gr}
     {}
 
@@ -784,7 +702,7 @@ namespace
 namespace
 {
   struct op_value_attr
-    : public inner_op
+    : public stub_op
   {
     dwgrep_graph::sptr m_gr;
     std::unique_ptr <value_producer> m_vpr;
@@ -792,7 +710,7 @@ namespace
 
     op_value_attr (std::shared_ptr <op> upstream, dwgrep_graph::sptr gr,
 		   std::shared_ptr <scope> scope)
-      : inner_op {upstream}
+      : stub_op {upstream, gr, scope}
       , m_gr {gr}
     {}
 
@@ -835,18 +753,12 @@ namespace
       m_upstream->reset ();
     }
 
-    std::string
-    name () const
-    {
-      return "value:attr";
-    }
-
     static selector get_selector ()
     { return {value_attr::vtype}; }
   };
 
   struct op_value_loclist_op
-    : public inner_op
+    : public stub_op
   {
     dwgrep_graph::sptr m_gr;
     std::unique_ptr <value_producer> m_vpr1;
@@ -855,7 +767,7 @@ namespace
 
     op_value_loclist_op (std::shared_ptr <op> upstream, dwgrep_graph::sptr gr,
 			 std::shared_ptr <scope> scope)
-      : inner_op {upstream}
+      : stub_op {upstream, gr, scope}
       , m_gr {gr}
     {}
 
@@ -901,12 +813,6 @@ namespace
     {
       reset_me ();
       m_upstream->reset ();
-    }
-
-    std::string
-    name () const
-    {
-      return "value:loclist_op";
     }
 
     static selector get_selector ()
@@ -1199,10 +1105,16 @@ dwgrep_builtins_dw ()
   add_builtin_type_constant <value_attr> (dict);
   add_builtin_type_constant <value_loclist_op> (dict);
 
-  dict.add (std::make_shared <builtin_winfo> ());
-  dict.add (std::make_shared <builtin_unit> ());
+  add_simple_exec_builtin <op_winfo> (dict, "winfo");
+  add_simple_exec_builtin <op_unit> (dict, "unit");
 
-  dict.add (std::make_shared <builtin_attribute> ());
+  {
+    auto t = std::make_shared <overload_tab> ();
+
+    t->add_simple_op_overload <op_attribute_die> ();
+
+    dict.add (std::make_shared <overloaded_op_builtin> ("attribute", t));
+  }
 
   dict.add (std::make_shared <builtin_rootp> (true));
   dict.add (std::make_shared <builtin_rootp> (false));
