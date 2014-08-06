@@ -292,76 +292,39 @@ namespace
 namespace
 {
   struct op_attribute_die
-    : public stub_op
+    : public op_yielding_overload <value_die>
   {
-    dwgrep_graph::sptr m_gr;
-    Dwarf_Die m_die;
-    valfile::uptr m_vf;
-    attr_iterator m_it;
+    using op_yielding_overload::op_yielding_overload;
 
-    size_t m_pos;
-
-    op_attribute_die (std::shared_ptr <op> upstream, dwgrep_graph::sptr gr,
-		      std::shared_ptr <scope> scope)
-      : stub_op {upstream, gr, scope}
-      , m_gr {gr}
-      , m_die {}
-      , m_it {attr_iterator::end ()}
-      , m_pos {0}
-    {}
-
-    void
-    reset_me ()
+    struct producer
+      : public value_producer
     {
-      m_vf = nullptr;
-      m_pos = 0;
-    }
+      std::unique_ptr <value_die> m_value;
+      attr_iterator m_it;
+      size_t m_i;
 
-    valfile::uptr
-    next ()
+      producer (std::unique_ptr <value_die> value)
+	: m_value {std::move (value)}
+	, m_it {attr_iterator {&m_value->get_die ()}}
+	, m_i {0}
+      {}
+
+      std::unique_ptr <value>
+      next () override
+      {
+	if (m_it != attr_iterator::end ())
+	  return std::make_unique <value_attr>
+	    (m_value->get_graph (), **m_it++, m_value->get_die (), m_i++);
+	else
+	  return nullptr;
+      }
+    };
+
+    std::unique_ptr <value_producer>
+    operate (std::unique_ptr <value_die> a) override
     {
-      while (true)
-	{
-	  while (m_vf == nullptr)
-	    {
-	      if (auto vf = m_upstream->next ())
-		{
-		  auto vp = vf->pop ();
-		  if (auto v = value::as <value_die> (&*vp))
-		    {
-		      m_die = v->get_die ();
-		      m_it = attr_iterator (&m_die);
-		      m_vf = std::move (vf);
-		    }
-		  else
-		    show_expects (name (), {value_die::vtype});
-		}
-	      else
-		return nullptr;
-	    }
-
-	  if (m_it != attr_iterator::end ())
-	    {
-	      auto ret = std::make_unique <valfile> (*m_vf);
-	      ret->push (std::make_unique <value_attr>
-			 (m_gr, **m_it, m_die, m_pos++));
-	      ++m_it;
-	      return ret;
-	    }
-
-	  reset_me ();
-	}
+      return std::make_unique <producer> (std::move (a));
     }
-
-    void
-    reset ()
-    {
-      reset_me ();
-      m_upstream->reset ();
-    }
-
-    static selector get_selector ()
-    { return {value_die::vtype}; }
   };
 }
 
