@@ -245,11 +245,12 @@ overload_tab::add_simple_pred_overload ()
 }
 
 template <class... VT>
-class op_overload
+struct op_overload_impl
   : public stub_op
 {
+protected:
   template <class T>
-  auto collect1 (valfile &vf)
+  static auto collect1 (valfile &vf)
   {
     auto dv = vf.pop_as <T> ();
     assert (dv != nullptr);
@@ -257,18 +258,35 @@ class op_overload
   }
 
   template <size_t Fake>
-  auto collect (valfile &vf)
+  static auto collect (valfile &vf)
   {
     return std::tuple <> {};
   }
 
   template <size_t Fake, class T, class... Ts>
-  auto collect (valfile &vf)
+  static auto collect (valfile &vf)
   {
     auto rest = collect <Fake, Ts...> (vf);
     return std::tuple_cat (collect1 <T> (vf), std::move (rest));
   }
 
+  dwgrep_graph::sptr m_gr;
+
+public:
+  op_overload_impl (std::shared_ptr <op> upstream, dwgrep_graph::sptr gr,
+		    std::shared_ptr <scope> scope)
+    : stub_op {upstream, gr, scope}
+    , m_gr {gr}
+  {}
+
+  static selector get_selector ()
+  { return {VT::vtype...}; }
+};
+
+template <class... VT>
+struct op_overload
+  : public op_overload_impl <VT...>
+{
   template <size_t... I>
   std::unique_ptr <value>
   call_operate (std::index_sequence <I...>,
@@ -277,25 +295,16 @@ class op_overload
     return operate (std::move (std::get <I> (args))...);
   }
 
-protected:
-  dwgrep_graph::sptr m_gr;
-
 public:
-  op_overload (std::shared_ptr <op> upstream, dwgrep_graph::sptr gr,
-	       std::shared_ptr <scope> scope)
-    : stub_op {upstream, gr, scope}
-    , m_gr {gr}
-  {}
-
-  static selector get_selector ()
-  { return {VT::vtype...}; }
+  typedef op_overload_impl <VT...> super_t;
+  using super_t::super_t;
 
   valfile::uptr
   next () override final
   {
-    while (auto vf = m_upstream->next ())
+    while (auto vf = this->m_upstream->next ())
       if (auto nv = call_operate (std::index_sequence_for <VT...> {},
-				  collect <0, VT...> (*vf)))
+				  super_t::template collect <0, VT...> (*vf)))
 	{
 	  vf->push (std::move (nv));
 	  return vf;
@@ -305,6 +314,71 @@ public:
   }
 
   virtual std::unique_ptr <value> operate (std::unique_ptr <VT>... vals) = 0;
+};
+
+template <class... VT>
+struct op_yielding_overload
+  : public op_overload_impl <VT...>
+{
+  typedef op_overload_impl <VT...> super_t;
+  using super_t::super_t;
+
+private:
+  template <size_t... I>
+  std::unique_ptr <value_producer>
+  call_operate (std::index_sequence <I...>,
+		std::tuple <std::unique_ptr <VT>...> args)
+  {
+    return operate (std::move (std::get <I> (args))...);
+  }
+
+  valfile::uptr m_vf;
+  std::unique_ptr <value_producer> m_prod;
+
+  void
+  reset_me ()
+  {
+    m_prod = nullptr;
+    m_vf = nullptr;
+  }
+
+public:
+  valfile::uptr
+  next () override final
+  {
+    while (true)
+      {
+	while (m_prod == nullptr)
+	  if (auto vf = this->m_upstream->next ())
+	    {
+	      m_prod = call_operate
+		(std::index_sequence_for <VT...> {},
+		 super_t::template collect <0, VT...> (*vf));
+	      m_vf = std::move (vf);
+	    }
+	  else
+	    return nullptr;
+
+	if (auto v = m_prod->next ())
+	  {
+	    auto ret = std::make_unique <valfile> (*m_vf);
+	    ret->push (std::move (v));
+	    return ret;
+	  }
+
+	reset_me ();
+      }
+  }
+
+  void
+  reset () override
+  {
+    reset_me ();
+    super_t::reset ();
+  }
+
+  virtual std::unique_ptr <value_producer>
+	operate (std::unique_ptr <VT>... vals) = 0;
 };
 
 #endif /* _OVERLOAD_H_ */
