@@ -31,7 +31,7 @@
 
 #include "value.hh"
 #include "op.hh"
-#include "selector.hh"
+#include "overload.hh"
 
 class value_cst
   : public value
@@ -57,88 +57,59 @@ public:
 };
 
 struct op_value_cst
-  : public stub_op
+  : public op_overload <value_cst>
 {
-  using stub_op::stub_op;
+  using op_overload::op_overload;
 
-  static selector get_selector ()
-  { return {value_cst::vtype}; }
-
-  valfile::uptr next () override;
+  std::unique_ptr <value> operate (std::unique_ptr <value_cst> a) override;
 };
 
 
 // Arithmetic operator overloads.
 
-struct cst_arith_op
-  : public stub_op
-{
-  using stub_op::stub_op;
-
-  valfile::uptr next () override;
-
-  virtual std::unique_ptr <value>
-  operate (value_cst const &a, value_cst const &b) const = 0;
-};
-
 struct op_add_cst
-  : public cst_arith_op
+  : public op_overload <value_cst, value_cst>
 {
-  using cst_arith_op::cst_arith_op;
+  using op_overload::op_overload;
 
-  static selector get_selector ()
-  { return {value_cst::vtype}; }
-
-  std::unique_ptr <value>
-  operate (value_cst const &a, value_cst const &b) const override;
+  std::unique_ptr <value> operate (std::unique_ptr <value_cst> a,
+				   std::unique_ptr <value_cst> b) override;
 };
 
 struct op_sub_cst
-  : public cst_arith_op
+  : public op_overload <value_cst, value_cst>
 {
-  using cst_arith_op::cst_arith_op;
+  using op_overload::op_overload;
 
-  static selector get_selector ()
-  { return {value_cst::vtype}; }
-
-  std::unique_ptr <value>
-  operate (value_cst const &a, value_cst const &b) const override;
+  std::unique_ptr <value> operate (std::unique_ptr <value_cst> a,
+				   std::unique_ptr <value_cst> b) override;
 };
 
 struct op_mul_cst
-  : public cst_arith_op
+  : public op_overload <value_cst, value_cst>
 {
-  using cst_arith_op::cst_arith_op;
+  using op_overload::op_overload;
 
-  static selector get_selector ()
-  { return {value_cst::vtype}; }
-
-  std::unique_ptr <value>
-  operate (value_cst const &a, value_cst const &b) const override;
+  std::unique_ptr <value> operate (std::unique_ptr <value_cst> a,
+				   std::unique_ptr <value_cst> b) override;
 };
 
 struct op_div_cst
-  : public cst_arith_op
+  : public op_overload <value_cst, value_cst>
 {
-  using cst_arith_op::cst_arith_op;
+  using op_overload::op_overload;
 
-  static selector get_selector ()
-  { return {value_cst::vtype}; }
-
-  std::unique_ptr <value>
-  operate (value_cst const &a, value_cst const &b) const override;
+  std::unique_ptr <value> operate (std::unique_ptr <value_cst> a,
+				   std::unique_ptr <value_cst> b) override;
 };
 
 struct op_mod_cst
-  : public cst_arith_op
+  : public op_overload <value_cst, value_cst>
 {
-  using cst_arith_op::cst_arith_op;
+  using op_overload::op_overload;
 
-  static selector get_selector ()
-  { return {value_cst::vtype}; }
-
-  std::unique_ptr <value>
-  operate (value_cst const &a, value_cst const &b) const override;
+  std::unique_ptr <value> operate (std::unique_ptr <value_cst> a,
+				   std::unique_ptr <value_cst> b) override;
 };
 
 #endif /* _VALUE_CST_H_ */

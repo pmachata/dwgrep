@@ -57,34 +57,19 @@ value_str::cmp (value const &that) const
     return cmp_result::fail;
 }
 
-valfile::uptr
-op_add_str::next ()
+std::unique_ptr <value>
+op_add_str::operate (std::unique_ptr <value_str> a,
+		     std::unique_ptr <value_str> b)
 {
-  if (auto vf = m_upstream->next ())
-    {
-      auto vp = vf->pop_as <value_str> ();
-      auto wp = vf->pop_as <value_str> ();
-
-      std::string result = wp->get_string () + vp->get_string ();
-      vf->push (std::make_unique <value_str> (std::move (result), 0));
-      return vf;
-    }
-
-  return nullptr;
+  a->get_string () += b->get_string ();
+  return std::move (a);
 }
 
-valfile::uptr
-op_length_str::next ()
+std::unique_ptr <value>
+op_length_str::operate (std::unique_ptr <value_str> a)
 {
-  if (auto vf = m_upstream->next ())
-    {
-      auto vp = vf->pop_as <value_str> ();
-      constant t {vp->get_string ().length (), &dec_constant_dom};
-      vf->push (std::make_unique <value_cst> (t, 0));
-      return vf;
-    }
-
-  return nullptr;
+  constant t {a->get_string ().length (), &dec_constant_dom};
+  return std::make_unique <value_cst> (t, 0);
 }
 
 struct op_elem_str::state

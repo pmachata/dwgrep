@@ -31,7 +31,7 @@
 
 #include "value.hh"
 #include "op.hh"
-#include "selector.hh"
+#include "overload.hh"
 
 class value_seq
   : public value
@@ -69,25 +69,20 @@ public:
 };
 
 struct op_add_seq
-  : public stub_op
+  : public op_overload <value_seq, value_seq>
 {
-  using stub_op::stub_op;
+  using op_overload::op_overload;
 
-  static selector get_selector ()
-  { return {value_seq::vtype}; }
-
-  valfile::uptr next () override;
+  std::unique_ptr <value> operate (std::unique_ptr <value_seq> a,
+				   std::unique_ptr <value_seq> b) override;
 };
 
 struct op_length_seq
-  : public stub_op
+  : public op_overload <value_seq>
 {
-  using stub_op::stub_op;
+  using op_overload::op_overload;
 
-  static selector get_selector ()
-  { return {value_seq::vtype}; }
-
-  valfile::uptr next () override;
+  std::unique_ptr <value> operate (std::unique_ptr <value_seq> a) override;
 };
 
 struct op_elem_seq

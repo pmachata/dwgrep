@@ -130,39 +130,21 @@ value_seq::cmp (value const &that) const
     return cmp_result::fail;
 }
 
-valfile::uptr
-op_add_seq::next ()
+std::unique_ptr <value>
+op_add_seq::operate (std::unique_ptr <value_seq> a,
+		     std::unique_ptr <value_seq> b)
 {
-  if (auto vf = m_upstream->next ())
-    {
-      auto vp = vf->pop_as <value_seq> ();
-      auto wp = vf->pop_as <value_seq> ();
-
-      value_seq::seq_t res;
-      for (auto const &x: *wp->get_seq ())
-	res.emplace_back (x->clone ());
-      for (auto const &x: *vp->get_seq ())
-	res.emplace_back (x->clone ());
-
-      vf->push (std::make_unique <value_seq> (std::move (res), 0));
-      return vf;
-    }
-
-  return nullptr;
+  auto seq = a->get_seq ();
+  for (auto &v: *b->get_seq ())
+    seq->push_back (std::move (v));
+  return std::move (a);
 }
 
-valfile::uptr
-op_length_seq::next ()
+std::unique_ptr <value>
+op_length_seq::operate (std::unique_ptr <value_seq> a)
 {
-  if (auto vf = m_upstream->next ())
-    {
-      auto vp = vf->pop_as <value_seq> ();
-      constant t {vp->get_seq ()->size (), &dec_constant_dom};
-      vf->push (std::make_unique <value_cst> (t, 0));
-      return vf;
-    }
-
-  return nullptr;
+  constant t {a->get_seq ()->size (), &dec_constant_dom};
+  return std::make_unique <value_cst> (t, 0);
 }
 
 

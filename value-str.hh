@@ -29,10 +29,10 @@
 #ifndef _VALUE_STR_H_
 #define _VALUE_STR_H_
 
-#include <vector>
+#include <string>
 #include "value.hh"
 #include "op.hh"
-#include "selector.hh"
+#include "overload.hh"
 
 class value_str
   : public value
@@ -47,7 +47,7 @@ public:
     , m_str {std::move (str)}
   {}
 
-  std::string const &get_string () const
+  std::string &get_string ()
   { return m_str; }
 
   void show (std::ostream &o, brevity brv) const override;
@@ -56,25 +56,20 @@ public:
 };
 
 struct op_add_str
-  : public stub_op
+  : public op_overload <value_str, value_str>
 {
-  using stub_op::stub_op;
+  using op_overload::op_overload;
 
-  static selector get_selector ()
-  { return {value_str::vtype}; }
-
-  valfile::uptr next () override;
+  std::unique_ptr <value> operate (std::unique_ptr <value_str> a,
+				   std::unique_ptr <value_str> b) override;
 };
 
 struct op_length_str
-  : public stub_op
+  : public op_overload <value_str>
 {
-  using stub_op::stub_op;
+  using op_overload::op_overload;
 
-  static selector get_selector ()
-  { return {value_str::vtype}; }
-
-  valfile::uptr next () override;
+  std::unique_ptr <value> operate (std::unique_ptr <value_str> a) override;
 };
 
 struct op_elem_str

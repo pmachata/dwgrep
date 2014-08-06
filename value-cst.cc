@@ -69,35 +69,11 @@ value_cst::cmp (value const &that) const
     return cmp_result::fail;
 }
 
-valfile::uptr
-op_value_cst::next ()
+std::unique_ptr <value>
+op_value_cst::operate (std::unique_ptr <value_cst> a)
 {
-  if (auto vf = m_upstream->next ())
-    {
-      auto vp = vf->pop_as <value_cst> ();
-      constant cst {vp->get_constant ().value (), &dec_constant_dom};
-      vf->push (std::make_unique <value_cst> (cst, 0));
-      return vf;
-    }
-
-  return nullptr;
-}
-
-valfile::uptr
-cst_arith_op::next ()
-{
-  while (auto vf = m_upstream->next ())
-    {
-      auto bp = vf->pop_as <value_cst> ();
-      auto ap = vf->pop_as <value_cst> ();
-      if (auto cp = operate (*ap, *bp))
-	{
-	  vf->push (std::move (cp));
-	  return vf;
-	}
-    }
-
-  return nullptr;
+  constant cst {a->get_constant ().value (), &dec_constant_dom};
+  return std::make_unique <value_cst> (cst, 0);
 }
 
 namespace
@@ -119,10 +95,11 @@ namespace
 }
 
 std::unique_ptr <value>
-op_add_cst::operate (value_cst const &a, value_cst const &b) const
+op_add_cst::operate (std::unique_ptr <value_cst> a,
+		     std::unique_ptr <value_cst> b)
 {
   return simple_arith_op
-    (a, b,
+    (*a, *b,
      [] (constant const &cst_a, constant const &cst_b,
 	 constant_dom const *d)
      {
@@ -132,10 +109,11 @@ op_add_cst::operate (value_cst const &a, value_cst const &b) const
 }
 
 std::unique_ptr <value>
-op_sub_cst::operate (value_cst const &a, value_cst const &b) const
+op_sub_cst::operate (std::unique_ptr <value_cst> a,
+		     std::unique_ptr <value_cst> b)
 {
   return simple_arith_op
-    (a, b,
+    (*a, *b,
      [] (constant const &cst_a, constant const &cst_b,
 	 constant_dom const *d)
      {
@@ -145,10 +123,11 @@ op_sub_cst::operate (value_cst const &a, value_cst const &b) const
 }
 
 std::unique_ptr <value>
-op_mul_cst::operate (value_cst const &a, value_cst const &b) const
+op_mul_cst::operate (std::unique_ptr <value_cst> a,
+		     std::unique_ptr <value_cst> b)
 {
   return simple_arith_op
-    (a, b,
+    (*a, *b,
      [] (constant const &cst_a, constant const &cst_b,
 	 constant_dom const *d)
      {
@@ -158,10 +137,11 @@ op_mul_cst::operate (value_cst const &a, value_cst const &b) const
 }
 
 std::unique_ptr <value>
-op_div_cst::operate (value_cst const &a, value_cst const &b) const
+op_div_cst::operate (std::unique_ptr <value_cst> a,
+		     std::unique_ptr <value_cst> b)
 {
   return simple_arith_op
-    (a, b,
+    (*a, *b,
      [] (constant const &cst_a, constant const &cst_b,
 	 constant_dom const *d) -> std::unique_ptr <value>
      {
@@ -177,10 +157,11 @@ op_div_cst::operate (value_cst const &a, value_cst const &b) const
 }
 
 std::unique_ptr <value>
-op_mod_cst::operate (value_cst const &a, value_cst const &b) const
+op_mod_cst::operate (std::unique_ptr <value_cst> a,
+		     std::unique_ptr <value_cst> b)
 {
   return simple_arith_op
-    (a, b,
+    (*a, *b,
      [] (constant const &cst_a, constant const &cst_b,
 	 constant_dom const *d) -> std::unique_ptr <value>
      {
