@@ -85,6 +85,12 @@ value_type::name () const
   return ret;
 }
 
+std::ostream &
+operator<< (std::ostream &o, value_type const &v)
+{
+  return o << v.name ();
+}
+
 static struct
   : public constant_dom
 {

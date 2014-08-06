@@ -32,6 +32,7 @@
 #include <vector>
 #include "value.hh"
 #include "op.hh"
+#include "selector.hh"
 
 class value_str
   : public value
@@ -59,8 +60,8 @@ struct op_add_str
 {
   using stub_op::stub_op;
 
-  static value_type get_value_type ()
-  { return value_str::vtype; }
+  static selector get_selector ()
+  { return {value_str::vtype}; }
 
   valfile::uptr next () override;
 };
@@ -70,8 +71,8 @@ struct op_length_str
 {
   using stub_op::stub_op;
 
-  static value_type get_value_type ()
-  { return value_str::vtype; }
+  static selector get_selector ()
+  { return {value_str::vtype}; }
 
   valfile::uptr next () override;
 };
@@ -90,8 +91,8 @@ struct op_elem_str
   std::string name () const override;
   void reset () override;
 
-  static value_type get_value_type ()
-  { return value_str::vtype; }
+  static selector get_selector ()
+  { return {value_str::vtype}; }
 };
 
 struct pred_empty_str
@@ -99,8 +100,8 @@ struct pred_empty_str
 {
   using stub_pred::stub_pred;
 
-  static value_type get_value_type ()
-  { return value_str::vtype; }
+  static selector get_selector ()
+  { return {value_str::vtype}; }
 
   pred_result result (valfile &vf) override;
 };
@@ -110,8 +111,8 @@ struct pred_find_str
 {
   using stub_pred::stub_pred;
 
-  static value_type get_value_type ()
-  { return value_str::vtype; }
+  static selector get_selector ()
+  { return {value_str::vtype}; }
 
   pred_result result (valfile &vf) override;
 };
@@ -121,8 +122,8 @@ struct pred_match_str
 {
   using stub_pred::stub_pred;
 
-  static value_type get_value_type ()
-  { return value_str::vtype; }
+  static selector get_selector ()
+  { return {value_str::vtype}; }
 
   pred_result result (valfile &vf) override;
 };

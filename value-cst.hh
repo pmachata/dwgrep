@@ -31,6 +31,7 @@
 
 #include "value.hh"
 #include "op.hh"
+#include "selector.hh"
 
 class value_cst
   : public value
@@ -60,8 +61,8 @@ struct op_value_cst
 {
   using stub_op::stub_op;
 
-  static value_type get_value_type ()
-  { return value_cst::vtype; }
+  static selector get_selector ()
+  { return {value_cst::vtype}; }
 
   valfile::uptr next () override;
 };
@@ -85,8 +86,8 @@ struct op_add_cst
 {
   using cst_arith_op::cst_arith_op;
 
-  static value_type get_value_type ()
-  { return value_cst::vtype; }
+  static selector get_selector ()
+  { return {value_cst::vtype}; }
 
   std::unique_ptr <value>
   operate (value_cst const &a, value_cst const &b) const override;
@@ -97,8 +98,8 @@ struct op_sub_cst
 {
   using cst_arith_op::cst_arith_op;
 
-  static value_type get_value_type ()
-  { return value_cst::vtype; }
+  static selector get_selector ()
+  { return {value_cst::vtype}; }
 
   std::unique_ptr <value>
   operate (value_cst const &a, value_cst const &b) const override;
@@ -109,8 +110,8 @@ struct op_mul_cst
 {
   using cst_arith_op::cst_arith_op;
 
-  static value_type get_value_type ()
-  { return value_cst::vtype; }
+  static selector get_selector ()
+  { return {value_cst::vtype}; }
 
   std::unique_ptr <value>
   operate (value_cst const &a, value_cst const &b) const override;
@@ -121,8 +122,8 @@ struct op_div_cst
 {
   using cst_arith_op::cst_arith_op;
 
-  static value_type get_value_type ()
-  { return value_cst::vtype; }
+  static selector get_selector ()
+  { return {value_cst::vtype}; }
 
   std::unique_ptr <value>
   operate (value_cst const &a, value_cst const &b) const override;
@@ -133,8 +134,8 @@ struct op_mod_cst
 {
   using cst_arith_op::cst_arith_op;
 
-  static value_type get_value_type ()
-  { return value_cst::vtype; }
+  static selector get_selector ()
+  { return {value_cst::vtype}; }
 
   std::unique_ptr <value>
   operate (value_cst const &a, value_cst const &b) const override;

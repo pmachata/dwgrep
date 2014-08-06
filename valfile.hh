@@ -128,6 +128,13 @@ public:
     return *(m_values.rbegin () + depth)->get ();
   }
 
+  value const &
+  get (unsigned depth) const
+  {
+    assert (m_values.size () > depth);
+    return *(m_values.rbegin () + depth)->get ();
+  }
+
   template <class T>
   T *
   top_as ()

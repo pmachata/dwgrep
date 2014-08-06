@@ -31,6 +31,7 @@
 
 #include "value.hh"
 #include "op.hh"
+#include "selector.hh"
 
 class value_seq
   : public value
@@ -72,8 +73,8 @@ struct op_add_seq
 {
   using stub_op::stub_op;
 
-  static value_type get_value_type ()
-  { return value_seq::vtype; }
+  static selector get_selector ()
+  { return {value_seq::vtype}; }
 
   valfile::uptr next () override;
 };
@@ -83,8 +84,8 @@ struct op_length_seq
 {
   using stub_op::stub_op;
 
-  static value_type get_value_type ()
-  { return value_seq::vtype; }
+  static selector get_selector ()
+  { return {value_seq::vtype}; }
 
   valfile::uptr next () override;
 };
@@ -103,8 +104,8 @@ struct op_elem_seq
   std::string name () const override;
   void reset () override;
 
-  static value_type get_value_type ()
-  { return value_seq::vtype; }
+  static selector get_selector ()
+  { return {value_seq::vtype}; }
 };
 
 struct pred_empty_seq
@@ -112,8 +113,8 @@ struct pred_empty_seq
 {
   using stub_pred::stub_pred;
 
-  static value_type get_value_type ()
-  { return value_seq::vtype; }
+  static selector get_selector ()
+  { return {value_seq::vtype}; }
 
   pred_result result (valfile &vf) override;
 };
@@ -123,8 +124,8 @@ struct pred_find_seq
 {
   using stub_pred::stub_pred;
 
-  static value_type get_value_type ()
-  { return value_seq::vtype; }
+  static selector get_selector ()
+  { return {value_seq::vtype}; }
 
   pred_result result (valfile &vf) override;
 };

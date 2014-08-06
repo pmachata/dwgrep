@@ -1141,10 +1141,9 @@ pred_constant::result (valfile &vf)
       check_constants_comparable (m_const, v->get_constant ());
       return pred_result (m_const == v->get_constant ());
     }
-
   else
     {
-      show_expects (name (), {value_cst::vtype});
+      show_expects (name (), {{value_cst::vtype}});
       return pred_result::fail;
     }
 }

@@ -32,13 +32,15 @@
 #include <vector>
 #include <tuple>
 #include <memory>
+#include <utility>
 
 #include "op.hh"
 #include "builtin.hh"
+#include "selector.hh"
 
 // Format an error message detailing what types a given operator
 // needs.
-void show_expects (std::string const &name, std::vector <value_type> vts);
+void show_expects (std::string const &name, std::vector <selector> vts);
 
 // Some operators are generically applicable.  In order to allow
 // adding new value types, and reuse the same operators for them, this
@@ -65,43 +67,35 @@ void show_expects (std::string const &name, std::vector <value_type> vts);
 
 class overload_instance
 {
-  typedef std::vector <std::tuple <value_type,
-				   std::shared_ptr <op_origin>,
-				   std::shared_ptr <op>>> exec_vec;
-  exec_vec m_execs;
-
-  typedef std::vector <std::tuple <value_type,
-				   std::shared_ptr <pred>>> pred_vec;
-  pred_vec m_preds;
-
-  unsigned m_arity;
+  std::vector <selector> m_selectors;
+  std::vector <std::pair <std::shared_ptr <op_origin>,
+			  std::shared_ptr <op>>> m_execs;
+  std::vector <std::shared_ptr <pred>> m_preds;
 
 public:
   overload_instance (std::vector
-			<std::tuple <value_type,
+			<std::tuple <selector,
 				     std::shared_ptr <builtin>>> const &stencil,
-		     dwgrep_graph::sptr q, std::shared_ptr <scope> scope,
-		     unsigned arity);
+		     dwgrep_graph::sptr q, std::shared_ptr <scope> scope);
 
-  exec_vec::value_type *find_exec (valfile &vf);
-  pred_vec::value_type *find_pred (valfile &vf);
+  std::pair <std::shared_ptr <op_origin>, std::shared_ptr <op>>
+    find_exec (valfile &vf);
+
+  std::shared_ptr <pred> find_pred (valfile &vf);
 
   void show_error (std::string const &name);
 };
 
 class overload_tab
 {
-  unsigned m_arity;
-  std::vector <std::tuple <value_type, std::shared_ptr <builtin>>> m_overloads;
+  std::vector <std::tuple <selector, std::shared_ptr <builtin>>> m_overloads;
 
 public:
-  explicit overload_tab (unsigned arity = 1)
-    : m_arity {arity}
-  {}
-
+  overload_tab () = default;
+  overload_tab (overload_tab const &that) = default;
   overload_tab (overload_tab const &a, overload_tab const &b);
 
-  void add_overload (value_type vt, std::shared_ptr <builtin> b);
+  void add_overload (selector vt, std::shared_ptr <builtin> b);
 
   template <class T> void add_simple_op_overload ();
   template <class T> void add_simple_pred_overload ();
@@ -238,7 +232,7 @@ template <class T>
 void
 overload_tab::add_simple_op_overload ()
 {
-  add_overload (T::get_value_type (),
+  add_overload (T::get_selector (),
 		std::make_shared <overload_op_builtin <T>> ());
 }
 
@@ -246,43 +240,71 @@ template <class T>
 void
 overload_tab::add_simple_pred_overload ()
 {
-  add_overload (T::get_value_type (),
+  add_overload (T::get_selector (),
 		std::make_shared <overload_pred_builtin <T>> ());
 }
 
-template <class VT>
-struct op_unary_overload
+template <class... VT>
+class op_overload
   : public stub_op
 {
+  template <class T>
+  auto collect1 (valfile &vf)
+  {
+    auto dv = vf.pop_as <T> ();
+    assert (dv != nullptr);
+    return std::make_tuple (std::move (dv));
+  }
+
+  template <size_t Fake>
+  auto collect (valfile &vf)
+  {
+    return std::tuple <> {};
+  }
+
+  template <size_t Fake, class T, class... Ts>
+  auto collect (valfile &vf)
+  {
+    auto rest = collect <Fake, Ts...> (vf);
+    return std::tuple_cat (collect1 <T> (vf), std::move (rest));
+  }
+
+  template <size_t... I>
+  std::unique_ptr <value>
+  call_operate (std::index_sequence <I...>,
+		std::tuple <std::unique_ptr <VT>...> args)
+  {
+    return operate (std::move (std::get <I> (args))...);
+  }
+
 protected:
   dwgrep_graph::sptr m_gr;
 
 public:
-  op_unary_overload (std::shared_ptr <op> upstream, dwgrep_graph::sptr gr,
-		     std::shared_ptr <scope> scope)
+  op_overload (std::shared_ptr <op> upstream, dwgrep_graph::sptr gr,
+	       std::shared_ptr <scope> scope)
     : stub_op {upstream, gr, scope}
     , m_gr {gr}
   {}
 
-  static value_type get_value_type ()
-  { return VT::vtype; }
+  static selector get_selector ()
+  { return {VT::vtype...}; }
 
-  valfile::uptr next () override final
+  valfile::uptr
+  next () override final
   {
     while (auto vf = m_upstream->next ())
-      {
-	auto dv = vf->pop_as <VT> ();
-	assert (dv != nullptr);
-	if (auto nv = operate (std::move (dv)))
-	  {
-	    vf->push (std::move (nv));
-	    return vf;
-	  }
-      }
+      if (auto nv = call_operate (std::index_sequence_for <VT...> {},
+				  collect <0, VT...> (*vf)))
+	{
+	  vf->push (std::move (nv));
+	  return vf;
+	}
+
     return nullptr;
   }
 
-  virtual std::unique_ptr <value> operate (std::unique_ptr <VT> val) = 0;
+  virtual std::unique_ptr <value> operate (std::unique_ptr <VT>... vals) = 0;
 };
 
 #endif /* _OVERLOAD_H_ */

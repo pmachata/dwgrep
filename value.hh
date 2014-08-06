@@ -103,6 +103,8 @@ public:
   }
 };
 
+std::ostream &operator<< (std::ostream &o, value_type const &v);
+
 // A domain for slot type constants.
 extern constant_dom const &slot_type_dom;
 

@@ -28,164 +28,119 @@
 
 #include <iostream>
 #include <memory>
-#include <set>
 
 #include "overload.hh"
 
 overload_instance::overload_instance
-	(std::vector <std::tuple <value_type,
+	(std::vector <std::tuple <selector,
 				  std::shared_ptr <builtin>>> const &stencil,
-	 dwgrep_graph::sptr q, std::shared_ptr <scope> scope, unsigned arity)
-  : m_arity {arity}
+	 dwgrep_graph::sptr q, std::shared_ptr <scope> scope)
 {
-  assert (m_arity > 0);
   for (auto const &v: stencil)
     {
-      auto pred = std::get <1> (v)->build_pred (q, scope);
-
       auto origin = std::make_shared <op_origin> (nullptr);
       auto op = std::get <1> (v)->build_exec (origin, q, scope);
+      auto pred = std::get <1> (v)->build_pred (q, scope);
 
       assert (op != nullptr || pred != nullptr);
 
-      if (op != nullptr)
-	m_execs.push_back (std::make_tuple (std::get <0> (v), origin, op));
-      if (pred != nullptr)
-	m_preds.push_back (std::make_tuple (std::get <0> (v),
-					    std::move (pred)));
+      if (op == nullptr)
+	origin = nullptr;
+
+      m_selectors.push_back (std::get <0> (v));
+      m_execs.push_back (std::make_pair (origin, op));
+      m_preds.push_back (std::move (pred));
     }
 }
 
 namespace
 {
-  value_type
-  check_vt_near_top (valfile &vf, unsigned depth)
+  ssize_t
+  find_selector (selector profile, std::vector <selector> const &selectors)
   {
-    value_type vt = vf.top ().get_type ();
-    for (unsigned i = 1; i < depth; ++i)
-      if (vt != vf.get (i).get_type ())
-	return value_type {0};
-    return vt;
+    auto it = std::find_if (selectors.begin (), selectors.end (),
+			    [profile] (selector const &sel)
+			    { return sel.matches (profile); });
+    if (it == selectors.end ())
+      return -1;
+    else
+      return it - selectors.begin ();
   }
 }
 
-overload_instance::exec_vec::value_type *
+std::pair <std::shared_ptr <op_origin>, std::shared_ptr <op>>
 overload_instance::find_exec (valfile &vf)
 {
-  value_type vt = check_vt_near_top (vf, m_arity);
-  if (vt == value_type {0})
-    return nullptr;
-
-  auto it = std::find_if (m_execs.begin (), m_execs.end (),
-			  [vt] (exec_vec::value_type const &ovl)
-			  { return std::get <0> (ovl) == vt; });
-
-  if (it == m_execs.end ())
-    return nullptr;
+  ssize_t idx = find_selector (selector {vf}, m_selectors);
+  if (idx < 0)
+    return {nullptr, nullptr};
   else
-    return &*it;
+    return m_execs[idx];
 }
 
-overload_instance::pred_vec::value_type *
+std::shared_ptr <pred>
 overload_instance::find_pred (valfile &vf)
 {
-  value_type vt = check_vt_near_top (vf, m_arity);
-  if (vt == value_type {0})
-    return nullptr;
-
-  auto it = std::find_if (m_preds.begin (), m_preds.end (),
-			  [vt] (pred_vec::value_type const &ovl)
-			  { return std::get <0> (ovl) == vt; });
-
-  if (it == m_preds.end ())
+  ssize_t idx = find_selector (selector {vf}, m_selectors);
+  if (idx < 0)
     return nullptr;
   else
-    return &*it;
+    return m_preds[idx];
 }
 
 void
-show_expects (std::string const &name, std::vector <value_type> vts)
+show_expects (std::string const &name, std::vector <selector> selectors)
 {
   std::cerr << "Error: `" << name << "'";
 
-  if (vts.empty ())
+  if (selectors.empty ())
     {
       std::cerr << " has no registered overloads.\n";
       return;
     }
 
   std::cerr << " expects ";
-  size_t i = 0;
-  for (auto vt: vts)
+  for (size_t i = 0; i < selectors.size (); ++i)
     {
       if (i == 0)
 	;
-      else if (i == vts.size () - 1)
+      else if (i == selectors.size () - 1)
 	std::cerr << " or ";
       else
 	std::cerr << ", ";
 
-      ++i;
-      std::cerr << vt.name ();
+      std::cerr << selectors[i];
     }
-  std::cerr << " on TOS.\n";
+  std::cerr << " near TOS.\n";
 }
 
 void
 overload_instance::show_error (std::string const &name)
 {
-  std::set <value_type> vts;
-  for (auto const &ex: m_execs)
-    vts.insert (std::get <0> (ex));
-  for (auto const &pr: m_preds)
-    vts.insert (std::get <0> (pr));
-
-  return show_expects (name,
-		       std::vector <value_type> (vts.begin (), vts.end ()));
+  return show_expects (name, m_selectors);
 }
 
 overload_tab::overload_tab (overload_tab const &a, overload_tab const &b)
-  : overload_tab {a.m_arity}
+  : overload_tab {a}
 {
-  assert (a.m_arity == b.m_arity);
-
-  std::set <value_type> vts;
-  auto add_all = [this, &vts] (overload_tab const &t)
-    {
-      for (auto const &overload: t.m_overloads)
-	{
-	  value_type vt = std::get <0> (overload);
-	  assert (vts.find (vt) == vts.end ());
-	  vts.insert (vt);
-	  add_overload (vt, std::get <1> (overload));
-	}
-    };
-
-  add_all (a);
-  add_all (b);
+  for (auto const &overload: b.m_overloads)
+    add_overload (std::get <0> (overload), std::get <1> (overload));
 }
 
 void
-overload_tab::add_overload (value_type vt, std::shared_ptr <builtin> b)
+overload_tab::add_overload (selector sel, std::shared_ptr <builtin> b)
 {
-  // If this assert fails, the likely suspect is static initialization
-  // order fiasco.
-  assert (vt != value_type {0});
-
   // Check someone didn't order overload for this type yet.
-  assert (std::find_if (m_overloads.begin (), m_overloads.end (),
-			[vt] (std::tuple <value_type,
-					  std::shared_ptr <builtin>> const &p)
-			{ return std::get <0> (p) == vt; })
-	  == m_overloads.end ());
+  for (auto const &ovl: m_overloads)
+    assert (std::get <0> (ovl) != sel);
 
-  m_overloads.push_back (std::make_tuple (vt, b));
+  m_overloads.push_back (std::make_tuple (sel, b));
 }
 
 overload_instance
 overload_tab::instantiate (dwgrep_graph::sptr q, std::shared_ptr <scope> scope)
 {
-  return overload_instance {m_overloads, q, scope, m_arity};
+  return overload_instance {m_overloads, q, scope};
 }
 
 
@@ -217,13 +172,13 @@ struct overload_op::pimpl
 	    if (auto vf = m_upstream->next ())
 	      {
 		auto ovl = m_ovl_inst.find_exec (*vf);
-		if (ovl == nullptr)
+		if (std::get <0> (ovl) == nullptr)
 		  m_ovl_inst.show_error (self.name ());
 		else
 		  {
-		    m_op = std::get <2> (*ovl);
+		    m_op = std::get <1> (ovl);
 		    m_op->reset ();
-		    std::get <1> (*ovl)->set_next (std::move (vf));
+		    std::get <0> (ovl)->set_next (std::move (vf));
 		  }
 	      }
 	    else
@@ -275,7 +230,7 @@ overload_pred::result (valfile &vf)
       return pred_result::fail;
     }
   else
-    return std::get <1> (*ovl)->result (vf);
+    return ovl->result (vf);
 }
 
 namespace

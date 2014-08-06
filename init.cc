@@ -99,7 +99,7 @@ dwgrep_builtins_core ()
 
   // "add"
   {
-    auto t = std::make_shared <overload_tab> (2);
+    auto t = std::make_shared <overload_tab> ();
 
     t->add_simple_op_overload <op_add_cst> ();
     t->add_simple_op_overload <op_add_str> ();
@@ -110,28 +110,28 @@ dwgrep_builtins_core ()
 
   // "sub"
   {
-    auto t = std::make_shared <overload_tab> (2);
+    auto t = std::make_shared <overload_tab> ();
     t->add_simple_op_overload <op_sub_cst> ();
     dict->add (std::make_shared <overloaded_op_builtin> ("sub", t));
   }
 
   // "mul"
   {
-    auto t = std::make_shared <overload_tab> (2);
+    auto t = std::make_shared <overload_tab> ();
     t->add_simple_op_overload <op_mul_cst> ();
     dict->add (std::make_shared <overloaded_op_builtin> ("mul", t));
   }
 
   // "div"
   {
-    auto t = std::make_shared <overload_tab> (2);
+    auto t = std::make_shared <overload_tab> ();
     t->add_simple_op_overload <op_div_cst> ();
     dict->add (std::make_shared <overloaded_op_builtin> ("div", t));
   }
 
   // "mod"
   {
-    auto t = std::make_shared <overload_tab> (2);
+    auto t = std::make_shared <overload_tab> ();
     t->add_simple_op_overload <op_mod_cst> ();
     dict->add (std::make_shared <overloaded_op_builtin> ("mod", t));
   }
@@ -159,7 +159,7 @@ dwgrep_builtins_core ()
 
   // "find"
   {
-    auto t = std::make_shared <overload_tab> (2);
+    auto t = std::make_shared <overload_tab> ();
 
     t->add_simple_pred_overload <pred_find_str> ();
     t->add_simple_pred_overload <pred_find_seq> ();
@@ -170,7 +170,7 @@ dwgrep_builtins_core ()
 
   // "match"
   {
-    auto t = std::make_shared <overload_tab> (2);
+    auto t = std::make_shared <overload_tab> ();
 
     t->add_simple_pred_overload <pred_match_str> ();
 

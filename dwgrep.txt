@@ -1161,7 +1161,7 @@
 **  T_ADDR_RANGE
     - T_ADDR_RANGE actually behaves pretty much like a sequence of
       integers.  Maybe sequence could have an optimization whereby if
-      it contains all integers, it just stores low×high pairs instead
+      it contains integers only, it just stores low×high pairs instead
       of listing each value separately.
 
     - We would still need a way of promoting assertions directly to

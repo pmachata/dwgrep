@@ -39,6 +39,7 @@
 #include "known-dwarf.h"
 #include "op.hh"
 #include "overload.hh"
+#include "value-closure.hh"
 #include "value-cst.hh"
 #include "value-dw.hh"
 
@@ -319,8 +320,8 @@ namespace
       return "child:die";
     }
 
-    static value_type get_value_type ()
-    { return value_die::vtype; }
+    static selector get_selector ()
+    { return {value_die::vtype}; }
   };
 
   struct op_child_loclist_elem
@@ -388,8 +389,8 @@ namespace
       return "child:loclist_elem";
     }
 
-    static value_type get_value_type ()
-    { return value_loclist_elem::vtype; }
+    static selector get_selector ()
+    { return {value_loclist_elem::vtype}; }
   };
 }
 
@@ -537,9 +538,9 @@ namespace
 namespace
 {
   struct op_offset_die
-    : public op_unary_overload <value_die>
+    : public op_overload <value_die>
   {
-    using op_unary_overload::op_unary_overload;
+    using op_overload::op_overload;
 
     std::unique_ptr <value>
     operate (std::unique_ptr <value_die> val) override
@@ -550,9 +551,9 @@ namespace
   };
 
   struct op_offset_loclist_op
-    : public op_unary_overload <value_loclist_op>
+    : public op_overload <value_loclist_op>
   {
-    using op_unary_overload::op_unary_overload;
+    using op_overload::op_overload;
 
     std::unique_ptr <value>
     operate (std::unique_ptr <value_loclist_op> val) override
@@ -567,9 +568,9 @@ namespace
 namespace
 {
   struct op_address_loclist_elem
-    : public op_unary_overload <value_loclist_elem>
+    : public op_overload <value_loclist_elem>
   {
-    using op_unary_overload::op_unary_overload;
+    using op_overload::op_overload;
 
     std::unique_ptr <value>
     operate (std::unique_ptr <value_loclist_elem> val) override
@@ -584,9 +585,9 @@ namespace
 namespace
 {
   struct op_label_die
-    : public op_unary_overload <value_die>
+    : public op_overload <value_die>
   {
-    using op_unary_overload::op_unary_overload;
+    using op_overload::op_overload;
 
     std::unique_ptr <value>
     operate (std::unique_ptr <value_die> val) override
@@ -599,9 +600,9 @@ namespace
   };
 
   struct op_label_attr
-    : public op_unary_overload <value_attr>
+    : public op_overload <value_attr>
   {
-    using op_unary_overload::op_unary_overload;
+    using op_overload::op_overload;
 
     std::unique_ptr <value>
     operate (std::unique_ptr <value_attr> val) override
@@ -612,9 +613,9 @@ namespace
   };
 
   struct op_label_loclist_op
-    : public op_unary_overload <value_loclist_op>
+    : public op_overload <value_loclist_op>
   {
-    using op_unary_overload::op_unary_overload;
+    using op_overload::op_overload;
 
     std::unique_ptr <value>
     operate (std::unique_ptr <value_loclist_op> val) override
@@ -629,9 +630,9 @@ namespace
 namespace
 {
   struct op_form_attr
-    : public op_unary_overload <value_attr>
+    : public op_overload <value_attr>
   {
-    using op_unary_overload::op_unary_overload;
+    using op_overload::op_overload;
 
     std::unique_ptr <value>
     operate (std::unique_ptr <value_attr> val) override
@@ -645,9 +646,9 @@ namespace
 namespace
 {
   struct op_parent_die
-    : public op_unary_overload <value_die>
+    : public op_overload <value_die>
   {
-    using op_unary_overload::op_unary_overload;
+    using op_overload::op_overload;
 
     std::unique_ptr <value>
     operate (std::unique_ptr <value_die> val) override
@@ -665,9 +666,9 @@ namespace
   };
 
   struct op_parent_attr
-    : public op_unary_overload <value_attr>
+    : public op_overload <value_attr>
   {
-    using op_unary_overload::op_unary_overload;
+    using op_overload::op_overload;
 
     std::unique_ptr <value>
     operate (std::unique_ptr <value_attr> val) override
@@ -679,52 +680,41 @@ namespace
 
 namespace
 {
-  struct builtin_integrate
-    : public builtin
+  struct op_integrate_die
+    : public op_overload <value_die>
   {
-    struct integrate
-      : public die_op_f
+    using op_overload::op_overload;
+
+    std::unique_ptr <value>
+    operate (std::unique_ptr <value_die> val) override
     {
-      using die_op_f::die_op_f;
+      Dwarf_Attribute attr_mem, *attr
+	= dwarf_attr (&val->get_die (), DW_AT_abstract_origin, &attr_mem);
 
-      bool
-      operate (valfile &vf, Dwarf_Die &die) override
-      {
-	Dwarf_Attribute attr_mem, *attr
-	  = dwarf_attr (&die, DW_AT_abstract_origin, &attr_mem);
+      if (attr == nullptr)
+	attr = dwarf_attr (&val->get_die (), DW_AT_specification, &attr_mem);
 
-	if (attr == nullptr)
-	  attr = dwarf_attr (&die, DW_AT_specification, &attr_mem);
+      if (attr == nullptr)
+	return nullptr;
 
-	if (attr == nullptr)
-	  return false;
+      Dwarf_Die die_mem, *die2 = dwarf_formref_die (attr, &die_mem);
+      if (die2 == nullptr)
+	throw_libdw ();
 
-	Dwarf_Die die_mem, *die2 = dwarf_formref_die (attr, &die_mem);
-	if (die2 == nullptr)
-	  throw_libdw ();
-
-	vf.push (std::make_unique <value_die> (m_gr, *die2, 0));
-	return true;
-      }
-
-      std::string
-      name () const override
-      {
-	return "integrate";
-      }
-    };
-
-    std::shared_ptr <op>
-    build_exec (std::shared_ptr <op> upstream, dwgrep_graph::sptr q,
-		std::shared_ptr <scope> scope) const override
-    {
-      return std::make_shared <integrate> (upstream, q);
+      return std::make_unique <value_die> (m_gr, *die2, 0);
     }
+  };
 
-    char const *
-    name () const override
+  struct op_integrate_closure
+    : public op_overload <value_die, value_closure>
+  {
+    using op_overload::op_overload;
+
+    std::unique_ptr <value>
+    operate (std::unique_ptr <value_die> die,
+	     std::unique_ptr <value_closure> action) override
     {
-      return "integrate";
+      throw std::runtime_error ("integrate over closures not implemented");
     }
   };
 }
@@ -851,8 +841,8 @@ namespace
       return "value:attr";
     }
 
-    static value_type get_value_type ()
-    { return value_attr::vtype; }
+    static selector get_selector ()
+    { return {value_attr::vtype}; }
   };
 
   struct op_value_loclist_op
@@ -919,8 +909,8 @@ namespace
       return "value:loclist_op";
     }
 
-    static value_type get_value_type ()
-    { return value_loclist_op::vtype; }
+    static selector get_selector ()
+    { return {value_loclist_op::vtype}; }
   };
 }
 
@@ -1213,7 +1203,6 @@ dwgrep_builtins_dw ()
   dict.add (std::make_shared <builtin_unit> ());
 
   dict.add (std::make_shared <builtin_attribute> ());
-  dict.add (std::make_shared <builtin_integrate> ());
 
   dict.add (std::make_shared <builtin_rootp> (true));
   dict.add (std::make_shared <builtin_rootp> (false));
@@ -1278,6 +1267,15 @@ dwgrep_builtins_dw ()
     t->add_simple_op_overload <op_parent_attr> ();
 
     dict.add (std::make_shared <overloaded_op_builtin> ("parent", t));
+  }
+
+  {
+    auto t = std::make_shared <overload_tab> ();
+
+    t->add_simple_op_overload <op_integrate_die> ();
+    t->add_simple_op_overload <op_integrate_closure> ();
+
+    dict.add (std::make_shared <overloaded_op_builtin> ("integrate", t));
   }
 
 #define ONE_KNOWN_DW_AT(NAME, CODE)					\
