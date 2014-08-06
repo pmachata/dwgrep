@@ -196,141 +196,96 @@ namespace
 namespace
 {
   struct op_child_die
-    : public stub_op
+    : public op_yielding_overload <value_die>
   {
-    dwgrep_graph::sptr m_gr;
-    valfile::uptr m_vf;
-    Dwarf_Die m_child;
+    struct producer
+      : public value_producer
+    {
+      std::unique_ptr <value_die> m_child;
 
-    size_t m_pos;
+      producer (std::unique_ptr <value_die> child)
+	: m_child {std::move (child)}
+      {}
+
+      std::unique_ptr <value>
+      next () override
+      {
+	if (m_child == nullptr)
+	  return nullptr;
+
+	std::unique_ptr <value_die> ret = std::move (m_child);
+
+	Dwarf_Die child;
+	switch (dwarf_siblingof (&ret->get_die (), &child))
+	  {
+	  case 0:
+	    m_child = std::make_unique <value_die>
+	      (ret->get_graph (), child, ret->get_pos () + 1);
+	  case 1: // no more siblings
+	    return std::move (ret);
+	  }
+
+	throw_libdw ();
+      }
+    };
 
     op_child_die (std::shared_ptr <op> upstream, dwgrep_graph::sptr gr,
 		  std::shared_ptr <scope> scope)
-      : stub_op {upstream, gr, scope}
-      , m_gr {gr}
-      , m_child {}
-      , m_pos {0}
+      : op_yielding_overload {upstream, gr, scope}
     {}
 
-    void
-    reset_me ()
+    std::unique_ptr <value_producer>
+    operate (std::unique_ptr <value_die> a) override
     {
-      m_vf = nullptr;
-      m_pos = 0;
-    }
-
-    valfile::uptr
-    next () override
-    {
-      while (true)
+      Dwarf_Die *die = &a->get_die ();
+      if (dwarf_haschildren (die))
 	{
-	  while (m_vf == nullptr)
-	    if (auto vf = m_upstream->next ())
-	      {
-		auto vp = vf->pop_as <value_die> ();
-		Dwarf_Die *die = &vp->get_die ();
-		if (dwarf_haschildren (die))
-		  {
-		    if (dwarf_child (die, &m_child) != 0)
-		      throw_libdw ();
+	  Dwarf_Die child;
+	  if (dwarf_child (die, &child) != 0)
+	    throw_libdw ();
 
-		    // We found our guy.
-		    m_vf = std::move (vf);
-		  }
-	      }
-	    else
-	      return nullptr;
-
-	  auto ret = std::make_unique <valfile> (*m_vf);
-	  ret->push (std::make_unique <value_die> (m_gr, m_child, m_pos++));
-
-	  switch (dwarf_siblingof (&m_child, &m_child))
-	    {
-	    case -1:
-	      throw_libdw ();
-	    case 1:
-	      // No more siblings.
-	      reset_me ();
-	      break;
-	    case 0:
-	      break;
-	    }
-
-	  return ret;
+	  auto value = std::make_unique <value_die> (m_gr, child, 0);
+	  return std::make_unique <producer> (std::move (value));
 	}
-    }
 
-    void
-    reset () override
-    {
-      reset_me ();
-      m_upstream->reset ();
+      return nullptr;
     }
-
-    static selector get_selector ()
-    { return {value_die::vtype}; }
   };
 
   struct op_child_loclist_elem
-    : public stub_op
+    : public op_yielding_overload <value_loclist_elem>
   {
-    dwgrep_graph::sptr m_gr;
-    valfile::uptr m_vf;
-    std::unique_ptr <value_loclist_elem> m_val;
+    using op_yielding_overload::op_yielding_overload;
 
-    size_t m_i;
-
-    op_child_loclist_elem (std::shared_ptr <op> upstream, dwgrep_graph::sptr gr,
-			   std::shared_ptr <scope> scope)
-      : stub_op {upstream, gr, scope}
-      , m_gr {gr}
-      , m_i {0}
-    {}
-
-    void
-    reset_me ()
+    struct producer
+      : public value_producer
     {
-      m_vf = nullptr;
-      m_i = 0;
-    }
+      std::unique_ptr <value_loclist_elem> m_value;
+      size_t m_i;
 
-    valfile::uptr
-    next () override
+      producer (std::unique_ptr <value_loclist_elem> value)
+	: m_value {std::move (value)}
+	, m_i {0}
+      {}
+
+      std::unique_ptr <value>
+      next () override
+      {
+	size_t idx = m_i++;
+	if (idx < m_value->get_exprlen ())
+	  return std::make_unique <value_loclist_op>
+	    (m_value->get_graph (), m_value->get_expr () + idx,
+	     m_value->get_attr (), idx);
+	else
+	  return nullptr;
+      }
+    };
+
+    std::unique_ptr <value_producer>
+    operate (std::unique_ptr <value_loclist_elem> a) override
     {
-      while (true)
-	{
-	  while (m_vf == nullptr)
-	    if (auto vf = m_upstream->next ())
-	      {
-		m_val = vf->pop_as <value_loclist_elem> ();
-		m_vf = std::move (vf);
-	      }
-	    else
-	      return nullptr;
-
-	  if (m_i < m_val->get_exprlen ())
-	    {
-	      auto ret = std::make_unique <valfile> (*m_vf);
-	      ret->push (std::make_unique <value_loclist_op>
-			 (m_gr, m_val->get_expr () + m_i,
-			  m_val->get_attr (), m_i));
-	      m_i++;
-	      return ret;
-	    }
-
-	  reset_me ();
-	}
+      return std::make_unique <producer> (std::move (a));
     }
-
-    void
-    reset () override
-    {
-      reset_me ();
-      m_upstream->reset ();
-    }
-
-    static selector get_selector ()
-    { return {value_loclist_elem::vtype}; }
   };
 }
 

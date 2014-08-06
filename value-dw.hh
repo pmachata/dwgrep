@@ -52,6 +52,9 @@ public:
   Dwarf_Die &get_die ()
   { return m_die; }
 
+  dwgrep_graph::sptr get_graph ()
+  { return m_gr; }
+
   void show (std::ostream &o, brevity brv) const override;
   std::unique_ptr <value> clone () const override;
   cmp_result cmp (value const &that) const override;
@@ -129,6 +132,9 @@ public:
 
   Dwarf_Attribute &get_attr ()
   { return m_attr; }
+
+  dwgrep_graph::sptr get_graph ()
+  { return m_gr; }
 
   void show (std::ostream &o, brevity brv) const override;
   std::unique_ptr <value> clone () const override;
