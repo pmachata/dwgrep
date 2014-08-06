@@ -405,3 +405,7 @@ expect_count 2 ./enum.o -e '
 #   Numbering of elements of location list.
 expect_count 1 ./bitcount.o -e '
 	winfo ?(offset ?0x91) @AT_location ?(pos ?1)'
+
+# Test multi-yielding value.
+expect_count 3 ./bitcount.o -e '
+	[winfo ?AT_location] elem (pos == 0) attribute ?AT_location value'

@@ -620,121 +620,29 @@ namespace
 namespace
 {
   struct op_value_attr
-    : public stub_op
+    : public op_yielding_overload <value_attr>
   {
-    dwgrep_graph::sptr m_gr;
-    std::unique_ptr <value_producer> m_vpr;
-    valfile::uptr m_vf;
+    using op_yielding_overload::op_yielding_overload;
 
-    op_value_attr (std::shared_ptr <op> upstream, dwgrep_graph::sptr gr,
-		   std::shared_ptr <scope> scope)
-      : stub_op {upstream, gr, scope}
-      , m_gr {gr}
-    {}
-
-    void
-    reset_me ()
+    std::unique_ptr <value_producer>
+    operate (std::unique_ptr <value_attr> a) override
     {
-      m_vf = nullptr;
-      m_vpr = nullptr;
+      return at_value (a->get_attr (), a->get_die (), a->get_graph ());
     }
-
-    valfile::uptr
-    next () override
-    {
-      while (true)
-	{
-	  while (m_vpr == nullptr)
-	    if (m_vf = m_upstream->next ())
-	      {
-		auto vp = m_vf->pop_as <value_attr> ();
-		m_vpr = at_value (vp->get_attr (), vp->get_die (), m_gr);
-	      }
-	    else
-	      return nullptr;
-
-	  if (auto v = m_vpr->next ())
-	    {
-	      auto vf = std::make_unique <valfile> (*m_vf);
-	      vf->push (std::move (v));
-	      return vf;
-	    }
-
-	  reset_me ();
-	}
-    }
-
-    void
-    reset () override
-    {
-      reset_me ();
-      m_upstream->reset ();
-    }
-
-    static selector get_selector ()
-    { return {value_attr::vtype}; }
   };
 
   struct op_value_loclist_op
-    : public stub_op
+    : public op_yielding_overload <value_loclist_op>
   {
-    dwgrep_graph::sptr m_gr;
-    std::unique_ptr <value_producer> m_vpr1;
-    std::unique_ptr <value_producer> m_vpr2;
-    valfile::uptr m_vf;
+    using op_yielding_overload::op_yielding_overload;
 
-    op_value_loclist_op (std::shared_ptr <op> upstream, dwgrep_graph::sptr gr,
-			 std::shared_ptr <scope> scope)
-      : stub_op {upstream, gr, scope}
-      , m_gr {gr}
-    {}
-
-    void
-    reset_me ()
+    std::unique_ptr <value_producer>
+    operate (std::unique_ptr <value_loclist_op> a) override
     {
-      m_vf = nullptr;
-      m_vpr1 = nullptr;
-      m_vpr2 = nullptr;
+      return std::make_unique <value_producer_cat>
+	(dwop_number (a->get_dwop (), a->get_attr (), a->get_graph ()),
+	 dwop_number2 (a->get_dwop (), a->get_attr (), a->get_graph ()));
     }
-
-    valfile::uptr
-    next () override
-    {
-      while (true)
-	{
-	  while (m_vpr1 == nullptr)
-	    if (m_vf = m_upstream->next ())
-	      {
-		auto vp = m_vf->pop_as <value_loclist_op> ();
-		m_vpr1 = dwop_number (vp->get_dwop (), vp->get_attr (), m_gr);
-		m_vpr2 = dwop_number2 (vp->get_dwop (), vp->get_attr (), m_gr);
-	      }
-	    else
-	      return nullptr;
-
-	  while (m_vpr1 != nullptr)
-	    if (auto v = m_vpr1->next ())
-	      {
-		auto vf = std::make_unique <valfile> (*m_vf);
-		vf->push (std::move (v));
-		return vf;
-	      }
-	    else
-	      m_vpr1 = std::move (m_vpr2);
-
-	  reset_me ();
-	}
-    }
-
-    void
-    reset () override
-    {
-      reset_me ();
-      m_upstream->reset ();
-    }
-
-    static selector get_selector ()
-    { return {value_loclist_op::vtype}; }
   };
 }
 

@@ -59,6 +59,27 @@ struct value_producer
   virtual std::unique_ptr <value> next () = 0;
 };
 
+struct value_producer_cat
+  : public value_producer
+{
+  std::vector <std::unique_ptr <value_producer>> m_vprs;
+  size_t m_i;
+
+  value_producer_cat ()
+    : m_i {0}
+  {}
+
+  template <class... Ts>
+  value_producer_cat (std::unique_ptr <value_producer> vpr1,
+		      std::unique_ptr <Ts>... vprs)
+    : value_producer_cat {std::move (vprs)...}
+  {
+    m_vprs.insert (m_vprs.begin (), std::move (vpr1));
+  }
+
+  std::unique_ptr <value> next () override;
+};
+
 // An op that's not an origin has an upstream.
 class inner_op
   : public op

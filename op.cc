@@ -39,6 +39,15 @@
 #include "value-seq.hh"
 #include "value-str.hh"
 
+std::unique_ptr <value>
+value_producer_cat::next ()
+{
+  for (; m_i < m_vprs.size (); ++m_i)
+    if (auto v = m_vprs[m_i]->next ())
+      return v;
+  return nullptr;
+}
+
 valfile::uptr
 op_origin::next ()
 {
