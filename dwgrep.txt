@@ -258,16 +258,17 @@
 
    Precedence of comparison operators is lower than that of
    concatenation, so you can write a couple words on each side of the
-   operator.  For example, to check whether one of the children has a
-   specific name, you could say:
+   operator.  For example, to look for DIE's where one of the location
+   expression opcodes is DW_OP_addr, you could say:
 
-   : (child @AT_name == "foo")
+   : winfo (@AT_location child label == DW_OP_addr)
 
-   Due to this precedence, comparisons are typically enclosed in
-   parens, so that they don't force too much of your computation into
-   sub-expression context.  The precedence is however above "," and
-   "||" that are introduced further, so those need to be parenthesized
-   further if they should be a comparison operand.
+   Due to this precedence setting, comparisons are typically enclosed
+   in parens (as in the example), so that they don't force too much of
+   your computation into sub-expression context.  The precedence is
+   however above "," and "||" that are introduced further, so those
+   need to be parenthesized further if they should be a comparison
+   operand.
 
    Back to the problem at hand--besides DW_TAG_structure_type, we care
    about DW_TAG_class_type as well!  We can express "and" easily
@@ -1102,7 +1103,7 @@
 ***  form :: ?T_ABBREV_ATTR -> ?T_CONST
      Yields attribute form.
 
-**  T_SYMBOL
+**  T_ELFSYM
 ***  label :: ?T_ELFSYM -> ?T_CONST
      Yields symbol type, such as STT_FUNC.
 
@@ -1137,7 +1138,7 @@
 *** •child :: ?T_LOCLIST_ELEM ->* ?T_LOCLIST_OP
      Yields individual location expression operators.
 
-** •T_LOCLIST_OP
+** ·T_LOCLIST_OP
 *** •label :: ?T_LOCLIST_OP -> ?T_CONST
      Yields operation opcode (a DW_OP_* constant).
 
@@ -1157,6 +1158,9 @@
 
      Here we have only one T_LOCLIST_OP, and that has an offset of 0, a
      label of DW_OP_fbreg, and yields one value, -18.
+
+***  parent :: ?T_LOCLIST_OP -> T_LOCLIST_ELEM
+     The opposite of child of T_LOCLIST_ELEM.
 
 **  T_ADDR_RANGE
     - T_ADDR_RANGE actually behaves pretty much like a sequence of
