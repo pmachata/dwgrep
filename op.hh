@@ -88,7 +88,8 @@ protected:
   std::shared_ptr <op> m_upstream;
 
 public:
-  inner_op (std::shared_ptr <op> upstream)
+  inner_op (std::shared_ptr <op> upstream, dwgrep_graph::sptr gr,
+	    std::shared_ptr <scope> scope)
     : m_upstream {upstream}
   {}
 
@@ -143,7 +144,7 @@ struct stub_op
 {
   stub_op (std::shared_ptr <op> upstream, dwgrep_graph::sptr gr,
 	   std::shared_ptr <scope> scope)
-    : inner_op {upstream}
+    : inner_op {upstream, gr, scope}
   {}
 
   std::string name () const override final { return "stub"; }

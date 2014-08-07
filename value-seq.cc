@@ -177,9 +177,9 @@ struct op_elem_seq::state
   }
 };
 
-op_elem_seq::op_elem_seq (std::shared_ptr <op> upstream, dwgrep_graph::sptr q,
+op_elem_seq::op_elem_seq (std::shared_ptr <op> upstream, dwgrep_graph::sptr gr,
 			  std::shared_ptr <scope> scope)
-  : inner_op {upstream}
+  : inner_op {upstream, gr, scope}
 {}
 
 op_elem_seq::~op_elem_seq ()

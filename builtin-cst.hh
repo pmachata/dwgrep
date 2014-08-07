@@ -32,6 +32,7 @@
 #include <memory>
 
 #include "builtin.hh"
+#include "op.hh"
 #include "value.hh"
 
 class builtin_constant
@@ -96,26 +97,18 @@ struct builtin_bin
   char const *name () const override;
 };
 
-struct builtin_type
-  : public builtin
+class op_type
+  : public inner_op
 {
-  std::shared_ptr <op> build_exec (std::shared_ptr <op> upstream,
-				   dwgrep_graph::sptr q,
-				   std::shared_ptr <scope> scope)
-    const override;
-
-  char const *name () const override;
+  using inner_op::inner_op;
+  valfile::uptr next () override;
 };
 
-struct builtin_pos
-  : public builtin
+class op_pos
+  : public inner_op
 {
-  std::shared_ptr <op> build_exec (std::shared_ptr <op> upstream,
-				   dwgrep_graph::sptr q,
-				   std::shared_ptr <scope> scope)
-    const override;
-
-  char const *name () const override;
+  using inner_op::inner_op;
+  valfile::uptr next () override;
 };
 
 #endif /* _BUILTIN_CST_H_ */

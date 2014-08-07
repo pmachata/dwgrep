@@ -87,15 +87,15 @@ dwgrep_builtins_core ()
 
   add_builtin_constant (*dict, constant (0, &bool_constant_dom), "false");
   add_builtin_constant (*dict, constant (1, &bool_constant_dom), "true");
-  dict->add (std::make_shared <builtin_type> ());
-  dict->add (std::make_shared <builtin_pos> ());
+  add_simple_exec_builtin <op_type> (*dict, "type");
+  add_simple_exec_builtin <op_pos> (*dict, "pos");
 
   // stack shuffling
-  dict->add (std::make_shared <builtin_drop> ());
-  dict->add (std::make_shared <builtin_swap> ());
-  dict->add (std::make_shared <builtin_dup> ());
-  dict->add (std::make_shared <builtin_over> ());
-  dict->add (std::make_shared <builtin_rot> ());
+  add_simple_exec_builtin <op_drop> (*dict, "drop");
+  add_simple_exec_builtin <op_swap> (*dict, "swap");
+  add_simple_exec_builtin <op_dup> (*dict, "dup");
+  add_simple_exec_builtin <op_over> (*dict, "over");
+  add_simple_exec_builtin <op_rot> (*dict, "rot");
 
   // "add"
   {

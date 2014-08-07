@@ -54,8 +54,8 @@ namespace
     size_t m_pos;
 
     op_winfo (std::shared_ptr <op> upstream, dwgrep_graph::sptr gr,
-	   std::shared_ptr <scope> scope)
-      : inner_op {upstream}
+	      std::shared_ptr <scope> scope)
+      : inner_op {upstream, gr, scope}
       , m_gr {gr}
       , m_it {all_dies_iterator::end ()}
       , m_pos {0}
@@ -116,7 +116,7 @@ namespace
 
     op_unit (std::shared_ptr <op> upstream, dwgrep_graph::sptr gr,
 	     std::shared_ptr <scope> scope)
-      : inner_op {upstream}
+      : inner_op {upstream, gr, scope}
       , m_gr {gr}
       , m_it {all_dies_iterator::end ()}
       , m_end {all_dies_iterator::end ()}
@@ -337,8 +337,9 @@ namespace
     dwgrep_graph::sptr m_gr;
 
   public:
-    die_op_f (std::shared_ptr <op> upstream, dwgrep_graph::sptr gr)
-      : inner_op {upstream}
+    die_op_f (std::shared_ptr <op> upstream, dwgrep_graph::sptr gr,
+	      std::shared_ptr <scope> scope)
+      : inner_op {upstream, gr, scope}
       , m_gr {gr}
     {}
 
@@ -662,8 +663,9 @@ namespace
       int m_atname;
 
     public:
-      o (std::shared_ptr <op> upstream, dwgrep_graph::sptr g, int atname)
-	: die_op_f {upstream, g}
+      o (std::shared_ptr <op> upstream, dwgrep_graph::sptr gr,
+	 std::shared_ptr <scope> scope, int atname)
+	: die_op_f {upstream, gr, scope}
 	, m_atname {atname}
       {}
 
@@ -688,11 +690,11 @@ namespace
     };
 
     std::shared_ptr <op>
-    build_exec (std::shared_ptr <op> upstream, dwgrep_graph::sptr q,
+    build_exec (std::shared_ptr <op> upstream, dwgrep_graph::sptr gr,
 		std::shared_ptr <scope> scope) const override
     {
-      auto t = std::make_shared <o> (upstream, q, m_atname);
-      return std::make_shared <op_value_attr> (t, q, scope);
+      auto t = std::make_shared <o> (upstream, gr, scope, m_atname);
+      return std::make_shared <op_value_attr> (t, gr, scope);
     }
 
     char const *

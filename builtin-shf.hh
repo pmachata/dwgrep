@@ -29,61 +29,41 @@
 #ifndef _BUILTIN_SHF_H_
 #define _BUILTIN_SHF_H_
 
-#include "builtin.hh"
+#include "op.hh"
 
-struct builtin_drop
-  : public builtin
+struct op_drop
+  : public inner_op
 {
-  std::shared_ptr <op> build_exec (std::shared_ptr <op> upstream,
-				   dwgrep_graph::sptr q,
-				   std::shared_ptr <scope> scope)
-    const override;
-
-  char const *name () const override;
+  using inner_op::inner_op;
+  valfile::uptr next () override;
 };
 
-struct builtin_swap
-  : public builtin
+struct op_swap
+  : public inner_op
 {
-  std::shared_ptr <op> build_exec (std::shared_ptr <op> upstream,
-				   dwgrep_graph::sptr q,
-				   std::shared_ptr <scope> scope)
-    const override;
-
-  char const *name () const override;
+  using inner_op::inner_op;
+  valfile::uptr next () override;
 };
 
-struct builtin_dup
-  : public builtin
+struct op_dup
+  : public inner_op
 {
-  std::shared_ptr <op> build_exec (std::shared_ptr <op> upstream,
-				   dwgrep_graph::sptr q,
-				   std::shared_ptr <scope> scope)
-    const override;
-
-  char const *name () const override;
+  using inner_op::inner_op;
+  valfile::uptr next () override;
 };
 
-struct builtin_over
-  : public builtin
+struct op_over
+  : public inner_op
 {
-  std::shared_ptr <op> build_exec (std::shared_ptr <op> upstream,
-				   dwgrep_graph::sptr q,
-				   std::shared_ptr <scope> scope)
-    const override;
-
-  char const *name () const override;
+  using inner_op::inner_op;
+  valfile::uptr next () override;
 };
 
-struct builtin_rot
-  : public builtin
+struct op_rot
+  : public inner_op
 {
-  std::shared_ptr <op> build_exec (std::shared_ptr <op> upstream,
-				   dwgrep_graph::sptr q,
-				   std::shared_ptr <scope> scope)
-    const override;
-
-  char const *name () const override;
+  using inner_op::inner_op;
+  valfile::uptr next () override;
 };
 
 #endif /* _BUILTIN_SHF_H_ */
