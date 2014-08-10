@@ -69,9 +69,9 @@ namespace
 }
 
 std::pair <std::shared_ptr <op_origin>, std::shared_ptr <op>>
-overload_instance::find_exec (valfile &vf)
+overload_instance::find_exec (stack &stk)
 {
-  ssize_t idx = find_selector (selector {vf}, m_selectors);
+  ssize_t idx = find_selector (selector {stk}, m_selectors);
   if (idx < 0)
     return {nullptr, nullptr};
   else
@@ -79,9 +79,9 @@ overload_instance::find_exec (valfile &vf)
 }
 
 std::shared_ptr <pred>
-overload_instance::find_pred (valfile &vf)
+overload_instance::find_pred (stack &stk)
 {
-  ssize_t idx = find_selector (selector {vf}, m_selectors);
+  ssize_t idx = find_selector (selector {stk}, m_selectors);
   if (idx < 0)
     return nullptr;
   else
@@ -162,31 +162,31 @@ struct overload_op::pimpl
     , m_op {nullptr}
   {}
 
-  valfile::uptr
+  stack::uptr
   next (op &self)
   {
     while (true)
       {
 	while (m_op == nullptr)
 	  {
-	    if (auto vf = m_upstream->next ())
+	    if (auto stk = m_upstream->next ())
 	      {
-		auto ovl = m_ovl_inst.find_exec (*vf);
+		auto ovl = m_ovl_inst.find_exec (*stk);
 		if (std::get <0> (ovl) == nullptr)
 		  m_ovl_inst.show_error (self.name ());
 		else
 		  {
 		    m_op = std::get <1> (ovl);
 		    m_op->reset ();
-		    std::get <0> (ovl)->set_next (std::move (vf));
+		    std::get <0> (ovl)->set_next (std::move (stk));
 		  }
 	      }
 	    else
 	      return nullptr;
 	  }
 
-	if (auto vf = m_op->next ())
-	  return vf;
+	if (auto stk = m_op->next ())
+	  return stk;
 
 	reset_me ();
       }
@@ -208,7 +208,7 @@ overload_op::overload_op (std::shared_ptr <op> upstream,
 overload_op::~overload_op ()
 {}
 
-valfile::uptr
+stack::uptr
 overload_op::next ()
 {
   return m_pimpl->next (*this);
@@ -221,16 +221,16 @@ overload_op::reset ()
 }
 
 pred_result
-overload_pred::result (valfile &vf)
+overload_pred::result (stack &stk)
 {
-  auto ovl = m_ovl_inst.find_pred (vf);
+  auto ovl = m_ovl_inst.find_pred (stk);
   if (ovl == nullptr)
     {
       m_ovl_inst.show_error (name ());
       return pred_result::fail;
     }
   else
-    return ovl->result (vf);
+    return ovl->result (stk);
 }
 
 namespace

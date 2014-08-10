@@ -95,7 +95,7 @@ struct op_elem_seq
 	       std::shared_ptr <scope> scope);
   ~op_elem_seq ();
 
-  valfile::uptr next () override;
+  stack::uptr next () override;
   std::string name () const override;
   void reset () override;
 
@@ -111,7 +111,7 @@ struct pred_empty_seq
   static selector get_selector ()
   { return {value_seq::vtype}; }
 
-  pred_result result (valfile &vf) override;
+  pred_result result (stack &stk) override;
 };
 
 struct pred_find_seq
@@ -122,7 +122,7 @@ struct pred_find_seq
   static selector get_selector ()
   { return {value_seq::vtype}; }
 
-  pred_result result (valfile &vf) override;
+  pred_result result (stack &stk) override;
 };
 
 #endif /* _VALUE_SEQ_H_ */

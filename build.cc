@@ -95,7 +95,7 @@ tree::build_exec (std::shared_ptr <op> upstream, dwgrep_graph::sptr q,
 		  std::shared_ptr <scope> scope) const
 {
   if (upstream == nullptr)
-    upstream = std::make_shared <op_origin> (std::make_unique <valfile> ());
+    upstream = std::make_shared <op_origin> (std::make_unique <stack> ());
 
   switch (m_tt)
     {
@@ -110,7 +110,7 @@ tree::build_exec (std::shared_ptr <op> upstream, dwgrep_graph::sptr q,
 
 	op_merge::opvec_t ops;
 	{
-	  auto f = std::make_shared <std::vector <valfile::uptr> >
+	  auto f = std::make_shared <std::vector <stack::uptr>>
 	    (m_children.size ());
 	  for (size_t i = 0; i < m_children.size (); ++i)
 	    ops.push_back (std::make_shared <op_tine> (upstream, f, done, i));

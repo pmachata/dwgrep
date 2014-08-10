@@ -74,27 +74,27 @@ op_length_str::operate (std::unique_ptr <value_str> a)
 
 struct op_elem_str::state
 {
-  valfile::uptr m_base;
+  stack::uptr m_base;
   std::string m_str;
   size_t m_idx;
 
-  state (valfile::uptr base, std::string const &str)
+  state (stack::uptr base, std::string const &str)
     : m_base {std::move (base)}
     , m_str {str}
     , m_idx {0}
   {}
 
-  valfile::uptr
+  stack::uptr
   next ()
   {
     if (m_idx < m_str.size ())
       {
 	char c = m_str[m_idx];
 	auto v = std::make_unique <value_str> (std::string {c}, m_idx);
-	valfile::uptr vf = std::make_unique <valfile> (*m_base);
-	vf->push (std::move (v));
+	stack::uptr stk = std::make_unique <stack> (*m_base);
+	stk->push (std::move (v));
 	m_idx++;
-	return vf;
+	return stk;
       }
 
     return nullptr;
@@ -109,25 +109,25 @@ op_elem_str::op_elem_str (std::shared_ptr <op> upstream, dwgrep_graph::sptr gr,
 op_elem_str::~op_elem_str ()
 {}
 
-valfile::uptr
+stack::uptr
 op_elem_str::next ()
 {
   while (true)
     {
       if (m_state == nullptr)
 	{
-	  if (auto vf = m_upstream->next ())
+	  if (auto stk = m_upstream->next ())
 	    {
-	      auto vp = vf->pop_as <value_str> ();
-	      m_state = std::make_unique <state> (std::move (vf),
+	      auto vp = stk->pop_as <value_str> ();
+	      m_state = std::make_unique <state> (std::move (stk),
 						  vp->get_string ());
 	    }
 	  else
 	    return nullptr;
 	}
 
-      if (auto vf = m_state->next ())
-	return vf;
+      if (auto stk = m_state->next ())
+	return stk;
 
       m_state = nullptr;
     }
@@ -147,26 +147,26 @@ op_elem_str::reset ()
 }
 
 pred_result
-pred_empty_str::result (valfile &vf)
+pred_empty_str::result (stack &stk)
 {
-  auto vp = vf.top_as <value_str> ();
+  auto vp = stk.top_as <value_str> ();
   return pred_result (vp->get_string () == "");
 }
 
 pred_result
-pred_find_str::result (valfile &vf)
+pred_find_str::result (stack &stk)
 {
-  auto needle = vf.get_as <value_str> (0);
-  auto haystack = vf.get_as <value_str> (1);
+  auto needle = stk.get_as <value_str> (0);
+  auto haystack = stk.get_as <value_str> (1);
   return pred_result (haystack->get_string ().find (needle->get_string ())
 		      != std::string::npos);
 }
 
 pred_result
-pred_match_str::result (valfile &vf)
+pred_match_str::result (stack &stk)
 {
-  auto needle = vf.get_as <value_str> (0);
-  auto haystack = vf.get_as <value_str> (1);
+  auto needle = stk.get_as <value_str> (0);
+  auto haystack = stk.get_as <value_str> (1);
 
   regex_t re;
   if (regcomp (&re, needle->get_string ().c_str(),

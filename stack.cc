@@ -26,7 +26,7 @@
    the GNU Lesser General Public License along with this program.  If
    not, see <http://www.gnu.org/licenses/>.  */
 
-#include "valfile.hh"
+#include "stack.hh"
 
 void
 frame::bind_value (var_id index, std::unique_ptr <value> val)
@@ -61,18 +61,18 @@ frame::clone () const
   return ret;
 }
 
-valfile::valfile (valfile const &that)
+stack::stack (stack const &that)
   : m_frame {that.m_frame != nullptr ? that.m_frame->clone () : nullptr}
 {
-  for (auto const &vf: that.m_values)
-    m_values.push_back (vf->clone ());
+  for (auto const &v: that.m_values)
+    m_values.push_back (v->clone ());
 }
 
 namespace
 {
   int
-  compare_vf (std::vector <std::unique_ptr <value> > const &a,
-	      std::vector <std::unique_ptr <value> > const &b)
+  compare_stack (std::vector <std::unique_ptr <value> > const &a,
+	       std::vector <std::unique_ptr <value> > const &b)
   {
     if (a.size () < b.size ())
       return -1;
@@ -132,13 +132,13 @@ namespace
 }
 
 bool
-valfile::operator< (valfile const &that) const
+stack::operator< (stack const &that) const
 {
-  return compare_vf (m_values, that.m_values) < 0;
+  return compare_stack (m_values, that.m_values) < 0;
 }
 
 bool
-valfile::operator== (valfile const &that) const
+stack::operator== (stack const &that) const
 {
-  return compare_vf (m_values, that.m_values) == 0;
+  return compare_stack (m_values, that.m_values) == 0;
 }

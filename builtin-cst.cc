@@ -48,17 +48,17 @@ namespace
       , m_dom {dom}
     {}
 
-    valfile::uptr
+    stack::uptr
     next () override
     {
-      while (auto vf = m_upstream->next ())
+      while (auto stk = m_upstream->next ())
 	{
-	  auto vp = vf->pop ();
+	  auto vp = stk->pop ();
 	  if (auto v = value::as <value_cst> (&*vp))
 	    {
 	      constant cst2 {v->get_constant ().value (), m_dom};
-	      vf->push (std::make_unique <value_cst> (cst2, 0));
-	      return vf;
+	      stk->push (std::make_unique <value_cst> (cst2, 0));
+	      return stk;
 	    }
 	  else
 	    std::cerr << "Error: cast to " << m_dom->name ()
@@ -154,29 +154,29 @@ builtin_bin::name () const
 }
 
 
-valfile::uptr
+stack::uptr
 op_type::next ()
 {
-  if (auto vf = m_upstream->next ())
+  if (auto stk = m_upstream->next ())
     {
-      constant t = vf->pop ()->get_type_const ();
-      vf->push (std::make_unique <value_cst> (t, 0));
-      return vf;
+      constant t = stk->pop ()->get_type_const ();
+      stk->push (std::make_unique <value_cst> (t, 0));
+      return stk;
     }
 
   return nullptr;
 }
 
-valfile::uptr
+stack::uptr
 op_pos::next ()
 {
-  if (auto vf = m_upstream->next ())
+  if (auto stk = m_upstream->next ())
     {
-      auto vp = vf->pop ();
+      auto vp = stk->pop ();
       static numeric_constant_dom_t pos_dom_obj ("pos");
-      vf->push (std::make_unique <value_cst>
+      stk->push (std::make_unique <value_cst>
 		(constant {vp->get_pos (), &pos_dom_obj}, 0));
-      return vf;
+      return stk;
     }
 
   return nullptr;

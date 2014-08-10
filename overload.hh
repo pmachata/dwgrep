@@ -79,9 +79,9 @@ public:
 		     dwgrep_graph::sptr q, std::shared_ptr <scope> scope);
 
   std::pair <std::shared_ptr <op_origin>, std::shared_ptr <op>>
-    find_exec (valfile &vf);
+    find_exec (stack &stk);
 
-  std::shared_ptr <pred> find_pred (valfile &vf);
+  std::shared_ptr <pred> find_pred (stack &stk);
 
   void show_error (std::string const &name);
 };
@@ -114,7 +114,7 @@ public:
   overload_op (std::shared_ptr <op> upstream, overload_instance ovl_inst);
   ~overload_op ();
 
-  valfile::uptr next () override final;
+  stack::uptr next () override final;
   void reset () override final;
 };
 
@@ -131,7 +131,7 @@ public:
   reset () override final
   {}
 
-  pred_result result (valfile &vf) override final;
+  pred_result result (stack &stk) override final;
 };
 
 // Base class for overloaded builtins.
@@ -250,24 +250,24 @@ struct op_overload_impl
 {
 protected:
   template <class T>
-  static auto collect1 (valfile &vf)
+  static auto collect1 (stack &stk)
   {
-    auto dv = vf.pop_as <T> ();
+    auto dv = stk.pop_as <T> ();
     assert (dv != nullptr);
     return std::make_tuple (std::move (dv));
   }
 
   template <size_t Fake>
-  static auto collect (valfile &vf)
+  static auto collect (stack &stk)
   {
     return std::tuple <> {};
   }
 
   template <size_t Fake, class T, class... Ts>
-  static auto collect (valfile &vf)
+  static auto collect (stack &stk)
   {
-    auto rest = collect <Fake, Ts...> (vf);
-    return std::tuple_cat (collect1 <T> (vf), std::move (rest));
+    auto rest = collect <Fake, Ts...> (stk);
+    return std::tuple_cat (collect1 <T> (stk), std::move (rest));
   }
 
   dwgrep_graph::sptr m_gr;
@@ -299,15 +299,15 @@ public:
   typedef op_overload_impl <VT...> super_t;
   using super_t::super_t;
 
-  valfile::uptr
+  stack::uptr
   next () override final
   {
-    while (auto vf = this->m_upstream->next ())
+    while (auto stk = this->m_upstream->next ())
       if (auto nv = call_operate (std::index_sequence_for <VT...> {},
-				  super_t::template collect <0, VT...> (*vf)))
+				  super_t::template collect <0, VT...> (*stk)))
 	{
-	  vf->push (std::move (nv));
-	  return vf;
+	  stk->push (std::move (nv));
+	  return stk;
 	}
 
     return nullptr;
@@ -332,36 +332,36 @@ private:
     return operate (std::move (std::get <I> (args))...);
   }
 
-  valfile::uptr m_vf;
+  stack::uptr m_stk;
   std::unique_ptr <value_producer> m_prod;
 
   void
   reset_me ()
   {
     m_prod = nullptr;
-    m_vf = nullptr;
+    m_stk = nullptr;
   }
 
 public:
-  valfile::uptr
+  stack::uptr
   next () override final
   {
     while (true)
       {
 	while (m_prod == nullptr)
-	  if (auto vf = this->m_upstream->next ())
+	  if (auto stk = this->m_upstream->next ())
 	    {
 	      m_prod = call_operate
 		(std::index_sequence_for <VT...> {},
-		 super_t::template collect <0, VT...> (*vf));
-	      m_vf = std::move (vf);
+		 super_t::template collect <0, VT...> (*stk));
+	      m_stk = std::move (stk);
 	    }
 	  else
 	    return nullptr;
 
 	if (auto v = m_prod->next ())
 	  {
-	    auto ret = std::make_unique <valfile> (*m_vf);
+	    auto ret = std::make_unique <stack> (*m_stk);
 	    ret->push (std::move (v));
 	    return ret;
 	  }

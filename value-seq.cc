@@ -150,17 +150,17 @@ op_length_seq::operate (std::unique_ptr <value_seq> a)
 
 struct op_elem_seq::state
 {
-  valfile::uptr m_base;
+  stack::uptr m_base;
   std::shared_ptr <value_seq::seq_t> m_seq;
   size_t m_idx;
 
-  state (valfile::uptr base, std::shared_ptr <value_seq::seq_t> seq)
+  state (stack::uptr base, std::shared_ptr <value_seq::seq_t> seq)
     : m_base {std::move (base)}
     , m_seq {seq}
     , m_idx {0}
   {}
 
-  valfile::uptr
+  stack::uptr
   next ()
   {
     if (m_idx < m_seq->size ())
@@ -168,9 +168,9 @@ struct op_elem_seq::state
 	std::unique_ptr <value> v = (*m_seq)[m_idx]->clone ();
 	v->set_pos (m_idx);
 	m_idx++;
-	valfile::uptr vf = std::make_unique <valfile> (*m_base);
-	vf->push (std::move (v));
-	return vf;
+	stack::uptr ret = std::make_unique <stack> (*m_base);
+	ret->push (std::move (v));
+	return ret;
       }
 
     return nullptr;
@@ -185,25 +185,25 @@ op_elem_seq::op_elem_seq (std::shared_ptr <op> upstream, dwgrep_graph::sptr gr,
 op_elem_seq::~op_elem_seq ()
 {}
 
-valfile::uptr
+stack::uptr
 op_elem_seq::next ()
 {
   while (true)
     {
       if (m_state == nullptr)
 	{
-	  if (auto vf = m_upstream->next ())
+	  if (auto stk = m_upstream->next ())
 	    {
-	      auto vp = vf->pop_as <value_seq> ();
-	      m_state = std::make_unique <state> (std::move (vf),
+	      auto vp = stk->pop_as <value_seq> ();
+	      m_state = std::make_unique <state> (std::move (stk),
 						  vp->get_seq ());
 	    }
 	  else
 	    return nullptr;
 	}
 
-      if (auto vf = m_state->next ())
-	return vf;
+      if (auto stk = m_state->next ())
+	return stk;
 
       m_state = nullptr;
     }
@@ -223,17 +223,17 @@ op_elem_seq::reset ()
 }
 
 pred_result
-pred_empty_seq::result (valfile &vf)
+pred_empty_seq::result (stack &stk)
 {
-  auto vp = vf.top_as <value_seq> ();
+  auto vp = stk.top_as <value_seq> ();
   return pred_result (vp->get_seq ()->empty ());
 }
 
 pred_result
-pred_find_seq::result (valfile &vf)
+pred_find_seq::result (stack &stk)
 {
-  auto needle = vf.get_as <value_seq> (0)->get_seq ();
-  auto haystack = vf.get_as <value_seq> (1)->get_seq ();
+  auto needle = stk.get_as <value_seq> (0)->get_seq ();
+  auto haystack = stk.get_as <value_seq> (1)->get_seq ();
   return pred_result (std::search (haystack->begin (), haystack->end (),
 				   needle->begin (), needle->end (),
 				   [] (std::unique_ptr <value> const &a,

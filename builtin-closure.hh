@@ -44,7 +44,7 @@ public:
   ~op_apply ();
 
   void reset () override;
-  valfile::uptr next () override;
+  stack::uptr next () override;
   std::string name () const override;
 };
 

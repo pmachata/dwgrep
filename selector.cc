@@ -28,19 +28,19 @@
 
 #include <iostream>
 #include "selector.hh"
-#include "valfile.hh"
+#include "stack.hh"
 
 std::array <value_type, 4>
-selector::get_vts (valfile const &vf)
+selector::get_vts (stack const &s)
 {
   auto ret = selector {}.m_vts;
-  for (unsigned i = 0; i < ret.size () && i < vf.size (); ++i)
-    ret[ret.size () - i - 1] = vf.get (i).get_type ();
+  for (unsigned i = 0; i < ret.size () && i < s.size (); ++i)
+    ret[ret.size () - i - 1] = s.get (i).get_type ();
   return ret;
 }
 
-selector::selector (valfile const &vf)
-  : m_vts (get_vts (vf))
+selector::selector (stack const &s)
+  : m_vts (get_vts (s))
   , m_mask {0} // No need to care about the mask, this is just for
 	       // purposes of getting the imprint.
 {}

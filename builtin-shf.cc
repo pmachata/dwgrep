@@ -29,65 +29,65 @@
 #include "builtin-shf.hh"
 #include "op.hh"
 
-valfile::uptr
+stack::uptr
 op_drop::next ()
 {
-  if (auto vf = m_upstream->next ())
+  if (auto stk = m_upstream->next ())
     {
-      vf->pop ();
-      return vf;
+      stk->pop ();
+      return stk;
     }
   return nullptr;
 }
 
-valfile::uptr
+stack::uptr
 op_swap::next ()
 {
-  if (auto vf = m_upstream->next ())
+  if (auto stk = m_upstream->next ())
     {
-      auto a = vf->pop ();
-      auto b = vf->pop ();
-      vf->push (std::move (a));
-      vf->push (std::move (b));
-      return vf;
+      auto a = stk->pop ();
+      auto b = stk->pop ();
+      stk->push (std::move (a));
+      stk->push (std::move (b));
+      return stk;
     }
   return nullptr;
 }
 
-valfile::uptr
+stack::uptr
 op_dup::next ()
 {
-  if (auto vf = m_upstream->next ())
+  if (auto stk = m_upstream->next ())
     {
-      vf->push (vf->top ().clone ());
-      return vf;
+      stk->push (stk->top ().clone ());
+      return stk;
     }
   return nullptr;
 }
 
-valfile::uptr
+stack::uptr
 op_over::next ()
 {
-  if (auto vf = m_upstream->next ())
+  if (auto stk = m_upstream->next ())
     {
-      vf->push (vf->get (1).clone ());
-      return vf;
+      stk->push (stk->get (1).clone ());
+      return stk;
     }
   return nullptr;
 }
 
-valfile::uptr
+stack::uptr
 op_rot::next ()
 {
-  if (auto vf = m_upstream->next ())
+  if (auto stk = m_upstream->next ())
     {
-      auto a = vf->pop ();
-      auto b = vf->pop ();
-      auto c = vf->pop ();
-      vf->push (std::move (b));
-      vf->push (std::move (c));
-      vf->push (std::move (a));
-      return vf;
+      auto a = stk->pop ();
+      auto b = stk->pop ();
+      auto c = stk->pop ();
+      stk->push (std::move (b));
+      stk->push (std::move (c));
+      stk->push (std::move (a));
+      return stk;
     }
   return nullptr;
 }

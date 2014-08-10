@@ -35,35 +35,35 @@ struct op_drop
   : public inner_op
 {
   using inner_op::inner_op;
-  valfile::uptr next () override;
+  stack::uptr next () override;
 };
 
 struct op_swap
   : public inner_op
 {
   using inner_op::inner_op;
-  valfile::uptr next () override;
+  stack::uptr next () override;
 };
 
 struct op_dup
   : public inner_op
 {
   using inner_op::inner_op;
-  valfile::uptr next () override;
+  stack::uptr next () override;
 };
 
 struct op_over
   : public inner_op
 {
   using inner_op::inner_op;
-  valfile::uptr next () override;
+  stack::uptr next () override;
 };
 
 struct op_rot
   : public inner_op
 {
   using inner_op::inner_op;
-  valfile::uptr next () override;
+  stack::uptr next () override;
 };
 
 #endif /* _BUILTIN_SHF_H_ */

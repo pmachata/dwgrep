@@ -33,7 +33,7 @@
 #include "atval.hh"
 #include "dwcst.hh"
 #include "dwpp.hh"
-#include "valfile.hh"
+#include "stack.hh"
 #include "value-cst.hh"
 #include "value-dw.hh"
 #include "value-seq.hh"

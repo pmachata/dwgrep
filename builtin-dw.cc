@@ -50,7 +50,7 @@ namespace
   {
     dwgrep_graph::sptr m_gr;
     all_dies_iterator m_it;
-    valfile::uptr m_vf;
+    stack::uptr m_stk;
     size_t m_pos;
 
     op_winfo (std::shared_ptr <op> upstream, dwgrep_graph::sptr gr,
@@ -64,26 +64,26 @@ namespace
     void
     reset_me ()
     {
-      m_vf = nullptr;
+      m_stk = nullptr;
       m_pos = 0;
     }
 
-    valfile::uptr
+    stack::uptr
     next () override
     {
       while (true)
 	{
-	  if (m_vf == nullptr)
+	  if (m_stk == nullptr)
 	    {
-	      m_vf = m_upstream->next ();
-	      if (m_vf == nullptr)
+	      m_stk = m_upstream->next ();
+	      if (m_stk == nullptr)
 		return nullptr;
 	      m_it = all_dies_iterator (&*m_gr->dwarf);
 	    }
 
 	  if (m_it != all_dies_iterator::end ())
 	    {
-	      auto ret = std::make_unique <valfile> (*m_vf);
+	      auto ret = std::make_unique <stack> (*m_stk);
 	      auto v = std::make_unique <value_die> (m_gr, **m_it, m_pos++);
 	      ret->push (std::move (v));
 	      ++m_it;
@@ -109,7 +109,7 @@ namespace
     : public inner_op
   {
     dwgrep_graph::sptr m_gr;
-    valfile::uptr m_vf;
+    stack::uptr m_stk;
     all_dies_iterator m_it;
     all_dies_iterator m_end;
     size_t m_pos;
@@ -138,30 +138,30 @@ namespace
     void
     reset_me ()
     {
-      m_vf = nullptr;
+      m_stk = nullptr;
       m_it = all_dies_iterator::end ();
       m_pos = 0;
     }
 
-    valfile::uptr
+    stack::uptr
     next () override
     {
       while (true)
 	{
-	  while (m_vf == nullptr)
+	  while (m_stk == nullptr)
 	    {
-	      if (auto vf = m_upstream->next ())
+	      if (auto stk = m_upstream->next ())
 		{
-		  auto vp = vf->pop ();
+		  auto vp = stk->pop ();
 		  if (auto v = value::as <value_die> (&*vp))
 		    {
 		      init_from_die (v->get_die ());
-		      m_vf = std::move (vf);
+		      m_stk = std::move (stk);
 		    }
 		  else if (auto v = value::as <value_attr> (&*vp))
 		    {
 		      init_from_die (v->get_die ());
-		      m_vf = std::move (vf);
+		      m_stk = std::move (stk);
 		    }
 		  else
 		    show_expects (name (),
@@ -173,7 +173,7 @@ namespace
 
 	  if (m_it != m_end)
 	    {
-	      auto ret = std::make_unique <valfile> (*m_vf);
+	      auto ret = std::make_unique <stack> (*m_stk);
 	      ret->push (std::make_unique <value_die>
 			 (m_gr, **m_it, m_pos++));
 	      ++m_it;
@@ -343,16 +343,16 @@ namespace
       , m_gr {gr}
     {}
 
-    valfile::uptr
+    stack::uptr
     next () override final
     {
-      while (auto vf = m_upstream->next ())
+      while (auto stk = m_upstream->next ())
 	{
-	  auto vp = vf->pop ();
+	  auto vp = stk->pop ();
 	  if (auto v = value::as <value_die> (&*vp))
 	    {
-	      if (operate (*vf, v->get_die ()))
-		return vf;
+	      if (operate (*stk, v->get_die ()))
+		return stk;
 	    }
 
 	  else
@@ -367,7 +367,7 @@ namespace
 
     virtual std::string name () const override = 0;
 
-    virtual bool operate (valfile &vf, Dwarf_Die &die)
+    virtual bool operate (stack &stk, Dwarf_Die &die)
     { return false; }
   };
 }
@@ -573,12 +573,12 @@ namespace
       {}
 
       pred_result
-      result (valfile &vf) override
+      result (stack &stk) override
       {
-	if (auto v = vf.top_as <value_die> ())
+	if (auto v = stk.top_as <value_die> ())
 	  return pred_result (m_gr->is_root (v->get_die ()));
 
-	else if (vf.top ().is <value_attr> ())
+	else if (stk.top ().is <value_attr> ())
 	  // By definition, attributes are never root.
 	  return pred_result::no;
 
@@ -670,13 +670,13 @@ namespace
       {}
 
       bool
-      operate (valfile &vf, Dwarf_Die &die) override
+      operate (stack &stk, Dwarf_Die &die) override
       {
 	Dwarf_Attribute attr;
 	if (dwarf_attr (&die, m_atname, &attr) == nullptr)
 	  return false;
 
-	vf.push (std::make_unique <value_attr> (m_gr, attr, die, 0));
+	stk.push (std::make_unique <value_attr> (m_gr, attr, die, 0));
 	return true;
       }
 
@@ -728,21 +728,21 @@ namespace
       {}
 
       pred_result
-      result (valfile &vf) override
+      result (stack &stk) override
       {
-	if (auto v = vf.top_as <value_die> ())
+	if (auto v = stk.top_as <value_die> ())
 	  {
 	    Dwarf_Die *die = &v->get_die ();
 	    return pred_result (dwarf_hasattr (die, m_atname) != 0);
 	  }
 
-	else if (auto v = vf.top_as <value_cst> ())
+	else if (auto v = stk.top_as <value_cst> ())
 	  {
 	    check_constants_comparable (m_const, v->get_constant ());
 	    return pred_result (m_const == v->get_constant ());
 	  }
 
-	else if (auto v = vf.top_as <value_attr> ())
+	else if (auto v = stk.top_as <value_attr> ())
 	  return pred_result (dwarf_whatattr (&v->get_attr ()) == m_atname);
 
 	else
@@ -806,12 +806,12 @@ namespace
       {}
 
       pred_result
-      result (valfile &vf) override
+      result (stack &stk) override
       {
-	if (auto v = vf.top_as <value_die> ())
+	if (auto v = stk.top_as <value_die> ())
 	  return pred_result (dwarf_tag (&v->get_die ()) == m_tag);
 
-	else if (auto v = vf.top_as <value_cst> ())
+	else if (auto v = stk.top_as <value_cst> ())
 	  {
 	    check_constants_comparable (m_const, v->get_constant ());
 	    return pred_result (m_const == v->get_constant ());
@@ -876,12 +876,12 @@ namespace
       {}
 
       pred_result
-      result (valfile &vf) override
+      result (stack &stk) override
       {
-	if (auto v = vf.top_as <value_attr> ())
+	if (auto v = stk.top_as <value_attr> ())
 	  return pred_result (dwarf_whatform (&v->get_attr ()) == m_form);
 
-	else if (auto v = vf.top_as <value_cst> ())
+	else if (auto v = stk.top_as <value_cst> ())
 	  {
 	    check_constants_comparable (m_const, v->get_constant ());
 	    return pred_result (m_const == v->get_constant ());

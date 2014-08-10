@@ -34,7 +34,7 @@
 #include <iosfwd>
 
 #include "constant.hh"
-#include "valfile.hh"
+#include "stack.hh"
 #include "builtin.hh"
 
 // These constants describe how a tree is allowed to be constructed.

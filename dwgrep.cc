@@ -47,8 +47,8 @@
 #include "dwpp.hh"
 #include "op.hh"
 #include "parser.hh"
+#include "stack.hh"
 #include "tree.hh"
-#include "valfile.hh"
 
 namespace
 {
@@ -266,7 +266,7 @@ main(int argc, char *argv[])
       auto program = query.build_exec (nullptr, g);
 
       uint64_t count = 0;
-      while (valfile::uptr result = program->next ())
+      while (stack::uptr result = program->next ())
 	{
 	  // grep: Exit immediately with zero status if any match
 	  // is found, even if an error was detected.

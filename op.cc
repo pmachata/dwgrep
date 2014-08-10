@@ -48,10 +48,10 @@ value_producer_cat::next ()
   return nullptr;
 }
 
-valfile::uptr
+stack::uptr
 op_origin::next ()
 {
-  return std::move (m_vf);
+  return std::move (m_stk);
 }
 
 std::string
@@ -61,27 +61,27 @@ op_origin::name () const
 }
 
 void
-op_origin::set_next (valfile::uptr vf)
+op_origin::set_next (stack::uptr s)
 {
-  assert (m_vf == nullptr);
+  assert (m_stk == nullptr);
 
   // set_next should have been preceded with a reset() call that
   // should have percolated all the way here.
   assert (m_reset);
   m_reset = false;
 
-  m_vf = std::move (vf);
+  m_stk = std::move (s);
 }
 
 void
 op_origin::reset ()
 {
-  m_vf = nullptr;
+  m_stk = nullptr;
   m_reset = true;
 }
 
 
-valfile::uptr
+stack::uptr
 op_nop::next ()
 {
   return m_upstream->next ();
@@ -94,12 +94,12 @@ op_nop::name () const
 }
 
 
-valfile::uptr
+stack::uptr
 op_assert::next ()
 {
-  while (auto vf = m_upstream->next ())
-    if (m_pred->result (*vf) == pred_result::yes)
-      return vf;
+  while (auto stk = m_upstream->next ())
+    if (m_pred->result (*stk) == pred_result::yes)
+      return stk;
   return nullptr;
 }
 
@@ -113,32 +113,32 @@ op_assert::name () const
 
 
 void
-stringer_origin::set_next (valfile::uptr vf)
+stringer_origin::set_next (stack::uptr s)
 {
-  assert (m_vf == nullptr);
+  assert (m_stk == nullptr);
 
   // set_next should have been preceded with a reset() call that
   // should have percolated all the way here.
   assert (m_reset);
   m_reset = false;
 
-  m_vf = std::move (vf);
+  m_stk = std::move (s);
 }
 
-std::pair <valfile::uptr, std::string>
+std::pair <stack::uptr, std::string>
 stringer_origin::next ()
 {
-  return std::make_pair (std::move (m_vf), "");
+  return std::make_pair (std::move (m_stk), "");
 }
 
 void
 stringer_origin::reset ()
 {
-  m_vf = nullptr;
+  m_stk = nullptr;
   m_reset = true;
 }
 
-std::pair <valfile::uptr, std::string>
+std::pair <stack::uptr, std::string>
 stringer_lit::next ()
 {
   auto up = m_upstream->next ();
@@ -154,7 +154,7 @@ stringer_lit::reset ()
   m_upstream->reset ();
 }
 
-std::pair <valfile::uptr, std::string>
+std::pair <stack::uptr, std::string>
 stringer_op::next ()
 {
   while (true)
@@ -172,11 +172,11 @@ stringer_op::next ()
 	  m_have = true;
 	}
 
-      if (auto op_vf = m_op->next ())
+      if (auto stk = m_op->next ())
 	{
 	  std::stringstream ss;
-	  (op_vf->pop ())->show (ss, brevity::brief);
-	  return std::make_pair (std::move (op_vf), m_str + ss.str ());
+	  (stk->pop ())->show (ss, brevity::brief);
+	  return std::make_pair (std::move (stk), m_str + ss.str ());
 	}
 
       m_have = false;
@@ -214,23 +214,23 @@ struct op_format::pimpl
     m_pos = 0;
   }
 
-  valfile::uptr
+  stack::uptr
   next ()
   {
     while (true)
       {
-	auto s = m_stringer->next ();
-	if (s.first != nullptr)
+	auto stk = m_stringer->next ();
+	if (stk.first != nullptr)
 	  {
-	    s.first->push (std::make_unique <value_str>
-			   (std::move (s.second), m_pos++));
-	    return std::move (s.first);
+	    stk.first->push (std::make_unique <value_str>
+			     (std::move (stk.second), m_pos++));
+	    return std::move (stk.first);
 	  }
 
-	if (auto vf = m_upstream->next ())
+	if (auto stk = m_upstream->next ())
 	  {
 	    reset_me ();
-	    m_origin->set_next (std::move (vf));
+	    m_origin->set_next (std::move (stk));
 	  }
 	else
 	  return nullptr;
@@ -254,7 +254,7 @@ op_format::op_format (std::shared_ptr <op> upstream,
 op_format::~op_format ()
 {}
 
-valfile::uptr
+stack::uptr
 op_format::next ()
 {
   return m_pimpl->next ();
@@ -273,13 +273,13 @@ op_format::name () const
 }
 
 
-valfile::uptr
+stack::uptr
 op_const::next ()
 {
-  if (auto vf = m_upstream->next ())
+  if (auto stk = m_upstream->next ())
     {
-      vf->push (m_value->clone ());
-      return vf;
+      stk->push (m_value->clone ());
+      return stk;
     }
   return nullptr;
 }
@@ -295,18 +295,18 @@ op_const::name () const
 }
 
 
-valfile::uptr
+stack::uptr
 op_tine::next ()
 {
   if (*m_done)
     return nullptr;
 
   if (std::all_of (m_file->begin (), m_file->end (),
-		   [] (valfile::uptr const &ptr) { return ptr == nullptr; }))
+		   [] (stack::uptr const &ptr) { return ptr == nullptr; }))
     {
-      if (auto vf = m_upstream->next ())
+      if (auto stk = m_upstream->next ())
 	for (auto &ptr: *m_file)
-	  ptr = std::make_unique <valfile> (*vf);
+	  ptr = std::make_unique <stack> (*stk);
       else
 	{
 	  *m_done = true;
@@ -320,8 +320,8 @@ op_tine::next ()
 void
 op_tine::reset ()
 {
-  for (auto &vf: *m_file)
-    vf = nullptr;
+  for (auto &stk: *m_file)
+    stk = nullptr;
   m_upstream->reset ();
 }
 
@@ -332,7 +332,7 @@ op_tine::name () const
 }
 
 
-valfile::uptr
+stack::uptr
 op_merge::next ()
 {
   if (*m_done)
@@ -380,28 +380,28 @@ op_or::reset ()
   m_upstream->reset ();
 }
 
-valfile::uptr
+stack::uptr
 op_or::next ()
 {
   while (true)
     {
       while (m_branch_it == m_branches.end ())
 	{
-	  if (auto vf = m_upstream->next ())
+	  if (auto stk = m_upstream->next ())
 	    for (m_branch_it = m_branches.begin ();
 		 m_branch_it != m_branches.end (); ++m_branch_it)
 	      {
 		m_branch_it->second->reset ();
-		m_branch_it->first->set_next (std::make_unique <valfile> (*vf));
-		if (auto vf2 = m_branch_it->second->next ())
-		  return vf2;
+		m_branch_it->first->set_next (std::make_unique <stack> (*stk));
+		if (auto stk2 = m_branch_it->second->next ())
+		  return stk2;
 	      }
 	  else
 	    return nullptr;
 	}
 
-      if (auto vf2 = m_branch_it->second->next ())
-	return vf2;
+      if (auto stk2 = m_branch_it->second->next ())
+	return stk2;
 
       reset_me ();
     }
@@ -425,20 +425,20 @@ op_or::name () const
 }
 
 
-valfile::uptr
+stack::uptr
 op_capture::next ()
 {
-  if (auto vf = m_upstream->next ())
+  if (auto stk = m_upstream->next ())
     {
       m_op->reset ();
-      m_origin->set_next (std::make_unique <valfile> (*vf));
+      m_origin->set_next (std::make_unique <stack> (*stk));
 
       value_seq::seq_t vv;
-      while (auto vf2 = m_op->next ())
-	vv.push_back (vf2->pop ());
+      while (auto stk2 = m_op->next ())
+	vv.push_back (stk2->pop ());
 
-      vf->push (std::make_unique <value_seq> (std::move (vv), 0));
-      return vf;
+      stk->push (std::make_unique <value_seq> (std::move (vv), 0));
+      return stk;
     }
 
   return nullptr;
@@ -479,8 +479,8 @@ struct op_tr_closure::pimpl
   std::shared_ptr <op_origin> m_origin;
   std::shared_ptr <op> m_op;
 
-  std::set <std::shared_ptr <valfile>, deref_less> m_seen;
-  std::vector <std::shared_ptr <valfile> > m_vfs;
+  std::set <std::shared_ptr <stack>, deref_less> m_seen;
+  std::vector <std::shared_ptr <stack> > m_stks;
 
   pimpl (std::shared_ptr <op> upstream,
 	 std::shared_ptr <op_origin> origin,
@@ -493,7 +493,7 @@ struct op_tr_closure::pimpl
   void
   reset_me ()
   {
-    m_vfs.clear ();
+    m_stks.clear ();
     m_seen.clear ();
   }
 
@@ -504,37 +504,37 @@ struct op_tr_closure::pimpl
     m_upstream->reset ();
   }
 
-  valfile::uptr
+  stack::uptr
   next ()
   {
     while (true)
       {
-	if (m_vfs.empty ())
+	if (m_stks.empty ())
 	  {
 	    reset_me ();
-	    if (std::shared_ptr <valfile> vf = m_upstream->next ())
+	    if (std::shared_ptr <stack> stk = m_upstream->next ())
 	      {
-		m_vfs.push_back (vf);
-		m_seen.insert (vf);
+		m_stks.push_back (stk);
+		m_seen.insert (stk);
 	      }
 	    else
 	      return nullptr;
 	  }
 
-	auto vf = m_vfs.back ();
-	m_vfs.pop_back ();
+	auto stk = m_stks.back ();
+	m_stks.pop_back ();
 
 	m_op->reset ();
-	m_origin->set_next (std::make_unique <valfile> (*vf));
+	m_origin->set_next (std::make_unique <stack> (*stk));
 
-	while (std::shared_ptr <valfile> vf2 = m_op->next ())
-	  if (m_seen.find (vf2) == m_seen.end ())
+	while (std::shared_ptr <stack> stk2 = m_op->next ())
+	  if (m_seen.find (stk2) == m_seen.end ())
 	    {
-	      m_vfs.push_back (vf2);
-	      m_seen.insert (vf2);
+	      m_stks.push_back (stk2);
+	      m_seen.insert (stk2);
 	    }
 
-	return std::make_unique <valfile> (*vf);
+	return std::make_unique <stack> (*stk);
       }
     return nullptr;
   }
@@ -557,7 +557,7 @@ op_tr_closure::op_tr_closure (std::shared_ptr <op> upstream,
 op_tr_closure::~op_tr_closure ()
 {}
 
-valfile::uptr
+stack::uptr
 op_tr_closure::next ()
 {
   return m_pimpl->next ();
@@ -581,7 +581,7 @@ struct op_subx::pimpl
   std::shared_ptr <op> m_upstream;
   std::shared_ptr <op_origin> m_origin;
   std::shared_ptr <op> m_op;
-  valfile::uptr m_vf;
+  stack::uptr m_stk;
 
   pimpl (std::shared_ptr <op> upstream,
 	 std::shared_ptr <op_origin> origin,
@@ -594,27 +594,27 @@ struct op_subx::pimpl
   void
   reset_me ()
   {
-    m_vf = nullptr;
+    m_stk = nullptr;
   }
 
-  valfile::uptr
+  stack::uptr
   next ()
   {
     while (true)
       {
-	while (m_vf == nullptr)
-	  if ((m_vf = m_upstream->next ()) != nullptr)
+	while (m_stk == nullptr)
+	  if (m_stk = m_upstream->next ())
 	    {
 	      m_op->reset ();
-	      m_origin->set_next (std::make_unique <valfile> (*m_vf));
+	      m_origin->set_next (std::make_unique <stack> (*m_stk));
 	    }
 	  else
 	    return nullptr;
 
-	if (auto vf = m_op->next ())
+	if (auto stk = m_op->next ())
 	  {
-	    auto ret = std::make_unique <valfile> (*m_vf);
-	    ret->push (vf->pop ());
+	    auto ret = std::make_unique <stack> (*m_stk);
+	    ret->push (stk->pop ());
 	    return ret;
 	  }
 
@@ -639,7 +639,7 @@ op_subx::op_subx (std::shared_ptr <op> upstream,
 op_subx::~op_subx ()
 {}
 
-valfile::uptr
+stack::uptr
 op_subx::next ()
 {
   return m_pimpl->next ();
@@ -660,26 +660,26 @@ op_subx::name () const
 }
 
 
-valfile::uptr
+stack::uptr
 op_f_debug::next ()
 {
-  while (auto vf = m_upstream->next ())
+  while (auto stk = m_upstream->next ())
     {
       {
-	std::vector <std::unique_ptr <value>> stk;
-	while (vf->size () > 0)
-	  stk.push_back (vf->pop ());
+	std::vector <std::unique_ptr <value>> stack;
+	while (stk->size () > 0)
+	  stack.push_back (stk->pop ());
 
 	std::cerr << "<";
-	std::for_each (stk.rbegin (), stk.rend (),
-		       [&vf] (std::unique_ptr <value> &v) {
+	std::for_each (stack.rbegin (), stack.rend (),
+		       [&stk] (std::unique_ptr <value> &v) {
 			 v->show ((std::cerr << ' '), brevity::brief);
-			 vf->push (std::move (v));
+			 stk->push (std::move (v));
 		       });
 	std::cerr << " > (";
       }
 
-      std::shared_ptr <frame> frame = vf->nth_frame (0);
+      std::shared_ptr <frame> frame = stk->nth_frame (0);
       while (frame != nullptr)
 	{
 	  std::cerr << frame;
@@ -695,7 +695,7 @@ op_f_debug::next ()
 	}
       std::cerr << ")\n";
 
-      return vf;
+      return stk;
     }
   return nullptr;
 }
@@ -738,29 +738,29 @@ struct op_scope::pimpl
     m_primed = false;
   }
 
-  valfile::uptr
+  stack::uptr
   next ()
   {
     while (true)
       {
 	while (! m_primed)
-	  if (auto vf = m_upstream->next ())
+	  if (auto stk = m_upstream->next ())
 	    {
 	      // Push new stack frame.
-	      vf->set_frame (std::make_shared <frame> (vf->nth_frame (0),
-						       m_num_vars));
+	      stk->set_frame (std::make_shared <frame> (stk->nth_frame (0),
+							m_num_vars));
 	      m_op->reset ();
-	      m_origin->set_next (std::move (vf));
+	      m_origin->set_next (std::move (stk));
 	      m_primed = true;
 	    }
 	  else
 	    return nullptr;
 
-	if (auto vf = m_op->next ())
+	if (auto stk = m_op->next ())
 	  {
 	    // Pop top stack frame.
-	    vf->set_frame (vf->nth_frame (1));
-	    return vf;
+	    stk->set_frame (stk->nth_frame (1));
+	    return stk;
 	  }
 
 	reset_me ();
@@ -785,7 +785,7 @@ op_scope::op_scope (std::shared_ptr <op> upstream,
 op_scope::~op_scope ()
 {}
 
-valfile::uptr
+stack::uptr
 op_scope::next ()
 {
   return m_pimpl->next ();
@@ -813,14 +813,14 @@ op_bind::reset ()
   m_upstream->reset ();
 }
 
-valfile::uptr
+stack::uptr
 op_bind::next ()
 {
-  if (auto vf = m_upstream->next ())
+  if (auto stk = m_upstream->next ())
     {
-      auto frame = vf->nth_frame (m_depth);
-      frame->bind_value (m_index, vf->pop ());
-      return vf;
+      auto frame = stk->nth_frame (m_depth);
+      frame->bind_value (m_index, stk->pop ());
+      return stk;
     }
   return nullptr;
 }
@@ -853,30 +853,30 @@ struct op_read::pimpl
     m_apply = nullptr;
   }
 
-  valfile::uptr
+  stack::uptr
   next ()
   {
     while (true)
       {
 	if (m_apply == nullptr)
 	  {
-	    if (auto vf = m_upstream->next ())
+	    if (auto stk = m_upstream->next ())
 	      {
-		auto frame = vf->nth_frame (m_depth);
+		auto frame = stk->nth_frame (m_depth);
 		value &val = frame->read_value (m_index);
 		bool is_closure = val.is <value_closure> ();
-		vf->push (val.clone ());
+		stk->push (val.clone ());
 
 		// If a referenced value is not a closure, then the
 		// result is just that one value.
 		if (! is_closure)
-		  return vf;
+		  return stk;
 
 		// If it's a closure, then this is a function
 		// reference.  We need to execute it and fetch all the
 		// values.
 
-		auto origin = std::make_shared <op_origin> (std::move (vf));
+		auto origin = std::make_shared <op_origin> (std::move (stk));
 		m_apply = std::make_shared <op_apply> (origin);
 	      }
 	    else
@@ -884,8 +884,8 @@ struct op_read::pimpl
 	  }
 
 	assert (m_apply != nullptr);
-	if (auto vf = m_apply->next ())
-	  return vf;
+	if (auto stk = m_apply->next ())
+	  return stk;
 
 	reset_me ();
       }
@@ -912,7 +912,7 @@ op_read::reset ()
   m_pimpl->reset ();
 }
 
-valfile::uptr
+stack::uptr
 op_read::next ()
 {
   return m_pimpl->next ();
@@ -933,14 +933,14 @@ op_lex_closure::reset ()
   m_upstream->reset ();
 }
 
-valfile::uptr
+stack::uptr
 op_lex_closure::next ()
 {
-  if (auto vf = m_upstream->next ())
+  if (auto stk = m_upstream->next ())
     {
-      vf->push (std::make_unique <value_closure> (m_t, m_q, m_scope,
-						  vf->nth_frame (0), 0));
-      return vf;
+      stk->push (std::make_unique <value_closure> (m_t, m_q, m_scope,
+						   stk->nth_frame (0), 0));
+      return stk;
     }
   return nullptr;
 }
@@ -993,17 +993,17 @@ struct op_ifelse::pimpl
     m_sel_op = nullptr;
   }
 
-  valfile::uptr
+  stack::uptr
   next ()
   {
     while (true)
       {
 	if (m_sel_op == nullptr)
 	  {
-	    if (auto vf = m_upstream->next ())
+	    if (auto stk = m_upstream->next ())
 	      {
 		m_cond_op->reset ();
-		m_cond_origin->set_next (std::make_unique <valfile> (*vf));
+		m_cond_origin->set_next (std::make_unique <stack> (*stk));
 
 		if (m_cond_op->next () != nullptr)
 		  {
@@ -1017,14 +1017,14 @@ struct op_ifelse::pimpl
 		  }
 
 		m_sel_op->reset ();
-		m_sel_origin->set_next (std::move (vf));
+		m_sel_origin->set_next (std::move (stk));
 	      }
 	    else
 	      return nullptr;
 	  }
 
-	if (auto vf = m_sel_op->next ())
-	  return vf;
+	if (auto stk = m_sel_op->next ())
+	  return stk;
 
 	reset_me ();
       }
@@ -1059,7 +1059,7 @@ op_ifelse::reset ()
   m_pimpl->reset ();
 }
 
-valfile::uptr
+stack::uptr
 op_ifelse::next ()
 {
   return m_pimpl->next ();
@@ -1073,9 +1073,9 @@ op_ifelse::name () const
 
 
 pred_result
-pred_not::result (valfile &vf)
+pred_not::result (stack &stk)
 {
-  return ! m_a->result (vf);
+  return ! m_a->result (stk);
 }
 
 std::string
@@ -1088,9 +1088,9 @@ pred_not::name () const
 
 
 pred_result
-pred_and::result (valfile &vf)
+pred_and::result (stack &stk)
 {
-  return m_a->result (vf) && m_b->result (vf);
+  return m_a->result (stk) && m_b->result (stk);
 }
 
 std::string
@@ -1103,9 +1103,9 @@ pred_and::name () const
 
 
 pred_result
-pred_or::result (valfile &vf)
+pred_or::result (stack &stk)
 {
-  return m_a->result (vf) || m_b->result (vf);
+  return m_a->result (stk) || m_b->result (stk);
 }
 
 std::string
@@ -1117,10 +1117,10 @@ pred_or::name () const
 }
 
 pred_result
-pred_subx_any::result (valfile &vf)
+pred_subx_any::result (stack &stk)
 {
   m_op->reset ();
-  m_origin->set_next (std::make_unique <valfile> (vf));
+  m_origin->set_next (std::make_unique <stack> (stk));
   if (m_op->next () != nullptr)
     return pred_result::yes;
   else
@@ -1143,9 +1143,9 @@ pred_subx_any::reset ()
 
 
 pred_result
-pred_constant::result (valfile &vf)
+pred_constant::result (stack &stk)
 {
-  if (auto v = vf.top_as <value_cst> ())
+  if (auto v = stk.top_as <value_cst> ())
     {
       check_constants_comparable (m_const, v->get_constant ());
       return pred_result (m_const == v->get_constant ());

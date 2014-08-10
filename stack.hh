@@ -26,8 +26,8 @@
    the GNU Lesser General Public License along with this program.  If
    not, see <http://www.gnu.org/licenses/>.  */
 
-#ifndef _VALFILE_H_
-#define _VALFILE_H_
+#ifndef _STK_H_
+#define _STK_H_
 
 #include <memory>
 #include <vector>
@@ -56,18 +56,18 @@ struct frame
 
 // Value file is a container type that's used for maintaining stacks
 // of dwgrep values.
-class valfile
+class stack
 {
   std::vector <std::unique_ptr <value>> m_values;
   std::shared_ptr <frame> m_frame;
 
 public:
-  typedef std::unique_ptr <valfile> uptr;
+  typedef std::unique_ptr <stack> uptr;
 
-  valfile () = default;
-  valfile (valfile const &other);
-  valfile (valfile &&other) = default;
-  ~valfile () = default;
+  stack () = default;
+  stack (stack const &other);
+  stack (stack &&other) = default;
+  ~stack () = default;
 
   std::shared_ptr <frame>
   nth_frame (size_t depth) const
@@ -151,8 +151,8 @@ public:
     return value::as <T> (const_cast <value *> (&ret));
   }
 
-  bool operator< (valfile const &that) const;
-  bool operator== (valfile const &that) const;
+  bool operator< (stack const &that) const;
+  bool operator== (stack const &that) const;
 };
 
-#endif /* _VALFILE_H_ */
+#endif /* _STK_H_ */

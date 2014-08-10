@@ -37,14 +37,14 @@
 namespace
 {
   pred_result
-  comparison_result (valfile &vf, cmp_result want)
+  comparison_result (stack &stk, cmp_result want)
   {
-    if (auto va = vf.get_as <value_cst> (0))
-      if (auto vb = vf.get_as <value_cst> (1))
+    if (auto va = stk.get_as <value_cst> (0))
+      if (auto vb = stk.get_as <value_cst> (1))
 	check_constants_comparable (va->get_constant (), vb->get_constant ());
 
-    auto &va = vf.get (0);
-    auto &vb = vf.get (1);
+    auto &va = stk.get (0);
+    auto &vb = stk.get (1);
     cmp_result r = vb.cmp (va);
     if (r == cmp_result::fail)
       {
@@ -59,9 +59,9 @@ namespace
     : public pred
   {
     pred_result
-    result (valfile &vf) override
+    result (stack &stk) override
     {
-      return comparison_result (vf, cmp_result::equal);
+      return comparison_result (stk, cmp_result::equal);
     }
 
     std::string
@@ -77,9 +77,9 @@ namespace
     : public pred
   {
     pred_result
-    result (valfile &vf) override
+    result (stack &stk) override
     {
-      return comparison_result (vf, cmp_result::less);
+      return comparison_result (stk, cmp_result::less);
     }
 
     std::string
@@ -95,9 +95,9 @@ namespace
     : public pred
   {
     pred_result
-    result (valfile &vf) override
+    result (stack &stk) override
     {
-      return comparison_result (vf, cmp_result::greater);
+      return comparison_result (stk, cmp_result::greater);
     }
 
     std::string

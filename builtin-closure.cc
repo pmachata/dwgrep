@@ -49,36 +49,36 @@ struct op_apply::pimpl
     m_old_frame = nullptr;
   }
 
-  valfile::uptr
+  stack::uptr
   next ()
   {
     while (true)
       {
 	while (m_op == nullptr)
-	  if (auto vf = m_upstream->next ())
+	  if (auto stk = m_upstream->next ())
 	    {
-	      if (! vf->top ().is <value_closure> ())
+	      if (! stk->top ().is <value_closure> ())
 		{
 		  std::cerr << "Error: `apply' expects a T_CLOSURE on TOS.\n";
 		  continue;
 		}
 
-	      auto val = vf->pop ();
+	      auto val = stk->pop ();
 	      auto &cl = static_cast <value_closure &> (*val);
 
-	      m_old_frame = vf->nth_frame (0);
-	      vf->set_frame (cl.get_frame ());
-	      auto origin = std::make_shared <op_origin> (std::move (vf));
+	      m_old_frame = stk->nth_frame (0);
+	      stk->set_frame (cl.get_frame ());
+	      auto origin = std::make_shared <op_origin> (std::move (stk));
 	      m_op = cl.get_tree ().build_exec (origin, cl.get_graph (),
 						cl.get_scope ());
 	    }
 	  else
 	    return nullptr;
 
-	if (auto vf = m_op->next ())
+	if (auto stk = m_op->next ())
 	  {
-	    vf->set_frame (m_old_frame);
-	    return vf;
+	    stk->set_frame (m_old_frame);
+	    return stk;
 	  }
 
 	reset_me ();
@@ -106,7 +106,7 @@ op_apply::reset ()
   m_pimpl->reset ();
 }
 
-valfile::uptr
+stack::uptr
 op_apply::next ()
 {
   return m_pimpl->next ();

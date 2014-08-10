@@ -101,14 +101,14 @@ class op_type
   : public inner_op
 {
   using inner_op::inner_op;
-  valfile::uptr next () override;
+  stack::uptr next () override;
 };
 
 class op_pos
   : public inner_op
 {
   using inner_op::inner_op;
-  valfile::uptr next () override;
+  stack::uptr next () override;
 };
 
 #endif /* _BUILTIN_CST_H_ */

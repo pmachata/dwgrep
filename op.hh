@@ -33,7 +33,7 @@
 #include <cassert>
 
 #include "dwgrep.hh"
-#include "valfile.hh"
+#include "stack.hh"
 #include "pred_result.hh"
 #include "tree.hh"
 
@@ -46,7 +46,7 @@ public:
   virtual ~op () {}
 
   // Produce next value.
-  virtual valfile::uptr next () = 0;
+  virtual stack::uptr next () = 0;
   virtual void reset () = 0;
   virtual std::string name () const = 0;
 };
@@ -102,14 +102,14 @@ public:
 class pred
 {
 public:
-  virtual pred_result result (valfile &vf) = 0;
+  virtual pred_result result (stack &stk) = 0;
   virtual std::string name () const = 0;
   virtual void reset () = 0;
 };
 
 // Origin is upstream-less node that is placed at the beginning of the
-// chain of computations.  It's provided a valfile from the outside by
-// way of set_next.  Its only action is to send this valfile down from
+// chain of computations.  It's provided a stack from the outside by
+// way of set_next.  Its only action is to send this stack down from
 // next() upon request.
 //
 // The way origin is used is that the chain is moved to initial state
@@ -123,18 +123,18 @@ public:
 class op_origin
   : public op
 {
-  valfile::uptr m_vf;
+  stack::uptr m_stk;
   bool m_reset;
 
 public:
-  explicit op_origin (valfile::uptr vf)
-    : m_vf (std::move (vf))
+  explicit op_origin (stack::uptr s)
+    : m_stk (std::move (s))
     , m_reset (false)
   {}
 
-  void set_next (valfile::uptr vf);
+  void set_next (stack::uptr s);
 
-  valfile::uptr next () override;
+  stack::uptr next () override;
   std::string name () const override;
   void reset () override;
 };
@@ -170,7 +170,7 @@ public:
     : m_upstream {upstream}
   {}
 
-  valfile::uptr next () override;
+  stack::uptr next () override;
   std::string name () const override;
 
   void reset () override
@@ -189,7 +189,7 @@ public:
     , m_pred {std::move (p)}
   {}
 
-  valfile::uptr next () override;
+  stack::uptr next () override;
   std::string name () const override;
 
   void reset () override
@@ -199,16 +199,16 @@ public:
 // The stringer hieararchy supports op_format, which implements
 // formatting strings.  They are written similarly to op's, except
 // they send along next() a work-in-progress string in addition to
-// valfile::ptr.  The valfile::ptr is in-place mutated by the
+// stack::ptr.  The stack::ptr is in-place mutated by the
 // stringers, and when it gets all the way through, op_format takes
 // whatever's left, and puts the finished string on top.  This scheme
 // is similar to how pred_subx_any is written, except there we never
-// mutate the passed-in valfile.  But here we do, as per the language
+// mutate the passed-in stack.  But here we do, as per the language
 // spec.
 class stringer
 {
 public:
-  virtual std::pair <valfile::uptr, std::string> next () = 0;
+  virtual std::pair <stack::uptr, std::string> next () = 0;
   virtual void reset () = 0;
 };
 
@@ -219,7 +219,7 @@ public:
 class stringer_origin
   : public stringer
 {
-  valfile::uptr m_vf;
+  stack::uptr m_stk;
   bool m_reset;
 
 public:
@@ -227,9 +227,9 @@ public:
     : m_reset (false)
   {}
 
-  void set_next (valfile::uptr vf);
+  void set_next (stack::uptr s);
 
-  std::pair <valfile::uptr, std::string> next () override;
+  std::pair <stack::uptr, std::string> next () override;
   void reset () override;
 };
 
@@ -247,7 +247,7 @@ public:
     , m_str (str)
   {}
 
-  std::pair <valfile::uptr, std::string> next () override;
+  std::pair <stack::uptr, std::string> next () override;
   void reset () override;
 };
 
@@ -271,7 +271,7 @@ public:
     , m_have {false}
   {}
 
-  std::pair <valfile::uptr, std::string> next () override;
+  std::pair <stack::uptr, std::string> next () override;
   void reset () override;
 };
 
@@ -289,7 +289,7 @@ public:
 
   ~op_format ();
 
-  valfile::uptr next () override;
+  stack::uptr next () override;
   std::string name () const override;
   void reset () override;
 };
@@ -306,7 +306,7 @@ public:
     , m_value {std::move (value)}
   {}
 
-  valfile::uptr next () override;
+  stack::uptr next () override;
   std::string name () const override;
 
   void reset () override
@@ -314,7 +314,7 @@ public:
 };
 
 // Tine is placed at the beginning of each alt expression.  These
-// tines together share a vector of valfiles, called a file, which
+// tines together share a vector of stacks, called a file, which
 // next() takes data from (each vector element belongs to one tine of
 // the overall alt).
 //
@@ -336,13 +336,13 @@ class op_tine
   : public op
 {
   std::shared_ptr <op> m_upstream;
-  std::shared_ptr <std::vector <valfile::uptr> > m_file;
+  std::shared_ptr <std::vector <stack::uptr>> m_file;
   std::shared_ptr <bool> m_done;
   size_t m_branch_id;
 
 public:
   op_tine (std::shared_ptr <op> upstream,
-	   std::shared_ptr <std::vector <valfile::uptr> > file,
+	   std::shared_ptr <std::vector <stack::uptr>> file,
 	   std::shared_ptr <bool> done,
 	   size_t branch_id)
     : m_upstream {upstream}
@@ -353,7 +353,7 @@ public:
     assert (m_branch_id < m_file->size ());
   }
 
-  valfile::uptr next () override;
+  stack::uptr next () override;
   std::string name () const override;
   void reset () override;
 };
@@ -378,7 +378,7 @@ public:
     *m_done = false;
   }
 
-  valfile::uptr next () override;
+  stack::uptr next () override;
   std::string name () const override;
   void reset () override;
 };
@@ -409,7 +409,7 @@ public:
   }
 
   void reset () override;
-  valfile::uptr next () override;
+  stack::uptr next () override;
   std::string name () const override;
 };
 
@@ -430,7 +430,7 @@ public:
   {}
 
   void reset () override;
-  valfile::uptr next () override;
+  stack::uptr next () override;
   std::string name () const override;
 };
 
@@ -447,7 +447,7 @@ public:
 
   ~op_tr_closure ();
 
-  valfile::uptr next () override;
+  stack::uptr next () override;
   std::string name () const override;
   void reset () override;
 };
@@ -465,7 +465,7 @@ public:
 
   ~op_subx ();
 
-  valfile::uptr next () override;
+  stack::uptr next () override;
   std::string name () const override;
   void reset () override;
 };
@@ -480,7 +480,7 @@ public:
     : m_upstream {upstream}
   {}
 
-  valfile::uptr next () override;
+  stack::uptr next () override;
   std::string name () const override;
   void reset () override;
 };
@@ -498,7 +498,7 @@ public:
 	    size_t num_vars);
   ~op_scope ();
 
-  valfile::uptr next () override;
+  stack::uptr next () override;
   void reset () override;
   std::string name () const override;
 };
@@ -517,7 +517,7 @@ public:
     , m_index {index}
   {}
 
-  valfile::uptr next () override;
+  stack::uptr next () override;
   void reset () override;
   std::string name () const override;
 };
@@ -532,7 +532,7 @@ public:
   op_read (std::shared_ptr <op> upstream, size_t depth, var_id index);
   ~op_read ();
 
-  valfile::uptr next () override;
+  stack::uptr next () override;
   void reset () override;
   std::string name () const override;
 };
@@ -557,7 +557,7 @@ public:
   {}
 
   void reset () override;
-  valfile::uptr next () override;
+  stack::uptr next () override;
   std::string name () const override;
 };
 
@@ -579,7 +579,7 @@ public:
   ~op_ifelse ();
 
   void reset () override;
-  valfile::uptr next () override;
+  stack::uptr next () override;
   std::string name () const override;
 };
 
@@ -594,7 +594,7 @@ public:
     : m_a {std::move (a)}
   {}
 
-  pred_result result (valfile &vf) override;
+  pred_result result (stack &stk) override;
   std::string name () const override;
 
   void reset () override
@@ -613,7 +613,7 @@ public:
     , m_b { std::move (b) }
   {}
 
-  pred_result result (valfile &vf) override;
+  pred_result result (stack &stk) override;
   std::string name () const override;
 
   void reset () override
@@ -635,7 +635,7 @@ public:
     , m_b { std::move (b) }
   {}
 
-  pred_result result (valfile &vf) override;
+  pred_result result (stack &stk) override;
   std::string name () const override;
 
   void reset () override
@@ -658,7 +658,7 @@ public:
     , m_origin (origin)
   {}
 
-  pred_result result (valfile &vf) override;
+  pred_result result (stack &stk) override;
   std::string name () const override;
   void reset () override;
 };
@@ -673,7 +673,7 @@ public:
     : m_const {cst}
   {}
 
-  pred_result result (valfile &vf) override;
+  pred_result result (stack &stk) override;
   std::string name () const override;
 
   void reset () override {}

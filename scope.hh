@@ -30,7 +30,7 @@
 #define _SCOPE_H_
 
 #include <algorithm>
-#include "valfile.hh"
+#include "stack.hh"
 
 struct scope
 {

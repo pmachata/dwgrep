@@ -82,7 +82,7 @@ struct op_elem_str
 	      std::shared_ptr <scope> scope);
   ~op_elem_str ();
 
-  valfile::uptr next () override;
+  stack::uptr next () override;
   std::string name () const override;
   void reset () override;
 
@@ -98,7 +98,7 @@ struct pred_empty_str
   static selector get_selector ()
   { return {value_str::vtype}; }
 
-  pred_result result (valfile &vf) override;
+  pred_result result (stack &stk) override;
 };
 
 struct pred_find_str
@@ -109,7 +109,7 @@ struct pred_find_str
   static selector get_selector ()
   { return {value_str::vtype}; }
 
-  pred_result result (valfile &vf) override;
+  pred_result result (stack &stk) override;
 };
 
 struct pred_match_str
@@ -120,7 +120,7 @@ struct pred_match_str
   static selector get_selector ()
   { return {value_str::vtype}; }
 
-  pred_result result (valfile &vf) override;
+  pred_result result (stack &stk) override;
 };
 
 #endif /* _VALUE_STR_H_ */

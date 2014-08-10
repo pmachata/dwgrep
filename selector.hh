@@ -34,7 +34,7 @@
 
 #include "value.hh"
 
-struct valfile;
+struct stack;
 class selector
 {
   union
@@ -63,7 +63,7 @@ class selector
     return compute_mask (codes...) << 8 | compute_mask (code);
   }
 
-  static std::array <value_type, 4> get_vts (valfile const &vf);
+  static std::array <value_type, 4> get_vts (stack const &s);
 
 public:
   template <class... Ts, std::enable_if_t <(sizeof... (Ts) == 4), int> Fake = 0>
@@ -77,7 +77,7 @@ public:
     : selector {value_type {0}, vts...}
   {}
 
-  selector (valfile const &vf);
+  selector (stack const &s);
 
   selector (selector const &that)
     : m_vts (that.m_vts)
