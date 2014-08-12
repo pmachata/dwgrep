@@ -223,22 +223,20 @@ op_elem_seq::reset ()
 }
 
 pred_result
-pred_empty_seq::result (stack &stk)
+pred_empty_seq::result (value_seq &a)
 {
-  auto vp = stk.top_as <value_seq> ();
-  return pred_result (vp->get_seq ()->empty ());
+  return pred_result (a.get_seq ()->empty ());
 }
 
 pred_result
-pred_find_seq::result (stack &stk)
+pred_find_seq::result (value_seq &haystack, value_seq &needle)
 {
-  auto needle = stk.get_as <value_seq> (0)->get_seq ();
-  auto haystack = stk.get_as <value_seq> (1)->get_seq ();
-  return pred_result (std::search (haystack->begin (), haystack->end (),
-				   needle->begin (), needle->end (),
-				   [] (std::unique_ptr <value> const &a,
-				       std::unique_ptr <value> const &b)
-				   {
-				     return a->cmp (*b) == cmp_result::equal;
-				   }) != haystack->end ());
+  return pred_result
+    (std::search (haystack.get_seq ()->begin (), haystack.get_seq ()->end (),
+		  needle.get_seq ()->begin (), needle.get_seq ()->end (),
+		  [] (std::unique_ptr <value> const &a,
+		      std::unique_ptr <value> const &b)
+		  {
+		    return a->cmp (*b) == cmp_result::equal;
+		  }) != haystack.get_seq ()->end ());
 }

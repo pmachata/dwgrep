@@ -91,36 +91,24 @@ struct op_elem_str
 };
 
 struct pred_empty_str
-  : public stub_pred
+  : public pred_overload <value_str>
 {
-  using stub_pred::stub_pred;
-
-  static selector get_selector ()
-  { return {value_str::vtype}; }
-
-  pred_result result (stack &stk) override;
+  using pred_overload::pred_overload;
+  pred_result result (value_str &a) override;
 };
 
 struct pred_find_str
-  : public stub_pred
+  : public pred_overload <value_str, value_str>
 {
-  using stub_pred::stub_pred;
-
-  static selector get_selector ()
-  { return {value_str::vtype}; }
-
-  pred_result result (stack &stk) override;
+  using pred_overload::pred_overload;
+  pred_result result (value_str &haystack, value_str &needle) override;
 };
 
 struct pred_match_str
-  : public stub_pred
+  : public pred_overload <value_str, value_str>
 {
-  using stub_pred::stub_pred;
-
-  static selector get_selector ()
-  { return {value_str::vtype}; }
-
-  pred_result result (stack &stk) override;
+  using pred_overload::pred_overload;
+  pred_result result (value_str &haystack, value_str &needle) override;
 };
 
 #endif /* _VALUE_STR_H_ */

@@ -147,37 +147,31 @@ op_elem_str::reset ()
 }
 
 pred_result
-pred_empty_str::result (stack &stk)
+pred_empty_str::result (value_str &a)
 {
-  auto vp = stk.top_as <value_str> ();
-  return pred_result (vp->get_string () == "");
+  return pred_result (a.get_string () == "");
 }
 
 pred_result
-pred_find_str::result (stack &stk)
+pred_find_str::result (value_str &haystack, value_str &needle)
 {
-  auto needle = stk.get_as <value_str> (0);
-  auto haystack = stk.get_as <value_str> (1);
-  return pred_result (haystack->get_string ().find (needle->get_string ())
+  return pred_result (haystack.get_string ().find (needle.get_string ())
 		      != std::string::npos);
 }
 
 pred_result
-pred_match_str::result (stack &stk)
+pred_match_str::result (value_str &haystack, value_str &needle)
 {
-  auto needle = stk.get_as <value_str> (0);
-  auto haystack = stk.get_as <value_str> (1);
-
   regex_t re;
-  if (regcomp (&re, needle->get_string ().c_str(),
+  if (regcomp (&re, needle.get_string ().c_str(),
 	       REG_EXTENDED | REG_NOSUB) != 0)
     {
       std::cerr << "Error: could not compile regular expression: '"
-		<< needle->get_string () << "'\n";
+		<< needle.get_string () << "'\n";
       return pred_result::fail;
     }
 
-  const int reti = regexec (&re, haystack->get_string ().c_str (),
+  const int reti = regexec (&re, haystack.get_string ().c_str (),
 			    /* nmatch: size of pmatch array */ 0,
 			    /* pmatch: array of matches */ NULL,
 			    /* no extra flags */ 0);
@@ -190,7 +184,7 @@ pred_match_str::result (stack &stk)
   else
     {
       char msgbuf[100];
-      regerror (reti, &re, msgbuf, sizeof(msgbuf));
+      regerror (reti, &re, msgbuf, sizeof (msgbuf));
       std::cerr << "Error: match failed: " << msgbuf << "\n";
     }
 

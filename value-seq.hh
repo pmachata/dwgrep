@@ -104,25 +104,17 @@ struct op_elem_seq
 };
 
 struct pred_empty_seq
-  : public stub_pred
+  : public pred_overload <value_seq>
 {
-  using stub_pred::stub_pred;
-
-  static selector get_selector ()
-  { return {value_seq::vtype}; }
-
-  pred_result result (stack &stk) override;
+  using pred_overload::pred_overload;
+  pred_result result (value_seq &a) override;
 };
 
 struct pred_find_seq
-  : public stub_pred
+  : public pred_overload <value_seq, value_seq>
 {
-  using stub_pred::stub_pred;
-
-  static selector get_selector ()
-  { return {value_seq::vtype}; }
-
-  pred_result result (stack &stk) override;
+  using pred_overload::pred_overload;
+  pred_result result (value_seq &haystack, value_seq &needle) override;
 };
 
 #endif /* _VALUE_SEQ_H_ */
