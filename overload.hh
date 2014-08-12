@@ -246,7 +246,6 @@ overload_tab::add_simple_pred_overload ()
 
 template <class... VT>
 struct op_overload_impl
-  : public stub_op
 {
 protected:
   template <class T>
@@ -270,15 +269,7 @@ protected:
     return std::tuple_cat (collect1 <T> (stk), std::move (rest));
   }
 
-  dwgrep_graph::sptr m_gr;
-
 public:
-  op_overload_impl (std::shared_ptr <op> upstream, dwgrep_graph::sptr gr,
-		    std::shared_ptr <scope> scope)
-    : stub_op {upstream, gr, scope}
-    , m_gr {gr}
-  {}
-
   static selector get_selector ()
   { return {VT::vtype...}; }
 };
@@ -286,6 +277,7 @@ public:
 template <class... VT>
 struct op_overload
   : public op_overload_impl <VT...>
+  , public stub_op
 {
   template <size_t... I>
   std::unique_ptr <value>
@@ -295,16 +287,23 @@ struct op_overload
     return operate (std::move (std::get <I> (args))...);
   }
 
+protected:
+  dwgrep_graph::sptr m_gr;
+
 public:
-  typedef op_overload_impl <VT...> super_t;
-  using super_t::super_t;
+  op_overload (std::shared_ptr <op> upstream, dwgrep_graph::sptr gr,
+	       std::shared_ptr <scope> scope)
+    : stub_op {upstream, gr, scope}
+    , m_gr {gr}
+  {}
 
   stack::uptr
   next () override final
   {
     while (auto stk = this->m_upstream->next ())
-      if (auto nv = call_operate (std::index_sequence_for <VT...> {},
-				  super_t::template collect <0, VT...> (*stk)))
+      if (auto nv = call_operate
+		(std::index_sequence_for <VT...> {},
+		 op_overload_impl <VT...>::template collect <0, VT...> (*stk)))
 	{
 	  stk->push (std::move (nv));
 	  return stk;
@@ -317,13 +316,10 @@ public:
 };
 
 template <class... VT>
-struct op_yielding_overload
+class op_yielding_overload
   : public op_overload_impl <VT...>
+  , public stub_op
 {
-  typedef op_overload_impl <VT...> super_t;
-  using super_t::super_t;
-
-private:
   template <size_t... I>
   std::unique_ptr <value_producer>
   call_operate (std::index_sequence <I...>,
@@ -342,7 +338,16 @@ private:
     m_stk = nullptr;
   }
 
+protected:
+  dwgrep_graph::sptr m_gr;
+
 public:
+  op_yielding_overload (std::shared_ptr <op> upstream, dwgrep_graph::sptr gr,
+			std::shared_ptr <scope> scope)
+    : stub_op {upstream, gr, scope}
+    , m_gr {gr}
+  {}
+
   stack::uptr
   next () override final
   {
@@ -353,7 +358,7 @@ public:
 	    {
 	      m_prod = call_operate
 		(std::index_sequence_for <VT...> {},
-		 super_t::template collect <0, VT...> (*stk));
+		 op_overload_impl <VT...>::template collect <0, VT...> (*stk));
 	      m_stk = std::move (stk);
 	    }
 	  else
@@ -374,7 +379,7 @@ public:
   reset () override
   {
     reset_me ();
-    super_t::reset ();
+    stub_op::reset ();
   }
 
   virtual std::unique_ptr <value_producer>
