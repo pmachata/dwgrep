@@ -527,62 +527,28 @@ namespace
 
 namespace
 {
-  struct builtin_rootp
-    : public pred_builtin
+  struct pred_rootp_die
+    : public pred_overload <value_die>
   {
-    using pred_builtin::pred_builtin;
+    using pred_overload::pred_overload;
 
-    struct p
-      : public pred
+    pred_result
+    result (value_die &a) override
     {
-      dwgrep_graph::sptr m_gr;
-
-      explicit p (dwgrep_graph::sptr g)
-	: m_gr {g}
-      {}
-
-      pred_result
-      result (stack &stk) override
-      {
-	if (auto v = stk.top_as <value_die> ())
-	  return pred_result (m_gr->is_root (v->get_die ()));
-
-	else if (stk.top ().is <value_attr> ())
-	  // By definition, attributes are never root.
-	  return pred_result::no;
-
-	else
-	  {
-	    show_expects (name (), {value_die::vtype, value_attr::vtype});
-	    return pred_result::fail;
-	  }
-      }
-
-      void
-      reset () override
-      {}
-
-      std::string
-      name () const override
-      {
-	return "?root";
-      }
-    };
-
-    std::unique_ptr <pred>
-    build_pred (dwgrep_graph::sptr q,
-		std::shared_ptr <scope> scope) const override
-    {
-      return maybe_invert (std::make_unique <p> (q));
+      return pred_result (m_gr->is_root (a.get_die ()));
     }
+  };
 
-    char const *
-    name () const override
+  struct pred_rootp_attr
+    : public pred_overload <value_attr>
+  {
+    using pred_overload::pred_overload;
+
+    pred_result
+    result (value_attr &a) override
     {
-      if (m_positive)
-	return "?root";
-      else
-	return "!root";
+      // By definition, attributes are never root.
+      return pred_result::no;
     }
   };
 }
@@ -921,8 +887,15 @@ dwgrep_builtins_dw ()
     dict.add (std::make_shared <overloaded_op_builtin> ("attribute", t));
   }
 
-  dict.add (std::make_shared <builtin_rootp> (true));
-  dict.add (std::make_shared <builtin_rootp> (false));
+  {
+    auto t = std::make_shared <overload_tab> ();
+
+    t->add_simple_pred_overload <pred_rootp_die> ();
+    t->add_simple_pred_overload <pred_rootp_attr> ();
+
+    dict.add (std::make_shared <overloaded_pred_builtin> ("?root", t));
+    dict.add (std::make_shared <overloaded_pred_builtin> ("!root", t));
+  }
 
   {
     auto t = std::make_shared <overload_tab> ();

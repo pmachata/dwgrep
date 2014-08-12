@@ -153,7 +153,7 @@ struct stub_op
 struct stub_pred
   : public pred
 {
-  stub_pred (dwgrep_graph::sptr q,  std::shared_ptr <scope> scope)
+  stub_pred (dwgrep_graph::sptr gr, std::shared_ptr <scope> scope)
   {}
 
   std::string name () const override final { return "stub"; }
