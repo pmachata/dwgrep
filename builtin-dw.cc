@@ -105,26 +105,19 @@ namespace
 
 namespace
 {
-  struct op_unit
-    : public inner_op
+  struct producer_unit_die
+    : public value_producer
   {
     dwgrep_graph::sptr m_gr;
-    stack::uptr m_stk;
     all_dies_iterator m_it;
     all_dies_iterator m_end;
-    size_t m_pos;
+    size_t m_i;
 
-    op_unit (std::shared_ptr <op> upstream, dwgrep_graph::sptr gr,
-	     std::shared_ptr <scope> scope)
-      : inner_op {upstream, gr, scope}
-      , m_gr {gr}
+    producer_unit_die (Dwarf_Die die, dwgrep_graph::sptr gr)
+      : m_gr {gr}
       , m_it {all_dies_iterator::end ()}
       , m_end {all_dies_iterator::end ()}
-      , m_pos {0}
-    {}
-
-    void
-    init_from_die (Dwarf_Die die)
+      , m_i {0}
     {
       Dwarf_Die cudie;
       if (dwarf_diecu (&die, &cudie, nullptr, nullptr) == nullptr)
@@ -135,60 +128,39 @@ namespace
       m_end = all_dies_iterator (++cuit);
     }
 
-    void
-    reset_me ()
-    {
-      m_stk = nullptr;
-      m_it = all_dies_iterator::end ();
-      m_pos = 0;
-    }
-
-    stack::uptr
+    std::unique_ptr <value>
     next () override
     {
-      while (true)
-	{
-	  while (m_stk == nullptr)
-	    {
-	      if (auto stk = m_upstream->next ())
-		{
-		  auto vp = stk->pop ();
-		  if (auto v = value::as <value_die> (&*vp))
-		    {
-		      init_from_die (v->get_die ());
-		      m_stk = std::move (stk);
-		    }
-		  else if (auto v = value::as <value_attr> (&*vp))
-		    {
-		      init_from_die (v->get_die ());
-		      m_stk = std::move (stk);
-		    }
-		  else
-		    show_expects (name (),
-				  {value_die::vtype, value_attr::vtype});
-		}
-	      else
-		return nullptr;
-	    }
+      if (m_it == m_end)
+	return nullptr;
 
-	  if (m_it != m_end)
-	    {
-	      auto ret = std::make_unique <stack> (*m_stk);
-	      ret->push (std::make_unique <value_die>
-			 (m_gr, **m_it, m_pos++));
-	      ++m_it;
-	      return ret;
-	    }
-
-	  reset_me ();
-	}
+      return std::make_unique <value_die> (m_gr, **m_it++, m_i++);
     }
+  };
 
-    void
-    reset () override
+  struct op_unit_die
+    : public op_yielding_overload <value_die>
+  {
+    using op_yielding_overload::op_yielding_overload;
+
+    std::unique_ptr <value_producer>
+    operate (std::unique_ptr <value_die> a) override
     {
-      reset_me ();
-      m_upstream->reset ();
+      return std::make_unique <producer_unit_die>
+	(a->get_die (), a->get_graph ());
+    }
+  };
+
+  struct op_unit_attr
+    : public op_yielding_overload <value_attr>
+  {
+    using op_yielding_overload::op_yielding_overload;
+
+    std::unique_ptr <value_producer>
+    operate (std::unique_ptr <value_attr> a) override
+    {
+      return std::make_unique <producer_unit_die>
+	(a->get_die (), a->get_graph ());
     }
   };
 }
@@ -198,6 +170,8 @@ namespace
   struct op_child_die
     : public op_yielding_overload <value_die>
   {
+    using op_yielding_overload::op_yielding_overload;
+
     struct producer
       : public value_producer
     {
@@ -228,11 +202,6 @@ namespace
 	throw_libdw ();
       }
     };
-
-    op_child_die (std::shared_ptr <op> upstream, dwgrep_graph::sptr gr,
-		  std::shared_ptr <scope> scope)
-      : op_yielding_overload {upstream, gr, scope}
-    {}
 
     std::unique_ptr <value_producer>
     operate (std::unique_ptr <value_die> a) override
@@ -934,7 +903,15 @@ dwgrep_builtins_dw ()
   add_builtin_type_constant <value_loclist_op> (dict);
 
   add_simple_exec_builtin <op_winfo> (dict, "winfo");
-  add_simple_exec_builtin <op_unit> (dict, "unit");
+
+  {
+    auto t = std::make_shared <overload_tab> ();
+
+    t->add_simple_op_overload <op_unit_die> ();
+    t->add_simple_op_overload <op_unit_attr> ();
+
+    dict.add (std::make_shared <overloaded_op_builtin> ("unit", t));
+  }
 
   {
     auto t = std::make_shared <overload_tab> ();
