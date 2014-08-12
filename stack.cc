@@ -63,6 +63,7 @@ frame::clone () const
 
 stack::stack (stack const &that)
   : m_frame {that.m_frame != nullptr ? that.m_frame->clone () : nullptr}
+  , m_profile {that.m_profile}
 {
   for (auto const &v: that.m_values)
     m_values.push_back (v->clone ());

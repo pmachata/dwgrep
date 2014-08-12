@@ -31,57 +31,63 @@
 
 #include <array>
 #include <type_traits>
+#include <climits>
 
 #include "value.hh"
 
 struct stack;
-class selector
+
+struct selector
 {
-  union
-  {
-    std::array <value_type, 4> m_vts;
-    uint32_t m_imprint;
-  };
-  union
-  {
-    std::array <uint8_t, 4> m_mask_elts;
-    uint32_t m_mask;
-  };
+  typedef uint32_t sel_t;
+  static auto const W = sizeof (sel_t);
+  static_assert (CHAR_BIT == 8, "character has 8 bits");
+  static_assert (sizeof (((value_type *) nullptr)->code ()) == 1,
+		 "sizeof of value_type code is 1");
 
-  static_assert (sizeof (m_vts) == 4, "assuming 4 value_types in uint32_t");
+private:
 
-  static uint32_t
-  compute_mask (uint8_t code)
+  sel_t m_imprint;
+  sel_t m_mask;
+
+  static sel_t
+  compute_mask ()
   {
-    return code != 0 ? 0xff : 0;
+    return 0;
   }
 
   template <class... Ts>
-  static uint32_t
+  static sel_t
   compute_mask (uint8_t code, Ts... codes)
   {
-    return compute_mask (codes...) << 8 | compute_mask (code);
+    return compute_mask (codes...) << 8 | (code != 0 ? (sel_t) 0xff : 0);
   }
 
-  static std::array <value_type, 4> get_vts (stack const &s);
+  static sel_t
+  compute_imprint ()
+  {
+    return 0;
+  }
+
+  template <class... Ts>
+  static sel_t
+  compute_imprint (uint8_t code, Ts... codes)
+  {
+    return compute_imprint (codes...) << 8 | (sel_t) code;
+  }
 
 public:
-  template <class... Ts, std::enable_if_t <(sizeof... (Ts) == 4), int> Fake = 0>
+  template <class... Ts, std::enable_if_t <(sizeof... (Ts) <= W), int> Fake = 0>
   selector (Ts... vts)
-    : m_vts {{vts...}}
-    , m_mask_elts {{(vts.code () != 0 ? (uint8_t) 0xff : (uint8_t) 0)...}}
-  {}
-
-  template <class... Ts, std::enable_if_t <(sizeof... (Ts) < 4), int> Fake = 0>
-  selector (Ts... vts)
-    : selector {value_type {0}, vts...}
+    : m_imprint {compute_imprint ((vts.code ())...)}
+    , m_mask {compute_mask ((vts.code ())...)}
   {}
 
   selector (stack const &s);
 
   selector (selector const &that)
-    : m_vts (that.m_vts)
-    , m_mask_elts (that.m_mask_elts)
+    : m_imprint (that.m_imprint)
+    , m_mask (that.m_mask)
   {}
 
   bool
@@ -90,9 +96,12 @@ public:
     return (profile.m_imprint & m_mask) == m_imprint;
   }
 
-  bool operator< (selector const &that) const { return m_vts < that.m_vts; }
-  bool operator== (selector const &that) const { return m_vts == that.m_vts; }
-  bool operator!= (selector const &that) const { return m_vts != that.m_vts; }
+  bool operator< (selector const &that) const
+  { return m_imprint < that.m_imprint; }
+  bool operator== (selector const &that) const
+  { return m_imprint == that.m_imprint; }
+  bool operator!= (selector const &that) const
+  { return m_imprint != that.m_imprint; }
 
   friend std::ostream &operator<< (std::ostream &o, selector const &sel);
 };

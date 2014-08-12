@@ -33,6 +33,7 @@
 #include <vector>
 
 #include "value.hh"
+#include "selector.hh"
 
 enum var_id: unsigned {};
 
@@ -60,11 +61,15 @@ class stack
 {
   std::vector <std::unique_ptr <value>> m_values;
   std::shared_ptr <frame> m_frame;
+  selector::sel_t m_profile;
 
 public:
   typedef std::unique_ptr <stack> uptr;
 
-  stack () = default;
+  stack ()
+    : m_profile {0}
+  {}
+
   stack (stack const &other);
   stack (stack &&other) = default;
   ~stack () = default;
@@ -90,9 +95,17 @@ public:
     return m_values.size ();
   }
 
+  selector::sel_t
+  profile () const
+  {
+    return m_profile;
+  }
+
   void
   push (std::unique_ptr <value> vp)
   {
+    m_profile <<= 8;
+    m_profile |= vp->get_type ().code ();
     m_values.push_back (std::move (vp));
   }
 
@@ -102,6 +115,12 @@ public:
     assert (! m_values.empty ());
     auto ret = std::move (m_values.back ());
     m_values.pop_back ();
+    m_profile >>= 8;
+    if (m_values.size () >= selector::W)
+      {
+	auto code = get (selector::W - 1).get_type ().code ();
+	m_profile |= ((selector::sel_t) code) << 24;
+      }
     return ret;
   }
 

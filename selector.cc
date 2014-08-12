@@ -30,32 +30,22 @@
 #include "selector.hh"
 #include "stack.hh"
 
-std::array <value_type, 4>
-selector::get_vts (stack const &s)
-{
-  auto ret = selector {}.m_vts;
-  for (unsigned i = 0; i < ret.size () && i < s.size (); ++i)
-    ret[ret.size () - i - 1] = s.get (i).get_type ();
-  return ret;
-}
-
 selector::selector (stack const &s)
-  : m_vts (get_vts (s))
-  , m_mask {0} // No need to care about the mask, this is just for
-	       // purposes of getting the imprint.
+  : m_imprint {s.profile ()}
+  , m_mask {0}
 {}
 
 std::ostream &
 operator<< (std::ostream &o, selector const &sel)
 {
   bool seen = false;
-  for (unsigned i = 0; i < sel.m_vts.size (); ++i)
-    if (sel.m_vts[i].code () != 0)
+  for (auto imprint = sel.m_imprint; imprint != 0; imprint >>= 8)
+    if (uint8_t code = imprint & 0xff)
       {
 	if (seen)
 	  o << " ";
 	seen = true;
-	o << sel.m_vts[i].name ();
+	o << value_type {code}.name ();
       }
 
   return o;
