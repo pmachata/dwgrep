@@ -55,13 +55,17 @@ void show_expects (std::string const &name, std::vector <selector> vts);
 // type overload_builtin <your_op>.
 //
 // These individual overloads are collected into an overload table,
-// which maps value types to builtins.  The table itself needs to be
-// public, so that other modules can add their specializations in.
+// which maps value types to builtins.
 //
 // The overaching operator is then a builtin as well.  It creates an
-// op that inherits off overload_op, which handles the dispatching
-// itself.  Constructor of that class needs an overload instance,
-// which is created from overload table above.
+// op (or a pred) that inherits off overload_op (overload_pred), which
+// handles the dispatching itself.  Constructor of that class needs an
+// overload instance, which is created from overload table above.
+//
+// As an additional simplification, there's some templating magic that
+// sets up stage just like the above expects it: op_overload and
+// pred_overload.  Most of the time, all you need to write are
+// sub-classes of these templates.  See below for comments on these.
 //
 // For example of this in action, see e.g. operator length.
 
@@ -244,6 +248,33 @@ overload_tab::add_simple_pred_overload ()
 		std::make_shared <overload_pred_builtin <T>> ());
 }
 
+// Generators for type-safe overloads.
+//
+// While it is possible to hand-code each overload as a full-fledged
+// op, this is often unnecessarily laborious and prone to errors.
+// Instead, three class templates are provided for making this work
+// simple:
+//
+//  - op_overload -- for simple overloads
+//  - op_yielding_overload -- for overloads that yield more than once
+//  - pred_overload -- for predicates
+//
+// The general usage is that you inherit off this template, and as
+// arguments, you provide the types of values that you expect on stack
+// (the last argument is TOS, deeper stack elements are to the left).
+// The template sets up the necessary popping and argument gathering,
+// and then calls a virtual with those arguments.  You provide
+// implementation of this virtual.
+//
+// Return type of this virtual depends on the template type:
+//
+//  - op_overload: a value to be pushed
+//
+//  - op_yielding_overload: a value_producer that enumerates the
+//    values that should become TOS of new stacks
+//
+//  - pred_overload: a pred_result
+
 template <class... VT>
 struct op_overload_impl
 {
@@ -387,9 +418,9 @@ public:
 };
 
 template <class... VT>
-struct pred_overload_impl
+struct pred_overload
+  : public stub_pred
 {
-protected:
   template <class T>
   static auto collect1 (stack &stk, size_t depth)
   {
@@ -411,16 +442,6 @@ protected:
     return std::tuple_cat (rest, collect1 <T> (stk, N));
   }
 
-public:
-  static selector get_selector ()
-  { return {VT::vtype...}; }
-};
-
-template <class... VT>
-struct pred_overload
-  : public pred_overload_impl <VT...>
-  , public stub_pred
-{
   template <size_t... I>
   pred_result
   call_result (std::index_sequence <I...>, std::tuple <VT &...> args)
@@ -440,12 +461,14 @@ public:
   pred_result
   result (stack &stk) override
   {
-    return call_result
-      (std::index_sequence_for <VT...> {},
-       pred_overload_impl <VT...>::template collect <0, VT...> (stk));
+    return call_result (std::index_sequence_for <VT...> {},
+			collect <0, VT...> (stk));
   }
 
   virtual pred_result result (VT &... vals) = 0;
+
+  static selector get_selector ()
+  { return {VT::vtype...}; }
 };
 
 #endif /* _OVERLOAD_H_ */
