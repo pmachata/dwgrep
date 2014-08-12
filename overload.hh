@@ -386,4 +386,66 @@ public:
 	operate (std::unique_ptr <VT>... vals) = 0;
 };
 
+template <class... VT>
+struct pred_overload_impl
+{
+protected:
+  template <class T>
+  static auto collect1 (stack &stk, size_t depth)
+  {
+    auto dv = stk.get_as <T> (depth);
+    assert (dv != nullptr);
+    return std::tuple <T &> (*dv);
+  }
+
+  template <size_t N>
+  static auto collect (stack &stk)
+  {
+    return std::tuple <> {};
+  }
+
+  template <size_t N, class T, class... Ts>
+  static auto collect (stack &stk)
+  {
+    auto rest = collect <N + 1, Ts...> (stk);
+    return std::tuple_cat (collect1 <T> (stk, N), rest);
+  }
+
+public:
+  static selector get_selector ()
+  { return {VT::vtype...}; }
+};
+
+template <class... VT>
+struct pred_overload
+  : public pred_overload_impl <VT...>
+  , public stub_pred
+{
+  template <size_t... I>
+  pred_result
+  call_result (std::index_sequence <I...>, std::tuple <VT &...> args)
+  {
+    return result (std::get <I> (args)...);
+  }
+
+protected:
+  dwgrep_graph::sptr m_gr;
+
+public:
+  pred_overload (dwgrep_graph::sptr gr, std::shared_ptr <scope> scope)
+    : stub_pred {gr, scope}
+    , m_gr {gr}
+  {}
+
+  pred_result
+  result (stack &stk) override
+  {
+    return call_result
+      (std::index_sequence_for <VT...> {},
+       pred_overload_impl <VT...>::template collect <0, VT...> (stk));
+  }
+
+  virtual pred_result result (VT &... vals) = 0;
+};
+
 #endif /* _OVERLOAD_H_ */
