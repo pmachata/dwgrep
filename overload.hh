@@ -408,7 +408,7 @@ protected:
   static auto collect (stack &stk)
   {
     auto rest = collect <N + 1, Ts...> (stk);
-    return std::tuple_cat (collect1 <T> (stk, N), rest);
+    return std::tuple_cat (rest, collect1 <T> (stk, N));
   }
 
 public:
