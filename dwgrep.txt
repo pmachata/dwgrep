@@ -875,18 +875,18 @@
     : [child ?(@AT_name ?"foo")]
 
 *** Element access
-    : [some seq] elem (pos == 0)	# first
-    : [some seq] relem (pos == 0)	# last
-    : [some seq] elem (pos != 0)	# rest
-    : [some seq] elem (pos >= 3) (pos <= 5)	# slice
+    : [some seq] elem (pos == 0)	# [0]
+    : [some seq] relem (pos == 0)	# [-1]
+    : [some seq] elem (pos != 0)	# [1:]
+    : [some seq] elem (pos >= 3 && pos <= 5)	# [3:6]
+    : [some seq] relem (pos > 0)	# [:-1]
 
     This is not widely used, so maybe this is just fine.  Most of the
     time, instead of producing a sequence, you would just assert
     position on the producing expression directly.  If necessary, we
     can adopt words like (get :: ?T_SEQ ?T_CONST -> ?()) (that would
     allow Python-like negative indices as well), (last :: ?T_SEQ ->
-    ?()), etc.  Especially slices of the sort [:-1] are ugly with this
-    approach.
+    ?()), etc.
 
 ** ·T_STR
     Any word that is applicable to sequences is applicable to a string
@@ -977,11 +977,11 @@
      XXX how do we solve logical vs. low-level access to
      DW_TAG_partial_unit?
 
-***  low :: ?T_DIE ->? ?T_CONST
-     : @AT_lowpc
-
 ***  high :: ?T_DIE ->? ?T_CONST
      : attribute ?AT_highpc address
+
+***  low :: ?T_DIE ->? ?T_CONST
+     : @AT_lowpc
 
 ***  address :: ?T_DIE ->* ?T_ADDR_RANGE
      Like dwarf_ranges.
