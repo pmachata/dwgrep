@@ -299,50 +299,6 @@ namespace
 
 namespace
 {
-  class die_op_f
-    : public inner_op
-  {
-  protected:
-    dwgrep_graph::sptr m_gr;
-
-  public:
-    die_op_f (std::shared_ptr <op> upstream, dwgrep_graph::sptr gr,
-	      std::shared_ptr <scope> scope)
-      : inner_op {upstream, gr, scope}
-      , m_gr {gr}
-    {}
-
-    stack::uptr
-    next () override final
-    {
-      while (auto stk = m_upstream->next ())
-	{
-	  auto vp = stk->pop ();
-	  if (auto v = value::as <value_die> (&*vp))
-	    {
-	      if (operate (*stk, v->get_die ()))
-		return stk;
-	    }
-
-	  else
-	    show_expects (name (), {value_die::vtype});
-	}
-
-      return nullptr;
-    }
-
-    void reset () override final
-    { m_upstream->reset (); }
-
-    virtual std::string name () const override = 0;
-
-    virtual bool operate (stack &stk, Dwarf_Die &die)
-    { return false; }
-  };
-}
-
-namespace
-{
   struct op_offset_die
     : public op_overload <value_die>
   {
