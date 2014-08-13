@@ -33,6 +33,7 @@
 #include <tuple>
 #include <memory>
 #include <utility>
+#include <iostream>
 
 #include "op.hh"
 #include "builtin.hh"
@@ -101,8 +102,8 @@ public:
 
   void add_overload (selector vt, std::shared_ptr <builtin> b);
 
-  template <class T> void add_simple_op_overload ();
-  template <class T> void add_simple_pred_overload ();
+  template <class T, class... As> void add_op_overload (As &&... arg);
+  template <class T, class... As> void add_pred_overload (As &&... arg);
 
   overload_instance instantiate (dwgrep_graph::sptr q,
 				 std::shared_ptr <scope> scope);
@@ -194,58 +195,105 @@ struct overloaded_pred_builtin
   create_merged (std::shared_ptr <overload_tab> tab) const override final;
 };
 
-// Base class for individual overloads that produce an op.
-template <class OP>
-struct overload_op_builtin
-  : public builtin
-{
-  std::shared_ptr <op>
-  build_exec (std::shared_ptr <op> upstream, dwgrep_graph::sptr q,
-	      std::shared_ptr <scope> scope) const override final
-  {
-    return std::make_shared <OP> (upstream, q, scope);
-  }
 
-  char const *
-  name () const override final
+// The following is for delayed dispatch of an op constructor with
+// arguments provided when adding an overload through add_op_overload.
+
+template <class Op, class... Args>
+struct overload_op_builder_impl
+{
+  template <size_t... I>
+  static std::shared_ptr <op>
+  build (std::shared_ptr <op> upstream, dwgrep_graph::sptr q,
+	 std::shared_ptr <scope> scope,
+	 std::index_sequence <I...>,
+	 std::tuple <std::remove_reference_t <Args>...> const &args)
   {
-    return "overload";
+    return std::make_shared <Op> (upstream, q, scope, std::get <I> (args)...);
   }
 };
 
-// Base class for individual overloads that produce a pred.
-template <class PRED>
-struct overload_pred_builtin
-  : public builtin
-{
-  std::unique_ptr <pred>
-  build_pred (dwgrep_graph::sptr q,
-	      std::shared_ptr <scope> scope) const override final
-  {
-    return std::make_unique <PRED> (q, scope);
-  }
-
-  char const *
-  name () const override final
-  {
-    return "overload";
-  }
-};
-
-template <class T>
+template <class Op, class... Args>
 void
-overload_tab::add_simple_op_overload ()
+overload_tab::add_op_overload (Args &&... args)
 {
-  add_overload (T::get_selector (),
-		std::make_shared <overload_op_builtin <T>> ());
+  struct overload_op_builtin
+    : public builtin
+  {
+    std::tuple <std::remove_reference_t <Args>...> m_args;
+
+    overload_op_builtin (Args &&... args2)
+      : m_args (std::forward <Args> (args2)...)
+    {}
+
+    std::shared_ptr <op>
+    build_exec (std::shared_ptr <op> upstream, dwgrep_graph::sptr q,
+		std::shared_ptr <scope> scope) const override final
+    {
+      return overload_op_builder_impl <Op, Args...>::template build
+	(upstream, q, scope, std::index_sequence_for <Args...> {}, m_args);
+    }
+
+    char const *
+    name () const override final
+    {
+      return "overload";
+    }
+  };
+
+  add_overload (Op::get_selector (),
+		std::make_shared <overload_op_builtin>
+			(std::forward <Args> (args)...));
 }
 
-template <class T>
-void
-overload_tab::add_simple_pred_overload ()
+
+// The following is for delayed dispatch of a pred constructor with
+// arguments provided when adding an overload through
+// add_pred_overload.
+
+template <class Pred, class... Args>
+struct overload_pred_builder_impl
 {
-  add_overload (T::get_selector (),
-		std::make_shared <overload_pred_builtin <T>> ());
+  template <size_t... I>
+  static std::unique_ptr <pred>
+  build (dwgrep_graph::sptr q, std::shared_ptr <scope> scope,
+	 std::index_sequence <I...>,
+	 std::tuple <std::remove_reference_t <Args>...> const &args)
+  {
+    return std::make_unique <Pred> (q, scope, std::get <I> (args)...);
+  }
+};
+
+template <class Pred, class... Args>
+void
+overload_tab::add_pred_overload (Args &&... args)
+{
+  struct overload_pred_builtin
+    : public builtin
+  {
+    std::tuple <std::remove_reference_t <Args>...> const m_args;
+
+    overload_pred_builtin (Args... args2)
+      : m_args (args2...)
+    {}
+
+    std::unique_ptr <pred>
+    build_pred (dwgrep_graph::sptr q,std::shared_ptr <scope> scope)
+      const override final
+    {
+      return overload_pred_builder_impl <Pred, Args...>::template build
+        (q, scope, std::index_sequence_for <Args...> {}, m_args);
+    }
+
+    char const *
+    name () const override final
+    {
+      return "overload";
+    }
+  };
+
+  add_overload (Pred::get_selector (),
+		std::make_shared <overload_pred_builtin> (args...));
 }
 
 // Generators for type-safe overloads.

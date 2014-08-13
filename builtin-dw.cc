@@ -584,276 +584,164 @@ namespace
 
 namespace
 {
-  struct builtin_attr_named
-    : public builtin
+  class op_atval_die
+    : public op_yielding_overload <value_die>
   {
     int m_atname;
-    explicit builtin_attr_named (int atname)
-      : m_atname {atname}
-    {}
 
-    struct o
-      : public die_op_f
-    {
-      int m_atname;
-
-    public:
-      o (std::shared_ptr <op> upstream, dwgrep_graph::sptr gr,
-	 std::shared_ptr <scope> scope, int atname)
-	: die_op_f {upstream, gr, scope}
-	, m_atname {atname}
-      {}
-
-      bool
-      operate (stack &stk, Dwarf_Die &die) override
-      {
-	Dwarf_Attribute attr;
-	if (dwarf_attr (&die, m_atname, &attr) == nullptr)
-	  return false;
-
-	stk.push (std::make_unique <value_attr> (m_gr, attr, die, 0));
-	return true;
-      }
-
-      std::string
-      name () const override
-      {
-	std::stringstream ss;
-	ss << "@" << constant {m_atname, &dw_attr_dom, brevity::brief};
-	return ss.str ();
-      }
-    };
-
-    std::shared_ptr <op>
-    build_exec (std::shared_ptr <op> upstream, dwgrep_graph::sptr gr,
-		std::shared_ptr <scope> scope) const override
-    {
-      auto t = std::make_shared <o> (upstream, gr, scope, m_atname);
-      return std::make_shared <op_value_attr> (t, gr, scope);
-    }
-
-    char const *
-    name () const override
-    {
-      return "@attr";
-    }
-  };
-}
-
-namespace
-{
-  struct builtin_pred_attr
-    : public pred_builtin
-  {
-    int m_atname;
-    builtin_pred_attr (int atname, bool positive)
-      : pred_builtin {positive}
+  public:
+    op_atval_die (std::shared_ptr <op> upstream, dwgrep_graph::sptr gr,
+		  std::shared_ptr <scope> scope, int atname)
+      : op_yielding_overload {upstream, gr, scope}
       , m_atname {atname}
     {}
 
-    struct p
-      : public pred
+    std::unique_ptr <value_producer>
+    operate (std::unique_ptr <value_die> a)
     {
-      unsigned m_atname;
-      constant m_const;
+      Dwarf_Attribute attr;
+      if (dwarf_attr (&a->get_die (), m_atname, &attr) == nullptr)
+	return false;
 
-      explicit p (unsigned atname)
-	: m_atname {atname}
-	, m_const {atname, &dw_attr_dom}
-      {}
-
-      pred_result
-      result (stack &stk) override
-      {
-	if (auto v = stk.top_as <value_die> ())
-	  {
-	    Dwarf_Die *die = &v->get_die ();
-	    return pred_result (dwarf_hasattr (die, m_atname) != 0);
-	  }
-
-	else if (auto v = stk.top_as <value_cst> ())
-	  {
-	    check_constants_comparable (m_const, v->get_constant ());
-	    return pred_result (m_const == v->get_constant ());
-	  }
-
-	else if (auto v = stk.top_as <value_attr> ())
-	  return pred_result (dwarf_whatattr (&v->get_attr ()) == m_atname);
-
-	else
-	  {
-	    show_expects (name (),
-			  {value_die::vtype,
-			   value_attr::vtype, value_cst::vtype});
-	    return pred_result::fail;
-	  }
-      }
-
-      void reset () override {}
-
-      std::string
-      name () const override
-      {
-	std::stringstream ss;
-	ss << "?AT_" << constant {m_atname, &dw_attr_dom};
-	return ss.str ();
-      }
-    };
-
-    std::unique_ptr <pred>
-    build_pred (dwgrep_graph::sptr q,
-		std::shared_ptr <scope> scope) const override
-    {
-      return maybe_invert (std::make_unique <p> (m_atname));
+      return at_value (attr, a->get_die (), a->get_graph ());
     }
+  };
 
-    char const *
-    name () const override
+}
+
+namespace
+{
+  struct pred_atname_die
+    : public pred_overload <value_die>
+  {
+    unsigned m_atname;
+
+    pred_atname_die (dwgrep_graph::sptr gr, std::shared_ptr <scope> scope,
+		     unsigned atname)
+      : pred_overload {gr, scope}
+      , m_atname {atname}
+    {}
+
+    pred_result
+    result (value_die &a) override
     {
-      if (m_positive)
-	return "?attr";
-      else
-	return "!attr";
+      Dwarf_Die *die = &a.get_die ();
+      return pred_result (dwarf_hasattr (die, m_atname) != 0);
+    }
+  };
+
+  struct pred_atname_attr
+    : public pred_overload <value_attr>
+  {
+    unsigned m_atname;
+
+    pred_atname_attr (dwgrep_graph::sptr gr, std::shared_ptr <scope> scope,
+		      unsigned atname)
+      : pred_overload {gr, scope}
+      , m_atname {atname}
+    {}
+
+    pred_result
+    result (value_attr &a) override
+    {
+      return pred_result (dwarf_whatattr (&a.get_attr ()) == m_atname);
+    }
+  };
+
+  struct pred_atname_cst
+    : public pred_overload <value_cst>
+  {
+    constant m_const;
+
+    pred_atname_cst (dwgrep_graph::sptr gr, std::shared_ptr <scope> scope,
+		     unsigned atname)
+      : pred_overload {gr, scope}
+      , m_const {atname, &dw_attr_dom}
+    {}
+
+    pred_result
+    result (value_cst &a) override
+    {
+      check_constants_comparable (m_const, a.get_constant ());
+      return pred_result (m_const == a.get_constant ());
     }
   };
 }
 
 namespace
 {
-  struct builtin_pred_tag
-    : public pred_builtin
+  struct pred_tag_die
+    : public pred_overload <value_die>
   {
     int m_tag;
-    builtin_pred_tag (int tag, bool positive)
-      : pred_builtin {positive}
+
+    pred_tag_die (dwgrep_graph::sptr gr, std::shared_ptr <scope> scope, int tag)
+      : pred_overload {gr, scope}
       , m_tag {tag}
     {}
 
-    struct p
-      : public pred
+    pred_result
+    result (value_die &a) override
     {
-      int m_tag;
-      constant m_const;
-
-      explicit p (int tag)
-	: m_tag {tag}
-	, m_const {(unsigned) tag, &dw_tag_dom}
-      {}
-
-      pred_result
-      result (stack &stk) override
-      {
-	if (auto v = stk.top_as <value_die> ())
-	  return pred_result (dwarf_tag (&v->get_die ()) == m_tag);
-
-	else if (auto v = stk.top_as <value_cst> ())
-	  {
-	    check_constants_comparable (m_const, v->get_constant ());
-	    return pred_result (m_const == v->get_constant ());
-	  }
-
-	else
-	  {
-	    show_expects (name (), {value_die::vtype, value_cst::vtype});
-	    return pred_result::fail;
-	  }
-      }
-
-      void reset () override {}
-
-      std::string
-      name () const override
-      {
-	std::stringstream ss;
-	ss << "?" << m_const;
-	return ss.str ();
-      }
-    };
-
-    std::unique_ptr <pred>
-    build_pred (dwgrep_graph::sptr q,
-		std::shared_ptr <scope> scope) const override
-    {
-      return maybe_invert (std::make_unique <p> (m_tag));
+      return pred_result (dwarf_tag (&a.get_die ()) == m_tag);
     }
+  };
 
-    char const *
-    name () const override
+  struct pred_tag_cst
+    : public pred_overload <value_cst>
+  {
+    constant m_const;
+
+    pred_tag_cst (dwgrep_graph::sptr gr, std::shared_ptr <scope> scope, int tag)
+      : pred_overload {gr, scope}
+      , m_const {(unsigned) tag, &dw_tag_dom}
+    {}
+
+    pred_result
+    result (value_cst &a) override
     {
-      if (m_positive)
-	return "?tag";
-      else
-	return "!tag";
+      check_constants_comparable (m_const, a.get_constant ());
+      return pred_result (m_const == a.get_constant ());
     }
   };
 }
 
 namespace
 {
-  struct builtin_pred_form
-    : public pred_builtin
+  struct pred_form_attr
+    : public pred_overload <value_attr>
   {
     unsigned m_form;
-    builtin_pred_form (unsigned form, bool positive)
-      : pred_builtin {positive}
+
+    pred_form_attr (dwgrep_graph::sptr gr, std::shared_ptr <scope> scope,
+		    unsigned form)
+      : pred_overload {gr, scope}
       , m_form {form}
     {}
 
-    struct p
-      : public pred
+    pred_result
+    result (value_attr &a) override
     {
-      unsigned m_form;
-      constant m_const;
-
-      explicit p (unsigned form)
-	: m_form {form}
-	, m_const {m_form, &dw_form_dom}
-      {}
-
-      pred_result
-      result (stack &stk) override
-      {
-	if (auto v = stk.top_as <value_attr> ())
-	  return pred_result (dwarf_whatform (&v->get_attr ()) == m_form);
-
-	else if (auto v = stk.top_as <value_cst> ())
-	  {
-	    check_constants_comparable (m_const, v->get_constant ());
-	    return pred_result (m_const == v->get_constant ());
-	  }
-
-	else
-	  {
-	    show_expects (name (), {value_attr::vtype, value_cst::vtype});
-	    return pred_result::fail;
-	  }
-      }
-
-      void reset () override {}
-
-      std::string
-      name () const override
-      {
-	std::stringstream ss;
-	ss << "?" << m_const;
-	return ss.str ();
-      }
-    };
-
-    std::unique_ptr <pred>
-    build_pred (dwgrep_graph::sptr q,
-		std::shared_ptr <scope> scope) const override
-    {
-      return maybe_invert (std::make_unique <p> (m_form));
+      return pred_result (dwarf_whatform (&a.get_attr ()) == m_form);
     }
+  };
 
-    char const *
-    name () const override
+  struct pred_form_cst
+    : public pred_overload <value_cst>
+  {
+    constant m_const;
+
+    pred_form_cst (dwgrep_graph::sptr gr, std::shared_ptr <scope> scope,
+		   unsigned form)
+      : pred_overload {gr, scope}
+      , m_const {form, &dw_form_dom}
+    {}
+
+    pred_result
+    result (value_cst &a) override
     {
-      if (m_positive)
-	return "?form";
-      else
-	return "!form";
+      check_constants_comparable (m_const, a.get_constant ());
+      return pred_result (m_const == a.get_constant ());
     }
   };
 }
@@ -873,8 +761,8 @@ dwgrep_builtins_dw ()
   {
     auto t = std::make_shared <overload_tab> ();
 
-    t->add_simple_op_overload <op_unit_die> ();
-    t->add_simple_op_overload <op_unit_attr> ();
+    t->add_op_overload <op_unit_die> ();
+    t->add_op_overload <op_unit_attr> ();
 
     dict.add (std::make_shared <overloaded_op_builtin> ("unit", t));
   }
@@ -882,7 +770,7 @@ dwgrep_builtins_dw ()
   {
     auto t = std::make_shared <overload_tab> ();
 
-    t->add_simple_op_overload <op_attribute_die> ();
+    t->add_op_overload <op_attribute_die> ();
 
     dict.add (std::make_shared <overloaded_op_builtin> ("attribute", t));
   }
@@ -890,8 +778,8 @@ dwgrep_builtins_dw ()
   {
     auto t = std::make_shared <overload_tab> ();
 
-    t->add_simple_pred_overload <pred_rootp_die> ();
-    t->add_simple_pred_overload <pred_rootp_attr> ();
+    t->add_pred_overload <pred_rootp_die> ();
+    t->add_pred_overload <pred_rootp_attr> ();
 
     dict.add (std::make_shared <overloaded_pred_builtin> ("?root", t));
     dict.add (std::make_shared <overloaded_pred_builtin> ("!root", t));
@@ -900,8 +788,8 @@ dwgrep_builtins_dw ()
   {
     auto t = std::make_shared <overload_tab> ();
 
-    t->add_simple_op_overload <op_child_die> ();
-    t->add_simple_op_overload <op_child_loclist_elem> ();
+    t->add_op_overload <op_child_die> ();
+    t->add_op_overload <op_child_loclist_elem> ();
 
     dict.add (std::make_shared <overloaded_op_builtin> ("child", t));
   }
@@ -909,8 +797,8 @@ dwgrep_builtins_dw ()
   {
     auto t = std::make_shared <overload_tab> ();
 
-    t->add_simple_op_overload <op_value_attr> ();
-    t->add_simple_op_overload <op_value_loclist_op> ();
+    t->add_op_overload <op_value_attr> ();
+    t->add_op_overload <op_value_loclist_op> ();
 
     dict.add (std::make_shared <overloaded_op_builtin> ("value", t));
   }
@@ -918,8 +806,8 @@ dwgrep_builtins_dw ()
   {
     auto t = std::make_shared <overload_tab> ();
 
-    t->add_simple_op_overload <op_offset_die> ();
-    t->add_simple_op_overload <op_offset_loclist_op> ();
+    t->add_op_overload <op_offset_die> ();
+    t->add_op_overload <op_offset_loclist_op> ();
 
     dict.add (std::make_shared <overloaded_op_builtin> ("offset", t));
   }
@@ -927,7 +815,7 @@ dwgrep_builtins_dw ()
   {
     auto t = std::make_shared <overload_tab> ();
 
-    t->add_simple_op_overload <op_address_loclist_elem> ();
+    t->add_op_overload <op_address_loclist_elem> ();
 
     dict.add (std::make_shared <overloaded_op_builtin> ("address", t));
   }
@@ -935,9 +823,9 @@ dwgrep_builtins_dw ()
   {
     auto t = std::make_shared <overload_tab> ();
 
-    t->add_simple_op_overload <op_label_die> ();
-    t->add_simple_op_overload <op_label_attr> ();
-    t->add_simple_op_overload <op_label_loclist_op> ();
+    t->add_op_overload <op_label_die> ();
+    t->add_op_overload <op_label_attr> ();
+    t->add_op_overload <op_label_loclist_op> ();
 
     dict.add (std::make_shared <overloaded_op_builtin> ("label", t));
   }
@@ -945,7 +833,7 @@ dwgrep_builtins_dw ()
   {
     auto t = std::make_shared <overload_tab> ();
 
-    t->add_simple_op_overload <op_form_attr> ();
+    t->add_op_overload <op_form_attr> ();
 
     dict.add (std::make_shared <overloaded_op_builtin> ("form", t));
   }
@@ -953,8 +841,8 @@ dwgrep_builtins_dw ()
   {
     auto t = std::make_shared <overload_tab> ();
 
-    t->add_simple_op_overload <op_parent_die> ();
-    t->add_simple_op_overload <op_parent_attr> ();
+    t->add_op_overload <op_parent_die> ();
+    t->add_op_overload <op_parent_attr> ();
 
     dict.add (std::make_shared <overloaded_op_builtin> ("parent", t));
   }
@@ -962,52 +850,94 @@ dwgrep_builtins_dw ()
   {
     auto t = std::make_shared <overload_tab> ();
 
-    t->add_simple_op_overload <op_integrate_die> ();
-    t->add_simple_op_overload <op_integrate_closure> ();
+    t->add_op_overload <op_integrate_die> ();
+    t->add_op_overload <op_integrate_closure> ();
 
     dict.add (std::make_shared <overloaded_op_builtin> ("integrate", t));
   }
 
+  auto add_dw_at = [&dict] (unsigned code,
+			    char const *qname, char const *bname,
+			    char const *atname,
+			    char const *lqname, char const *lbname,
+			    char const *latname)
+    {
+      // ?AT_* etc.
+      {
+	auto t = std::make_shared <overload_tab> ();
+
+	t->add_pred_overload <pred_atname_die> (code);
+	t->add_pred_overload <pred_atname_attr> (code);
+	t->add_pred_overload <pred_atname_cst> (code);
+
+	dict.add (std::make_shared <overloaded_pred_builtin> (qname, t));
+	dict.add (std::make_shared <overloaded_pred_builtin> (bname, t));
+	dict.add (std::make_shared <overloaded_pred_builtin> (lqname, t));
+	dict.add (std::make_shared <overloaded_pred_builtin> (lbname, t));
+      }
+
+      // @AT_* etc.
+      {
+	auto t = std::make_shared <overload_tab> ();
+
+	t->add_op_overload <op_atval_die> (code);
+
+	dict.add (std::make_shared <overloaded_op_builtin> (atname, t));
+	dict.add (std::make_shared <overloaded_op_builtin> (latname, t));
+      }
+
+      // DW_AT_*
+      add_builtin_constant (dict, constant (code, &dw_attr_dom), lqname + 1);
+    };
+
 #define ONE_KNOWN_DW_AT(NAME, CODE)					\
-  {									\
-    auto b1 = std::make_shared <builtin_attr_named> (CODE);		\
-    dict.add (b1, "@AT_" #NAME);					\
-    dict.add (b1, "@" #CODE);						\
-    auto b2 = std::make_shared <builtin_pred_attr> (CODE, true);	\
-    auto nb2 = std::make_shared <builtin_pred_attr> (CODE, false);	\
-    dict.add (b2, "?AT_" #NAME);					\
-    dict.add (nb2, "!AT_" #NAME);					\
-    dict.add (b2, "?" #CODE);						\
-    dict.add (nb2, "!" #CODE);						\
-    add_builtin_constant (dict, constant (CODE, &dw_attr_dom), #CODE);	\
-  }
+  add_dw_at (CODE, "?AT_" #NAME, "!AT_" #NAME, "@AT_" #NAME,		\
+	     "?" #CODE, "!" #CODE, "@" #CODE);
   ALL_KNOWN_DW_AT;
 #undef ONE_KNOWN_DW_AT
 
+  auto add_dw_tag = [&dict] (int code,
+			     char const *qname, char const *bname,
+			     char const *lqname, char const *lbname)
+    {
+      auto t = std::make_shared <overload_tab> ();
+
+      t->add_pred_overload <pred_tag_die> (code);
+      t->add_pred_overload <pred_tag_cst> (code);
+
+      dict.add (std::make_shared <overloaded_pred_builtin> (qname, t));
+      dict.add (std::make_shared <overloaded_pred_builtin> (bname, t));
+      dict.add (std::make_shared <overloaded_pred_builtin> (lqname, t));
+      dict.add (std::make_shared <overloaded_pred_builtin> (lbname, t));
+
+      add_builtin_constant (dict, constant (code, &dw_tag_dom), lqname + 1);
+    };
+
 #define ONE_KNOWN_DW_TAG(NAME, CODE)					\
-  {									\
-    auto b1 = std::make_shared <builtin_pred_tag> (CODE, true);		\
-    auto nb1 = std::make_shared <builtin_pred_tag> (CODE, false);	\
-    dict.add (b1, "?TAG_" #NAME);					\
-    dict.add (nb1, "!TAG_" #NAME);					\
-    dict.add (b1, "?" #CODE);						\
-    dict.add (nb1, "!" #CODE);						\
-    add_builtin_constant (dict, constant (CODE, &dw_tag_dom), #CODE);	\
-  }
+  add_dw_tag (CODE, "?TAG_" #NAME, "!TAG_" #NAME, "?" #CODE, "!" #CODE);
   ALL_KNOWN_DW_TAG;
 #undef ONE_KNOWN_DW_TAG
 
+  auto add_dw_form = [&dict] (unsigned code,
+			      char const *qname, char const *bname,
+			      char const *lqname, char const *lbname)
+    {
+      auto t = std::make_shared <overload_tab> ();
+
+      t->add_pred_overload <pred_form_attr> (code);
+      t->add_pred_overload <pred_form_cst> (code);
+
+      dict.add (std::make_shared <overloaded_pred_builtin> (qname, t));
+      dict.add (std::make_shared <overloaded_pred_builtin> (bname, t));
+      dict.add (std::make_shared <overloaded_pred_builtin> (lqname, t));
+      dict.add (std::make_shared <overloaded_pred_builtin> (lbname, t));
+
+      add_builtin_constant (dict, constant (code, &dw_tag_dom), lqname + 1);
+    };
+
 #define ONE_KNOWN_DW_FORM_DESC(NAME, CODE, DESC) ONE_KNOWN_DW_FORM (NAME, CODE)
 #define ONE_KNOWN_DW_FORM(NAME, CODE)					\
-  {									\
-    auto b1 = std::make_shared <builtin_pred_form> (CODE, true);	\
-    auto nb1 = std::make_shared <builtin_pred_form> (CODE, false);	\
-    dict.add (b1, "?FORM_" #NAME);					\
-    dict.add (nb1, "!FORM_" #NAME);					\
-    dict.add (b1, "?" #CODE);						\
-    dict.add (nb1, "!" #CODE);						\
-    add_builtin_constant (dict, constant (CODE, &dw_form_dom), #CODE);	\
-  }
+  add_dw_form (CODE, "?FORM_" #NAME, "!FORM_" #NAME, "?" #CODE, "!" #CODE);
   ALL_KNOWN_DW_FORM;
 #undef ONE_KNOWN_DW_FORM
 #undef ONE_KNOWN_DW_FORM_DESC
