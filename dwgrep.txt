@@ -1185,7 +1185,7 @@
 *** •address :: ?T_LOCLIST_ELEM -> ?T_ADDR_RANGE
      Yields where given location expression applies.
 
-*** •child :: ?T_LOCLIST_ELEM ->* ?T_LOCLIST_OP
+*** •elem :: ?T_LOCLIST_ELEM ->* ?T_LOCLIST_OP
      Yields individual location expression operators.
 
 

@@ -220,8 +220,11 @@ namespace
       return nullptr;
     }
   };
+}
 
-  struct op_child_loclist_elem
+namespace
+{
+  struct op_elem_loclist_elem
     : public op_yielding_overload <value_loclist_elem>
   {
     using op_yielding_overload::op_yielding_overload;
@@ -745,9 +748,16 @@ dwgrep_builtins_dw ()
     auto t = std::make_shared <overload_tab> ();
 
     t->add_op_overload <op_child_die> ();
-    t->add_op_overload <op_child_loclist_elem> ();
 
     dict.add (std::make_shared <overloaded_op_builtin> ("child", t));
+  }
+
+  {
+    auto t = std::make_shared <overload_tab> ();
+
+    t->add_op_overload <op_elem_loclist_elem> ();
+
+    dict.add (std::make_shared <overloaded_op_builtin> ("elem", t));
   }
 
   {
