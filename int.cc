@@ -88,6 +88,24 @@ operator== (mpz_class v1, mpz_class v2)
 }
 
 bool
+operator<= (mpz_class v1, mpz_class v2)
+{
+  return v1 < v2 || !(v2 < v1);
+}
+
+bool
+operator> (mpz_class v1, mpz_class v2)
+{
+  return !(v1 <= v2);
+}
+
+bool
+operator>= (mpz_class v1, mpz_class v2)
+{
+  return !(v1 < v2);
+}
+
+bool
 operator!= (mpz_class v1, mpz_class v2)
 {
   return !(v1 == v2);
@@ -192,7 +210,66 @@ operator- (mpz_class v1, mpz_class v2)
 		    signedness::sign};
 }
 
+mpz_class
+operator* (mpz_class v1, mpz_class v2)
+{
+  // v1 < 0 && v2 < 0: a * b becomes -a * -b.
+  if ((v1.m_sign == signedness::sign && (int64_t) v1.m_value < 0)
+      && (v2.m_sign == signedness::sign && (int64_t) v2.m_value < 0))
+    {
+      v1 = -v1;
+      v2 = -v2;
+    }
+
+  // v1 >= 0 && v2 >= 0
+  if ((v1.m_sign == signedness::unsign || (int64_t) v1.m_value >= 0)
+      && (v2.m_sign == signedness::unsign || (int64_t) v2.m_value >= 0))
+    {
+      uint64_t r = v1.m_value * v2.m_value;
+      if (v1.m_value != 0 && r / v1.m_value != v2.m_value)
+	throw overflow ();
+      return mpz_class {r, signedness::unsign};
+    }
+
+  // v1 < 0
+  if (v1.m_sign == signedness::sign && (int64_t) v1.m_value < 0)
+    v1.swap (v2);
+
+  // v2 < 0
+  assert (v2.m_sign == signedness::sign);
+
+  uint64_t a = (-v2).m_value;
+  uint64_t r = a * v1.m_value;
+  if (a != 0 && r / a != v1.m_value)
+    throw overflow ();
+  if (r > (uint64_t) INT64_MAX + 1)
+    throw overflow ();
+  return mpz_class {-r, signedness::sign};
+}
+
 #if 0
+
+namespace
+{
+  template <class F>
+  bool
+  overflow_detected (F f)
+  {
+    try
+      {
+	f ();
+	return false;
+      }
+    catch (overflow)
+      {
+	return true;
+      }
+  }
+}
+
+#define assert_overflows(F)			\
+  assert (overflow_detected ([] () { F; }))
+
 int
 main(int argc, char *argv[])
 {
@@ -256,8 +333,35 @@ main(int argc, char *argv[])
   assert (mpz_class (-10) - -15 == 5);
   assert (mpz_class (-10) - -5 == -5);
 
+
+  assert (mpz_class (10U) * 15U == 150);
+  assert (mpz_class (10U) * 15 == 150);
+  assert (mpz_class (10U) * -15 == -150);
+  assert (mpz_class (10U) * 0U == 0);
+  assert (mpz_class (10U) * 0 == 0);
+  assert (mpz_class (0U) * 10U == 0);
+  assert (mpz_class (0) * 10U == 0);
+
+  assert (mpz_class (10) * 15U == 150);
+  assert (mpz_class (10) * 15 == 150);
+  assert (mpz_class (10) * -15 == -150);
+  assert (mpz_class (10) * 0U == 0);
+  assert (mpz_class (10) * 0 == 0);
+  assert (mpz_class (0U) * 10 == 0);
+  assert (mpz_class (0) * 10 == 0);
+
+  assert (mpz_class (-10) * 15U == -150);
+  assert (mpz_class (-10) * 15 == -150);
+  assert (mpz_class (-10) * -15 == 150);
+  assert (mpz_class (-10) * 0U == 0);
+  assert (mpz_class (-10) * 0 == 0);
+  assert (mpz_class (-0U) * 10 == 0);
+  assert (mpz_class (-0) * 10 == 0);
+
+
   // INT64_MIN is an even number, so the following should hold.
   assert (mpz_class (INT64_MIN / 2) + (INT64_MIN / 2) == INT64_MIN);
+
   assert (mpz_class (INT64_MAX) + INT64_MAX == UINT64_MAX - 1);
   assert (mpz_class (INT64_MAX) + (uint64_t) INT64_MAX == UINT64_MAX - 1);
   assert (mpz_class ((uint64_t) INT64_MAX) + INT64_MAX == UINT64_MAX - 1);
@@ -268,6 +372,20 @@ main(int argc, char *argv[])
 
   assert (mpz_class (10U) - INT64_MIN == (uint64_t) INT64_MAX + 11);
   assert (mpz_class (INT64_MIN) - -10 == INT64_MIN + 10);
+
+  assert (mpz_class (1) * INT64_MIN == INT64_MIN);
+  assert (mpz_class (1U) * INT64_MIN == INT64_MIN);
+  assert (mpz_class (-1) * INT64_MIN == (uint64_t) INT64_MAX + 1);
+  assert (mpz_class (INT64_MIN) * 1 == INT64_MIN);
+  assert (mpz_class (INT64_MIN) * 1U == INT64_MIN);
+  assert (mpz_class (INT64_MIN) * -1 == (uint64_t) INT64_MAX + 1);
+  assert (mpz_class (2) * INT64_MAX == UINT64_MAX - 1);
+  assert (mpz_class (2U) * INT64_MAX == UINT64_MAX - 1);
+  assert (mpz_class (INT64_MAX) * 2 == UINT64_MAX - 1);
+  assert (mpz_class (INT64_MAX) * 2U == UINT64_MAX - 1);
+
+  assert_overflows (mpz_class (UINT64_MAX) * -1);
+  assert_overflows (mpz_class ((uint64_t) INT64_MAX + 2) * -1);
 
   return 0;
 }

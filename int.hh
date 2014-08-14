@@ -77,11 +77,15 @@ struct mpz_class
 std::ostream &operator<< (std::ostream &o, mpz_class value);
 
 bool operator< (mpz_class v1, mpz_class v2);
+bool operator> (mpz_class v1, mpz_class v2);
+bool operator<= (mpz_class v1, mpz_class v2);
+bool operator>= (mpz_class v1, mpz_class v2);
 bool operator== (mpz_class v1, mpz_class v2);
 bool operator!= (mpz_class v1, mpz_class v2);
 
 mpz_class operator- (mpz_class v);
 mpz_class operator- (mpz_class v1, mpz_class v2);
 mpz_class operator+ (mpz_class v1, mpz_class v2);
+mpz_class operator* (mpz_class v1, mpz_class v2);
 
 #endif /* _INT_H_ */

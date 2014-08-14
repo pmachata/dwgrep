@@ -131,7 +131,8 @@ op_mul_cst::operate (std::unique_ptr <value_cst> a,
      [] (constant const &cst_a, constant const &cst_b,
 	 constant_dom const *d) -> std::unique_ptr <value>
      {
-       throw std::runtime_error ("mpz_class * mpz_class not available");
+       constant r {cst_a.value () * cst_b.value (), d};
+       return std::make_unique <value_cst> (r, 0);
      });
 }
 
