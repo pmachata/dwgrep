@@ -298,8 +298,9 @@ namespace
 	      || ! dwarf_hasattr_integrate (&type_die, DW_AT_encoding))
 	    {
 	      // Ho hum.  This could be a structure, a pointer, or
-	      // something similarly useless.
-	      return atval_unsigned (attr);
+	      // something similarly useless.  See if it's a block
+	      // form at least.
+	      break;
 	    }
 	  else
 	    {
@@ -389,7 +390,8 @@ namespace
 	return atval_unsigned_with_domain (attr, hex_constant_dom);
 
       case DW_AT_GNU_macros:
-	std::cerr << "GNU macros NIY\n";
+      case DW_AT_macro_info:
+	std::cerr << "macros NIY\n";
 	return atval_unsigned_with_domain (attr, hex_constant_dom);
 
       case DW_AT_discr_value:
