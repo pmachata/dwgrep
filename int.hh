@@ -40,16 +40,21 @@ enum class signedness
 
 struct mpz_class
 {
-  uint64_t m_value;
+  union
+  {
+    uint64_t m_u;
+    int64_t m_i;
+  };
+
   signedness m_sign;
 
   mpz_class ()
-    : m_value {0}
+    : m_u {0}
     , m_sign {signedness::unsign}
   {}
 
   mpz_class (uint64_t value, signedness sign)
-    : m_value {value}
+    : m_u {value}
     , m_sign {sign}
   {}
 
@@ -71,6 +76,9 @@ struct mpz_class
     : mpz_class {static_cast <uint64_t> (value), signedness::sign}
   {}
 
+  uint64_t uval () const;
+  int64_t sval () const;
+
   void swap (mpz_class &that);
 };
 
@@ -87,5 +95,22 @@ mpz_class operator- (mpz_class v);
 mpz_class operator- (mpz_class v1, mpz_class v2);
 mpz_class operator+ (mpz_class v1, mpz_class v2);
 mpz_class operator* (mpz_class v1, mpz_class v2);
+mpz_class operator/ (mpz_class v1, mpz_class v2);
+mpz_class operator% (mpz_class v1, mpz_class v2);
+
+inline uint64_t
+mpz_class::uval () const
+{
+  assert (*this >= 0);
+  return m_u;
+}
+
+inline int64_t
+mpz_class::sval () const
+{
+  assert (m_sign == signedness::sign
+	  || m_u <= INT64_MAX);
+  return m_i;
+}
 
 #endif /* _INT_H_ */

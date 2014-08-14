@@ -60,10 +60,7 @@ static struct
     ios_flag_saver s {o};
     if (brv == brevity::full)
       o << std::showbase;
-    if (v < 0)
-      o << std::hex << '-' << -(int64_t) v.m_value;
-    else
-      o << std::hex << v.m_value;
+    o << std::hex << v;
   }
 
   bool
@@ -90,10 +87,7 @@ static struct
     ios_flag_saver s {o};
     if (brv == brevity::full)
       o << std::showbase;
-    if (v < 0)
-      o << std::oct << '-' << -(int64_t) v.m_value;
-    else
-      o << std::oct << v.m_value;
+    o << std::oct << v;
   }
 
   bool
@@ -121,10 +115,10 @@ static struct
       o << '0';
     else
       {
-	mpz_class v = t < 0 ? mpz_class (-t) : t;
+	mpz_class v = t < 0 ? -t : t;
 
 	std::vector <char> chars;
-	for (uint64_t i = v.m_value; i != 0; i >>= 1)
+	for (uint64_t i = v.uval (); i != 0; i >>= 1)
 	  chars.push_back ("01"[i & 0x1]);
 	if (v == 0)
 	  chars.push_back ('0');

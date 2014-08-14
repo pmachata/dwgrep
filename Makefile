@@ -1,4 +1,4 @@
-TARGETS = dwgrep test-parser
+TARGETS = dwgrep test-parser test-int
 
 DIRS = .
 
@@ -19,7 +19,8 @@ CXXOPTFLAGS = -O2
 YACC = bison
 
 all: $(TARGETS)
-check: dwgrep test-parser
+check: dwgrep test-parser test-int
+	./test-int
 	./test-parser
 	(cd ./tests/; ./tests.sh)
 
@@ -40,6 +41,8 @@ test-parser: test-parser.o parser.o lexer.o stack.o tree.o tree_cr.o	\
 	selector.o value.o value-closure.o value-cst.o value-str.o	\
 	value-seq.o builtin-shf.o builtin-closure.o builtin-cmp.o	\
 	builtin-cst.o
+
+test-int: test-int.o int.o
 
 test-parser.o: CXXOPTFLAGS = -O0
 

@@ -350,9 +350,9 @@ namespace
   int
   positive_int_from_mpz (mpz_class const &v)
   {
-    if (v < 0 || v.m_value > INT_MAX)
+    if (v < 0 || v.uval () > INT_MAX)
       return -1;
-    return v.m_value;
+    return v.uval ();
   }
 }
 

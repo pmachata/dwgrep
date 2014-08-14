@@ -97,9 +97,9 @@ static struct
   void
   show (mpz_class const &v, std::ostream &o, brevity brv) const override
   {
-    assert (!(v < 0));
+    assert (v >= 0);
 
-    uint64_t ui = v.m_value;
+    uint64_t ui = v.uval ();
     static_assert (sizeof (value_type) == 1,
 		   "assuming value_type is 8 bits large");
     if (ui <= 0xff)
