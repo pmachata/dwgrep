@@ -534,6 +534,9 @@
     ... where OP is depending on the operator in question,
     respectively, ?eq, ?ne, ?lt, ?le, ?gt, and ?ge.
 
+    (N.B.: the temporary binding is necessary so that [Y] is evaluated
+    with the unchanged incoming stack.)
+
     In plain English, X and Y are both evaluated in separate
     sub-expression contexts.  Their TOS's are gathered and compared
     using a comparison assertion word.
@@ -550,6 +553,10 @@
     Examples:
      : A B swap? (drop>) drop    # "max" -- keep the greater number on stack
      : A B swap? (drop<) drop    # "min"
+
+**  EXPR → EXPR₁ (“=~” | “!~”) EXPR₂ — string matching
+    =~ is like:
+    : [EXPR₁] elem -> .tmp; [EXPR₂] elem .tmp swap ?match
 
 ** •EXPR → EXPR₁ “*” | EXPR₁ “+” | EXPR₁ “?” — iterate
 
@@ -727,6 +734,10 @@
       : 10 add: 1	# equivalent to (10 1 add)
       : [10 range] sort: {->a; if (a mod: 2 ?0) then 0 else 1}
 
+**  comments
+    - # seems the logical choice.  /* */ and // possibly as well.
+      (Systemtap has all three.)
+
 
 * Fundamental words
 ** •dup, over, swap, rot, drop — stack shuffling
@@ -874,19 +885,41 @@
     sort of thing directly, if possible:
     : [child ?(@AT_name ?"foo")]
 
-*** Element access
-    : [some seq] elem (pos == 0)	# [0]
-    : [some seq] relem (pos == 0)	# [-1]
-    : [some seq] elem (pos != 0)	# [1:]
-    : [some seq] elem (pos >= 3 && pos <= 5)	# [3:6]
-    : [some seq] relem (pos > 0)	# [:-1]
+***  at :: ?T_SEQ ?T_CONST -> ?()
 
-    This is not widely used, so maybe this is just fine.  Most of the
-    time, instead of producing a sequence, you would just assert
-    position on the producing expression directly.  If necessary, we
-    can adopt words like (get :: ?T_SEQ ?T_CONST -> ?()) (that would
-    allow Python-like negative indices as well), (last :: ?T_SEQ ->
-    ?()), etc.
+     One can access a particular element by spreading the array with
+     elem or relem, and then do assertions on pos:
+
+     : [some seq] elem (pos == 0)	# [0]
+     : [some seq] relem (pos == 0)	# [-1]
+     : [some seq] elem (pos != 0)	# [1:]
+     : [some seq] elem (pos >= 3 && pos <= 5)	# [3:6]
+     : [some seq] relem (pos > 0)	# [:-1]
+
+     I don't suppose array operations will be widely used, so maybe
+     this is just fine.  Most of the time, instead of producing a
+     sequence, you would just assert position on the producing
+     expression directly.
+
+     If it turns out to be useful, we can adopt an "at" word, which
+     would follow Python indexing conventions:
+
+     : [some seq] at: 0		# elem (pos == 0)
+     : [some seq] at: -1	# relem (pos == 0)
+
+     We could also have:
+     -- slice :: ?T_SEQ ?T_CONST ?T_CONST -> ?()
+     -- slice :: ?T_SEQ ?T_CONST -> ?()
+
+     : [some seq] 1 slice	# elem (pos != 0)
+     : [some seq] 3 6 slice	# elem (pos >= 3 && pos <= 5)
+     : [some seq] 0 -1 slice	# relem (pos > 0)
+
+     We would need both versions because there's no placeholder like
+     None in Python, where [1:] means [1:None] and None is treated
+     like one past last element.  0 can't be used in that capacity, as
+     then it wouldn't be clear whether (0 0 slice) needs to yield
+     nothing or everything.
 
 ** ·T_STR
     Any word that is applicable to sequences is applicable to a string
@@ -925,44 +958,6 @@
      Yields all symbols in .symtab, or minisymtab, or .dynsym.  It
      produces values of type T_ELFSYM.
 
-** ·?DW_TAG_*, !DW_TAG_*, ?DW_AT_*, — named constant assertions
-
-    Since majority of comparisons are == against some Dwarf constant
-    anyway, there's a number of words for asserting value on TOS.
-
-    According to a value on TOS, and a constant family, the following
-    rewrire rules define the semantics of a value assertion:
-
-    |---+--------------+---------------+--------------------------|
-    | ? | v            | TOS           | Meaning of ?v            |
-    |---+--------------+---------------+--------------------------|
-    | • | DW_TAG_*     | T_DIE         | ?(tag ?v)                |
-    | • | DW_TAG_*     | T_CONST       | ?(v ?eq)                 |
-    | • | DW_AT_*      | T_DIE         | ?(attribute ?v)          |
-    | • | DW_AT_*      | T_ATTR        | ?(name ?v)               |
-    | • | DW_AT_*      | T_CONST       | ?(v ?eq)                 |
-    | • | DW_FORM_*    | T_ATTR        | ?(form ?v)               |
-    | • | DW_FORM_*    | T_CONST       | ?(v ?eq)                 |
-    |   | DW_LANG_*    | T_DIE         | ?(@AT_language ?v)       |
-    |   | DW_LANG_*    | T_ATTR        | ?(?AT_language value ?v) |
-    |   | DW_LANG_*    | T_CONST       | ?(v ?eq)                 |
-    |   | DW_ATE_*     | @AT_encoding  | ?(value ?v)              |
-    |   | DW_OP_*      | XXX locexpr   |                          |
-    |   | DW_LNE_*     | XXX linetab   |                          |
-    |   | DW_LNS_*     | XXX linetab   |                          |
-    |   | DW_MACINFO_* | XXX macinfo   |                          |
-    |   | DW_MACRO_*   | XXX macro     |                          |
-    |   | DW_CFA_*     | XXX CFI       |                          |
-    |   | DW_CIE_*     | XXX CFI       |                          |
-    |   | DW_EH_*      | XXX .eh_frame |                          |
-    |   | any          | T_CONST       | ?(== v)                  |
-    |---+--------------+---------------+--------------------------|
-
-   The prefix DW_ is optional.  There's no harm spelling it out, but
-   since it's so common, you can leave it out.
-
-   For example, ?ATE_unsigned is applicable to an attribute that is
-   DW_AT_encoding, or a constant of that domain.
 
 ** ·T_DIE
 ***  label :: ?T_DIE -> ?T_CONST
@@ -1066,6 +1061,19 @@
 *** •@AT_* :: ?T_DIE ->* ?()
      Syntactic sugar for (attribute ?(label == AT_*) value).
 
+*** •?AT_* :: ?T_DIE
+     Holds if DIE has this attribute.
+
+*** •?TAG_* :: ?T_DIE
+     Holds if DIE has this tag.
+
+***  ?LANG_* :: ?T_DIE
+     Holds if (@AT_language == DW_LANG_*).
+
+***  ?ATE_* :: ?T_DIE
+     Holds if @AT_encoding == DW_ATE_*.
+
+
 ** ·T_ATTR
 *** •label :: ?T_ATTR -> ?T_CONST
      Yield an attribute name.
@@ -1089,10 +1097,31 @@
 *** •form :: ?T_ATTR -> ?T_CONST
      Yield a form of an attribute.
 
+***  next :: ?T_ATTR ->? ?T_ATTR  (XXX is this useful?)
+***  prev :: ?T_ATTR ->? ?T_ATTR  (XXX is this useful?)
+***  ?AT_* :: ?T_ATTR
+     Holds if it is this attribute.
+
+***  ?FORM_* :: ?T_ATTR
+     Holds if the attribute has this form.
+
+***  ?LANG_* :: ?T_ATTR
+     Holds if (?AT_language value == DW_LANG_*).
+
+***  ?ATE_* :: ?T_ATTR
+     Holds if (?AT_encoding value == DW_ATE_*)
+
+
 **  T_ABBREV
 ***  label :: ?T_ABBREV -> ?T_CONST
 ***  offset :: ?T_ABBREV -> ?T_CONST
 ***  attribute :: ?T_ABBREV ->* T_ABBREV_ATTR
+***  @AT_* :: ?T_ABBREV ->? T_CONST
+     Yields a form of an attribute.
+***  ?AT_* :: ?T_ABBREV
+     Holds if abbreviation has this attribute.
+
+
 **  T_ABBREV_ATTR
 ***  label :: ?T_ABBREV_ATTR -> ?T_CONST
      Yields attribute name.
@@ -1102,6 +1131,13 @@
 
 ***  form :: ?T_ABBREV_ATTR -> ?T_CONST
      Yields attribute form.
+
+***  ?AT_* :: ?T_ABBREV_ATTR
+     Holds if it is this attribute.
+
+***  ?FORM_* :: ?T_ABBREV_ATTR
+     Holds if the attribute has this form.
+
 
 **  T_ELFSYM
 ***  label :: ?T_ELFSYM -> ?T_CONST
@@ -1128,6 +1164,7 @@
      : some addr ->A; symtab (address == A)
      fuzzy matching (getting symbol/offset) would be more involved.
 
+
 ** •T_LOCLIST_ELEM
     XXX possibly a means of evaluating?  (Could we use the in-program
     stack for evaluating the Dwarf expression?)
@@ -1137,6 +1174,7 @@
 
 *** •child :: ?T_LOCLIST_ELEM ->* ?T_LOCLIST_OP
      Yields individual location expression operators.
+
 
 ** ·T_LOCLIST_OP
 *** •label :: ?T_LOCLIST_OP -> ?T_CONST
@@ -1161,6 +1199,10 @@
 
 ***  parent :: ?T_LOCLIST_OP -> T_LOCLIST_ELEM
      The opposite of child of T_LOCLIST_ELEM.
+
+***  ?OP_* :: ?T_LOCLIST_OP
+     Holds if this is an operation with this opcode.
+
 
 **  T_ADDR_RANGE
     - T_ADDR_RANGE actually behaves pretty much like a sequence of
@@ -1334,7 +1376,8 @@
 
      : def GetSym {->X; symtab (?STT_OBJECT, ?STT_FUNC)
      :             (@name == X @AT_linkage_name)}
-     : winfo ?AT_linkage_name if !(GetSym) then (
+     : winfo ?AT_linkage_name
+     : if !(GetSym) then (
      :     !AT_declaration !AT_const_value
      :     (!structure_type !enumeration_type !union_type, ?AT_name)
      :     "%s has linkage_name attribute that's not in symtab, "\
