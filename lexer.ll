@@ -69,7 +69,6 @@ BIN [01]
 "*" return TOK_ASTERISK;
 "+" return TOK_PLUS;
 "?" return TOK_QMARK;
-"-" return TOK_MINUS;
 "," return TOK_COMMA;
 ":" return TOK_COLON;
 ";" return TOK_SEMICOLON;
