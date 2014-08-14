@@ -43,6 +43,7 @@
 #include "value-cst.hh"
 #include "value-dw.hh"
 
+// winfo
 namespace
 {
   struct op_winfo
@@ -103,6 +104,7 @@ namespace
   };
 }
 
+// unit
 namespace
 {
   struct producer_unit_die
@@ -165,6 +167,7 @@ namespace
   };
 }
 
+// child
 namespace
 {
   struct op_child_die
@@ -222,6 +225,7 @@ namespace
   };
 }
 
+// elem, relem
 namespace
 {
   template <class T>
@@ -298,6 +302,7 @@ namespace
   };
 }
 
+// attribute
 namespace
 {
   struct op_attribute_die
@@ -337,6 +342,7 @@ namespace
   };
 }
 
+// offset
 namespace
 {
   struct op_offset_die
@@ -367,6 +373,7 @@ namespace
   };
 }
 
+// address
 namespace
 {
   struct op_address_loclist_elem
@@ -384,6 +391,7 @@ namespace
   };
 }
 
+// label
 namespace
 {
   struct op_label_die
@@ -429,6 +437,7 @@ namespace
   };
 }
 
+// form
 namespace
 {
   struct op_form_attr
@@ -445,6 +454,7 @@ namespace
   };
 }
 
+// parent
 namespace
 {
   struct op_parent_die
@@ -480,6 +490,7 @@ namespace
   };
 }
 
+// integrate
 namespace
 {
   struct op_integrate_die
@@ -521,6 +532,7 @@ namespace
   };
 }
 
+// ?root
 namespace
 {
   struct pred_rootp_die
@@ -549,6 +561,7 @@ namespace
   };
 }
 
+// value
 namespace
 {
   struct op_value_attr
@@ -578,6 +591,7 @@ namespace
   };
 }
 
+// @AT_*
 namespace
 {
   class op_atval_die
@@ -602,9 +616,9 @@ namespace
       return at_value (attr, a->get_die (), a->get_graph ());
     }
   };
-
 }
 
+// ?AT_*
 namespace
 {
   struct pred_atname_die
@@ -664,6 +678,7 @@ namespace
   };
 }
 
+// ?TAG_*
 namespace
 {
   struct pred_tag_die
@@ -702,6 +717,7 @@ namespace
   };
 }
 
+// ?FORM_*
 namespace
 {
   struct pred_form_attr
