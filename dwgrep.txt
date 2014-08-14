@@ -973,7 +973,7 @@
 
 
 ** ·T_DIE
-***  label :: ?T_DIE -> ?T_CONST
+*** •label :: ?T_DIE -> ?T_CONST
      Yields DIE tag.
 
 *** •offset :: ?T_DIE -> ?T_CONST
@@ -1050,7 +1050,7 @@
      : {attribute ?AT_xyz} integrate	# dwarf_attr_integrate
      : {@AT_xyz} integrate		# value of integrated DW_AT_xyz
 
-*** •AT_decl_file
+*** •@AT_decl_file
      Value of this attribute is represented as actual string including
      path.
 
@@ -1060,7 +1060,7 @@
      this is stored?  Or after it gets to be stored in general, where
      this is _not_ stored?)
 
-***  handling DW_AT_high_pc, DW_AT_entry_pc with constant form
+***  @AT_high_pc, @AT_entry_pc with constant form
      Should we convert to full address?
      http://dwarfstd.org/ShowIssue.php?issue=120719.1
 
@@ -1112,10 +1112,10 @@
 
 ***  next :: ?T_ATTR ->? ?T_ATTR  (XXX is this useful?)
 ***  prev :: ?T_ATTR ->? ?T_ATTR  (XXX is this useful?)
-***  ?AT_* :: ?T_ATTR
+*** •?AT_* :: ?T_ATTR
      Holds if it is this attribute.
 
-***  ?FORM_* :: ?T_ATTR
+*** •?FORM_* :: ?T_ATTR
      Holds if the attribute has this form.
 
 ***  ?LANG_* :: ?T_ATTR
@@ -1191,6 +1191,11 @@
 *** •relem :: ?T_LOCLIST_ELEM ->* ?T_LOCLIST_OP
      Like elem, but yields in opposite direction.
 
+*** •?OP_* :: ?T_LOCLIST_ELEM
+     Holds if this location expression contains an operation with this
+     opcode.
+
+
 ** ·T_LOCLIST_OP
 *** •label :: ?T_LOCLIST_OP -> ?T_CONST
      Yields operation opcode (a DW_OP_* constant).
@@ -1212,10 +1217,7 @@
      Here we have only one T_LOCLIST_OP, and that has an offset of 0, a
      label of DW_OP_fbreg, and yields one value, -18.
 
-***  parent :: ?T_LOCLIST_OP -> T_LOCLIST_ELEM
-     The opposite of child of T_LOCLIST_ELEM.
-
-***  ?OP_* :: ?T_LOCLIST_OP
+*** •?OP_* :: ?T_LOCLIST_OP
      Holds if this is an operation with this opcode.
 
 

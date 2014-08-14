@@ -410,3 +410,11 @@ expect_count 1 ./bitcount.o -e '
 # Test multi-yielding value.
 expect_count 3 ./bitcount.o -e '
 	[winfo ?AT_location] elem (pos == 0) attribute ?AT_location value'
+
+# ?OP_*
+expect_count 1 ./bitcount.o -e '
+	[winfo @AT_location] elem (pos == 1)
+	([?OP_and] length == 1)
+	([?OP_or] length == 0)
+	([elem ?OP_and] length == 1)
+	([elem ?OP_or] length == 0)'

@@ -758,6 +758,68 @@ namespace
   };
 }
 
+// ?OP_*
+namespace
+{
+  struct pred_op_loclist_elem
+    : public pred_overload <value_loclist_elem>
+  {
+    unsigned m_op;
+
+    pred_op_loclist_elem (dwgrep_graph::sptr gr, std::shared_ptr <scope> scope,
+			  unsigned op)
+      : pred_overload {gr, scope}
+      , m_op {op}
+    {}
+
+    pred_result
+    result (value_loclist_elem &a) override
+    {
+      for (size_t i = 0; i < a.get_exprlen (); ++i)
+	if (a.get_expr ()[i].atom == m_op)
+	  return pred_result::yes;
+      return pred_result::no;
+    }
+  };
+
+  struct pred_op_loclist_op
+    : public pred_overload <value_loclist_op>
+  {
+    unsigned m_op;
+
+    pred_op_loclist_op (dwgrep_graph::sptr gr, std::shared_ptr <scope> scope,
+			unsigned op)
+      : pred_overload {gr, scope}
+      , m_op {op}
+    {}
+
+    pred_result
+    result (value_loclist_op &a) override
+    {
+      return pred_result (a.get_dwop ()->atom == m_op);
+    }
+  };
+
+  struct pred_op_cst
+    : public pred_overload <value_cst>
+  {
+    constant m_const;
+
+    pred_op_cst (dwgrep_graph::sptr gr, std::shared_ptr <scope> scope,
+		 unsigned form)
+      : pred_overload {gr, scope}
+      , m_const {form, &dw_locexpr_opcode_dom}
+    {}
+
+    pred_result
+    result (value_cst &a) override
+    {
+      check_constants_comparable (m_const, a.get_constant ());
+      return pred_result (m_const == a.get_constant ());
+    }
+  };
+}
+
 std::unique_ptr <builtin_dict>
 dwgrep_builtins_dw ()
 {
@@ -969,6 +1031,32 @@ dwgrep_builtins_dw ()
 #undef ONE_KNOWN_DW_FORM
 #undef ONE_KNOWN_DW_FORM_DESC
 
+  auto add_dw_op = [&dict] (unsigned code,
+			    char const *qname, char const *bname,
+			    char const *lqname, char const *lbname)
+    {
+      auto t = std::make_shared <overload_tab> ();
+
+      t->add_pred_overload <pred_op_loclist_elem> (code);
+      t->add_pred_overload <pred_op_loclist_op> (code);
+      t->add_pred_overload <pred_op_cst> (code);
+
+      dict.add (std::make_shared <overloaded_pred_builtin> (qname, t));
+      dict.add (std::make_shared <overloaded_pred_builtin> (bname, t));
+      dict.add (std::make_shared <overloaded_pred_builtin> (lqname, t));
+      dict.add (std::make_shared <overloaded_pred_builtin> (lbname, t));
+
+      add_builtin_constant (dict, constant (code, &dw_locexpr_opcode_dom),
+			    lqname + 1);
+    };
+
+#define ONE_KNOWN_DW_OP_DESC(NAME, CODE, DESC) ONE_KNOWN_DW_OP (NAME, CODE)
+#define ONE_KNOWN_DW_OP(NAME, CODE)					\
+  add_dw_op (CODE, "?OP_" #NAME, "!OP_" #NAME, "?" #CODE, "!" #CODE);
+  ALL_KNOWN_DW_OP;
+#undef ONE_KNOWN_DW_OP
+#undef ONE_KNOWN_DW_OP_DESC
+
 #define ONE_KNOWN_DW_LANG_DESC(NAME, CODE, DESC)			\
   {									\
     add_builtin_constant (dict, constant (CODE, &dw_lang_dom), #CODE);	\
@@ -1062,16 +1150,6 @@ dwgrep_builtins_dw ()
   }
   ALL_KNOWN_DW_DS;
 #undef ONE_KNOWN_DW_DS
-
-#define ONE_KNOWN_DW_OP_DESC(NAME, CODE, DESC) ONE_KNOWN_DW_OP (NAME, CODE)
-#define ONE_KNOWN_DW_OP(NAME, CODE)					\
-  {									\
-    add_builtin_constant (dict,						\
-			  constant (CODE, &dw_locexpr_opcode_dom), #CODE); \
-  }
-  ALL_KNOWN_DW_OP;
-#undef ONE_KNOWN_DW_OP
-#undef ONE_KNOWN_DW_OP_DESC
 
   add_builtin_constant (dict, constant (DW_ADDR_none, &dw_address_class_dom),
 			"DW_ADDR_none");
