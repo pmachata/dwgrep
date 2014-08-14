@@ -224,32 +224,69 @@ namespace
 
 namespace
 {
+  template <class T>
+  struct elem_loclist_producer
+    : public value_producer
+  {
+    std::unique_ptr <value_loclist_elem> m_value;
+    size_t m_i;
+
+    elem_loclist_producer (std::unique_ptr <value_loclist_elem> value)
+      : m_value {std::move (value)}
+      , m_i {0}
+    {}
+
+    std::unique_ptr <value>
+    next () override
+    {
+      size_t idx = m_i++;
+      if (idx < m_value->get_exprlen ())
+	return std::make_unique <value_loclist_op>
+	  (m_value->get_graph (), T::get_expr (*m_value, idx),
+	   m_value->get_attr (), idx);
+      else
+	return nullptr;
+    }
+  };
+
   struct op_elem_loclist_elem
     : public op_yielding_overload <value_loclist_elem>
   {
     using op_yielding_overload::op_yielding_overload;
 
     struct producer
-      : public value_producer
+      : public elem_loclist_producer <producer>
     {
-      std::unique_ptr <value_loclist_elem> m_value;
-      size_t m_i;
+      using elem_loclist_producer::elem_loclist_producer;
 
-      producer (std::unique_ptr <value_loclist_elem> value)
-	: m_value {std::move (value)}
-	, m_i {0}
-      {}
-
-      std::unique_ptr <value>
-      next () override
+      static Dwarf_Op *
+      get_expr (value_loclist_elem &v, size_t idx)
       {
-	size_t idx = m_i++;
-	if (idx < m_value->get_exprlen ())
-	  return std::make_unique <value_loclist_op>
-	    (m_value->get_graph (), m_value->get_expr () + idx,
-	     m_value->get_attr (), idx);
-	else
-	  return nullptr;
+	return v.get_expr () + idx;
+      }
+    };
+
+    std::unique_ptr <value_producer>
+    operate (std::unique_ptr <value_loclist_elem> a) override
+    {
+      return std::make_unique <producer> (std::move (a));
+    }
+  };
+
+  struct op_relem_loclist_elem
+    : public op_yielding_overload <value_loclist_elem>
+  {
+    using op_yielding_overload::op_yielding_overload;
+
+    struct producer
+      : public elem_loclist_producer <producer>
+    {
+      using elem_loclist_producer::elem_loclist_producer;
+
+      static Dwarf_Op *
+      get_expr (value_loclist_elem &v, size_t idx)
+      {
+	return v.get_expr () + v.get_exprlen () - 1 - idx;
       }
     };
 
@@ -758,6 +795,14 @@ dwgrep_builtins_dw ()
     t->add_op_overload <op_elem_loclist_elem> ();
 
     dict.add (std::make_shared <overloaded_op_builtin> ("elem", t));
+  }
+
+  {
+    auto t = std::make_shared <overload_tab> ();
+
+    t->add_op_overload <op_relem_loclist_elem> ();
+
+    dict.add (std::make_shared <overloaded_op_builtin> ("relem", t));
   }
 
   {

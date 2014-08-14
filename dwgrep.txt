@@ -1188,6 +1188,8 @@
 *** •elem :: ?T_LOCLIST_ELEM ->* ?T_LOCLIST_OP
      Yields individual location expression operators.
 
+*** •relem :: ?T_LOCLIST_ELEM ->* ?T_LOCLIST_OP
+     Like elem, but yields in opposite direction.
 
 ** ·T_LOCLIST_OP
 *** •label :: ?T_LOCLIST_OP -> ?T_CONST
