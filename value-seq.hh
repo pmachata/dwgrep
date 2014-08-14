@@ -86,21 +86,12 @@ struct op_length_seq
 };
 
 struct op_elem_seq
-  : public inner_op
+  : public op_yielding_overload <value_seq>
 {
-  struct state;
-  std::unique_ptr <state> m_state;
+  using op_yielding_overload::op_yielding_overload;
 
-  op_elem_seq (std::shared_ptr <op> upstream, dwgrep_graph::sptr q,
-	       std::shared_ptr <scope> scope);
-  ~op_elem_seq ();
-
-  stack::uptr next () override;
-  std::string name () const override;
-  void reset () override;
-
-  static selector get_selector ()
-  { return {value_seq::vtype}; }
+  std::unique_ptr <value_producer>
+  operate (std::unique_ptr <value_seq> a) override;
 };
 
 struct pred_empty_seq

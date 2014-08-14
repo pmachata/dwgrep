@@ -72,78 +72,39 @@ op_length_str::operate (std::unique_ptr <value_str> a)
   return std::make_unique <value_cst> (t, 0);
 }
 
-struct op_elem_str::state
+namespace
 {
-  stack::uptr m_base;
-  std::string m_str;
-  size_t m_idx;
-
-  state (stack::uptr base, std::string const &str)
-    : m_base {std::move (base)}
-    , m_str {str}
-    , m_idx {0}
-  {}
-
-  stack::uptr
-  next ()
+  struct str_elem_producer
+    : public value_producer
   {
-    if (m_idx < m_str.size ())
-      {
-	char c = m_str[m_idx];
-	auto v = std::make_unique <value_str> (std::string {c}, m_idx);
-	stack::uptr stk = std::make_unique <stack> (*m_base);
-	stk->push (std::move (v));
-	m_idx++;
-	return stk;
-      }
+    std::unique_ptr <value_str> m_v;
+    std::string const &m_str;
+    size_t m_idx;
 
-    return nullptr;
-  }
-};
+    str_elem_producer (std::unique_ptr <value_str> v)
+      : m_v {std::move (v)}
+      , m_str {m_v->get_string ()}
+      , m_idx {0}
+    {}
 
-op_elem_str::op_elem_str (std::shared_ptr <op> upstream, dwgrep_graph::sptr gr,
-			  std::shared_ptr <scope> scope)
-  : inner_op {upstream, gr, scope}
-{}
-
-op_elem_str::~op_elem_str ()
-{}
-
-stack::uptr
-op_elem_str::next ()
-{
-  while (true)
+    std::unique_ptr <value>
+    next () override
     {
-      if (m_state == nullptr)
+      if (m_idx < m_str.size ())
 	{
-	  if (auto stk = m_upstream->next ())
-	    {
-	      auto vp = stk->pop_as <value_str> ();
-	      m_state = std::make_unique <state> (std::move (stk),
-						  vp->get_string ());
-	    }
-	  else
-	    return nullptr;
+	  char c = m_str[m_idx];
+	  return std::make_unique <value_str> (std::string {c}, m_idx++);
 	}
 
-      if (auto stk = m_state->next ())
-	return stk;
-
-      m_state = nullptr;
+      return nullptr;
     }
+  };
 }
 
-std::string
-op_elem_str::name () const
+std::unique_ptr <value_producer>
+op_elem_str::operate (std::unique_ptr <value_str> a)
 {
-  return "elem_str";
-}
-
-void
-op_elem_str::reset ()
-{
-  m_state = nullptr;
-  inner_op::reset ();
+  return std::make_unique <str_elem_producer> (std::move (a));
 }
 
 pred_result

@@ -148,78 +148,39 @@ op_length_seq::operate (std::unique_ptr <value_seq> a)
 }
 
 
-struct op_elem_seq::state
+namespace
 {
-  stack::uptr m_base;
-  std::shared_ptr <value_seq::seq_t> m_seq;
-  size_t m_idx;
-
-  state (stack::uptr base, std::shared_ptr <value_seq::seq_t> seq)
-    : m_base {std::move (base)}
-    , m_seq {seq}
-    , m_idx {0}
-  {}
-
-  stack::uptr
-  next ()
+  struct seq_elem_producer
+    : public value_producer
   {
-    if (m_idx < m_seq->size ())
-      {
-	std::unique_ptr <value> v = (*m_seq)[m_idx]->clone ();
-	v->set_pos (m_idx);
-	m_idx++;
-	stack::uptr ret = std::make_unique <stack> (*m_base);
-	ret->push (std::move (v));
-	return ret;
-      }
+    std::shared_ptr <value_seq::seq_t> m_seq;
+    size_t m_idx;
 
-    return nullptr;
-  }
-};
+    seq_elem_producer (std::shared_ptr <value_seq::seq_t> seq)
+      : m_seq {seq}
+      , m_idx {0}
+    {}
 
-op_elem_seq::op_elem_seq (std::shared_ptr <op> upstream, dwgrep_graph::sptr gr,
-			  std::shared_ptr <scope> scope)
-  : inner_op {upstream, gr, scope}
-{}
-
-op_elem_seq::~op_elem_seq ()
-{}
-
-stack::uptr
-op_elem_seq::next ()
-{
-  while (true)
+    std::unique_ptr <value>
+    next () override
     {
-      if (m_state == nullptr)
+      if (m_idx < m_seq->size ())
 	{
-	  if (auto stk = m_upstream->next ())
-	    {
-	      auto vp = stk->pop_as <value_seq> ();
-	      m_state = std::make_unique <state> (std::move (stk),
-						  vp->get_seq ());
-	    }
-	  else
-	    return nullptr;
+	  std::unique_ptr <value> v = (*m_seq)[m_idx]->clone ();
+	  v->set_pos (m_idx);
+	  m_idx++;
+	  return v;
 	}
 
-      if (auto stk = m_state->next ())
-	return stk;
-
-      m_state = nullptr;
+      return nullptr;
     }
+  };
 }
 
-std::string
-op_elem_seq::name () const
+std::unique_ptr <value_producer>
+op_elem_seq::operate (std::unique_ptr <value_seq> a)
 {
-  return "elem_seq";
-}
-
-void
-op_elem_seq::reset ()
-{
-  m_state = nullptr;
-  inner_op::reset ();
+  return std::make_unique <seq_elem_producer> (a->get_seq ());
 }
 
 pred_result

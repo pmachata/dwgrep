@@ -73,21 +73,12 @@ struct op_length_str
 };
 
 struct op_elem_str
-  : public inner_op
+  : public op_yielding_overload <value_str>
 {
-  struct state;
-  std::unique_ptr <state> m_state;
+  using op_yielding_overload::op_yielding_overload;
 
-  op_elem_str (std::shared_ptr <op> upstream, dwgrep_graph::sptr q,
-	      std::shared_ptr <scope> scope);
-  ~op_elem_str ();
-
-  stack::uptr next () override;
-  std::string name () const override;
-  void reset () override;
-
-  static selector get_selector ()
-  { return {value_str::vtype}; }
+  std::unique_ptr <value_producer>
+  operate (std::unique_ptr <value_str> a) override;
 };
 
 struct pred_empty_str
