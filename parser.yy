@@ -146,21 +146,17 @@
 	  dom = &dec_constant_dom;
 	}
 
-      mpz_class val;
-      try
-	{
-	  val = mpz_class {{buf, len}, base};
-	}
-      catch (std::invalid_argument const &e)
-	{
-	  throw std::runtime_error
+      size_t pos;
+      uint64_t val = std::stoull ({buf, len}, &pos, base);
+      if (pos < len)
+	throw std::runtime_error
 	    (std::string ("Invalid integer literal: `") + str.buf + "'");
-	}
 
+      mpz_class ret = val;
       if (sign)
-	val = -val;
+	ret = -ret;
 
-      return constant {val, dom};
+      return constant {ret, dom};
     }
 
     tree *

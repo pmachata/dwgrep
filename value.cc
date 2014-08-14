@@ -97,19 +97,18 @@ static struct
   void
   show (mpz_class const &v, std::ostream &o, brevity brv) const override
   {
-    if (v.fits_uint_p ())
+    assert (!(v < 0));
+
+    uint64_t ui = v.m_value;
+    static_assert (sizeof (value_type) == 1,
+		   "assuming value_type is 8 bits large");
+    if (ui <= 0xff)
       {
-	unsigned int ui = v.get_ui ();
-	static_assert (sizeof (value_type) == 1,
-		       "assuming value_type is 8 bits large");
-	if (ui <= 0xff)
-	  {
-	    char const *name = find_vtype_name (ui);
-	    assert (name != nullptr);
-	    assert (name[0] == 'T' && name[1] == '_');
-	    o << (&name[brv == brevity::full ? 0 : 2]);
-	    return;
-	  }
+	char const *name = find_vtype_name (ui);
+	assert (name != nullptr);
+	assert (name[0] == 'T' && name[1] == '_');
+	o << (&name[brv == brevity::full ? 0 : 2]);
+	return;
       }
 
     assert (! "Invalid slot type constant value.");

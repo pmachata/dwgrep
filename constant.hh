@@ -32,8 +32,8 @@
 #include <cassert>
 #include <iosfwd>
 #include <cstdint>
-#include <cstddef> // Workaround for gmpxx.h.
-#include <gmpxx.h>
+
+#include "int.hh"
 
 class constant;
 

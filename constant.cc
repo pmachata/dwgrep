@@ -28,8 +28,9 @@
 
 #include <sstream>
 #include <iostream>
-#include <bitset>
 #include <vector>
+#include <algorithm>
+
 #include "constant.hh"
 #include "flag_saver.hh"
 
@@ -59,7 +60,10 @@ static struct
     ios_flag_saver s {o};
     if (brv == brevity::full)
       o << std::showbase;
-    o << std::hex << v;
+    if (v < 0)
+      o << std::hex << '-' << -(int64_t) v.m_value;
+    else
+      o << std::hex << v.m_value;
   }
 
   bool
@@ -86,7 +90,10 @@ static struct
     ios_flag_saver s {o};
     if (brv == brevity::full)
       o << std::showbase;
-    o << std::oct << v;
+    if (v < 0)
+      o << std::oct << '-' << -(int64_t) v.m_value;
+    else
+      o << std::oct << v.m_value;
   }
 
   bool
@@ -115,11 +122,15 @@ static struct
     else
       {
 	mpz_class v = t < 0 ? mpz_class (-t) : t;
-	size_t sz = mpz_sizeinbase (v.get_mpz_t (), 2);
-	std::vector <char> chars (sz + 1, '\0');
-	for (size_t i = 0; i < sz; ++i)
-	  *(chars.rbegin () + i + 1)
-	    = mpz_tstbit (v.get_mpz_t (), i) == 0 ? '0' : '1';
+
+	std::vector <char> chars;
+	for (uint64_t i = v.m_value; i != 0; i >>= 1)
+	  chars.push_back ("01"[i & 0x1]);
+	if (v == 0)
+	  chars.push_back ('0');
+	std::reverse (chars.begin (), chars.end ());
+	chars.push_back ('\0');
+
 	o << (t < 0 ? "-" : "")
 	  << (brv == brevity::full ? "0b" : "")
 	  << &*chars.begin ();

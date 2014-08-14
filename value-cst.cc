@@ -129,10 +129,9 @@ op_mul_cst::operate (std::unique_ptr <value_cst> a,
   return simple_arith_op
     (*a, *b,
      [] (constant const &cst_a, constant const &cst_b,
-	 constant_dom const *d)
+	 constant_dom const *d) -> std::unique_ptr <value>
      {
-       constant r {cst_a.value () * cst_b.value (), d};
-       return std::make_unique <value_cst> (r, 0);
+       throw std::runtime_error ("mpz_class * mpz_class not available");
      });
 }
 
@@ -151,8 +150,7 @@ op_div_cst::operate (std::unique_ptr <value_cst> a,
 	   return nullptr;
 	 }
 
-       constant r {cst_a.value () / cst_b.value (), d};
-       return std::make_unique <value_cst> (r, 0);
+       throw std::runtime_error ("mpz_class / mpz_class not available");
      });
 }
 
@@ -171,7 +169,6 @@ op_mod_cst::operate (std::unique_ptr <value_cst> a,
 	   return nullptr;
 	 }
 
-       constant r {cst_a.value () % cst_b.value (), d};
-       return std::make_unique <value_cst> (r, 0);
+       throw std::runtime_error ("mpz_class % mpz_class not available");
      });
 }

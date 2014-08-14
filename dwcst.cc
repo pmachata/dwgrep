@@ -17,6 +17,7 @@
 #include <dwarf.h>
 #include <stdexcept>
 #include <iostream>
+#include <climits>
 
 #include "known-dwarf.h"
 #include "constant.hh"
@@ -349,12 +350,9 @@ namespace
   int
   positive_int_from_mpz (mpz_class const &v)
   {
-    if (! v.fits_uint_p ())
+    if (v < 0 || v.m_value > INT_MAX)
       return -1;
-    unsigned long ul = v.get_ui ();
-    if (ul >= (1U << 31))
-      return -1;
-    return static_cast <int> (ul);
+    return v.m_value;
   }
 }
 
