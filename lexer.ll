@@ -69,11 +69,13 @@ BIN [01]
 "*" return TOK_ASTERISK;
 "+" return TOK_PLUS;
 "?" return TOK_QMARK;
+
 "," return TOK_COMMA;
+"||" return TOK_DOUBLE_VBAR;
+
 ":" return TOK_COLON;
 ";" return TOK_SEMICOLON;
 "->" return TOK_ARROW;
-"||" return TOK_DOUBLE_VBAR;
 
 "==" return TOK_EQ;
 "!=" return TOK_NE;
