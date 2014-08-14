@@ -855,7 +855,7 @@
      ... would be replaced with three stacks:
      : (A B C₁ D₁, A B C₂ D₂, A B C₃ D₃)
 
-***  relem :: ?T_SEQ ->* ?()
+*** •relem :: ?T_SEQ ->* ?()
      This is like elem, but yields elements in reverse order.
 
 *** •length :: ?T_SEQ -> ?T_CONST
@@ -921,13 +921,26 @@
      then it wouldn't be clear whether (0 0 slice) needs to yield
      nothing or everything.
 
+***  fold :: ?T_SEQ ?() ?T_CLOSURE ->* ?()
+     - This takes care of all sorts of summing and joining list
+       elements.  E.g. "join" is:
+       : [the sequence] "" {"%s" add} fold
+       "sum" is:
+       : [the sequence] 0 {add} fold
+
 ** ·T_STR
-    Any word that is applicable to sequences is applicable to a string
-    as well.  The semantics are as if the string was a sequence of all
+    Many words, applicable to sequences, are applicable to strings as
+    well.  The semantics are as if the string was a sequence of all
     the constituent characters (the characters themselves are again of
     type T_STR).  The prototypes are as if T_SEQ was replaced with
     T_STR.
 
+*** •add (as T_SEQ)
+*** •elem (as T_SEQ)
+*** •relem (as T_SEQ)
+*** •length (as T_SEQ)
+*** •?empty (as T_SEQ)
+*** •?find (as T_SEQ)
 *** •?match :: ?T_STR ?T_STR
      This asserts that TOS (which is a string with a regular
      expression) matches the value below TOS.  The whole string has to

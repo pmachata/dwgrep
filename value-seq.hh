@@ -94,6 +94,15 @@ struct op_elem_seq
   operate (std::unique_ptr <value_seq> a) override;
 };
 
+struct op_relem_seq
+  : public op_yielding_overload <value_seq>
+{
+  using op_yielding_overload::op_yielding_overload;
+
+  std::unique_ptr <value_producer>
+  operate (std::unique_ptr <value_seq> a) override;
+};
+
 struct pred_empty_seq
   : public pred_overload <value_seq>
 {

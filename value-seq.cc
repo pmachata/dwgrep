@@ -150,16 +150,22 @@ op_length_seq::operate (std::unique_ptr <value_seq> a)
 
 namespace
 {
-  struct seq_elem_producer
-    : public value_producer
+  struct seq_elem_producer_base
   {
     std::shared_ptr <value_seq::seq_t> m_seq;
     size_t m_idx;
 
-    seq_elem_producer (std::shared_ptr <value_seq::seq_t> seq)
+    seq_elem_producer_base (std::shared_ptr <value_seq::seq_t> seq)
       : m_seq {seq}
       , m_idx {0}
     {}
+  };
+
+  struct seq_elem_producer
+    : public value_producer
+    , public seq_elem_producer_base
+  {
+    using seq_elem_producer_base::seq_elem_producer_base;
 
     std::unique_ptr <value>
     next () override
@@ -167,8 +173,28 @@ namespace
       if (m_idx < m_seq->size ())
 	{
 	  std::unique_ptr <value> v = (*m_seq)[m_idx]->clone ();
-	  v->set_pos (m_idx);
-	  m_idx++;
+	  v->set_pos (m_idx++);
+	  return v;
+	}
+
+      return nullptr;
+    }
+  };
+
+  struct seq_relem_producer
+    : public value_producer
+    , public seq_elem_producer_base
+  {
+    using seq_elem_producer_base::seq_elem_producer_base;
+
+    std::unique_ptr <value>
+    next () override
+    {
+      if (m_idx < m_seq->size ())
+	{
+	  std::unique_ptr <value> v
+	    = (*m_seq)[m_seq->size () - 1 - m_idx]->clone ();
+	  v->set_pos (m_idx++);
 	  return v;
 	}
 
@@ -181,6 +207,12 @@ std::unique_ptr <value_producer>
 op_elem_seq::operate (std::unique_ptr <value_seq> a)
 {
   return std::make_unique <seq_elem_producer> (a->get_seq ());
+}
+
+std::unique_ptr <value_producer>
+op_relem_seq::operate (std::unique_ptr <value_seq> a)
+{
+  return std::make_unique <seq_relem_producer> (a->get_seq ());
 }
 
 pred_result

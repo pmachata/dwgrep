@@ -74,18 +74,24 @@ op_length_str::operate (std::unique_ptr <value_str> a)
 
 namespace
 {
-  struct str_elem_producer
-    : public value_producer
+  struct str_elem_producer_base
   {
     std::unique_ptr <value_str> m_v;
     std::string const &m_str;
     size_t m_idx;
 
-    str_elem_producer (std::unique_ptr <value_str> v)
+    str_elem_producer_base (std::unique_ptr <value_str> v)
       : m_v {std::move (v)}
       , m_str {m_v->get_string ()}
       , m_idx {0}
     {}
+  };
+
+  struct str_elem_producer
+    : public value_producer
+    , public str_elem_producer_base
+  {
+    using str_elem_producer_base::str_elem_producer_base;
 
     std::unique_ptr <value>
     next () override
@@ -99,12 +105,37 @@ namespace
       return nullptr;
     }
   };
+
+  struct str_relem_producer
+    : public value_producer
+    , public str_elem_producer_base
+  {
+    using str_elem_producer_base::str_elem_producer_base;
+
+    std::unique_ptr <value>
+    next () override
+    {
+      if (m_idx < m_str.size ())
+	{
+	  char c = m_str[m_str.size () - 1 - m_idx];
+	  return std::make_unique <value_str> (std::string {c}, m_idx++);
+	}
+
+      return nullptr;
+    }
+  };
 }
 
 std::unique_ptr <value_producer>
 op_elem_str::operate (std::unique_ptr <value_str> a)
 {
   return std::make_unique <str_elem_producer> (std::move (a));
+}
+
+std::unique_ptr <value_producer>
+op_relem_str::operate (std::unique_ptr <value_str> a)
+{
+  return std::make_unique <str_relem_producer> (std::move (a));
 }
 
 pred_result

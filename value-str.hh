@@ -81,6 +81,15 @@ struct op_elem_str
   operate (std::unique_ptr <value_str> a) override;
 };
 
+struct op_relem_str
+  : public op_yielding_overload <value_str>
+{
+  using op_yielding_overload::op_yielding_overload;
+
+  std::unique_ptr <value_producer>
+  operate (std::unique_ptr <value_str> a) override;
+};
+
 struct pred_empty_str
   : public pred_overload <value_str>
 {

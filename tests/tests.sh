@@ -115,6 +115,10 @@ expect_count 1 ./nontrivial-types.o -e '
 	?(elem (pos == 2) (== 12))'
 expect_count 3 ./empty -e '
 	[0, 1, 2] elem dup (== pos)'
+expect_count 3 ./empty -e '
+	[2, 1, 0] relem dup (== pos)'
+expect_count 1 ./empty -e '
+	["210" relem] == ["012" elem]'
 
 # Check literal assertions.
 expect_count 1 ./empty -e '
@@ -391,9 +395,6 @@ expect_count 1 ./empty -e '
 			!([4,5,6] !find) !(dup !find))'
 
 # Check location expression support.
-
-#	XXX update for actual location expression value type.  The
-#	"elem ?(pos ?2)" bit should become "value" or something.
 
 #   Support of DW_AT_location with DW_FORM_block*.
 expect_count 1 ./typedef.o -e '

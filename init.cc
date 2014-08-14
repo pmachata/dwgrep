@@ -146,6 +146,16 @@ dwgrep_builtins_core ()
     dict->add (std::make_shared <overloaded_op_builtin> ("elem", t));
   }
 
+  // "relem"
+  {
+    auto t = std::make_shared <overload_tab> ();
+
+    t->add_op_overload <op_relem_str> ();
+    t->add_op_overload <op_relem_seq> ();
+
+    dict->add (std::make_shared <overloaded_op_builtin> ("relem", t));
+  }
+
   // "empty"
   {
     auto t = std::make_shared <overload_tab> ();
