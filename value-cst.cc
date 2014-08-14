@@ -90,7 +90,15 @@ namespace
     constant_dom const *d = cst_a.dom ()->plain ()
       ? cst_b.dom () : cst_a.dom ();
 
-    return f (cst_a, cst_b, d);
+    try
+      {
+	return f (cst_a, cst_b, d);
+      }
+    catch (std::domain_error &e)
+      {
+	std::cerr << "Error: " << e.what () << std::endl;
+	return nullptr;
+      }
   }
 }
 
@@ -145,13 +153,8 @@ op_div_cst::operate (std::unique_ptr <value_cst> a,
      [] (constant const &cst_a, constant const &cst_b,
 	 constant_dom const *d) -> std::unique_ptr <value>
      {
-       if (cst_b.value () == 0)
-	 {
-	   std::cerr << "Error: `div': division by zero.\n";
-	   return nullptr;
-	 }
-
-       throw std::runtime_error ("mpz_class / mpz_class not available");
+       constant r {cst_a.value () / cst_b.value (), d};
+       return std::make_unique <value_cst> (r, 0);
      });
 }
 
@@ -164,12 +167,7 @@ op_mod_cst::operate (std::unique_ptr <value_cst> a,
      [] (constant const &cst_a, constant const &cst_b,
 	 constant_dom const *d) -> std::unique_ptr <value>
      {
-       if (cst_b.value () == 0)
-	 {
-	   std::cerr << "Error: `mod': division by zero.\n";
-	   return nullptr;
-	 }
-
-       throw std::runtime_error ("mpz_class % mpz_class not available");
+       constant r {cst_a.value () % cst_b.value (), d};
+       return std::make_unique <value_cst> (r, 0);
      });
 }
