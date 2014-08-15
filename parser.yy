@@ -234,6 +234,24 @@
     str = "";
     return tmp;
   }
+
+  tree *
+  tree_for_id_block (builtin_dict const &builtins,
+		     std::vector <std::string> *ids)
+  {
+    tree *ret = nullptr;
+    for (auto const &s: *ids)
+      if (builtins.find (s) == nullptr)
+	{
+	  auto t = tree::create_str <tree_type::BIND> (s);
+	  ret = tree::create_cat <tree_type::CAT> (ret, t);
+	}
+      else
+	throw std::runtime_error
+	    (std::string ("Can't rebind a builtin: `") + s + "'");
+
+    return ret;
+  }
 %}
 
 %pure-parser
@@ -382,19 +400,9 @@ Statement:
 
   | TOK_LBRACKET IdBlockOpt Program TOK_RBRACKET
   {
-    $$ = nullptr;
-    for (auto const &s: *$2)
-      if (builtins.find (s) == nullptr)
-	{
-	  auto t = tree::create_str <tree_type::BIND> (s);
-	  $$ = tree::create_cat <tree_type::CAT> ($$, t);
-	}
-      else
-	throw std::runtime_error
-	    (std::string ("Can't rebind a builtin: `") + s + "'");
-
     $$ = tree::create_cat <tree_type::CAT>
-	  ($$, tree::create_unary <tree_type::CAPTURE> ($3));
+	  (tree_for_id_block (builtins, $2),
+	   tree::create_unary <tree_type::CAPTURE> ($3));
 
     if ($2->size () > 0)
       $$ = tree::create_scope <tree_type::SCOPE> ($$);
@@ -402,9 +410,11 @@ Statement:
     delete $2;
   }
 
-  | TOK_LBRACE Program TOK_RBRACE
+  | TOK_LBRACE IdBlockOpt Program TOK_RBRACE
   {
-    $$ = tree::create_unary <tree_type::BLOCK> ($2);
+    $$ = tree::create_cat <tree_type::CAT>
+	  (tree_for_id_block (builtins, $2), $3);
+    $$ = tree::create_unary <tree_type::BLOCK> ($$);
   }
 
   | TOK_ARROW IdList TOK_SEMICOLON

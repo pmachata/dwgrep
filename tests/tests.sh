@@ -71,7 +71,7 @@ expect_count 0 ./empty -e '10  > 10'
 expect_count 0 ./empty -e '100 < 10'
 
 expect_count 1 ./duplicate-const -e '
-	{?TAG_const_type, ?TAG_volatile_type, ?TAG_restrict_type} ->?cvr_type;
+	let ?cvr_type := {?TAG_const_type,?TAG_volatile_type,?TAG_restrict_type};
 	let P := winfo ;
 	let A := P child ?cvr_type ;
 	let B := P child ?cvr_type ?(?lt: A) ;
@@ -261,26 +261,26 @@ expect_count 1 ./empty -e '
 
 # Check closures.
 expect_count 1 ./empty -e '
-	{->A; {->B; A}} 2 swap apply 9 swap apply (== 1 1 add)'
+	{|A| {|B| A}} 2 swap apply 9 swap apply (== 1 1 add)'
 expect_count 1 ./empty -e '
-	{->A; {A}} 5 swap apply apply (== 2 3 add)'
+	{|A| {A}} 5 swap apply apply (== 2 3 add)'
 expect_count 1 ./empty -e '
-	{dup add} -> double; 1 double (== 2)'
+	let double := {dup add}; (1 double == 2)'
 expect_count 1 ./empty -e '
-	{->x; {->y; x y add}} ->adder;
+	let adder := {|x| {|y| x y add}};
 	3 adder 2 swap apply (== 5)'
 expect_count 1 ./empty -e '
-	{->f; [|L| L elem f] } ->map;
+	let map := {|f| [|L| L elem f]};
 	[1, 2, 3] {1 add} map ?([2, 3, 4] ?eq)'
 expect_count 1 ./empty -e '
-	{->L B E;
-	  {->V;
-	    if (V 0 ?ge) then (V) else (L length V add) ->X;
-	    if (X 0 ?lt) then (0) else X
+	let slice := {|L B E|
+	  {|V|
+	    let X := if (V 0 ?ge) then (V) else (L length V add);
+	    if (X 0 ?lt) then 0 else X
 	  } ->wrap;
 	  let begin end := B wrap E wrap;
 	  [L elem ?(pos ?(begin ?ge) ?(end ?lt))]
-	} -> slice;
+	};
 	[0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
 	?(1 5 slice [1, 2, 3, 4] ?eq)
 	?(5 -1 slice [5, 6, 7, 8] ?eq)
@@ -292,16 +292,16 @@ expect_count 3 ./empty -e '
 
 # Check recursion.
 expect_count 1 ./empty -e '
-	{->A; (?(A 10 ?ge) 0 || A 1 add F 1 add)} ->F;
+	{|A| (?(A 10 ?ge) 0 || A 1 add F 1 add)} ->F;
 	0 F
 	?(10 ?eq)'
 
 expect_count 1 ./empty -e '
-	{->F T; (?(F T ?le) F, ?(F T ?lt) F 1 add T seq) } -> seq;
+	{|F T| ?(F T ?le) F, ?(F T ?lt) F 1 add T seq} -> seq;
 	[1 10 seq] ?([1, 2, 3, 4, 5, 6, 7, 8, 9, 10] ?eq)'
 
 expect_count 1 ./empty -e '
-	{->N; (?(N 2 ?lt) 1 || N 1 sub fact N mul)} -> fact;
+	{|N| (?(N 2 ?lt) 1 || N 1 sub fact N mul)} -> fact;
 	?(5 fact 120 ?eq)
 	?(6 fact 720 ?eq)
 	?(7 fact 5040 ?eq)
