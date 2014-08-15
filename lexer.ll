@@ -72,10 +72,12 @@ BIN [01]
 
 "," return TOK_COMMA;
 "||" return TOK_DOUBLE_VBAR;
+"|" return TOK_VBAR;
 
 ":" return TOK_COLON;
 ";" return TOK_SEMICOLON;
 "->" return TOK_ARROW;
+":=" return TOK_ASSIGN;
 
 "==" return TOK_EQ;
 "!=" return TOK_NE;
@@ -87,6 +89,7 @@ BIN [01]
 "if" return TOK_IF;
 "then" return TOK_THEN;
 "else" return TOK_ELSE;
+"let" return TOK_LET;
 
 "\\dbg" return TOK_DEBUG;
 
@@ -173,27 +176,27 @@ BIN [01]
 
 <STRING>"%s" {
   yylval->f->flush_str ();
-  yylval->f->t.push_child (parse_query (*yyextra, ""));
+  yylval->f->t.push_child (parse_subquery (*yyextra, ""));
 }
 
 <STRING>"%x" {
   yylval->f->flush_str ();
-  yylval->f->t.push_child (parse_query (*yyextra, "value hex"));
+  yylval->f->t.push_child (parse_subquery (*yyextra, "value hex"));
 }
 
 <STRING>"%o" {
   yylval->f->flush_str ();
-  yylval->f->t.push_child (parse_query (*yyextra, "value oct"));
+  yylval->f->t.push_child (parse_subquery (*yyextra, "value oct"));
 }
 
 <STRING>"%b" {
   yylval->f->flush_str ();
-  yylval->f->t.push_child (parse_query (*yyextra, "value bin"));
+  yylval->f->t.push_child (parse_subquery (*yyextra, "value bin"));
 }
 
 <STRING>"%d" {
   yylval->f->flush_str ();
-  yylval->f->t.push_child (parse_query (*yyextra, "value"));
+  yylval->f->t.push_child (parse_subquery (*yyextra, "value"));
 }
 
 <STRING>. {
@@ -233,7 +236,8 @@ BIN [01]
   yylval->f->in_string = true;
   if (yylval->f->level == 0)
     {
-      yylval->f->t.push_child (parse_query (*yyextra, yylval->f->yank_str ()));
+      yylval->f->t.push_child (parse_subquery (*yyextra,
+					       yylval->f->yank_str ()));
       BEGIN STRING;
     }
   else

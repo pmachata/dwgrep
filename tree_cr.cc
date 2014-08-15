@@ -70,9 +70,11 @@ tree::take_cat (tree *t)
 		     t->m_children.begin (), t->m_children.end ());
 }
 
+#include <iostream>
 
 namespace
 {
+  tree call_promote_scopes (tree t, std::shared_ptr <scope> scp);
   tree
   promote_scopes (tree t, std::shared_ptr <scope> scp)
   {
@@ -81,13 +83,21 @@ namespace
       case tree_type::ALT:
       case tree_type::CAPTURE:
       case tree_type::OR:
-      case tree_type::SCOPE:
       case tree_type::BLOCK:
       case tree_type::CLOSE_STAR:
       case tree_type::IFELSE:
       case tree_type::PRED_SUBX_ANY:
+      case tree_type::SUBX_EVAL:
 	for (auto &c: t.m_children)
 	  c = tree::promote_scopes (c, scp);
+	return t;
+
+      case tree_type::SCOPE:
+	assert (t.m_children.size () == 1);
+	assert (t.scp () != nullptr);
+	assert (t.scp ()->parent == nullptr);
+	t.scp ()->parent = scp;
+	t.child (0) = tree::promote_scopes (t.child (0), t.scp ());
 	return t;
 
       case tree_type::BIND:
@@ -105,10 +115,19 @@ namespace
       case tree_type::CONST: case tree_type::STR: case tree_type::FORMAT:
       case tree_type::F_BUILTIN: case tree_type::F_DEBUG:
 	for (auto &c: t.m_children)
-	  c = ::promote_scopes (c, scp);
+	  c = ::call_promote_scopes (c, scp);
 	return t;
       }
     return t;
+  }
+
+  tree
+  call_promote_scopes (tree t, std::shared_ptr <scope> scope)
+  {
+    //std::cerr << ">>>" << t << std::endl;
+    auto ret = promote_scopes (t, scope);
+    //std::cerr << "<<<" << std::endl;
+    return ret;
   }
 
   tree
@@ -129,6 +148,6 @@ tree
 tree::promote_scopes (tree t, std::shared_ptr <scope> parent)
 {
   auto scp = std::make_shared <scope> (parent);
-  auto t2 = ::promote_scopes (t, scp);
+  auto t2 = ::call_promote_scopes (t, scp);
   return build_scope (t2, scp);
 }

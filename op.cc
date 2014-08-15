@@ -39,6 +39,43 @@
 #include "value-seq.hh"
 #include "value-str.hh"
 
+namespace
+{
+  void
+  debug_stack (stack *stk)
+  {
+    {
+      std::vector <std::unique_ptr <value>> stack;
+      while (stk->size () > 0)
+	stack.push_back (stk->pop ());
+
+      std::cerr << "<";
+      std::for_each (stack.rbegin (), stack.rend (),
+		     [&stk] (std::unique_ptr <value> &v) {
+		       v->show ((std::cerr << ' '), brevity::brief);
+		       stk->push (std::move (v));
+		     });
+      std::cerr << " > (";
+    }
+
+    std::shared_ptr <frame> frame = stk->nth_frame (0);
+    while (frame != nullptr)
+      {
+	std::cerr << frame;
+	std::cerr << "{";
+	for (auto const &v: frame->m_values)
+	  if (v == nullptr)
+	    std::cerr << " (unbound)";
+	  else
+	    v->show ((std::cerr << ' '), brevity::brief);
+	std::cerr << " }  ";
+
+	frame = frame->m_parent;
+      }
+    std::cerr << ")\n";
+  }
+}
+
 std::unique_ptr <value>
 value_producer_cat::next ()
 {
@@ -582,13 +619,16 @@ struct op_subx::pimpl
   std::shared_ptr <op_origin> m_origin;
   std::shared_ptr <op> m_op;
   stack::uptr m_stk;
+  size_t m_keep;
 
   pimpl (std::shared_ptr <op> upstream,
 	 std::shared_ptr <op_origin> origin,
-	 std::shared_ptr <op> op)
+	 std::shared_ptr <op> op,
+	 size_t keep)
     : m_upstream {upstream}
     , m_origin {origin}
     , m_op {op}
+    , m_keep {keep}
   {}
 
   void
@@ -614,7 +654,14 @@ struct op_subx::pimpl
 	if (auto stk = m_op->next ())
 	  {
 	    auto ret = std::make_unique <stack> (*m_stk);
-	    ret->push (stk->pop ());
+	    std::vector <std::unique_ptr <value>> kept;
+	    for (size_t i = 0; i < m_keep; ++i)
+	      kept.push_back (stk->pop ());
+	    for (size_t i = 0; i < m_keep; ++i)
+	      {
+		ret->push (std::move (kept.back ()));
+		kept.pop_back ();
+	      }
 	    return ret;
 	  }
 
@@ -632,8 +679,9 @@ struct op_subx::pimpl
 
 op_subx::op_subx (std::shared_ptr <op> upstream,
 		  std::shared_ptr <op_origin> origin,
-		  std::shared_ptr <op> op)
-  : m_pimpl {std::make_unique <pimpl> (upstream, origin, op)}
+		  std::shared_ptr <op> op,
+		  size_t keep)
+  : m_pimpl {std::make_unique <pimpl> (upstream, origin, op, keep)}
 {}
 
 op_subx::~op_subx ()
@@ -659,42 +707,12 @@ op_subx::name () const
   return ss.str ();
 }
 
-
 stack::uptr
 op_f_debug::next ()
 {
   while (auto stk = m_upstream->next ())
     {
-      {
-	std::vector <std::unique_ptr <value>> stack;
-	while (stk->size () > 0)
-	  stack.push_back (stk->pop ());
-
-	std::cerr << "<";
-	std::for_each (stack.rbegin (), stack.rend (),
-		       [&stk] (std::unique_ptr <value> &v) {
-			 v->show ((std::cerr << ' '), brevity::brief);
-			 stk->push (std::move (v));
-		       });
-	std::cerr << " > (";
-      }
-
-      std::shared_ptr <frame> frame = stk->nth_frame (0);
-      while (frame != nullptr)
-	{
-	  std::cerr << frame;
-	  std::cerr << "{";
-	  for (auto const &v: frame->m_values)
-	    if (v == nullptr)
-	      std::cerr << " (unbound)";
-	    else
-	      v->show ((std::cerr << ' '), brevity::brief);
-	  std::cerr << " }  ";
-
-	  frame = frame->m_parent;
-	}
-      std::cerr << ")\n";
-
+      debug_stack (&*stk);
       return stk;
     }
   return nullptr;

@@ -461,7 +461,8 @@ class op_subx
 public:
   op_subx (std::shared_ptr <op> upstream,
 	   std::shared_ptr <op_origin> origin,
-	   std::shared_ptr <op> op);
+	   std::shared_ptr <op> op,
+	   size_t keep);
 
   ~op_subx ();
 

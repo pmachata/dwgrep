@@ -373,7 +373,7 @@
    parameter it is, and we'd like to tell the user the name of the
    function, not just a DIE offset.  We'll address both.
 
-** ->X; — name binding
+** let X := EXPR; — name binding
 
    Often you need to refer back to a value that was computed earlier.
    Since this is a stack machine, one way to do this is to use stack
@@ -384,16 +384,18 @@
    introduces a word that, when mentioned, pushes the bound value back
    to stack.
 
-   : 1->A; A A add	# gives 2
+   : let A := 1; A A add	# gives 2
+   : let A B := 10 2; A B div 	# gives 5
 
    Let's use this tool to remember the two elements that we care
    about: the subprogram (S) and its naked structure parameter (P):
 
-   : winfo ?TAG_subprogram !AT_declaration ->S;
+   : let S := winfo ?TAG_subprogram !AT_declaration;
    :
-   : S child ?TAG_formal_parameter
-   : ?(@AT_type ((?TAG_const_type, ?TAG_volatile_type, ?TAG_typedef) @AT_type)*
-   :   (?TAG_structure_type, ?TAG_class_type)) ->P;
+   : let P := S child ?TAG_formal_parameter
+   :          ?(@AT_type ((?TAG_const_type,
+   :                       ?TAG_volatile_type, ?TAG_typedef) @AT_type)*
+   :            (?TAG_structure_type, ?TAG_class_type));
    :
    : P S "%s: Parameter %s has non-trivial type."
 
@@ -411,11 +413,12 @@
    With this tool, we can make the formatting string quite a bit
    clearer:
 
-   : winfo ?TAG_subprogram !AT_declaration ->S;
+   : let S := winfo ?TAG_subprogram !AT_declaration;
    :
-   : S child ?TAG_formal_parameter
-   : ?(@AT_type ((?TAG_const_type, ?TAG_volatile_type, ?TAG_typedef) @AT_type)*
-   :   (?TAG_structure_type, ?TAG_class_type)) ->P;
+   : let P := S child ?TAG_formal_parameter
+   :          ?(@AT_type ((?TAG_const_type,
+   :                       ?TAG_volatile_type, ?TAG_typedef) @AT_type)*
+   :            (?TAG_structure_type, ?TAG_class_type));
    :
    : "%( S %): Parameter %( P %) has non-trivial type."
 
@@ -426,11 +429,12 @@
    Dwarf offsets and tag names.  With interpolation, it's actually
    quite easy:
 
-   : winfo ?TAG_subprogram !AT_declaration ->S;
+   : let S := winfo ?TAG_subprogram !AT_declaration;
    :
-   : S child ?TAG_formal_parameter
-   : ?(@AT_type ((?TAG_const_type, ?TAG_volatile_type, ?TAG_typedef) @AT_type)*
-   :   (?TAG_structure_type, ?TAG_class_type)) ->P;
+   : let P := S child ?TAG_formal_parameter
+   :          ?(@AT_type ((?TAG_const_type,
+   :                       ?TAG_volatile_type, ?TAG_typedef) @AT_type)*
+   :            (?TAG_structure_type, ?TAG_class_type));
    :
    : "%( S @AT_decl_file %): %( S @AT_decl_line %): note: in function "\
    : "`%( S @AT_name %)', parameter `%( P @AT_name %)' type is not trivial."
@@ -611,85 +615,102 @@
 
 ** •EXPR → “(” EXPR₁ “)” — grouping, precedence
 
-** •EXPR → “[” EXPR₁ “]” | “[” “]” — sub-expression capture
+** ·EXPR → “[” (“|” ID* “|”)? EXPR₁ “]” | “[” “]” — sub-expression capture
 
-   This is a literal form that gathers what EXPR₁ yields and pushes a
-   sequence with those elements.  It can be used for constructing a
-   sequence literal:
+   - This is a literal form that gathers what EXPR₁ yields and pushes
+     a sequence with those elements.  It can be used for constructing
+     a sequence literal:
 
-   : [1, 2, 3]        # produces a list with elements 1, 2 and 3
-   : [child]          # list of immediate children
-   : [child*]         # list of all descendants
+     : [1, 2, 3]        # produces a list with elements 1, 2 and 3
+     : [child]          # list of immediate children
+     : [child*]         # list of all descendants
 
-   [] is a literal that produces an empty list.  It is exactly
-   equivalent to (among others):
-   : [ 0 == 1 ]
+   - [] is a literal that produces an empty list.  It is exactly
+     equivalent to (among others):
+     : [ 0 == 1 ]
 
-** ·EXPR → “->” ID₀ [ID₁ …] “;” — binding
+   - At the start of the sub-expression, a capture block is allowed.
+     A presence of such block converts the whole form into a function
+     that pops as many arguments as there are identifier in the
+     capture block, and binds them to these identifiers such that the
+     rightmost one get the value on TOS and then progressively lefter
+     ID's get progressively deeper stack values.  The expression is
+     then evaluated as usual, except one can use the bindings:
 
-   - This pops a bunch of values from TOS and binds each of them to
-     one identifier ID.  From that point on, mentioning ID is the same
-     as pushing the value to TOS.
+     : [|A| A child]	# convert DIE on TOS into a list of its children
+     : [|A B| foo]	# pop A and B, then push a list with result of foo
 
-   - The following two pieces of code are equivalent:
-     : ->A B;
-     : ->B; ->A;
-     The mnemonic for this is that the list of variables describes
-     stack layout, with TOS being on the right.
+** •EXPR → “let” ID₀ [ID₁ …] “:=” EXPR₁ “;” — binding
+    - EXPR₁ is evaluated in sub-expression context.  Then values near
+      TOS are bound to given identifiers and exported into surrounding
+      context.  From that point on, mentioning ID is the same as
+      pushing the value to TOS.
 
-   - When a binding is mentioned that references a closure, that
-     counts as invocation of the referenced closure.  In other words,
-     there's an implicit "apply" for bindings that reference closures.
-     : { 1 add } -> inc;
-     : 2 inc	# 3
+    - Ordering of ID's is such that the rightmost is bound to TOS, the
+      next one to the left to one below TOS, etc.  E.g.:
 
-** ·EXPR → “{” EXPR₁ “}” | “def” ID “{” EXPR₁ “}” | “:”ID — blocks
+      : let A B := 1 2 ;	# A is 1, B is 2
 
-    - {X} -- A block syntax.  A value representing an expression X
-      is pushed to TOS.
+      The mnemonic for this is that the list of variables describes
+      stack layout, with TOS being on the right.
 
-      XXX -- this needs a block-local bindings.  E.g. in the following:
-      : {->F T; ?(F T ?le) F, ?(F T ?lt) F 1 add T seq apply} -> seq;
-      F and T are local to the first ALT branch.  This has to be
-      rewritten like so:
-      : {->F T; (?(F T ?le) F, ?(F T ?lt) F 1 add T seq apply)} -> seq;
-      Pretty sure this will cause problems.
+    - --- xxx ---
+      : let A B := X ;
+      is the same as:
+      : (2 | X) ->A B;	# (N | EXPR) is subexpression evaluation
+
+      : [|A B| A B blah]
+      is the same as (with (( and )) denoting scope)
+      : (( ->A B; [(1 | blah)]))
+
+    - When a binding is mentioned that references a closure, that
+      counts as invocation of the referenced closure.  In other words,
+      there's an implicit "apply" for bindings that reference
+      closures.
+      : { 1 add } -> inc;
+      : 2 inc	# 3
+
+** ·EXPR → “{” (“|” ID* “|”)? EXPR₁ “}” — blocks
+
+    - {X} -- A block syntax.  A value representing an expression X is
+      pushed to TOS.  Named arguments can be given in an identifier
+      block, similarly to sub-expression capture:
+      : {|A B| do stuff with A and B}
+      B is bound to a value on TOS, and progressively lefter
+      identifiers get progressively deeper values.
+
+      It is of course possible to not give variables names.  For
+      example, this is a completely valid closure:
+      : {1 add}		# Adds 1 to whatever is on TOS.
 
       When {X} is executed, this introduces a new activation record
-      (dynamic scope) inside the current scope.  Any def's bind
+      (dynamic scope) inside the current scope.  Any let forms bind
       symbols in this new scope, and words are looked up in this scope
-      as well (but of course proceed upwards if the symbol is not
-      found).  Any block literals inside this execution remember the
-      scope (which in turn remembers its surrounding scope, even if
-      the execution already left it), so that they work as closures.
+      as well (but of course the search proceeds upwards if the symbol
+      is not found).  Any block literals inside this execution
+      remember the scope (which in turn remembers its surrounding
+      scope, even if the execution already left it), so that they work
+      as closures.
 
-      : {->x; {->y; x y add}} ->adder;
+      : let adder := {|x| {|y| x y add}};
       : 3 adder 2 swap apply	# 5
 
-      : def map { ->L f;  [ L elem f ] }
+      : let map := {|L f| [L elem f]};
       : [1, 2, 3] {1 add} map	# [2, 3, 4]
 
-    - def ID X -- equivalent to X ->ID; For functions, syntactically
-      arguably clearer than ->X.
-      : def double { dup add }
-      : 3 double	# 6
+      Closures can be invoked recursively:
 
-      : def fact { ->n; if (n ?1) then 1 else (n n 1 sub fact mul) }
+      : let fact := {|n| if (n==1) then 1 else (n 1 sub n fact mul)};
       : 3 fact		# 6
 
-    - :ID -- A symbol syntax.  A value representing symbol ID is
-      pushed on TOS.  Normally mentioning a word such as "swap" leads
-      directly to that action being performed.  ":swap" instead pushes
-      the symbol to TOS.
-
-      :ID value -- resolve symbol on TOS to whatever it's bound to.
-
-    - Stack shuffling operators:
-      : def drop { ->a; }		# ->(a->)drop;
-      : def dup { ->a; a a }		# ->(a->a a)dup;
-      : def swap { ->a b; b a }		# ->(a b->b a)swap;
-      : def rot { ->a b c; b c a }	# ->(a b c->b c a)rot;
-      : def over { ->a b; a b a }	# ->(a b->a b a)over;
+    - Example: stack shuffling operators.  (N.B.: this example uses
+      underscores to distinguish from the corresponding built-in
+      words.   Redefining built-ins is not allowed.)
+      : let drop_ := {|a|};
+      : let dup_ := {|a| a a};
+      : let swap_ := {|a b| b a};
+      : let rot_ := {|a b c| b c a};
+      : let over_ := {|a b| a b a};
 
 ** •EXPR → “?(” EXPR₁ “)” | “!(” EXPR₁ “)” — sub-expression assertions
 
@@ -733,6 +754,7 @@
       operators, where it makes sense, in infix form.  For example:
       : 10 add: 1	# equivalent to (10 1 add)
       : [10 range] sort: {->a; if (a mod: 2 ?0) then 0 else 1}
+      : [10 range] sort: {a | if (a mod: 2 == 0) then 0 else 1}
 
 **  comments
     - # seems the logical choice.  /* */ and // possibly as well.
@@ -879,6 +901,7 @@
     To pick only those elements that match, you could do the
     following:
     : [child]->L; [L elem ?(@AT_name ?"foo")]
+    : [child] [L | L elem ?(@AT_name ?"foo")]
 
     The above is suitable for a function that takes a list on input
     and wants to filter it.  It is of course preferable to write this
@@ -1014,6 +1037,8 @@
      Like dwarf_siblingof, returns next sibling of the DIE.
 
      : def next {->D; D parent child (pos == D parent child (== D) pos 1 add)}
+
+     : def next {D | D parent child (pos == D parent child (== D) pos 1 add)}
 
      The first line is necessary to make sure that pos later refers
      to order in children array, not to e.g. a result of ([XYZ] each).
@@ -1175,6 +1200,7 @@
      XXX some of this is fairly easy to get by cross-matching like
      this:
      : some addr ->A; symtab (address == A)
+     : let A := some addr; symtab (address == A)
      fuzzy matching (getting symbol/offset) would be more involved.
 
 
@@ -1196,7 +1222,7 @@
      opcode.
 
 
-** ·T_LOCLIST_OP
+** •T_LOCLIST_OP
 *** •label :: ?T_LOCLIST_OP -> ?T_CONST
      Yields operation opcode (a DW_OP_* constant).
 
@@ -1307,12 +1333,12 @@
 
 ** Josh Stone's nontrivial-parameters script
 
-   : winfo ?TAG_subprogram !AT_declaration
-   : ?(@AT_decl_file ?("^/usr/" ?match) ?("^/usr/src/debug" !match)) -> A;
+   : let A := winfo ?TAG_subprogram !AT_declaration
+   :          ?(@AT_decl_file ?("^/usr/" ?match) ?("^/usr/src/debug" !match));
    :
-   : A child ?TAG_formal_parameter
-   : ?(@AT_type ((?TAG_const_type, ?TAG_volatile_type, ?TAG_typedef) @AT_type)*
-   :   (?TAG_structure_type, ?TAG_class_type)) -> B;
+   : let B := A child ?TAG_formal_parameter
+   :          ?(@AT_type ((?TAG_const_type, ?TAG_volatile_type, ?TAG_typedef)
+   :            @AT_type)* (?TAG_structure_type, ?TAG_class_type));
    :
    : "%( A @AT_decl_file %): %( A @AT_decl_line %): note: in function "\
    : "`%( A @AT_name %)', parameter `%( B @AT_name %)' type is not trivial"
@@ -1322,11 +1348,11 @@
    : , etc.)
 
 ** check_die_line_info:
-   : winfo (?TAG_subprogram, ?TAG_inline_subroutine, ?TAG_entry_point,
-   :        ?TAG_lexical_block, ?TAG_label, ?TAG_with_stmt, ?TAG_try_block,
-   :        ?TAG_catch_block) ->A;
-   : A (@AT_entry_pc, @AT_low_pc, @AT_ranges) ->B;
-   : A parent* ?root !(@AT_stmt_list address == B) ->C;
+   : let A := winfo (?TAG_subprogram, ?TAG_inline_subroutine, ?TAG_entry_point,
+   :                ?TAG_lexical_block, ?TAG_label, ?TAG_with_stmt,
+   :                ?TAG_try_block, ?TAG_catch_block);
+   : let B := A (@AT_entry_pc, @AT_low_pc, @AT_ranges);
+   : let C := A parent* ?root !(@AT_stmt_list address == B);
    : "Address %( B %) referenced from %( C %) not found in line table."
 
 ** contains DW_OP_fbreg && ! @frame_base
@@ -1363,19 +1389,18 @@
 ** types inconsistent between instance and specification
    - http://gcc.gnu.org/bugzilla/show_bug.cgi?id=43053
 
-     : winfo ?TAG_subprogram ->A;
-     : A child ?TAG_formal_parameter ->B;
-     : A @AT_specification child ?TAG_formal_parameter ->C;
+     : let A := winfo ?TAG_subprogram;
+     : let B := A child ?TAG_formal_parameter;
+     : let C := A @AT_specification child ?TAG_formal_parameter;
      : (B pos == C pos) (B @AT_type != C @AT_type) A
 
 ** duplicat DW_TAG_const_type
    - http://gcc.gnu.org/bugzilla/show_bug.cgi?id=56740
 
-     : { ?TAG_const_type, ?TAG_volatile_type, ?TAG_restrict_type } -> ?cvr_type;
-     : winfo ?cvr_type ->A;
-     : A unit ?(> A) ?cvr_type ->B;
-     : (A tag == B tag) (A @AT_type == B @AT_type)
-     : A B
+     : let ?cvr_type := {?TAG_const_type,?TAG_volatile_type,?TAG_restrict_type};
+     : let A := winfo ?cvr_type ;
+     : let B := A unit ?(> A) ?cvr_type ;
+     : (A tag == B tag) (A @AT_type == B @AT_type) A B
 
 ** find any attribute with value "blah"
    : attribute (value == "blah")
@@ -1384,22 +1409,22 @@
    Check for two full DW_TAG_variable DIEs with the same DW_AT_name
    value.
 
-   : winfo ?TAG_variable dup next+ ?TAG_variable (@AT_name == swap @AT_name)
+   : winfo ?TAG_variable (@AT_name == next+ ?TAG_variable @AT_name)
 
    - XXX
      : winfo dup next+ <?TAG_variable @AT_name>?eq
 
 ** check_linkage_external_die.cc
 
-     : def GetSym {->X; symtab (?STT_OBJECT, ?STT_FUNC)
-     :             (@name == X @AT_linkage_name)}
+     : let GetSym := {X | symtab (?STT_OBJECT, ?STT_FUNC)
+     :                    (@name == X @AT_linkage_name)};
      : winfo ?AT_linkage_name
      : if !(GetSym) then (
      :     !AT_declaration !AT_const_value
      :     (!structure_type !enumeration_type !union_type, ?AT_name)
      :     "%s has linkage_name attribute that's not in symtab, "\
      :     "but is not marked as declaration"
-     : ) else if GetSym ?STB_LOCAL then (
+     : ) else if (GetSym ?STB_LOCAL) then (
      :     !AT_declaration ?AT_external
      :     "%s has linkage_name attribute, "\
      :     "but the corresponding symbol is local"
@@ -1419,12 +1444,12 @@
 
 ** CU A imports two PU's B and C, and both import the same third PU
 
-   : {parent* ?root child ?TAG_imported_unit @AT_import} ->imports;
+   : let imports := {parent* ?root child ?TAG_imported_unit @AT_import};
    :
-   : winfo ?root ->U;
-   : U child ?TAG_imported_unit @AT_import ->A;
-   : U child ?TAG_imported_unit @AT_import ?(A ?lt) ->B;
-   : A imports B imports ?eq
+   : let U := winfo ?root ;
+   : let A := U child ?TAG_imported_unit @AT_import ;
+   : let B := U child ?TAG_imported_unit @AT_import (> A) ;
+   : A imports B imports (== swap)
    : "PU %(offset%) is imported by PU's %(A offset%) and %(B offset%), "\
    : "which are both imported by %(U offset%)."
 
@@ -1441,8 +1466,8 @@
      [7b] typedef __off64_t long int (signed, 8 bytes);
      [...]
 
-     : winfo ?TAG_typedef ->T;
-     : T @AT_type (?TAG_typedef @AT_type)* !TAG_typedef ->U;
+     : let T := winfo ?TAG_typedef ;
+     : let U := T @AT_type (?TAG_typedef @AT_type)* !TAG_typedef ;
      : "[%(T offset%)] typedef %(T @AT_name%) %(U @AT_name%) "\
      : "(%( U @AT_encoding || "???" %), %( U @AT_byte_size || "???" %) bytes)"
 

@@ -93,6 +93,7 @@ enum class tree_arity_v
   TREE_TYPE (CAT, BINARY)			\
   TREE_TYPE (ALT, BINARY)			\
   TREE_TYPE (CAPTURE, UNARY)			\
+  TREE_TYPE (SUBX_EVAL, CST)			\
   TREE_TYPE (IFELSE, TERNARY)			\
   TREE_TYPE (OR, BINARY)			\
   TREE_TYPE (SCOPE, SCOPE)			\
@@ -210,6 +211,7 @@ public:
   template <tree_type TT> static tree *create_str (std::string s);
   template <tree_type TT> static tree *create_const (constant c);
   template <tree_type TT> static tree *create_cat (tree *t1, tree *t2);
+  template <tree_type TT> static tree *create_scope (tree *t1);
 
   static tree *create_builtin (std::shared_ptr <builtin const> b);
 

@@ -58,10 +58,14 @@
 }
 
 %code provides {
-  // These two are for sub-expression parsing.
   tree parse_query (builtin_dict const &builtins, std::string str);
   tree parse_query (builtin_dict const &builtins,
 		    char const *begin, char const *end);
+
+  // These two are for sub-expression parsing.
+  tree parse_subquery (builtin_dict const &builtins, std::string str);
+  tree parse_subquery (builtin_dict const &builtins,
+		       char const *begin, char const *end);
 }
 
 %{
@@ -243,10 +247,10 @@
 %token TOK_QMARK_LPAREN TOK_BANG_LPAREN
 
 %token TOK_ASTERISK TOK_PLUS TOK_QMARK TOK_COMMA TOK_COLON
-%token TOK_SEMICOLON TOK_DOUBLE_VBAR TOK_ARROW
+%token TOK_SEMICOLON TOK_VBAR TOK_DOUBLE_VBAR TOK_ARROW TOK_ASSIGN
 %token TOK_EQ TOK_NE TOK_LT TOK_LE TOK_GT TOK_GE
 
-%token TOK_IF TOK_THEN TOK_ELSE TOK_WORD TOK_LIT_STR
+%token TOK_IF TOK_THEN TOK_ELSE TOK_LET TOK_WORD TOK_LIT_STR
 %token TOK_LIT_INT TOK_QMARK_LIT_INT TOK_BANG_LIT_INT
 
    // XXX These should eventually be moved to builtins.
@@ -262,7 +266,7 @@
  }
 
 %type <t> Program AltList OrList EqList StatementList Statement
-%type <ids> IdList IdListOpt
+%type <ids> IdList IdListOpt IdBlockOpt
 %type <s> TOK_LIT_INT TOK_QMARK_LIT_INT TOK_BANG_LIT_INT
 %type <s> TOK_WORD
 %type <t> TOK_LIT_STR
@@ -345,6 +349,15 @@ IdList:
     $$ = $2;
   }
 
+IdBlockOpt:
+  /* eps. */
+  {
+    $$ = new std::vector <std::string> ();
+  }
+
+  | TOK_VBAR IdList TOK_VBAR
+  { $$ = $2; }
+
 Statement:
   TOK_LPAREN Program TOK_RPAREN
   { $$ = $2; }
@@ -367,9 +380,26 @@ Statement:
     $$ = tree::create_nullary <tree_type::EMPTY_LIST> ();
   }
 
-  | TOK_LBRACKET Program TOK_RBRACKET
+  | TOK_LBRACKET IdBlockOpt Program TOK_RBRACKET
   {
-    $$ = tree::create_unary <tree_type::CAPTURE> ($2);
+    $$ = nullptr;
+    for (auto const &s: *$2)
+      if (builtins.find (s) == nullptr)
+	{
+	  auto t = tree::create_str <tree_type::BIND> (s);
+	  $$ = tree::create_cat <tree_type::CAT> ($$, t);
+	}
+      else
+	throw std::runtime_error
+	    (std::string ("Can't rebind a builtin: `") + s + "'");
+
+    $$ = tree::create_cat <tree_type::CAT>
+	  ($$, tree::create_unary <tree_type::CAPTURE> ($3));
+
+    if ($2->size () > 0)
+      $$ = tree::create_scope <tree_type::SCOPE> ($$);
+
+    delete $2;
   }
 
   | TOK_LBRACE Program TOK_RBRACE
@@ -390,6 +420,25 @@ Statement:
       else
 	throw std::runtime_error
 	    (std::string ("Can't rebind a builtin: `") + s + "'");
+  }
+
+  | TOK_LET IdList TOK_ASSIGN Program TOK_SEMICOLON
+  {
+    $$ = tree::create_const <tree_type::SUBX_EVAL>
+	  (constant {$2->size (), &dec_constant_dom});
+    $$->take_child ($4);
+
+    for (auto const &s: *$2)
+      if (builtins.find (s) == nullptr)
+	{
+	  auto t = tree::create_str <tree_type::BIND> (s);
+	  $$ = tree::create_cat <tree_type::CAT> ($$, t);
+	}
+      else
+	throw std::runtime_error
+	    (std::string ("Can't rebind a builtin: `") + s + "'");
+
+    delete $2;
   }
 
   | Statement TOK_ASTERISK
@@ -484,11 +533,26 @@ parse_query (builtin_dict const &builtins, std::string str)
 }
 
 tree
-parse_query (builtin_dict const &builtins, char const *begin, char const *end)
+parse_subquery (builtin_dict const &builtins, std::string str)
+{
+  char const *buf = str.c_str ();
+  return parse_subquery (builtins, buf, buf + str.length ());
+}
+
+tree
+parse_query (builtin_dict const &builtins,
+	     char const *begin, char const *end)
+{
+  return tree::promote_scopes (parse_subquery (builtins, begin, end));
+}
+
+tree
+parse_subquery (builtin_dict const &builtins,
+		char const *begin, char const *end)
 {
   lexer lex {builtins, begin, end};
   std::unique_ptr <tree> t;
   if (yyparse (t, lex.m_sc, builtins) == 0)
-    return tree::promote_scopes (*t);
+    return *t;
   throw std::runtime_error ("syntax error");
 }

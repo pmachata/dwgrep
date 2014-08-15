@@ -72,9 +72,9 @@ expect_count 0 ./empty -e '100 < 10'
 
 expect_count 1 ./duplicate-const -e '
 	{?TAG_const_type, ?TAG_volatile_type, ?TAG_restrict_type} ->?cvr_type;
-	winfo ->P;
-	P child ?cvr_type ->A;
-	P child ?cvr_type ?(?lt: A) ->B;
+	let P := winfo ;
+	let A := P child ?cvr_type ;
+	let B := P child ?cvr_type ?(?lt: A) ;
 	?((A label) ?eq: (B label))
 	?((A @AT_type) ?eq: (B @AT_type))'
 
@@ -101,11 +101,11 @@ expect_count 1 ./nontrivial-types.o -e '
 
 # Test that unit annotates position.
 expect_count 11 ./nontrivial-types.o -e '
-	winfo ->A; A unit ->B; (A pos == B pos)'
+	let A := winfo; let B := A unit; (A pos == B pos)'
 
 # Test a bug with scope promotion.
 expect_count 1 ./empty -e '
-	1->A; ?(A->X;)'
+	let A:=1; ?(let X:=A;)'
 
 # Test that elem annotates position.
 expect_count 1 ./nontrivial-types.o -e '
@@ -270,7 +270,7 @@ expect_count 1 ./empty -e '
 	{->x; {->y; x y add}} ->adder;
 	3 adder 2 swap apply (== 5)'
 expect_count 1 ./empty -e '
-	{->L f; [ L elem f ] } ->map;
+	{->f; [|L| L elem f] } ->map;
 	[1, 2, 3] {1 add} map ?([2, 3, 4] ?eq)'
 expect_count 1 ./empty -e '
 	{->L B E;
@@ -278,7 +278,7 @@ expect_count 1 ./empty -e '
 	    if (V 0 ?ge) then (V) else (L length V add) ->X;
 	    if (X 0 ?lt) then (0) else X
 	  } ->wrap;
-	  B wrap ->begin;    E wrap ->end;
+	  let begin end := B wrap E wrap;
 	  [L elem ?(pos ?(begin ?ge) ?(end ?lt))]
 	} -> slice;
 	[0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
@@ -288,7 +288,7 @@ expect_count 1 ./empty -e '
 
 # Check that bindings remember position.
 expect_count 3 ./empty -e '
-	[0, 1, 2] elem ->E; E dup pos ?eq'
+	let E := [0, 1, 2] elem; E (== pos)'
 
 # Check recursion.
 expect_count 1 ./empty -e '
