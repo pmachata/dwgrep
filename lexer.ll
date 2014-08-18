@@ -271,9 +271,9 @@ BIN [01]
 [ \t\n]+ // Skip.
 
 . {
-  std::stringstream ss;
-  ss << "invalid token `" << *yytext << "'";
-  throw std::runtime_error (ss.str ());
+  using namespace std::literals::string_literals;
+  throw std::runtime_error
+    ("Invalid character in input stream: `"s + *yytext + "'");
 }
 
 <<EOF>> return TOK_EOF;

@@ -39,6 +39,8 @@
 #include "value-seq.hh"
 #include "value-str.hh"
 
+using namespace std::literals::string_literals;
+
 namespace
 {
   void
@@ -143,9 +145,7 @@ op_assert::next ()
 std::string
 op_assert::name () const
 {
-  std::stringstream ss;
-  ss << "assert<" << m_pred->name () << ">";
-  return ss.str ();
+  return "assert<"s + m_pred->name () + ">";
 }
 
 
@@ -491,9 +491,7 @@ op_capture::reset ()
 std::string
 op_capture::name () const
 {
-  std::stringstream ss;
-  ss << "capture<" << m_op->name () << ">";
-  return ss.str ();
+  return "capture<"s + m_op->name () + ">";
 }
 
 
@@ -579,9 +577,7 @@ struct op_tr_closure::pimpl
   std::string
   name () const
   {
-    std::stringstream ss;
-    ss << "close<" << m_upstream->name () << ">";
-    return ss.str ();
+    return "close<"s + m_upstream->name () + ">";
   }
 };
 
@@ -702,9 +698,7 @@ op_subx::reset ()
 std::string
 op_subx::name () const
 {
-  std::stringstream ss;
-  ss << "subx<" << m_pimpl->m_op->name () << ">";
-  return ss.str ();
+  return "subx<"s + m_pimpl->m_op->name () + ">";
 }
 
 stack::uptr
@@ -818,10 +812,8 @@ op_scope::reset ()
 std::string
 op_scope::name () const
 {
-  std::stringstream ss;
-  ss << "scope<vars=" << m_pimpl->m_num_vars
-     << ", " << m_pimpl->m_op->name () << ">";
-  return ss.str ();
+  return "scope<vars="s + std::to_string (m_pimpl->m_num_vars)
+    + ", " + m_pimpl->m_op->name () + ">";
 }
 
 
@@ -846,9 +838,8 @@ op_bind::next ()
 std::string
 op_bind::name () const
 {
-  std::stringstream ss;
-  ss << "bind<" << m_index << "@" << m_depth << ">";
-  return ss.str ();
+  return "bind<"s + std::to_string (m_index)
+    + "@" + std::to_string (m_depth) + ">";
 }
 
 
@@ -939,9 +930,8 @@ op_read::next ()
 std::string
 op_read::name () const
 {
-  std::stringstream ss;
-  ss << "read<" << m_pimpl->m_index << "@" << m_pimpl->m_depth << ">";
-  return ss.str ();
+  return "read<"s + std::to_string (m_pimpl->m_index)
+    + "@" + std::to_string (m_pimpl->m_depth) + ">";
 }
 
 
@@ -1099,9 +1089,7 @@ pred_not::result (stack &stk)
 std::string
 pred_not::name () const
 {
-  std::stringstream ss;
-  ss << "not<" << m_a->name () << ">";
-  return ss.str ();
+  return "not<"s + m_a->name () + ">";
 }
 
 
@@ -1114,9 +1102,7 @@ pred_and::result (stack &stk)
 std::string
 pred_and::name () const
 {
-  std::stringstream ss;
-  ss << "and<" << m_a->name () << "><" << m_b->name () << ">";
-  return ss.str ();
+  return "and<"s + m_a->name () + "><" + m_b->name () + ">";
 }
 
 
@@ -1129,9 +1115,7 @@ pred_or::result (stack &stk)
 std::string
 pred_or::name () const
 {
-  std::stringstream ss;
-  ss << "or<" << m_a->name () << "><" << m_b->name () << ">";
-  return ss.str ();
+  return "or<"s + m_a->name () + "><" + m_b->name () + ">";
 }
 
 pred_result
@@ -1148,9 +1132,7 @@ pred_subx_any::result (stack &stk)
 std::string
 pred_subx_any::name () const
 {
-  std::stringstream ss;
-  ss << "pred_subx_any<" << m_op->name () << ">";
-  return ss.str ();
+  return "pred_subx_any<"s + m_op->name () + ">";
 }
 
 void
