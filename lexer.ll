@@ -263,7 +263,10 @@ BIN [01]
     return pass_string (yyscanner, yylval, TOK_LIT_INT);
 }
 
-[ \t\n]+ // Skip.
+[ \t\n]+ // Skip whitespace.
+
+(#|[/][/])[^\n]*\n // Skip # or // comment.
+[/][*]([^*]|[*][^/])*[*][/] // Skip /**/ comment.
 
 . {
   using namespace std::literals::string_literals;

@@ -747,9 +747,10 @@
       : 10 add: 1	# equivalent to (10 1 add)
       : [10 range] sort: {a | if (a mod: 2 == 0) then 0 else 1}
 
-**  comments
-    - # seems the logical choice.  /* */ and // possibly as well.
-      (Systemtap has all three.)
+** •comments
+    - Comments start with either # or // and continue until the end of
+      the line; or they start with /* and continue until */.  Nesting
+      comments is not allowed.
 
 
 * Fundamental words

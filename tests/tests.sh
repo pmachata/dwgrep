@@ -70,6 +70,19 @@ expect_count 0 ./empty -e '10  < 10'
 expect_count 0 ./empty -e '10  > 10'
 expect_count 0 ./empty -e '100 < 10'
 
+# Test comments.
+expect_count 1 ./empty -e '
+	1 #blah blah -45720352304573257230453045302 {}[*[{)+*]&+*
+	2 # sub mul div mod
+	add == 3'
+expect_count 1 ./empty -e '
+	1 //blah blah -45720352304573257230453045302 {}[*[{)+*]&+*
+	2 // sub mul div mod
+	add == 3'
+expect_count 1 ./empty -e '
+	1 /*blah blah -45720352304573257230453045302 {}[*[{)+*]&+***/ 2 /*
+	sub mul div mod*/ add
+	== 3'
 expect_count 1 ./duplicate-const -e '
 	let ?cvr_type := {?TAG_const_type,?TAG_volatile_type,?TAG_restrict_type};
 	let P := winfo ;
