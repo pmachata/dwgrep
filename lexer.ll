@@ -256,15 +256,10 @@ BIN [01]
     ("too few closing parentheses in embedded expression");
 }
 
-[?!]?"-"?0[xX]{HEX}+ |
-[?!]?"-"?0[oO]?{OCT}+ |
-[?!]?"-"?0[bB]?{BIN}+ |
-[?!]?"-"?{DEC}+ {
-  if (*yyget_text (yyscanner) == '!')
-    return pass_string (yyscanner, yylval, TOK_BANG_LIT_INT, 1);
-  else if (*yyget_text (yyscanner) == '?')
-    return pass_string (yyscanner, yylval, TOK_QMARK_LIT_INT, 1);
-  else
+"-"?0[xX]{HEX}+ |
+"-"?0[oO]?{OCT}+ |
+"-"?0[bB]?{BIN}+ |
+"-"?{DEC}+ {
     return pass_string (yyscanner, yylval, TOK_LIT_INT);
 }
 

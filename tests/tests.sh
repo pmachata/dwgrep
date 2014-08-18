@@ -122,13 +122,13 @@ expect_count 1 ./empty -e '
 
 # Check literal assertions.
 expect_count 1 ./empty -e '
-	?([1, 3, 5] elem ?(pos ?0) (== 1))
-	?([1, 3, 5] elem ?(pos ?1) (== 3))
-	?([1, 3, 5] elem ?(pos ?2) (== 5))'
+	?([1, 3, 5] elem (pos == 0) (== 1))
+	?([1, 3, 5] elem (pos == 1) (== 3))
+	?([1, 3, 5] elem (pos == 2) (== 5))'
 expect_count 1 ./empty -e '
-	?([[1, 3, 5] elem ?(pos !0) ((3,5) ==)] length ?2)
-	?([[1, 3, 5] elem ?(pos !1) ((1,5) ==)] length ?2)
-	?([[1, 3, 5] elem ?(pos !2) ((1,3) ==)] length ?2)'
+	?([[1, 3, 5] elem (pos != 0) ((3,5) ==)] (length == 2))
+	?([[1, 3, 5] elem (pos != 1) ((1,5) ==)] (length == 2))
+	?([[1, 3, 5] elem (pos != 2) ((1,3) ==)] (length == 2))'
 
 # Tests star closure whose body ends with stack in a different state
 # than it starts in (different slots are taken in the valfile).
@@ -257,7 +257,7 @@ expect_count 6 ./typedef.o -e '
 expect_count 1 ./typedef.o -e '
 	winfo (@AT_decl_line || @AT_byte_size || drop 42) (== 42)'
 expect_count 1 ./empty -e '
-	(0, 1, 20) (?10 || ?20)'
+	(0, 1, 20) (== 10 || == 20)'
 
 # Check closures.
 expect_count 1 ./empty -e '
@@ -405,7 +405,7 @@ expect_count 2 ./enum.o -e '
 
 #   Numbering of elements of location list.
 expect_count 1 ./bitcount.o -e '
-	winfo ?(offset ?0x91) @AT_location ?(pos ?1)'
+	winfo (offset == 0x91) @AT_location (pos == 1)'
 
 # Test multi-yielding value.
 expect_count 3 ./bitcount.o -e '

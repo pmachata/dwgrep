@@ -577,14 +577,6 @@
     - Without prefix, decimal base is assumed.  Valid digits are [0-9].
     - An initial "-" means the number is negative.
 
-** ·EXPR → (“?”|“!”) literal — literal assertion
-    - This is applicable to string and numeric literals.  ?X expands
-      to (X ?eq drop), !X similarly to (X !eq drop).
-
-      : [stuff] elem ?(pos ?0)		# pick first element of a list
-      : winfo ?(@AT_low_pc ?0)		# select DIE's whose low_pc is 0
-      : winfo ?(@AT_name ?"foo")	# select DIE's whose name is "foo"
-
 ** •EXPR → “r”? “"” (formatting string) “"”
    - %( and %) enclose an EXPR that's evaluated in plain context, and
      whose input is whatever is the input to the string literal
@@ -753,7 +745,6 @@
       executed before that word.  That can be used for writing the
       operators, where it makes sense, in infix form.  For example:
       : 10 add: 1	# equivalent to (10 1 add)
-      : [10 range] sort: {->a; if (a mod: 2 ?0) then 0 else 1}
       : [10 range] sort: {a | if (a mod: 2 == 0) then 0 else 1}
 
 **  comments
@@ -1372,8 +1363,6 @@
    : ?(@AT_location label "%s" "deref" ?find)
 
 ** contains DW_OP_call_frame_cfa && $@low_pc == 0
-
-   : winfo ?(@AT_low_pc ?0) ?(@AT_frame_base ?OP_call_frame_cfa)
 
    : winfo (@AT_low_pc == 0) ?(@AT_frame_base ?OP_call_frame_cfa)
 
