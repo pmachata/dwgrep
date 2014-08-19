@@ -13,44 +13,6 @@
      naive thing natively should be much better than the current
      list/scope bonanza.
 
-** [{F}] 1->F; elem apply
-
-   : (SCOPE{F}
-   :   (CAT (CAPTURE (BLOCK (READ<F>)))
-   :        (CONST<1>) (BIND<F>)
-   :        (F_BUILTIN<elem>) (F_BUILTIN<apply>)))
-
-   - The block remembers its surrounding scope, and F is then looked
-     up (and found) there.  But since the block is created in a
-     sub-expression context, it ends up referencing a clone of the
-     "outer" scope.  That's where the 1->F; takes place.  So the F
-     ends up being defined in one scope, but then when we apply the
-     block, it looks it up in another scope.
-
-   - [{F}] (1,2)->F; elem apply		# this is even worse
-
-     This creates a block in subexpression context.  Then forks the
-     computation.  Each computation gets a different value of F.
-     After executing the block, the correct F needs to be read.
-
-     For this to work, we simply can't use pointers to refer to stack
-     frames.  We need to clone frames at least at the point of 1,2.
-     But the {F} that's in the list on TOS at that point needs to
-     somehow refer in each its clone to a different cloned frame.
-
-     We'd need to crawl through the stack, find any closure
-     references, follow their frame pointers, do clones of these,
-     including recursively crawling any sequences and closures that
-     are in those frames.  Doable, but fragile and difficult.
-
-     Much better: have closure carry around copies of values of
-     bindings referenced from inside.  That means writing recursive
-     functions is not simple (nor easy, though possible) anymore,
-     because in "let X:={X};", that X is not yet defined at the point
-     that it's referenced.  But that shouldn't be a big deal.  We can
-     introduce first-class functions when this gets awkward, and quite
-     possibly it won't as recursion should generally not be needed in
-     the queries.  Hopefully.
 
 * TODO
 ** static analysis tools
