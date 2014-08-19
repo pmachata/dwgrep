@@ -74,80 +74,66 @@ tree::take_cat (tree *t)
 
 namespace
 {
-  tree call_promote_scopes (tree t, std::shared_ptr <scope> scp);
   tree
   promote_scopes (tree t, std::shared_ptr <scope> scp)
   {
     switch (t.tt ())
       {
-      case tree_type::ALT:
-      case tree_type::CAPTURE:
-      case tree_type::OR:
-      case tree_type::BLOCK:
-      case tree_type::CLOSE_STAR:
-      case tree_type::IFELSE:
-      case tree_type::PRED_SUBX_ANY:
-      case tree_type::SUBX_EVAL:
-	for (auto &c: t.m_children)
-	  c = tree::promote_scopes (c, scp);
-	return t;
-
-      case tree_type::SCOPE:
-	assert (t.m_children.size () == 1);
-	assert (t.scp () != nullptr);
-	assert (t.scp ()->parent == nullptr);
-	t.scp ()->parent = scp;
-	t.child (0) = tree::promote_scopes (t.child (0), t.scp ());
-	return t;
-
       case tree_type::BIND:
 	if (scp->has_name (t.str ()))
-	  throw std::runtime_error (std::string {"Name `"}
-				    + t.str () + "' rebound.");
+	  throw std::runtime_error
+	    (std::string {"Name `"} + t.str () + "' rebound.");
+
+	std::cerr << "binding " << t.str () << " in " << scp << std::endl;
 	scp->add_name (t.str ());
 	assert (t.m_children.size () == 0);
 	return t;
 
-      case tree_type::ASSERT:
-      case tree_type::CAT: case tree_type::READ: case tree_type::EMPTY_LIST:
-      case tree_type::PRED_NOT:
-      case tree_type::PRED_AND: case tree_type::NOP: case tree_type::PRED_OR:
-      case tree_type::CONST: case tree_type::STR: case tree_type::FORMAT:
-      case tree_type::F_BUILTIN: case tree_type::F_DEBUG:
+      case tree_type::SCOPE:
+	// First descend, so as to process all binds.
+	assert (t.m_children.size () == 1);
+	t.child (0) = promote_scopes (t.child (0), t.scp ());
+
+	// Only keep the scope if it is useful.
+	if (t.scp ()->empty ())
+	  return t.child (0);
+	else
+	  return t;
+
+      default:
 	for (auto &c: t.m_children)
-	  c = ::call_promote_scopes (c, scp);
+	  c = promote_scopes (c, scp);
 	return t;
       }
-    return t;
   }
 
-  tree
-  call_promote_scopes (tree t, std::shared_ptr <scope> scope)
+  void
+  link_scopes (tree &t, std::shared_ptr <scope> scp)
   {
-    //std::cerr << ">>>" << t << std::endl;
-    auto ret = promote_scopes (t, scope);
-    //std::cerr << "<<<" << std::endl;
-    return ret;
-  }
-
-  tree
-  build_scope (tree t, std::shared_ptr <scope> scope)
-  {
-    if (scope->empty ())
-      return t;
-    else
+    switch (t.tt ())
       {
-	tree ret {tree_type::SCOPE, scope};
-	ret.m_children.push_back (t);
-	return ret;
+      case tree_type::SCOPE:
+	t.scp ()->parent = scp;
+	link_scopes (t.child (0), t.scp ());
+	break;
+
+      default:
+	for (auto &c: t.m_children)
+	  link_scopes (c, scp);
+	break;
       }
   }
 }
 
+// Walk the tree, and collect all binds to the nearest higher scope.
+// Keep only those scopes that actually contain any variables.
 tree
-tree::promote_scopes (tree t, std::shared_ptr <scope> parent)
+tree::promote_scopes (tree t)
 {
-  auto scp = std::make_shared <scope> (parent);
-  auto t2 = ::call_promote_scopes (t, scp);
-  return build_scope (t2, scp);
+  // Create whole-program scope.
+  tree u {tree_type::SCOPE, std::make_shared <scope> (nullptr)};
+  u.push_child (t);
+  tree ret = ::promote_scopes (u, nullptr);
+  link_scopes (ret, nullptr);
+  return ret;
 }

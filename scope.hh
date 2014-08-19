@@ -38,7 +38,7 @@ struct scope
   std::vector <std::string> vars;
 
   scope () = default;
-
+  scope (scope const &that) = delete;
   explicit scope (std::shared_ptr <scope> a_parent)
     : parent {a_parent}
   {}

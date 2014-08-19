@@ -92,10 +92,10 @@ enum class tree_arity_v
 #define TREE_TYPES				\
   TREE_TYPE (CAT, BINARY)			\
   TREE_TYPE (ALT, BINARY)			\
+  TREE_TYPE (OR, BINARY)			\
   TREE_TYPE (CAPTURE, UNARY)			\
   TREE_TYPE (SUBX_EVAL, CST)			\
   TREE_TYPE (IFELSE, TERNARY)			\
-  TREE_TYPE (OR, BINARY)			\
   TREE_TYPE (SCOPE, SCOPE)			\
   TREE_TYPE (BLOCK, UNARY)			\
   TREE_TYPE (BIND, STR)				\
@@ -218,7 +218,7 @@ public:
   static tree *create_neg (tree *t1);
   static tree *create_assert (tree *t1);
 
-  static tree promote_scopes (tree t, std::shared_ptr <scope> parent = {});
+  static tree promote_scopes (tree t);
 
   // push_back (*T) and delete T.
   void take_child (tree *t);

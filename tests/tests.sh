@@ -119,6 +119,10 @@ expect_count 11 ./nontrivial-types.o -e '
 # Test a bug with scope promotion.
 expect_count 1 ./empty -e '
 	let A:=1; ?(let X:=A;)'
+expect_count 1 ./empty -e '
+	0 [|B| 1 [|V| B]] ?([[0]] ?eq)'
+expect_count 1 ./empty -e '
+	1 {|A| 3 [|B| A]} apply ?([1] ?eq)'
 
 # Test that elem annotates position.
 expect_count 1 ./nontrivial-types.o -e '
@@ -287,10 +291,10 @@ expect_count 1 ./empty -e '
 	[1, 2, 3] {1 add} map ?([2, 3, 4] ?eq)'
 expect_count 1 ./empty -e '
 	let slice := {|L B E|
-	  {|V|
+	  let wrap := {|V|
 	    let X := if (V 0 ?ge) then (V) else (L length V add);
 	    if (X 0 ?lt) then 0 else X
-	  } ->wrap;
+	  };
 	  let begin end := B wrap E wrap;
 	  [L elem ?(pos ?(begin ?ge) ?(end ?lt))]
 	};
