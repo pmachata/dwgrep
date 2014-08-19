@@ -780,7 +780,7 @@
 
     If you wish to know the number of values produced, you have to
     count them by hand:
-    : [ child ] dup length->L; elem
+    : [ child ] let L := length; elem
 
 ** •?eq, ?ne, ?gt, ?ge, ?lt, ?le :: ?() ?()
     These are low-level assertions that are currently used for
@@ -887,8 +887,7 @@
 
     To pick only those elements that match, you could do the
     following:
-    : [child]->L; [L elem ?(@AT_name ?"foo")]
-    : [child] [L | L elem ?(@AT_name ?"foo")]
+    : [child] [|L| L elem ?(@AT_name ?"foo")]
 
     The above is suitable for a function that takes a list on input
     and wants to filter it.  It is of course preferable to write this
@@ -1023,9 +1022,7 @@
 ***  next :: ?T_DIE ->? ?T_DIE
      Like dwarf_siblingof, returns next sibling of the DIE.
 
-     : def next {->D; D parent child (pos == D parent child (== D) pos 1 add)}
-
-     : def next {D | D parent child (pos == D parent child (== D) pos 1 add)}
+     : def next {|D| D parent child (pos == D parent child (== D) pos 1 add)}
 
      The first line is necessary to make sure that pos later refers
      to order in children array, not to e.g. a result of ([XYZ] each).
@@ -1054,7 +1051,7 @@
      Given the above as "integrate1", the behavior of this "integrate"
      can be specified thus:
 
-     : {->Op; (!(Op) integrate1)* Op} -> integrate;
+     : let integrate := {|Op| (!(Op) integrate1)* Op};
 
      This then can be used as follows:
      : {?AT_xyz} integrate		# find closest DIE with DW_AT_xyz
@@ -1181,13 +1178,12 @@
 ***  symbol :: ?T_CONST ->? T_ELFSYM
      This find a symbol associated with an address on TOS.  The match
      doesn't have to be exact, offset would then be:
-     : some addr ->A; A symbol dup address A sub
+     : let A := some addr; A symbol dup address A sub
      :  # now TOS has offset and below TOS is symbol
 
      XXX some of this is fairly easy to get by cross-matching like
      this:
-     : some addr ->A; symtab (address == A)
-     : let A := some addr; symtab (address == A)
+     : symtab (address == some addr)
      fuzzy matching (getting symbol/offset) would be more involved.
 
 
