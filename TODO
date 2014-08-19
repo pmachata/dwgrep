@@ -8,12 +8,6 @@
 
 ** stack underruns are ungraceful
 
-** performance of syntactic operators is deplorable
-   - We need a dedicated op for these.  Even doing the simplest most
-     naive thing natively should be much better than the current
-     list/scope bonanza.
-
-
 * TODO
 ** static analysis tools
 *** overload pegging

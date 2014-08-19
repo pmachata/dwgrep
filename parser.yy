@@ -220,42 +220,10 @@
     tree *
     parse_cmp (builtin_dict const &builtins, tree *a, tree *b, char const *word)
     {
-      // A <op> B → ?([A] elem ->.tmp; [B] elem .tmp swap <WORD>)
-      auto bi_elem = builtins.find ("elem");
-      auto bi_swap = builtins.find ("swap");
-      auto bi_cmp = builtins.find (word);
-
-      if (a == nullptr)
-	a = tree::create_nullary <tree_type::NOP> ();
-      if (b == nullptr)
-	b = tree::create_nullary <tree_type::NOP> ();
-
-      tree *ret = nullptr;
-
-      ret = tree::create_cat <tree_type::CAT>
-		(ret, tree::create_unary <tree_type::CAPTURE> (a));
-      ret = tree::create_cat <tree_type::CAT>
-		(ret, tree::create_builtin (bi_elem));
-      ret = tree::create_cat <tree_type::CAT>
-		(ret, tree::create_str <tree_type::BIND> (".tmp"));
-
-      ret = tree::create_cat <tree_type::CAT>
-		(ret, tree::create_unary <tree_type::CAPTURE> (b));
-      ret = tree::create_cat <tree_type::CAT>
-		(ret, tree::create_builtin (bi_elem));
-
-      ret = tree::create_cat <tree_type::CAT>
-		(ret, tree::create_str <tree_type::READ> (".tmp"));
-      ret = tree::create_cat <tree_type::CAT>
-		(ret, tree::create_builtin (bi_swap));
-      ret = tree::create_cat <tree_type::CAT>
-		(ret, tree::create_builtin (bi_cmp));
-
-      ret = wrap_in_scope (ret);
-      ret = tree::create_unary <tree_type::PRED_SUBX_ANY> (ret);
-      ret = tree::create_assert (ret);
-
-      return wrap_in_scope (ret);
+      auto t = tree::create_ternary <tree_type::PRED_SUBX_CMP>
+	(maybe_nop (a), maybe_nop (b),
+	 tree::create_builtin (builtins.find (word)));
+      return tree::create_assert (t);
     }
   }
 

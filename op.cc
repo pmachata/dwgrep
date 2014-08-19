@@ -1164,3 +1164,42 @@ pred_constant::name () const
   ss << "?" << m_const;
   return ss.str ();
 }
+
+pred_result
+pred_subx_compare::result (stack &stk)
+{
+  m_op1->reset ();
+  m_origin->set_next (std::make_unique <stack> (stk));
+  while (auto stk_1 = m_op1->next ())
+    {
+      m_op2->reset ();
+      m_origin->set_next (std::make_unique <stack> (stk));
+
+      while (auto stk_2 = m_op2->next ())
+	{
+	  stk_1->push (stk_2->pop ());
+
+	  if (m_pred->result (*stk_1) == pred_result::yes)
+	    return pred_result::yes;
+
+	  stk_1->pop ();
+	}
+    }
+
+  return pred_result::no;
+}
+
+std::string
+pred_subx_compare::name () const
+{
+  return "pred_subx_compare<"s + m_op1->name () + "><"
+    + m_op2->name () + "><" + m_pred->name () + ">";
+}
+
+void
+pred_subx_compare::reset ()
+{
+  m_op1->reset ();
+  m_op2->reset ();
+  m_pred->reset ();
+}

@@ -63,6 +63,17 @@ tree::build_pred (dwgrep_graph::sptr q, std::shared_ptr <scope> scope) const
 	return std::make_unique <pred_subx_any> (op, origin);
       }
 
+    case tree_type::PRED_SUBX_CMP:
+      {
+	assert (m_children.size () == 3);
+	auto origin = std::make_shared <op_origin> (nullptr);
+	auto op1 = child (0).build_exec (origin, q, scope);
+	auto op2 = child (1).build_exec (origin, q, scope);
+	auto pred = child (2).build_pred (q, scope);
+	return std::make_unique <pred_subx_compare> (op1, op2, origin,
+						     std::move (pred));
+      }
+
     case tree_type::F_BUILTIN:
       return m_builtin->build_pred (q, scope);
 
@@ -276,6 +287,7 @@ tree::build_exec (std::shared_ptr <op> upstream, dwgrep_graph::sptr q,
     case tree_type::PRED_OR:
     case tree_type::PRED_NOT:
     case tree_type::PRED_SUBX_ANY:
+    case tree_type::PRED_SUBX_CMP:
       assert (! "Should never get here.");
       abort ();
     }
