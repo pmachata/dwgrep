@@ -43,8 +43,7 @@ tree::build_pred (dwgrep_graph::sptr q, std::shared_ptr <scope> scope) const
   switch (m_tt)
     {
     case tree_type::PRED_NOT:
-      return std::make_unique <pred_not>
-	(m_children.front ().build_pred (q, scope));
+      return std::make_unique <pred_not> (child (0).build_pred (q, scope));
 
     case tree_type::PRED_OR:
       return std::make_unique <pred_or>
@@ -60,7 +59,7 @@ tree::build_pred (dwgrep_graph::sptr q, std::shared_ptr <scope> scope) const
       {
 	assert (m_children.size () == 1);
 	auto origin = std::make_shared <op_origin> (nullptr);
-	auto op = m_children.front ().build_exec (origin, q, scope);
+	auto op = child (0).build_exec (origin, q, scope);
 	return std::make_unique <pred_subx_any> (op, origin);
       }
 
@@ -155,7 +154,7 @@ tree::build_exec (std::shared_ptr <op> upstream, dwgrep_graph::sptr q,
 
     case tree_type::ASSERT:
       return std::make_shared <op_assert>
-	(upstream, m_children.front ().build_pred (q, scope));
+	(upstream, child (0).build_pred (q, scope));
 
     case tree_type::FORMAT:
       {
@@ -195,14 +194,14 @@ tree::build_exec (std::shared_ptr <op> upstream, dwgrep_graph::sptr q,
     case tree_type::CAPTURE:
       {
 	auto origin = std::make_shared <op_origin> (nullptr);
-	auto op = m_children.front ().build_exec (origin, q, scope);
+	auto op = child (0).build_exec (origin, q, scope);
 	return std::make_shared <op_capture> (upstream, origin, op);
       }
 
     case tree_type::SUBX_EVAL:
       {
 	auto origin = std::make_shared <op_origin> (nullptr);
-	auto op = m_children.front ().build_exec (origin, q, scope);
+	auto op = child (0).build_exec (origin, q, scope);
 	return std::make_shared <op_subx> (upstream, origin, op,
 					   cst ().value ().uval ());
       }
@@ -210,7 +209,7 @@ tree::build_exec (std::shared_ptr <op> upstream, dwgrep_graph::sptr q,
     case tree_type::CLOSE_STAR:
       {
 	auto origin = std::make_shared <op_origin> (nullptr);
-	auto op = m_children.front ().build_exec (origin, q, scope);
+	auto op = child (0).build_exec (origin, q, scope);
 	return std::make_shared <op_tr_closure> (upstream, origin, op);
       }
 
