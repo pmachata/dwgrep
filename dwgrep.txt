@@ -95,10 +95,15 @@
 ** winfo — domain selection
 
    Since the initial working set is empty, it is usually desirable to
-   select the domain that the query should be run over.  Each Dwarf
-   section has one domain designator (winfo, wline, etc.) (XXX though
-   only winfo is implemented as of now), and there are also
-   designators for ELF symbol tables (XXX also not implemented yet).
+   select the domain that the query should be run over.  The entry
+   point of the whole Dwarf graph is a .debug_info section, and the
+   corresponding selector, winfo, selects all DIE's in the graph.
+
+   XXX How this will handle .debug_types and partial units is unclear
+   as of now.
+
+   XXX A selector for ELF symbol table is planned as well, but as of
+   now not implemented.
 
 ** ?DW_TAG_foo, ?TAG_foo — DIE tag assertion
 ** EXPR₁ EXPR₂ … — concatenation
@@ -403,12 +408,12 @@
    which value is perhaps not too comfortable.  For that reason,
    dwgrep allows interpolation of expressions in strings.
 
-** %( %) — embedding expressions in formatting strings
+** %( %) — format string splicing
 
-   In formatting string, code between %( and the matching %) is
-   evaluated in plain context, after which TOS of the result is popped
-   and interpolated in formatting string.  %s is then exactly
-   equivalent to %(%).
+   In format strings, code between %( and the matching %) is evaluated
+   in plain context, after which TOS of the result is popped and
+   inserted in place of the %(...%).  %s is then exactly equivalent to
+   %(%).
 
    With this tool, we can make the formatting string quite a bit
    clearer:
@@ -426,8 +431,8 @@
    : [6c] subprogram: Parameter [8f] formal_parameter has non-trivial type.
 
    Ideally we'd mention names and source code corrdinates instead of
-   Dwarf offsets and tag names.  With interpolation, it's actually
-   quite easy:
+   Dwarf offsets and tag names.  With splicing, it's actually quite
+   easy:
 
    : let S := winfo ?TAG_subprogram !AT_declaration;
    :
@@ -461,62 +466,27 @@
    introduced in a semi-formal, but rather terse format.
 
 
-* Stack maintenance
-
-  A stack of values is maintained for each computation context (in
-  fact the stack is that context).  Various expressions treat the
-  stack in various ways.  In particular
-
-  - Initially the stack is empty.
-
-  - Graph entry points push values to stack without popping any.
-
-  - Assertions inspect TOS (or several values on TOS), test a
-    condition, and either leave the stack unchanged, or abort the
-    computation.  They do not pop.  This includes ?AT_at, !AT_at,
-    ?tag, !tag, ?(), !(), ?match, etc.  Assertions typically start
-    either with a ? (if it's positive assertion), or with a ! (if it's
-    negative assertion), although comparison operators (==, !=) also
-    have assertion-like semantics.
-
-  - Stack shuffling operators (swap, drop, dup, ...) reorder values on
-    the stack.
-
-  - Literals push a new value on stack:
-    - constants (1, 0x20, -7)
-    - strings ("Ahoj!")
-    - sequences ([1, 2, 3])
-    - constants (DW_AT_name, DW_FORM_ref_addr, ...)
-
-  - All other forms are called functions.  They pop one or more values
-    from TOS and push another value back.  This includes traversal
-    forms (@AT_at, child, parent, etc.) and operators (sub, add,
-    etc.).
-
-
 * Overview of dwgrep language
+
+  This section describes syntactic constructs in dwgrep.  For a
+  catalog of words, see further sections.
 
   - • means implemented
   - · means partially implemented
 
-** •EXPR → word
-    Most actions are performed not through syntax, but trough words.
-    Some word types were mentioned above in "stack maintained"
-    (e.g. stack shuffling words, functions, etc.).  All internal words
-    are specified in the following sections.
+** •EXPR₁ EXPR₂ — concatenation
 
-** •EXPR → EXPR₁ EXPR₂ — concatenate
+    The constituent EXPR's may yield more than one output value.  A
+    new working set is formed by gathering all these returned values.
+    If you wish to get an actual list of values instead, see below for
+    [] operator, which captures the resulting values and wraps them in
+    a sequence.
 
-   The constituent EXPR's may yield more than one output value.  A new
-   working set is formed by gathering all these returned values.  If
-   you wish to get an actual list of values instead, see below for []
-   operator, which captures the resulting values and wraps them in a
-   sequence.
+** •EXPR₁ “,” EXPR₂ … — alternation
 
-** •EXPR → EXPR₁ “,” EXPR₂ … — alternate
-
-   EXPR yields all the values that EXPR₁ and EXPR₂ yield.  In practice
-   this can be used as logical or, or to construct literal lists.
+   The resulting expression yields all the values that EXPR₁ and EXPR₂
+   yield.  In practice this can be used as logical or, or to construct
+   sequences.
 
    All constituent EXPR's shall have the same overall stack effect
    (the number of slots pushed - number of slots popped will be the
@@ -525,21 +495,24 @@
    - For example, to follow through all edges:
      : (child, attribute ?(form "%s" "DW_FORM_ref.*" ?match))
 
-** •EXPR → EXPR₁ “||” EXPR₂ … — first match
+** •EXPR₁ “||” EXPR₂ … — either-or
 
    EXPR yields all the values of the first expression that yields
    anything.
 
-** •EXPR → EXPR₁ (“==” | “!=” | “<” | “<=” | “>” | “>=”) EXPR₂ — comparisons
+** •“(” EXPR₁ “)”
 
-    EXPR is evaluated in subexpression context.  The semantics of (X
-    op Y) are:
-    : ?([X] elem -> .tmp; [Y] elem .tmp swap OP)
-    ... where OP is depending on the operator in question,
-    respectively, ?eq, ?ne, ?lt, ?le, ?gt, and ?ge.
+    Concatenation has a high precedence, so parentheses can be used
+    liberally to adjust how an expression should be chopped into
+    sub-expression.  For example:
+    : foo bar, baz	# these two ...
+    : (foo bar), baz	# ... mean the same thing
+    : foo (bar, baz)	# this one is different
 
-    (N.B.: the temporary binding is necessary so that [Y] is evaluated
-    with the unchanged incoming stack.)
+** •EXPR₁ (“==” | “!=” | “<” | “<=” | “>” | “>=”) EXPR₂ — comparisons
+    : ?(let .tmp1 := X; let .tmp2 := Y; .tmp1 .tmp2 OP)
+    ... where depending on the operator in question, OP is
+    respectively ?eq, ?ne, ?lt, ?le, ?gt, and ?ge.
 
     In plain English, X and Y are both evaluated in separate
     sub-expression contexts.  Their TOS's are gathered and compared
@@ -558,11 +531,11 @@
      : A B swap? (drop>) drop    # "max" -- keep the greater number on stack
      : A B swap? (drop<) drop    # "min"
 
-**  EXPR → EXPR₁ (“=~” | “!~”) EXPR₂ — string matching
-    =~ is like:
-    : [EXPR₁] elem -> .tmp; [EXPR₂] elem .tmp swap ?match
+**  EXPR₁ (“=~” | “!~”) EXPR₂ — string matching
+    These are comparison operators with words, respectively, ?match
+    and !match.
 
-** •EXPR → EXPR₁ “*” | EXPR₁ “+” | EXPR₁ “?” — iterate
+** •EXPR₁ “*” | EXPR₁ “+” | EXPR₁ “?” — iteration
 
    EXPR₁ shall have a stack effect of +n,-n (number of slots pushed
    equals number of slots popped).
@@ -570,14 +543,16 @@
    - Example: explicit for loop
      : 0 (1 add ?(10 ?lt))*
 
-** •EXPR → “-”?(“0x”|“0o”|“0b”|“0”|“”){digits} — literals
+** •“-”?(“0x”|“0o”|“0b”|“0”|“”){digits} — integer literals
     - 0x and 0X are hexadecimal prefixes.  Valid digits are [0-9a-fA-F].
     - 0o, 0O and 0 are octal prefixes.  Valid digits are [0-7].
     - 0b and 0B are binary prefixes.  Valid digits are [0-1].
     - Without prefix, decimal base is assumed.  Valid digits are [0-9].
     - An initial "-" means the number is negative.
+    - dwgrep integers can hold any 64-bit signed or unsigned number:
+      : 0xffffffffffffffff -0x7fffffffffffffff add	# 0x8000000000000000
 
-** •EXPR → “r”? “"” (formatting string) “"”
+** •“r”? “"” (formatting string) “"”
    - %( and %) enclose an EXPR that's evaluated in plain context, and
      whose input is whatever is the input to the string literal
      itself.  TOS is then popped, converted to a string and embedded
@@ -590,8 +565,8 @@
    - %b stands for %( value bin %)
    - %% stands for a single %
 
-   - The resulting string is pushed to stack after all interpolations
-     are processed one after another.
+   - The resulting string is pushed to stack after all formatting
+     directives are processed one after another.
 
    - The r"" strings are raw strings.  They work the same as normal
      formatting strings, but escape sequences are left intact in the
@@ -605,34 +580,35 @@
      Any whitespace (but only whitespace) is allowed between "\ and
      the followig ".
 
-** •EXPR → “(” EXPR₁ “)” — grouping, precedence
+** •“[” (“|” ID₁ ID₂ … “|”)? EXPR₁ “]” — sub-expression capture
 
-** ·EXPR → “[” (“|” ID* “|”)? EXPR₁ “]” | “[” “]” — sub-expression capture
-
-   - This is a literal form that gathers what EXPR₁ yields and pushes
-     a sequence with those elements.  It can be used for constructing
-     a sequence literal:
+   - [EXPR₁] evaluates EXPR₁ in sub-expression context, gathers TOS's
+     of what it yields, and pushes a sequence with those elements.
 
      : [1, 2, 3]        # produces a list with elements 1, 2 and 3
      : [child]          # list of immediate children
      : [child*]         # list of all descendants
 
-   - [] is a literal that produces an empty list.  It is exactly
-     equivalent to (among others):
+   - [] produces an empty list.  It is exactly equivalent to (among
+     others):
      : [ 0 == 1 ]
 
-   - At the start of the sub-expression, a capture block is allowed.
-     A presence of such block converts the whole form into a function
-     that pops as many arguments as there are identifier in the
-     capture block, and binds them to these identifiers such that the
-     rightmost one get the value on TOS and then progressively lefter
-     ID's get progressively deeper stack values.  The expression is
-     then evaluated as usual, except one can use the bindings:
+   - [()] is a capture of nop.  It wraps TOS in a list and pushes it.
+     : 1 [()]	# gives 1 [1]
 
-     : [|A| A child]	# convert DIE on TOS into a list of its children
-     : [|A B| foo]	# pop A and B, then push a list with result of foo
+   - Sub-expression caputer allows a binding block.  A presence of
+     such block converts the whole form into a function that pops as
+     many arguments as there are identifiers in the binding block, and
+     binds them to these identifiers such that the rightmost one get
+     the value on TOS and then progressively lefter ID's get
+     progressively deeper stack values.  The expression is then
+     evaluated as usual, except one can use the bound names:
 
-** •EXPR → “let” ID₀ [ID₁ …] “:=” EXPR₁ “;” — binding
+     : [|A| A child]		# convert DIE on TOS into a list of its children
+     : [|A B| A foo B bar]
+     : [|A| A]			# wrap TOS in a list
+
+** •“let” ID₁ ID₂ … “:=” EXPR₁ “;” — binding
     - EXPR₁ is evaluated in sub-expression context.  Then values near
       TOS are bound to given identifiers and exported into surrounding
       context.  From that point on, mentioning ID is the same as
@@ -646,43 +622,33 @@
       The mnemonic for this is that the list of variables describes
       stack layout, with TOS being on the right.
 
-    - --- xxx ---
-      : let A B := X ;
-      is the same as:
-      : (2 | X) ->A B;	# (N | EXPR) is subexpression evaluation
-
-      : [|A B| A B blah]
-      is the same as (with (( and )) denoting scope)
-      : (( ->A B; [(1 | blah)]))
-
-    - When a binding is mentioned that references a closure, that
-      counts as invocation of the referenced closure.  In other words,
-      there's an implicit "apply" for bindings that reference
-      closures.
-      : { 1 add } -> inc;
+    - When a binding is mentioned that references a block, that counts
+      as invocation of the referenced block.  In other words, there's
+      an implicit "apply" for bindings that reference blocks.
+      : let inc := { 1 add };
       : 2 inc	# 3
 
-** ·EXPR → “{” (“|” ID* “|”)? EXPR₁ “}” — blocks
+** ·“{” (“|” ID₁ ID₂ … “|”)? EXPR₁ “}” — blocks
 
-    - {X} -- A block syntax.  A value representing an expression X is
-      pushed to TOS.  Named arguments can be given in an identifier
-      block, similarly to sub-expression capture:
-      : {|A B| do stuff with A and B}
-      B is bound to a value on TOS, and progressively lefter
-      identifiers get progressively deeper values.
+    - {EXPR₁} -- A block syntax.  A value representing an expression
+      EXPR₁ is pushed to TOS.  The enclosed expression can later be
+      evaluated using an operator "apply".  Application causes EXPR₁
+      to be evaluated in plain context.  Thus:
+      : {add} 1 2 rot apply	# Leaves 3 on stack.
+      : {1 add} 2 swap apply	# Likewise.
 
-      It is of course possible to not give variables names.  For
-      example, this is a completely valid closure:
-      : {1 add}		# Adds 1 to whatever is on TOS.
+    - {|ID₁ ID₂ …| EXPR₁} -- A variant of block syntaxt with an
+      identifier block.  When applied, pops TOS and binds it to the
+      rightmost identifier, and then proceeds doing the same with
+      other identifiers in right to left direction.
 
-      When {X} is executed, this introduces a new activation record
+      : {|A B| A B add A B sub mul} 3 1 rot apply	# 8
+
+    - When a block is applied, this introduces a new activation record
       (dynamic scope) inside the current scope.  Any let forms bind
-      symbols in this new scope, and words are looked up in this scope
-      as well (but of course the search proceeds upwards if the symbol
-      is not found).  Any block literals inside this execution
-      remember the scope (which in turn remembers its surrounding
-      scope, even if the execution already left it), so that they work
-      as closures.
+      symbols in this new scope.  Upon creation, block literals copy
+      values of referenced variables into their scope, so they work as
+      closures:
 
       : let adder := {|x| {|y| x y add}};
       : 3 adder 2 swap apply	# 5
@@ -690,10 +656,38 @@
       : let map := {|L f| [L elem f]};
       : [1, 2, 3] {1 add} map	# [2, 3, 4]
 
-      Closures can be invoked recursively:
+    - Because blocks copy surrounding context instead of referencing
+      it, all referenced bindings need to be defined at the point of
+      block creation.  That precludes a simple way of writing
+      recursive functions:
 
-      : let fact := {|n| if (n==1) then 1 else (n 1 sub n fact mul)};
-      : 3 fact		# 6
+      : # This doesn't work:
+      : let fact := {|N| if (N < 2) then 1 else (N 1 sub fact N mul)};
+
+      Here "fact" is referenced inside the block, but at that point,
+      it has not yet been defined, and such expression is thus
+      erroneous.  It is possible to express recursion, even mutual
+      recursion:
+
+      : let f1 := {|N f1 f2|
+      :    if (N < 100) then (
+      :        N sub 1
+      :        {f1} {f2} f2 apply	# recurse to f2
+      :    ) else (N)
+      : };
+      :
+      : let f2 := {|N f1 f2|
+      :     if (N > 0) then (N mul: 2) else (N)
+      :     {f1} {f2} f1 apply		# recurse to f1
+      : };
+      :
+      : 5 {{f1}} {{f2}} f1	# 194
+
+      ... but that is of course ridiculous.  The hope is that
+      recursion is rarely useful in a language like this, which is
+      meant for querying, not writing algorithms.  Should there be
+      serious need for this sort of thing, this functionality would be
+      introduced.
 
     - Example: stack shuffling operators.  (N.B.: this example uses
       underscores to distinguish from the corresponding built-in
@@ -704,26 +698,26 @@
       : let rot_ := {|a b c| b c a};
       : let over_ := {|a b| a b a};
 
-** •EXPR → “?(” EXPR₁ “)” | “!(” EXPR₁ “)” — sub-expression assertions
+** •“?(” EXPR₁ “)” | “!(” EXPR₁ “)” — sub-expression assertions
 
-   These ask whether TOS of [ EXPR₁ ] would be, respectively, a
-   non-empty or empty list.
+    ?(EXPR₁) is an assertion that holds if EXPR₁ yields at least once.
+    !(EXPR₁) holds when it doesn't yield at all.
 
-   - ?( EXPR₁ ) is exactly equivalent to:
-     : [ EXPR₁ ] !empty drop
-   - !( EXPR₁ ) is exactly equivalent to:
-     : [ EXPR₁ ] ?empty drop
+    - ?( EXPR₁ ) is exactly equivalent to:
+      : ([ EXPR₁ ] != [])
+    - !( EXPR₁ ) is exactly equivalent to:
+      : ([ EXPR₁ ] == [])
 
-   - Examples:
-     : !(child)       # keep leaf DIE's only
+    - Examples:
+      : !(child)       # keep leaf DIE's only
 
-** •EXPR → “if” EXPR₀ “then” EXPR₁ “else” EXPR₂ — conditionals
+** •“if” EXPR₀ “then” EXPR₁ “else” EXPR₂ — conditionals
 
    - EXPR₀ is evaluated in sub-expression context.  If it yields
      anything, EXPR₁ is evaluated in plain context.  Otherwise EXPR₂
      is evaluated in plain context.
 
-**  EXPR → “while” EXPR₀ “do” EXPR₁ | “do” EXPR₁ “while” EXPR₀
+**  “while” EXPR₀ “do” EXPR₁ | “do” EXPR₁ “while” EXPR₀
 
    - The "while..do" loop checks whether EXPR₀ yields anything.  If
      yes, it evaluates EXPR₁ and repeats; otherwise it doesn't do
@@ -735,10 +729,11 @@
    - EXPR₀ is evaluated in sub-expression context.
    - EXPR₁ shall have neutral stack effect.
 
-** •EXPR → “\dbg” — debug assertion
+** •“\dbg” — debug print
 
-   Always succeeds, but as a side effect prints some information about
-   the computation in whose context it appeared.
+   Doesn't alter the stack in any way, but as a side effect prints
+   some information about the computation in whose context it
+   appeared.
 
 ** •colon infix syntax
     - When a word is followed by a colon, the following statement is
