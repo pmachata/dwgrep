@@ -83,18 +83,6 @@ expect_count 1 ./empty -e '
 	1 /*blah blah -45720352304573257230453045302 {}[*[{)+*]&+***/ 2 /*
 	sub mul div mod*/ add
 	== 3'
-expect_count 1 ./duplicate-const -e '
-	let ?cvr_type := {?TAG_const_type,?TAG_volatile_type,?TAG_restrict_type};
-	let P := winfo ;
-	let A := P child ?cvr_type ;
-	let B := P child ?cvr_type ?(?lt: A) ;
-	?((A label) ?eq: (B label))
-	?((A @AT_type) ?eq: (B @AT_type))'
-
-expect_count 1 ./nontrivial-types.o -e '
-	winfo ?TAG_subprogram !AT_declaration dup child ?TAG_formal_parameter
-	?(@AT_type ((?TAG_const_type,?TAG_volatile_type,?TAG_typedef) @AT_type)*
-	  (?TAG_structure_type, ?TAG_class_type))'
 
 # Test that universe annotates position.
 expect_count 1 ./nontrivial-types.o -e '
@@ -323,6 +311,20 @@ expect_count 1 ./empty -e '
 	?(6 fact 720 ?eq)
 	?(7 fact 5040 ?eq)
 	?(8 fact 40320 ?eq)'
+
+# Examples.
+expect_count 1 ./duplicate-const -e '
+	let ?cvr_type := {?TAG_const_type,?TAG_volatile_type,?TAG_restrict_type};
+	let P := winfo ;
+	let A := P child ?cvr_type ;
+	let B := P child ?cvr_type ?(?lt: A) ;
+	?((A label) ?eq: (B label))
+	?((A @AT_type) ?eq: (B @AT_type))'
+
+expect_count 1 ./nontrivial-types.o -e '
+	winfo ?TAG_subprogram !AT_declaration dup child ?TAG_formal_parameter
+	?(@AT_type ((?TAG_const_type,?TAG_volatile_type,?TAG_typedef) @AT_type)*
+	  (?TAG_structure_type, ?TAG_class_type))'
 
 # Check ifelse.
 expect_count 1 ./empty -e '
