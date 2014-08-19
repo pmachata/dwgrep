@@ -85,8 +85,8 @@ op_rot::next ()
       auto b = stk->pop ();
       auto c = stk->pop ();
       stk->push (std::move (b));
-      stk->push (std::move (c));
       stk->push (std::move (a));
+      stk->push (std::move (c));
       return stk;
     }
   return nullptr;
