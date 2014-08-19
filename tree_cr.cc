@@ -29,6 +29,8 @@
 #include "scope.hh"
 #include "tree_cr.hh"
 
+using namespace std::literals::string_literals;
+
 tree *
 tree::create_builtin (std::shared_ptr <builtin const> b)
 {
@@ -70,8 +72,6 @@ tree::take_cat (tree *t)
 		     t->m_children.begin (), t->m_children.end ());
 }
 
-#include <iostream>
-
 namespace
 {
   tree
@@ -81,10 +81,8 @@ namespace
       {
       case tree_type::BIND:
 	if (scp->has_name (t.str ()))
-	  throw std::runtime_error
-	    (std::string {"Name `"} + t.str () + "' rebound.");
+	  throw std::runtime_error ("Name `"s + t.str () + "' rebound.");
 
-	std::cerr << "binding " << t.str () << " in " << scp << std::endl;
 	scp->add_name (t.str ());
 	assert (t.m_children.size () == 0);
 	return t;
