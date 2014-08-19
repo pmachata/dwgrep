@@ -52,4 +52,7 @@ extern constant_dom const &dw_locexpr_opcode_dom;
 extern constant_dom const &dw_address_class_dom;
 extern constant_dom const &dw_endianity_dom;
 
+extern constant_dom const &dw_address_dom;	// Dwarf_Addr
+extern constant_dom const &dw_offset_dom;	// Dwarf_Off
+
 #endif /* _DWCST_H_ */

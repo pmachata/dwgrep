@@ -437,3 +437,19 @@ expect_count 1 ./bitcount.o -e '
 	([?OP_or] length == 0)
 	([elem ?OP_and] length == 1)
 	([elem ?OP_or] length == 0)'
+
+# high, low, address
+expect_count 1 ./bitcount.o -e '
+	[winfo @AT_location] elem (pos == 1) address
+	(high == 0x1a) (low == 0x17) (== 23 26 arange)'
+
+expect_count 2 ./duplicate-const -e '
+	winfo attribute ?AT_high_pc
+	(form == DW_FORM_data8)
+	(value == 46)
+	address (== 0x4004fb) ("%s" == "0x4004fb")'
+
+expect_count 2 ./duplicate-const -e '
+	winfo attribute ?AT_low_pc
+	(form == DW_FORM_addr)
+	address (== value) ("%s" == "0x4004cd")'

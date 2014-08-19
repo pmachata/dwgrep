@@ -1108,7 +1108,7 @@
      Children of these nodes are T_LOCLIST_OP, individual operations
      of location expression.
 
-***  address :: (?T_ATTR (?AT_high_pc, ?AT_low_pc, ?FORM_addr)) -> ?T_CONST
+*** •address :: (?T_ATTR (?AT_high_pc, ?AT_low_pc, ?FORM_addr)) -> ?T_CONST
      - For DW_AT_high_pc, DW_AT_entry_pc with constant forms, this
        converts the value to address.
 
@@ -1240,16 +1240,15 @@
       "elem" such that it can do something clever instead of
       enumerating all 64 bits of adress space or some such.
 
-***  low :: ?T_ADDR_RANGE -> ?T_CONST
-***  high :: ?T_ADDR_RANGE -> ?T_CONST
-***  arange :: ?T_CONST ?T_CONST -> ?T_ADDR_RANGE
+*** •low :: ?T_ADDR_RANGE -> ?T_CONST
+*** •high :: ?T_ADDR_RANGE -> ?T_CONST
+*** •arange :: ?T_CONST ?T_CONST -> ?T_ADDR_RANGE
 ***  ?contains :: ?T_ADDR_RANGE ?T_CONST
 ***  ?contains :: ?T_ADDR_RANGE ?T_ADDR_RANGE
      Whether TOS is contained within below TOS.
 
 ***  ?overlaps :: ?T_ADDR_RANGE ?T_ADDR_RANGE
      Whether TOS and below TOS overlap.
-
 
 
 * Examples

@@ -353,7 +353,7 @@ namespace
     std::unique_ptr <value>
     operate (std::unique_ptr <value_die> val) override
     {
-      constant c {dwarf_dieoffset (&val->get_die ()), &hex_constant_dom};
+      constant c {dwarf_dieoffset (&val->get_die ()), &dw_offset_dom};
       return std::make_unique <value_cst> (c, 0);
     }
   };
@@ -367,7 +367,7 @@ namespace
     operate (std::unique_ptr <value_loclist_op> val) override
     {
       Dwarf_Op const *dwop = val->get_dwop ();
-      constant c {dwop->offset, &hex_constant_dom};
+      constant c {dwop->offset, &dw_offset_dom};
       return std::make_unique <value_cst> (c, 0);
     }
   };
@@ -376,6 +376,47 @@ namespace
 // address
 namespace
 {
+  struct op_address_attr
+    : public op_overload <value_attr>
+  {
+    using op_overload::op_overload;
+
+    static std::unique_ptr <value>
+    get_addr (std::unique_ptr <value_attr> a,
+	      int (cb) (Dwarf_Die *, Dwarf_Addr *))
+    {
+      Dwarf_Addr addr;
+      if (cb (&a->get_die (), &addr) < 0)
+	throw_libdw ();
+      return std::make_unique <value_cst> (constant {addr, &dw_address_dom}, 0);
+    }
+
+    std::unique_ptr <value>
+    operate (std::unique_ptr <value_attr> a) override
+    {
+      if (dwarf_whatattr (&a->get_attr ()) == DW_AT_high_pc)
+	return get_addr (std::move (a), &dwarf_highpc);
+
+      if (dwarf_whatattr (&a->get_attr ()) == DW_AT_entry_pc)
+	return get_addr (std::move (a), &dwarf_entrypc);
+
+      if (dwarf_whatform (&a->get_attr ()) == DW_FORM_addr)
+	{
+	  Dwarf_Addr addr;
+	  if (dwarf_formaddr (&a->get_attr (), &addr) < 0)
+	    throw_libdw ();
+	  return std::make_unique <value_cst>
+	    (constant {addr, &dw_address_dom}, 0);
+	}
+
+      std::cerr << "`address' applied to non-address attribute:\n    ";
+      a->show (std::cerr, brevity::brief);
+      std::cerr << std::endl;
+
+      return nullptr;
+    }
+  };
+
   struct op_address_loclist_elem
     : public op_overload <value_loclist_elem>
   {
@@ -385,8 +426,8 @@ namespace
     operate (std::unique_ptr <value_loclist_elem> val) override
     {
       return std::make_unique <value_addr_range>
-	(constant {val->get_low (), &hex_constant_dom},
-	 constant {val->get_high (), &hex_constant_dom}, 0);
+	(constant {val->get_low (), &dw_address_dom},
+	 constant {val->get_high (), &dw_address_dom}, 0);
     }
   };
 }
@@ -587,6 +628,56 @@ namespace
       return std::make_unique <value_producer_cat>
 	(dwop_number (a->get_dwop (), a->get_attr (), a->get_graph ()),
 	 dwop_number2 (a->get_dwop (), a->get_attr (), a->get_graph ()));
+    }
+  };
+}
+
+// low
+namespace
+{
+  struct op_low_addr_range
+    : public op_overload <value_addr_range>
+  {
+    using op_overload::op_overload;
+
+    std::unique_ptr <value>
+    operate (std::unique_ptr <value_addr_range> a) override
+    {
+      return std::make_unique <value_cst> (a->get_low (), 0);
+    }
+  };
+}
+
+// high
+namespace
+{
+  struct op_high_addr_range
+    : public op_overload <value_addr_range>
+  {
+    using op_overload::op_overload;
+
+    std::unique_ptr <value>
+    operate (std::unique_ptr <value_addr_range> a) override
+    {
+      return std::make_unique <value_cst> (a->get_high (), 0);
+    }
+  };
+}
+
+// arange
+namespace
+{
+  struct op_arange_cst_cst
+    : public op_overload <value_cst, value_cst>
+  {
+    using op_overload::op_overload;
+
+    std::unique_ptr <value>
+    operate (std::unique_ptr <value_cst> a,
+	     std::unique_ptr <value_cst> b) override
+    {
+      return std::make_unique <value_addr_range>
+	(a->get_constant (), b->get_constant (), 0);
     }
   };
 }
@@ -904,6 +995,7 @@ dwgrep_builtins_dw ()
   {
     auto t = std::make_shared <overload_tab> ();
 
+    t->add_op_overload <op_address_attr> ();
     t->add_op_overload <op_address_loclist_elem> ();
 
     dict.add (std::make_shared <overloaded_op_builtin> ("address", t));
@@ -943,6 +1035,30 @@ dwgrep_builtins_dw ()
     t->add_op_overload <op_integrate_closure> ();
 
     dict.add (std::make_shared <overloaded_op_builtin> ("integrate", t));
+  }
+
+  {
+    auto t = std::make_shared <overload_tab> ();
+
+    t->add_op_overload <op_low_addr_range> ();
+
+    dict.add (std::make_shared <overloaded_op_builtin> ("low", t));
+  }
+
+  {
+    auto t = std::make_shared <overload_tab> ();
+
+    t->add_op_overload <op_high_addr_range> ();
+
+    dict.add (std::make_shared <overloaded_op_builtin> ("high", t));
+  }
+
+  {
+    auto t = std::make_shared <overload_tab> ();
+
+    t->add_op_overload <op_arange_cst_cst> ();
+
+    dict.add (std::make_shared <overloaded_op_builtin> ("arange", t));
   }
 
   auto add_dw_at = [&dict] (unsigned code,
@@ -1021,7 +1137,7 @@ dwgrep_builtins_dw ()
       dict.add (std::make_shared <overloaded_pred_builtin> (lqname, t));
       dict.add (std::make_shared <overloaded_pred_builtin> (lbname, t));
 
-      add_builtin_constant (dict, constant (code, &dw_tag_dom), lqname + 1);
+      add_builtin_constant (dict, constant (code, &dw_form_dom), lqname + 1);
     };
 
 #define ONE_KNOWN_DW_FORM_DESC(NAME, CODE, DESC) ONE_KNOWN_DW_FORM (NAME, CODE)

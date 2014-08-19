@@ -7,6 +7,14 @@
     be used.
 
 ** stack underruns are ungraceful
+** domain comparability
+   - whether domain is arithmetic is currently used for deciding
+     whether it's meaningful to compare a constant this domain to
+     constants of other domains.  But e.g. address and offset aren't
+     comparable, but they are safe for arithmetic.  Similarly line and
+     column--shouldn't be compared with one another, but are safe for
+     arithmetics.  This is unlike named constants, which are not safe
+     for arithmetic.
 
 * TODO
 ** static analysis tools

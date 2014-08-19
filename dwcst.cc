@@ -21,6 +21,7 @@
 
 #include "known-dwarf.h"
 #include "constant.hh"
+#include "flag_saver.hh"
 
 static const char *
 abbreviate (char const *name, size_t prefix_len, brevity brv)
@@ -740,3 +741,25 @@ static struct
 } dw_endianity_dom_obj;
 
 constant_dom const &dw_endianity_dom = dw_endianity_dom_obj;
+
+namespace
+{
+  struct dw_numeric_constant_dom_t
+    : public numeric_constant_dom_t
+  {
+    using numeric_constant_dom_t::numeric_constant_dom_t;
+
+    void
+    show (mpz_class const &v, std::ostream &o, brevity brv) const override
+    {
+      ios_flag_saver s {o};
+      o << std::hex << std::showbase << v;
+    }
+  };
+}
+
+dw_numeric_constant_dom_t dw_address_dom_obj ("Dwarf_Address");
+constant_dom const &dw_address_dom = dw_address_dom_obj;
+
+dw_numeric_constant_dom_t dw_offset_dom_obj ("Dwarf_Off");
+constant_dom const &dw_offset_dom = dw_offset_dom_obj;

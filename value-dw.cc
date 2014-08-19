@@ -224,7 +224,7 @@ void
 value_addr_range::show (std::ostream &o, brevity brv) const
 {
   ios_flag_saver s {o};
-  o << std::hex << std::showbase << m_low << ".." << m_high;
+  o << m_low << ".." << m_high;
 }
 
 std::unique_ptr <value>
