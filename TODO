@@ -1,0 +1,216 @@
+-*-org-*-
+* BUGS
+** missing DW_LNE_*, DW_LNS_*
+  - these can't quite have distinct domains, as they need to be
+    comparable.  Better wait with implementing these until we get to
+    line tables, so that it's better understood how these will need to
+    be used.
+
+** stack underruns are ungraceful
+
+** performance of syntactic operators is deplorable
+   - We need a dedicated op for these.  Even doing the simplest most
+     naive thing natively should be much better than the current
+     list/scope bonanza.
+
+** [{F}] 1->F; elem apply
+
+   : (SCOPE{F}
+   :   (CAT (CAPTURE (BLOCK (READ<F>)))
+   :        (CONST<1>) (BIND<F>)
+   :        (F_BUILTIN<elem>) (F_BUILTIN<apply>)))
+
+   - The block remembers its surrounding scope, and F is then looked
+     up (and found) there.  But since the block is created in a
+     sub-expression context, it ends up referencing a clone of the
+     "outer" scope.  That's where the 1->F; takes place.  So the F
+     ends up being defined in one scope, but then when we apply the
+     block, it looks it up in another scope.
+
+   - [{F}] (1,2)->F; elem apply		# this is even worse
+
+     This creates a block in subexpression context.  Then forks the
+     computation.  Each computation gets a different value of F.
+     After executing the block, the correct F needs to be read.
+
+     For this to work, we simply can't use pointers to refer to stack
+     frames.  We need to clone frames at least at the point of 1,2.
+     But the {F} that's in the list on TOS at that point needs to
+     somehow refer in each its clone to a different cloned frame.
+
+     We'd need to crawl through the stack, find any closure
+     references, follow their frame pointers, do clones of these,
+     including recursively crawling any sequences and closures that
+     are in those frames.  Doable, but fragile and difficult.
+
+     Much better: have closure carry around copies of values of
+     bindings referenced from inside.  That means writing recursive
+     functions is not simple (nor easy, though possible) anymore,
+     because in "let X:={X};", that X is not yet defined at the point
+     that it's referenced.  But that shouldn't be a big deal.  We can
+     introduce first-class functions when this gets awkward, and quite
+     possibly it won't as recursion should generally not be needed in
+     the queries.  Hopefully.
+
+* TODO
+** static analysis tools
+*** overload pegging
+    - We could use overload prototype declarations to mention return
+      value type as well.  Then we could determine what overload will
+      be chosen for each overloaded word, and dispatch it directly.
+
+*** stack effect analysis
+    - By the same token, we could statically determine that a certain
+      program is invalid, because it underruns stack.  For variadic
+      input argument operators (such as integrate, which is either
+      ?T_DIE ->? ?T_DIE or ?T_DIE ?T_CLOSURE ->? ?()) we are possibly
+      out of luck and have to fall back on runtime checking.
+
+      - It might even make sense to turn off stack effect checking
+        when we can prove that the program never underruns.
+
+        We could also selectively turn off stack profile tracking for
+        programs where we can statically determine all effects.  But
+        that will be rare, any attribute access is a wild card.
+
+      - At least stack shuffling operators need to be built in, so
+        that we know that we don't lose type information after
+        dup'ing.  (Without having to have something awfully generic
+        like dup :: A => A A).
+
+      - Variable binding somewhat complicates things, though we can
+        probably simply annotate the deduced type in the scope.  Since
+        variables are never redefined, this shouldn't be a big
+        problem.
+
+      - Closures are of course difficult.  No idea how to handle
+        those.
+
+** command-line arguments -- $1, $2, ...
+   - These would have to be passed in not only from command line, but
+     also from the C/C++ wrapper.  Thus it is desirable that they can
+     somehow become of various types.  E.g. we'd like to be able to
+     pass in 17 without making it "17".
+
+   - Systemtap has @1, @2, etc. for literals.  $1, $2, etc. are pasted
+     verbatim (macro-expanded so to speak) and lexed and parsed.  This
+     would allow the "17" be passed in as 17, but that's still
+     awkward.
+
+   - The wrapper (or command-line interface) should probably provide a
+     map of values (as in, instances of a class value subclass).  Thus
+     $1 could be spliced as 17 or "17" depending on what comes in.  $1
+     could be similar to binding--maybe this could be modelled as an
+     outermost scope (provided we solve the stack cloning performance
+     issues).  Type inference would have to be done after these
+     arguments are provided.
+
+** Generaziled operators
+   - Could we just abstract all the =='s etc. into an overarching
+     theory of "operators" (akin to "words")?  So that a module could
+     bring in e.g. =~ and !~.
+
+   - Then, could we have || and , provided as these operators?  The
+     parser would need to be able to swallow a whole chain of
+     operators, so that (a || b || c || d) is possible.
+
+   - There would be no precedence and the operators would be left
+     associative.  a, b || c, d would be parsed as (((a, b) || c), d).
+     Parentheses would need to be used to explicitly mark this.
+
+     - But for (a,b || c,d) yacc would just see WORD OP WORD OP WORD
+       OP WORD.  So post-processing will be necessary anyway, and we
+       can solve precedence there.  Look for all the OP's used in the
+       stream, go through them in precedence order, recursively
+       breaking the stream into arms.
+
+   - The dictionary would provide some artifacts that the parser woud
+     look up and pass the parsed thing over.  These would be distinct
+     from op's and pred's, as the way they are constructed is
+     different: they get an upstream and an array of op's with
+     individual arms.
+
+** Dictionaries
+   - Maybe have a key-value value type?  And a => operator for
+     constructing this?  The dictionary would then be:
+     : [7 => 5, 8 => "foo"]
+     There would be words, key and value, which access parts of the
+     pair.  Lookup would be done like:
+     : [dictionary] elem (key == 7) value	# gimme 7's value
+     Querying:
+     : [dictionary] (elem key == 7)		# do we have key 7?
+     Getting list of all keys:
+     : [dictionary] ->D; [D elem key]
+     Add 1 to key X:
+     : [dictionary] ->D; [D elem (key => value (==X) 1 add || )]
+     Add A=>B unless A already present:
+     : [dictionary] ->D; if (D elem key == A) then D else [D elem, A=>B]
+     Wow, that's a mouthful.
+
+     Um, what does this do?
+     : [(1, 2, 3) => ("a", "b", "c")]
+     I think it should be this:
+     : [1 => "a", 1 => "b", 1 => "c", 2 => "a", ...]
+     ... which actually shows that list of key-val pairs is no
+     dictionary, or actually that it's a multi-set sort of thing.
+** (|F| F foo)
+   This syntax is free and could be used for explicit scopes.  It
+   would be like {|F| F foo} apply.
+
+** @AT_MIPS_linkage_name — translated to @AT_linkage_name automatically
+** XXX @AT_stmt_list
+
+   @AT_stmt_list yields a number of nodes of type line_table_entry.
+   The following words (which are thin wrappers around similarly named
+   libdw functions) are applicable to individual line table entries:
+
+   : address
+   : @lineop_index
+   : @lineno (or @AT_decl_line ???)
+   : @linecol (or @AT_decl_column ???)
+   : @linebeginstatement, ?linebeginstatement, !linebeginstatement
+   : @lineendsequence, ?lineendsequence, !lineendsequence
+   : @lineblock, ?lineblock, !lineblock
+   : @lineprologueend, ?lineprologueend, !lineprologueend
+   : @lineepiloguebegin, ?lineepiloguebegin, !lineepiloguebegin
+   : @lineisa
+   : @linediscriminator
+
+   The operators that return a boolean constant come also in assertion
+   variant so that it's easy to filter interesting line table entries.
+
+   XXX That's however not entirely consistent with how DW_FORM_flag*
+   attributes behave.  For those, ?AT_* always means, is this
+   attribute present, and never, is the value true.  Needs some more
+   thinking to consolidate this.  Maybe we could abandon the @op's for
+   these and just expose ?op's.  When ?x is present, it implies that
+   @op is true.
+
+** XXX Dwarf CU version -- an artificial attribute?
+   - https://stackoverflow.com/questions/16169864
+
+** XXX .debug_frame, .eh_frame
+   - do we need an overarching "theory" for both of these?
+   - also, there's fair amount of tables around here (symbol tables,
+     line tables, ...).  Does it make sense to understand them as
+     first-class citizen of some sort?  Currently we understand there
+     are values, every value has some properties, and some values have
+     attributes.
+
+** XXX .debug_macro
+
+** XXX optional inlining of DW_TAG_partial unit
+   - We don't interpret DW_TAG_imported_unit at all currently.
+     Eventually we'll probably want to inline this by default, but
+     also have a way to actually see the DW_TAG_imported_unit DIE's as
+     well.
+
+   - (Note that DW_TAG_imported_module and DW_TAG_imported_declaration
+     are for "using namespace X" and "using X" respectively, so
+     unrelated to this.)
+
+** XXX multithreading
+   - processing Dwarf has the potential for a lot of concurrency.  If
+     locks end up serializing, we might actually open the Dwarf in
+     each thread anew, and see if that helps.
+

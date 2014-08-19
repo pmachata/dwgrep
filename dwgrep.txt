@@ -1252,66 +1252,6 @@
 
 
 
-* TODO
-
-** @AT_MIPS_linkage_name — translated to @AT_linkage_name automatically
-** XXX @AT_stmt_list
-
-   @AT_stmt_list yields a number of nodes of type line_table_entry.
-   The following words (which are thin wrappers around similarly named
-   libdw functions) are applicable to individual line table entries:
-
-   : address
-   : @lineop_index
-   : @lineno (or @AT_decl_line ???)
-   : @linecol (or @AT_decl_column ???)
-   : @linebeginstatement, ?linebeginstatement, !linebeginstatement
-   : @lineendsequence, ?lineendsequence, !lineendsequence
-   : @lineblock, ?lineblock, !lineblock
-   : @lineprologueend, ?lineprologueend, !lineprologueend
-   : @lineepiloguebegin, ?lineepiloguebegin, !lineepiloguebegin
-   : @lineisa
-   : @linediscriminator
-
-   The operators that return a boolean constant come also in assertion
-   variant so that it's easy to filter interesting line table entries.
-
-   XXX That's however not entirely consistent with how DW_FORM_flag*
-   attributes behave.  For those, ?AT_* always means, is this
-   attribute present, and never, is the value true.  Needs some more
-   thinking to consolidate this.  Maybe we could abandon the @op's for
-   these and just expose ?op's.  When ?x is present, it implies that
-   @op is true.
-
-** XXX Dwarf CU version -- an artificial attribute?
-   - https://stackoverflow.com/questions/16169864
-
-** XXX .debug_frame, .eh_frame
-   - do we need an overarching "theory" for both of these?
-   - also, there's fair amount of tables around here (symbol tables,
-     line tables, ...).  Does it make sense to understand them as
-     first-class citizen of some sort?  Currently we understand there
-     are values, every value has some properties, and some values have
-     attributes.
-
-** XXX .debug_macro
-
-** XXX optional inlining of DW_TAG_partial unit
-   - We don't interpret DW_TAG_imported_unit at all currently.
-     Eventually we'll probably want to inline this by default, but
-     also have a way to actually see the DW_TAG_imported_unit DIE's as
-     well.
-
-   - (Note that DW_TAG_imported_module and DW_TAG_imported_declaration
-     are for "using namespace X" and "using X" respectively, so
-     unrelated to this.)
-
-** XXX multithreading
-   - processing Dwarf has the potential for a lot of concurrency.  If
-     locks end up serializing, we might actually open the Dwarf in
-     each thread anew, and see if that helps.
-
-
 * Examples
 
 ** Josh Stone's nontrivial-parameters script
