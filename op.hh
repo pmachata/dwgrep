@@ -610,8 +610,8 @@ class pred_and
 
 public:
   pred_and (std::unique_ptr <pred> a, std::unique_ptr <pred> b)
-    : m_a { std::move (a) }
-    , m_b { std::move (b) }
+    : m_a {std::move (a)}
+    , m_b {std::move (b)}
   {}
 
   pred_result result (stack &stk) override;
@@ -655,8 +655,8 @@ class pred_subx_any
 public:
   pred_subx_any (std::shared_ptr <op> op,
 		 std::shared_ptr <op_origin> origin)
-    : m_op (op)
-    , m_origin (origin)
+    : m_op {op}
+    , m_origin {origin}
   {}
 
   pred_result result (stack &stk) override;
