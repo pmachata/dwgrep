@@ -992,12 +992,13 @@
      Selects objects belonging to the same logical unit.
 
      XXX how do we solve logical vs. low-level access to
-     DW_TAG_partial_unit?
+     DW_TAG_partial_unit?  We could have winfo/wtype/wunit. for
+     low-level access and info/unit for interpreted access.
 
-***  high :: ?T_DIE ->? ?T_CONST
+*** •high :: ?T_DIE ->? ?T_CONST
      : attribute ?AT_highpc address
 
-***  low :: ?T_DIE ->? ?T_CONST
+*** •low :: ?T_DIE ->? ?T_CONST
      : @AT_lowpc
 
 ***  address :: ?T_DIE ->* ?T_ADDR_RANGE

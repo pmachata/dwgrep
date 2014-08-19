@@ -376,29 +376,28 @@ namespace
 // address
 namespace
 {
+  static std::unique_ptr <value>
+  get_die_addr (Dwarf_Die *die, int (cb) (Dwarf_Die *, Dwarf_Addr *))
+  {
+    Dwarf_Addr addr;
+    if (cb (die, &addr) < 0)
+      throw_libdw ();
+    return std::make_unique <value_cst> (constant {addr, &dw_address_dom}, 0);
+  }
+
   struct op_address_attr
     : public op_overload <value_attr>
   {
     using op_overload::op_overload;
 
-    static std::unique_ptr <value>
-    get_addr (std::unique_ptr <value_attr> a,
-	      int (cb) (Dwarf_Die *, Dwarf_Addr *))
-    {
-      Dwarf_Addr addr;
-      if (cb (&a->get_die (), &addr) < 0)
-	throw_libdw ();
-      return std::make_unique <value_cst> (constant {addr, &dw_address_dom}, 0);
-    }
-
     std::unique_ptr <value>
     operate (std::unique_ptr <value_attr> a) override
     {
       if (dwarf_whatattr (&a->get_attr ()) == DW_AT_high_pc)
-	return get_addr (std::move (a), &dwarf_highpc);
+	return get_die_addr (&a->get_die (), &dwarf_highpc);
 
       if (dwarf_whatattr (&a->get_attr ()) == DW_AT_entry_pc)
-	return get_addr (std::move (a), &dwarf_entrypc);
+	return get_die_addr (&a->get_die (), &dwarf_entrypc);
 
       if (dwarf_whatform (&a->get_attr ()) == DW_FORM_addr)
 	{
@@ -635,6 +634,20 @@ namespace
 // low
 namespace
 {
+  struct op_low_die
+    : public op_overload <value_die>
+  {
+    using op_overload::op_overload;
+
+    std::unique_ptr <value>
+    operate (std::unique_ptr <value_die> a) override
+    {
+      if (! dwarf_hasattr (&a->get_die (), DW_AT_low_pc))
+	return nullptr;
+      return get_die_addr (&a->get_die (), &dwarf_lowpc);
+    }
+  };
+
   struct op_low_addr_range
     : public op_overload <value_addr_range>
   {
@@ -651,6 +664,20 @@ namespace
 // high
 namespace
 {
+  struct op_high_die
+    : public op_overload <value_die>
+  {
+    using op_overload::op_overload;
+
+    std::unique_ptr <value>
+    operate (std::unique_ptr <value_die> a) override
+    {
+      if (! dwarf_hasattr (&a->get_die (), DW_AT_high_pc))
+	return nullptr;
+      return get_die_addr (&a->get_die (), &dwarf_highpc);
+    }
+  };
+
   struct op_high_addr_range
     : public op_overload <value_addr_range>
   {
@@ -1040,6 +1067,7 @@ dwgrep_builtins_dw ()
   {
     auto t = std::make_shared <overload_tab> ();
 
+    t->add_op_overload <op_low_die> ();
     t->add_op_overload <op_low_addr_range> ();
 
     dict.add (std::make_shared <overloaded_op_builtin> ("low", t));
@@ -1048,6 +1076,7 @@ dwgrep_builtins_dw ()
   {
     auto t = std::make_shared <overload_tab> ();
 
+    t->add_op_overload <op_high_die> ();
     t->add_op_overload <op_high_addr_range> ();
 
     dict.add (std::make_shared <overloaded_op_builtin> ("high", t));

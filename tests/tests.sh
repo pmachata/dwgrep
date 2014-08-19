@@ -453,3 +453,6 @@ expect_count 2 ./duplicate-const -e '
 	winfo attribute ?AT_low_pc
 	(form == DW_FORM_addr)
 	address (== value) ("%s" == "0x4004cd")'
+
+expect_count 2 ./duplicate-const -e '
+	winfo (low == 0x4004cd) (high == 0x4004fb)'
