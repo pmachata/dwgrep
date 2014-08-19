@@ -122,7 +122,7 @@ namespace
     if (dwarf_formaddr (&attr, &addr) != 0)
       throw_libdw ();
     return pass_single_value
-      (std::make_unique <value_cst> (constant {addr, &hex_constant_dom}, 0));
+      (std::make_unique <value_cst> (constant {addr, &dw_address_dom}, 0));
   }
 
   struct locexpr_producer
