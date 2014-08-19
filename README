@@ -1069,16 +1069,6 @@
      this is stored?  Or after it gets to be stored in general, where
      this is _not_ stored?)
 
-***  @AT_high_pc, @AT_entry_pc with constant form
-     Should we convert to full address?
-     http://dwarfstd.org/ShowIssue.php?issue=120719.1
-
-     It seems "low", "high" and "address" should do this, but
-
-     This could be optionally interpreted, i.e. @AT_high_pc whose form
-     is DW_FORM_data* would actually yield a value computed from
-     DW_AT_ranges or DW_AT_low_pc.
-
 ***  abbrev :: ?T_DIE -> T_ABBREV
 *** •@AT_* :: ?T_DIE ->* ?()
      Syntactic sugar for (attribute ?(label == AT_*) value).
@@ -1230,7 +1220,7 @@
      Holds if this is an operation with this opcode.
 
 
-**  T_ADDR_RANGE
+** ·T_ADDR_RANGE
     - T_ADDR_RANGE actually behaves pretty much like a sequence of
       integers.  Maybe sequence could have an optimization whereby if
       it contains integers only, it just stores low×high pairs instead
