@@ -127,6 +127,8 @@ public:
 
   bool operator< (constant that) const;
   bool operator> (constant that) const;
+  bool operator<= (constant that) const;
+  bool operator>= (constant that) const;
   bool operator== (constant that) const;
   bool operator!= (constant that) const;
 

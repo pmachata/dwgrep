@@ -194,6 +194,18 @@ constant::operator> (constant that) const
 }
 
 bool
+constant::operator<= (constant that) const
+{
+  return that < *this || that == *this;
+}
+
+bool
+constant::operator>= (constant that) const
+{
+  return ! (*this < that);
+}
+
+bool
 constant::operator== (constant that) const
 {
   return ! (*this != that);

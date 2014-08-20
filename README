@@ -1231,11 +1231,14 @@
       "elem" such that it can do something clever instead of
       enumerating all 64 bits of adress space or some such.
 
+    - Consider promoting this to core (T_RANGE).  Address ranges would
+      just use address-domained limits.
+
 *** •low :: ?T_ADDR_RANGE -> ?T_CONST
 *** •high :: ?T_ADDR_RANGE -> ?T_CONST
 *** •arange :: ?T_CONST ?T_CONST -> ?T_ADDR_RANGE
-***  ?contains :: ?T_ADDR_RANGE ?T_CONST
-***  ?contains :: ?T_ADDR_RANGE ?T_ADDR_RANGE
+*** •?contains :: ?T_ADDR_RANGE ?T_CONST
+*** •?contains :: ?T_ADDR_RANGE ?T_ADDR_RANGE
      Whether TOS is contained within below TOS.
 
 ***  ?overlaps :: ?T_ADDR_RANGE ?T_ADDR_RANGE

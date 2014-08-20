@@ -456,3 +456,35 @@ expect_count 2 ./duplicate-const -e '
 
 expect_count 2 ./duplicate-const -e '
 	winfo (low == 0x4004cd) (high == 0x4004fb)'
+
+expect_count 1 ./empty -e '
+	10 20 arange
+	?(9 !contains) ?(10 ?contains) ?(11 ?contains) ?(12 ?contains)
+	?(13 ?contains) ?(14 ?contains) ?(15 ?contains) ?(16 ?contains)
+	?(17 ?contains) ?(18 ?contains) ?(19 ?contains) ?(20 !contains)'
+
+
+expect_count 1 ./empty -e '
+	10 20 arange
+	?(9 20 arange !contains) ?(10 20 arange ?contains)
+	?(11 20 arange ?contains) ?(12 20 arange ?contains)
+	?(13 20 arange ?contains) ?(14 20 arange ?contains)
+	?(15 20 arange ?contains) ?(16 20 arange ?contains)
+	?(17 20 arange ?contains) ?(18 20 arange ?contains)
+	?(19 20 arange ?contains) ?(20 20 arange !contains)
+
+	?(9 9 arange !contains) ?(9 10 arange !contains)
+	?(9 11 arange !contains) ?(9 12 arange !contains)
+	?(9 13 arange !contains) ?(9 14 arange !contains)
+	?(9 15 arange !contains) ?(9 16 arange !contains)
+	?(9 17 arange !contains) ?(9 18 arange !contains)
+	?(9 19 arange !contains) ?(9 20 arange !contains)
+	?(9 21 arange !contains)
+
+	?(9 21 arange !contains) ?(10 21 arange !contains)
+	?(11 21 arange !contains) ?(12 21 arange !contains)
+	?(13 21 arange !contains) ?(14 21 arange !contains)
+	?(15 21 arange !contains) ?(16 21 arange !contains)
+	?(17 21 arange !contains) ?(18 21 arange !contains)
+	?(19 21 arange !contains) ?(20 21 arange !contains)
+	?(21 21 arange !contains)'

@@ -709,6 +709,42 @@ namespace
   };
 }
 
+// ?contains
+namespace
+{
+  bool
+  inside (value_addr_range &a, constant const &c)
+  {
+    return c >= a.get_low () && c < a.get_high ();
+  }
+
+  struct pred_containsp_arange_cst
+    : public pred_overload <value_addr_range, value_cst>
+  {
+    using pred_overload::pred_overload;
+
+    pred_result
+    result (value_addr_range &a, value_cst &cst) override
+    {
+      return pred_result (inside (a, cst.get_constant ()));
+    }
+  };
+
+  struct pred_containsp_arange_arange
+    : public pred_overload <value_addr_range, value_addr_range>
+  {
+    using pred_overload::pred_overload;
+
+    pred_result
+    result (value_addr_range &a, value_addr_range &b) override
+    {
+      return pred_result (inside (a, b.get_low ())
+			  && (inside (a, b.get_high ())
+			      || b.get_high () == a.get_high ()));
+    }
+  };
+}
+
 // @AT_*
 namespace
 {
@@ -1088,6 +1124,16 @@ dwgrep_builtins_dw ()
     t->add_op_overload <op_arange_cst_cst> ();
 
     dict.add (std::make_shared <overloaded_op_builtin> ("arange", t));
+  }
+
+  {
+    auto t = std::make_shared <overload_tab> ();
+
+    t->add_pred_overload <pred_containsp_arange_cst> ();
+    t->add_pred_overload <pred_containsp_arange_arange> ();
+
+    dict.add (std::make_shared <overloaded_pred_builtin> ("?contains", t));
+    dict.add (std::make_shared <overloaded_pred_builtin> ("!contains", t));
   }
 
   auto add_dw_at = [&dict] (unsigned code,
