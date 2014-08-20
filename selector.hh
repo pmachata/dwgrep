@@ -60,7 +60,8 @@ private:
   static sel_t
   compute_mask (uint8_t code, Ts... codes)
   {
-    return compute_mask (codes...) << 8 | (code != 0 ? (sel_t) 0xff : 0);
+    return compute_mask (codes...) >> 8
+      | (code != 0 ? ((sel_t) 0xff) << (8 * W - 8) : 0);
   }
 
   static sel_t
@@ -73,14 +74,21 @@ private:
   static sel_t
   compute_imprint (uint8_t code, Ts... codes)
   {
-    return compute_imprint (codes...) << 8 | (sel_t) code;
+    return compute_imprint (codes...) >> 8
+      | (((sel_t) code) << (8 * W - 8));
+  }
+
+  static sel_t
+  unshift (sel_t sel, size_t N)
+  {
+    return sel >> ((W - N) * 8);
   }
 
 public:
   template <class... Ts, std::enable_if_t <(sizeof... (Ts) <= W), int> Fake = 0>
   selector (Ts... vts)
-    : m_imprint {compute_imprint ((vts.code ())...)}
-    , m_mask {compute_mask ((vts.code ())...)}
+    : m_imprint {unshift (compute_imprint ((vts.code ())...), sizeof... (Ts))}
+    , m_mask {unshift (compute_mask ((vts.code ())...), sizeof... (Ts))}
   {}
 
   selector (stack const &s);
