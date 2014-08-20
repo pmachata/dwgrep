@@ -1241,9 +1241,11 @@
 *** •?contains :: ?T_ADDR_RANGE ?T_ADDR_RANGE
      Whether TOS is contained within below TOS.
 
-***  ?overlaps :: ?T_ADDR_RANGE ?T_ADDR_RANGE
+*** •?overlaps :: ?T_ADDR_RANGE ?T_ADDR_RANGE
      Whether TOS and below TOS overlap.
 
+***  ?empty :: ?T_ADDR_RANGE
+     (low == high)
 
 * Examples
 

@@ -196,7 +196,7 @@ constant::operator> (constant that) const
 bool
 constant::operator<= (constant that) const
 {
-  return that < *this || that == *this;
+  return ! (that < *this);
 }
 
 bool

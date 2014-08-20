@@ -463,7 +463,6 @@ expect_count 1 ./empty -e '
 	?(13 ?contains) ?(14 ?contains) ?(15 ?contains) ?(16 ?contains)
 	?(17 ?contains) ?(18 ?contains) ?(19 ?contains) ?(20 !contains)'
 
-
 expect_count 1 ./empty -e '
 	10 20 arange
 	?(9 20 arange !contains) ?(10 20 arange ?contains)
@@ -471,16 +470,20 @@ expect_count 1 ./empty -e '
 	?(13 20 arange ?contains) ?(14 20 arange ?contains)
 	?(15 20 arange ?contains) ?(16 20 arange ?contains)
 	?(17 20 arange ?contains) ?(18 20 arange ?contains)
-	?(19 20 arange ?contains) ?(20 20 arange !contains)
+	?(19 20 arange ?contains) ?(20 20 arange !contains)'
 
+expect_count 1 ./empty -e '
+	10 20 arange
 	?(9 9 arange !contains) ?(9 10 arange !contains)
 	?(9 11 arange !contains) ?(9 12 arange !contains)
 	?(9 13 arange !contains) ?(9 14 arange !contains)
 	?(9 15 arange !contains) ?(9 16 arange !contains)
 	?(9 17 arange !contains) ?(9 18 arange !contains)
 	?(9 19 arange !contains) ?(9 20 arange !contains)
-	?(9 21 arange !contains)
+	?(9 21 arange !contains)'
 
+expect_count 1 ./empty -e '
+	10 20 arange
 	?(9 21 arange !contains) ?(10 21 arange !contains)
 	?(11 21 arange !contains) ?(12 21 arange !contains)
 	?(13 21 arange !contains) ?(14 21 arange !contains)
@@ -488,3 +491,18 @@ expect_count 1 ./empty -e '
 	?(17 21 arange !contains) ?(18 21 arange !contains)
 	?(19 21 arange !contains) ?(20 21 arange !contains)
 	?(21 21 arange !contains)'
+
+expect_count 1 ./empty -e '10 20 arange 10 10 arange ?contains'
+expect_count 1 ./empty -e '10 20 arange 15 15 arange ?contains'
+expect_count 1 ./empty -e '10 20 arange 20 20 arange !contains'
+expect_count 1 ./empty -e '10 10 arange dup ?contains'
+
+expect_count 1 ./empty -e '
+	5 10 arange
+	?(4 5 arange !overlaps) ?(4 6 arange ?overlaps)
+	?(4 7 arange ?overlaps) ?(4 8 arange ?overlaps)
+	?(4 9 arange ?overlaps) ?(4 10 arange ?overlaps)
+	?(4 11 arange ?overlaps) ?(5 11 arange ?overlaps)
+	?(6 11 arange ?overlaps) ?(7 11 arange ?overlaps)
+	?(8 11 arange ?overlaps) ?(9 11 arange ?overlaps)
+	?(10 11 arange !overlaps)'

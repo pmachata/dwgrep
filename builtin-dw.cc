@@ -713,9 +713,15 @@ namespace
 namespace
 {
   bool
-  inside (value_addr_range &a, constant const &c)
+  contains (value_addr_range &a, constant const &c)
   {
     return c >= a.get_low () && c < a.get_high ();
+  }
+
+  bool
+  contains_incl (value_addr_range &a, constant const &c)
+  {
+    return c >= a.get_low () && c <= a.get_high ();
   }
 
   struct pred_containsp_arange_cst
@@ -726,7 +732,7 @@ namespace
     pred_result
     result (value_addr_range &a, value_cst &cst) override
     {
-      return pred_result (inside (a, cst.get_constant ()));
+      return pred_result (contains (a, cst.get_constant ()));
     }
   };
 
@@ -738,9 +744,32 @@ namespace
     pred_result
     result (value_addr_range &a, value_addr_range &b) override
     {
-      return pred_result (inside (a, b.get_low ())
-			  && (inside (a, b.get_high ())
-			      || b.get_high () == a.get_high ()));
+      if (a.get_low () == a.get_high ())
+	return pred_result (b.get_low () == a.get_low ()
+			    && b.get_high () == a.get_high ());
+
+      return pred_result (contains (a, b.get_low ())
+			  && contains_incl (a, b.get_high ()));
+    }
+  };
+}
+
+// ?overlaps
+namespace
+{
+  struct pred_overlapsp_arange_arange
+    : public pred_overload <value_addr_range, value_addr_range>
+  {
+    using pred_overload::pred_overload;
+
+    pred_result
+    result (value_addr_range &a, value_addr_range &b) override
+    {
+      return pred_result (contains (a, b.get_low ())
+			  || (contains (a, b.get_high ())
+			      && b.get_high () != a.get_low ())
+			  || (b.get_low () < a.get_low ()
+			      && b.get_high () >= a.get_high ()));
     }
   };
 }
@@ -1134,6 +1163,15 @@ dwgrep_builtins_dw ()
 
     dict.add (std::make_shared <overloaded_pred_builtin> ("?contains", t));
     dict.add (std::make_shared <overloaded_pred_builtin> ("!contains", t));
+  }
+
+  {
+    auto t = std::make_shared <overload_tab> ();
+
+    t->add_pred_overload <pred_overlapsp_arange_arange> ();
+
+    dict.add (std::make_shared <overloaded_pred_builtin> ("?overlaps", t));
+    dict.add (std::make_shared <overloaded_pred_builtin> ("!overlaps", t));
   }
 
   auto add_dw_at = [&dict] (unsigned code,
