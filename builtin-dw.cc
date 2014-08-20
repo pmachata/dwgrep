@@ -648,7 +648,7 @@ namespace
     }
   };
 
-  struct op_low_addr_range
+  struct op_low_arange
     : public op_overload <value_addr_range>
   {
     using op_overload::op_overload;
@@ -678,7 +678,7 @@ namespace
     }
   };
 
-  struct op_high_addr_range
+  struct op_high_arange
     : public op_overload <value_addr_range>
   {
     using op_overload::op_overload;
@@ -1068,7 +1068,7 @@ dwgrep_builtins_dw ()
     auto t = std::make_shared <overload_tab> ();
 
     t->add_op_overload <op_low_die> ();
-    t->add_op_overload <op_low_addr_range> ();
+    t->add_op_overload <op_low_arange> ();
 
     dict.add (std::make_shared <overloaded_op_builtin> ("low", t));
   }
@@ -1077,7 +1077,7 @@ dwgrep_builtins_dw ()
     auto t = std::make_shared <overload_tab> ();
 
     t->add_op_overload <op_high_die> ();
-    t->add_op_overload <op_high_addr_range> ();
+    t->add_op_overload <op_high_arange> ();
 
     dict.add (std::make_shared <overloaded_op_builtin> ("high", t));
   }
