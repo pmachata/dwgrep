@@ -376,6 +376,49 @@ namespace
 // address
 namespace
 {
+  struct op_address_die
+    : public op_yielding_overload <value_die>
+  {
+    using op_yielding_overload::op_yielding_overload;
+
+    struct ranges_producer
+      : public value_producer
+    {
+      std::unique_ptr <value_die> m_die;
+      ptrdiff_t m_offset;
+      Dwarf_Addr m_base;
+      size_t m_i;
+
+      explicit ranges_producer (std::unique_ptr <value_die> die)
+	: m_die {std::move (die)}
+	, m_offset {0}
+	, m_i {0}
+      {}
+
+      std::unique_ptr <value>
+      next () override
+      {
+	Dwarf_Addr start, end;
+	m_offset = dwarf_ranges (&m_die->get_die (), m_offset,
+				 &m_base, &start, &end);
+	if (m_offset < 0)
+	  throw_libdw ();
+	if (m_offset == 0)
+	  return nullptr;
+
+	return std::make_unique <value_addr_range>
+	  (constant {start, &dw_address_dom},
+	   constant {end, &dw_address_dom}, m_i++);
+      }
+    };
+
+    std::unique_ptr <value_producer>
+    operate (std::unique_ptr <value_die> a) override
+    {
+      return std::make_unique <ranges_producer> (std::move (a));
+    }
+  };
+
   static std::unique_ptr <value>
   get_die_addr (Dwarf_Die *die, int (cb) (Dwarf_Die *, Dwarf_Addr *))
   {
@@ -1121,6 +1164,7 @@ dwgrep_builtins_dw ()
   {
     auto t = std::make_shared <overload_tab> ();
 
+    t->add_op_overload <op_address_die> ();
     t->add_op_overload <op_address_attr> ();
     t->add_op_overload <op_address_loclist_elem> ();
 

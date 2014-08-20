@@ -514,3 +514,8 @@ expect_count 1 ./empty -e '
 expect_count 1 ./empty -e '
 	(10 20 arange length == 10)
 	(10 10 arange length == 0)'
+
+expect_count 1 ./aranges.o -e '
+	winfo ?TAG_lexical_block
+	([address] length == 2)
+	address (pos == 1) (== 0xe 0x15 arange)'

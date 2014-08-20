@@ -1001,7 +1001,7 @@
 *** •low :: ?T_DIE ->? ?T_CONST
      : @AT_lowpc
 
-***  address :: ?T_DIE ->* ?T_ADDR_RANGE
+*** •address :: ?T_DIE ->* ?T_ADDR_RANGE
      Like dwarf_ranges.
 
 *** •child :: ?T_DIE ->* ?T_DIE
