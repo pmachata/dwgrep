@@ -486,8 +486,8 @@ struct pred_overload
   template <size_t N, class T, class... Ts>
   static auto collect (stack &stk)
   {
-    auto rest = collect <N + 1, Ts...> (stk);
-    return std::tuple_cat (rest, collect1 <T> (stk, N));
+    auto rest = collect <N - 1, Ts...> (stk);
+    return std::tuple_cat (collect1 <T> (stk, N - 1), rest);
   }
 
   template <size_t... I>
@@ -510,7 +510,7 @@ public:
   result (stack &stk) override
   {
     return call_result (std::index_sequence_for <VT...> {},
-			collect <0, VT...> (stk));
+			collect <sizeof... (VT), VT...> (stk));
   }
 
   virtual pred_result result (VT &... vals) = 0;
