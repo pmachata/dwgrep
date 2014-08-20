@@ -510,3 +510,7 @@ expect_count 1 ./empty -e '
 expect_count 1 ./empty -e '
 	5 10 arange !empty
 	5 5 arange ?empty'
+
+expect_count 1 ./empty -e '
+	(10 20 arange length == 10)
+	(10 10 arange length == 0)'

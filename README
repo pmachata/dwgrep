@@ -1235,9 +1235,16 @@
       such).  Address ranges would be intervals whose limits are
       T_CONST with dw_address_dom.
 
+      If this should hold anything else than pairs of constants, it
+      would need "length" to have access to the overload dictionary to
+      look up "sub" in.
+
 *** •low :: ?T_ADDR_RANGE -> ?T_CONST
 *** •high :: ?T_ADDR_RANGE -> ?T_CONST
 *** •arange :: ?T_CONST ?T_CONST -> ?T_ADDR_RANGE
+*** •length :: ?T_ADDR_RANGE -> ?T_CONST
+     (high low sub)
+
 *** •?contains :: ?T_ADDR_RANGE ?T_CONST
 *** •?contains :: ?T_ADDR_RANGE ?T_ADDR_RANGE
      Whether TOS is contained within below TOS.

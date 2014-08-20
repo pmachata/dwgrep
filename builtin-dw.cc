@@ -709,6 +709,24 @@ namespace
   };
 }
 
+// length
+namespace
+{
+  struct op_length_arange
+    : public op_overload <value_addr_range>
+  {
+    using op_overload::op_overload;
+
+    std::unique_ptr <value>
+    operate (std::unique_ptr <value_addr_range> a) override
+    {
+      return std::make_unique <value_cst>
+	(constant {a->get_high ().value () - a->get_low ().value (),
+		   &dec_constant_dom}, 0);
+    }
+  };
+}
+
 // ?contains
 namespace
 {
@@ -1169,6 +1187,14 @@ dwgrep_builtins_dw ()
     t->add_op_overload <op_arange_cst_cst> ();
 
     dict.add (std::make_shared <overloaded_op_builtin> ("arange", t));
+  }
+
+  {
+    auto t = std::make_shared <overload_tab> ();
+
+    t->add_op_overload <op_length_arange> ();
+
+    dict.add (std::make_shared <overloaded_op_builtin> ("length", t));
   }
 
   {
