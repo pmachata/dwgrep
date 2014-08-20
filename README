@@ -1221,7 +1221,7 @@
      Holds if this is an operation with this opcode.
 
 
-** ·T_ADDR_RANGE
+** •T_ADDR_RANGE
     - T_ADDR_RANGE actually behaves pretty much like a sequence of
       integers.  Maybe sequence could have an optimization whereby if
       it contains integers only, it just stores low×high pairs instead
@@ -1231,8 +1231,9 @@
       "elem" such that it can do something clever instead of
       enumerating all 64 bits of adress space or some such.
 
-    - Consider promoting this to core (T_RANGE).  Address ranges would
-      just use address-domained limits.
+    - XXX Consider promoting this to core (T_RANGE, T_INTERVAL or some
+      such).  Address ranges would be intervals whose limits are
+      T_CONST with dw_address_dom.
 
 *** •low :: ?T_ADDR_RANGE -> ?T_CONST
 *** •high :: ?T_ADDR_RANGE -> ?T_CONST
@@ -1244,7 +1245,7 @@
 *** •?overlaps :: ?T_ADDR_RANGE ?T_ADDR_RANGE
      Whether TOS and below TOS overlap.
 
-***  ?empty :: ?T_ADDR_RANGE
+*** •?empty :: ?T_ADDR_RANGE
      (low == high)
 
 * Examples

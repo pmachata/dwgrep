@@ -506,3 +506,7 @@ expect_count 1 ./empty -e '
 	?(6 11 arange ?overlaps) ?(7 11 arange ?overlaps)
 	?(8 11 arange ?overlaps) ?(9 11 arange ?overlaps)
 	?(10 11 arange !overlaps)'
+
+expect_count 1 ./empty -e '
+	5 10 arange !empty
+	5 5 arange ?empty'

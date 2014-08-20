@@ -774,6 +774,22 @@ namespace
   };
 }
 
+// ?empty
+namespace
+{
+  struct pred_emptyp_arange
+    : public pred_overload <value_addr_range>
+  {
+    using pred_overload::pred_overload;
+
+    pred_result
+    result (value_addr_range &a) override
+    {
+      return pred_result (a.get_low () == a.get_high ());
+    }
+  };
+}
+
 // @AT_*
 namespace
 {
@@ -1172,6 +1188,15 @@ dwgrep_builtins_dw ()
 
     dict.add (std::make_shared <overloaded_pred_builtin> ("?overlaps", t));
     dict.add (std::make_shared <overloaded_pred_builtin> ("!overlaps", t));
+  }
+
+  {
+    auto t = std::make_shared <overload_tab> ();
+
+    t->add_pred_overload <pred_emptyp_arange> ();
+
+    dict.add (std::make_shared <overloaded_pred_builtin> ("?empty", t));
+    dict.add (std::make_shared <overloaded_pred_builtin> ("!empty", t));
   }
 
   auto add_dw_at = [&dict] (unsigned code,
