@@ -46,13 +46,6 @@ value_type const value_dwarf::vtype = value_type::alloc ("T_DWARF");
 
 namespace
 {
-  void
-  destroy_dwfl (Dwfl *dwfl)
-  {
-    std::cerr << "\ndwfl_end (" << dwfl << ")\n";
-    dwfl_end (dwfl);
-  }
-
   std::shared_ptr <Dwfl>
   open_dwfl (std::string const &fn)
   {
@@ -68,10 +61,9 @@ namespace
 	.section_address = dwfl_offline_section_address,
       };
 
-    auto dwfl = std::shared_ptr <Dwfl> (dwfl_begin (&callbacks), destroy_dwfl);
+    auto dwfl = std::shared_ptr <Dwfl> (dwfl_begin (&callbacks), dwfl_end);
     if (dwfl == nullptr)
       throw_libdwfl ();
-    std::cerr << "\ndwfl_begin (" << dwfl << ")\n";
 
     dwfl_report_begin (&*dwfl);
     if (dwfl_report_offline (&*dwfl, fn.c_str (), fn.c_str (), fd) == nullptr)
