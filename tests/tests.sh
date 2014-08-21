@@ -524,5 +524,8 @@ expect_count 1 ./aranges.o -e '
 	([address] length == 2)
 	address (pos == 1) (== 0x1000e 0x10015 arange)'
 
+expect_count 1 ./pointer_const_value.o -e '
+	winfo @AT_const_value == 0'
+
 echo "$total tests total, $failures failures."
 [ $failures -eq 0 ]

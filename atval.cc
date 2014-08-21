@@ -297,25 +297,47 @@ namespace
 		break;
 	    }
 
-	  if (dwarf_tag (&type_die) != DW_TAG_base_type
-	      || ! dwarf_hasattr_integrate (&type_die, DW_AT_encoding))
+	  int tag = dwarf_tag (&type_die);
+	  if (tag == DW_TAG_pointer_type)
+	    return atval_unsigned_with_domain (attr, dw_address_dom);
+
+	  if (tag != DW_TAG_enumeration_type
+	      && (tag != DW_TAG_base_type
+		  || ! dwarf_hasattr_integrate (&type_die, DW_AT_encoding)))
 	    {
-	      // Ho hum.  This could be a structure, a pointer, or
-	      // something similarly useless.  See if it's a block
-	      // form at least.
+	      // Ho hum.  This could be a structure or something
+	      // similarly useless.  See if it's a block form at
+	      // least.
 	      break;
 	    }
 	  else
 	    {
-	      if (dwarf_attr_integrate (&type_die, DW_AT_encoding,
-					&at) == nullptr)
-		throw_libdw ();
+	      Dwarf_Word encoding;
+	      if (dwarf_hasattr_integrate (&type_die, DW_AT_encoding))
+		{
+		  if (dwarf_attr_integrate (&type_die, DW_AT_encoding,
+					    &at) == nullptr)
+		    throw_libdw ();
+		  if (dwarf_formudata (&at, &encoding) != 0)
+		    throw_libdw ();
+		}
 
-	      Dwarf_Word uval;
-	      if (dwarf_formudata (&at, &uval) != 0)
-		throw_libdw ();
+	      else if (tag == DW_TAG_enumeration_type)
+		{
+		  if (dwarf_hasattr_integrate (&type_die, DW_AT_type))
+		    // We can use this DW_AT_type to figure out
+		    // whether this is signed or unsigned.
+		    assert (! "unhandled: DW_AT_const_value on a DIE whose"
+			    " DW_AT_type is a DW_TAG_enumeration_type with"
+			    " DW_AT_type");
 
-	      switch (uval)
+		  std::cerr << "DW_AT_const_value on a DIE whose DW_AT_type is "
+		    "a DW_TAG_enumeration_type without DW_AT_encoding or "
+		    "DW_AT_type.  Assuming signed.\n";
+		  return atval_signed (attr);
+		}
+
+	      switch (encoding)
 		{
 		case DW_ATE_signed:
 		case DW_ATE_signed_char:
