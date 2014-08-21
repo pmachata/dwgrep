@@ -445,7 +445,7 @@ expect_count 1 ./bitcount.o -e '
 # high, low, address
 expect_count 1 ./bitcount.o -e '
 	[winfo @AT_location] elem (pos == 1) address
-	(high == 0x1a) (low == 0x17) (== 23 26 arange)'
+	(high == 0x1001a) (low == 0x10017) (== 65559 65562 arange)'
 
 expect_count 2 ./duplicate-const -e '
 	winfo attribute ?AT_high_pc
@@ -522,7 +522,7 @@ expect_count 1 ./empty -e '
 expect_count 1 ./aranges.o -e '
 	winfo ?TAG_lexical_block
 	([address] length == 2)
-	address (pos == 1) (== 0xe 0x15 arange)'
+	address (pos == 1) (== 0x1000e 0x10015 arange)'
 
 echo "$failures / $total failed"
 [ $failures -eq 0 ]
