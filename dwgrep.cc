@@ -51,54 +51,6 @@
 #include "tree.hh"
 #include "value-dw.hh"
 
-namespace
-{
-  inline void
-  throw_system ()
-  {
-    throw std::runtime_error
-      (std::error_code (errno, std::system_category ()).message ());
-  }
-}
-
-struct dwgrep_graph::pimpl
-{
-  parent_cache m_parcache;
-  root_cache m_rootcache;
-
-  Dwarf_Off
-  find_parent (Dwarf_Die die)
-  {
-    return m_parcache.find (die);
-  }
-
-  bool
-  is_root (Dwarf_Die die, Dwarf *dw)
-  {
-    return m_rootcache.is_root (die, dw);
-  }
-};
-
-dwgrep_graph::dwgrep_graph ()
-  : m_pimpl {std::make_unique <pimpl> ()}
-{}
-
-dwgrep_graph::~dwgrep_graph ()
-{}
-
-Dwarf_Off
-dwgrep_graph::find_parent (Dwarf_Die die)
-{
-  return m_pimpl->find_parent (die);
-}
-
-bool
-dwgrep_graph::is_root (Dwarf_Die die)
-{
-  std::cerr << "dwgrep_graph::is_root passing null to is_root\n";
-  return m_pimpl->is_root (die, nullptr);
-}
-
 int
 main(int argc, char *argv[])
 {

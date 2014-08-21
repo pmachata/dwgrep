@@ -26,24 +26,28 @@
    the GNU Lesser General Public License along with this program.  If
    not, see <http://www.gnu.org/licenses/>.  */
 
-#ifndef _ATVAL_H_
-#define _ATVAL_H_
+#ifndef _DWFL_CONTEXT_H_
+#define _DWFL_CONTEXT_H_
 
-#include "dwfl_context.hh"
+#include <memory>
+#include <elfutils/libdwfl.h>
 
-class value_producer;
+// This represents a Dwfl handle together with some query caches.
+class dwfl_context
+{
+  class pimpl;
+  std::unique_ptr <pimpl> m_pimpl;
+  std::shared_ptr <Dwfl> m_dwfl;
 
-// Obtain a value of ATTR at DIE.
-std::unique_ptr <value_producer>
-at_value (std::shared_ptr <dwfl_context> dwctx,
-	  Dwarf_Die die, Dwarf_Attribute attr);
+public:
+  explicit dwfl_context (std::shared_ptr <Dwfl> dwfl);
+  ~dwfl_context ();
 
-std::unique_ptr <value_producer>
-dwop_number (std::shared_ptr <dwfl_context> dwctx,
-	     Dwarf_Attribute const &attr, Dwarf_Op const *op);
+  Dwfl *get_dwfl ()
+  { return &*m_dwfl; }
 
-std::unique_ptr <value_producer>
-dwop_number2 (std::shared_ptr <dwfl_context> dwctx,
-	      Dwarf_Attribute const &attr, Dwarf_Op const *op);
+  Dwarf_Off find_parent (Dwarf_Die die);
+  bool is_root (Dwarf_Die die);
+};
 
-#endif /* _ATVAL_H_ */
+#endif /* _DWFL_CONTEXT_H_ */

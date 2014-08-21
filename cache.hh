@@ -65,6 +65,7 @@ class parent_cache
   unit_cache_t populate_unit (Dwarf_Die die);
 
 public:
+  static Dwarf_Off const no_off = (Dwarf_Off) -1;
   Dwarf_Off find (Dwarf_Die die);
 };
 

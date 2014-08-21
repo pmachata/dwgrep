@@ -68,7 +68,7 @@ parent_cache::unit_cache_t
 parent_cache::populate_unit (Dwarf_Die die)
 {
   unit_cache_t uc;
-  recursively_populate_unit (uc, die, dwgrep_graph::none_off);
+  recursively_populate_unit (uc, die, no_off);
   return uc;
 }
 

@@ -128,14 +128,15 @@ namespace
   struct locexpr_producer
     : public value_producer
   {
-    std::shared_ptr <Dwfl> m_dwfl;
+    std::shared_ptr <dwfl_context> m_dwctx;
     Dwarf_Attribute m_attr;
     Dwarf_Addr m_base;
     ptrdiff_t m_offset;
     size_t m_i;
 
-    locexpr_producer (std::shared_ptr <Dwfl> dwfl, Dwarf_Attribute attr)
-      : m_dwfl {dwfl}
+    locexpr_producer (std::shared_ptr <dwfl_context> dwctx,
+		      Dwarf_Attribute attr)
+      : m_dwctx {dwctx}
       , m_attr (attr)
       , m_offset {0}
       , m_i {0}
@@ -157,20 +158,20 @@ namespace
 	  return nullptr;
 	default:
 	  return std::make_unique <value_loclist_elem>
-	    (m_dwfl, m_attr, start, end, expr, exprlen, m_i++);
+	    (m_dwctx, m_attr, start, end, expr, exprlen, m_i++);
 	}
     }
   };
 
   std::unique_ptr <value_producer>
-  atval_locexpr (std::shared_ptr <Dwfl> dwfl, Dwarf_Attribute attr)
+  atval_locexpr (std::shared_ptr <dwfl_context> dwctx, Dwarf_Attribute attr)
   {
-    return std::make_unique <locexpr_producer> (dwfl, attr);
+    return std::make_unique <locexpr_producer> (dwctx, attr);
   }
 
   std::unique_ptr <value_producer>
   handle_at_dependent_value (Dwarf_Attribute attr, Dwarf_Die die,
-			     std::shared_ptr <Dwfl> dwfl)
+			     std::shared_ptr <dwfl_context> dwctx)
   {
     switch (dwarf_whatattr (&attr))
       {
@@ -385,7 +386,7 @@ namespace
       case DW_AT_location:
       case DW_AT_data_member_location:
       case DW_AT_vtable_elem_location:
-	return atval_locexpr (dwfl, attr);
+	return atval_locexpr (dwctx, attr);
 
       case DW_AT_ranges:
 	std::cerr << "address ranges NIY\n";
@@ -427,7 +428,8 @@ namespace
 }
 
 std::unique_ptr <value_producer>
-at_value (std::shared_ptr <Dwfl> dwfl, Dwarf_Die die, Dwarf_Attribute attr)
+at_value (std::shared_ptr <dwfl_context> dwctx,
+	  Dwarf_Die die, Dwarf_Attribute attr)
 {
   switch (dwarf_whatform (&attr))
     {
@@ -451,7 +453,7 @@ at_value (std::shared_ptr <Dwfl> dwfl, Dwarf_Die die, Dwarf_Attribute attr)
 	Dwarf_Die die;
 	if (dwarf_formref_die (&attr, &die) == nullptr)
 	  throw_libdw ();
-	return pass_single_value (std::make_unique <value_die> (dwfl, die, 0));
+	return pass_single_value (std::make_unique <value_die> (dwctx, die, 0));
       }
 
     case DW_FORM_sdata:
@@ -483,10 +485,10 @@ at_value (std::shared_ptr <Dwfl> dwfl, Dwarf_Die die, Dwarf_Attribute attr)
     case DW_FORM_block2:
     case DW_FORM_block4:
     case DW_FORM_block:
-      return handle_at_dependent_value (attr, die, dwfl);
+      return handle_at_dependent_value (attr, die, dwctx);
 
     case DW_FORM_exprloc:
-      return atval_locexpr (dwfl, attr);
+      return atval_locexpr (dwctx, attr);
 
     case DW_FORM_ref_sig8:
     case DW_FORM_GNU_ref_alt:
@@ -534,7 +536,7 @@ namespace
   // represents unary, both non-default represent binary op.
   template <unsigned N>
   std::unique_ptr <value_producer>
-  locexpr_op_values (std::shared_ptr <Dwfl> dwfl,
+  locexpr_op_values (std::shared_ptr <dwfl_context> dwctx,
 		     Dwarf_Attribute const &at, Dwarf_Op const *op)
   {
     auto signed_cst = [] (Dwarf_Word w, constant_dom const *dom)
@@ -613,7 +615,7 @@ namespace
 	    throw_libdw ();
 
 	  return select <N>
-	    (pass_single_value (std::make_unique <value_die> (dwfl, die, 0)),
+	    (pass_single_value (std::make_unique <value_die> (dwctx, die, 0)),
 	     pass_single_value (std::make_unique <value_cst>
 				(signed_cst (op->number2,
 					     &dec_constant_dom), 0)));
@@ -638,7 +640,7 @@ namespace
 	      (const_cast <Dwarf_Attribute *> (&at), op, &result) != 0)
 	    throw_libdw ();
 
-	  return select <N> (atval_locexpr (dwfl, result),
+	  return select <N> (atval_locexpr (dwctx, result),
 			     std::make_unique <null_producer> ());
 	}
       }
@@ -646,15 +648,15 @@ namespace
 }
 
 std::unique_ptr <value_producer>
-dwop_number (std::shared_ptr <Dwfl> dwfl,
+dwop_number (std::shared_ptr <dwfl_context> dwctx,
 	     Dwarf_Attribute const &attr, Dwarf_Op const *op)
 {
-  return locexpr_op_values <0> (dwfl, attr, op);
+  return locexpr_op_values <0> (dwctx, attr, op);
 }
 
 std::unique_ptr <value_producer>
-dwop_number2 (std::shared_ptr <Dwfl> dwfl,
+dwop_number2 (std::shared_ptr <dwfl_context> dwctx,
 	     Dwarf_Attribute const &attr, Dwarf_Op const *op)
 {
-  return locexpr_op_values <1> (dwfl, attr, op);
+  return locexpr_op_values <1> (dwctx, attr, op);
 }

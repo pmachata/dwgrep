@@ -86,7 +86,7 @@ namespace
 value_dwarf::value_dwarf (std::string const &fn, size_t pos)
   : value {vtype, pos}
   , m_fn {fn}
-  , m_dwfl {open_dwfl (fn)}
+  , m_dwctx {std::make_shared <dwfl_context> (open_dwfl (fn))}
 {}
 
 void
@@ -105,7 +105,7 @@ cmp_result
 value_dwarf::cmp (value const &that) const
 {
   if (auto v = value::as <value_dwarf> (&that))
-    return compare (m_dwfl, v->m_dwfl);
+    return compare (m_dwctx->get_dwfl (), v->m_dwctx->get_dwfl ());
   else
     return cmp_result::fail;
 }
@@ -127,7 +127,7 @@ value_die::show (std::ostream &o, brevity brv) const
     for (auto it = attr_iterator {die}; it != attr_iterator::end (); ++it)
       {
 	o << "\n\t";
-	value_attr {m_dwfl, **it, m_die, 0}.show (o, brevity::full);
+	value_attr {m_dwctx, **it, m_die, 0}.show (o, brevity::full);
       }
 }
 
@@ -159,7 +159,7 @@ value_attr::show (std::ostream &o, brevity brv) const
   ios_flag_saver s {o};
   o << constant (name, &dw_attr_dom, brevity::brief) << " ("
     << constant (form, &dw_form_dom, brevity::brief) << ")\t";
-  auto vpr = at_value (m_dwfl, m_die, m_attr);
+  auto vpr = at_value (m_dwctx, m_die, m_attr);
   while (auto v = vpr->next ())
     {
       if (auto d = value::as <value_die> (v.get ()))
@@ -199,13 +199,13 @@ namespace
 {
   void
   show_loclist_op (std::ostream &o, brevity brv,
-		   std::shared_ptr <Dwfl> dwfl,
+		   std::shared_ptr <dwfl_context> dwctx,
 		   Dwarf_Attribute const &attr, Dwarf_Op *dwop)
   {
     o << dwop->offset << ':'
       << constant {dwop->atom, &dw_locexpr_opcode_dom, brevity::brief};
     {
-      auto prod = dwop_number (dwfl, attr, dwop);
+      auto prod = dwop_number (dwctx, attr, dwop);
       while (auto v = prod->next ())
 	{
 	  o << "<";
@@ -216,7 +216,7 @@ namespace
 
     {
       bool sep = false;
-      auto prod = dwop_number2 (dwfl, attr, dwop);
+      auto prod = dwop_number2 (dwctx, attr, dwop);
       while (auto v = prod->next ())
 	{
 	  if (! sep)
@@ -249,7 +249,7 @@ value_loclist_elem::show (std::ostream &o, brevity brv) const
     {
       if (i > 0)
 	o << ", ";
-      show_loclist_op (o, brv, m_dwfl, m_attr, m_expr + i);
+      show_loclist_op (o, brv, m_dwctx, m_attr, m_expr + i);
     }
   o << "]";
 }
@@ -324,7 +324,7 @@ value_type const value_loclist_op::vtype = value_type::alloc ("T_LOCLIST_OP");
 void
 value_loclist_op::show (std::ostream &o, brevity brv) const
 {
-  show_loclist_op (o, brv, m_dwfl, m_attr, m_dwop);
+  show_loclist_op (o, brv, m_dwctx, m_attr, m_dwop);
 }
 
 std::unique_ptr <value>

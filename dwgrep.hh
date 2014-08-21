@@ -32,8 +32,6 @@
 #include <memory>
 #include <vector>
 
-#include <elfutils/libdw.h> // XXX
-
 struct builtin_dict;
 std::unique_ptr <builtin_dict> dwgrep_builtins_core ();
 
@@ -41,18 +39,11 @@ std::unique_ptr <builtin_dict> dwgrep_builtins_core ();
 // and any associated caches.
 class dwgrep_graph
 {
-  class pimpl;
-  std::unique_ptr <pimpl> m_pimpl;
-
 public:
   typedef std::shared_ptr <dwgrep_graph> sptr;
 
-  dwgrep_graph ();
-  ~dwgrep_graph ();
-
-  static Dwarf_Off const none_off = (Dwarf_Off) -1;
-  Dwarf_Off find_parent (Dwarf_Die die);
-  bool is_root (Dwarf_Die die);
+  dwgrep_graph () {}
+  ~dwgrep_graph () {}
 };
 
 class dwgrep_expr

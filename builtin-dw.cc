@@ -43,6 +43,7 @@
 #include "value-cst.hh"
 #include "value-str.hh"
 #include "value-dw.hh"
+#include "cache.hh"
 
 // dwopen
 namespace
@@ -69,13 +70,13 @@ namespace
     struct winfo_producer
       : public value_producer
     {
-      std::shared_ptr <Dwfl> m_dwfl;
+      std::shared_ptr <dwfl_context> m_dwctx;
       all_dies_iterator m_it;
       size_t m_i;
       ptrdiff_t m_offset;
 
-      winfo_producer (std::shared_ptr <Dwfl> dwfl)
-	: m_dwfl {(assert (dwfl != nullptr), dwfl)}
+      winfo_producer (std::shared_ptr <dwfl_context> dwctx)
+	: m_dwctx {(assert (dwctx != nullptr), dwctx)}
 	, m_it {all_dies_iterator::end ()}
 	, m_i {0}
 	, m_offset {0}
@@ -103,7 +104,8 @@ namespace
 	      };
 
 	    result ret;
-	    m_offset = dwfl_getmodules (&*m_dwfl, cb, &ret, m_offset);
+	    m_offset = dwfl_getmodules (m_dwctx->get_dwfl (), cb,
+					&ret, m_offset);
 	    if (m_offset < 0)
 	      throw_libdwfl ();
 	    if (m_offset == 0)
@@ -113,7 +115,7 @@ namespace
 	    m_it = all_dies_iterator (ret.dw);
 	  }
 
-	return std::make_unique <value_die> (m_dwfl, **m_it++, m_i++);
+	return std::make_unique <value_die> (m_dwctx, **m_it++, m_i++);
       }
     };
 
@@ -122,7 +124,7 @@ namespace
     std::unique_ptr <value_producer>
     operate (std::unique_ptr <value_dwarf> a) override
     {
-      return std::make_unique <winfo_producer> (a->get_dwfl ());
+      return std::make_unique <winfo_producer> (a->get_dwctx ());
     }
   };
 }
@@ -133,13 +135,13 @@ namespace
   struct producer_unit_die
     : public value_producer
   {
-    std::shared_ptr <Dwfl> m_dwfl;
+    std::shared_ptr <dwfl_context> m_dwctx;
     all_dies_iterator m_it;
     all_dies_iterator m_end;
     size_t m_i;
 
-    producer_unit_die (std::shared_ptr <Dwfl> dwfl, Dwarf_Die die)
-      : m_dwfl {dwfl}
+    producer_unit_die (std::shared_ptr <dwfl_context> dwctx, Dwarf_Die die)
+      : m_dwctx {dwctx}
       , m_it {all_dies_iterator::end ()}
       , m_end {all_dies_iterator::end ()}
       , m_i {0}
@@ -161,7 +163,7 @@ namespace
       if (m_it == m_end)
 	return nullptr;
 
-      return std::make_unique <value_die> (m_dwfl, **m_it++, m_i++);
+      return std::make_unique <value_die> (m_dwctx, **m_it++, m_i++);
     }
   };
 
@@ -174,7 +176,7 @@ namespace
     operate (std::unique_ptr <value_die> a) override
     {
       return std::make_unique <producer_unit_die>
-	(a->get_dwfl (), a->get_die ());
+	(a->get_dwctx (), a->get_die ());
     }
   };
 
@@ -187,7 +189,7 @@ namespace
     operate (std::unique_ptr <value_attr> a) override
     {
       return std::make_unique <producer_unit_die>
-	(a->get_dwfl (), a->get_die ());
+	(a->get_dwctx (), a->get_die ());
     }
   };
 }
@@ -222,7 +224,7 @@ namespace
 	  {
 	  case 0:
 	    m_child = std::make_unique <value_die>
-	      (ret->get_dwfl (), child, ret->get_pos () + 1);
+	      (ret->get_dwctx (), child, ret->get_pos () + 1);
 	  case 1: // no more siblings
 	    return std::move (ret);
 	  }
@@ -241,7 +243,7 @@ namespace
 	  if (dwarf_child (die, &child) != 0)
 	    throw_libdw ();
 
-	  auto value = std::make_unique <value_die> (a->get_dwfl (), child, 0);
+	  auto value = std::make_unique <value_die> (a->get_dwctx (), child, 0);
 	  return std::make_unique <producer> (std::move (value));
 	}
 
@@ -271,7 +273,7 @@ namespace
       size_t idx = m_i++;
       if (idx < m_value->get_exprlen ())
 	return std::make_unique <value_loclist_op>
-	  (m_value->get_dwfl (), m_value->get_attr (),
+	  (m_value->get_dwctx (), m_value->get_attr (),
 	   T::get_expr (*m_value, idx), idx);
       else
 	return nullptr;
@@ -353,7 +355,7 @@ namespace
       {
 	if (m_it != attr_iterator::end ())
 	  return std::make_unique <value_attr>
-	    (m_value->get_dwfl (), **m_it++, m_value->get_die (), m_i++);
+	    (m_value->get_dwctx (), **m_it++, m_value->get_die (), m_i++);
 	else
 	  return nullptr;
       }
@@ -573,8 +575,8 @@ namespace
     std::unique_ptr <value>
     operate (std::unique_ptr <value_die> a) override
     {
-      Dwarf_Off par_off = m_gr->find_parent (a->get_die ());
-      if (par_off == dwgrep_graph::none_off)
+      Dwarf_Off par_off = a->get_dwctx ()->find_parent (a->get_die ());
+      if (par_off == parent_cache::no_off)
 	return nullptr;
 
       Dwarf_Die par_die;
@@ -582,7 +584,7 @@ namespace
 			par_off, &par_die) == nullptr)
 	throw_libdw ();
 
-      return std::make_unique <value_die> (a->get_dwfl (), par_die, 0);
+      return std::make_unique <value_die> (a->get_dwctx (), par_die, 0);
     }
   };
 
@@ -594,7 +596,7 @@ namespace
     std::unique_ptr <value>
     operate (std::unique_ptr <value_attr> a) override
     {
-      return std::make_unique <value_die> (a->get_dwfl (), a->get_die (), 0);
+      return std::make_unique <value_die> (a->get_dwctx (), a->get_die (), 0);
     }
   };
 }
@@ -623,7 +625,7 @@ namespace
       if (die2 == nullptr)
 	throw_libdw ();
 
-      return std::make_unique <value_die> (val->get_dwfl (), *die2, 0);
+      return std::make_unique <value_die> (val->get_dwctx (), *die2, 0);
     }
   };
 
@@ -652,7 +654,7 @@ namespace
     pred_result
     result (value_die &a) override
     {
-      return pred_result (m_gr->is_root (a.get_die ()));
+      return pred_result (a.get_dwctx ()->is_root (a.get_die ()));
     }
   };
 
@@ -681,7 +683,7 @@ namespace
     std::unique_ptr <value_producer>
     operate (std::unique_ptr <value_attr> a) override
     {
-      return at_value (a->get_dwfl (), a->get_die (), a->get_attr ());
+      return at_value (a->get_dwctx (), a->get_die (), a->get_attr ());
     }
   };
 
@@ -694,8 +696,8 @@ namespace
     operate (std::unique_ptr <value_loclist_op> a) override
     {
       return std::make_unique <value_producer_cat>
-	(dwop_number (a->get_dwfl (), a->get_attr (), a->get_dwop ()),
-	 dwop_number2 (a->get_dwfl (), a->get_attr (), a->get_dwop ()));
+	(dwop_number (a->get_dwctx (), a->get_attr (), a->get_dwop ()),
+	 dwop_number2 (a->get_dwctx (), a->get_attr (), a->get_dwop ()));
     }
   };
 }
@@ -899,7 +901,7 @@ namespace
       if (dwarf_attr (&a->get_die (), m_atname, &attr) == nullptr)
 	return false;
 
-      return at_value (a->get_dwfl (), a->get_die (), attr);
+      return at_value (a->get_dwctx (), a->get_die (), attr);
     }
   };
 }

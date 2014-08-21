@@ -31,12 +31,13 @@
 
 #include <elfutils/libdwfl.h>
 #include "value.hh"
+#include "dwfl_context.hh"
 
 class value_dwarf
   : public value
 {
   std::string m_fn;
-  std::shared_ptr <Dwfl> m_dwfl;
+  std::shared_ptr <dwfl_context> m_dwctx;
 
 public:
   static value_type const vtype;
@@ -47,8 +48,8 @@ public:
   std::string &get_fn ()
   { return m_fn; }
 
-  std::shared_ptr <Dwfl> get_dwfl ()
-  { return m_dwfl; }
+  std::shared_ptr <dwfl_context> get_dwctx ()
+  { return m_dwctx; }
 
   void show (std::ostream &o, brevity brv) const override;
   std::unique_ptr <value> clone () const override;
@@ -58,15 +59,15 @@ public:
 class value_die
   : public value
 {
-  std::shared_ptr <Dwfl> m_dwfl;
+  std::shared_ptr <dwfl_context> m_dwctx;
   Dwarf_Die m_die;
 
 public:
   static value_type const vtype;
 
-  value_die (std::shared_ptr <Dwfl> dwfl, Dwarf_Die die, size_t pos)
+  value_die (std::shared_ptr <dwfl_context> dwctx, Dwarf_Die die, size_t pos)
     : value {vtype, pos}
-    , m_dwfl {(assert (dwfl != nullptr), dwfl)}
+    , m_dwctx {(assert (dwctx != nullptr), dwctx)}
     , m_die (die)
   {}
 
@@ -75,8 +76,8 @@ public:
   Dwarf_Die &get_die ()
   { return m_die; }
 
-  std::shared_ptr <Dwfl> get_dwfl ()
-  { return m_dwfl; }
+  std::shared_ptr <dwfl_context> get_dwctx ()
+  { return m_dwctx; }
 
   void show (std::ostream &o, brevity brv) const override;
   std::unique_ptr <value> clone () const override;
@@ -86,25 +87,25 @@ public:
 class value_attr
   : public value
 {
-  std::shared_ptr <Dwfl> m_dwfl;
+  std::shared_ptr <dwfl_context> m_dwctx;
   Dwarf_Die m_die;
   Dwarf_Attribute m_attr;
 
 public:
   static value_type const vtype;
 
-  value_attr (std::shared_ptr <Dwfl> dwfl,
+  value_attr (std::shared_ptr <dwfl_context> dwctx,
 	      Dwarf_Attribute attr, Dwarf_Die die, size_t pos)
     : value {vtype, pos}
-    , m_dwfl {dwfl}
+    , m_dwctx {dwctx}
     , m_die (die)
     , m_attr (attr)
   {}
 
   value_attr (value_attr const &that) = default;
 
-  std::shared_ptr <Dwfl> get_dwfl ()
-  { return m_dwfl; }
+  std::shared_ptr <dwfl_context> get_dwctx ()
+  { return m_dwctx; }
 
   Dwarf_Die &get_die ()
   { return m_die; }
@@ -120,7 +121,7 @@ public:
 class value_loclist_elem
   : public value
 {
-  std::shared_ptr <Dwfl> m_dwfl;
+  std::shared_ptr <dwfl_context> m_dwctx;
   Dwarf_Attribute m_attr;
   Dwarf_Addr m_low;
   Dwarf_Addr m_high;
@@ -130,11 +131,11 @@ class value_loclist_elem
 public:
   static value_type const vtype;
 
-  value_loclist_elem (std::shared_ptr <Dwfl> dwfl, Dwarf_Attribute attr,
+  value_loclist_elem (std::shared_ptr <dwfl_context> dwctx, Dwarf_Attribute attr,
 		      Dwarf_Addr low, Dwarf_Addr high,
 		      Dwarf_Op *expr, size_t exprlen, size_t pos)
     : value {vtype, pos}
-    , m_dwfl {dwfl}
+    , m_dwctx {dwctx}
     , m_attr (attr)
     , m_low {low}
     , m_high {high}
@@ -144,8 +145,8 @@ public:
 
   value_loclist_elem (value_loclist_elem const &that) = default;
 
-  std::shared_ptr <Dwfl> get_dwfl ()
-  { return m_dwfl; }
+  std::shared_ptr <dwfl_context> get_dwctx ()
+  { return m_dwctx; }
 
   Dwarf_Attribute &get_attr ()
   { return m_attr; }
@@ -201,25 +202,25 @@ class value_loclist_op
   // This apparently wild pointer points into libdw-private data.  We
   // actually need to carry a pointer, as some functions require that
   // they be called with the original pointer, not our own copy.
-  std::shared_ptr <Dwfl> m_dwfl;
+  std::shared_ptr <dwfl_context> m_dwctx;
   Dwarf_Attribute m_attr;
   Dwarf_Op *m_dwop;
 
 public:
   static value_type const vtype;
 
-  value_loclist_op (std::shared_ptr <Dwfl> dwfl, Dwarf_Attribute attr,
+  value_loclist_op (std::shared_ptr <dwfl_context> dwctx, Dwarf_Attribute attr,
 		    Dwarf_Op *dwop, size_t pos)
     : value {vtype, pos}
-    , m_dwfl {dwfl}
+    , m_dwctx {dwctx}
     , m_attr (attr)
     , m_dwop (dwop)
   {}
 
   value_loclist_op (value_loclist_op const &that) = default;
 
-  std::shared_ptr <Dwfl> get_dwfl ()
-  { return m_dwfl; }
+  std::shared_ptr <dwfl_context> get_dwctx ()
+  { return m_dwctx; }
 
   Dwarf_Attribute &get_attr ()
   { return m_attr; }
