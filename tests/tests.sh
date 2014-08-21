@@ -1,7 +1,11 @@
 #!/bin/sh
 
+failures=0
+total=0
+
 expect_count ()
 {
+    export total=$((total + 1))
     COUNT=$1
     shift
     GOT=$(timeout 10 ../dwgrep -c "$@" 2>/dev/null)
@@ -9,9 +13,7 @@ expect_count ()
 	echo "FAIL: dwgrep -c" "$@"
 	echo "expected: $COUNT"
 	echo "     got: $GOT"
-	exit 1
-    else
-	echo "PASS: dwgrep -c" "$@"
+	export failures=$((failures + 1))
     fi
 }
 
@@ -519,3 +521,5 @@ expect_count 1 ./aranges.o -e '
 	winfo ?TAG_lexical_block
 	([address] length == 2)
 	address (pos == 1) (== 0xe 0x15 arange)'
+
+echo "$failures / $total failed"
