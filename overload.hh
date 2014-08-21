@@ -81,7 +81,7 @@ public:
   overload_instance (std::vector
 			<std::tuple <selector,
 				     std::shared_ptr <builtin>>> const &stencil,
-		     dwgrep_graph::sptr q, std::shared_ptr <scope> scope);
+		     std::shared_ptr <scope> scope);
 
   std::pair <std::shared_ptr <op_origin>, std::shared_ptr <op>>
     find_exec (stack &stk);
@@ -105,8 +105,7 @@ public:
   template <class T, class... As> void add_op_overload (As &&... arg);
   template <class T, class... As> void add_pred_overload (As &&... arg);
 
-  overload_instance instantiate (dwgrep_graph::sptr q,
-				 std::shared_ptr <scope> scope);
+  overload_instance instantiate (std::shared_ptr <scope> scope);
 };
 
 class overload_op
@@ -173,7 +172,6 @@ struct overloaded_op_builtin
   using overloaded_builtin::overloaded_builtin;
 
   std::shared_ptr <op> build_exec (std::shared_ptr <op> upstream,
-				   dwgrep_graph::sptr q,
 				   std::shared_ptr <scope> scope)
     const override final;
 
@@ -187,8 +185,7 @@ struct overloaded_pred_builtin
 {
   using overloaded_builtin::overloaded_builtin;
 
-  std::unique_ptr <pred> build_pred (dwgrep_graph::sptr q,
-				     std::shared_ptr <scope> scope)
+  std::unique_ptr <pred> build_pred (std::shared_ptr <scope> scope)
     const override final;
 
   std::shared_ptr <overloaded_builtin>
@@ -204,12 +201,12 @@ struct overload_op_builder_impl
 {
   template <size_t... I>
   static std::shared_ptr <op>
-  build (std::shared_ptr <op> upstream, dwgrep_graph::sptr q,
+  build (std::shared_ptr <op> upstream,
 	 std::shared_ptr <scope> scope,
 	 std::index_sequence <I...>,
 	 std::tuple <std::remove_reference_t <Args>...> const &args)
   {
-    return std::make_shared <Op> (upstream, q, scope, std::get <I> (args)...);
+    return std::make_shared <Op> (upstream, scope, std::get <I> (args)...);
   }
 };
 
@@ -227,11 +224,11 @@ overload_tab::add_op_overload (Args &&... args)
     {}
 
     std::shared_ptr <op>
-    build_exec (std::shared_ptr <op> upstream, dwgrep_graph::sptr q,
+    build_exec (std::shared_ptr <op> upstream,
 		std::shared_ptr <scope> scope) const override final
     {
       return overload_op_builder_impl <Op, Args...>::template build
-	(upstream, q, scope, std::index_sequence_for <Args...> {}, m_args);
+	(upstream, scope, std::index_sequence_for <Args...> {}, m_args);
     }
 
     char const *
@@ -256,11 +253,11 @@ struct overload_pred_builder_impl
 {
   template <size_t... I>
   static std::unique_ptr <pred>
-  build (dwgrep_graph::sptr q, std::shared_ptr <scope> scope,
+  build (std::shared_ptr <scope> scope,
 	 std::index_sequence <I...>,
 	 std::tuple <std::remove_reference_t <Args>...> const &args)
   {
-    return std::make_unique <Pred> (q, scope, std::get <I> (args)...);
+    return std::make_unique <Pred> (scope, std::get <I> (args)...);
   }
 };
 
@@ -278,11 +275,11 @@ overload_tab::add_pred_overload (Args &&... args)
     {}
 
     std::unique_ptr <pred>
-    build_pred (dwgrep_graph::sptr q,std::shared_ptr <scope> scope)
+    build_pred (std::shared_ptr <scope> scope)
       const override final
     {
       return overload_pred_builder_impl <Pred, Args...>::template build
-        (q, scope, std::index_sequence_for <Args...> {}, m_args);
+        (scope, std::index_sequence_for <Args...> {}, m_args);
     }
 
     char const *
@@ -366,14 +363,10 @@ struct op_overload
     return operate (std::move (std::get <I> (args))...);
   }
 
-protected:
-  dwgrep_graph::sptr m_gr;
-
 public:
-  op_overload (std::shared_ptr <op> upstream, dwgrep_graph::sptr gr,
+  op_overload (std::shared_ptr <op> upstream,
 	       std::shared_ptr <scope> scope)
-    : stub_op {upstream, gr, scope}
-    , m_gr {gr}
+    : stub_op {upstream, scope}
   {}
 
   stack::uptr
@@ -417,14 +410,10 @@ class op_yielding_overload
     m_stk = nullptr;
   }
 
-protected:
-  dwgrep_graph::sptr m_gr;
-
 public:
-  op_yielding_overload (std::shared_ptr <op> upstream, dwgrep_graph::sptr gr,
+  op_yielding_overload (std::shared_ptr <op> upstream,
 			std::shared_ptr <scope> scope)
-    : stub_op {upstream, gr, scope}
-    , m_gr {gr}
+    : stub_op {upstream, scope}
   {}
 
   stack::uptr
@@ -497,13 +486,9 @@ struct pred_overload
     return result (std::get <I> (args)...);
   }
 
-protected:
-  dwgrep_graph::sptr m_gr;
-
 public:
-  pred_overload (dwgrep_graph::sptr gr, std::shared_ptr <scope> scope)
-    : stub_pred {gr, scope}
-    , m_gr {gr}
+  pred_overload (std::shared_ptr <scope> scope)
+    : stub_pred {scope}
   {}
 
   pred_result

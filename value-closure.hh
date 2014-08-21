@@ -39,24 +39,19 @@ class value_closure
   : public value
 {
   std::unique_ptr <tree> m_t;
-  dwgrep_graph::sptr m_q;
   std::shared_ptr <scope> m_scope;
   std::shared_ptr <frame> m_frame;
 
 public:
   static value_type const vtype;
 
-  value_closure (tree const &t, dwgrep_graph::sptr q,
-		 std::shared_ptr <scope> scope, std::shared_ptr <frame> frame,
-		 size_t pos);
+  value_closure (tree const &t, std::shared_ptr <scope> scope,
+		 std::shared_ptr <frame> frame, size_t pos);
   value_closure (value_closure const &that);
   ~value_closure();
 
   tree const &get_tree () const
   { return *m_t; }
-
-  dwgrep_graph::sptr get_graph () const
-  { return m_q; }
 
   std::shared_ptr <scope> get_scope () const
   { return m_scope; }

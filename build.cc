@@ -38,28 +38,28 @@
 #include "value-str.hh"
 
 std::unique_ptr <pred>
-tree::build_pred (dwgrep_graph::sptr q, std::shared_ptr <scope> scope) const
+tree::build_pred (std::shared_ptr <scope> scope) const
 {
   switch (m_tt)
     {
     case tree_type::PRED_NOT:
-      return std::make_unique <pred_not> (child (0).build_pred (q, scope));
+      return std::make_unique <pred_not> (child (0).build_pred (scope));
 
     case tree_type::PRED_OR:
       return std::make_unique <pred_or>
-	(m_children[0].build_pred (q, scope),
-	 m_children[1].build_pred (q, scope));
+	(m_children[0].build_pred (scope),
+	 m_children[1].build_pred (scope));
 
     case tree_type::PRED_AND:
       return std::make_unique <pred_and>
-	(m_children[0].build_pred (q, scope),
-	 m_children[1].build_pred (q, scope));
+	(m_children[0].build_pred (scope),
+	 m_children[1].build_pred (scope));
 
     case tree_type::PRED_SUBX_ANY:
       {
 	assert (m_children.size () == 1);
 	auto origin = std::make_shared <op_origin> (nullptr);
-	auto op = child (0).build_exec (origin, q, scope);
+	auto op = child (0).build_exec (origin, scope);
 	return std::make_unique <pred_subx_any> (op, origin);
       }
 
@@ -67,15 +67,15 @@ tree::build_pred (dwgrep_graph::sptr q, std::shared_ptr <scope> scope) const
       {
 	assert (m_children.size () == 3);
 	auto origin = std::make_shared <op_origin> (nullptr);
-	auto op1 = child (0).build_exec (origin, q, scope);
-	auto op2 = child (1).build_exec (origin, q, scope);
-	auto pred = child (2).build_pred (q, scope);
+	auto op1 = child (0).build_exec (origin, scope);
+	auto op2 = child (1).build_exec (origin, scope);
+	auto pred = child (2).build_pred (scope);
 	return std::make_unique <pred_subx_compare> (op1, op2, origin,
 						     std::move (pred));
       }
 
     case tree_type::F_BUILTIN:
-      return m_builtin->build_pred (q, scope);
+      return m_builtin->build_pred (scope);
 
     case tree_type::CAT:
     case tree_type::NOP:
@@ -102,7 +102,7 @@ tree::build_pred (dwgrep_graph::sptr q, std::shared_ptr <scope> scope) const
 }
 
 std::shared_ptr <op>
-tree::build_exec (std::shared_ptr <op> upstream, dwgrep_graph::sptr q,
+tree::build_exec (std::shared_ptr <op> upstream,
 		  std::shared_ptr <scope> scope) const
 {
   if (upstream == nullptr)
@@ -112,7 +112,7 @@ tree::build_exec (std::shared_ptr <op> upstream, dwgrep_graph::sptr q,
     {
     case tree_type::CAT:
       for (auto const &tree: m_children)
-	upstream = tree.build_exec (upstream, q, scope);
+	upstream = tree.build_exec (upstream, scope);
       return upstream;
 
     case tree_type::ALT:
@@ -127,10 +127,10 @@ tree::build_exec (std::shared_ptr <op> upstream, dwgrep_graph::sptr q,
 	    ops.push_back (std::make_shared <op_tine> (upstream, f, done, i));
 	}
 
-	auto build_branch = [&q, &scope] (tree const &ch,
+	auto build_branch = [&scope] (tree const &ch,
 					  std::shared_ptr <op> o)
 	  {
-	    return ch.build_exec (o, q, scope);
+	    return ch.build_exec (o, scope);
 	  };
 
 	std::transform (m_children.begin (), m_children.end (),
@@ -145,7 +145,7 @@ tree::build_exec (std::shared_ptr <op> upstream, dwgrep_graph::sptr q,
 	for (auto const &tree: m_children)
 	  {
 	    auto origin2 = std::make_shared <op_origin> (nullptr);
-	    auto op = tree.build_exec (origin2, q, scope);
+	    auto op = tree.build_exec (origin2, scope);
 	    o->add_branch (origin2, op);
 	  }
 	return o;
@@ -156,16 +156,16 @@ tree::build_exec (std::shared_ptr <op> upstream, dwgrep_graph::sptr q,
 
     case tree_type::F_BUILTIN:
       {
-	if (auto pred = build_pred (q, scope))
+	if (auto pred = build_pred (scope))
 	  return std::make_shared <op_assert> (upstream, std::move (pred));
-	auto op = m_builtin->build_exec (upstream, q, scope);
+	auto op = m_builtin->build_exec (upstream, scope);
 	assert (op != nullptr);
 	return op;
       }
 
     case tree_type::ASSERT:
       return std::make_shared <op_assert>
-	(upstream, child (0).build_pred (q, scope));
+	(upstream, child (0).build_pred (scope));
 
     case tree_type::FORMAT:
       {
@@ -177,7 +177,7 @@ tree::build_exec (std::shared_ptr <op> upstream, dwgrep_graph::sptr q,
 	  else
 	    {
 	      auto origin2 = std::make_shared <op_origin> (nullptr);
-	      auto op = tree.build_exec (origin2, q, scope);
+	      auto op = tree.build_exec (origin2, scope);
 	      strgr = std::make_shared <stringer_op> (strgr, origin2, op);
 	    }
 
@@ -205,14 +205,14 @@ tree::build_exec (std::shared_ptr <op> upstream, dwgrep_graph::sptr q,
     case tree_type::CAPTURE:
       {
 	auto origin = std::make_shared <op_origin> (nullptr);
-	auto op = child (0).build_exec (origin, q, scope);
+	auto op = child (0).build_exec (origin, scope);
 	return std::make_shared <op_capture> (upstream, origin, op);
       }
 
     case tree_type::SUBX_EVAL:
       {
 	auto origin = std::make_shared <op_origin> (nullptr);
-	auto op = child (0).build_exec (origin, q, scope);
+	auto op = child (0).build_exec (origin, scope);
 	return std::make_shared <op_subx> (upstream, origin, op,
 					   cst ().value ().uval ());
       }
@@ -220,21 +220,21 @@ tree::build_exec (std::shared_ptr <op> upstream, dwgrep_graph::sptr q,
     case tree_type::CLOSE_STAR:
       {
 	auto origin = std::make_shared <op_origin> (nullptr);
-	auto op = child (0).build_exec (origin, q, scope);
+	auto op = child (0).build_exec (origin, scope);
 	return std::make_shared <op_tr_closure> (upstream, origin, op);
       }
 
     case tree_type::SCOPE:
       {
 	auto origin = std::make_shared <op_origin> (nullptr);
-	auto op = child (0).build_exec (origin, q, scp ());
+	auto op = child (0).build_exec (origin, scp ());
 	return std::make_shared <op_scope> (upstream, origin, op,
 					    scp ()->num_names ());
       }
 
     case tree_type::BLOCK:
       assert (scp () == nullptr);
-      return std::make_shared <op_lex_closure> (upstream, child (0), q, scope);
+      return std::make_shared <op_lex_closure> (upstream, child (0), scope);
 
     case tree_type::BIND:
     case tree_type::READ:
@@ -270,13 +270,13 @@ tree::build_exec (std::shared_ptr <op> upstream, dwgrep_graph::sptr q,
     case tree_type::IFELSE:
       {
 	auto cond_origin = std::make_shared <op_origin> (nullptr);
-	auto cond_op = child (0).build_exec (cond_origin, q, scope);
+	auto cond_op = child (0).build_exec (cond_origin, scope);
 
 	auto then_origin = std::make_shared <op_origin> (nullptr);
-	auto then_op = child (1).build_exec (then_origin, q, scope);
+	auto then_op = child (1).build_exec (then_origin, scope);
 
 	auto else_origin = std::make_shared <op_origin> (nullptr);
-	auto else_op = child (2).build_exec (else_origin, q, scope);
+	auto else_op = child (2).build_exec (else_origin, scope);
 
 	return std::make_shared <op_ifelse> (upstream, cond_origin, cond_op,
 					     then_origin, then_op,

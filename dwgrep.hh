@@ -35,17 +35,6 @@
 struct builtin_dict;
 std::unique_ptr <builtin_dict> dwgrep_builtins_core ();
 
-// A dwgrep_graph object represents a graph that we want to explore,
-// and any associated caches.
-class dwgrep_graph
-{
-public:
-  typedef std::shared_ptr <dwgrep_graph> sptr;
-
-  dwgrep_graph () {}
-  ~dwgrep_graph () {}
-};
-
 class dwgrep_expr
 {
   class pimpl;
@@ -57,8 +46,7 @@ public:
   explicit dwgrep_expr (std::string const &str);
   ~dwgrep_expr ();
 
-  result query (std::shared_ptr <dwgrep_graph> p);
-  result query (dwgrep_graph p);
+  result query ();
 };
 
 class dwgrep_expr::result

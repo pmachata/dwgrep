@@ -34,18 +34,17 @@
 
 value_type const value_closure::vtype = value_type::alloc ("T_CLOSURE");
 
-value_closure::value_closure (tree const &t, dwgrep_graph::sptr q,
+value_closure::value_closure (tree const &t,
 			      std::shared_ptr <scope> scope,
 			      std::shared_ptr <frame> frame, size_t pos)
   : value {vtype, pos}
   , m_t {std::make_unique <tree> (t)}
-  , m_q {q}
   , m_scope {scope}
   , m_frame {frame}
 {}
 
 value_closure::value_closure (value_closure const &that)
-  : value_closure {*that.m_t, that.m_q, that.m_scope, that.m_frame,
+  : value_closure {*that.m_t, that.m_scope, that.m_frame,
 		   that.get_pos ()}
 {}
 

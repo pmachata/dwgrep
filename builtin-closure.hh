@@ -52,7 +52,6 @@ struct builtin_apply
   : public builtin
 {
   std::shared_ptr <op> build_exec (std::shared_ptr <op> upstream,
-				   dwgrep_graph::sptr q,
 				   std::shared_ptr <scope> scope)
     const override;
 

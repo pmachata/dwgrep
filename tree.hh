@@ -193,12 +193,12 @@ public:
   // nullptr if this is the toplevel-most expression, otherwise it
   // should be a valid op that the op produced by this node feeds off.
   std::shared_ptr <op>
-  build_exec (std::shared_ptr <op> upstream, dwgrep_graph::sptr q,
+  build_exec (std::shared_ptr <op> upstream,
 	      std::shared_ptr <scope> scope = {}) const;
 
   // Produce program suitable for interpretation.
   std::unique_ptr <pred>
-  build_pred (dwgrep_graph::sptr q, std::shared_ptr <scope> scope) const;
+  build_pred (std::shared_ptr <scope> scope) const;
 
   // === Parser interface ===
   //

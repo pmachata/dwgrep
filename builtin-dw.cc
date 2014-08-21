@@ -888,9 +888,9 @@ namespace
     int m_atname;
 
   public:
-    op_atval_die (std::shared_ptr <op> upstream, dwgrep_graph::sptr gr,
+    op_atval_die (std::shared_ptr <op> upstream,
 		  std::shared_ptr <scope> scope, int atname)
-      : op_yielding_overload {upstream, gr, scope}
+      : op_yielding_overload {upstream, scope}
       , m_atname {atname}
     {}
 
@@ -914,9 +914,8 @@ namespace
   {
     unsigned m_atname;
 
-    pred_atname_die (dwgrep_graph::sptr gr, std::shared_ptr <scope> scope,
-		     unsigned atname)
-      : pred_overload {gr, scope}
+    pred_atname_die (std::shared_ptr <scope> scope, unsigned atname)
+      : pred_overload {scope}
       , m_atname {atname}
     {}
 
@@ -933,9 +932,8 @@ namespace
   {
     unsigned m_atname;
 
-    pred_atname_attr (dwgrep_graph::sptr gr, std::shared_ptr <scope> scope,
-		      unsigned atname)
-      : pred_overload {gr, scope}
+    pred_atname_attr (std::shared_ptr <scope> scope, unsigned atname)
+      : pred_overload {scope}
       , m_atname {atname}
     {}
 
@@ -951,9 +949,8 @@ namespace
   {
     constant m_const;
 
-    pred_atname_cst (dwgrep_graph::sptr gr, std::shared_ptr <scope> scope,
-		     unsigned atname)
-      : pred_overload {gr, scope}
+    pred_atname_cst (std::shared_ptr <scope> scope, unsigned atname)
+      : pred_overload {scope}
       , m_const {atname, &dw_attr_dom}
     {}
 
@@ -974,8 +971,8 @@ namespace
   {
     int m_tag;
 
-    pred_tag_die (dwgrep_graph::sptr gr, std::shared_ptr <scope> scope, int tag)
-      : pred_overload {gr, scope}
+    pred_tag_die (std::shared_ptr <scope> scope, int tag)
+      : pred_overload {scope}
       , m_tag {tag}
     {}
 
@@ -991,8 +988,8 @@ namespace
   {
     constant m_const;
 
-    pred_tag_cst (dwgrep_graph::sptr gr, std::shared_ptr <scope> scope, int tag)
-      : pred_overload {gr, scope}
+    pred_tag_cst (std::shared_ptr <scope> scope, int tag)
+      : pred_overload {scope}
       , m_const {(unsigned) tag, &dw_tag_dom}
     {}
 
@@ -1013,9 +1010,8 @@ namespace
   {
     unsigned m_form;
 
-    pred_form_attr (dwgrep_graph::sptr gr, std::shared_ptr <scope> scope,
-		    unsigned form)
-      : pred_overload {gr, scope}
+    pred_form_attr (std::shared_ptr <scope> scope, unsigned form)
+      : pred_overload {scope}
       , m_form {form}
     {}
 
@@ -1031,9 +1027,8 @@ namespace
   {
     constant m_const;
 
-    pred_form_cst (dwgrep_graph::sptr gr, std::shared_ptr <scope> scope,
-		   unsigned form)
-      : pred_overload {gr, scope}
+    pred_form_cst (std::shared_ptr <scope> scope, unsigned form)
+      : pred_overload {scope}
       , m_const {form, &dw_form_dom}
     {}
 
@@ -1054,9 +1049,8 @@ namespace
   {
     unsigned m_op;
 
-    pred_op_loclist_elem (dwgrep_graph::sptr gr, std::shared_ptr <scope> scope,
-			  unsigned op)
-      : pred_overload {gr, scope}
+    pred_op_loclist_elem (std::shared_ptr <scope> scope, unsigned op)
+      : pred_overload {scope}
       , m_op {op}
     {}
 
@@ -1075,9 +1069,8 @@ namespace
   {
     unsigned m_op;
 
-    pred_op_loclist_op (dwgrep_graph::sptr gr, std::shared_ptr <scope> scope,
-			unsigned op)
-      : pred_overload {gr, scope}
+    pred_op_loclist_op (std::shared_ptr <scope> scope, unsigned op)
+      : pred_overload {scope}
       , m_op {op}
     {}
 
@@ -1093,9 +1086,8 @@ namespace
   {
     constant m_const;
 
-    pred_op_cst (dwgrep_graph::sptr gr, std::shared_ptr <scope> scope,
-		 unsigned form)
-      : pred_overload {gr, scope}
+    pred_op_cst (std::shared_ptr <scope> scope, unsigned form)
+      : pred_overload {scope}
       , m_const {form, &dw_locexpr_opcode_dom}
     {}
 

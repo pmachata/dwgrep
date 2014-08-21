@@ -37,13 +37,13 @@
 #include "value-cst.hh"
 
 std::unique_ptr <pred>
-builtin::build_pred (dwgrep_graph::sptr q, std::shared_ptr <scope> scope) const
+builtin::build_pred (std::shared_ptr <scope> scope) const
 {
   return nullptr;
 }
 
 std::shared_ptr <op>
-builtin::build_exec (std::shared_ptr <op> upstream, dwgrep_graph::sptr q,
+builtin::build_exec (std::shared_ptr <op> upstream,
 		     std::shared_ptr <scope> scope) const
 {
   return nullptr;

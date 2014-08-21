@@ -42,10 +42,10 @@ class builtin
 {
 public:
   virtual std::unique_ptr <pred>
-  build_pred (dwgrep_graph::sptr q, std::shared_ptr <scope> scope) const;
+  build_pred (std::shared_ptr <scope> scope) const;
 
   virtual std::shared_ptr <op>
-  build_exec (std::shared_ptr <op> upstream, dwgrep_graph::sptr q,
+  build_exec (std::shared_ptr <op> upstream,
 	      std::shared_ptr <scope> scope) const;
 
   virtual char const *name () const = 0;
@@ -99,9 +99,9 @@ add_simple_exec_builtin (builtin_dict &dict, char const *name)
     : public Op
   {
     char const *m_name;
-    this_op (std::shared_ptr <op> upstream, dwgrep_graph::sptr gr,
+    this_op (std::shared_ptr <op> upstream,
 	     std::shared_ptr <scope> scope, char const *name)
-      : Op {upstream, gr, scope}
+      : Op {upstream, scope}
       , m_name {name}
     {}
 
@@ -122,10 +122,10 @@ add_simple_exec_builtin (builtin_dict &dict, char const *name)
     {}
 
     std::shared_ptr <op>
-    build_exec (std::shared_ptr <op> upstream, dwgrep_graph::sptr gr,
+    build_exec (std::shared_ptr <op> upstream,
 		std::shared_ptr <scope> scope) const override final
     {
-      return std::make_shared <this_op> (upstream, gr, scope, m_name);
+      return std::make_shared <this_op> (upstream, scope, m_name);
     }
 
     char const *

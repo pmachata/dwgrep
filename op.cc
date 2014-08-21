@@ -946,7 +946,7 @@ op_lex_closure::next ()
 {
   if (auto stk = m_upstream->next ())
     {
-      stk->push (std::make_unique <value_closure> (m_t, m_q, m_scope,
+      stk->push (std::make_unique <value_closure> (m_t, m_scope,
 						   stk->nth_frame (0), 0));
       return stk;
     }

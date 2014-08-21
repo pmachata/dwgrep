@@ -187,7 +187,6 @@ main(int argc, char *argv[])
   bool match = false;
   for (auto const &fn: to_process)
     {
-      auto g = std::make_shared <dwgrep_graph> ();
       auto stk = std::make_unique <stack> ();
 
       std::unique_ptr <value_dwarf> vdw;
@@ -206,7 +205,7 @@ main(int argc, char *argv[])
 
       stk->push (std::move (vdw));
       auto upstream = std::make_shared <op_origin> (std::move (stk));
-      auto program = query.build_exec (upstream, g);
+      auto program = query.build_exec (upstream);
 
       uint64_t count = 0;
       while (stack::uptr result = program->next ())
