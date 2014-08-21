@@ -524,5 +524,5 @@ expect_count 1 ./aranges.o -e '
 	([address] length == 2)
 	address (pos == 1) (== 0x1000e 0x10015 arange)'
 
-echo "$failures / $total failed"
+echo "$total tests total, $failures failures."
 [ $failures -eq 0 ]
