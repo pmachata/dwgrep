@@ -41,65 +41,88 @@
 #include "overload.hh"
 #include "value-closure.hh"
 #include "value-cst.hh"
+#include "value-str.hh"
 #include "value-dw.hh"
+
+// dwopen
+namespace
+{
+  struct op_dwopen_str
+    : public op_overload <value_str>
+  {
+    using op_overload::op_overload;
+
+    std::unique_ptr <value>
+    operate (std::unique_ptr <value_str> a) override
+    {
+      return std::make_unique <value_dwarf> (a->get_string (), 0);
+    }
+  };
+}
 
 // winfo
 namespace
 {
-  struct op_winfo
-    : public inner_op
+  struct op_winfo_dwarf
+    : public op_yielding_overload <value_dwarf>
   {
-    dwgrep_graph::sptr m_gr;
-    all_dies_iterator m_it;
-    stack::uptr m_stk;
-    size_t m_pos;
-
-    op_winfo (std::shared_ptr <op> upstream, dwgrep_graph::sptr gr,
-	      std::shared_ptr <scope> scope)
-      : inner_op {upstream, gr, scope}
-      , m_gr {gr}
-      , m_it {all_dies_iterator::end ()}
-      , m_pos {0}
-    {}
-
-    void
-    reset_me ()
+    struct winfo_producer
+      : public value_producer
     {
-      m_stk = nullptr;
-      m_pos = 0;
-    }
+      std::shared_ptr <Dwfl> m_dwfl;
+      all_dies_iterator m_it;
+      size_t m_i;
+      ptrdiff_t m_offset;
 
-    stack::uptr
-    next () override
-    {
-      while (true)
-	{
-	  if (m_stk == nullptr)
+      winfo_producer (std::shared_ptr <Dwfl> dwfl)
+	: m_dwfl {(assert (dwfl != nullptr), dwfl)}
+	, m_it {all_dies_iterator::end ()}
+	, m_i {0}
+	, m_offset {0}
+      {}
+
+      std::unique_ptr <value>
+      next () override
+      {
+	if (m_it == all_dies_iterator::end ())
+	  {
+	    struct result
 	    {
-	      m_stk = m_upstream->next ();
-	      if (m_stk == nullptr)
-		return nullptr;
-	      m_it = all_dies_iterator (&*m_gr->dwarf);
-	    }
+	      Dwarf *dw;
+	      Dwarf_Addr bias;
+	    };
 
-	  if (m_it != all_dies_iterator::end ())
-	    {
-	      auto ret = std::make_unique <stack> (*m_stk);
-	      auto v = std::make_unique <value_die> (m_gr, **m_it, m_pos++);
-	      ret->push (std::move (v));
-	      ++m_it;
-	      return ret;
-	    }
+	    auto cb = [] (Dwfl_Module *mod, void **data, const char *name,
+			  Dwarf_Addr addr, void *arg) -> int
+	      {
+		result *ret = static_cast <result *> (arg);
+		ret->dw = dwfl_module_getdwarf (mod, &ret->bias);
+		if (ret->dw == nullptr)
+		  throw_libdwfl ();
+		return DWARF_CB_ABORT;
+	      };
 
-	  reset_me ();
-	}
-    }
+	    result ret;
+	    m_offset = dwfl_getmodules (&*m_dwfl, cb, &ret, m_offset);
+	    if (m_offset < 0)
+	      throw_libdwfl ();
+	    if (m_offset == 0)
+	      return nullptr;
 
-    void
-    reset () override
+	    assert (ret.dw != nullptr);
+	    m_it = all_dies_iterator (ret.dw);
+	  }
+
+	return std::make_unique <value_die> (m_dwfl, **m_it++, m_i++);
+      }
+    };
+
+    using op_yielding_overload::op_yielding_overload;
+
+    std::unique_ptr <value_producer>
+    operate (std::unique_ptr <value_dwarf> a) override
     {
-      reset_me ();
-      m_upstream->reset ();
+      return std::make_unique <winfo_producer> (a->get_dwfl ());
     }
   };
 }
@@ -110,13 +133,13 @@ namespace
   struct producer_unit_die
     : public value_producer
   {
-    dwgrep_graph::sptr m_gr;
+    std::shared_ptr <Dwfl> m_dwfl;
     all_dies_iterator m_it;
     all_dies_iterator m_end;
     size_t m_i;
 
-    producer_unit_die (Dwarf_Die die, dwgrep_graph::sptr gr)
-      : m_gr {gr}
+    producer_unit_die (std::shared_ptr <Dwfl> dwfl, Dwarf_Die die)
+      : m_dwfl {dwfl}
       , m_it {all_dies_iterator::end ()}
       , m_end {all_dies_iterator::end ()}
       , m_i {0}
@@ -125,7 +148,9 @@ namespace
       if (dwarf_diecu (&die, &cudie, nullptr, nullptr) == nullptr)
 	throw_libdw ();
 
-      cu_iterator cuit {&*m_gr->dwarf, cudie};
+      Dwarf *dw = dwarf_cu_getdwarf (cudie.cu);
+
+      cu_iterator cuit {dw, cudie};
       m_it = all_dies_iterator (cuit);
       m_end = all_dies_iterator (++cuit);
     }
@@ -136,7 +161,7 @@ namespace
       if (m_it == m_end)
 	return nullptr;
 
-      return std::make_unique <value_die> (m_gr, **m_it++, m_i++);
+      return std::make_unique <value_die> (m_dwfl, **m_it++, m_i++);
     }
   };
 
@@ -149,7 +174,7 @@ namespace
     operate (std::unique_ptr <value_die> a) override
     {
       return std::make_unique <producer_unit_die>
-	(a->get_die (), a->get_graph ());
+	(a->get_dwfl (), a->get_die ());
     }
   };
 
@@ -162,7 +187,7 @@ namespace
     operate (std::unique_ptr <value_attr> a) override
     {
       return std::make_unique <producer_unit_die>
-	(a->get_die (), a->get_graph ());
+	(a->get_dwfl (), a->get_die ());
     }
   };
 }
@@ -197,7 +222,7 @@ namespace
 	  {
 	  case 0:
 	    m_child = std::make_unique <value_die>
-	      (ret->get_graph (), child, ret->get_pos () + 1);
+	      (ret->get_dwfl (), child, ret->get_pos () + 1);
 	  case 1: // no more siblings
 	    return std::move (ret);
 	  }
@@ -216,7 +241,7 @@ namespace
 	  if (dwarf_child (die, &child) != 0)
 	    throw_libdw ();
 
-	  auto value = std::make_unique <value_die> (m_gr, child, 0);
+	  auto value = std::make_unique <value_die> (a->get_dwfl (), child, 0);
 	  return std::make_unique <producer> (std::move (value));
 	}
 
@@ -246,8 +271,8 @@ namespace
       size_t idx = m_i++;
       if (idx < m_value->get_exprlen ())
 	return std::make_unique <value_loclist_op>
-	  (m_value->get_graph (), T::get_expr (*m_value, idx),
-	   m_value->get_attr (), idx);
+	  (m_value->get_dwfl (), m_value->get_attr (),
+	   T::get_expr (*m_value, idx), idx);
       else
 	return nullptr;
     }
@@ -328,7 +353,7 @@ namespace
       {
 	if (m_it != attr_iterator::end ())
 	  return std::make_unique <value_attr>
-	    (m_value->get_graph (), **m_it++, m_value->get_die (), m_i++);
+	    (m_value->get_dwfl (), **m_it++, m_value->get_die (), m_i++);
 	else
 	  return nullptr;
       }
@@ -546,17 +571,18 @@ namespace
     using op_overload::op_overload;
 
     std::unique_ptr <value>
-    operate (std::unique_ptr <value_die> val) override
+    operate (std::unique_ptr <value_die> a) override
     {
-      Dwarf_Off par_off = m_gr->find_parent (val->get_die ());
+      Dwarf_Off par_off = m_gr->find_parent (a->get_die ());
       if (par_off == dwgrep_graph::none_off)
 	return nullptr;
 
       Dwarf_Die par_die;
-      if (dwarf_offdie (&*m_gr->dwarf, par_off, &par_die) == nullptr)
+      if (dwarf_offdie (dwarf_cu_getdwarf (a->get_die ().cu),
+			par_off, &par_die) == nullptr)
 	throw_libdw ();
 
-      return std::make_unique <value_die> (m_gr, par_die, 0);
+      return std::make_unique <value_die> (a->get_dwfl (), par_die, 0);
     }
   };
 
@@ -566,9 +592,9 @@ namespace
     using op_overload::op_overload;
 
     std::unique_ptr <value>
-    operate (std::unique_ptr <value_attr> val) override
+    operate (std::unique_ptr <value_attr> a) override
     {
-      return std::make_unique <value_die> (m_gr, val->get_die (), 0);
+      return std::make_unique <value_die> (a->get_dwfl (), a->get_die (), 0);
     }
   };
 }
@@ -597,7 +623,7 @@ namespace
       if (die2 == nullptr)
 	throw_libdw ();
 
-      return std::make_unique <value_die> (m_gr, *die2, 0);
+      return std::make_unique <value_die> (val->get_dwfl (), *die2, 0);
     }
   };
 
@@ -655,7 +681,7 @@ namespace
     std::unique_ptr <value_producer>
     operate (std::unique_ptr <value_attr> a) override
     {
-      return at_value (a->get_attr (), a->get_die (), a->get_graph ());
+      return at_value (a->get_dwfl (), a->get_die (), a->get_attr ());
     }
   };
 
@@ -668,8 +694,8 @@ namespace
     operate (std::unique_ptr <value_loclist_op> a) override
     {
       return std::make_unique <value_producer_cat>
-	(dwop_number (a->get_dwop (), a->get_attr (), a->get_graph ()),
-	 dwop_number2 (a->get_dwop (), a->get_attr (), a->get_graph ()));
+	(dwop_number (a->get_dwfl (), a->get_attr (), a->get_dwop ()),
+	 dwop_number2 (a->get_dwfl (), a->get_attr (), a->get_dwop ()));
     }
   };
 }
@@ -873,7 +899,7 @@ namespace
       if (dwarf_attr (&a->get_die (), m_atname, &attr) == nullptr)
 	return false;
 
-      return at_value (attr, a->get_die (), a->get_graph ());
+      return at_value (a->get_dwfl (), a->get_die (), attr);
     }
   };
 }
@@ -1090,7 +1116,21 @@ dwgrep_builtins_dw ()
   add_builtin_type_constant <value_attr> (dict);
   add_builtin_type_constant <value_loclist_op> (dict);
 
-  add_simple_exec_builtin <op_winfo> (dict, "winfo");
+  {
+    auto t = std::make_shared <overload_tab> ();
+
+    t->add_op_overload <op_dwopen_str> ();
+
+    dict.add (std::make_shared <overloaded_op_builtin> ("dwopen", t));
+  }
+
+  {
+    auto t = std::make_shared <overload_tab> ();
+
+    t->add_op_overload <op_winfo_dwarf> ();
+
+    dict.add (std::make_shared <overloaded_op_builtin> ("winfo", t));
+  }
 
   {
     auto t = std::make_shared <overload_tab> ();

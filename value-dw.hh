@@ -29,22 +29,45 @@
 #ifndef _VALUE_DW_H_
 #define _VALUE_DW_H_
 
-#include <elfutils/libdw.h>
+#include <elfutils/libdwfl.h>
 #include "value.hh"
 
-class value_die
+class value_dwarf
   : public value
 {
-  Dwarf_Die m_die;
-  dwgrep_graph::sptr m_gr;
+  std::string m_fn;
+  std::shared_ptr <Dwfl> m_dwfl;
 
 public:
   static value_type const vtype;
 
-  value_die (dwgrep_graph::sptr gr, Dwarf_Die die, size_t pos)
+  value_dwarf (std::string const &fn, size_t pos);
+  value_dwarf (value_dwarf const &that) = default;
+
+  std::string &get_fn ()
+  { return m_fn; }
+
+  std::shared_ptr <Dwfl> get_dwfl ()
+  { return m_dwfl; }
+
+  void show (std::ostream &o, brevity brv) const override;
+  std::unique_ptr <value> clone () const override;
+  cmp_result cmp (value const &that) const override;
+};
+
+class value_die
+  : public value
+{
+  std::shared_ptr <Dwfl> m_dwfl;
+  Dwarf_Die m_die;
+
+public:
+  static value_type const vtype;
+
+  value_die (std::shared_ptr <Dwfl> dwfl, Dwarf_Die die, size_t pos)
     : value {vtype, pos}
+    , m_dwfl {(assert (dwfl != nullptr), dwfl)}
     , m_die (die)
-    , m_gr {gr}
   {}
 
   value_die (value_die const &that) = default;
@@ -52,8 +75,8 @@ public:
   Dwarf_Die &get_die ()
   { return m_die; }
 
-  dwgrep_graph::sptr get_graph ()
-  { return m_gr; }
+  std::shared_ptr <Dwfl> get_dwfl ()
+  { return m_dwfl; }
 
   void show (std::ostream &o, brevity brv) const override;
   std::unique_ptr <value> clone () const override;
@@ -63,31 +86,31 @@ public:
 class value_attr
   : public value
 {
-  Dwarf_Attribute m_attr;
+  std::shared_ptr <Dwfl> m_dwfl;
   Dwarf_Die m_die;
-  dwgrep_graph::sptr m_gr;
+  Dwarf_Attribute m_attr;
 
 public:
   static value_type const vtype;
 
-  value_attr (dwgrep_graph::sptr gr,
+  value_attr (std::shared_ptr <Dwfl> dwfl,
 	      Dwarf_Attribute attr, Dwarf_Die die, size_t pos)
     : value {vtype, pos}
-    , m_attr (attr)
+    , m_dwfl {dwfl}
     , m_die (die)
-    , m_gr {gr}
+    , m_attr (attr)
   {}
 
   value_attr (value_attr const &that) = default;
 
-  Dwarf_Attribute &get_attr ()
-  { return m_attr; }
+  std::shared_ptr <Dwfl> get_dwfl ()
+  { return m_dwfl; }
 
   Dwarf_Die &get_die ()
   { return m_die; }
 
-  dwgrep_graph::sptr get_graph ()
-  { return m_gr; }
+  Dwarf_Attribute &get_attr ()
+  { return m_attr; }
 
   void show (std::ostream &o, brevity brv) const override;
   std::unique_ptr <value> clone () const override;
@@ -97,29 +120,35 @@ public:
 class value_loclist_elem
   : public value
 {
-  dwgrep_graph::sptr m_gr;
+  std::shared_ptr <Dwfl> m_dwfl;
+  Dwarf_Attribute m_attr;
   Dwarf_Addr m_low;
   Dwarf_Addr m_high;
   Dwarf_Op *m_expr;
   size_t m_exprlen;
-  Dwarf_Attribute m_attr;
 
 public:
   static value_type const vtype;
 
-  value_loclist_elem (dwgrep_graph::sptr gr, Dwarf_Addr low, Dwarf_Addr high,
-		      Dwarf_Op *expr, size_t exprlen, Dwarf_Attribute attr,
-		      size_t pos)
+  value_loclist_elem (std::shared_ptr <Dwfl> dwfl, Dwarf_Attribute attr,
+		      Dwarf_Addr low, Dwarf_Addr high,
+		      Dwarf_Op *expr, size_t exprlen, size_t pos)
     : value {vtype, pos}
-    , m_gr {gr}
+    , m_dwfl {dwfl}
+    , m_attr (attr)
     , m_low {low}
     , m_high {high}
     , m_expr {expr}
     , m_exprlen {exprlen}
-    , m_attr (attr)
   {}
 
   value_loclist_elem (value_loclist_elem const &that) = default;
+
+  std::shared_ptr <Dwfl> get_dwfl ()
+  { return m_dwfl; }
+
+  Dwarf_Attribute &get_attr ()
+  { return m_attr; }
 
   Dwarf_Addr get_low () const
   { return m_low; }
@@ -132,12 +161,6 @@ public:
 
   size_t get_exprlen () const
   { return m_exprlen; }
-
-  Dwarf_Attribute &get_attr ()
-  { return m_attr; }
-
-  dwgrep_graph::sptr get_graph ()
-  { return m_gr; }
 
   void show (std::ostream &o, brevity brv) const override;
   std::unique_ptr <value> clone () const override;
@@ -178,31 +201,31 @@ class value_loclist_op
   // This apparently wild pointer points into libdw-private data.  We
   // actually need to carry a pointer, as some functions require that
   // they be called with the original pointer, not our own copy.
-  Dwarf_Op *m_dwop;
+  std::shared_ptr <Dwfl> m_dwfl;
   Dwarf_Attribute m_attr;
-  dwgrep_graph::sptr m_gr;
+  Dwarf_Op *m_dwop;
 
 public:
   static value_type const vtype;
 
-  value_loclist_op (dwgrep_graph::sptr gr,
-		    Dwarf_Op *dwop, Dwarf_Attribute attr, size_t pos)
+  value_loclist_op (std::shared_ptr <Dwfl> dwfl, Dwarf_Attribute attr,
+		    Dwarf_Op *dwop, size_t pos)
     : value {vtype, pos}
-    , m_dwop (dwop)
+    , m_dwfl {dwfl}
     , m_attr (attr)
-    , m_gr {gr}
+    , m_dwop (dwop)
   {}
 
   value_loclist_op (value_loclist_op const &that) = default;
+
+  std::shared_ptr <Dwfl> get_dwfl ()
+  { return m_dwfl; }
 
   Dwarf_Attribute &get_attr ()
   { return m_attr; }
 
   Dwarf_Op *get_dwop ()
   { return m_dwop; }
-
-  dwgrep_graph::sptr get_graph ()
-  { return m_gr; }
 
   void show (std::ostream &o, brevity brv) const override;
   std::unique_ptr <value> clone () const override;

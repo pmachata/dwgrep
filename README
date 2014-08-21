@@ -969,16 +969,31 @@
    different types.  These include label, offset, address, high, low,
    name and value.
 
+
 ** ·Entry points
-*** ·winfo :: ->* ?T_DIE
+*** ·dwopen :: ?T_STR -> ?T_DWARF
+     - Pops a file name, opens an ELF with that name, and pushes a
+       value representing that file to TOS.
+
+     - When files are passed on command line, those are pre-opened and
+       pre-pushed by the query driver, and appear as sole value on
+       runtime stack:
+       : $ dwgrep ./a.out -e 'type'
+       : T_DWARF
+
+
+** ·T_DWARF
+*** ·winfo :: ?T_DWARF ->* ?T_DIE
      Yields all DIE's in a .debug_info section.  In produces values of
      type T_DIE.
 
      XXX How do we handle DW_TAG_partial_unit?
 
-***  symtab :: ->* ?T_ELFSYM
+***  symtab :: ?T_DWARF ->* ?T_ELFSYM
      Yields all symbols in .symtab, or minisymtab, or .dynsym.  It
      produces values of type T_ELFSYM.
+
+***  name :: ?T_DWARF -> ?T_STR
 
 
 ** ·T_DIE

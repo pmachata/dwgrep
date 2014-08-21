@@ -128,16 +128,16 @@ namespace
   struct locexpr_producer
     : public value_producer
   {
+    std::shared_ptr <Dwfl> m_dwfl;
     Dwarf_Attribute m_attr;
     Dwarf_Addr m_base;
     ptrdiff_t m_offset;
-    dwgrep_graph::sptr m_gr;
     size_t m_i;
 
-    explicit locexpr_producer (dwgrep_graph::sptr gr, Dwarf_Attribute attr)
-      : m_attr (attr)
+    locexpr_producer (std::shared_ptr <Dwfl> dwfl, Dwarf_Attribute attr)
+      : m_dwfl {dwfl}
+      , m_attr (attr)
       , m_offset {0}
-      , m_gr {gr}
       , m_i {0}
     {}
 
@@ -157,20 +157,20 @@ namespace
 	  return nullptr;
 	default:
 	  return std::make_unique <value_loclist_elem>
-	    (m_gr, start, end, expr, exprlen, m_attr, m_i++);
+	    (m_dwfl, m_attr, start, end, expr, exprlen, m_i++);
 	}
     }
   };
 
   std::unique_ptr <value_producer>
-  atval_locexpr (dwgrep_graph::sptr gr, Dwarf_Attribute attr)
+  atval_locexpr (std::shared_ptr <Dwfl> dwfl, Dwarf_Attribute attr)
   {
-    return std::make_unique <locexpr_producer> (gr, attr);
+    return std::make_unique <locexpr_producer> (dwfl, attr);
   }
 
   std::unique_ptr <value_producer>
   handle_at_dependent_value (Dwarf_Attribute attr, Dwarf_Die die,
-			     dwgrep_graph::sptr gr)
+			     std::shared_ptr <Dwfl> dwfl)
   {
     switch (dwarf_whatattr (&attr))
       {
@@ -255,10 +255,13 @@ namespace
 	    type_die = die;
 	  else
 	    {
+	      assert (! "atval dwarf_offdie");
+	      /*
 	      // Get DW_TAG_enumeration_type.
 	      if (dwarf_offdie (&*gr->dwarf, gr->find_parent (die),
 				&type_die) == nullptr)
 		throw_libdw ();
+	      */
 
 	      if (dwarf_tag (&type_die) != DW_TAG_enumeration_type)
 		{
@@ -287,7 +290,6 @@ namespace
 	      if (tag != DW_TAG_const_type
 		  && tag != DW_TAG_volatile_type
 		  && tag != DW_TAG_restrict_type
-		  && tag != DW_TAG_mutable_type
 		  && tag != DW_TAG_typedef
 		  && tag != DW_TAG_subrange_type
 		  && tag != DW_TAG_packed_type)
@@ -383,7 +385,7 @@ namespace
       case DW_AT_location:
       case DW_AT_data_member_location:
       case DW_AT_vtable_elem_location:
-	return atval_locexpr (gr, attr);
+	return atval_locexpr (dwfl, attr);
 
       case DW_AT_ranges:
 	std::cerr << "address ranges NIY\n";
@@ -425,7 +427,7 @@ namespace
 }
 
 std::unique_ptr <value_producer>
-at_value (Dwarf_Attribute attr, Dwarf_Die die, dwgrep_graph::sptr gr)
+at_value (std::shared_ptr <Dwfl> dwfl, Dwarf_Die die, Dwarf_Attribute attr)
 {
   switch (dwarf_whatform (&attr))
     {
@@ -449,7 +451,7 @@ at_value (Dwarf_Attribute attr, Dwarf_Die die, dwgrep_graph::sptr gr)
 	Dwarf_Die die;
 	if (dwarf_formref_die (&attr, &die) == nullptr)
 	  throw_libdw ();
-	return pass_single_value (std::make_unique <value_die> (gr, die, 0));
+	return pass_single_value (std::make_unique <value_die> (dwfl, die, 0));
       }
 
     case DW_FORM_sdata:
@@ -481,10 +483,10 @@ at_value (Dwarf_Attribute attr, Dwarf_Die die, dwgrep_graph::sptr gr)
     case DW_FORM_block2:
     case DW_FORM_block4:
     case DW_FORM_block:
-      return handle_at_dependent_value (attr, die, gr);
+      return handle_at_dependent_value (attr, die, dwfl);
 
     case DW_FORM_exprloc:
-      return atval_locexpr (gr, attr);
+      return atval_locexpr (dwfl, attr);
 
     case DW_FORM_ref_sig8:
     case DW_FORM_GNU_ref_alt:
@@ -532,8 +534,8 @@ namespace
   // represents unary, both non-default represent binary op.
   template <unsigned N>
   std::unique_ptr <value_producer>
-  locexpr_op_values (Dwarf_Op const *op, Dwarf_Attribute const &at,
-		     dwgrep_graph::sptr gr)
+  locexpr_op_values (std::shared_ptr <Dwfl> dwfl,
+		     Dwarf_Attribute const &at, Dwarf_Op const *op)
   {
     auto signed_cst = [] (Dwarf_Word w, constant_dom const *dom)
       {
@@ -611,7 +613,7 @@ namespace
 	    throw_libdw ();
 
 	  return select <N>
-	    (pass_single_value (std::make_unique <value_die> (gr, die, 0)),
+	    (pass_single_value (std::make_unique <value_die> (dwfl, die, 0)),
 	     pass_single_value (std::make_unique <value_cst>
 				(signed_cst (op->number2,
 					     &dec_constant_dom), 0)));
@@ -636,7 +638,7 @@ namespace
 	      (const_cast <Dwarf_Attribute *> (&at), op, &result) != 0)
 	    throw_libdw ();
 
-	  return select <N> (atval_locexpr (gr, result),
+	  return select <N> (atval_locexpr (dwfl, result),
 			     std::make_unique <null_producer> ());
 	}
       }
@@ -644,15 +646,15 @@ namespace
 }
 
 std::unique_ptr <value_producer>
-dwop_number (Dwarf_Op const *op, Dwarf_Attribute const &attr,
-	     dwgrep_graph::sptr gr)
+dwop_number (std::shared_ptr <Dwfl> dwfl,
+	     Dwarf_Attribute const &attr, Dwarf_Op const *op)
 {
-  return locexpr_op_values <0> (op, attr, gr);
+  return locexpr_op_values <0> (dwfl, attr, op);
 }
 
 std::unique_ptr <value_producer>
-dwop_number2 (Dwarf_Op const *op, Dwarf_Attribute const &attr,
-	      dwgrep_graph::sptr gr)
+dwop_number2 (std::shared_ptr <Dwfl> dwfl,
+	     Dwarf_Attribute const &attr, Dwarf_Op const *op)
 {
-  return locexpr_op_values <1> (op, attr, gr);
+  return locexpr_op_values <1> (dwfl, attr, op);
 }

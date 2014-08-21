@@ -30,6 +30,17 @@
 #define _DWPP_H_
 
 #include <cassert>
+#include <elfutils/libdwfl.h>
+#include <elfutils/libdw.h>
+
+inline __attribute__ ((noreturn)) void
+throw_libdwfl (int dwerr = 0)
+{
+  if (dwerr == 0)
+    dwerr = dwfl_errno ();
+  assert (dwerr != 0);
+  throw std::runtime_error (dwfl_errmsg (dwerr));
+}
 
 inline __attribute__ ((noreturn)) void
 throw_libdw (int dwerr = 0)

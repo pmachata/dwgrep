@@ -46,9 +46,8 @@ class dwgrep_graph
 
 public:
   typedef std::shared_ptr <dwgrep_graph> sptr;
-  std::shared_ptr <Dwarf> dwarf;
 
-  dwgrep_graph (std::shared_ptr <Dwarf> d);
+  dwgrep_graph ();
   ~dwgrep_graph ();
 
   static Dwarf_Off const none_off = (Dwarf_Off) -1;

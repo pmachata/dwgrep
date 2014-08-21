@@ -26,15 +26,90 @@
    the GNU Lesser General Public License along with this program.  If
    not, see <http://www.gnu.org/licenses/>.  */
 
-#include "flag_saver.hh"
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <fcntl.h>
+
 #include <iostream>
 #include <memory>
+#include <system_error>
 
 #include "atval.hh"
 #include "dwcst.hh"
 #include "dwit.hh"
+#include "dwpp.hh"
+#include "flag_saver.hh"
 #include "op.hh"
 #include "value-dw.hh"
+
+value_type const value_dwarf::vtype = value_type::alloc ("T_DWARF");
+
+namespace
+{
+  void
+  destroy_dwfl (Dwfl *dwfl)
+  {
+    std::cerr << "\ndwfl_end (" << dwfl << ")\n";
+    dwfl_end (dwfl);
+  }
+
+  std::shared_ptr <Dwfl>
+  open_dwfl (std::string const &fn)
+  {
+    int fd = open (fn.c_str (), O_RDONLY);
+    if (fd == -1)
+      throw std::runtime_error
+	(std::error_code (errno, std::system_category ()).message ());
+
+    const static Dwfl_Callbacks callbacks =
+      {
+	.find_elf = dwfl_build_id_find_elf,
+	.find_debuginfo = dwfl_standard_find_debuginfo,
+	.section_address = dwfl_offline_section_address,
+      };
+
+    auto dwfl = std::shared_ptr <Dwfl> (dwfl_begin (&callbacks), destroy_dwfl);
+    if (dwfl == nullptr)
+      throw_libdwfl ();
+    std::cerr << "\ndwfl_begin (" << dwfl << ")\n";
+
+    dwfl_report_begin (&*dwfl);
+    if (dwfl_report_offline (&*dwfl, fn.c_str (), fn.c_str (), fd) == nullptr)
+      throw_libdwfl ();
+    if (dwfl_report_end (&*dwfl, nullptr, nullptr) != 0)
+      throw_libdwfl ();
+
+    return dwfl;
+  }
+}
+
+value_dwarf::value_dwarf (std::string const &fn, size_t pos)
+  : value {vtype, pos}
+  , m_fn {fn}
+  , m_dwfl {open_dwfl (fn)}
+{}
+
+void
+value_dwarf::show (std::ostream &o, brevity brv) const
+{
+  o << "<Dwarf \"" << m_fn << "\">";
+}
+
+std::unique_ptr <value>
+value_dwarf::clone () const
+{
+  return std::make_unique <value_dwarf> (*this);
+}
+
+cmp_result
+value_dwarf::cmp (value const &that) const
+{
+  if (auto v = value::as <value_dwarf> (&that))
+    return compare (m_dwfl, v->m_dwfl);
+  else
+    return cmp_result::fail;
+}
+
 
 value_type const value_die::vtype = value_type::alloc ("T_DIE");
 
@@ -52,7 +127,7 @@ value_die::show (std::ostream &o, brevity brv) const
     for (auto it = attr_iterator {die}; it != attr_iterator::end (); ++it)
       {
 	o << "\n\t";
-	value_attr {m_gr, **it, m_die, 0}.show (o, brevity::full);
+	value_attr {m_dwfl, **it, m_die, 0}.show (o, brevity::full);
       }
 }
 
@@ -84,7 +159,7 @@ value_attr::show (std::ostream &o, brevity brv) const
   ios_flag_saver s {o};
   o << constant (name, &dw_attr_dom, brevity::brief) << " ("
     << constant (form, &dw_form_dom, brevity::brief) << ")\t";
-  auto vpr = at_value (m_attr, m_die, m_gr);
+  auto vpr = at_value (m_dwfl, m_die, m_attr);
   while (auto v = vpr->next ())
     {
       if (auto d = value::as <value_die> (v.get ()))
@@ -124,13 +199,13 @@ namespace
 {
   void
   show_loclist_op (std::ostream &o, brevity brv,
-		   Dwarf_Op *dwop, Dwarf_Attribute const &attr,
-		   dwgrep_graph::sptr gr)
+		   std::shared_ptr <Dwfl> dwfl,
+		   Dwarf_Attribute const &attr, Dwarf_Op *dwop)
   {
     o << dwop->offset << ':'
       << constant {dwop->atom, &dw_locexpr_opcode_dom, brevity::brief};
     {
-      auto prod = dwop_number (dwop, attr, gr);
+      auto prod = dwop_number (dwfl, attr, dwop);
       while (auto v = prod->next ())
 	{
 	  o << "<";
@@ -141,7 +216,7 @@ namespace
 
     {
       bool sep = false;
-      auto prod = dwop_number2 (dwop, attr, gr);
+      auto prod = dwop_number2 (dwfl, attr, dwop);
       while (auto v = prod->next ())
 	{
 	  if (! sep)
@@ -174,7 +249,7 @@ value_loclist_elem::show (std::ostream &o, brevity brv) const
     {
       if (i > 0)
 	o << ", ";
-      show_loclist_op (o, brv, m_expr + i, m_attr, m_gr);
+      show_loclist_op (o, brv, m_dwfl, m_attr, m_expr + i);
     }
   o << "]";
 }
@@ -249,7 +324,7 @@ value_type const value_loclist_op::vtype = value_type::alloc ("T_LOCLIST_OP");
 void
 value_loclist_op::show (std::ostream &o, brevity brv) const
 {
-  show_loclist_op (o, brv, m_dwop, m_attr, m_gr);
+  show_loclist_op (o, brv, m_dwfl, m_attr, m_dwop);
 }
 
 std::unique_ptr <value>

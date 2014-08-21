@@ -34,7 +34,7 @@
 #include <memory>
 #include <vector>
 
-#include <libdw.h>
+#include <elfutils/libdw.h>
 
 enum class unit_type
   {

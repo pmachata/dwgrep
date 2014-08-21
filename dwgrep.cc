@@ -39,7 +39,7 @@
 #include <system_error>
 
 #include <dwarf.h>
-#include <libdw.h>
+#include <elfutils/libdw.h>
 #include <libelf.h>
 
 #include "builtin-dw.hh"
@@ -49,6 +49,7 @@
 #include "parser.hh"
 #include "stack.hh"
 #include "tree.hh"
+#include "value-dw.hh"
 
 namespace
 {
@@ -78,9 +79,8 @@ struct dwgrep_graph::pimpl
   }
 };
 
-dwgrep_graph::dwgrep_graph (std::shared_ptr <Dwarf> d)
+dwgrep_graph::dwgrep_graph ()
   : m_pimpl {std::make_unique <pimpl> ()}
-  , dwarf {d}
 {}
 
 dwgrep_graph::~dwgrep_graph ()
@@ -95,21 +95,8 @@ dwgrep_graph::find_parent (Dwarf_Die die)
 bool
 dwgrep_graph::is_root (Dwarf_Die die)
 {
-  return m_pimpl->is_root (die, &*dwarf);
-}
-
-std::shared_ptr <Dwarf>
-open_dwarf (std::string const &fn)
-{
-  int fd = open (fn.c_str (), O_RDONLY);
-  if (fd == -1)
-    throw_system ();
-
-  Dwarf *dw = dwarf_begin (fd, DWARF_C_READ);
-  if (dw == nullptr)
-    throw_libdw ();
-
-  return std::shared_ptr <Dwarf> (dw, dwarf_end);
+  std::cerr << "dwgrep_graph::is_root passing null to is_root\n";
+  return m_pimpl->is_root (die, nullptr);
 }
 
 int
@@ -248,11 +235,13 @@ main(int argc, char *argv[])
   bool match = false;
   for (auto const &fn: to_process)
     {
-      std::shared_ptr <dwgrep_graph> g;
+      auto g = std::make_shared <dwgrep_graph> ();
+      auto stk = std::make_unique <stack> ();
 
+      std::unique_ptr <value_dwarf> vdw;
       try
 	{
-	  g = std::make_shared <dwgrep_graph> (open_dwarf (fn));
+	  vdw = std::make_unique <value_dwarf> (fn, 0);
 	}
       catch (std::runtime_error e)
 	{
@@ -263,7 +252,9 @@ main(int argc, char *argv[])
 	  continue;
 	}
 
-      auto program = query.build_exec (nullptr, g);
+      stk->push (std::move (vdw));
+      auto upstream = std::make_shared <op_origin> (std::move (stk));
+      auto program = query.build_exec (upstream, g);
 
       uint64_t count = 0;
       while (stack::uptr result = program->next ())

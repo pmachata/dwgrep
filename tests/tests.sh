@@ -349,15 +349,17 @@ expect_count 1 ./empty -e '
 	[0x3, 0x26, 0x20, 0x16, 0x1, 0x10, 0x3, 0x2, 0x3, 0x1, 0x3, 0x1, 0x1,
 	 0x28, 0x5, 0x0, 0x2, 0x3, 0x6] ?eq'
 
-expect_count 1 ./duplicate-const -e '
-	"%([winfo label]%)"
-	"[DW_TAG_compile_unit, DW_TAG_subprogram, DW_TAG_variable, "\
-	"DW_TAG_variable, DW_TAG_variable, DW_TAG_variable, "\
-	"DW_TAG_base_type, DW_TAG_pointer_type, DW_TAG_const_type, "\
-	"DW_TAG_base_type, DW_TAG_array_type, DW_TAG_subrange_type, "\
-	"DW_TAG_base_type, DW_TAG_const_type, DW_TAG_variable, "\
-	"DW_TAG_variable, DW_TAG_const_type]" ?eq
-	"%([winfo label]%)" ?eq'
+expect_count 1 ./empty -e '
+	let Dw := "duplicate-const" dwopen;
+
+	"%([Dw winfo label]%)"
+	"[DW_TAG_compile_unit, DW_TAG_subprogram, DW_TAG_variable,"\
+	" DW_TAG_variable, DW_TAG_variable, DW_TAG_variable,"\
+	" DW_TAG_base_type, DW_TAG_pointer_type, DW_TAG_const_type,"\
+	" DW_TAG_base_type, DW_TAG_array_type, DW_TAG_subrange_type,"\
+	" DW_TAG_base_type, DW_TAG_const_type, DW_TAG_variable,"\
+	" DW_TAG_variable, DW_TAG_const_type]" ?eq
+	"%([Dw winfo label]%)" ?eq'
 
 expect_count 1 ./duplicate-const -e '
 	"%([winfo ?root attribute label]%)"
@@ -523,3 +525,4 @@ expect_count 1 ./aranges.o -e '
 	address (pos == 1) (== 0xe 0x15 arange)'
 
 echo "$failures / $total failed"
+[ $failures -eq 0 ]

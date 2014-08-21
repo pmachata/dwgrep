@@ -29,21 +29,21 @@
 #ifndef _ATVAL_H_
 #define _ATVAL_H_
 
-#include <libdw.h>
+#include <elfutils/libdwfl.h>
 #include "dwgrep.hh"
 
 class value_producer;
 
 // Obtain a value of ATTR at DIE.
-std::unique_ptr <value_producer> at_value (Dwarf_Attribute attr, Dwarf_Die die,
-					   dwgrep_graph::sptr gr);
+std::unique_ptr <value_producer> at_value (std::shared_ptr <Dwfl> dwfl,
+					   Dwarf_Die die, Dwarf_Attribute attr);
 
-std::unique_ptr <value_producer> dwop_number (Dwarf_Op const *op,
+std::unique_ptr <value_producer> dwop_number (std::shared_ptr <Dwfl> dwfl,
 					      Dwarf_Attribute const &attr,
-					      dwgrep_graph::sptr gr);
+					      Dwarf_Op const *op);
 
-std::unique_ptr <value_producer> dwop_number2 (Dwarf_Op const *op,
-					       Dwarf_Attribute const &attr,
-					       dwgrep_graph::sptr gr);
+std::unique_ptr <value_producer> dwop_number2 (std::shared_ptr <Dwfl> dwfl,
+					      Dwarf_Attribute const &attr,
+					      Dwarf_Op const *op);
 
 #endif /* _ATVAL_H_ */
