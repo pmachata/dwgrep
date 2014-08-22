@@ -350,13 +350,11 @@ namespace
 		  return atval_unsigned (attr);
 
 		case DW_ATE_float:
+		case DW_ATE_imaginary_float:
 		case DW_ATE_complex_float:
-		case DW_ATE_imaginary_float: // ???
-		  // Encoding floating-point enumerators in
-		  // DW_FORM_data* actually makes sense, but
-		  // for now, NIY.
-		  assert (! "float enumerator unhandled");
-		  abort ();
+		  // Break out so that it's passed as a block, if it's
+		  // a block.
+		  break;
 
 		case DW_ATE_signed_fixed:
 		case DW_ATE_unsigned_fixed:
@@ -373,6 +371,7 @@ namespace
 		  abort ();
 		}
 	    }
+	  break;
 	}
 
       case DW_AT_byte_stride:

@@ -178,3 +178,14 @@
      locks end up serializing, we might actually open the Dwarf in
      each thread anew, and see if that helps.
 
+** floats
+   - These are currently represented as blocks.  libdw doesn't give us
+     any support decoding these, and it seems to be not entirely
+     trivial--endian issues, different encodings, and such.
+
+     E.g. on x86_64, __float128 type claims to be 10 bytes, but the
+     block is 16 bytes long.  long double claims to be 10 bytes as
+     well, the block is 16 bytes as well, but aligned so that only the
+     first ten bytes are used.
+
+     Seems like a fair can of worms.  Is it worth it?
