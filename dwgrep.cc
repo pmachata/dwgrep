@@ -208,8 +208,22 @@ main(int argc, char *argv[])
       auto program = query.build_exec (upstream);
 
       uint64_t count = 0;
-      while (stack::uptr result = program->next ())
+      while (true)
 	{
+	  stack::uptr result;
+	  try
+	    {
+	      result = program->next ();
+	    }
+	  catch (std::runtime_error e)
+	    {
+	      std::cerr << "dwgrep: " << fn << ": " << e.what () << std::endl;
+	      break;
+	    }
+
+	  if (result == nullptr)
+	    break;
+
 	  // grep: Exit immediately with zero status if any match
 	  // is found, even if an error was detected.
 	  if (verbosity < 0)
