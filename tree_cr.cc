@@ -51,6 +51,14 @@ tree::create_assert (tree *t)
   return tree::create_unary <tree_type::ASSERT> (t);
 }
 
+tree *
+tree::create_scope (tree *t1)
+{
+  auto t = new tree {tree_type::SCOPE, std::make_shared <scope> (nullptr)};
+  t->take_child (t1);
+  return t;
+}
+
 void
 tree::take_child (tree *t)
 {

@@ -203,17 +203,11 @@
     }
 
     tree *
-    wrap_in_scope (tree *t)
-    {
-      return tree::create_scope <tree_type::SCOPE> (t);
-    }
-
-    tree *
     wrap_in_scope_unless (tree_type tt, tree *t)
     {
       auto ret = maybe_nop (t);
       if (ret->tt () != tt)
-	ret = wrap_in_scope (ret);
+	ret = tree::create_scope (ret);
       return ret;
     }
 
@@ -378,18 +372,20 @@ Statement:
     $$ = tree::create_cat <tree_type::CAT>
 	  (tree_for_id_block (builtins, $2), $3);
     if ($2->size () > 0)
-      $$ = wrap_in_scope ($$);
+      $$ = tree::create_scope ($$);
   }
 
   | TOK_QMARK_LPAREN Program TOK_RPAREN
   {
-    auto t = tree::create_unary <tree_type::PRED_SUBX_ANY> (wrap_in_scope ($2));
+    auto t = tree::create_unary <tree_type::PRED_SUBX_ANY>
+      (tree::create_scope ($2));
     $$ = tree::create_assert (t);
   }
 
   | TOK_BANG_LPAREN Program TOK_RPAREN
   {
-    auto t = tree::create_unary <tree_type::PRED_SUBX_ANY> (wrap_in_scope ($2));
+    auto t = tree::create_unary <tree_type::PRED_SUBX_ANY>
+      (tree::create_scope ($2));
     auto u = tree::create_neg (t);
     $$ = tree::create_assert (u);
   }
@@ -403,8 +399,8 @@ Statement:
   {
     $$ = tree::create_cat <tree_type::CAT>
 	  (tree_for_id_block (builtins, $2),
-	   tree::create_unary <tree_type::CAPTURE> (wrap_in_scope ($3)));
-    $$ = wrap_in_scope ($$);
+	   tree::create_unary <tree_type::CAPTURE> (tree::create_scope ($3)));
+    $$ = tree::create_scope ($$);
 
     delete $2;
   }
@@ -413,7 +409,7 @@ Statement:
   {
     $$ = tree::create_cat <tree_type::CAT>
 	  (tree_for_id_block (builtins, $2), $3);
-    $$ = tree::create_unary <tree_type::BLOCK> (wrap_in_scope ($$));
+    $$ = tree::create_unary <tree_type::BLOCK> (tree::create_scope ($$));
   }
 
   | TOK_ARROW IdList TOK_SEMICOLON
@@ -435,7 +431,7 @@ Statement:
   {
     $$ = tree::create_const <tree_type::SUBX_EVAL>
 	  (constant {$2->size (), &dec_constant_dom});
-    $$->take_child (wrap_in_scope ($4));
+    $$->take_child (tree::create_scope ($4));
 
     $$ = tree::create_cat <tree_type::CAT>
 	  ($$, tree_for_id_block (builtins, $2));
@@ -444,7 +440,7 @@ Statement:
   }
 
   | Statement TOK_ASTERISK
-  { $$ = tree::create_unary <tree_type::CLOSE_STAR> (wrap_in_scope ($1)); }
+  { $$ = tree::create_unary <tree_type::CLOSE_STAR> (tree::create_scope ($1)); }
 
   | Statement TOK_PLUS
   {
@@ -461,7 +457,8 @@ Statement:
   | TOK_IF Statement TOK_THEN Statement TOK_ELSE Statement
   {
     $$ = tree::create_ternary <tree_type::IFELSE>
-	  (wrap_in_scope ($2), wrap_in_scope ($4), wrap_in_scope ($6));
+	  (tree::create_scope ($2), tree::create_scope ($4),
+	   tree::create_scope ($6));
   }
 
   | TOK_LIT_INT

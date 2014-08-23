@@ -30,7 +30,6 @@
 #define _TREE_CR_H_
 
 #include "tree.hh"
-#include "scope.hh"
 
 template <tree_type TT>
 tree *
@@ -137,17 +136,6 @@ tree::create_cat (tree *t1, tree *t2)
     return t1;
   else
     return tree::create_binary <TT> (t1, t2);
-}
-
-template <tree_type TT>
-tree *
-tree::create_scope (tree *t1)
-{
-  static_assert (tree_arity <TT>::value == tree_arity_v::SCOPE,
-		 "Wrong tree arity.");
-  auto t = new tree {TT, std::make_shared <scope> (nullptr)};
-  t->take_child (t1);
-  return t;
 }
 
 #endif /* _TREE_CR_H_ */

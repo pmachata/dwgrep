@@ -213,12 +213,11 @@ public:
   template <tree_type TT> static tree *create_str (std::string s);
   template <tree_type TT> static tree *create_const (constant c);
   template <tree_type TT> static tree *create_cat (tree *t1, tree *t2);
-  template <tree_type TT> static tree *create_scope (tree *t1);
 
   static tree *create_builtin (std::shared_ptr <builtin const> b);
-
   static tree *create_neg (tree *t1);
   static tree *create_assert (tree *t1);
+  static tree *create_scope (tree *t1);
 
   static tree resolve_scopes (tree t);
 
