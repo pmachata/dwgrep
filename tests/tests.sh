@@ -540,5 +540,9 @@ expect_count 4 ./float_const_value.o -e '
 	      (@AT_const_value == [0, 0, 0, 0, 0, 0, 0, 0,
 				   0, 0, 0, 0, 0, 0x80, 0xff, 0x3f]))))'
 
+expect_count 1 ./empty -e '
+	[1, 2, 3, 4] [3, 4, 5, 6]
+	(|A B| A [B elem !(== A elem)] add) == [1, 2, 3, 4, 5, 6]'
+
 echo "$total tests total, $failures failures."
 [ $failures -eq 0 ]
