@@ -373,8 +373,13 @@ IdBlockOpt:
   { $$ = $2; }
 
 Statement:
-  TOK_LPAREN Program TOK_RPAREN
-  { $$ = $2; }
+  TOK_LPAREN IdBlockOpt Program TOK_RPAREN
+  {
+    $$ = tree::create_cat <tree_type::CAT>
+	  (tree_for_id_block (builtins, $2), $3);
+    if ($2->size () > 0)
+      $$ = wrap_in_scope ($$);
+  }
 
   | TOK_QMARK_LPAREN Program TOK_RPAREN
   {

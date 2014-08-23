@@ -104,11 +104,11 @@
      Querying:
      : [dictionary] (elem key == 7)		# do we have key 7?
      Getting list of all keys:
-     : [dictionary] ->D; [D elem key]
+     : [dictionary] [|D| D elem key]
      Add 1 to key X:
-     : [dictionary] ->D; [D elem (key => value (==X) 1 add || )]
+     : [dictionary] [|D| D elem (key => value (==X) 1 add || )]
      Add A=>B unless A already present:
-     : [dictionary] ->D; if (D elem key == A) then D else [D elem, A=>B]
+     : [dictionary] (|D| if (D elem key == A) then D else [D elem, A=>B])
      Wow, that's a mouthful.
 
      Um, what does this do?
@@ -117,9 +117,6 @@
      : [1 => "a", 1 => "b", 1 => "c", 2 => "a", ...]
      ... which actually shows that list of key-val pairs is no
      dictionary, or actually that it's a multi-set sort of thing.
-** (|F| F foo)
-   This syntax is free and could be used for explicit scopes.  It
-   would be like {|F| F foo} apply.
 
 ** @AT_MIPS_linkage_name — translated to @AT_linkage_name automatically
 ** XXX @AT_stmt_list

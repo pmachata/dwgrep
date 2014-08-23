@@ -500,14 +500,26 @@
    EXPR yields all the values of the first expression that yields
    anything.
 
-** •“(” EXPR₁ “)”
+** •“(” (“|” ID₁ ID₂ … “|”)? EXPR₁ “)”
 
-    Concatenation has a high precedence, so parentheses can be used
-    liberally to adjust how an expression should be chopped into
-    sub-expression.  For example:
-    : foo bar, baz	# these two ...
-    : (foo bar), baz	# ... mean the same thing
-    : foo (bar, baz)	# this one is different
+     Concatenation has a high precedence, so parentheses can be used
+     liberally to adjust how an expression should be chopped into
+     sub-expression.  For example:
+
+     : foo bar, baz	# these two ...
+     : (foo bar), baz	# ... mean the same thing
+     : foo (bar, baz)	# this one is different
+
+     A presence of binding block converts the whole form into a
+     function that pops as many arguments as there are identifiers in
+     the binding block, and binds them to these identifiers such that
+     the rightmost one get the value on TOS and then progressively
+     lefter ID's get progressively deeper stack values.  The
+     expression is then evaluated as usual, except one can use the
+     bound names:
+
+     : (|Dw| Dw winfo (name == Dw symtab name))
+     : [foo] [bar] (|A B| A [B elem !(== A elem)] add)	# set union
 
 ** •EXPR₁ (“==” | “!=” | “<” | “<=” | “>” | “>=”) EXPR₂ — comparisons
     : ?(let .tmp1 := X; let .tmp2 := Y; .tmp1 .tmp2 OP)
@@ -596,7 +608,7 @@
    - [()] is a capture of nop.  It wraps TOS in a list and pushes it.
      : 1 [()]	# gives 1 [1]
 
-   - Sub-expression caputer allows a binding block.  A presence of
+   - Sub-expression capture allows a binding block.  A presence of
      such block converts the whole form into a function that pops as
      many arguments as there are identifiers in the binding block, and
      binds them to these identifiers such that the rightmost one get
@@ -783,9 +795,8 @@
     : [ child ] let L := length; elem
 
 ** •?eq, ?ne, ?gt, ?ge, ?lt, ?le :: ?() ?()
-    These are low-level assertions that are currently used for
-    implementation of ==, !=, etc., though in future those are likely
-    to get optimized dedicated operators and these would be displaced.
+    These are low-level assertions that can be used instead of ==, !=,
+    etc.
 
     Two elements are inspected: TOS and one below that (B and A,
     respectively).  The assertion holds if A op B is true.  Comparing
@@ -969,7 +980,6 @@
    different types.  These include label, offset, address, high, low,
    name and value.
 
-
 ** ·Entry points
 *** ·dwopen :: ?T_STR -> ?T_DWARF
      - Pops a file name, opens an ELF with that name, and pushes a
@@ -980,7 +990,6 @@
        runtime stack:
        : $ dwgrep ./a.out -e 'type'
        : T_DWARF
-
 
 ** ·T_DWARF
 *** ·winfo :: ?T_DWARF ->* ?T_DIE
@@ -994,7 +1003,6 @@
      produces values of type T_ELFSYM.
 
 ***  name :: ?T_DWARF -> ?T_STR
-
 
 ** ·T_DIE
 *** •label :: ?T_DIE -> ?T_CONST
@@ -1101,7 +1109,6 @@
 ***  ?ATE_* :: ?T_DIE
      Holds if @AT_encoding == DW_ATE_*.
 
-
 ** ·T_ATTR
 *** •label :: ?T_ATTR -> ?T_CONST
      Yield an attribute name.
@@ -1139,7 +1146,6 @@
 ***  ?ATE_* :: ?T_ATTR
      Holds if (?AT_encoding value == DW_ATE_*)
 
-
 **  T_ABBREV
 ***  label :: ?T_ABBREV -> ?T_CONST
 ***  offset :: ?T_ABBREV -> ?T_CONST
@@ -1148,7 +1154,6 @@
      Yields a form of an attribute.
 ***  ?AT_* :: ?T_ABBREV
      Holds if abbreviation has this attribute.
-
 
 **  T_ABBREV_ATTR
 ***  label :: ?T_ABBREV_ATTR -> ?T_CONST
@@ -1165,7 +1170,6 @@
 
 ***  ?FORM_* :: ?T_ABBREV_ATTR
      Holds if the attribute has this form.
-
 
 **  T_ELFSYM
 ***  label :: ?T_ELFSYM -> ?T_CONST
@@ -1192,7 +1196,6 @@
      : symtab (address == some addr)
      fuzzy matching (getting symbol/offset) would be more involved.
 
-
 ** •T_LOCLIST_ELEM
     XXX possibly a means of evaluating?  (Could we use the in-program
     stack for evaluating the Dwarf expression?)
@@ -1209,7 +1212,6 @@
 *** •?OP_* :: ?T_LOCLIST_ELEM
      Holds if this location expression contains an operation with this
      opcode.
-
 
 ** •T_LOCLIST_OP
 *** •label :: ?T_LOCLIST_OP -> ?T_CONST
@@ -1234,7 +1236,6 @@
 
 *** •?OP_* :: ?T_LOCLIST_OP
      Holds if this is an operation with this opcode.
-
 
 ** •T_ADDR_RANGE
     - T_ADDR_RANGE actually behaves pretty much like a sequence of
@@ -1270,6 +1271,7 @@
 *** •?empty :: ?T_ADDR_RANGE
      (low == high)
 
+
 * Examples
 
 ** Josh Stone's nontrivial-parameters script
@@ -1301,9 +1303,10 @@
 
 ** uses register based operators
 
-   : ?(@AT_location label (== DW_OP_bregx || (>= DW_OP_reg0) (<= DW_OP_regx)))
+   : winfo ?(@AT_location elem label
+   :         (== DW_OP_bregx || (>= DW_OP_reg0) (<= DW_OP_regx)))
 
-   : ?(@AT_location label "%s" "_b?reg" ?find)
+   : winfo ?(@AT_location elem label "%s" "_b?reg" ?find)
 
 ** whether it uses a deref operator
 
@@ -1355,22 +1358,23 @@
 
 ** check_linkage_external_die.cc
 
-     : let GetSym := {X | symtab (?STT_OBJECT, ?STT_FUNC)
-     :                    (@name == X @AT_linkage_name)};
-     : winfo ?AT_linkage_name
-     : if !(GetSym) then (
-     :     !AT_declaration !AT_const_value
-     :     (!structure_type !enumeration_type !union_type, ?AT_name)
-     :     "%s has linkage_name attribute that's not in symtab, "\
-     :     "but is not marked as declaration"
-     : ) else if (GetSym ?STB_LOCAL) then (
-     :     !AT_declaration ?AT_external
-     :     "%s has linkage_name attribute, "\
-     :     "but the corresponding symbol is local"
-     : ) else (
-     :     !AT_external
-     :     "%s has linkage_name attribute, but no external attribute"
-     : )
+     : (|Dw|
+     :  let GetSym := {|X| Dw symtab (?STT_OBJECT, ?STT_FUNC)
+     :                     (@name == X @AT_linkage_name)};
+     :  Dw winfo ?AT_linkage_name
+     :  if !(GetSym) then (
+     :      !AT_declaration !AT_const_value
+     :      (!structure_type !enumeration_type !union_type, ?AT_name)
+     :      "%s has linkage_name attribute that's not in symtab, "\
+     :      "but is not marked as declaration"
+     :  ) else if (GetSym ?STB_LOCAL) then (
+     :      !AT_declaration ?AT_external
+     :      "%s has linkage_name attribute, "\
+     :      "but the corresponding symbol is local"
+     :  ) else (
+     :      !AT_external
+     :      "%s has linkage_name attribute, but no external attribute"
+     :  ))
 
    This is still 1:10 vs. dwarflint C++ (i.e., say 1:20 if we had to
    explore the DIE tree by hand), but fairly involved.
@@ -1380,6 +1384,9 @@
    would lead to an ugly combinatorial explosion of states.  Noticing
    that we look at the bottom slot and cross-reference @AT_name with
    @AT_linkage_name should be possible.
+
+   An alternative start would be something like:
+   : let Dw := "$1" dwopen;
 
 ** CU A imports two PU's B and C, and both import the same third PU
 
