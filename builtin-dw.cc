@@ -888,9 +888,8 @@ namespace
     int m_atname;
 
   public:
-    op_atval_die (std::shared_ptr <op> upstream,
-		  std::shared_ptr <scope> scope, int atname)
-      : op_yielding_overload {upstream, scope}
+    op_atval_die (std::shared_ptr <op> upstream, int atname)
+      : op_yielding_overload {upstream}
       , m_atname {atname}
     {}
 
@@ -914,9 +913,8 @@ namespace
   {
     unsigned m_atname;
 
-    pred_atname_die (std::shared_ptr <scope> scope, unsigned atname)
-      : pred_overload {scope}
-      , m_atname {atname}
+    pred_atname_die (unsigned atname)
+      : m_atname {atname}
     {}
 
     pred_result
@@ -932,9 +930,8 @@ namespace
   {
     unsigned m_atname;
 
-    pred_atname_attr (std::shared_ptr <scope> scope, unsigned atname)
-      : pred_overload {scope}
-      , m_atname {atname}
+    pred_atname_attr (unsigned atname)
+      : m_atname {atname}
     {}
 
     pred_result
@@ -949,9 +946,8 @@ namespace
   {
     constant m_const;
 
-    pred_atname_cst (std::shared_ptr <scope> scope, unsigned atname)
-      : pred_overload {scope}
-      , m_const {atname, &dw_attr_dom}
+    pred_atname_cst (unsigned atname)
+      : m_const {atname, &dw_attr_dom}
     {}
 
     pred_result
@@ -971,9 +967,8 @@ namespace
   {
     int m_tag;
 
-    pred_tag_die (std::shared_ptr <scope> scope, int tag)
-      : pred_overload {scope}
-      , m_tag {tag}
+    pred_tag_die (int tag)
+      : m_tag {tag}
     {}
 
     pred_result
@@ -988,9 +983,8 @@ namespace
   {
     constant m_const;
 
-    pred_tag_cst (std::shared_ptr <scope> scope, int tag)
-      : pred_overload {scope}
-      , m_const {(unsigned) tag, &dw_tag_dom}
+    pred_tag_cst (int tag)
+      : m_const {(unsigned) tag, &dw_tag_dom}
     {}
 
     pred_result
@@ -1010,9 +1004,8 @@ namespace
   {
     unsigned m_form;
 
-    pred_form_attr (std::shared_ptr <scope> scope, unsigned form)
-      : pred_overload {scope}
-      , m_form {form}
+    pred_form_attr (unsigned form)
+      : m_form {form}
     {}
 
     pred_result
@@ -1027,9 +1020,8 @@ namespace
   {
     constant m_const;
 
-    pred_form_cst (std::shared_ptr <scope> scope, unsigned form)
-      : pred_overload {scope}
-      , m_const {form, &dw_form_dom}
+    pred_form_cst (unsigned form)
+      : m_const {form, &dw_form_dom}
     {}
 
     pred_result
@@ -1049,9 +1041,8 @@ namespace
   {
     unsigned m_op;
 
-    pred_op_loclist_elem (std::shared_ptr <scope> scope, unsigned op)
-      : pred_overload {scope}
-      , m_op {op}
+    pred_op_loclist_elem (unsigned op)
+      : m_op {op}
     {}
 
     pred_result
@@ -1069,9 +1060,8 @@ namespace
   {
     unsigned m_op;
 
-    pred_op_loclist_op (std::shared_ptr <scope> scope, unsigned op)
-      : pred_overload {scope}
-      , m_op {op}
+    pred_op_loclist_op (unsigned op)
+      : m_op {op}
     {}
 
     pred_result
@@ -1086,9 +1076,8 @@ namespace
   {
     constant m_const;
 
-    pred_op_cst (std::shared_ptr <scope> scope, unsigned form)
-      : pred_overload {scope}
-      , m_const {form, &dw_locexpr_opcode_dom}
+    pred_op_cst (unsigned form)
+      : m_const {form, &dw_locexpr_opcode_dom}
     {}
 
     pred_result

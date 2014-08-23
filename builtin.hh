@@ -33,7 +33,8 @@
 #include <string>
 
 #include "dwgrep.hh"
-#include "scope.hh"
+#include "constant.hh"
+#include "value.hh"
 
 struct pred;
 struct op;
@@ -42,11 +43,10 @@ class builtin
 {
 public:
   virtual std::unique_ptr <pred>
-  build_pred (std::shared_ptr <scope> scope) const;
+  build_pred () const;
 
   virtual std::shared_ptr <op>
-  build_exec (std::shared_ptr <op> upstream,
-	      std::shared_ptr <scope> scope) const;
+  build_exec (std::shared_ptr <op> upstream) const;
 
   virtual char const *name () const = 0;
 };
@@ -99,9 +99,8 @@ add_simple_exec_builtin (builtin_dict &dict, char const *name)
     : public Op
   {
     char const *m_name;
-    this_op (std::shared_ptr <op> upstream,
-	     std::shared_ptr <scope> scope, char const *name)
-      : Op {upstream, scope}
+    this_op (std::shared_ptr <op> upstream, char const *name)
+      : Op {upstream}
       , m_name {name}
     {}
 
@@ -122,10 +121,9 @@ add_simple_exec_builtin (builtin_dict &dict, char const *name)
     {}
 
     std::shared_ptr <op>
-    build_exec (std::shared_ptr <op> upstream,
-		std::shared_ptr <scope> scope) const override final
+    build_exec (std::shared_ptr <op> upstream) const override final
     {
-      return std::make_shared <this_op> (upstream, scope, m_name);
+      return std::make_shared <this_op> (upstream, m_name);
     }
 
     char const *

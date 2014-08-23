@@ -36,8 +36,7 @@ struct builtin_eq
 {
   using pred_builtin::pred_builtin;
 
-  std::unique_ptr <pred> build_pred (std::shared_ptr <scope> scope)
-    const override;
+  std::unique_ptr <pred> build_pred () const override;
 
   char const *name () const override;
 };
@@ -47,8 +46,7 @@ struct builtin_lt
 {
   using pred_builtin::pred_builtin;
 
-  std::unique_ptr <pred> build_pred (std::shared_ptr <scope> scope)
-    const override;
+  std::unique_ptr <pred> build_pred () const override;
 
   char const *name () const override;
 };
@@ -58,8 +56,7 @@ struct builtin_gt
 {
   using pred_builtin::pred_builtin;
 
-  std::unique_ptr <pred> build_pred (std::shared_ptr <scope> scope)
-    const override;
+  std::unique_ptr <pred> build_pred () const override;
 
   char const *name () const override;
 };

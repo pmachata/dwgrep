@@ -28,6 +28,7 @@
 
 #include <iostream>
 #include <memory>
+#include <algorithm>
 
 #include "op.hh"
 #include "tree.hh"

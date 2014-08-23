@@ -115,6 +115,29 @@ namespace
 	link_scopes (t.child (0), t.scp ());
 	break;
 
+      case tree_type::BIND:
+      case tree_type::READ:
+	{
+	  assert (t.m_scope == nullptr);
+	  assert (t.m_cst == nullptr);
+
+	  // Find access coordinates.  Stack frames form a chain.  Here
+	  // we find what stack frame will be accessed (i.e. how deeply
+	  // nested is this OP inside SCOPE's) and at which position.
+
+	  size_t depth = 0;
+	  for (; scp != nullptr; scp = scp->parent, ++depth)
+	    if (scp->has_name (t.str ()))
+	      {
+		t.m_scope = scp;
+		t.m_cst = std::make_unique <constant> (depth, nullptr);
+		return;
+	      }
+
+	  using namespace std::literals::string_literals;
+	  throw std::runtime_error ("Unknown identifier `"s + t.str () + "'.");
+	}
+
       default:
 	for (auto &c: t.m_children)
 	  link_scopes (c, scp);
@@ -126,7 +149,7 @@ namespace
 // Walk the tree, and collect all binds to the nearest higher scope.
 // Keep only those scopes that actually contain any variables.
 tree
-tree::promote_scopes (tree t)
+tree::resolve_scopes (tree t)
 {
   // Create whole-program scope.
   tree u {tree_type::SCOPE, std::make_shared <scope> (nullptr)};

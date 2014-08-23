@@ -245,9 +245,9 @@ do_tests ()
 
   // Formatting strings.
   test ("\"%%\"", "(FORMAT (STR<%>))");
-  test ("\"a%( \")%( [@name] %)(\" %)b\"",
+  test ("\"a%( \")%( [elem] %)(\" %)b\"",
 	"(FORMAT (STR<a>) (FORMAT (STR<)>)"
-	" (CAPTURE (READ<@name>))"
+	" (CAPTURE (F_BUILTIN<elem>))"
 	" (STR<(>)) (STR<b>))");
   test ("\"abc%sdef\"",
 	"(FORMAT (STR<abc>) (NOP) (STR<def>))");
@@ -295,11 +295,11 @@ do_tests ()
 	 "(CAT (F_BUILTIN<elem>)"
 	 " (F_BUILTIN<drop>) (FORMAT (STR<foo>)))");
 
-  ftest ("elem \"%( dup swap %): %( @name %)\"",
+  ftest ("elem \"%( dup swap %): %( elem %)\"",
 	 "(CAT (F_BUILTIN<elem>)"
 	 " (FORMAT (STR<>)"
 	 " (CAT (F_BUILTIN<dup>) (F_BUILTIN<swap>)) (STR<: >)"
-	 " (READ<@name>) (STR<>)))",
+	 " (F_BUILTIN<elem>) (STR<>)))",
 	 true);
 
   test ("((1, 2), (3, 4))",

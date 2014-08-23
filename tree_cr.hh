@@ -30,6 +30,7 @@
 #define _TREE_CR_H_
 
 #include "tree.hh"
+#include "scope.hh"
 
 template <tree_type TT>
 tree *

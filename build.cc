@@ -38,28 +38,28 @@
 #include "value-str.hh"
 
 std::unique_ptr <pred>
-tree::build_pred (std::shared_ptr <scope> scope) const
+tree::build_pred () const
 {
   switch (m_tt)
     {
     case tree_type::PRED_NOT:
-      return std::make_unique <pred_not> (child (0).build_pred (scope));
+      return std::make_unique <pred_not> (child (0).build_pred ());
 
     case tree_type::PRED_OR:
       return std::make_unique <pred_or>
-	(m_children[0].build_pred (scope),
-	 m_children[1].build_pred (scope));
+	(m_children[0].build_pred (),
+	 m_children[1].build_pred ());
 
     case tree_type::PRED_AND:
       return std::make_unique <pred_and>
-	(m_children[0].build_pred (scope),
-	 m_children[1].build_pred (scope));
+	(m_children[0].build_pred (),
+	 m_children[1].build_pred ());
 
     case tree_type::PRED_SUBX_ANY:
       {
 	assert (m_children.size () == 1);
 	auto origin = std::make_shared <op_origin> (nullptr);
-	auto op = child (0).build_exec (origin, scope);
+	auto op = child (0).build_exec (origin);
 	return std::make_unique <pred_subx_any> (op, origin);
       }
 
@@ -67,15 +67,15 @@ tree::build_pred (std::shared_ptr <scope> scope) const
       {
 	assert (m_children.size () == 3);
 	auto origin = std::make_shared <op_origin> (nullptr);
-	auto op1 = child (0).build_exec (origin, scope);
-	auto op2 = child (1).build_exec (origin, scope);
-	auto pred = child (2).build_pred (scope);
+	auto op1 = child (0).build_exec (origin);
+	auto op2 = child (1).build_exec (origin);
+	auto pred = child (2).build_pred ();
 	return std::make_unique <pred_subx_compare> (op1, op2, origin,
 						     std::move (pred));
       }
 
     case tree_type::F_BUILTIN:
-      return m_builtin->build_pred (scope);
+      return m_builtin->build_pred ();
 
     case tree_type::CAT:
     case tree_type::NOP:
@@ -102,8 +102,7 @@ tree::build_pred (std::shared_ptr <scope> scope) const
 }
 
 std::shared_ptr <op>
-tree::build_exec (std::shared_ptr <op> upstream,
-		  std::shared_ptr <scope> scope) const
+tree::build_exec (std::shared_ptr <op> upstream) const
 {
   if (upstream == nullptr)
     upstream = std::make_shared <op_origin> (std::make_unique <stack> ());
@@ -112,7 +111,7 @@ tree::build_exec (std::shared_ptr <op> upstream,
     {
     case tree_type::CAT:
       for (auto const &tree: m_children)
-	upstream = tree.build_exec (upstream, scope);
+	upstream = tree.build_exec (upstream);
       return upstream;
 
     case tree_type::ALT:
@@ -127,10 +126,9 @@ tree::build_exec (std::shared_ptr <op> upstream,
 	    ops.push_back (std::make_shared <op_tine> (upstream, f, done, i));
 	}
 
-	auto build_branch = [&scope] (tree const &ch,
-					  std::shared_ptr <op> o)
+	auto build_branch = [] (tree const &ch, std::shared_ptr <op> o)
 	  {
-	    return ch.build_exec (o, scope);
+	    return ch.build_exec (o);
 	  };
 
 	std::transform (m_children.begin (), m_children.end (),
@@ -145,7 +143,7 @@ tree::build_exec (std::shared_ptr <op> upstream,
 	for (auto const &tree: m_children)
 	  {
 	    auto origin2 = std::make_shared <op_origin> (nullptr);
-	    auto op = tree.build_exec (origin2, scope);
+	    auto op = tree.build_exec (origin2);
 	    o->add_branch (origin2, op);
 	  }
 	return o;
@@ -156,16 +154,16 @@ tree::build_exec (std::shared_ptr <op> upstream,
 
     case tree_type::F_BUILTIN:
       {
-	if (auto pred = build_pred (scope))
+	if (auto pred = build_pred ())
 	  return std::make_shared <op_assert> (upstream, std::move (pred));
-	auto op = m_builtin->build_exec (upstream, scope);
+	auto op = m_builtin->build_exec (upstream);
 	assert (op != nullptr);
 	return op;
       }
 
     case tree_type::ASSERT:
       return std::make_shared <op_assert>
-	(upstream, child (0).build_pred (scope));
+	(upstream, child (0).build_pred ());
 
     case tree_type::FORMAT:
       {
@@ -177,7 +175,7 @@ tree::build_exec (std::shared_ptr <op> upstream,
 	  else
 	    {
 	      auto origin2 = std::make_shared <op_origin> (nullptr);
-	      auto op = tree.build_exec (origin2, scope);
+	      auto op = tree.build_exec (origin2);
 	      strgr = std::make_shared <stringer_op> (strgr, origin2, op);
 	    }
 
@@ -205,14 +203,14 @@ tree::build_exec (std::shared_ptr <op> upstream,
     case tree_type::CAPTURE:
       {
 	auto origin = std::make_shared <op_origin> (nullptr);
-	auto op = child (0).build_exec (origin, scope);
+	auto op = child (0).build_exec (origin);
 	return std::make_shared <op_capture> (upstream, origin, op);
       }
 
     case tree_type::SUBX_EVAL:
       {
 	auto origin = std::make_shared <op_origin> (nullptr);
-	auto op = child (0).build_exec (origin, scope);
+	auto op = child (0).build_exec (origin);
 	return std::make_shared <op_subx> (upstream, origin, op,
 					   cst ().value ().uval ());
       }
@@ -220,49 +218,29 @@ tree::build_exec (std::shared_ptr <op> upstream,
     case tree_type::CLOSE_STAR:
       {
 	auto origin = std::make_shared <op_origin> (nullptr);
-	auto op = child (0).build_exec (origin, scope);
+	auto op = child (0).build_exec (origin);
 	return std::make_shared <op_tr_closure> (upstream, origin, op);
       }
 
     case tree_type::SCOPE:
       {
 	auto origin = std::make_shared <op_origin> (nullptr);
-	auto op = child (0).build_exec (origin, scp ());
+	auto op = child (0).build_exec (origin);
 	return std::make_shared <op_scope> (upstream, origin, op,
 					    scp ()->num_names ());
       }
 
     case tree_type::BLOCK:
       assert (scp () == nullptr);
-      return std::make_shared <op_lex_closure> (upstream, child (0), scope);
+      return std::make_shared <op_lex_closure> (upstream, child (0));
 
     case tree_type::BIND:
+      return std::make_shared <op_bind>
+	(upstream, cst ().value ().uval (), scp ()->index (str ()));
+
     case tree_type::READ:
-      {
-	// Find access coordinates.  Stack frames form a chain.  Here
-	// we find what stack frame will be accessed (i.e. how deeply
-	// nested is this OP inside SCOPE's) and at which position.
-
-	std::string const &name = str ();
-	size_t depth = 0;
-	for (auto scp = scope; scp != nullptr; scp = scp->parent, ++depth)
-	  if (scp->has_name (name))
-	    {
-	      auto id = scp->index (name);
-	      /*
-	      std::cout << "Found `" << name << "' at depth "
-			<< depth << ", index " << (size_t) id
-			<< std::endl;
-	      */
-	      if (m_tt == tree_type::BIND)
-		return std::make_shared <op_bind> (upstream, depth, id);
-	      else
-		return std::make_shared <op_read> (upstream, depth, id);
-	    }
-
-	throw std::runtime_error (std::string {"Unknown identifier `"}
-				  + name + "'.");
-      }
+      return std::make_shared <op_read>
+	(upstream, cst ().value ().uval (), scp ()->index (str ()));
 
     case tree_type::F_DEBUG:
       return std::make_shared <op_f_debug> (upstream);
@@ -270,13 +248,13 @@ tree::build_exec (std::shared_ptr <op> upstream,
     case tree_type::IFELSE:
       {
 	auto cond_origin = std::make_shared <op_origin> (nullptr);
-	auto cond_op = child (0).build_exec (cond_origin, scope);
+	auto cond_op = child (0).build_exec (cond_origin);
 
 	auto then_origin = std::make_shared <op_origin> (nullptr);
-	auto then_op = child (1).build_exec (then_origin, scope);
+	auto then_op = child (1).build_exec (then_origin);
 
 	auto else_origin = std::make_shared <op_origin> (nullptr);
-	auto else_op = child (2).build_exec (else_origin, scope);
+	auto else_op = child (2).build_exec (else_origin);
 
 	return std::make_shared <op_ifelse> (upstream, cond_origin, cond_op,
 					     then_origin, then_op,

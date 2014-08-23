@@ -529,7 +529,7 @@ tree
 parse_query (builtin_dict const &builtins,
 	     char const *begin, char const *end)
 {
-  return tree::promote_scopes (parse_subquery (builtins, begin, end));
+  return tree::resolve_scopes (parse_subquery (builtins, begin, end));
 }
 
 tree

@@ -35,17 +35,14 @@
 value_type const value_closure::vtype = value_type::alloc ("T_CLOSURE");
 
 value_closure::value_closure (tree const &t,
-			      std::shared_ptr <scope> scope,
 			      std::shared_ptr <frame> frame, size_t pos)
   : value {vtype, pos}
   , m_t {std::make_unique <tree> (t)}
-  , m_scope {scope}
   , m_frame {frame}
 {}
 
 value_closure::value_closure (value_closure const &that)
-  : value_closure {*that.m_t, that.m_scope, that.m_frame,
-		   that.get_pos ()}
+  : value_closure {*that.m_t, that.m_frame, that.get_pos ()}
 {}
 
 value_closure::~value_closure()
@@ -68,9 +65,9 @@ value_closure::cmp (value const &v) const
 {
   if (auto that = value::as <value_closure> (&v))
     {
-      auto a = std::make_tuple (static_cast <tree &> (*m_t), m_scope, m_frame);
+      auto a = std::make_tuple (static_cast <tree &> (*m_t), m_frame);
       auto b = std::make_tuple (static_cast <tree &> (*that->m_t),
-				that->m_scope, that->m_frame);
+				that->m_frame);
       return compare (a, b);
     }
   else

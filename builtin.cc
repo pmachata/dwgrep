@@ -37,14 +37,13 @@
 #include "value-cst.hh"
 
 std::unique_ptr <pred>
-builtin::build_pred (std::shared_ptr <scope> scope) const
+builtin::build_pred () const
 {
   return nullptr;
 }
 
 std::shared_ptr <op>
-builtin::build_exec (std::shared_ptr <op> upstream,
-		     std::shared_ptr <scope> scope) const
+builtin::build_exec (std::shared_ptr <op> upstream) const
 {
   return nullptr;
 }

@@ -30,6 +30,7 @@
 #include <sstream>
 #include <memory>
 #include <set>
+#include <algorithm>
 
 #include "op.hh"
 #include "builtin-closure.hh"
@@ -946,8 +947,7 @@ op_lex_closure::next ()
 {
   if (auto stk = m_upstream->next ())
     {
-      stk->push (std::make_unique <value_closure> (m_t, m_scope,
-						   stk->nth_frame (0), 0));
+      stk->push (std::make_unique <value_closure> (m_t, stk->nth_frame (0), 0));
       return stk;
     }
   return nullptr;

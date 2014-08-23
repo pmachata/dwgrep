@@ -80,8 +80,7 @@ class overload_instance
 public:
   overload_instance (std::vector
 			<std::tuple <selector,
-				     std::shared_ptr <builtin>>> const &stencil,
-		     std::shared_ptr <scope> scope);
+				     std::shared_ptr <builtin>>> const &stencil);
 
   std::pair <std::shared_ptr <op_origin>, std::shared_ptr <op>>
     find_exec (stack &stk);
@@ -105,7 +104,7 @@ public:
   template <class T, class... As> void add_op_overload (As &&... arg);
   template <class T, class... As> void add_pred_overload (As &&... arg);
 
-  overload_instance instantiate (std::shared_ptr <scope> scope);
+  overload_instance instantiate ();
 };
 
 class overload_op
@@ -171,8 +170,7 @@ struct overloaded_op_builtin
 {
   using overloaded_builtin::overloaded_builtin;
 
-  std::shared_ptr <op> build_exec (std::shared_ptr <op> upstream,
-				   std::shared_ptr <scope> scope)
+  std::shared_ptr <op> build_exec (std::shared_ptr <op> upstream)
     const override final;
 
   std::shared_ptr <overloaded_builtin>
@@ -185,8 +183,7 @@ struct overloaded_pred_builtin
 {
   using overloaded_builtin::overloaded_builtin;
 
-  std::unique_ptr <pred> build_pred (std::shared_ptr <scope> scope)
-    const override final;
+  std::unique_ptr <pred> build_pred () const override final;
 
   std::shared_ptr <overloaded_builtin>
   create_merged (std::shared_ptr <overload_tab> tab) const override final;
@@ -202,11 +199,10 @@ struct overload_op_builder_impl
   template <size_t... I>
   static std::shared_ptr <op>
   build (std::shared_ptr <op> upstream,
-	 std::shared_ptr <scope> scope,
 	 std::index_sequence <I...>,
 	 std::tuple <std::remove_reference_t <Args>...> const &args)
   {
-    return std::make_shared <Op> (upstream, scope, std::get <I> (args)...);
+    return std::make_shared <Op> (upstream, std::get <I> (args)...);
   }
 };
 
@@ -224,11 +220,10 @@ overload_tab::add_op_overload (Args &&... args)
     {}
 
     std::shared_ptr <op>
-    build_exec (std::shared_ptr <op> upstream,
-		std::shared_ptr <scope> scope) const override final
+    build_exec (std::shared_ptr <op> upstream) const override final
     {
       return overload_op_builder_impl <Op, Args...>::template build
-	(upstream, scope, std::index_sequence_for <Args...> {}, m_args);
+	(upstream, std::index_sequence_for <Args...> {}, m_args);
     }
 
     char const *
@@ -253,11 +248,10 @@ struct overload_pred_builder_impl
 {
   template <size_t... I>
   static std::unique_ptr <pred>
-  build (std::shared_ptr <scope> scope,
-	 std::index_sequence <I...>,
+  build (std::index_sequence <I...>,
 	 std::tuple <std::remove_reference_t <Args>...> const &args)
   {
-    return std::make_unique <Pred> (scope, std::get <I> (args)...);
+    return std::make_unique <Pred> (std::get <I> (args)...);
   }
 };
 
@@ -275,11 +269,10 @@ overload_tab::add_pred_overload (Args &&... args)
     {}
 
     std::unique_ptr <pred>
-    build_pred (std::shared_ptr <scope> scope)
-      const override final
+    build_pred () const override final
     {
       return overload_pred_builder_impl <Pred, Args...>::template build
-        (scope, std::index_sequence_for <Args...> {}, m_args);
+        (std::index_sequence_for <Args...> {}, m_args);
     }
 
     char const *
@@ -364,9 +357,8 @@ struct op_overload
   }
 
 public:
-  op_overload (std::shared_ptr <op> upstream,
-	       std::shared_ptr <scope> scope)
-    : stub_op {upstream, scope}
+  op_overload (std::shared_ptr <op> upstream)
+    : stub_op {upstream}
   {}
 
   stack::uptr
@@ -411,9 +403,8 @@ class op_yielding_overload
   }
 
 public:
-  op_yielding_overload (std::shared_ptr <op> upstream,
-			std::shared_ptr <scope> scope)
-    : stub_op {upstream, scope}
+  op_yielding_overload (std::shared_ptr <op> upstream)
+    : stub_op {upstream}
   {}
 
   stack::uptr
@@ -487,10 +478,6 @@ struct pred_overload
   }
 
 public:
-  pred_overload (std::shared_ptr <scope> scope)
-    : stub_pred {scope}
-  {}
-
   pred_result
   result (stack &stk) override
   {

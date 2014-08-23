@@ -193,12 +193,10 @@ public:
   // nullptr if this is the toplevel-most expression, otherwise it
   // should be a valid op that the op produced by this node feeds off.
   std::shared_ptr <op>
-  build_exec (std::shared_ptr <op> upstream,
-	      std::shared_ptr <scope> scope = {}) const;
+  build_exec (std::shared_ptr <op> upstream) const;
 
   // Produce program suitable for interpretation.
-  std::unique_ptr <pred>
-  build_pred (std::shared_ptr <scope> scope) const;
+  std::unique_ptr <pred> build_pred () const;
 
   // === Parser interface ===
   //
@@ -222,7 +220,7 @@ public:
   static tree *create_neg (tree *t1);
   static tree *create_assert (tree *t1);
 
-  static tree promote_scopes (tree t);
+  static tree resolve_scopes (tree t);
 
   // push_back (*T) and delete T.
   void take_child (tree *t);

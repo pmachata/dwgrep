@@ -111,7 +111,7 @@ namespace
 }
 
 std::unique_ptr <pred>
-builtin_eq::build_pred (std::shared_ptr <scope> scope) const
+builtin_eq::build_pred () const
 {
   return maybe_invert (std::make_unique <pred_eq> ());
 }
@@ -127,7 +127,7 @@ builtin_eq::name () const
 
 
 std::unique_ptr <pred>
-builtin_lt::build_pred (std::shared_ptr <scope> scope) const
+builtin_lt::build_pred () const
 {
   return maybe_invert (std::make_unique <pred_lt> ());
 }
@@ -143,7 +143,7 @@ builtin_lt::name () const
 
 
 std::unique_ptr <pred>
-builtin_gt::build_pred (std::shared_ptr <scope> scope) const
+builtin_gt::build_pred () const
 {
   return maybe_invert (std::make_unique <pred_gt> ());
 }

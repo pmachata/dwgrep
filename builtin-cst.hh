@@ -45,8 +45,7 @@ public:
     : m_value {std::move (value)}
   {}
 
-  std::shared_ptr <op> build_exec (std::shared_ptr <op> upstream,
-				   std::shared_ptr <scope> scope)
+  std::shared_ptr <op> build_exec (std::shared_ptr <op> upstream)
     const override;
 
   char const *name () const override;
@@ -55,8 +54,7 @@ public:
 struct builtin_hex
   : public builtin
 {
-  std::shared_ptr <op> build_exec (std::shared_ptr <op> upstream,
-				   std::shared_ptr <scope> scope)
+  std::shared_ptr <op> build_exec (std::shared_ptr <op> upstream)
     const override;
 
   char const *name () const override;
@@ -65,8 +63,7 @@ struct builtin_hex
 struct builtin_dec
   : public builtin
 {
-  std::shared_ptr <op> build_exec (std::shared_ptr <op> upstream,
-				   std::shared_ptr <scope> scope)
+  std::shared_ptr <op> build_exec (std::shared_ptr <op> upstream)
     const override;
 
   char const *name () const override;
@@ -75,8 +72,7 @@ struct builtin_dec
 struct builtin_oct
   : public builtin
 {
-  std::shared_ptr <op> build_exec (std::shared_ptr <op> upstream,
-				   std::shared_ptr <scope> scope)
+  std::shared_ptr <op> build_exec (std::shared_ptr <op> upstream)
     const override;
 
   char const *name () const override;
@@ -85,8 +81,7 @@ struct builtin_oct
 struct builtin_bin
   : public builtin
 {
-  std::shared_ptr <op> build_exec (std::shared_ptr <op> upstream,
-				   std::shared_ptr <scope> scope)
+  std::shared_ptr <op> build_exec (std::shared_ptr <op> upstream)
     const override;
 
   char const *name () const override;

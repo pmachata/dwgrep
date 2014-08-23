@@ -69,7 +69,7 @@ struct op_apply::pimpl
 	      m_old_frame = stk->nth_frame (0);
 	      stk->set_frame (cl.get_frame ());
 	      auto origin = std::make_shared <op_origin> (std::move (stk));
-	      m_op = cl.get_tree ().build_exec (origin, cl.get_scope ());
+	      m_op = cl.get_tree ().build_exec (origin);
 	    }
 	  else
 	    return nullptr;
@@ -118,8 +118,7 @@ op_apply::name () const
 }
 
 std::shared_ptr <op>
-builtin_apply::build_exec (std::shared_ptr <op> upstream,
-			   std::shared_ptr <scope> scope) const
+builtin_apply::build_exec (std::shared_ptr <op> upstream) const
 {
   return std::make_shared <op_apply> (upstream);
 }

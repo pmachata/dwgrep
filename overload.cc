@@ -28,19 +28,19 @@
 
 #include <iostream>
 #include <memory>
+#include <algorithm>
 
 #include "overload.hh"
 
 overload_instance::overload_instance
 	(std::vector <std::tuple <selector,
-				  std::shared_ptr <builtin>>> const &stencil,
-	 std::shared_ptr <scope> scope)
+				  std::shared_ptr <builtin>>> const &stencil)
 {
   for (auto const &v: stencil)
     {
       auto origin = std::make_shared <op_origin> (nullptr);
-      auto op = std::get <1> (v)->build_exec (origin, scope);
-      auto pred = std::get <1> (v)->build_pred (scope);
+      auto op = std::get <1> (v)->build_exec (origin);
+      auto pred = std::get <1> (v)->build_pred ();
 
       assert (op != nullptr || pred != nullptr);
 
@@ -138,9 +138,9 @@ overload_tab::add_overload (selector sel, std::shared_ptr <builtin> b)
 }
 
 overload_instance
-overload_tab::instantiate (std::shared_ptr <scope> scope)
+overload_tab::instantiate ()
 {
-  return overload_instance {m_overloads, scope};
+  return overload_instance {m_overloads};
 }
 
 
@@ -256,11 +256,10 @@ namespace
 }
 
 std::shared_ptr <op>
-overloaded_op_builtin::build_exec (std::shared_ptr <op> upstream,
-				   std::shared_ptr <scope> scope) const
+overloaded_op_builtin::build_exec (std::shared_ptr <op> upstream) const
 {
   return std::make_shared <named_overload_op>
-    (upstream, get_overload_tab ()->instantiate (scope), name ());
+    (upstream, get_overload_tab ()->instantiate (), name ());
 }
 
 std::shared_ptr <overloaded_builtin>
@@ -290,13 +289,13 @@ namespace
 }
 
 std::unique_ptr <pred>
-overloaded_pred_builtin::build_pred (std::shared_ptr <scope> scope) const
+overloaded_pred_builtin::build_pred () const
 {
   assert (name ()[0] == '?' || name ()[0] == '!');
   bool positive = name ()[0] == '?';
 
   auto pred = std::make_unique <named_overload_pred>
-    (get_overload_tab ()->instantiate (scope), name ());
+    (get_overload_tab ()->instantiate (), name ());
 
   if (positive)
     return std::move (pred);

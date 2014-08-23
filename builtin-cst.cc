@@ -84,8 +84,7 @@ namespace
 
 
 std::shared_ptr <op>
-builtin_constant::build_exec (std::shared_ptr <op> upstream,
-			      std::shared_ptr <scope> scope) const
+builtin_constant::build_exec (std::shared_ptr <op> upstream) const
 {
   return std::make_shared <op_const> (upstream, m_value->clone ());
 }
@@ -98,8 +97,7 @@ builtin_constant::name () const
 
 
 std::shared_ptr <op>
-builtin_hex::build_exec (std::shared_ptr <op> upstream,
-			 std::shared_ptr <scope> scope) const
+builtin_hex::build_exec (std::shared_ptr <op> upstream) const
 {
   return std::make_shared <op_cast> (upstream, &hex_constant_dom);
 }
@@ -112,8 +110,7 @@ builtin_hex::name () const
 
 
 std::shared_ptr <op>
-builtin_dec::build_exec (std::shared_ptr <op> upstream,
-			 std::shared_ptr <scope> scope) const
+builtin_dec::build_exec (std::shared_ptr <op> upstream) const
 {
   return std::make_shared <op_cast> (upstream, &dec_constant_dom);
 }
@@ -126,8 +123,7 @@ builtin_dec::name () const
 
 
 std::shared_ptr <op>
-builtin_oct::build_exec (std::shared_ptr <op> upstream,
-			 std::shared_ptr <scope> scope) const
+builtin_oct::build_exec (std::shared_ptr <op> upstream) const
 {
   return std::make_shared <op_cast> (upstream, &oct_constant_dom);
 }
@@ -140,8 +136,7 @@ builtin_oct::name () const
 
 
 std::shared_ptr <op>
-builtin_bin::build_exec (std::shared_ptr <op> upstream,
-			 std::shared_ptr <scope> scope) const
+builtin_bin::build_exec (std::shared_ptr <op> upstream) const
 {
   return std::make_shared <op_cast> (upstream, &bin_constant_dom);
 }
