@@ -26,37 +26,48 @@
    the GNU Lesser General Public License along with this program.  If
    not, see <http://www.gnu.org/licenses/>.  */
 
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <fcntl.h>
-#include <unistd.h>
 #include <getopt.h>
 
-#include <exception>
 #include <iostream>
 #include <fstream>
 #include <memory>
-#include <system_error>
-
-#include <dwarf.h>
-#include <elfutils/libdw.h>
-#include <libelf.h>
 
 #include "builtin-dw.hh"
-#include "cache.hh"
-#include "dwpp.hh"
 #include "op.hh"
 #include "parser.hh"
 #include "stack.hh"
 #include "tree.hh"
 #include "value-dw.hh"
 
+static void
+show_help ()
+{
+  std::cout << "\
+-e, --expr=EXPR		EXPR is a query to run\n\
+-f, --file=FILE		load query from FILE\n\
+\n\
+-s, --no-messages	suppress error messages\n\
+-q, --quiet, --silent	suppress all normal output\n\
+    --verbose		show query parse in addition to normal output\n\
+-H, --with-filename	print the filename for each match\n\
+-h, --no-filename	suppress printing filename on output\n\
+-c, --count		print only a count of query results\n\
+\n\
+    --help		this message\n\
+";
+}
+
 int
 main(int argc, char *argv[])
 {
   elf_version (EV_CURRENT);
 
-  constexpr int verbose_flag = 257;
+  enum
+  {
+    verbose_flag = 257,
+    help_flag,
+  };
+
   static option long_options[] = {
     {"quiet", no_argument, nullptr, 'q'},
     {"verbose", no_argument, nullptr, verbose_flag},
@@ -67,6 +78,7 @@ main(int argc, char *argv[])
     {"with-filename", no_argument, nullptr, 'H'},
     {"no-filename", no_argument, nullptr, 'h'},
     {"file", required_argument, nullptr, 'f'},
+    {"help", no_argument, nullptr, help_flag},
     {nullptr, no_argument, nullptr, 0},
   };
   static char const *options = "ce:Hhqsf:O:";
@@ -117,6 +129,10 @@ main(int argc, char *argv[])
 	case verbose_flag:
 	  verbosity = 1;
 	  break;
+
+	case help_flag:
+	  show_help ();
+	  return 0;
 
 	case 's':
 	  no_messages = true;
