@@ -77,6 +77,13 @@ dwgrep_builtins_core ()
     dict->add (lt, "!ge");
     dict->add (ngt, "?le");
     dict->add (gt, "!le");
+
+    dict->add (eq, "==");
+    dict->add (neq, "!=");
+    dict->add (lt, "<");
+    dict->add (nlt, ">=");
+    dict->add (gt, ">");
+    dict->add (ngt, "<=");
   }
 
   // domain conversions
@@ -163,8 +170,10 @@ dwgrep_builtins_core ()
     t->add_pred_overload <pred_empty_str> ();
     t->add_pred_overload <pred_empty_seq> ();
 
-    dict->add (std::make_shared <overloaded_pred_builtin> ("?empty", t));
-    dict->add (std::make_shared <overloaded_pred_builtin> ("!empty", t));
+    dict->add
+      (std::make_shared <overloaded_pred_builtin <true>> ("?empty", t));
+    dict->add
+      (std::make_shared <overloaded_pred_builtin <false>> ("!empty", t));
   }
 
   // "find"
@@ -174,8 +183,8 @@ dwgrep_builtins_core ()
     t->add_pred_overload <pred_find_str> ();
     t->add_pred_overload <pred_find_seq> ();
 
-    dict->add (std::make_shared <overloaded_pred_builtin> ("?find", t));
-    dict->add (std::make_shared <overloaded_pred_builtin> ("!find", t));
+    dict->add (std::make_shared <overloaded_pred_builtin <true>> ("?find", t));
+    dict->add (std::make_shared <overloaded_pred_builtin <false>> ("!find", t));
   }
 
   // "match"
@@ -184,8 +193,13 @@ dwgrep_builtins_core ()
 
     t->add_pred_overload <pred_match_str> ();
 
-    dict->add (std::make_shared <overloaded_pred_builtin> ("?match", t));
-    dict->add (std::make_shared <overloaded_pred_builtin> ("!match", t));
+    dict->add
+      (std::make_shared <overloaded_pred_builtin <true>> ("?match", t));
+    dict->add
+      (std::make_shared <overloaded_pred_builtin <false>> ("!match", t));
+
+    dict->add (std::make_shared <overloaded_pred_builtin <true>> ("=~", t));
+    dict->add (std::make_shared <overloaded_pred_builtin <false>> ("!~", t));
   }
 
   // "length"

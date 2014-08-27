@@ -212,7 +212,8 @@
     }
 
     tree *
-    parse_cmp (builtin_dict const &builtins, tree *a, tree *b, char const *word)
+    parse_op (builtin_dict const &builtins, tree *a, tree *b,
+	      std::string const &word)
     {
       auto t = tree::create_ternary <tree_type::PRED_SUBX_CMP>
 	(maybe_nop (a), maybe_nop (b),
@@ -256,9 +257,8 @@
 
 %token TOK_ASTERISK TOK_PLUS TOK_QMARK TOK_COMMA TOK_COLON
 %token TOK_SEMICOLON TOK_VBAR TOK_DOUBLE_VBAR TOK_ARROW TOK_ASSIGN
-%token TOK_EQ TOK_NE TOK_LT TOK_LE TOK_GT TOK_GE
 
-%token TOK_IF TOK_THEN TOK_ELSE TOK_LET TOK_WORD TOK_LIT_STR
+%token TOK_IF TOK_THEN TOK_ELSE TOK_LET TOK_WORD TOK_OP TOK_LIT_STR
 %token TOK_LIT_INT
 
    // XXX These should eventually be moved to builtins.
@@ -273,10 +273,10 @@
   std::vector <std::string> *ids;
  }
 
-%type <t> Program AltList OrList EqList StatementList Statement
+%type <t> Program AltList OrList OpList StatementList Statement
 %type <ids> IdList IdListOpt IdBlockOpt
 %type <s> TOK_LIT_INT
-%type <s> TOK_WORD
+%type <s> TOK_WORD TOK_OP
 %type <t> TOK_LIT_STR
 
 %%
@@ -303,35 +303,20 @@ AltList:
   }
 
 OrList:
-  EqList
+  OpList
 
-  | EqList TOK_DOUBLE_VBAR OrList
+  | OpList TOK_DOUBLE_VBAR OrList
   {
     auto t1 = wrap_in_scope_unless (tree_type::OR, maybe_nop ($1));
     auto t2 = wrap_in_scope_unless (tree_type::OR, maybe_nop ($3));
     $$ = tree::create_cat <tree_type::OR> (t1, t2);
   }
 
-EqList:
+OpList:
   StatementList
 
-  | StatementList TOK_EQ StatementList
-  { $$ = parse_cmp (builtins, $1, $3, "?eq"); }
-
-  | StatementList TOK_NE StatementList
-  { $$ = parse_cmp (builtins, $1, $3, "?ne"); }
-
-  | StatementList TOK_LT StatementList
-  { $$ = parse_cmp (builtins, $1, $3, "?lt"); }
-
-  | StatementList TOK_LE StatementList
-  { $$ = parse_cmp (builtins, $1, $3, "?le"); }
-
-  | StatementList TOK_GT StatementList
-  { $$ = parse_cmp (builtins, $1, $3, "?gt"); }
-
-  | StatementList TOK_GE StatementList
-  { $$ = parse_cmp (builtins, $1, $3, "?ge"); }
+  | StatementList TOK_OP StatementList
+  { $$ = parse_op (builtins, $1, $3, std::string {$2.buf, $2.len}); }
 
 StatementList:
   /* eps. */

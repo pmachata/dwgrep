@@ -1138,8 +1138,8 @@ dwgrep_builtins_dw ()
     t->add_pred_overload <pred_rootp_die> ();
     t->add_pred_overload <pred_rootp_attr> ();
 
-    dict.add (std::make_shared <overloaded_pred_builtin> ("?root", t));
-    dict.add (std::make_shared <overloaded_pred_builtin> ("!root", t));
+    dict.add (std::make_shared <overloaded_pred_builtin <true>> ("?root", t));
+    dict.add (std::make_shared <overloaded_pred_builtin <false>> ("!root", t));
   }
 
   {
@@ -1270,8 +1270,10 @@ dwgrep_builtins_dw ()
     t->add_pred_overload <pred_containsp_arange_cst> ();
     t->add_pred_overload <pred_containsp_arange_arange> ();
 
-    dict.add (std::make_shared <overloaded_pred_builtin> ("?contains", t));
-    dict.add (std::make_shared <overloaded_pred_builtin> ("!contains", t));
+    dict.add
+      (std::make_shared <overloaded_pred_builtin <true>> ("?contains", t));
+    dict.add
+      (std::make_shared <overloaded_pred_builtin <false>> ("!contains", t));
   }
 
   {
@@ -1279,8 +1281,10 @@ dwgrep_builtins_dw ()
 
     t->add_pred_overload <pred_overlapsp_arange_arange> ();
 
-    dict.add (std::make_shared <overloaded_pred_builtin> ("?overlaps", t));
-    dict.add (std::make_shared <overloaded_pred_builtin> ("!overlaps", t));
+    dict.add
+      (std::make_shared <overloaded_pred_builtin <true>> ("?overlaps", t));
+    dict.add
+      (std::make_shared <overloaded_pred_builtin <false>> ("!overlaps", t));
   }
 
   {
@@ -1288,8 +1292,8 @@ dwgrep_builtins_dw ()
 
     t->add_pred_overload <pred_emptyp_arange> ();
 
-    dict.add (std::make_shared <overloaded_pred_builtin> ("?empty", t));
-    dict.add (std::make_shared <overloaded_pred_builtin> ("!empty", t));
+    dict.add (std::make_shared <overloaded_pred_builtin <true>> ("?empty", t));
+    dict.add (std::make_shared <overloaded_pred_builtin <false>> ("!empty", t));
   }
 
   auto add_dw_at = [&dict] (unsigned code,
@@ -1306,10 +1310,14 @@ dwgrep_builtins_dw ()
 	t->add_pred_overload <pred_atname_attr> (code);
 	t->add_pred_overload <pred_atname_cst> (code);
 
-	dict.add (std::make_shared <overloaded_pred_builtin> (qname, t));
-	dict.add (std::make_shared <overloaded_pred_builtin> (bname, t));
-	dict.add (std::make_shared <overloaded_pred_builtin> (lqname, t));
-	dict.add (std::make_shared <overloaded_pred_builtin> (lbname, t));
+	dict.add
+	  (std::make_shared <overloaded_pred_builtin <true>> (qname, t));
+	dict.add
+	  (std::make_shared <overloaded_pred_builtin <false>> (bname, t));
+	dict.add
+	  (std::make_shared <overloaded_pred_builtin <true>> (lqname, t));
+	dict.add
+	  (std::make_shared <overloaded_pred_builtin <false>> (lbname, t));
       }
 
       // @AT_* etc.
@@ -1341,10 +1349,10 @@ dwgrep_builtins_dw ()
       t->add_pred_overload <pred_tag_die> (code);
       t->add_pred_overload <pred_tag_cst> (code);
 
-      dict.add (std::make_shared <overloaded_pred_builtin> (qname, t));
-      dict.add (std::make_shared <overloaded_pred_builtin> (bname, t));
-      dict.add (std::make_shared <overloaded_pred_builtin> (lqname, t));
-      dict.add (std::make_shared <overloaded_pred_builtin> (lbname, t));
+      dict.add (std::make_shared <overloaded_pred_builtin <true>> (qname, t));
+      dict.add (std::make_shared <overloaded_pred_builtin <false>> (bname, t));
+      dict.add (std::make_shared <overloaded_pred_builtin <true>> (lqname, t));
+      dict.add (std::make_shared <overloaded_pred_builtin <false>> (lbname, t));
 
       add_builtin_constant (dict, constant (code, &dw_tag_dom), lqname + 1);
     };
@@ -1363,10 +1371,10 @@ dwgrep_builtins_dw ()
       t->add_pred_overload <pred_form_attr> (code);
       t->add_pred_overload <pred_form_cst> (code);
 
-      dict.add (std::make_shared <overloaded_pred_builtin> (qname, t));
-      dict.add (std::make_shared <overloaded_pred_builtin> (bname, t));
-      dict.add (std::make_shared <overloaded_pred_builtin> (lqname, t));
-      dict.add (std::make_shared <overloaded_pred_builtin> (lbname, t));
+      dict.add (std::make_shared <overloaded_pred_builtin <true>> (qname, t));
+      dict.add (std::make_shared <overloaded_pred_builtin <false>> (bname, t));
+      dict.add (std::make_shared <overloaded_pred_builtin <true>> (lqname, t));
+      dict.add (std::make_shared <overloaded_pred_builtin <false>> (lbname, t));
 
       add_builtin_constant (dict, constant (code, &dw_form_dom), lqname + 1);
     };
@@ -1388,10 +1396,10 @@ dwgrep_builtins_dw ()
       t->add_pred_overload <pred_op_loclist_op> (code);
       t->add_pred_overload <pred_op_cst> (code);
 
-      dict.add (std::make_shared <overloaded_pred_builtin> (qname, t));
-      dict.add (std::make_shared <overloaded_pred_builtin> (bname, t));
-      dict.add (std::make_shared <overloaded_pred_builtin> (lqname, t));
-      dict.add (std::make_shared <overloaded_pred_builtin> (lbname, t));
+      dict.add (std::make_shared <overloaded_pred_builtin <true>> (qname, t));
+      dict.add (std::make_shared <overloaded_pred_builtin <false>> (bname, t));
+      dict.add (std::make_shared <overloaded_pred_builtin <true>> (lqname, t));
+      dict.add (std::make_shared <overloaded_pred_builtin <false>> (lbname, t));
 
       add_builtin_constant (dict, constant (code, &dw_locexpr_opcode_dom),
 			    lqname + 1);

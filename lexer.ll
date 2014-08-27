@@ -79,13 +79,6 @@ BIN [01]
 "->" return TOK_ARROW;
 ":=" return TOK_ASSIGN;
 
-"==" return TOK_EQ;
-"!=" return TOK_NE;
-"<" return TOK_LT;
-"<=" return TOK_LE;
-">" return TOK_GT;
-">=" return TOK_GE;
-
 "if" return TOK_IF;
 "then" return TOK_THEN;
 "else" return TOK_ELSE;
@@ -267,6 +260,13 @@ BIN [01]
 
 (#|[/][/])[^\n]*\n // Skip # or // comment.
 [/][*]([^*]|[*][^/])*[*][/] // Skip /**/ comment.
+
+[^[:space:][:alnum:]()[\]{}]+ {
+    if (yyextra->find ({yyget_text (yyscanner),
+			(size_t) yyget_leng (yyscanner)}) == nullptr)
+      REJECT;
+    return pass_string (yyscanner, yylval, TOK_OP);
+}
 
 . {
   using namespace std::literals::string_literals;

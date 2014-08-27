@@ -178,6 +178,7 @@ struct overloaded_op_builtin
 };
 
 // Base class for overloaded predicate builtins.
+template <bool Positive>
 struct overloaded_pred_builtin
   : public overloaded_builtin
 {
