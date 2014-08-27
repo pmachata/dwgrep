@@ -543,7 +543,7 @@
      : A B swap? (drop>) drop    # "max" -- keep the greater number on stack
      : A B swap? (drop<) drop    # "min"
 
-**  EXPR₁ (“=~” | “!~”) EXPR₂ — string matching
+** •EXPR₁ (“=~” | “!~”) EXPR₂ — string matching
     These are comparison operators with words, respectively, ?match
     and !match.
 
@@ -640,7 +640,7 @@
       : let inc := { 1 add };
       : 2 inc	# 3
 
-** ·“{” (“|” ID₁ ID₂ … “|”)? EXPR₁ “}” — blocks
+** •“{” (“|” ID₁ ID₂ … “|”)? EXPR₁ “}” — blocks
 
     - {EXPR₁} -- A block syntax.  A value representing an expression
       EXPR₁ is pushed to TOS.  The enclosed expression can later be
