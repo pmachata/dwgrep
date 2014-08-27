@@ -161,6 +161,12 @@ expect_count 1 ./nontrivial-types.o -e '
 	winfo ?(@AT_language "%s" "DW_LANG_C89" ?match)'
 expect_count 1 ./nontrivial-types.o -e '
 	winfo ?(@AT_encoding "%s" "^DW_ATE_signed$" ?match)'
+expect_count 7 ./duplicate-const -e '
+	winfo (@AT_decl_file =~ "")'
+expect_count 7 ./duplicate-const -e '
+	winfo (@AT_decl_file =~ ".*petr.*")'
+expect_count 7 ./duplicate-const -e '
+	winfo (@AT_decl_file !~ ".*pavel.*")'
 
 # Test true/false
 expect_count 1 ./typedef.o -e '
