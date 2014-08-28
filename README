@@ -907,13 +907,13 @@
 
 ***  at :: ?T_SEQ ?T_CONST -> ?()
 
-     One can access a particular element by spreading the array with
+     One can access a particular element by enumerating the array with
      elem or relem, and then do assertions on pos:
 
      : [some seq] elem (pos == 0)	# [0]
      : [some seq] relem (pos == 0)	# [-1]
      : [some seq] elem (pos != 0)	# [1:]
-     : [some seq] elem (pos >= 3 && pos <= 5)	# [3:6]
+     : [some seq] elem (pos >= 3 && pos < 6)	# [3:6]
      : [some seq] relem (pos > 0)	# [:-1]
 
      I don't suppose array operations will be widely used, so maybe

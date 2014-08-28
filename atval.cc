@@ -349,6 +349,11 @@ namespace
 		case DW_ATE_boolean:
 		  return atval_unsigned (attr);
 
+		case DW_ATE_UTF:
+		  // XXX We could decode the character that this
+		  // represents.
+		  return atval_unsigned (attr);
+
 		case DW_ATE_float:
 		case DW_ATE_imaginary_float:
 		case DW_ATE_complex_float:

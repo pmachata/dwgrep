@@ -33,6 +33,7 @@
 #include <iostream>
 #include <memory>
 #include <system_error>
+#include <cerrno>
 
 #include "atval.hh"
 #include "dwcst.hh"
