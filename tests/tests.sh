@@ -155,6 +155,9 @@ expect_count 2 ./char_16_32.o -e '
 	winfo (@AT_name == "bar") (@AT_const_value == 0xe1)'
 expect_count 1 ./nullptr.o -e '
 	winfo ?(integrate @AT_type ?TAG_unspecified_type) (@AT_const_value == 0)'
+expect_count 1 ./testfile_const_type -e '
+	winfo @AT_location elem ?OP_GNU_const_type value
+	((pos == 0) (type == T_DIE) || (pos == 1) (type == T_SEQ))'
 
 # Test match operator
 expect_count 7 ./duplicate-const -e '

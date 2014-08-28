@@ -671,7 +671,6 @@ namespace
 	}
 
       case DW_OP_GNU_entry_value:
-      case DW_OP_GNU_const_type:
 	{
 	  Dwarf_Attribute result;
 	  if (dwarf_getlocation_attr
@@ -680,6 +679,26 @@ namespace
 
 	  return select <N> (atval_locexpr (dwctx, result),
 			     std::make_unique <null_producer> ());
+	}
+
+      case DW_OP_GNU_const_type:
+	{
+	  Dwarf_Attribute *attr = const_cast <Dwarf_Attribute *> (&at);
+	  Dwarf_Die die;
+	  if (dwarf_getlocation_die (attr, op, &die) != 0)
+	    throw_libdw ();
+
+	  Dwarf_Attribute attr2;
+	  if (dwarf_getlocation_attr (attr, op, &attr2) != 0)
+	    throw_libdw ();
+
+	  Dwarf_Block block;
+	  if (dwarf_formblock (&attr2, &block) != 0)
+	    throw_libdw ();
+
+	  return select <N>
+	    (pass_single_value (std::make_unique <value_die> (dwctx, die, 0)),
+	     pass_block (block));
 	}
       }
   }
