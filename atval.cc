@@ -39,6 +39,8 @@
 #include "value-seq.hh"
 #include "value-str.hh"
 
+using namespace std::literals::string_literals;
+
 namespace
 {
   struct single_value
@@ -305,6 +307,16 @@ namespace
 	      && (tag != DW_TAG_base_type
 		  || ! dwarf_hasattr_integrate (&type_die, DW_AT_encoding)))
 	    {
+	      char const *name = dwarf_diename (&type_die);
+	      if (name == nullptr)
+		{
+		  if (int e = dwarf_errno ())
+		    throw_libdw (e);
+		}
+	      else
+		if ("decltype(nullptr)"s == name)
+		  return atval_unsigned_with_domain (attr, dw_address_dom);
+
 	      // Ho hum.  This could be a structure or something
 	      // similarly useless.  See if it's a block form at
 	      // least.

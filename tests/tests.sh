@@ -153,6 +153,8 @@ expect_count 1 ./enum.o -e '
 	(@AT_const_value "%s" == "4294967295")'
 expect_count 2 ./char_16_32.o -e '
 	winfo (@AT_name == "bar") (@AT_const_value == 0xe1)'
+expect_count 1 ./nullptr.o -e '
+	winfo ?(integrate @AT_type ?TAG_unspecified_type) (@AT_const_value == 0)'
 
 # Test match operator
 expect_count 7 ./duplicate-const -e '
