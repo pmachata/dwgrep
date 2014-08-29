@@ -69,31 +69,6 @@
      issues).  Type inference would have to be done after these
      arguments are provided.
 
-** Generaziled operators
-   - Could we just abstract all the =='s etc. into an overarching
-     theory of "operators" (akin to "words")?  So that a module could
-     bring in e.g. =~ and !~.
-
-   - Then, could we have || and , provided as these operators?  The
-     parser would need to be able to swallow a whole chain of
-     operators, so that (a || b || c || d) is possible.
-
-   - There would be no precedence and the operators would be left
-     associative.  a, b || c, d would be parsed as (((a, b) || c), d).
-     Parentheses would need to be used to explicitly mark this.
-
-     - But for (a,b || c,d) yacc would just see WORD OP WORD OP WORD
-       OP WORD.  So post-processing will be necessary anyway, and we
-       can solve precedence there.  Look for all the OP's used in the
-       stream, go through them in precedence order, recursively
-       breaking the stream into arms.
-
-   - The dictionary would provide some artifacts that the parser woud
-     look up and pass the parsed thing over.  These would be distinct
-     from op's and pred's, as the way they are constructed is
-     different: they get an upstream and an array of op's with
-     individual arms.
-
 ** Dictionaries
    - Maybe have a key-value value type?  And a => operator for
      constructing this?  The dictionary would then be:
