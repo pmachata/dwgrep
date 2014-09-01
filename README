@@ -1109,6 +1109,15 @@
 ***  ?ATE_* :: ?T_DIE
      Holds if @AT_encoding == DW_ATE_*.
 
+***  flag :: ?T_DIE ?T_CONST ->? (==true || ==false)
+     : let flag := {|F|
+     :   if !(attribute label == F) then (
+     :     false
+     :   ) else (
+     :     attribute (label == F) flag/T_ATTR
+     :   )
+     : };
+
 ** ·T_ATTR
 *** •label :: ?T_ATTR -> ?T_CONST
      Yield an attribute name.
@@ -1145,6 +1154,9 @@
 
 ***  ?ATE_* :: ?T_ATTR
      Holds if (?AT_encoding value == DW_ATE_*)
+
+***  flag :: ?T_ATTR ->? (==true || ==false)
+     : let flag := { (?FORM_flag, ?FORM_flag_present) value };
 
 **  T_ABBREV
 ***  label :: ?T_ABBREV -> ?T_CONST
@@ -1237,7 +1249,7 @@
 *** •?OP_* :: ?T_LOCLIST_OP
      Holds if this is an operation with this opcode.
 
-** •T_ADDR_RANGE
+** ·T_ADDR_RANGE
     - T_ADDR_RANGE actually behaves pretty much like a sequence of
       integers.  Maybe sequence could have an optimization whereby if
       it contains integers only, it just stores low×high pairs instead
@@ -1261,6 +1273,8 @@
 *** •length :: ?T_ADDR_RANGE -> ?T_CONST
      (high low sub)
 
+***  overlap :: ?T_ADDR_RANGE ?T_ADDR_RANGE -> ?T_ADDR_RANGE
+     Produce a new range with overlap of the two constituents.
 *** •?contains :: ?T_ADDR_RANGE ?T_CONST
 *** •?contains :: ?T_ADDR_RANGE ?T_ADDR_RANGE
      Whether TOS is contained within below TOS.

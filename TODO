@@ -161,3 +161,18 @@
      first ten bytes are used.
 
      Seems like a fair can of worms.  Is it worth it?
+
+** proper decoding of DW_ATE_UTF
+   - Decode as UTF-8?  Or do we need a wchar_t string?  Also, C++
+     should have conversion facets for 16-bit and 32-bit character
+     types, but that's not implemented in GCC yet.
+
+** stateful list iteration
+   - We need foldl or something so that it's reasonably easy to
+     express sum (and whatever else).  Currently:
+     : let sum := {0 (over elem (pos == 0) add
+     : 	              swap [|A| A elem (pos != 0)] swap)*
+     :             swap (== []) drop};
+
+** statistics?
+   akin to systemtap?  locstat would certainly use them.
