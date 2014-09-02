@@ -92,6 +92,23 @@ dwpp_offdie (Dwarf *dbg, Dwarf_Off offset)
 }
 
 inline bool
+dwpp_attr (Dwarf_Die *die, unsigned int search_name,
+		     Dwarf_Attribute *result)
+{
+  // Clear the error code.
+  dwarf_errno ();
+  if (dwarf_attr (die, search_name, result) == nullptr)
+    {
+      int dwerr = dwarf_errno ();
+      if (dwerr != 0)
+	throw_libdw (dwerr);
+      else
+	return false;
+    }
+  return true;
+}
+
+inline bool
 dwpp_attr_integrate (Dwarf_Die *die, unsigned int search_name,
 		     Dwarf_Attribute *result)
 {

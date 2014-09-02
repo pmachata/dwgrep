@@ -31,12 +31,17 @@
 
 #include "dwfl_context.hh"
 
+class value;
 class value_producer;
 
 // Obtain a value of ATTR at DIE.
 std::unique_ptr <value_producer>
 at_value (std::shared_ptr <dwfl_context> dwctx,
 	  Dwarf_Die die, Dwarf_Attribute attr);
+
+// Obtain a value of ATTR at DIE.  Returns nullptr if ATTR doesn't
+// have flag form.
+std::unique_ptr <value> at_flag_value (Dwarf_Attribute attr);
 
 std::unique_ptr <value_producer>
 dwop_number (std::shared_ptr <dwfl_context> dwctx,

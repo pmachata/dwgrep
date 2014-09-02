@@ -879,6 +879,68 @@ namespace
   };
 }
 
+// flag
+namespace
+{
+  struct op_flag_die_cst
+    : public op_overload <value_die, value_cst>
+  {
+    using op_overload::op_overload;
+
+    std::unique_ptr <value>
+    operate (std::unique_ptr <value_die> a,
+	     std::unique_ptr <value_cst> b) override
+    {
+      if (b->get_constant ().dom () != &dw_attr_dom)
+	{
+	  std::cerr << "`flag' applied to non-DW_AT_* constant ";
+	  b->show (std::cerr, brevity::full);
+	  std::cerr << std::endl;
+	  return nullptr;
+	}
+
+      Dwarf_Attribute at_mem;
+      {
+	uint64_t u64 = b->get_constant ().value ().uval ();
+	assert (u64 <= UINT_MAX);
+	unsigned atname = static_cast <unsigned> (u64);
+
+	// Absent attribute is like a false flag.
+	if (! dwpp_attr (&a->get_die (), atname, &at_mem))
+	  return std::make_unique <value_cst>
+	    (constant {0, &bool_constant_dom}, 0);
+      }
+
+      // Otherwise we take the attribute's value, if it is a flag.
+      if (auto ret = at_flag_value (at_mem))
+	return ret;
+
+      std::cerr << "`flag' applied to non-flag attribute ";
+      b->show (std::cerr, brevity::full);
+      std::cerr << std::endl;
+      return nullptr;
+    }
+  };
+
+  struct op_flag_attr
+    : public op_overload <value_attr>
+  {
+    using op_overload::op_overload;
+
+    std::unique_ptr <value>
+    operate (std::unique_ptr <value_attr> a) override
+    {
+      // We take the attribute's value, if it is a flag.
+      if (auto ret = at_flag_value (a->get_attr ()))
+	return ret;
+
+      std::cerr << "`flag' applied to non-flag attribute "
+		<< a->label (brevity::full) << std::endl;
+      return nullptr;
+    }
+  };
+}
+
 // @AT_*
 namespace
 {
@@ -1294,6 +1356,15 @@ dwgrep_builtins_dw ()
 
     dict.add (std::make_shared <overloaded_pred_builtin <true>> ("?empty", t));
     dict.add (std::make_shared <overloaded_pred_builtin <false>> ("!empty", t));
+  }
+
+  {
+    auto t = std::make_shared <overload_tab> ();
+
+    t->add_op_overload <op_flag_die_cst> ();
+    t->add_op_overload <op_flag_attr> ();
+
+    dict.add (std::make_shared <overloaded_op_builtin> ("flag", t));
   }
 
   auto add_dw_at = [&dict] (unsigned code,

@@ -113,6 +113,9 @@ public:
   Dwarf_Attribute &get_attr ()
   { return m_attr; }
 
+  constant label (brevity brv) const;
+  constant form (brevity brv) const;
+
   void show (std::ostream &o, brevity brv) const override;
   std::unique_ptr <value> clone () const override;
   cmp_result cmp (value const &that) const override;

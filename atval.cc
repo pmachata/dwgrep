@@ -465,6 +465,24 @@ namespace
   }
 }
 
+// Obtain a value of ATTR at DIE.
+std::unique_ptr <value>
+at_flag_value (Dwarf_Attribute attr)
+{
+  switch (dwarf_whatform (&attr))
+  case DW_FORM_flag:
+  case DW_FORM_flag_present:
+    {
+      bool flag;
+      if (dwarf_formflag (&attr, &flag) != 0)
+	throw_libdw ();
+      return std::make_unique <value_cst>
+	(constant {static_cast <unsigned> (flag), &bool_constant_dom}, 0);
+    }
+
+  return nullptr;
+}
+
 std::unique_ptr <value_producer>
 at_value (std::shared_ptr <dwfl_context> dwctx,
 	  Dwarf_Die die, Dwarf_Attribute attr)
@@ -505,14 +523,7 @@ at_value (std::shared_ptr <dwfl_context> dwctx,
 
     case DW_FORM_flag:
     case DW_FORM_flag_present:
-      {
-	bool flag;
-	if (dwarf_formflag (&attr, &flag) != 0)
-	  throw_libdw ();
-	return pass_single_value
-	  (std::make_unique <value_cst>
-	   (constant {static_cast <unsigned> (flag), &bool_constant_dom}, 0));
-      }
+      return pass_single_value (at_flag_value (attr));
 
     case DW_FORM_data1:
     case DW_FORM_data2:

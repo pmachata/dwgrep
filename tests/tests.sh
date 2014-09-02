@@ -403,6 +403,13 @@ expect_count 1 ./empty -e '
 	?(?DW_FORM_strp form ?DW_FORM_strp)
 	!(!DW_FORM_strp || form !DW_FORM_strp)'
 
+expect_count 1 ./nullptr.o -e '
+	[winfo (@AT_name == "foo") DW_AT_declaration flag] == [false, true]'
+
+expect_count 1 ./nullptr.o -e '
+	winfo (@AT_name == "foo")
+	attribute (label == DW_AT_external) flag == true'
+
 # check type constants
 expect_count 1 ./empty -e '
 	?(1 type T_CONST ?eq "%s" "T_CONST" ?eq)

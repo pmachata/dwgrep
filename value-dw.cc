@@ -143,15 +143,25 @@ value_die::cmp (value const &that) const
 
 value_type const value_attr::vtype = value_type::alloc ("T_ATTR");
 
+constant
+value_attr::label (brevity brv) const
+{
+  unsigned name = (unsigned) dwarf_whatattr ((Dwarf_Attribute *) &m_attr);
+  return {name, &dw_attr_dom, brv};
+}
+
+constant
+value_attr::form (brevity brv) const
+{
+  unsigned f = dwarf_whatform ((Dwarf_Attribute *) &m_attr);
+  return {f, &dw_form_dom, brv};
+}
+
 void
 value_attr::show (std::ostream &o, brevity brv) const
 {
-  unsigned name = (unsigned) dwarf_whatattr ((Dwarf_Attribute *) &m_attr);
-  unsigned form = dwarf_whatform ((Dwarf_Attribute *) &m_attr);
-
   ios_flag_saver s {o};
-  o << constant (name, &dw_attr_dom, brevity::brief) << " ("
-    << constant (form, &dw_form_dom, brevity::brief) << ")\t";
+  o << label (brv) << " (" << form (brv) << ")\t";
   auto vpr = at_value (m_dwctx, m_die, m_attr);
   while (auto v = vpr->next ())
     {

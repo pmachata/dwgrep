@@ -1109,7 +1109,7 @@
 ***  ?ATE_* :: ?T_DIE
      Holds if @AT_encoding == DW_ATE_*.
 
-***  flag :: ?T_DIE ?T_CONST ->? (==true || ==false)
+*** •flag :: ?T_DIE ?T_CONST ->? (==true || ==false)
      : let flag := {|F|
      :   if !(attribute label == F) then (
      :     false
@@ -1155,7 +1155,7 @@
 ***  ?ATE_* :: ?T_ATTR
      Holds if (?AT_encoding value == DW_ATE_*)
 
-***  flag :: ?T_ATTR ->? (==true || ==false)
+*** •flag :: ?T_ATTR ->? (==true || ==false)
      : let flag := { (?FORM_flag, ?FORM_flag_present) value };
 
 **  T_ABBREV
