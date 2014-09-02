@@ -251,7 +251,8 @@
    evaluated separately with the same incoming stack.  Then if the
    comparison holds for any pair of produced values, the overall
    assertion holds.  dwgrep has a full suite of these operators--!=,
-   <, <=, etc.
+   <, <=, etc.  There's also =~ and !~ for matching regular
+   expressions.
 
    Importantly, comparisons are assertions.  If they hold, they
    produce unchanged incoming stack, otherwise they produce nothing at
@@ -274,6 +275,23 @@
    however above "," and "||" that are introduced further, so those
    need to be parenthesized further if they should be a comparison
    operand.
+
+   For completeness sake, to check that a flag is false, you would use
+   the following form:
+
+   : !(@AT_declaration == true)
+
+   If there's no DW_AT_declaration at a given DIE, the left hand side
+   of the inner expression doesn't yield anything, and the outer !()
+   succeeds--which is what we want, because flag absence is an
+   implicit false value.  If the attribute is present, then the !()
+   effectively works as a logical negation.  Contrast this with the
+   following:
+
+   : (@AT_declaration == false)		# WRONG!!!
+
+   You would be probably hard pressed to even find a Dwarf file that
+   actually encodes false flags like this, so the above is useless.
 
    Back to the problem at hand--besides DW_TAG_structure_type, we care
    about DW_TAG_class_type as well!  We can express "and" easily
@@ -1109,15 +1127,6 @@
 ***  ?ATE_* :: ?T_DIE
      Holds if @AT_encoding == DW_ATE_*.
 
-***  flag :: ?T_DIE ?T_CONST ->? (==true || ==false)
-     : let flag := {|F|
-     :   if !(attribute label == F) then (
-     :     false
-     :   ) else (
-     :     attribute (label == F) flag/T_ATTR
-     :   )
-     : };
-
 ** ·T_ATTR
 *** •label :: ?T_ATTR -> ?T_CONST
      Yield an attribute name.
@@ -1154,9 +1163,6 @@
 
 ***  ?ATE_* :: ?T_ATTR
      Holds if (?AT_encoding value == DW_ATE_*)
-
-***  flag :: ?T_ATTR ->? (==true || ==false)
-     : let flag := { (?FORM_flag, ?FORM_flag_present) value };
 
 **  T_ABBREV
 ***  label :: ?T_ABBREV -> ?T_CONST
