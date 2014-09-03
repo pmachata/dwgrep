@@ -171,6 +171,48 @@ namespace
     return std::make_unique <locexpr_producer> (dwctx, attr);
   }
 
+  struct ranges_producer
+    : public value_producer
+  {
+    std::shared_ptr <dwfl_context> m_dwctx;
+    Dwarf_Die m_die;
+    ptrdiff_t m_offset;
+    Dwarf_Addr m_base;
+    size_t m_i;
+
+    explicit ranges_producer (std::shared_ptr <dwfl_context> dwctx,
+			      Dwarf_Die die)
+      : m_dwctx {dwctx}
+      , m_die (die)
+      , m_offset {0}
+      , m_i {0}
+    {}
+
+    std::unique_ptr <value>
+    next () override
+    {
+      Dwarf_Addr start, end;
+      m_offset = dwarf_ranges (&m_die, m_offset, &m_base, &start, &end);
+      if (m_offset < 0)
+	throw_libdw ();
+      if (m_offset == 0)
+	return nullptr;
+
+      return std::make_unique <value_addr_range>
+	(constant {start, &dw_address_dom},
+	 constant {end, &dw_address_dom}, m_i++);
+    }
+  };
+}
+
+std::unique_ptr <value_producer>
+die_ranges (std::shared_ptr <dwfl_context> dwctx, Dwarf_Die die)
+{
+  return std::make_unique <ranges_producer> (dwctx, die);
+}
+
+namespace
+{
   std::unique_ptr <value_producer>
   handle_at_dependent_value (Dwarf_Attribute attr, Dwarf_Die die,
 			     std::shared_ptr <dwfl_context> dwctx)
@@ -400,10 +442,6 @@ namespace
 
       case DW_AT_high_pc:
       case DW_AT_entry_pc:
-	// High PC and entry PC that aren't DW_FORM_addr are relative
-	// to DW_AT_low_pc (or the first DW_AT_ranges address).  But
-	// we should probably keep it untranslated to keep close to
-	// actual data.
       case DW_AT_byte_size:
       case DW_AT_bit_size:
       case DW_AT_bit_offset:
@@ -427,8 +465,7 @@ namespace
 	return atval_locexpr (dwctx, attr);
 
       case DW_AT_ranges:
-	std::cerr << "address ranges NIY\n";
-	return atval_unsigned_with_domain (attr, hex_constant_dom);
+	return die_ranges (dwctx, die);
 
       case DW_AT_GNU_macros:
       case DW_AT_macro_info:

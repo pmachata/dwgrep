@@ -1311,10 +1311,10 @@
    : , etc.)
 
 ** check_die_line_info:
-   : let A := winfo (?TAG_subprogram, ?TAG_inline_subroutine, ?TAG_entry_point,
+   : let A := winfo (?TAG_subprogram, ?TAG_inlined_subroutine, ?TAG_entry_point,
    :                ?TAG_lexical_block, ?TAG_label, ?TAG_with_stmt,
    :                ?TAG_try_block, ?TAG_catch_block);
-   : let B := A (@AT_entry_pc, @AT_low_pc, @AT_ranges);
+   : let B := A (@AT_entry_pc, address);
    : let C := A parent* ?root !(@AT_stmt_list address == B);
    : "Address %( B %) referenced from %( C %) not found in line table."
 

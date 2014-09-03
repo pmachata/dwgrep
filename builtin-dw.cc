@@ -408,41 +408,10 @@ namespace
   {
     using op_yielding_overload::op_yielding_overload;
 
-    struct ranges_producer
-      : public value_producer
-    {
-      std::unique_ptr <value_die> m_die;
-      ptrdiff_t m_offset;
-      Dwarf_Addr m_base;
-      size_t m_i;
-
-      explicit ranges_producer (std::unique_ptr <value_die> die)
-	: m_die {std::move (die)}
-	, m_offset {0}
-	, m_i {0}
-      {}
-
-      std::unique_ptr <value>
-      next () override
-      {
-	Dwarf_Addr start, end;
-	m_offset = dwarf_ranges (&m_die->get_die (), m_offset,
-				 &m_base, &start, &end);
-	if (m_offset < 0)
-	  throw_libdw ();
-	if (m_offset == 0)
-	  return nullptr;
-
-	return std::make_unique <value_addr_range>
-	  (constant {start, &dw_address_dom},
-	   constant {end, &dw_address_dom}, m_i++);
-      }
-    };
-
     std::unique_ptr <value_producer>
     operate (std::unique_ptr <value_die> a) override
     {
-      return std::make_unique <ranges_producer> (std::move (a));
+      return die_ranges (a->get_dwctx (), a->get_die ());
     }
   };
 
