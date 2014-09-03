@@ -164,13 +164,123 @@ namespace
 	}
     }
   };
+}
 
-  std::unique_ptr <value_producer>
-  atval_locexpr (std::shared_ptr <dwfl_context> dwctx, Dwarf_Attribute attr)
+namespace
+{
+  struct macinfo_producer
+    : public value_producer
   {
-    return std::make_unique <locexpr_producer> (dwctx, attr);
-  }
+    std::shared_ptr <dwfl_context> m_dwctx;
+    Dwarf_Die m_cudie;
+    Dwarf_Addr m_base;
+    ptrdiff_t m_offset;
+    size_t m_i;
 
+    macinfo_producer (std::shared_ptr <dwfl_context> dwctx,
+		      Dwarf_Die cudie)
+      : m_dwctx {dwctx}
+      , m_cudie (cudie)
+      , m_offset {0}
+      , m_i {0}
+    {}
+
+    using result_t = std::pair <macinfo_producer &, std::unique_ptr <value>>;
+
+    static int
+    callback (Dwarf_Macro *macro, void *data)
+    {
+      auto retp = static_cast <result_t *> (data);
+      size_t &m_i = retp->first.m_i;
+
+      value_seq::seq_t seq;
+
+      unsigned int opcode;
+      if (dwarf_macro_opcode (macro, &opcode) < 0)
+	throw_libdw ();
+
+      {
+	constant c {opcode, &dw_macinfo_dom};
+	seq.push_back (std::make_unique <value_cst> (c, 0));
+      }
+
+      constant_dom const *param1dom;
+      switch (opcode)
+	{
+	case DW_MACINFO_define:
+	case DW_MACINFO_undef:
+	case DW_MACINFO_start_file:
+	  param1dom = &line_number_dom;
+	  break;
+
+	case DW_MACINFO_vendor_ext:
+	  param1dom = &dec_constant_dom;
+	  break;
+
+	default:
+	  param1dom = nullptr;
+	};
+
+      if (param1dom != nullptr)
+	{
+	  Dwarf_Word param1;
+	  if (dwarf_macro_param1 (macro, &param1) < 0)
+	    throw_libdw ();
+	  constant c {param1, param1dom};
+	  seq.push_back (std::make_unique <value_cst> (c, 0));
+	}
+
+      switch (opcode)
+	{
+	case DW_MACINFO_define:
+	case DW_MACINFO_undef:
+	case DW_MACINFO_vendor_ext:
+	  {
+	    const char *str;
+	    if (dwarf_macro_param2 (macro, nullptr, &str) < 0)
+	      throw_libdw ();
+	    seq.push_back
+	      (std::make_unique <value_str> (std::string {str}, 0));
+	    break;
+	  }
+
+	case DW_MACINFO_start_file:
+	  // XXX file index that should be translated to a string.
+	  {
+	    Dwarf_Word param2;
+	    if (dwarf_macro_param2 (macro, &param2, nullptr) < 0)
+	      throw_libdw ();
+	    constant c {param2, &dec_constant_dom};
+	    seq.push_back (std::make_unique <value_cst> (c, 0));
+	    break;
+	  }
+
+	default:;
+	}
+
+      retp->second = std::make_unique <value_seq> (std::move (seq), m_i);
+      m_i++;
+
+      return DWARF_CB_ABORT;
+    }
+
+    std::unique_ptr <value>
+    next () override
+    {
+      result_t result {*this, nullptr};
+      m_offset = dwarf_getmacros (&m_cudie, callback, &result, m_offset);
+      if (m_offset < 0)
+	throw_libdw ();
+      if (m_offset == 0)
+	return nullptr;
+
+      return std::move (result.second);
+    }
+  };
+}
+
+namespace
+{
   struct ranges_producer
     : public value_producer
   {
@@ -462,14 +572,21 @@ namespace
       case DW_AT_location:
       case DW_AT_data_member_location:
       case DW_AT_vtable_elem_location:
-	return atval_locexpr (dwctx, attr);
+	return std::make_unique <locexpr_producer> (dwctx, attr);
 
       case DW_AT_ranges:
 	return die_ranges (dwctx, die);
 
-      case DW_AT_GNU_macros:
       case DW_AT_macro_info:
-	std::cerr << "macros NIY\n";
+	{
+	  Dwarf_Die cudie;
+	  if (dwarf_diecu (&die, &cudie, nullptr, nullptr) == nullptr)
+	    throw_libdw ();
+	  return std::make_unique <macinfo_producer> (dwctx, cudie);
+	}
+
+      case DW_AT_GNU_macros:
+	std::cerr << "DW_AT_GNU_macros NIY\n";
 	return atval_unsigned_with_domain (attr, hex_constant_dom);
 
       case DW_AT_discr_value:
@@ -563,7 +680,7 @@ at_value (std::shared_ptr <dwfl_context> dwctx,
       return handle_at_dependent_value (attr, die, dwctx);
 
     case DW_FORM_exprloc:
-      return atval_locexpr (dwctx, attr);
+      return std::make_unique <locexpr_producer> (dwctx, attr);
 
     case DW_FORM_ref_sig8:
     case DW_FORM_GNU_ref_alt:
@@ -709,12 +826,12 @@ namespace
 
       case DW_OP_GNU_entry_value:
 	{
-	  Dwarf_Attribute result;
+	  Dwarf_Attribute attr;
 	  if (dwarf_getlocation_attr
-	      (const_cast <Dwarf_Attribute *> (&at), op, &result) != 0)
+	      (const_cast <Dwarf_Attribute *> (&at), op, &attr) != 0)
 	    throw_libdw ();
 
-	  return select <N> (atval_locexpr (dwctx, result),
+	  return select <N> (std::make_unique <locexpr_producer> (dwctx, attr),
 			     std::make_unique <null_producer> ());
 	}
 
