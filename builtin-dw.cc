@@ -367,6 +367,51 @@ namespace
       return std::make_unique <producer> (std::move (a));
     }
   };
+
+  struct op_attribute_abbrev
+    : public op_yielding_overload <value_abbrev>
+  {
+    using op_yielding_overload::op_yielding_overload;
+
+    struct producer
+      : public value_producer
+    {
+      std::unique_ptr <value_abbrev> m_value;
+      size_t m_n;
+      size_t m_i;
+
+      producer (std::unique_ptr <value_abbrev> value)
+	: m_value {std::move (value)}
+	, m_n {dwpp_abbrev_attrcnt (m_value->get_abbrev ())}
+	, m_i {0}
+      {}
+
+      std::unique_ptr <value>
+      next () override
+      {
+	if (m_i < m_n)
+	  {
+	    unsigned int name;
+	    unsigned int form;
+	    Dwarf_Off offset;
+	    if (dwarf_getabbrevattr (&m_value->get_abbrev (), m_i,
+				     &name, &form, &offset) != 0)
+	      throw_libdw ();
+
+	    return std::make_unique <value_abbrev_attr>
+	      (name, form, offset, m_i++);
+	  }
+	else
+	  return nullptr;
+      }
+    };
+
+    std::unique_ptr <value_producer>
+    operate (std::unique_ptr <value_abbrev> a) override
+    {
+      return std::make_unique <producer> (std::move (a));
+    }
+  };
 }
 
 // offset
@@ -381,6 +426,32 @@ namespace
     operate (std::unique_ptr <value_die> val) override
     {
       constant c {dwarf_dieoffset (&val->get_die ()), &dw_offset_dom};
+      return std::make_unique <value_cst> (c, 0);
+    }
+  };
+
+  struct op_offset_abbrev
+    : public op_overload <value_abbrev>
+  {
+    using op_overload::op_overload;
+
+    std::unique_ptr <value>
+    operate (std::unique_ptr <value_abbrev> a) override
+    {
+      constant c {dwpp_abbrev_offset (a->get_abbrev ()), &dw_offset_dom};
+      return std::make_unique <value_cst> (c, 0);
+    }
+  };
+
+  struct op_offset_abbrev_attr
+    : public op_overload <value_abbrev_attr>
+  {
+    using op_overload::op_overload;
+
+    std::unique_ptr <value>
+    operate (std::unique_ptr <value_abbrev_attr> a) override
+    {
+      constant c {a->offset, &dw_offset_dom};
       return std::make_unique <value_cst> (c, 0);
     }
   };
@@ -501,6 +572,34 @@ namespace
     }
   };
 
+  struct op_label_abbrev
+    : public op_overload <value_abbrev>
+  {
+    using op_overload::op_overload;
+
+    std::unique_ptr <value>
+    operate (std::unique_ptr <value_abbrev> a) override
+    {
+      unsigned int tag = dwarf_getabbrevtag (&a->get_abbrev ());
+      assert (tag >= 0);
+      constant cst {(unsigned) tag, &dw_tag_dom};
+      return std::make_unique <value_cst> (cst, 0);
+    }
+  };
+
+  struct op_label_abbrev_attr
+    : public op_overload <value_abbrev_attr>
+  {
+    using op_overload::op_overload;
+
+    std::unique_ptr <value>
+    operate (std::unique_ptr <value_abbrev_attr> a) override
+    {
+      constant cst {a->name, &dw_attr_dom};
+      return std::make_unique <value_cst> (cst, 0);
+    }
+  };
+
   struct op_label_loclist_op
     : public op_overload <value_loclist_op>
   {
@@ -528,6 +627,19 @@ namespace
     operate (std::unique_ptr <value_attr> val) override
     {
       constant cst {dwarf_whatform (&val->get_attr ()), &dw_form_dom};
+      return std::make_unique <value_cst> (cst, 0);
+    }
+  };
+
+  struct op_form_abbrev_attr
+    : public op_overload <value_abbrev_attr>
+  {
+    using op_overload::op_overload;
+
+    std::unique_ptr <value>
+    operate (std::unique_ptr <value_abbrev_attr> a) override
+    {
+      constant cst {a->form, &dw_form_dom};
       return std::make_unique <value_cst> (cst, 0);
     }
   };
@@ -848,6 +960,73 @@ namespace
   };
 }
 
+// abbrev
+namespace
+{
+  struct op_abbrev_die
+    : public op_overload <value_die>
+  {
+    using op_overload::op_overload;
+
+    std::unique_ptr <value>
+    operate (std::unique_ptr <value_die> a) override
+    {
+      if (a->get_die ().abbrev == nullptr)
+	dwarf_haschildren (&a->get_die ());
+      assert (a->get_die ().abbrev != nullptr);
+
+      return std::make_unique <value_abbrev>
+	(a->get_dwctx (), *a->get_die ().abbrev, 0);
+    }
+  };
+}
+
+// ?haschildren
+namespace
+{
+  struct pred_haschildrenp_die
+    : public pred_overload <value_die>
+  {
+    using pred_overload::pred_overload;
+
+    pred_result
+    result (value_die &a) override
+    {
+      return pred_result (dwarf_haschildren (&a.get_die ()));
+    }
+  };
+
+  struct pred_haschildrenp_abbrev
+    : public pred_overload <value_abbrev>
+  {
+    using pred_overload::pred_overload;
+
+    pred_result
+    result (value_abbrev &a) override
+    {
+      return pred_result (dwarf_abbrevhaschildren (&a.get_abbrev ()));
+    }
+  };
+}
+
+// code
+namespace
+{
+  struct op_code_abbrev
+    : public op_overload <value_abbrev>
+  {
+    using op_overload::op_overload;
+
+    std::unique_ptr <value>
+    operate (std::unique_ptr <value_abbrev> a) override
+    {
+      constant cst {dwarf_getabbrevcode (&a->get_abbrev ()),
+		    &dw_abbrevcode_dom};
+      return std::make_unique <value_cst> (cst, 0);
+    }
+  };
+}
+
 // @AT_*
 namespace
 {
@@ -907,6 +1086,48 @@ namespace
     result (value_attr &a) override
     {
       return pred_result (dwarf_whatattr (&a.get_attr ()) == m_atname);
+    }
+  };
+
+  struct pred_atname_abbrev
+    : public pred_overload <value_abbrev>
+  {
+    unsigned m_atname;
+
+    pred_atname_abbrev (unsigned atname)
+      : m_atname {atname}
+    {}
+
+    pred_result
+    result (value_abbrev &a) override
+    {
+      size_t cnt = dwpp_abbrev_attrcnt (a.get_abbrev ());
+      for (size_t i = 0; i < cnt; ++i)
+	{
+	  unsigned int name;
+	  if (dwarf_getabbrevattr (&a.get_abbrev (), i,
+				   &name, nullptr, nullptr) != 0)
+	    throw_libdw ();
+	  if (name == m_atname)
+	    return pred_result::yes;
+	}
+      return pred_result::no;
+    }
+  };
+
+  struct pred_atname_abbrev_attr
+    : public pred_overload <value_abbrev_attr>
+  {
+    unsigned m_atname;
+
+    pred_atname_abbrev_attr (unsigned atname)
+      : m_atname {atname}
+    {}
+
+    pred_result
+    result (value_abbrev_attr &a) override
+    {
+      return pred_result (a.name == m_atname);
     }
   };
 
@@ -981,6 +1202,22 @@ namespace
     result (value_attr &a) override
     {
       return pred_result (dwarf_whatform (&a.get_attr ()) == m_form);
+    }
+  };
+
+  struct pred_form_abbrev_attr
+    : public pred_overload <value_abbrev_attr>
+  {
+    unsigned m_form;
+
+    pred_form_abbrev_attr (unsigned form)
+      : m_form {form}
+    {}
+
+    pred_result
+    result (value_abbrev_attr &a) override
+    {
+      return pred_result (a.form == m_form);
     }
   };
 
@@ -1097,6 +1334,7 @@ dwgrep_builtins_dw ()
     auto t = std::make_shared <overload_tab> ();
 
     t->add_op_overload <op_attribute_die> ();
+    t->add_op_overload <op_attribute_abbrev> ();
 
     dict.add (std::make_shared <overloaded_op_builtin> ("attribute", t));
   }
@@ -1148,6 +1386,8 @@ dwgrep_builtins_dw ()
     auto t = std::make_shared <overload_tab> ();
 
     t->add_op_overload <op_offset_die> ();
+    t->add_op_overload <op_offset_abbrev> ();
+    t->add_op_overload <op_offset_abbrev_attr> ();
     t->add_op_overload <op_offset_loclist_op> ();
 
     dict.add (std::make_shared <overloaded_op_builtin> ("offset", t));
@@ -1168,6 +1408,8 @@ dwgrep_builtins_dw ()
 
     t->add_op_overload <op_label_die> ();
     t->add_op_overload <op_label_attr> ();
+    t->add_op_overload <op_label_abbrev> ();
+    t->add_op_overload <op_label_abbrev_attr> ();
     t->add_op_overload <op_label_loclist_op> ();
 
     dict.add (std::make_shared <overloaded_op_builtin> ("label", t));
@@ -1177,6 +1419,7 @@ dwgrep_builtins_dw ()
     auto t = std::make_shared <overload_tab> ();
 
     t->add_op_overload <op_form_attr> ();
+    t->add_op_overload <op_form_abbrev_attr> ();
 
     dict.add (std::make_shared <overloaded_op_builtin> ("form", t));
   }
@@ -1265,6 +1508,34 @@ dwgrep_builtins_dw ()
     dict.add (std::make_shared <overloaded_pred_builtin <false>> ("!empty", t));
   }
 
+  {
+    auto t = std::make_shared <overload_tab> ();
+
+    t->add_op_overload <op_abbrev_die> ();
+
+    dict.add (std::make_shared <overloaded_op_builtin> ("abbrev", t));
+  }
+
+  {
+    auto t = std::make_shared <overload_tab> ();
+
+    t->add_pred_overload <pred_haschildrenp_die> ();
+    t->add_pred_overload <pred_haschildrenp_abbrev> ();
+
+    dict.add (std::make_shared
+		<overloaded_pred_builtin <true>> ("?haschildren", t));
+    dict.add (std::make_shared
+		<overloaded_pred_builtin <false>> ("!haschildren", t));
+  }
+
+  {
+    auto t = std::make_shared <overload_tab> ();
+
+    t->add_op_overload <op_code_abbrev> ();
+
+    dict.add (std::make_shared <overloaded_op_builtin> ("code", t));
+  }
+
   auto add_dw_at = [&dict] (unsigned code,
 			    char const *qname, char const *bname,
 			    char const *atname,
@@ -1277,6 +1548,8 @@ dwgrep_builtins_dw ()
 
 	t->add_pred_overload <pred_atname_die> (code);
 	t->add_pred_overload <pred_atname_attr> (code);
+	t->add_pred_overload <pred_atname_abbrev> (code);
+	t->add_pred_overload <pred_atname_abbrev_attr> (code);
 	t->add_pred_overload <pred_atname_cst> (code);
 
 	dict.add
@@ -1338,6 +1611,7 @@ dwgrep_builtins_dw ()
       auto t = std::make_shared <overload_tab> ();
 
       t->add_pred_overload <pred_form_attr> (code);
+      t->add_pred_overload <pred_form_abbrev_attr> (code);
       t->add_pred_overload <pred_form_cst> (code);
 
       dict.add (std::make_shared <overloaded_pred_builtin <true>> (qname, t));

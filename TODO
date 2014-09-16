@@ -50,6 +50,25 @@
       - Closures are of course difficult.  No idea how to handle
         those.
 
+*** strength reduction, of sorts
+    - The idea is that instead of (Dw winfo (offset == 0x123)), we
+      would emit (Dw 0x123 dwarf_offdie), without dwarf_offdie
+      actually being a word.  (This would also check that there _is_
+      such DIE in the first place.)  winfo would expose a "reduction
+      point", and the translator would make use of that.
+
+      - winfo, unit, child: offset, ?root, maybe pos
+      - attribute: label
+      - address/T_DIE: other range ?overlap, maybe pos
+      - (r)elem/T_SEQ: pos
+      - (r)elem/T_LOCLIST_ELEM: pos, maybe offset
+      - value/T_LOCLIST_OP: pos
+
+    - This functionality would depend on overload pegging, so that you
+      know which overload to ask for abbreviations.  But some of it
+      could be doable in runtime as well, and might still very much
+      pay off.
+
 ** command-line arguments -- $1, $2, ...
    - These would have to be passed in not only from command line, but
      also from the C/C++ wrapper.  Thus it is desirable that they can
@@ -134,16 +153,6 @@
      attributes.
 
 ** XXX .debug_macro
-
-** XXX optional inlining of DW_TAG_partial unit
-   - We don't interpret DW_TAG_imported_unit at all currently.
-     Eventually we'll probably want to inline this by default, but
-     also have a way to actually see the DW_TAG_imported_unit DIE's as
-     well.
-
-   - (Note that DW_TAG_imported_module and DW_TAG_imported_declaration
-     are for "using namespace X" and "using X" respectively, so
-     unrelated to this.)
 
 ** XXX multithreading
    - processing Dwarf has the potential for a lot of concurrency.  If

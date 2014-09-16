@@ -118,6 +118,59 @@ public:
   cmp_result cmp (value const &that) const override;
 };
 
+class value_abbrev
+  : public value
+{
+  std::shared_ptr <dwfl_context> m_dwctx;
+  Dwarf_Abbrev &m_abbrev;
+
+public:
+  static value_type const vtype;
+
+  value_abbrev (std::shared_ptr <dwfl_context> dwctx,
+		Dwarf_Abbrev &abbrev, size_t pos)
+    : value {vtype, pos}
+    , m_dwctx {dwctx}
+    , m_abbrev {abbrev}
+  {}
+
+  value_abbrev (value_abbrev const &that) = default;
+
+  std::shared_ptr <dwfl_context> get_dwctx ()
+  { return m_dwctx; }
+
+  Dwarf_Abbrev &get_abbrev ()
+  { return m_abbrev; }
+
+  void show (std::ostream &o, brevity brv) const override;
+  std::unique_ptr <value> clone () const override;
+  cmp_result cmp (value const &that) const override;
+};
+
+struct value_abbrev_attr
+  : public value
+{
+  unsigned int name;
+  unsigned int form;
+  Dwarf_Off offset;
+
+  static value_type const vtype;
+
+  value_abbrev_attr (unsigned int a_name, unsigned int a_form,
+		     Dwarf_Off a_offset, size_t pos)
+    : value {vtype, pos}
+    , name {a_name}
+    , form {a_form}
+    , offset {a_offset}
+  {}
+
+  value_abbrev_attr (value_abbrev_attr const &that) = default;
+
+  void show (std::ostream &o, brevity brv) const override;
+  std::unique_ptr <value> clone () const override;
+  cmp_result cmp (value const &that) const override;
+};
+
 class value_loclist_elem
   : public value
 {

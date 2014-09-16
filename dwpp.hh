@@ -108,4 +108,21 @@ dwpp_attr_integrate (Dwarf_Die *die, unsigned int search_name,
   return true;
 }
 
+inline Dwarf_Off
+dwpp_abbrev_offset (Dwarf_Abbrev &abbrev)
+{
+  // Evil, evil hack.  But the easiest way to pry offset off ABBREV's
+  // hands as well, libdw won't help us in this regard.
+  return reinterpret_cast <Dwarf_Off &> (abbrev);
+}
+
+inline size_t
+dwpp_abbrev_attrcnt (Dwarf_Abbrev &abbrev)
+{
+  size_t ret;
+  if (dwarf_getattrcnt (&abbrev, &ret) != 0)
+    throw_libdw ();
+  return ret;
+}
+
 #endif /* _DWPP_H_ */

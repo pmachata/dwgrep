@@ -744,7 +744,7 @@ constant_dom const &dw_endianity_dom = dw_endianity_dom_obj;
 
 namespace
 {
-  struct dw_numeric_constant_dom_t
+  struct dw_hex_constant_dom_t
     : public numeric_constant_dom_t
   {
     using numeric_constant_dom_t::numeric_constant_dom_t;
@@ -756,10 +756,26 @@ namespace
       o << std::hex << std::showbase << v;
     }
   };
+
+  struct dw_dec_constant_dom_t
+    : public numeric_constant_dom_t
+  {
+    using numeric_constant_dom_t::numeric_constant_dom_t;
+
+    void
+    show (mpz_class const &v, std::ostream &o, brevity brv) const override
+    {
+      ios_flag_saver s {o};
+      o << std::dec << std::showbase << v;
+    }
+  };
 }
 
-dw_numeric_constant_dom_t dw_address_dom_obj ("Dwarf_Address");
+dw_hex_constant_dom_t dw_address_dom_obj ("Dwarf_Address");
 constant_dom const &dw_address_dom = dw_address_dom_obj;
 
-dw_numeric_constant_dom_t dw_offset_dom_obj ("Dwarf_Off");
+dw_hex_constant_dom_t dw_offset_dom_obj ("Dwarf_Off");
 constant_dom const &dw_offset_dom = dw_offset_dom_obj;
+
+dw_dec_constant_dom_t dw_abbrevcode_dom_obj ("Dwarf_Abbrev code");
+constant_dom const &dw_abbrevcode_dom = dw_abbrevcode_dom_obj;

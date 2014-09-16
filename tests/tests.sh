@@ -562,5 +562,41 @@ expect_count 1 ./empty -e '
 	[1, 2, 3, 4] [3, 4, 5, 6]
 	(|A B| A [B elem !(== A elem)] add) == [1, 2, 3, 4, 5, 6]'
 
+# Abbreviations.
+
+expect_count 1 ./bitcount.o -e '
+	[winfo abbrev offset] ==
+	[0, 19, 19, 30, 19, 19, 19, 19, 41, 19, 54, 80, 95, 104]'
+expect_count 1 ./bitcount.o -e '
+	[winfo abbrev code] ==
+	[1, 2, 2, 3, 2, 2, 2, 2, 4, 2, 5, 6, 7, 8]'
+
+expect_count 0 ./duplicate-const -e 'winfo ?haschildren !(child)'
+expect_count 0 ./duplicate-const -e 'winfo !haschildren ?(child)'
+
+expect_count 1 ./duplicate-const -e '
+	[winfo ?haschildren] length == [winfo abbrev ?haschildren] length'
+
+expect_count 1 ./duplicate-const -e '
+	[winfo ([abbrev attribute] length == [attribute] length)] length
+	== [winfo] length'
+expect_count 1 ./duplicate-const -e '
+	[winfo ([abbrev attribute form] == [attribute form])] length
+	== [winfo] length'
+expect_count 1 ./duplicate-const -e '
+	[winfo ([abbrev attribute label] == [attribute label])] length
+	== [winfo] length'
+expect_count 1 ./duplicate-const -e '
+	[winfo ?(abbrev ?AT_name)] == [winfo ?AT_name]'
+expect_count 1 ./duplicate-const -e '
+	[winfo ?(abbrev !AT_name)] == [winfo !AT_name]'
+expect_count 1 ./duplicate-const -e '
+	[winfo ?(abbrev attribute ?AT_name)] == [winfo ?AT_name]'
+expect_count 1 ./bitcount.o -e '
+	[winfo (pos == 0) abbrev attribute ?FORM_strp label]
+	== [DW_AT_producer, DW_AT_name, DW_AT_comp_dir]'
+
+expect_count 1 ./duplicate-const -e '[winfo label] == [winfo abbrev label]'
+
 echo "$total tests total, $failures failures."
 [ $failures -eq 0 ]

@@ -1010,11 +1010,14 @@
        : T_DWARF
 
 ** ·T_DWARF
-*** ·winfo :: ?T_DWARF ->* ?T_DIE
+*** •winfo :: ?T_DWARF ->* ?T_DIE
      Yields all DIE's in a .debug_info section.  In produces values of
      type T_DIE.
 
-     XXX How do we handle DW_TAG_partial_unit?
+***  wabbrev :: ?T_DWARF ->* ?T_ABBREV_UNIT
+     - Use dwarf_nextcu to discover where the units are.
+     - Then get abbreviations of each individual unit by iterating
+       through dwarf_offabbrev.
 
 ***  symtab :: ?T_DWARF ->* ?T_ELFSYM
      Yields all symbols in .symtab, or minisymtab, or .dynsym.  It
@@ -1030,7 +1033,8 @@
      Like dwarf_dieoffset.
 
 *** ·unit :: ?T_DIE ->* ?T_DIE
-     Selects objects belonging to the same logical unit.
+     - Selects objects belonging to the same logical unit.
+     - XXX isn't just saying (root child*) clearer?
 
      XXX how do we solve logical vs. low-level access to
      DW_TAG_partial_unit?  We could have winfo/wtype/wunit. for
@@ -1101,6 +1105,13 @@
      : {attribute ?AT_xyz} integrate	# dwarf_attr_integrate
      : {@AT_xyz} integrate		# value of integrated DW_AT_xyz
 
+***  merge :: ?T_DIE ->* ?T_DIE
+     : let merge := { ?DW_TAG_imported_unit @AT_import child+ };
+
+     And change the typical use to:
+     : winfo merge*		# if you want to see deref'd DIE's
+     : winfo merge* !(merge)	# if you care about the actual tree
+
 *** •@AT_decl_file
      Value of this attribute is represented as actual string including
      path.
@@ -1111,7 +1122,7 @@
      this is stored?  Or after it gets to be stored in general, where
      this is _not_ stored?)
 
-***  abbrev :: ?T_DIE -> T_ABBREV
+*** •abbrev :: ?T_DIE -> T_ABBREV
 *** •@AT_* :: ?T_DIE ->* ?()
      Syntactic sugar for (attribute ?(label == AT_*) value).
 
@@ -1126,6 +1137,9 @@
 
 ***  ?ATE_* :: ?T_DIE
      Holds if @AT_encoding == DW_ATE_*.
+
+*** •?haschildren :: ?T_DIE
+     - Holds for DIE's with children.
 
 ** ·T_ATTR
 *** •label :: ?T_ATTR -> ?T_CONST
@@ -1150,8 +1164,6 @@
 *** •form :: ?T_ATTR -> ?T_CONST
      Yield a form of an attribute.
 
-***  next :: ?T_ATTR ->? ?T_ATTR  (XXX is this useful?)
-***  prev :: ?T_ATTR ->? ?T_ATTR  (XXX is this useful?)
 *** •?AT_* :: ?T_ATTR
      Holds if it is this attribute.
 
@@ -1164,29 +1176,38 @@
 ***  ?ATE_* :: ?T_ATTR
      Holds if (?AT_encoding value == DW_ATE_*)
 
-**  T_ABBREV
-***  label :: ?T_ABBREV -> ?T_CONST
-***  offset :: ?T_ABBREV -> ?T_CONST
-***  attribute :: ?T_ABBREV ->* T_ABBREV_ATTR
-***  @AT_* :: ?T_ABBREV ->? T_CONST
-     Yields a form of an attribute.
-***  ?AT_* :: ?T_ABBREV
+**  T_ABBREV_UNIT
+***  offset :: ?T_ABBREV_UNIT -> ?T_CONST
+***  child :: ?T_ABBREV_UNIT ->* ?T_ABBREV
+** •T_ABBREV
+*** •label :: ?T_ABBREV -> ?T_CONST
+*** •offset :: ?T_ABBREV -> ?T_CONST
+*** •attribute :: ?T_ABBREV ->* ?T_ABBREV_ATTR
+     - Yields all abbreviation attributes.
+
+*** •code :: ?T_ABBREV -> ?T_CONST
+     - Yields abbreviation code.
+
+*** •?AT_* :: ?T_ABBREV
      Holds if abbreviation has this attribute.
 
-**  T_ABBREV_ATTR
-***  label :: ?T_ABBREV_ATTR -> ?T_CONST
+*** •?haschildren :: ?T_ABBREV
+     - Holds for abbreviations that form child-ful DIE's.
+
+** •T_ABBREV_ATTR
+*** •label :: ?T_ABBREV_ATTR -> ?T_CONST
      Yields attribute name.
 
-***  offset :: ?T_ABBREV_ATTR -> ?T_CONST
+*** •offset :: ?T_ABBREV_ATTR -> ?T_CONST
      Yields offset of attribute within abbreviation.
 
-***  form :: ?T_ABBREV_ATTR -> ?T_CONST
+*** •form :: ?T_ABBREV_ATTR -> ?T_CONST
      Yields attribute form.
 
-***  ?AT_* :: ?T_ABBREV_ATTR
+*** •?AT_* :: ?T_ABBREV_ATTR
      Holds if it is this attribute.
 
-***  ?FORM_* :: ?T_ABBREV_ATTR
+*** •?FORM_* :: ?T_ABBREV_ATTR
      Holds if the attribute has this form.
 
 **  T_ELFSYM

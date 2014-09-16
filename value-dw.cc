@@ -188,6 +188,82 @@ value_attr::cmp (value const &that) const
 }
 
 
+value_type const value_abbrev::vtype
+	= value_type::alloc ("T_ABBREV");
+
+void
+value_abbrev::show (std::ostream &o, brevity brv) const
+{
+  ios_flag_saver fs {o};
+
+  o << '[' << dwarf_getabbrevcode (&m_abbrev) << "] "
+    << "offset:" << constant (dwpp_abbrev_offset (m_abbrev),
+				&dw_offset_dom, brevity::full)
+    << ", children:" << (dwarf_abbrevhaschildren (&m_abbrev) ? "yes" : "no")
+    << ", tag:" << constant (dwarf_getabbrevtag (&m_abbrev),
+			     &dw_tag_dom, brevity::brief);
+
+  if (brv == brevity::full)
+    {
+      size_t cnt = dwpp_abbrev_attrcnt (m_abbrev);
+      for (size_t i = 0; i < cnt; ++i)
+	{
+	  unsigned int name;
+	  unsigned int form;
+	  Dwarf_Off offset;
+	  if (dwarf_getabbrevattr (&m_abbrev, i, &name, &form, &offset) != 0)
+	    throw_libdw ();
+	  o << "\n\t";
+	  value_abbrev_attr {name, form, offset, 0}.show (o, brevity::full);
+	}
+    }
+}
+
+std::unique_ptr <value>
+value_abbrev::clone () const
+{
+  return std::make_unique <value_abbrev> (*this);
+}
+
+cmp_result
+value_abbrev::cmp (value const &that) const
+{
+  if (auto v = value::as <value_abbrev> (&that))
+    // That Dwarf_Abbrev& ultimately comes from libdw, which keeps one
+    // of each.  Thus the pointer actually serves as identity.
+    return compare (&m_abbrev, &v->m_abbrev);
+  else
+    return cmp_result::fail;
+}
+
+
+value_type const value_abbrev_attr::vtype
+	= value_type::alloc ("T_ABBREV_ATTR");
+
+void
+value_abbrev_attr::show (std::ostream &o, brevity brv) const
+{
+  o << constant (offset, &dw_offset_dom, brevity::full)
+    << ' ' << constant (name, &dw_attr_dom, brevity::brief)
+    << " (" << constant (form, &dw_form_dom, brevity::brief) << ")";
+}
+
+std::unique_ptr <value>
+value_abbrev_attr::clone () const
+{
+  return std::make_unique <value_abbrev_attr> (*this);
+}
+
+cmp_result
+value_abbrev_attr::cmp (value const &that) const
+{
+  if (auto v = value::as <value_abbrev_attr> (&that))
+    return compare (offset, v->offset);
+  else
+    return cmp_result::fail;
+}
+
+
 namespace
 {
   void
