@@ -88,8 +88,9 @@ overload_instance::find_pred (stack &stk)
     return m_preds[idx];
 }
 
-void
-show_expects (std::string const &name, std::vector <selector> selectors)
+static void
+show_expects (std::string const &name, std::vector <selector> selectors,
+	      selector profile)
 {
   std::cerr << "Error: `" << name << "'";
 
@@ -111,13 +112,13 @@ show_expects (std::string const &name, std::vector <selector> selectors)
 
       std::cerr << selectors[i];
     }
-  std::cerr << " near TOS.\n";
+  std::cerr << " near TOS.  Actual profile is " << profile << ".\n";
 }
 
 void
-overload_instance::show_error (std::string const &name)
+overload_instance::show_error (std::string const &name, selector profile)
 {
-  return show_expects (name, m_selectors);
+  return show_expects (name, m_selectors, profile);
 }
 
 overload_tab::overload_tab (overload_tab const &a, overload_tab const &b)
@@ -173,7 +174,7 @@ struct overload_op::pimpl
 	      {
 		auto ovl = m_ovl_inst.find_exec (*stk);
 		if (std::get <0> (ovl) == nullptr)
-		  m_ovl_inst.show_error (self.name ());
+		  m_ovl_inst.show_error (self.name (), selector {*stk});
 		else
 		  {
 		    m_op = std::get <1> (ovl);
@@ -226,7 +227,7 @@ overload_pred::result (stack &stk)
   auto ovl = m_ovl_inst.find_pred (stk);
   if (ovl == nullptr)
     {
-      m_ovl_inst.show_error (name ());
+      m_ovl_inst.show_error (name (), selector {stk});
       return pred_result::fail;
     }
   else

@@ -38,9 +38,10 @@ selector::selector (stack const &s)
 std::ostream &
 operator<< (std::ostream &o, selector const &sel)
 {
+  const unsigned shift = 8 * (sizeof (selector::sel_t) - 1);
   bool seen = false;
-  for (auto imprint = sel.m_imprint; imprint != 0; imprint >>= 8)
-    if (uint8_t code = imprint & 0xff)
+  for (auto imprint = sel.m_imprint; imprint != 0; imprint <<= 8)
+    if (uint8_t code = (imprint & (0xff << shift)) >> shift)
       {
 	if (seen)
 	  o << " ";

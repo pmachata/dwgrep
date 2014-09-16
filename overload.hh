@@ -39,10 +39,6 @@
 #include "builtin.hh"
 #include "selector.hh"
 
-// Format an error message detailing what types a given operator
-// needs.
-void show_expects (std::string const &name, std::vector <selector> vts);
-
 // Some operators are generically applicable.  In order to allow
 // adding new value types, and reuse the same operators for them, this
 // overloading infrastructure is provided.
@@ -87,7 +83,7 @@ public:
 
   std::shared_ptr <pred> find_pred (stack &stk);
 
-  void show_error (std::string const &name);
+  void show_error (std::string const &name, selector profile);
 };
 
 class overload_tab
