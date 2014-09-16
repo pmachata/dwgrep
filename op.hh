@@ -653,22 +653,6 @@ public:
   void reset () override;
 };
 
-class pred_constant
-  : public pred
-{
-  constant m_const;
-
-public:
-  explicit pred_constant (constant cst)
-    : m_const {cst}
-  {}
-
-  pred_result result (stack &stk) override;
-  std::string name () const override;
-
-  void reset () override {}
-};
-
 class pred_subx_compare
   : public pred
 {

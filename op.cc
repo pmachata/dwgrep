@@ -1143,29 +1143,6 @@ pred_subx_any::reset ()
 
 
 pred_result
-pred_constant::result (stack &stk)
-{
-  if (auto v = stk.top_as <value_cst> ())
-    {
-      check_constants_comparable (m_const, v->get_constant ());
-      return pred_result (m_const == v->get_constant ());
-    }
-  else
-    {
-      show_expects (name (), {{value_cst::vtype}});
-      return pred_result::fail;
-    }
-}
-
-std::string
-pred_constant::name () const
-{
-  std::stringstream ss;
-  ss << "?" << m_const;
-  return ss.str ();
-}
-
-pred_result
 pred_subx_compare::result (stack &stk)
 {
   m_op1->reset ();
