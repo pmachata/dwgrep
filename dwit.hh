@@ -30,12 +30,96 @@
 #define DWIT_H
 
 #include <vector>
-#include <stdexcept>
 #include <cassert>
 #include <algorithm>
-
-#include <elfutils/libdw.h>
 #include <dwarf.h>
+
+#include "dwpp.hh"
+
+class dwfl_module_iterator
+  : public std::iterator<std::input_iterator_tag, Dwfl_Module *>
+{
+  Dwfl *m_dwfl;
+  ptrdiff_t m_offset;
+  Dwarf *m_ret_dw;
+  Dwarf_Addr m_ret_bias;
+
+  static int
+  module_cb (Dwfl_Module *mod, void **data, const char *name,
+	     Dwarf_Addr addr, void *arg)
+  {
+    auto self = static_cast <dwfl_module_iterator *> (arg);
+    self->m_ret_dw = dwfl_module_getdwarf (mod, &self->m_ret_bias);
+    if (self->m_ret_dw == nullptr)
+      throw_libdwfl ();
+    return DWARF_CB_ABORT;
+  }
+
+  void
+  move ()
+  {
+    m_offset = dwfl_getmodules (m_dwfl, module_cb, this, m_offset);
+    if (m_offset == -1)
+      throw_libdwfl ();
+  }
+
+  explicit dwfl_module_iterator (ptrdiff_t off)
+    : m_dwfl {nullptr}
+    , m_offset {off}
+  {}
+
+public:
+  dwfl_module_iterator (Dwfl *dwfl)
+    : m_dwfl {dwfl}
+    , m_offset {0}
+  {
+    move ();
+  }
+
+  dwfl_module_iterator (dwfl_module_iterator const &that) = default;
+
+  static dwfl_module_iterator
+  end ()
+  {
+    return dwfl_module_iterator ((ptrdiff_t) 0);
+  }
+
+  dwfl_module_iterator &
+  operator++ ()
+  {
+    assert (*this != end ());
+    move ();
+    return *this;
+  }
+
+  dwfl_module_iterator
+  operator++ (int)
+  {
+    auto ret = *this;
+    ++*this;
+    return ret;
+  }
+
+  std::pair <Dwarf *, Dwarf_Addr>
+  operator* () const
+  {
+    return std::make_pair (m_ret_dw, m_ret_bias);
+  }
+
+  bool
+  operator== (dwfl_module_iterator const &that) const
+  {
+    assert (m_dwfl == nullptr || that.m_dwfl == nullptr
+	    || m_dwfl == that.m_dwfl);
+    return m_offset == that.m_offset;
+  }
+
+  bool
+  operator!= (dwfl_module_iterator const &that) const
+  {
+    return !(*this == that);
+  }
+};
 
 class cu_iterator
   : public std::iterator<std::input_iterator_tag, Dwarf_Die *>
@@ -197,7 +281,7 @@ public:
       {
 	m_stack.push_back (dwarf_dieoffset (&m_die));
 	if (dwarf_child (&m_die, &m_die))
-	  throw std::runtime_error ("dwarf_child");
+	  throw_libdw ();
 	return *this;
       }
 
@@ -205,7 +289,7 @@ public:
       switch (dwarf_siblingof (&m_die, &m_die))
 	{
 	case -1:
-	  throw std::runtime_error ("dwarf_siblingof");
+	  throw_libdw ();
 	case 0:
 	  return *this;
 	case 1:
@@ -214,7 +298,7 @@ public:
 	  if (! m_stack.empty ())
 	    {
 	      if (dwarf_offdie (m_cuit.m_dw, m_stack.back (), &m_die) == nullptr)
-		throw std::runtime_error ("dwarf_offdie");
+		throw_libdw ();
 	      m_stack.pop_back ();
 	    }
 	}
@@ -257,7 +341,7 @@ public:
 
     all_dies_iterator ret = *this;
     if (dwarf_offdie (m_cuit.m_dw, m_stack.back (), &ret.m_die) == nullptr)
-      throw std::runtime_error ("parent:dwarf_offdie");
+      throw_libdw ();
     ret.m_stack.pop_back ();
     return ret;
   }
@@ -309,7 +393,7 @@ class attr_iterator
     cb_data data = {&m_at, false};
     m_offset = dwarf_getattrs (m_die, &callback, &data, m_offset);
     if (m_offset == -1)
-      throw std::runtime_error ("dwarf_getattrs");
+      throw_libdw ();
   }
 
   attr_iterator (ptrdiff_t offset)

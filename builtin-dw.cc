@@ -71,15 +71,15 @@ namespace
       : public value_producer
     {
       std::shared_ptr <dwfl_context> m_dwctx;
+      dwfl_module_iterator m_modit;
       all_dies_iterator m_it;
       size_t m_i;
-      ptrdiff_t m_offset;
 
       winfo_producer (std::shared_ptr <dwfl_context> dwctx)
 	: m_dwctx {(assert (dwctx != nullptr), dwctx)}
+	, m_modit {m_dwctx->get_dwfl ()}
 	, m_it {all_dies_iterator::end ()}
 	, m_i {0}
-	, m_offset {0}
       {}
 
       std::unique_ptr <value>
@@ -87,32 +87,12 @@ namespace
       {
 	if (m_it == all_dies_iterator::end ())
 	  {
-	    struct result
-	    {
-	      Dwarf *dw;
-	      Dwarf_Addr bias;
-	    };
-
-	    auto cb = [] (Dwfl_Module *mod, void **data, const char *name,
-			  Dwarf_Addr addr, void *arg) -> int
-	      {
-		result *ret = static_cast <result *> (arg);
-		ret->dw = dwfl_module_getdwarf (mod, &ret->bias);
-		if (ret->dw == nullptr)
-		  throw_libdwfl ();
-		return DWARF_CB_ABORT;
-	      };
-
-	    result ret;
-	    m_offset = dwfl_getmodules (m_dwctx->get_dwfl (), cb,
-					&ret, m_offset);
-	    if (m_offset < 0)
-	      throw_libdwfl ();
-	    if (m_offset == 0)
+	    if (m_modit == dwfl_module_iterator::end ())
 	      return nullptr;
 
-	    assert (ret.dw != nullptr);
-	    m_it = all_dies_iterator (ret.dw);
+	    auto ret = *m_modit++;
+	    assert (ret.first != nullptr);
+	    m_it = all_dies_iterator (ret.first);
 	  }
 
 	return std::make_unique <value_die> (m_dwctx, **m_it++, m_i++);
