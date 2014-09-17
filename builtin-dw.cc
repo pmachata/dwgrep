@@ -816,8 +816,7 @@ namespace
     operate (std::unique_ptr <value_die> a) override
     {
       Dwarf_Die cudie;
-      if (dwarf_cu_die (a->get_die ().cu, &cudie, nullptr, nullptr,
-			nullptr, nullptr, nullptr, nullptr) == nullptr)
+      if (dwarf_diecu (&a->get_die (), &cudie, nullptr, nullptr) == nullptr)
 	throw_libdw ();
       return std::make_unique <value_die> (a->get_dwctx (), cudie, 0);
     }
