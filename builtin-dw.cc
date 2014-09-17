@@ -804,6 +804,26 @@ namespace
   };
 }
 
+// root
+namespace
+{
+  struct op_root_die
+    : public op_overload <value_die>
+  {
+    using op_overload::op_overload;
+
+    std::unique_ptr <value>
+    operate (std::unique_ptr <value_die> a) override
+    {
+      Dwarf_Die cudie;
+      if (dwarf_cu_die (a->get_die ().cu, &cudie, nullptr, nullptr,
+			nullptr, nullptr, nullptr, nullptr) == nullptr)
+	throw_libdw ();
+      return std::make_unique <value_die> (a->get_dwctx (), cudie, 0);
+    }
+  };
+}
+
 // value
 namespace
 {
@@ -1422,6 +1442,14 @@ dwgrep_builtins_dw ()
 
     dict.add (std::make_shared <overloaded_pred_builtin <true>> ("?root", t));
     dict.add (std::make_shared <overloaded_pred_builtin <false>> ("!root", t));
+  }
+
+  {
+    auto t = std::make_shared <overload_tab> ();
+
+    t->add_op_overload <op_root_die> ();
+
+    dict.add (std::make_shared <overloaded_op_builtin> ("root", t));
   }
 
   {

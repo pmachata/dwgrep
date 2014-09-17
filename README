@@ -1058,6 +1058,9 @@
 
      XXX DW_TAG_partial_unit
 
+*** •root :: ?T_DIE -> ?T_DIE
+     : root := {parent* ?root};
+
 *** •?root, !root :: ?T_DIE
      ?root holds if the DIE is a root node.  Equivalent to !(parent).
 
