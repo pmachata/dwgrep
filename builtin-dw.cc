@@ -109,6 +109,77 @@ namespace
   };
 }
 
+// wabbrev
+namespace
+{
+  struct op_wabbrev_dwarf
+    : public op_yielding_overload <value_dwarf>
+  {
+    struct producer
+      : public value_producer
+    {
+      std::shared_ptr <dwfl_context> m_dwctx;
+      dwfl_module_iterator m_modit;
+      cu_iterator m_cuit;
+      Dwarf_Off m_offset;
+      size_t m_i;
+
+      producer (std::shared_ptr <dwfl_context> dwctx)
+	: m_dwctx {(assert (dwctx != nullptr), dwctx)}
+	, m_modit {m_dwctx->get_dwfl ()}
+	, m_cuit {cu_iterator::end ()}
+	, m_offset {0}
+	, m_i {0}
+      {}
+
+      std::unique_ptr <value>
+      next () override
+      {
+	Dwarf_Abbrev *abbrev;
+	while (true)
+	  {
+	    if (m_cuit == cu_iterator::end ())
+	      {
+		if (m_modit == dwfl_module_iterator::end ())
+		  {
+		    return nullptr;
+		  }
+
+		auto ret = *m_modit++;
+		assert (ret.first != nullptr);
+		m_cuit = cu_iterator (ret.first);
+		m_offset = 0;
+	      }
+
+	    size_t length;
+	    abbrev = dwarf_getabbrev (*m_cuit, m_offset, &length);
+	    if (abbrev == nullptr)
+	      throw_libdw ();
+	    if (abbrev == DWARF_END_ABBREV)
+	      {
+		m_offset = 0;
+		m_cuit++;
+		continue;
+	      }
+
+	    m_offset += length;
+	    break;
+	  }
+
+	return std::make_unique <value_abbrev> (m_dwctx, *abbrev, m_i++);
+      }
+    };
+
+    using op_yielding_overload::op_yielding_overload;
+
+    std::unique_ptr <value_producer>
+    operate (std::unique_ptr <value_dwarf> a) override
+    {
+      return std::make_unique <producer> (a->get_dwctx ());
+    }
+  };
+}
+
 // unit
 namespace
 {
@@ -1148,6 +1219,22 @@ namespace
     }
   };
 
+  struct pred_tag_abbrev
+    : public pred_overload <value_abbrev>
+  {
+    unsigned int m_tag;
+
+    pred_tag_abbrev (unsigned int tag)
+      : m_tag {tag}
+    {}
+
+    pred_result
+    result (value_abbrev &a) override
+    {
+      return pred_result (dwarf_getabbrevtag (&a.get_abbrev ()) == m_tag);
+    }
+  };
+
   struct pred_tag_cst
     : public pred_overload <value_cst>
   {
@@ -1299,6 +1386,14 @@ dwgrep_builtins_dw ()
     t->add_op_overload <op_winfo_dwarf> ();
 
     dict.add (std::make_shared <overloaded_op_builtin> ("winfo", t));
+  }
+
+  {
+    auto t = std::make_shared <overload_tab> ();
+
+    t->add_op_overload <op_wabbrev_dwarf> ();
+
+    dict.add (std::make_shared <overloaded_op_builtin> ("wabbrev", t));
   }
 
   {
@@ -1569,6 +1664,7 @@ dwgrep_builtins_dw ()
       auto t = std::make_shared <overload_tab> ();
 
       t->add_pred_overload <pred_tag_die> (code);
+      t->add_pred_overload <pred_tag_abbrev> (code);
       t->add_pred_overload <pred_tag_cst> (code);
 
       dict.add (std::make_shared <overloaded_pred_builtin <true>> (qname, t));

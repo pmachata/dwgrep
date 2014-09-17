@@ -1014,10 +1014,8 @@
      Yields all DIE's in a .debug_info section.  In produces values of
      type T_DIE.
 
-***  wabbrev :: ?T_DWARF ->* ?T_ABBREV_UNIT
-     - Use dwarf_nextcu to discover where the units are.
-     - Then get abbreviations of each individual unit by iterating
-       through dwarf_offabbrev.
+*** •wabbrev :: ?T_DWARF ->* ?T_ABBREV
+     - Yields all abbreviations in a .debug_abbrev sections.
 
 ***  symtab :: ?T_DWARF ->* ?T_ELFSYM
      Yields all symbols in .symtab, or minisymtab, or .dynsym.  It
@@ -1177,6 +1175,8 @@
      Holds if (?AT_encoding value == DW_ATE_*)
 
 **  T_ABBREV_UNIT
+    - maybe it would be better if wabbrev produced this instead of
+      unstructured dump of abbreviations.
 ***  offset :: ?T_ABBREV_UNIT -> ?T_CONST
 ***  child :: ?T_ABBREV_UNIT ->* ?T_ABBREV
 ** •T_ABBREV
@@ -1187,6 +1187,9 @@
 
 *** •code :: ?T_ABBREV -> ?T_CONST
      - Yields abbreviation code.
+
+*** •?TAG_* :: ?T_ABBREV
+     Holds if abbreviation has this tag.
 
 *** •?AT_* :: ?T_ABBREV
      Holds if abbreviation has this attribute.
