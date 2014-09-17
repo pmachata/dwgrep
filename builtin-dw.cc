@@ -1388,8 +1388,13 @@ dwgrep_builtins_dw ()
   auto ret = std::make_unique <builtin_dict> ();
   builtin_dict &dict = *ret;
 
+  add_builtin_type_constant <value_dwarf> (dict);
   add_builtin_type_constant <value_die> (dict);
   add_builtin_type_constant <value_attr> (dict);
+  add_builtin_type_constant <value_abbrev> (dict);
+  add_builtin_type_constant <value_abbrev_attr> (dict);
+  add_builtin_type_constant <value_loclist_elem> (dict);
+  add_builtin_type_constant <value_addr_range> (dict);
   add_builtin_type_constant <value_loclist_op> (dict);
 
   {
