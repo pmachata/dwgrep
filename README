@@ -1017,11 +1017,24 @@
 *** •wabbrev :: ?T_DWARF ->* ?T_ABBREV
      - Yields all abbreviations in a .debug_abbrev sections.
 
+***  unit :: ?T_DWARF ->* ?T_CU
 ***  symtab :: ?T_DWARF ->* ?T_ELFSYM
      Yields all symbols in .symtab, or minisymtab, or .dynsym.  It
      produces values of type T_ELFSYM.
 
 ***  name :: ?T_DWARF -> ?T_STR
+
+**  T_CU
+    - How to get to abbreviations associated with a given CU?  One way
+      would be to have a T_CU, which either winfo or some other word
+      would produce.  unit::?T_DIE wouldn't be ->*?T_DIE, but ->?T_CU.
+    - CU DIE would be obtained by saying (elem ?root)
+***  offset :: ?T_CU -> ?T_CONST
+***  elem :: ?T_CU ->* ?T_DIE
+***  next
+***  prev
+***  abbrev :: ?T_CU -> ?T_ABBREV_UNIT
+***  version :: ?T_CU -> ?T_CONST
 
 ** ·T_DIE
 *** •label :: ?T_DIE -> ?T_CONST
@@ -1030,13 +1043,8 @@
 *** •offset :: ?T_DIE -> ?T_CONST
      Like dwarf_dieoffset.
 
-*** ·unit :: ?T_DIE ->* ?T_DIE
-     - Selects objects belonging to the same logical unit.
-     - XXX isn't just saying (root child*) clearer?
-
-     XXX how do we solve logical vs. low-level access to
-     DW_TAG_partial_unit?  We could have winfo/wtype/wunit. for
-     low-level access and info/unit for interpreted access.
+***  unit :: ?T_DIE -> ?T_CU
+     - Selects unit that this DIE comes from.
 
 *** •high :: ?T_DIE ->? ?T_CONST
      : attribute ?AT_highpc address
@@ -1109,7 +1117,7 @@
 ***  merge :: ?T_DIE ->* ?T_DIE
      : let merge := { ?DW_TAG_imported_unit @AT_import child+ };
 
-     And change the typical use to:
+     A typical use would then be:
      : winfo merge*		# if you want to see deref'd DIE's
      : winfo merge* !(merge)	# if you care about the actual tree
 
@@ -1181,7 +1189,7 @@
     - maybe it would be better if wabbrev produced this instead of
       unstructured dump of abbreviations.
 ***  offset :: ?T_ABBREV_UNIT -> ?T_CONST
-***  child :: ?T_ABBREV_UNIT ->* ?T_ABBREV
+***  elem :: ?T_ABBREV_UNIT ->* ?T_ABBREV
 ** •T_ABBREV
 *** •label :: ?T_ABBREV -> ?T_CONST
 *** •offset :: ?T_ABBREV -> ?T_CONST
@@ -1318,6 +1326,46 @@
 *** •?empty :: ?T_ADDR_RANGE
      (low == high)
 
+**  T_MACRO_UNIT ???
+    - A value representing .debug_macro and .debug_macinfo units.
+      Might be useful for DW_MACRO_GNU_transparent_include opcode, and
+      for DW_AT_macro_info and DW_AT_GNU_macros attributes, which
+      would hold this as a value.
+
+***  child
+***  offset
+***  merge :: ?T_MACRO_ENTRY ->* ?T_MACRO_ENTRY
+     : let merge := { ?DW_MACRO_GNU_transparent_include value };
+
+     Should be used as with winfo, depending on what exactly is needed
+     either (merge*) or (merge* !(merge)).
+
+***  XXX :: something to get the prototype table???
+
+**  T_MACRO_ENTRY
+    - A value used for representing both .debug_macro and
+      .debug_macinfo entries.  Domain of entry label disambiguates
+      which is which.
+
+***  label :: ?T_MACRO_ENTRY -> ?T_CONST
+     - Opcode of this macro entry.
+
+***  attribute :: ?T_MACRO_ENTRY ->* ?T_MACRO_ATTRIBUTE
+     - Yields value(s) associated with this opcode.
+     - XXX could we somehow query a form?
+
+***  @0, @1, ... or something???
+     - Should this resemble DIE's or T_LOCLIST_OP's?  Shouldn't
+       T_LOCLIST_OP's actually resemble DIE's as well?  @X as a
+       shorthand for (value (pos == X)) seems fairly natural.
+
+       If X is a name instead of a number, it means:
+       : (attribute (label == X))
+
+**  T_MACRO_ATTRIBUTE ???
+    - Note that label is explicitly not applicable
+***  value
+***  form
 
 * Examples
 
@@ -1386,10 +1434,9 @@
 ** duplicat DW_TAG_const_type
    - http://gcc.gnu.org/bugzilla/show_bug.cgi?id=56740
 
-     : let ?cvr_type := {?TAG_const_type,?TAG_volatile_type,?TAG_restrict_type};
-     : let A := winfo ?cvr_type ;
-     : let B := A unit ?(> A) ?cvr_type ;
-     : (A tag == B tag) (A @AT_type == B @AT_type) A B
+     : # Leaves on stack two DIE's that describe the same type.
+     : let A := winfo (?TAG_const_type||?TAG_volatile_type||?TAG_restrict_type);
+     : A root child* (> A) (label == A label) (@AT_type == A @AT_type) A
 
 ** find any attribute with value "blah"
    : attribute (value == "blah")

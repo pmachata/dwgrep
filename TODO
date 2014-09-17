@@ -141,9 +141,6 @@
    these and just expose ?op's.  When ?x is present, it implies that
    @op is true.
 
-** XXX Dwarf CU version -- an artificial attribute?
-   - https://stackoverflow.com/questions/16169864
-
 ** XXX .debug_frame, .eh_frame
    - do we need an overarching "theory" for both of these?
    - also, there's fair amount of tables around here (symbol tables,
@@ -151,8 +148,6 @@
      first-class citizen of some sort?  Currently we understand there
      are values, every value has some properties, and some values have
      attributes.
-
-** XXX .debug_macro
 
 ** XXX multithreading
    - processing Dwarf has the potential for a lot of concurrency.  If
@@ -177,7 +172,7 @@
      types, but that's not implemented in GCC yet.
 
 ** stateful list iteration
-   - We need foldl or something so that it's reasonably easy to
+   - We need fold or something so that it's reasonably easy to
      express sum (and whatever else).  Currently:
      : let sum := {0 (over elem (pos == 0) add
      : 	              swap [|A| A elem (pos != 0)] swap)*
