@@ -279,46 +279,24 @@ namespace
   };
 }
 
-namespace
+std::unique_ptr <value>
+die_ranges (Dwarf_Die die)
 {
-  struct ranges_producer
-    : public value_producer
-  {
-    std::shared_ptr <dwfl_context> m_dwctx;
-    Dwarf_Die m_die;
-    ptrdiff_t m_offset;
-    Dwarf_Addr m_base;
-    size_t m_i;
-
-    explicit ranges_producer (std::shared_ptr <dwfl_context> dwctx,
-			      Dwarf_Die die)
-      : m_dwctx {dwctx}
-      , m_die (die)
-      , m_offset {0}
-      , m_i {0}
-    {}
-
-    std::unique_ptr <value>
-    next () override
+  coverage cov;
+  Dwarf_Addr base; // Cache for dwarf_ranges.
+  for (ptrdiff_t off = 0;;)
     {
       Dwarf_Addr start, end;
-      m_offset = dwarf_ranges (&m_die, m_offset, &m_base, &start, &end);
-      if (m_offset < 0)
+      off = dwarf_ranges (&die, off, &base, &start, &end);
+      if (off < 0)
 	throw_libdw ();
-      if (m_offset == 0)
-	return nullptr;
+      if (off == 0)
+	break;
 
-      return std::make_unique <value_addr_range>
-	(constant {start, &dw_address_dom},
-	 constant {end, &dw_address_dom}, m_i++);
+      cov.add (start, end - start);
     }
-  };
-}
 
-std::unique_ptr <value_producer>
-die_ranges (std::shared_ptr <dwfl_context> dwctx, Dwarf_Die die)
-{
-  return std::make_unique <ranges_producer> (dwctx, die);
+  return std::make_unique <value_aset> (cov, 0);
 }
 
 namespace
@@ -575,7 +553,7 @@ namespace
 	return std::make_unique <locexpr_producer> (dwctx, attr);
 
       case DW_AT_ranges:
-	return die_ranges (dwctx, die);
+	return pass_single_value (die_ranges (die));
 
       case DW_AT_macro_info:
 	{

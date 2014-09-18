@@ -32,6 +32,7 @@
 #include <elfutils/libdwfl.h>
 #include "value.hh"
 #include "dwfl_context.hh"
+#include "coverage.hh"
 
 class value_dwarf
   : public value
@@ -221,28 +222,23 @@ public:
   cmp_result cmp (value const &that) const override;
 };
 
-class value_addr_range
+// Set of addresses.
+struct value_aset
   : public value
 {
-  constant m_low;
-  constant m_high;
+  coverage cov;
 
-public:
   static value_type const vtype;
 
-  value_addr_range (constant const &low, constant const &high, size_t pos)
+  value_aset (coverage a_cov, size_t pos)
     : value {vtype, pos}
-    , m_low {low}
-    , m_high {high}
+    , cov {std::move (a_cov)}
   {}
 
-  value_addr_range (value_addr_range const &that) = default;
+  value_aset (value_aset const &that) = default;
 
-  constant const &get_low () const
-  { return m_low; }
-
-  constant const &get_high () const
-  { return m_high; }
+  coverage &get_coverage ()
+  { return cov; }
 
   void show (std::ostream &o, brevity brv) const override;
   std::unique_ptr <value> clone () const override;

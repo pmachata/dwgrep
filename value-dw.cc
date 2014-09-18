@@ -362,27 +362,41 @@ value_loclist_elem::cmp (value const &that) const
 }
 
 
-value_type const value_addr_range::vtype = value_type::alloc ("T_ADDR_RANGE");
+value_type const value_aset::vtype = value_type::alloc ("T_ASET");
 
 void
-value_addr_range::show (std::ostream &o, brevity brv) const
+value_aset::show (std::ostream &o, brevity brv) const
 {
-  ios_flag_saver s {o};
-  o << m_low << ".." << m_high;
+  o << cov::format_ranges {cov};
 }
 
 std::unique_ptr <value>
-value_addr_range::clone () const
+value_aset::clone () const
 {
-  return std::make_unique <value_addr_range> (*this);
+  return std::make_unique <value_aset> (*this);
 }
 
 cmp_result
-value_addr_range::cmp (value const &that) const
+value_aset::cmp (value const &that) const
 {
-  if (auto v = value::as <value_addr_range> (&that))
-    return compare (std::make_tuple (m_low, m_high),
-		    std::make_tuple (v->m_low, v->m_high));
+  if (auto v = value::as <value_aset> (&that))
+    {
+      auto const &cov2 = v->cov;
+
+      cmp_result ret = compare (cov.size (), cov2.size ());
+      if (ret != cmp_result::equal)
+	return ret;
+
+      for (size_t i = 0; i < cov.size (); ++i)
+	if ((ret = compare (cov.at (i).start,
+			    cov2.at (i).start)) != cmp_result::equal)
+	  return ret;
+	else if ((ret = compare (cov.at (i).length,
+				 cov2.at (i).length)) != cmp_result::equal)
+	  return ret;
+
+      return cmp_result::equal;
+    }
   else
     return cmp_result::fail;
 }

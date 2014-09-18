@@ -462,7 +462,7 @@ expect_count 1 ./bitcount.o -e '
 # high, low, address
 expect_count 1 ./bitcount.o -e '
 	[winfo @AT_location] elem (pos == 1) address
-	(high == 0x1001a) (low == 0x10017) (== 65559 65562 arange)'
+	(high == 0x1001a) (low == 0x10017) (== 65559 65562 aset)'
 
 expect_count 2 ./duplicate-const -e '
 	winfo attribute ?AT_high_pc
@@ -479,72 +479,77 @@ expect_count 2 ./duplicate-const -e '
 	winfo (low == 0x4004cd) (high == 0x4004fb)'
 
 expect_count 1 ./empty -e '
-	10 20 arange
+	10 20 aset
 	?(9 !contains) ?(10 ?contains) ?(11 ?contains) ?(12 ?contains)
 	?(13 ?contains) ?(14 ?contains) ?(15 ?contains) ?(16 ?contains)
 	?(17 ?contains) ?(18 ?contains) ?(19 ?contains) ?(20 !contains)'
 
 expect_count 1 ./empty -e '
-	10 20 arange
-	?(9 20 arange !contains) ?(10 20 arange ?contains)
-	?(11 20 arange ?contains) ?(12 20 arange ?contains)
-	?(13 20 arange ?contains) ?(14 20 arange ?contains)
-	?(15 20 arange ?contains) ?(16 20 arange ?contains)
-	?(17 20 arange ?contains) ?(18 20 arange ?contains)
-	?(19 20 arange ?contains) ?(20 20 arange !contains)'
+	10 20 aset
+	?(9 20 aset !contains) ?(10 20 aset ?contains)
+	?(11 20 aset ?contains) ?(12 20 aset ?contains)
+	?(13 20 aset ?contains) ?(14 20 aset ?contains)
+	?(15 20 aset ?contains) ?(16 20 aset ?contains)
+	?(17 20 aset ?contains) ?(18 20 aset ?contains)
+	?(19 20 aset ?contains)'
 
 expect_count 1 ./empty -e '
-	10 20 arange
-	?(9 9 arange !contains) ?(9 10 arange !contains)
-	?(9 11 arange !contains) ?(9 12 arange !contains)
-	?(9 13 arange !contains) ?(9 14 arange !contains)
-	?(9 15 arange !contains) ?(9 16 arange !contains)
-	?(9 17 arange !contains) ?(9 18 arange !contains)
-	?(9 19 arange !contains) ?(9 20 arange !contains)
-	?(9 21 arange !contains)'
+	10 20 aset
+	?(9 10 aset !contains)
+	?(9 11 aset !contains) ?(9 12 aset !contains)
+	?(9 13 aset !contains) ?(9 14 aset !contains)
+	?(9 15 aset !contains) ?(9 16 aset !contains)
+	?(9 17 aset !contains) ?(9 18 aset !contains)
+	?(9 19 aset !contains) ?(9 20 aset !contains)
+	?(9 21 aset !contains)'
 
 expect_count 1 ./empty -e '
-	10 20 arange
-	?(9 21 arange !contains) ?(10 21 arange !contains)
-	?(11 21 arange !contains) ?(12 21 arange !contains)
-	?(13 21 arange !contains) ?(14 21 arange !contains)
-	?(15 21 arange !contains) ?(16 21 arange !contains)
-	?(17 21 arange !contains) ?(18 21 arange !contains)
-	?(19 21 arange !contains) ?(20 21 arange !contains)
-	?(21 21 arange !contains)'
+	10 20 aset
+	?(9 21 aset !contains) ?(10 21 aset !contains)
+	?(11 21 aset !contains) ?(12 21 aset !contains)
+	?(13 21 aset !contains) ?(14 21 aset !contains)
+	?(15 21 aset !contains) ?(16 21 aset !contains)
+	?(17 21 aset !contains) ?(18 21 aset !contains)
+	?(19 21 aset !contains) ?(20 21 aset !contains)'
 
-expect_count 1 ./empty -e '10 20 arange 10 10 arange ?contains'
-expect_count 1 ./empty -e '10 20 arange 15 15 arange ?contains'
-expect_count 1 ./empty -e '10 20 arange 20 20 arange !contains'
-expect_count 1 ./empty -e '10 10 arange dup ?contains'
+expect_count 1 ./empty -e '10 20 aset 10 10 aset ?contains'
+expect_count 1 ./empty -e '10 20 aset 15 15 aset ?contains'
+expect_count 1 ./empty -e '10 10 aset dup ?contains'
 
 expect_count 1 ./empty -e '
-	5 10 arange
-	?(4 5 arange !overlaps) ?(4 6 arange ?overlaps)
-	?(4 7 arange ?overlaps) ?(4 8 arange ?overlaps)
-	?(4 9 arange ?overlaps) ?(4 10 arange ?overlaps)
-	?(4 11 arange ?overlaps) ?(5 11 arange ?overlaps)
-	?(6 11 arange ?overlaps) ?(7 11 arange ?overlaps)
-	?(8 11 arange ?overlaps) ?(9 11 arange ?overlaps)
-	?(10 11 arange !overlaps)'
+	5 10 aset
+	?(4 5 aset !overlaps) ?(4 6 aset ?overlaps)
+	?(4 7 aset ?overlaps) ?(4 8 aset ?overlaps)
+	?(4 9 aset ?overlaps) ?(4 10 aset ?overlaps)
+	?(4 11 aset ?overlaps) ?(5 11 aset ?overlaps)
+	?(6 11 aset ?overlaps) ?(7 11 aset ?overlaps)
+	?(8 11 aset ?overlaps) ?(9 11 aset ?overlaps)
+	?(10 11 aset !overlaps)'
 
 expect_count 1 ./empty -e '
-	5 10 arange !empty
-	5 5 arange ?empty'
+	5 10 aset !empty
+	5 5 aset ?empty'
 
 expect_count 1 ./empty -e '
-	(10 20 arange length == 10)
-	(10 10 arange length == 0)'
+	1 10 aset 2 20 aset overlap == 2 10 aset'
+expect_count 1 ./empty -e '
+	0x10 0x20 aset add: (0x30 0x40 aset) add: (0x50 0x60 aset)
+	overlap: (0x15 0x55 aset)
+	== 0x15 0x20 aset add: (0x30 0x40 aset) add: (0x50 0x55 aset)'
+
+expect_count 1 ./empty -e '
+	(10 20 aset length == 10)
+	(10 10 aset length == 0)'
 
 expect_count 1 ./aranges.o -e '
 	winfo ?TAG_lexical_block
-	([address] length == 2)
-	address (pos == 1) (== 0x1000e 0x10015 arange)'
+	([address elem] length == 2)
+	address elem (pos == 1) (== 0x1000e 0x10015 aset)'
 
 expect_count 1 ./aranges.o -e '
 	winfo ?TAG_lexical_block
-	([@AT_ranges] length == 2)
-	@AT_ranges (pos == 1) (== 0x1000e 0x10015 arange)'
+	([@AT_ranges elem] length == 2)
+	@AT_ranges elem (pos == 1) (== 0x1000e 0x10015 aset)'
 
 expect_count 1 ./pointer_const_value.o -e '
 	winfo @AT_const_value == 0'

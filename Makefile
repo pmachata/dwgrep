@@ -30,7 +30,7 @@ check: dwgrep test-parser test-int
 dwgrep: override LDFLAGS += -ldw -lelf
 builtin-dw.o: override CXXFLAGS += -fno-var-tracking-assignments
 
-dwgrep: dwgrep.o parser.o lexer.o stack.o tree.o tree_cr.o op.o		\
+dwgrep: coverage.o dwgrep.o parser.o lexer.o stack.o tree.o tree_cr.o op.o \
 	build.o cache.o atval.o builtin.o builtin-shf.o builtin-dw.o	\
 	builtin-closure.o builtin-cmp.o builtin-cst.o constant.o	\
 	dwfl_context.o init.o int.o overload.o selector.o value.o	\

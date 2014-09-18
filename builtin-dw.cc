@@ -378,6 +378,47 @@ namespace
       return std::make_unique <producer> (std::move (a));
     }
   };
+
+  template <bool forward>
+  struct op_elem_aset
+    : public op_yielding_overload <value_aset>
+  {
+    using op_yielding_overload::op_yielding_overload;
+
+    struct producer
+      : public value_producer
+    {
+      std::unique_ptr <value_aset> m_a;
+      size_t m_i;
+
+      producer (std::unique_ptr <value_aset> a)
+	: m_a {std::move (a)}
+	, m_i {0}
+      {}
+
+      std::unique_ptr <value>
+      next () override
+      {
+	size_t sz = m_a->get_coverage ().size ();
+	if (m_i >= sz)
+	  return nullptr;
+
+	size_t idx = forward ? m_i : sz - 1 - m_i;
+
+	coverage ret;
+	auto range = m_a->get_coverage ().at (idx);
+	ret.add (range.start, range.length);
+
+	return std::make_unique <value_aset> (ret, m_i++);
+      }
+    };
+
+    std::unique_ptr <value_producer>
+    operate (std::unique_ptr <value_aset> a) override
+    {
+      return std::make_unique <producer> (std::move (a));
+    }
+  };
 }
 
 // attribute
@@ -526,14 +567,14 @@ namespace
 namespace
 {
   struct op_address_die
-    : public op_yielding_overload <value_die>
+    : public op_overload <value_die>
   {
-    using op_yielding_overload::op_yielding_overload;
+    using op_overload::op_overload;
 
-    std::unique_ptr <value_producer>
+    std::unique_ptr <value>
     operate (std::unique_ptr <value_die> a) override
     {
-      return die_ranges (a->get_dwctx (), a->get_die ());
+      return die_ranges (a->get_die ());
     }
   };
 
@@ -585,9 +626,60 @@ namespace
     std::unique_ptr <value>
     operate (std::unique_ptr <value_loclist_elem> val) override
     {
-      return std::make_unique <value_addr_range>
-	(constant {val->get_low (), &dw_address_dom},
-	 constant {val->get_high (), &dw_address_dom}, 0);
+      uint64_t low = val->get_low ();
+      uint64_t len = val->get_high () - low;
+
+      coverage cov;
+      cov.add (low, len);
+      return std::make_unique <value_aset> (cov, 0);
+    }
+  };
+
+  struct op_address_aset
+    : public op_yielding_overload <value_aset>
+  {
+    using op_yielding_overload::op_yielding_overload;
+
+    struct producer
+      : public value_producer
+    {
+      coverage cov;
+      size_t m_idx;	// position among ranges
+      uint64_t m_addr;	// iteration through a range
+      size_t m_i;	// produced value counter
+
+      producer (coverage a_cov)
+	: cov {a_cov}
+	, m_idx {0}
+	, m_i {0}
+      {}
+
+      std::unique_ptr <value>
+      next () override
+      {
+	if (m_idx >= cov.size ())
+	  return nullptr;
+
+	if (m_i == 0)
+	  m_addr = cov.at (m_idx).start;
+
+	while (m_addr >= cov.at (m_idx).start + cov.at (m_idx).length)
+	  {
+	    m_idx++;
+	    if (m_idx >= cov.size ())
+	      return nullptr;
+	    m_addr = cov.at (m_idx).start;
+	  }
+
+	return std::make_unique <value_cst>
+	  (constant {m_addr++, &dw_address_dom}, m_i++);
+      }
+    };
+
+    std::unique_ptr <value_producer>
+    operate (std::unique_ptr <value_aset> val) override
+    {
+      return std::make_unique <producer> (val->get_coverage ());
     }
   };
 }
@@ -870,15 +962,20 @@ namespace
     }
   };
 
-  struct op_low_arange
-    : public op_overload <value_addr_range>
+  struct op_low_aset
+    : public op_overload <value_aset>
   {
     using op_overload::op_overload;
 
     std::unique_ptr <value>
-    operate (std::unique_ptr <value_addr_range> a) override
+    operate (std::unique_ptr <value_aset> a) override
     {
-      return std::make_unique <value_cst> (a->get_low (), 0);
+      auto &cov = a->get_coverage ();
+      if (cov.empty ())
+	return nullptr;
+
+      return std::make_unique <value_cst>
+	(constant {cov.at (0).start, &dw_address_dom}, 0);
     }
   };
 }
@@ -900,23 +997,49 @@ namespace
     }
   };
 
-  struct op_high_arange
-    : public op_overload <value_addr_range>
+  struct op_high_aset
+    : public op_overload <value_aset>
   {
     using op_overload::op_overload;
 
     std::unique_ptr <value>
-    operate (std::unique_ptr <value_addr_range> a) override
+    operate (std::unique_ptr <value_aset> a) override
     {
-      return std::make_unique <value_cst> (a->get_high (), 0);
+      auto &cov = a->get_coverage ();
+      if (cov.empty ())
+	return nullptr;
+
+      auto range = cov.at (cov.size () - 1);
+
+      return std::make_unique <value_cst>
+	(constant {range.start + range.length, &dw_address_dom}, 0);
     }
   };
 }
 
-// arange
+// aset
 namespace
 {
-  struct op_arange_cst_cst
+  mpz_class
+  addressify (constant c)
+  {
+    if (! c.dom ()->safe_arith ())
+      std::cerr << "Warning: the constant " << c
+		<< " doesn't seem to be suitable for use in address sets.\n";
+
+    auto v = c.value ();
+
+    if (v < 0)
+      {
+	std::cerr
+	  << "Warning: Negative values are not allowed in address sets.\n";
+	v = 0;
+      }
+
+    return v;
+  }
+
+  struct op_aset_cst_cst
     : public op_overload <value_cst, value_cst>
   {
     using op_overload::op_overload;
@@ -925,8 +1048,80 @@ namespace
     operate (std::unique_ptr <value_cst> a,
 	     std::unique_ptr <value_cst> b) override
     {
-      return std::make_unique <value_addr_range>
-	(a->get_constant (), b->get_constant (), 0);
+      auto av = addressify (a->get_constant ());
+      auto bv = addressify (b->get_constant ());
+      if (av > bv)
+	std::swap (av, bv);
+
+      coverage cov;
+      cov.add (av.uval (), (bv - av).uval ());
+      return std::make_unique <value_aset> (cov, 0);
+    }
+  };
+}
+
+// add
+namespace
+{
+  struct op_add_aset_cst
+    : public op_overload <value_aset, value_cst>
+  {
+    using op_overload::op_overload;
+
+    std::unique_ptr <value>
+    operate (std::unique_ptr <value_aset> a,
+	     std::unique_ptr <value_cst> b) override
+    {
+      auto bv = addressify (b->get_constant ());
+      a->get_coverage ().add (bv.uval (), 1);
+      return std::move (a);
+    }
+  };
+
+  struct op_add_aset_aset
+    : public op_overload <value_aset, value_aset>
+  {
+    using op_overload::op_overload;
+
+    std::unique_ptr <value>
+    operate (std::unique_ptr <value_aset> a,
+	     std::unique_ptr <value_aset> b) override
+    {
+      a->get_coverage ().add_all (b->get_coverage ());
+      return std::move (a);
+    }
+  };
+}
+
+// sub
+namespace
+{
+  struct op_sub_aset_cst
+    : public op_overload <value_aset, value_cst>
+  {
+    using op_overload::op_overload;
+
+    std::unique_ptr <value>
+    operate (std::unique_ptr <value_aset> a,
+	     std::unique_ptr <value_cst> b) override
+    {
+      auto bv = addressify (b->get_constant ());
+      a->get_coverage ().remove (bv.uval (), 1);
+      return std::move (a);
+    }
+  };
+
+  struct op_sub_aset_aset
+    : public op_overload <value_aset, value_aset>
+  {
+    using op_overload::op_overload;
+
+    std::unique_ptr <value>
+    operate (std::unique_ptr <value_aset> a,
+	     std::unique_ptr <value_aset> b) override
+    {
+      a->get_coverage ().remove_all (b->get_coverage ());
+      return std::move (a);
     }
   };
 }
@@ -934,17 +1129,20 @@ namespace
 // length
 namespace
 {
-  struct op_length_arange
-    : public op_overload <value_addr_range>
+  struct op_length_aset
+    : public op_overload <value_aset>
   {
     using op_overload::op_overload;
 
     std::unique_ptr <value>
-    operate (std::unique_ptr <value_addr_range> a) override
+    operate (std::unique_ptr <value_aset> a) override
     {
+      uint64_t length = 0;
+      for (size_t i = 0; i < a->get_coverage ().size (); ++i)
+	length += a->get_coverage ().at (i).length;
+
       return std::make_unique <value_cst>
-	(constant {a->get_high ().value () - a->get_low ().value (),
-		   &dec_constant_dom}, 0);
+	(constant {length, &dec_constant_dom}, 0);
     }
   };
 }
@@ -952,44 +1150,35 @@ namespace
 // ?contains
 namespace
 {
-  bool
-  contains (value_addr_range &a, constant const &c)
-  {
-    return c >= a.get_low () && c < a.get_high ();
-  }
-
-  bool
-  contains_incl (value_addr_range &a, constant const &c)
-  {
-    return c >= a.get_low () && c <= a.get_high ();
-  }
-
-  struct pred_containsp_arange_cst
-    : public pred_overload <value_addr_range, value_cst>
+  struct pred_containsp_aset_cst
+    : public pred_overload <value_aset, value_cst>
   {
     using pred_overload::pred_overload;
 
     pred_result
-    result (value_addr_range &a, value_cst &cst) override
+    result (value_aset &a, value_cst &b) override
     {
-      return pred_result (contains (a, cst.get_constant ()));
+      auto av = addressify (b.get_constant ());
+      return pred_result (a.get_coverage ().is_covered (av.uval (), 1));
     }
   };
 
-  struct pred_containsp_arange_arange
-    : public pred_overload <value_addr_range, value_addr_range>
+  struct pred_containsp_aset_aset
+    : public pred_overload <value_aset, value_aset>
   {
     using pred_overload::pred_overload;
 
     pred_result
-    result (value_addr_range &a, value_addr_range &b) override
+    result (value_aset &a, value_aset &b) override
     {
-      if (a.get_low () == a.get_high ())
-	return pred_result (b.get_low () == a.get_low ()
-			    && b.get_high () == a.get_high ());
-
-      return pred_result (contains (a, b.get_low ())
-			  && contains_incl (a, b.get_high ()));
+      // ?contains holds if A contains all of B.
+      for (size_t i = 0; i < b.get_coverage ().size (); ++i)
+	{
+	  auto range = b.get_coverage ().at (i);
+	  if (! a.get_coverage ().is_covered (range.start, range.length))
+	    return pred_result::no;
+	}
+      return pred_result::yes;
     }
   };
 }
@@ -997,19 +1186,45 @@ namespace
 // ?overlaps
 namespace
 {
-  struct pred_overlapsp_arange_arange
-    : public pred_overload <value_addr_range, value_addr_range>
+  struct pred_overlapsp_aset_aset
+    : public pred_overload <value_aset, value_aset>
   {
     using pred_overload::pred_overload;
 
     pred_result
-    result (value_addr_range &a, value_addr_range &b) override
+    result (value_aset &a, value_aset &b) override
     {
-      return pred_result (contains (a, b.get_low ())
-			  || (contains (a, b.get_high ())
-			      && b.get_high () != a.get_low ())
-			  || (b.get_low () < a.get_low ()
-			      && b.get_high () >= a.get_high ()));
+      for (size_t i = 0; i < b.get_coverage ().size (); ++i)
+	{
+	  auto range = b.get_coverage ().at (i);
+	  if (a.get_coverage ().is_overlap (range.start, range.length))
+	    return pred_result::yes;
+	}
+      return pred_result::no;
+    }
+  };
+}
+
+// overlap
+namespace
+{
+  struct op_overlap_aset_aset
+    : public op_overload <value_aset, value_aset>
+  {
+    using op_overload::op_overload;
+
+    std::unique_ptr <value>
+    operate (std::unique_ptr <value_aset> a,
+	     std::unique_ptr <value_aset> b) override
+    {
+      coverage ret;
+      for (size_t i = 0; i < b->get_coverage ().size (); ++i)
+	{
+	  auto range = b->get_coverage ().at (i);
+	  auto cov = a->get_coverage ().intersect (range.start, range.length);
+	  ret.add_all (cov);
+	}
+      return std::make_unique <value_aset> (ret, 0);
     }
   };
 }
@@ -1017,15 +1232,15 @@ namespace
 // ?empty
 namespace
 {
-  struct pred_emptyp_arange
-    : public pred_overload <value_addr_range>
+  struct pred_emptyp_aset
+    : public pred_overload <value_aset>
   {
     using pred_overload::pred_overload;
 
     pred_result
-    result (value_addr_range &a) override
+    result (value_aset &a) override
     {
-      return pred_result (a.get_low () == a.get_high ());
+      return pred_result (a.get_coverage ().empty ());
     }
   };
 }
@@ -1392,8 +1607,8 @@ dwgrep_builtins_dw ()
   add_builtin_type_constant <value_attr> (dict);
   add_builtin_type_constant <value_abbrev> (dict);
   add_builtin_type_constant <value_abbrev_attr> (dict);
+  add_builtin_type_constant <value_aset> (dict);
   add_builtin_type_constant <value_loclist_elem> (dict);
-  add_builtin_type_constant <value_addr_range> (dict);
   add_builtin_type_constant <value_loclist_op> (dict);
 
   {
@@ -1468,6 +1683,7 @@ dwgrep_builtins_dw ()
     auto t = std::make_shared <overload_tab> ();
 
     t->add_op_overload <op_elem_loclist_elem> ();
+    t->add_op_overload <op_elem_aset <true>> ();
 
     dict.add (std::make_shared <overloaded_op_builtin> ("elem", t));
   }
@@ -1476,6 +1692,7 @@ dwgrep_builtins_dw ()
     auto t = std::make_shared <overload_tab> ();
 
     t->add_op_overload <op_relem_loclist_elem> ();
+    t->add_op_overload <op_elem_aset <false>> ();
 
     dict.add (std::make_shared <overloaded_op_builtin> ("relem", t));
   }
@@ -1506,6 +1723,7 @@ dwgrep_builtins_dw ()
     t->add_op_overload <op_address_die> ();
     t->add_op_overload <op_address_attr> ();
     t->add_op_overload <op_address_loclist_elem> ();
+    t->add_op_overload <op_address_aset> ();
 
     dict.add (std::make_shared <overloaded_op_builtin> ("address", t));
   }
@@ -1553,7 +1771,7 @@ dwgrep_builtins_dw ()
     auto t = std::make_shared <overload_tab> ();
 
     t->add_op_overload <op_low_die> ();
-    t->add_op_overload <op_low_arange> ();
+    t->add_op_overload <op_low_aset> ();
 
     dict.add (std::make_shared <overloaded_op_builtin> ("low", t));
   }
@@ -1562,7 +1780,7 @@ dwgrep_builtins_dw ()
     auto t = std::make_shared <overload_tab> ();
 
     t->add_op_overload <op_high_die> ();
-    t->add_op_overload <op_high_arange> ();
+    t->add_op_overload <op_high_aset> ();
 
     dict.add (std::make_shared <overloaded_op_builtin> ("high", t));
   }
@@ -1570,15 +1788,33 @@ dwgrep_builtins_dw ()
   {
     auto t = std::make_shared <overload_tab> ();
 
-    t->add_op_overload <op_arange_cst_cst> ();
+    t->add_op_overload <op_aset_cst_cst> ();
 
-    dict.add (std::make_shared <overloaded_op_builtin> ("arange", t));
+    dict.add (std::make_shared <overloaded_op_builtin> ("aset", t));
   }
 
   {
     auto t = std::make_shared <overload_tab> ();
 
-    t->add_op_overload <op_length_arange> ();
+    t->add_op_overload <op_add_aset_cst> ();
+    t->add_op_overload <op_add_aset_aset> ();
+
+    dict.add (std::make_shared <overloaded_op_builtin> ("add", t));
+  }
+
+  {
+    auto t = std::make_shared <overload_tab> ();
+
+    t->add_op_overload <op_sub_aset_cst> ();
+    t->add_op_overload <op_sub_aset_aset> ();
+
+    dict.add (std::make_shared <overloaded_op_builtin> ("sub", t));
+  }
+
+  {
+    auto t = std::make_shared <overload_tab> ();
+
+    t->add_op_overload <op_length_aset> ();
 
     dict.add (std::make_shared <overloaded_op_builtin> ("length", t));
   }
@@ -1586,8 +1822,8 @@ dwgrep_builtins_dw ()
   {
     auto t = std::make_shared <overload_tab> ();
 
-    t->add_pred_overload <pred_containsp_arange_cst> ();
-    t->add_pred_overload <pred_containsp_arange_arange> ();
+    t->add_pred_overload <pred_containsp_aset_cst> ();
+    t->add_pred_overload <pred_containsp_aset_aset> ();
 
     dict.add
       (std::make_shared <overloaded_pred_builtin <true>> ("?contains", t));
@@ -1598,7 +1834,7 @@ dwgrep_builtins_dw ()
   {
     auto t = std::make_shared <overload_tab> ();
 
-    t->add_pred_overload <pred_overlapsp_arange_arange> ();
+    t->add_pred_overload <pred_overlapsp_aset_aset> ();
 
     dict.add
       (std::make_shared <overloaded_pred_builtin <true>> ("?overlaps", t));
@@ -1609,7 +1845,15 @@ dwgrep_builtins_dw ()
   {
     auto t = std::make_shared <overload_tab> ();
 
-    t->add_pred_overload <pred_emptyp_arange> ();
+    t->add_op_overload <op_overlap_aset_aset> ();
+
+    dict.add (std::make_shared <overloaded_op_builtin> ("overlap", t));
+  }
+
+  {
+    auto t = std::make_shared <overload_tab> ();
+
+    t->add_pred_overload <pred_emptyp_aset> ();
 
     dict.add (std::make_shared <overloaded_pred_builtin <true>> ("?empty", t));
     dict.add (std::make_shared <overloaded_pred_builtin <false>> ("!empty", t));

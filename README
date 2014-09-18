@@ -1290,41 +1290,52 @@
 *** •?OP_* :: ?T_LOCLIST_OP
      Holds if this is an operation with this opcode.
 
-** ·T_ADDR_RANGE
-    - T_ADDR_RANGE actually behaves pretty much like a sequence of
-      integers.  Maybe sequence could have an optimization whereby if
-      it contains integers only, it just stores low×high pairs instead
-      of listing each value separately.
+** •T_ASET
+    - For holding a set of addresses.
 
-    - We would still need a way of promoting assertions directly to
-      "elem" such that it can do something clever instead of
-      enumerating all 64 bits of adress space or some such.
+*** •add :: ?T_ASET ?T_CONST -> ?T_ASET
+*** •add :: ?T_ASET ?T_ASET -> ?T_ASET
+*** •sub :: ?T_ASET ?T_CONST -> ?T_ASET
+*** •sub :: ?T_ASET ?T_ASET -> ?T_ASET
+*** •aset :: ?T_CONST ?T_CONST -> ?T_ASET
+*** •elem :: ?T_ASET ->* ?T_ASET
+     - Extract continuous subranges of this aset and present them as
+       individual asets.
 
-    - XXX Consider promoting this to core (T_RANGE, T_INTERVAL or some
-      such).  Address ranges would be intervals whose limits are
-      T_CONST with dw_address_dom.
+*** •relem :: ?T_ASET ->* ?T_ASET
+     : [|A| A elem] relem
 
-      If this should hold anything else than pairs of constants, it
-      would need "length" to have access to the overload dictionary to
-      look up "sub" in.
+*** •high :: ?T_ASET ->? ?T_CONST
+     Highest address set in this aset.  Doesn't yield at all if an
+     aset is empty.
 
-*** •low :: ?T_ADDR_RANGE -> ?T_CONST
-*** •high :: ?T_ADDR_RANGE -> ?T_CONST
-*** •arange :: ?T_CONST ?T_CONST -> ?T_ADDR_RANGE
-*** •length :: ?T_ADDR_RANGE -> ?T_CONST
-     (high low sub)
+*** •low :: ?T_ASET ->? ?T_CONST
+     Lowest address set in this aset.  Doesn't yield at all if an aset
+     is empty.
 
-***  overlap :: ?T_ADDR_RANGE ?T_ADDR_RANGE -> ?T_ADDR_RANGE
-     Produce a new range with overlap of the two constituents.
-*** •?contains :: ?T_ADDR_RANGE ?T_CONST
-*** •?contains :: ?T_ADDR_RANGE ?T_ADDR_RANGE
-     Whether TOS is contained within below TOS.
+*** •length :: ?T_ASET -> ?T_CONST
+     : [|A| address] length
 
-*** •?overlaps :: ?T_ADDR_RANGE ?T_ADDR_RANGE
-     Whether TOS and below TOS overlap.
+*** •?empty :: ?T_ASET
+     : !(elem)
 
-*** •?empty :: ?T_ADDR_RANGE
-     (low == high)
+*** •?overlaps :: ?T_ASET ?T_ASET
+     - Holds if there is at least one value common to both osets.
+
+*** •?contains :: ?T_ASET ?T_CONST
+     : ?(|A C| A elem (|E| (C >= E low) (C <= E high)))
+
+*** •?contains :: ?T_ASET ?T_ASET
+     - Holds if the lower aset contains all addresses of the TOS aset.
+     : !(address !contains)
+
+*** •overlap :: ?T_ASET ?T_ASET -> ?T_ASET
+     Compute aset that contains addresses common to both asets.
+     Produces an empty aset if there's no overlap.
+
+*** •address :: ?T_ASET ->* ?T_CONST
+     - Actually enumerates all addresses in a range.  Potentially a
+       very bad idea for ranges that cover whole address space.
 
 **  T_MACRO_UNIT ???
     - A value representing .debug_macro and .debug_macinfo units.
