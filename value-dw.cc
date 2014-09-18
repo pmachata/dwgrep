@@ -104,6 +104,31 @@ value_dwarf::cmp (value const &that) const
 }
 
 
+value_type const value_cu::vtype = value_type::alloc ("T_CU");
+
+void
+value_cu::show (std::ostream &o, brevity brv) const
+{
+  ios_flag_saver s {o};
+  o << "CU " << std::hex << std::showbase << m_offset;
+}
+
+std::unique_ptr <value>
+value_cu::clone () const
+{
+  return std::make_unique <value_cu> (*this);
+}
+
+cmp_result
+value_cu::cmp (value const &that) const
+{
+  if (auto v = value::as <value_cu> (&that))
+    return compare (&m_cu, &v->m_cu);
+  else
+    return cmp_result::fail;
+}
+
+
 value_type const value_die::vtype = value_type::alloc ("T_DIE");
 
 void

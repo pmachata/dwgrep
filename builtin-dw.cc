@@ -112,6 +112,23 @@ namespace
 // wabbrev
 namespace
 {
+  bool
+  maybe_next_module (dwfl_module_iterator &modit, cu_iterator &cuit)
+  {
+    while (cuit == cu_iterator::end ())
+      {
+	if (modit == dwfl_module_iterator::end ())
+	  return false;
+
+	Dwarf *dw = (*modit++).first;
+	assert (dw != nullptr);
+	cuit = cu_iterator (dw);
+      }
+
+    return true;
+  }
+
+
   struct op_wabbrev_dwarf
     : public op_yielding_overload <value_dwarf>
   {
@@ -133,15 +150,8 @@ namespace
       std::unique_ptr <value>
       next () override
       {
-	while (m_cuit == cu_iterator::end ())
-	  {
-	    if (m_modit == dwfl_module_iterator::end ())
-	      return nullptr;
-
-	    Dwarf *dw = (*m_modit++).first;
-	    assert (dw != nullptr);
-	    m_cuit = cu_iterator (dw);
-	  }
+	if (! maybe_next_module (m_modit, m_cuit))
+	  return nullptr;
 
 	return std::make_unique <value_abbrev_unit>
 	  (m_dwctx, *(*m_cuit++)->cu, m_i++);
@@ -161,64 +171,81 @@ namespace
 // unit
 namespace
 {
-  struct producer_unit_die
-    : public value_producer
-  {
-    std::shared_ptr <dwfl_context> m_dwctx;
-    all_dies_iterator m_it;
-    all_dies_iterator m_end;
-    size_t m_i;
-
-    producer_unit_die (std::shared_ptr <dwfl_context> dwctx, Dwarf_Die die)
-      : m_dwctx {dwctx}
-      , m_it {all_dies_iterator::end ()}
-      , m_end {all_dies_iterator::end ()}
-      , m_i {0}
-    {
-      Dwarf_Die cudie;
-      if (dwarf_diecu (&die, &cudie, nullptr, nullptr) == nullptr)
-	throw_libdw ();
-
-      Dwarf *dw = dwarf_cu_getdwarf (cudie.cu);
-
-      cu_iterator cuit {dw, cudie};
-      m_it = all_dies_iterator (cuit);
-      m_end = all_dies_iterator (++cuit);
-    }
-
-    std::unique_ptr <value>
-    next () override
-    {
-      if (m_it == m_end)
-	return nullptr;
-
-      return std::make_unique <value_die> (m_dwctx, **m_it++, m_i++);
-    }
-  };
-
-  struct op_unit_die
-    : public op_yielding_overload <value_die>
+  struct op_unit_dwarf
+    : public op_yielding_overload <value_dwarf>
   {
     using op_yielding_overload::op_yielding_overload;
 
+    struct producer
+      : public value_producer
+    {
+      std::shared_ptr <dwfl_context> m_dwctx;
+      dwfl_module_iterator m_modit;
+      cu_iterator m_cuit;
+      size_t m_i;
+
+      producer (std::shared_ptr <dwfl_context> dwctx)
+	: m_dwctx {dwctx}
+	, m_modit {m_dwctx->get_dwfl ()}
+	, m_cuit {cu_iterator::end ()}
+	, m_i {0}
+      {}
+
+      std::unique_ptr <value>
+      next () override
+      {
+	if (! maybe_next_module (m_modit, m_cuit))
+	  return nullptr;
+
+	auto ret = std::make_unique <value_cu>
+	  (m_dwctx, *(*m_cuit)->cu, m_cuit.offset (), m_i++);
+	m_cuit++;
+	return std::move (ret);
+      }
+    };
+
     std::unique_ptr <value_producer>
+    operate (std::unique_ptr <value_dwarf> a) override
+    {
+      return std::make_unique <producer> (a->get_dwctx ());
+    }
+  };
+
+  std::unique_ptr <value>
+  cu_for_die (std::shared_ptr <dwfl_context> dwctx, Dwarf_Die die)
+  {
+    Dwarf_Die cudie;
+    if (dwarf_diecu (&die, &cudie, nullptr, nullptr) == nullptr)
+      throw_libdw ();
+
+    Dwarf *dw = dwarf_cu_getdwarf (cudie.cu);
+    cu_iterator cuit {dw, cudie};
+
+    return std::make_unique <value_cu> (dwctx, *(*cuit)->cu,
+					cuit.offset (), 0);
+  }
+
+  struct op_unit_die
+    : public op_overload <value_die>
+  {
+    using op_overload::op_overload;
+
+    std::unique_ptr <value>
     operate (std::unique_ptr <value_die> a) override
     {
-      return std::make_unique <producer_unit_die>
-	(a->get_dwctx (), a->get_die ());
+      return cu_for_die (a->get_dwctx (), a->get_die ());
     }
   };
 
   struct op_unit_attr
-    : public op_yielding_overload <value_attr>
+    : public op_overload <value_attr>
   {
-    using op_yielding_overload::op_yielding_overload;
+    using op_overload::op_overload;
 
-    std::unique_ptr <value_producer>
+    std::unique_ptr <value>
     operate (std::unique_ptr <value_attr> a) override
     {
-      return std::make_unique <producer_unit_die>
-	(a->get_dwctx (), a->get_die ());
+      return cu_for_die (a->get_dwctx (), a->get_die ());
     }
   };
 }
@@ -542,6 +569,19 @@ namespace
 // offset
 namespace
 {
+  struct op_offset_cu
+    : public op_overload <value_cu>
+  {
+    using op_overload::op_overload;
+
+    std::unique_ptr <value>
+    operate (std::unique_ptr <value_cu> a) override
+    {
+      constant c {a->get_offset (), &dw_offset_dom};
+      return std::make_unique <value_cst> (c, 0);
+    }
+  };
+
   struct op_offset_die
     : public op_overload <value_die>
   {
@@ -951,6 +991,22 @@ namespace
 // root
 namespace
 {
+  struct op_root_cu
+    : public op_overload <value_cu>
+  {
+    using op_overload::op_overload;
+
+    std::unique_ptr <value>
+    operate (std::unique_ptr <value_cu> a) override
+    {
+      Dwarf_Die cudie;
+      if (dwarf_cu_die (&a->get_cu (), &cudie, nullptr, nullptr,
+			nullptr, nullptr, nullptr, nullptr) == nullptr)
+	throw_libdw ();
+      return std::make_unique <value_die> (a->get_dwctx (), cudie, 0);
+    }
+  };
+
   struct op_root_die
     : public op_overload <value_die>
   {
@@ -1300,6 +1356,19 @@ namespace
 // abbrev
 namespace
 {
+  struct op_abbrev_cu
+    : public op_overload <value_cu>
+  {
+    using op_overload::op_overload;
+
+    std::unique_ptr <value>
+    operate (std::unique_ptr <value_cu> a) override
+    {
+      return std::make_unique <value_abbrev_unit>
+	(a->get_dwctx (), a->get_cu (), 0);
+    }
+  };
+
   struct op_abbrev_die
     : public op_overload <value_die>
   {
@@ -1308,6 +1377,8 @@ namespace
     std::unique_ptr <value>
     operate (std::unique_ptr <value_die> a) override
     {
+      // If the DIE doesn't have an abbreviation yet, force its
+      // look-up.
       if (a->get_die ().abbrev == nullptr)
 	dwarf_haschildren (&a->get_die ());
       assert (a->get_die ().abbrev != nullptr);
@@ -1360,6 +1431,29 @@ namespace
       constant cst {dwarf_getabbrevcode (&a->get_abbrev ()),
 		    &dw_abbrevcode_dom};
       return std::make_unique <value_cst> (cst, 0);
+    }
+  };
+}
+
+// version
+namespace
+{
+  struct op_version_cu
+    : public op_overload <value_cu>
+  {
+    using op_overload::op_overload;
+
+    std::unique_ptr <value>
+    operate (std::unique_ptr <value_cu> a) override
+    {
+      Dwarf_Die cudie;
+      Dwarf_Half version;
+      if (dwarf_cu_die (&a->get_cu (), &cudie, &version, nullptr,
+			nullptr, nullptr, nullptr, nullptr) == nullptr)
+	throw_libdw ();
+
+      constant c {version, &dec_constant_dom};
+      return std::make_unique <value_cst> (c, 0);
     }
   };
 }
@@ -1655,6 +1749,7 @@ dwgrep_builtins_dw ()
   builtin_dict &dict = *ret;
 
   add_builtin_type_constant <value_dwarf> (dict);
+  add_builtin_type_constant <value_cu> (dict);
   add_builtin_type_constant <value_die> (dict);
   add_builtin_type_constant <value_attr> (dict);
   add_builtin_type_constant <value_abbrev_unit> (dict);
@@ -1691,6 +1786,7 @@ dwgrep_builtins_dw ()
   {
     auto t = std::make_shared <overload_tab> ();
 
+    t->add_op_overload <op_unit_dwarf> ();
     t->add_op_overload <op_unit_die> ();
     t->add_op_overload <op_unit_attr> ();
 
@@ -1719,6 +1815,7 @@ dwgrep_builtins_dw ()
   {
     auto t = std::make_shared <overload_tab> ();
 
+    t->add_op_overload <op_root_cu> ();
     t->add_op_overload <op_root_die> ();
 
     dict.add (std::make_shared <overloaded_op_builtin> ("root", t));
@@ -1764,6 +1861,7 @@ dwgrep_builtins_dw ()
   {
     auto t = std::make_shared <overload_tab> ();
 
+    t->add_op_overload <op_offset_cu> ();
     t->add_op_overload <op_offset_die> ();
     t->add_op_overload <op_offset_abbrev_unit> ();
     t->add_op_overload <op_offset_abbrev> ();
@@ -1918,6 +2016,7 @@ dwgrep_builtins_dw ()
   {
     auto t = std::make_shared <overload_tab> ();
 
+    t->add_op_overload <op_abbrev_cu> ();
     t->add_op_overload <op_abbrev_die> ();
 
     dict.add (std::make_shared <overloaded_op_builtin> ("abbrev", t));
@@ -1941,6 +2040,14 @@ dwgrep_builtins_dw ()
     t->add_op_overload <op_code_abbrev> ();
 
     dict.add (std::make_shared <overloaded_op_builtin> ("code", t));
+  }
+
+  {
+    auto t = std::make_shared <overload_tab> ();
+
+    t->add_op_overload <op_version_cu> ();
+
+    dict.add (std::make_shared <overloaded_op_builtin> ("version", t));
   }
 
   auto add_dw_at = [&dict] (unsigned code,

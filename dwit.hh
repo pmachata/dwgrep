@@ -127,11 +127,13 @@ class cu_iterator
   friend class all_dies_iterator;
   Dwarf *m_dw;
   Dwarf_Off m_offset;
+  Dwarf_Off m_old_offset;
   Dwarf_Die m_cudie;
 
   explicit cu_iterator (Dwarf_Off off)
     : m_dw (nullptr)
     , m_offset (off)
+    , m_old_offset (0)
     , m_cudie ({})
   {}
 
@@ -141,12 +143,12 @@ class cu_iterator
     assert (*this != end ());
     do
       {
-	Dwarf_Off old_offset = m_offset;
+	m_old_offset = m_offset;
 	size_t hsize;
 	if (dwarf_nextcu (m_dw, m_offset, &m_offset, &hsize,
 			  nullptr, nullptr, nullptr) != 0)
 	  done ();
-	else if (dwarf_offdie (m_dw, old_offset + hsize, &m_cudie) == nullptr)
+	else if (dwarf_offdie (m_dw, m_old_offset + hsize, &m_cudie) == nullptr)
 	  continue;
 	else
 	  // XXX partial unit, type unit, what else?
@@ -167,6 +169,7 @@ public:
   explicit cu_iterator (Dwarf *dw)
     : m_dw {dw}
     , m_offset {0}
+    , m_old_offset {0}
     , m_cudie {}
   {
     move ();
@@ -175,6 +178,7 @@ public:
   cu_iterator (Dwarf *dw, Dwarf_Die cudie)
     : m_dw {dw}
     , m_offset {dwarf_dieoffset (&cudie) - dwarf_cuoffset (&cudie)}
+    , m_old_offset {0}
     , m_cudie {}
   {
     move ();
@@ -216,7 +220,7 @@ public:
   Dwarf_Off
   offset () const
   {
-    return m_offset;
+    return m_old_offset;
   }
 
   Dwarf_Die *

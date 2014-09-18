@@ -1014,7 +1014,7 @@
      - Yields all DIE's in a .debug_info section.  In produces values
        of type T_DIE.
 
-***  unit :: ?T_DWARF ->* ?T_CU
+*** •unit :: ?T_DWARF ->* ?T_CU
      : winfo ?root unit
 
 *** •wabbrev :: ?T_DWARF ->* ?T_ABBREV_UNIT
@@ -1026,23 +1026,25 @@
 
 ***  name :: ?T_DWARF -> ?T_STR
 
-**  T_CU
+** ·T_CU
     - How to get to abbreviations associated with a given CU?  One way
       would be to have a T_CU, which either winfo or some other word
       would produce.  unit::?T_DIE wouldn't be ->*?T_DIE, but ->?T_CU.
     - CU DIE would be obtained by saying (elem ?root)
-***  offset :: ?T_CU -> ?T_CONST
+*** •offset :: ?T_CU -> ?T_CONST
 ***  next :: ?T_CU ->? T_CU
 ***  prev :: ?T_CU ->? T_CU
-***  abbrev :: ?T_CU -> ?T_ABBREV_UNIT
+*** •abbrev :: ?T_CU -> ?T_ABBREV_UNIT
      - Produce an abbreviation unit associated with this CU.
 
-***  version :: ?T_CU -> ?T_CONST
-***  root :: ?T_CU -> ?T_DIE
+*** •version :: ?T_CU -> ?T_CONST
+*** •root :: ?T_CU -> ?T_DIE
      - Produce a CU DIE of a CU.
 
 ***  elem :: ?T_CU ->* ?T_DIE
-     : root child*
+     : root child*	# except in the right order
+     XXX elem implies there should be relem, which is difficult to
+     implement.  Should we use a different word?  Which one?
 
 ** ·T_DIE
 *** •label :: ?T_DIE -> ?T_CONST
@@ -1051,7 +1053,7 @@
 *** •offset :: ?T_DIE -> ?T_CONST
      Like dwarf_dieoffset.
 
-***  unit :: ?T_DIE -> ?T_CU
+*** •unit :: ?T_DIE -> ?T_CU
      - Selects unit that this DIE comes from.
 
 *** •high :: ?T_DIE ->? ?T_CONST
@@ -1180,6 +1182,9 @@
 
 *** •form :: ?T_ATTR -> ?T_CONST
      Yield a form of an attribute.
+
+*** •unit :: ?T_ATTR -> ?T_CU
+     - Yield a CU corresponding to this attribute.
 
 *** •?AT_* :: ?T_ATTR
      Holds if it is this attribute.

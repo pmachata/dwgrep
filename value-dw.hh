@@ -57,6 +57,40 @@ public:
   cmp_result cmp (value const &that) const override;
 };
 
+class value_cu
+  : public value
+{
+  std::shared_ptr <dwfl_context> m_dwctx;
+  Dwarf_Off m_offset;
+  Dwarf_CU &m_cu;
+
+public:
+  static value_type const vtype;
+
+  value_cu (std::shared_ptr <dwfl_context> dwctx, Dwarf_CU &cu,
+	    Dwarf_Off offset, size_t pos)
+    : value {vtype, pos}
+    , m_dwctx {dwctx}
+    , m_offset {offset}
+    , m_cu {cu}
+  {}
+
+  value_cu (value_cu const &that) = default;
+
+  std::shared_ptr <dwfl_context> get_dwctx ()
+  { return m_dwctx; }
+
+  Dwarf_CU &get_cu ()
+  { return m_cu; }
+
+  Dwarf_Off get_offset ()
+  { return m_offset; }
+
+  void show (std::ostream &o, brevity brv) const override;
+  std::unique_ptr <value> clone () const override;
+  cmp_result cmp (value const &that) const override;
+};
+
 class value_die
   : public value
 {
