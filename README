@@ -1010,9 +1010,8 @@
        : T_DWARF
 
 ** ·T_DWARF
-*** •winfo :: ?T_DWARF ->* ?T_DIE
-     - Yields all DIE's in a .debug_info section.  In produces values
-       of type T_DIE.
+*** •die :: ?T_DWARF ->* ?T_DIE
+      - Yields all DIE's in a .debug_info section.
 
 *** •unit :: ?T_DWARF ->* ?T_CU
      : winfo ?root unit
@@ -1020,17 +1019,12 @@
 *** •abbrev :: ?T_DWARF ->* ?T_ABBREV_UNIT
      - Yields all abbreviation units in a .debug_abbrev section.
 
-***  symtab :: ?T_DWARF ->* ?T_ELFSYM
-     Yields all symbols in .symtab, or minisymtab, or .dynsym.  It
-     produces values of type T_ELFSYM.
+***  symbol :: ?T_DWARF ->* ?T_ELFSYM
+     - Yields all symbols in .symtab, or minisymtab, or .dynsym.
 
 ***  name :: ?T_DWARF -> ?T_STR
 
 ** ·T_CU
-    - How to get to abbreviations associated with a given CU?  One way
-      would be to have a T_CU, which either winfo or some other word
-      would produce.  unit::?T_DIE wouldn't be ->*?T_DIE, but ->?T_CU.
-    - CU DIE would be obtained by saying (elem ?root)
 *** •offset :: ?T_CU -> ?T_CONST
 ***  next :: ?T_CU ->? T_CU
 ***  prev :: ?T_CU ->? T_CU
@@ -1038,13 +1032,11 @@
      - Produce an abbreviation unit associated with this CU.
 
 *** •version :: ?T_CU -> ?T_CONST
+*** •die :: ?T_CU ->* ?T_DIE
+     : root child*	# except in the right order
+
 *** •root :: ?T_CU -> ?T_DIE
      - Produce a CU DIE of a CU.
-
-***  elem :: ?T_CU ->* ?T_DIE
-     : root child*	# except in the right order
-     XXX elem implies there should be relem, which is difficult to
-     implement.  Should we use a different word?  Which one?
 
 ** ·T_DIE
 *** •label :: ?T_DIE -> ?T_CONST
@@ -1183,8 +1175,11 @@
 *** •form :: ?T_ATTR -> ?T_CONST
      Yield a form of an attribute.
 
+*** •die :: ?T_ATTR -> ?T_DIE
+     - Yield a DIE that this attribute is associated with.
+
 *** •unit :: ?T_ATTR -> ?T_CU
-     - Yield a CU corresponding to this attribute.
+     : die unit
 
 *** •?AT_* :: ?T_ATTR
      Holds if it is this attribute.
@@ -1271,7 +1266,7 @@
     XXX possibly a means of evaluating?  (Could we use the in-program
     stack for evaluating the Dwarf expression?)
 
-*** •address :: ?T_LOCLIST_ELEM -> ?T_ADDR_RANGE
+*** •address :: ?T_LOCLIST_ELEM -> ?T_ASET
      Yields where given location expression applies.
 
 *** •elem :: ?T_LOCLIST_ELEM ->* ?T_LOCLIST_OP
@@ -1363,12 +1358,6 @@
 
 ***  child
 ***  offset
-***  merge :: ?T_MACRO_ENTRY ->* ?T_MACRO_ENTRY
-     : let merge := { ?DW_MACRO_GNU_transparent_include value };
-
-     Should be used as with winfo, depending on what exactly is needed
-     either (merge*) or (merge* !(merge)).
-
 ***  XXX :: something to get the prototype table???
 
 **  T_MACRO_ENTRY
@@ -1382,6 +1371,12 @@
 ***  attribute :: ?T_MACRO_ENTRY ->* ?T_MACRO_ATTRIBUTE
      - Yields value(s) associated with this opcode.
      - XXX could we somehow query a form?
+
+***  merge :: ?T_MACRO_ENTRY ->* ?T_MACRO_ENTRY
+     : let merge := { ?DW_MACRO_GNU_transparent_include value };
+
+     Should be used as with winfo, depending on what exactly is needed
+     either (merge*) or (merge* !(merge)).
 
 ***  @0, @1, ... or something???
      - Should this resemble DIE's or T_LOCLIST_OP's?  Shouldn't

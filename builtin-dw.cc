@@ -61,13 +61,13 @@ namespace
   };
 }
 
-// winfo
+// die
 namespace
 {
-  struct op_winfo_dwarf
+  struct op_die_dwarf
     : public op_yielding_overload <value_dwarf>
   {
-    struct winfo_producer
+    struct producer
       : public value_producer
     {
       std::shared_ptr <dwfl_context> m_dwctx;
@@ -75,7 +75,7 @@ namespace
       all_dies_iterator m_it;
       size_t m_i;
 
-      winfo_producer (std::shared_ptr <dwfl_context> dwctx)
+      producer (std::shared_ptr <dwfl_context> dwctx)
 	: m_dwctx {(assert (dwctx != nullptr), dwctx)}
 	, m_modit {m_dwctx->get_dwfl ()}
 	, m_it {all_dies_iterator::end ()}
@@ -104,7 +104,67 @@ namespace
     std::unique_ptr <value_producer>
     operate (std::unique_ptr <value_dwarf> a) override
     {
-      return std::make_unique <winfo_producer> (a->get_dwctx ());
+      return std::make_unique <producer> (a->get_dwctx ());
+    }
+  };
+
+  struct op_die_cu
+    : public op_yielding_overload <value_cu>
+  {
+    using op_yielding_overload::op_yielding_overload;
+
+    struct producer
+      : public value_producer
+    {
+      std::shared_ptr <dwfl_context> m_dwctx;
+      all_dies_iterator m_it;
+      all_dies_iterator m_end;
+      size_t m_i;
+
+      producer (std::shared_ptr <dwfl_context> dwctx, Dwarf_Die cudie)
+	: m_dwctx {dwctx}
+	, m_it {all_dies_iterator::end ()}
+	, m_end {all_dies_iterator::end ()}
+	, m_i {0}
+      {
+	Dwarf *dw = dwarf_cu_getdwarf (cudie.cu);
+
+	cu_iterator cuit {dw, cudie};
+	m_it = all_dies_iterator (cuit);
+	m_end = all_dies_iterator (++cuit);
+      }
+
+      std::unique_ptr <value>
+      next () override
+      {
+	if (m_it == m_end)
+	  return nullptr;
+
+	return std::make_unique <value_die> (m_dwctx, **m_it++, m_i++);
+      }
+    };
+
+    std::unique_ptr <value_producer>
+    operate (std::unique_ptr <value_cu> a) override
+    {
+      Dwarf_Die cudie;
+      if (dwarf_cu_die (&a->get_cu (), &cudie, nullptr, nullptr,
+			nullptr, nullptr, nullptr, nullptr) == nullptr)
+	throw_libdw ();
+
+      return std::make_unique <producer> (a->get_dwctx (), cudie);
+    }
+  };
+
+  struct op_die_attr
+    : public op_overload <value_attr>
+  {
+    using op_overload::op_overload;
+
+    std::unique_ptr <value>
+    operate (std::unique_ptr <value_attr> a) override
+    {
+      return std::make_unique <value_die> (a->get_dwctx (), a->get_die (), 0);
     }
   };
 }
@@ -858,18 +918,6 @@ namespace
 	throw_libdw ();
 
       return std::make_unique <value_die> (a->get_dwctx (), par_die, 0);
-    }
-  };
-
-  struct op_parent_attr
-    : public op_overload <value_attr>
-  {
-    using op_overload::op_overload;
-
-    std::unique_ptr <value>
-    operate (std::unique_ptr <value_attr> a) override
-    {
-      return std::make_unique <value_die> (a->get_dwctx (), a->get_die (), 0);
     }
   };
 }
@@ -1765,9 +1813,11 @@ dwgrep_builtins_dw ()
   {
     auto t = std::make_shared <overload_tab> ();
 
-    t->add_op_overload <op_winfo_dwarf> ();
+    t->add_op_overload <op_die_dwarf> ();
+    t->add_op_overload <op_die_cu> ();
+    t->add_op_overload <op_die_attr> ();
 
-    dict.add (std::make_shared <overloaded_op_builtin> ("winfo", t));
+    dict.add (std::make_shared <overloaded_op_builtin> ("die", t));
   }
 
   {
@@ -1894,7 +1944,6 @@ dwgrep_builtins_dw ()
     auto t = std::make_shared <overload_tab> ();
 
     t->add_op_overload <op_parent_die> ();
-    t->add_op_overload <op_parent_attr> ();
 
     dict.add (std::make_shared <overloaded_op_builtin> ("parent", t));
   }

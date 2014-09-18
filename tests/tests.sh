@@ -88,19 +88,23 @@ expect_count 1 ./empty -e '
 
 # Test that universe annotates position.
 expect_count 1 ./nontrivial-types.o -e '
-	winfo (offset == 0xb8) (pos == 10)'
+	die (offset == 0xb8) (pos == 10)'
 
 # Test that child annotates position.
 expect_count 1 ./nontrivial-types.o -e '
-	winfo ?root child (offset == 0xb8) (pos == 6)'
+	die ?root child (offset == 0xb8) (pos == 6)'
 
 # Test that format annotates position.
 expect_count 1 ./nontrivial-types.o -e '
-	winfo ?root "%( child offset %)" (== "0xb8") (pos == 6)'
+	die ?root "%( child offset %)" (== "0xb8") (pos == 6)'
 
 # Test that attribute annotates position.
 expect_count 1 ./nontrivial-types.o -e '
-	winfo ?root attribute ?AT_stmt_list (pos == 6)'
+	die ?root attribute ?AT_stmt_list (pos == 6)'
+
+# Test that die::T_CU annotates position.
+expect_count 11 ./nontrivial-types.o -e '
+       	let A := die; let B := A unit die; (A pos == B pos)'
 
 # Test a bug with scope promotion.
 expect_count 1 ./empty -e '
@@ -112,7 +116,7 @@ expect_count 1 ./empty -e '
 
 # Test that elem annotates position.
 expect_count 1 ./nontrivial-types.o -e '
-	winfo ?root drop [10, 11, 12]
+	die ?root drop [10, 11, 12]
 	?(elem (pos == 0) (== 10))
 	?(elem (pos == 1) (== 11))
 	?(elem (pos == 2) (== 12))'
@@ -136,81 +140,81 @@ expect_count 1 ./empty -e '
 # Tests star closure whose body ends with stack in a different state
 # than it starts in (different slots are taken in the valfile).
 expect_count 1 ./typedef.o -e '
-	winfo
+	die
 	?([] swap (@AT_type ?TAG_typedef [()] rot add swap)* drop length 3 ?eq)
 	?(offset 0x45 ?eq)'
 
 # Test decoding signed and unsigned value.
 expect_count 1 ./enum.o -e '
-	winfo (@AT_name == "f") child (@AT_name == "V")
+	die (@AT_name == "f") child (@AT_name == "V")
 	(@AT_const_value "%s" == "-1")'
 expect_count 1 ./enum.o -e '
-	winfo (@AT_name == "e") child (@AT_name == "V")
+	die (@AT_name == "e") child (@AT_name == "V")
 	(@AT_const_value "%s" == "4294967295")'
 expect_count 2 ./char_16_32.o -e '
-	winfo (@AT_name == "bar") (@AT_const_value == 0xe1)'
+	die (@AT_name == "bar") (@AT_const_value == 0xe1)'
 expect_count 1 ./nullptr.o -e '
-	winfo ?(integrate @AT_type ?TAG_unspecified_type) (@AT_const_value == 0)'
+	die ?(integrate @AT_type ?TAG_unspecified_type) (@AT_const_value == 0)'
 expect_count 1 ./testfile_const_type -e '
-	winfo @AT_location elem ?OP_GNU_const_type value
+	die @AT_location elem ?OP_GNU_const_type value
 	((pos == 0) (type == T_DIE) || (pos == 1) (type == T_SEQ))'
 
 # Test match operator
 expect_count 7 ./duplicate-const -e '
-	winfo ?(@AT_decl_file "" ?match)'
+	die ?(@AT_decl_file "" ?match)'
 expect_count 7 ./duplicate-const -e '
-	winfo ?(@AT_decl_file ".*petr.*" ?match)'
+	die ?(@AT_decl_file ".*petr.*" ?match)'
 expect_count 1 ./nontrivial-types.o -e '
-	winfo ?(@AT_language "%s" "DW_LANG_C89" ?match)'
+	die ?(@AT_language "%s" "DW_LANG_C89" ?match)'
 expect_count 1 ./nontrivial-types.o -e '
-	winfo ?(@AT_encoding "%s" "^DW_ATE_signed$" ?match)'
+	die ?(@AT_encoding "%s" "^DW_ATE_signed$" ?match)'
 expect_count 7 ./duplicate-const -e '
-	winfo (@AT_decl_file =~ "")'
+	die (@AT_decl_file =~ "")'
 expect_count 7 ./duplicate-const -e '
-	winfo (@AT_decl_file =~ ".*petr.*")'
+	die (@AT_decl_file =~ ".*petr.*")'
 expect_count 7 ./duplicate-const -e '
-	winfo (@AT_decl_file !~ ".*pavel.*")'
+	die (@AT_decl_file !~ ".*pavel.*")'
 
 # Test true/false
 expect_count 1 ./typedef.o -e '
-	winfo ?(@AT_external == true)'
+	die ?(@AT_external == true)'
 expect_count 1 ./typedef.o -e '
-	winfo ?(@AT_external != false)'
+	die ?(@AT_external != false)'
 
 # Test that (dup parent) doesn't change the bottom DIE as well.
 expect_count 1 ./nontrivial-types.o -e '
-	winfo ?TAG_structure_type dup parent ?(swap offset == 0x2d)'
+	die ?TAG_structure_type dup parent ?(swap offset == 0x2d)'
 
 # Check that when promoting assertions close to producers of their
 # slots, we don't move across alternation or closure.
 expect_count 3 ./nontrivial-types.o -e '
-	winfo ?TAG_subprogram child* ?TAG_formal_parameter'
+	die ?TAG_subprogram child* ?TAG_formal_parameter'
 expect_count 3 ./nontrivial-types.o -e '
-	winfo ?TAG_subprogram child? ?TAG_formal_parameter'
+	die ?TAG_subprogram child? ?TAG_formal_parameter'
 expect_count 3 ./nontrivial-types.o -e '
-	winfo ?TAG_subprogram (child,) ?TAG_formal_parameter'
+	die ?TAG_subprogram (child,) ?TAG_formal_parameter'
 
 # Check casting.
 expect_count 1 ./enum.o -e '
-	winfo (@AT_name == "e") child
+	die (@AT_name == "e") child
 	@AT_const_value "%x" "0xffffffff" ?eq'
 expect_count 1 ./enum.o -e '
-	winfo (@AT_name == "e") child
+	die (@AT_name == "e") child
 	@AT_const_value hex "%s" "0xffffffff" ?eq'
 expect_count 1 ./enum.o -e '
-	winfo (@AT_name == "e") child
+	die (@AT_name == "e") child
 	@AT_const_value "%o" "037777777777" ?eq'
 expect_count 1 ./enum.o -e '
-	winfo (@AT_name == "e") child
+	die (@AT_name == "e") child
 	@AT_const_value oct "%s" "037777777777" ?eq'
 expect_count 1 ./enum.o -e '
-	winfo (@AT_name == "e") child @AT_const_value
+	die (@AT_name == "e") child @AT_const_value
 	"%b" "0b11111111111111111111111111111111" ?eq'
 expect_count 1 ./enum.o -e '
-	winfo (@AT_name == "e") child @AT_const_value bin
+	die (@AT_name == "e") child @AT_const_value bin
 	"%s" "0b11111111111111111111111111111111" ?eq'
 expect_count 1 ./enum.o -e '
-	winfo (@AT_name == "e") child label "%d" "40" ?eq'
+	die (@AT_name == "e") child label "%d" "40" ?eq'
 
 # Check decoding of huge literals.
 expect_count 1 ./empty -e '
@@ -261,17 +265,17 @@ expect_count 1 ./empty -e '-2 -10 mul (== 20)'
 
 # Check iterating over empty compile unit.
 expect_count 1 ./empty -e '
-	winfo offset'
+	die offset'
 
 # Check ||.
 expect_count 6 ./typedef.o -e '
-	winfo (@AT_decl_line || drop 42)'
+	die (@AT_decl_line || drop 42)'
 expect_count 2 ./typedef.o -e '
-	winfo (@AT_decl_line || drop 42) (== 42)'
+	die (@AT_decl_line || drop 42) (== 42)'
 expect_count 6 ./typedef.o -e '
-	winfo (@AT_decl_line || @AT_byte_size || drop 42)'
+	die (@AT_decl_line || @AT_byte_size || drop 42)'
 expect_count 1 ./typedef.o -e '
-	winfo (@AT_decl_line || @AT_byte_size || drop 42) (== 42)'
+	die (@AT_decl_line || @AT_byte_size || drop 42) (== 42)'
 expect_count 1 ./empty -e '
 	(0, 1, 20) (== 10 || == 20)'
 
@@ -326,18 +330,18 @@ expect_count 1 ./empty -e '
 # Examples.
 expect_count 1 ./duplicate-const -e '
 	let ?cvr_type := {?TAG_const_type,?TAG_volatile_type,?TAG_restrict_type};
-	let P := winfo ;
+	let P := die ;
 	let A := P child ?cvr_type ;
 	let B := P child ?cvr_type ?(?lt: A) ;
 	?((A label) ?eq: (B label))
 	?((A @AT_type) ?eq: (B @AT_type))'
 
 expect_count 1 ./duplicate-const -e '
-	let A:=winfo (?TAG_const_type||?TAG_volatile_type||?TAG_restrict_type);
+	let A:=die (?TAG_const_type||?TAG_volatile_type||?TAG_restrict_type);
 	A root child* (> A) (label == A label) (@AT_type == A @AT_type) A'
 
 expect_count 1 ./nontrivial-types.o -e '
-	winfo ?TAG_subprogram !AT_declaration dup child ?TAG_formal_parameter
+	die ?TAG_subprogram !AT_declaration dup child ?TAG_formal_parameter
 	?(@AT_type ((?TAG_const_type,?TAG_volatile_type,?TAG_typedef) @AT_type)*
 	  (?TAG_structure_type, ?TAG_class_type))'
 
@@ -347,7 +351,7 @@ expect_count 1 ./empty -e '
 expect_count 1 ./empty -e '
 	[if !(1) then (2,3) else (4,5)] ?([4,5] ?eq)'
 expect_count 6 ./typedef.o -e '
-	[winfo] ?(length 6 ?eq)
+	[die] ?(length 6 ?eq)
 	elem if child then 1 else 0 "%s %(offset%)"
 	?(("1 0xb","0 0x1d","0 0x28","0 0x2f","0 0x3a","0 0x45") ?eq)'
 
@@ -365,38 +369,38 @@ expect_count 1 ./empty -e '
 expect_count 1 ./empty -e '
 	let Dw := "duplicate-const" dwopen;
 
-	"%([Dw winfo label]%)"
+	"%([Dw die label]%)"
 	"[DW_TAG_compile_unit, DW_TAG_subprogram, DW_TAG_variable,"\
 	" DW_TAG_variable, DW_TAG_variable, DW_TAG_variable,"\
 	" DW_TAG_base_type, DW_TAG_pointer_type, DW_TAG_const_type,"\
 	" DW_TAG_base_type, DW_TAG_array_type, DW_TAG_subrange_type,"\
 	" DW_TAG_base_type, DW_TAG_const_type, DW_TAG_variable,"\
 	" DW_TAG_variable, DW_TAG_const_type]" ?eq
-	"%([Dw winfo label]%)" ?eq'
+	"%([Dw die label]%)" ?eq'
 
 expect_count 1 ./duplicate-const -e '
-	"%([winfo ?root attribute label]%)"
+	"%([die ?root attribute label]%)"
 	"[DW_AT_producer, DW_AT_language, DW_AT_name, DW_AT_comp_dir, "\
 	"DW_AT_low_pc, DW_AT_high_pc, DW_AT_stmt_list]" ?eq'
 
 expect_count 1 ./duplicate-const -e '
-	"%([winfo ?root attribute label]%)"
+	"%([die ?root attribute label]%)"
 	"[DW_AT_producer, DW_AT_language, DW_AT_name, DW_AT_comp_dir, "\
 	"DW_AT_low_pc, DW_AT_high_pc, DW_AT_stmt_list]" ?eq'
 
 expect_count 1 ./duplicate-const -e '
-	"%([winfo ?root attribute form]%)"
+	"%([die ?root attribute form]%)"
 	"[DW_FORM_strp, DW_FORM_data1, DW_FORM_strp, DW_FORM_strp, "\
 	"DW_FORM_addr, DW_FORM_data8, DW_FORM_sec_offset]" ?eq'
 
 expect_count 1 ./empty -e '
-	winfo ?root ?(label ?TAG_compile_unit) !(label !TAG_compile_unit)
+	die ?root ?(label ?TAG_compile_unit) !(label !TAG_compile_unit)
 	?AT_name !(!AT_name)
 	attribute ?(?AT_name label ?AT_name) !(!AT_name || label !AT_name)
 	?(?FORM_strp form ?FORM_strp) !(!FORM_strp || form !FORM_strp)'
 
 expect_count 1 ./empty -e '
-	winfo ?root ?(label ?DW_TAG_compile_unit) !(label !DW_TAG_compile_unit)
+	die ?root ?(label ?DW_TAG_compile_unit) !(label !DW_TAG_compile_unit)
 	?DW_AT_name !(!DW_AT_name)
 	attribute ?(?DW_AT_name label ?DW_AT_name)
 	!(!DW_AT_name || label !DW_AT_name)
@@ -410,8 +414,8 @@ expect_count 1 ./empty -e '
 	?([] type T_SEQ ?eq "%s" "T_SEQ" ?eq)
 	?({} type T_CLOSURE ?eq "%s" "T_CLOSURE" ?eq)'
 expect_count 1 ./duplicate-const -e '
-	?(winfo ?root type T_DIE ?eq "%s" "T_DIE" ?eq)
-	?(winfo ?root attribute ?AT_name type T_ATTR ?eq "%s" "T_ATTR" ?eq)'
+	?(die ?root type T_DIE ?eq "%s" "T_DIE" ?eq)
+	?(die ?root attribute ?AT_name type T_ATTR ?eq "%s" "T_ATTR" ?eq)'
 
 # Check some list and seq words.
 expect_count 1 ./empty -e '
@@ -434,22 +438,22 @@ expect_count 1 ./empty -e '
 
 #   Support of DW_AT_location with DW_FORM_block*.
 expect_count 1 ./typedef.o -e '
-	winfo ?(@AT_location elem label DW_OP_addr ?eq)'
+	die ?(@AT_location elem label DW_OP_addr ?eq)'
 #   Support of DW_AT_location with DW_FORM_exprloc
 expect_count 2 ./enum.o -e '
-	winfo ?(@AT_location elem label DW_OP_addr ?eq)'
+	die ?(@AT_location elem label DW_OP_addr ?eq)'
 
 #   Numbering of elements of location list.
 expect_count 1 ./bitcount.o -e '
-	winfo (offset == 0x91) @AT_location (pos == 1)'
+	die (offset == 0x91) @AT_location (pos == 1)'
 
 # Test multi-yielding value.
 expect_count 3 ./bitcount.o -e '
-	[winfo ?AT_location] elem (pos == 0) attribute ?AT_location value'
+	[die ?AT_location] elem (pos == 0) attribute ?AT_location value'
 
 # ?OP_*
 expect_count 1 ./bitcount.o -e '
-	[winfo @AT_location] elem (pos == 1)
+	[die @AT_location] elem (pos == 1)
 	([?OP_and] length == 1)
 	([?OP_or] length == 0)
 	([elem ?OP_and] length == 1)
@@ -457,22 +461,22 @@ expect_count 1 ./bitcount.o -e '
 
 # high, low, address
 expect_count 1 ./bitcount.o -e '
-	[winfo @AT_location] elem (pos == 1) address
+	[die @AT_location] elem (pos == 1) address
 	(high == 0x1001a) (low == 0x10017) (== 65559 65562 aset)'
 
 expect_count 2 ./duplicate-const -e '
-	winfo attribute ?AT_high_pc
+	die attribute ?AT_high_pc
 	(form == DW_FORM_data8)
 	(value == 46)
 	address (== 0x4004fb) ("%s" == "0x4004fb")'
 
 expect_count 2 ./duplicate-const -e '
-	winfo attribute ?AT_low_pc
+	die attribute ?AT_low_pc
 	(form == DW_FORM_addr)
 	address (== value) ("%s" == "0x4004cd")'
 
 expect_count 2 ./duplicate-const -e '
-	winfo (low == 0x4004cd) (high == 0x4004fb)'
+	die (low == 0x4004cd) (high == 0x4004fb)'
 
 expect_count 1 ./empty -e '
 	10 20 aset
@@ -538,20 +542,20 @@ expect_count 1 ./empty -e '
 	(10 10 aset length == 0)'
 
 expect_count 1 ./aranges.o -e '
-	winfo ?TAG_lexical_block
+	die ?TAG_lexical_block
 	([address elem] length == 2)
 	address elem (pos == 1) (== 0x1000e 0x10015 aset)'
 
 expect_count 1 ./aranges.o -e '
-	winfo ?TAG_lexical_block
+	die ?TAG_lexical_block
 	([@AT_ranges elem] length == 2)
 	@AT_ranges elem (pos == 1) (== 0x1000e 0x10015 aset)'
 
 expect_count 1 ./pointer_const_value.o -e '
-	winfo @AT_const_value == 0'
+	die @AT_const_value == 0'
 
 expect_count 4 ./float_const_value.o -e '
-	winfo
+	die
 	(?((@AT_name == "fv")
 	   (@AT_const_value == [0, 0, 0xc0, 0x3f]))
 	 || ?((@AT_name == "dv")
@@ -570,38 +574,38 @@ expect_count 1 ./empty -e '
 # Abbreviations.
 
 expect_count 1 ./bitcount.o -e '
-	[winfo abbrev offset] ==
+	[die abbrev offset] ==
 	[0, 19, 19, 30, 19, 19, 19, 19, 41, 19, 54, 80, 95, 104]'
 expect_count 1 ./bitcount.o -e '
-	[winfo abbrev code] ==
+	[die abbrev code] ==
 	[1, 2, 2, 3, 2, 2, 2, 2, 4, 2, 5, 6, 7, 8]'
 
-expect_count 0 ./duplicate-const -e 'winfo ?haschildren !(child)'
-expect_count 0 ./duplicate-const -e 'winfo !haschildren ?(child)'
+expect_count 0 ./duplicate-const -e 'die ?haschildren !(child)'
+expect_count 0 ./duplicate-const -e 'die !haschildren ?(child)'
 
 expect_count 1 ./duplicate-const -e '
-	[winfo ?haschildren] length == [winfo abbrev ?haschildren] length'
+	[die ?haschildren] length == [die abbrev ?haschildren] length'
 
 expect_count 1 ./duplicate-const -e '
-	[winfo ([abbrev attribute] length == [attribute] length)] length
-	== [winfo] length'
+	[die ([abbrev attribute] length == [attribute] length)] length
+	== [die] length'
 expect_count 1 ./duplicate-const -e '
-	[winfo ([abbrev attribute form] == [attribute form])] length
-	== [winfo] length'
+	[die ([abbrev attribute form] == [attribute form])] length
+	== [die] length'
 expect_count 1 ./duplicate-const -e '
-	[winfo ([abbrev attribute label] == [attribute label])] length
-	== [winfo] length'
+	[die ([abbrev attribute label] == [attribute label])] length
+	== [die] length'
 expect_count 1 ./duplicate-const -e '
-	[winfo ?(abbrev ?AT_name)] == [winfo ?AT_name]'
+	[die ?(abbrev ?AT_name)] == [die ?AT_name]'
 expect_count 1 ./duplicate-const -e '
-	[winfo ?(abbrev !AT_name)] == [winfo !AT_name]'
+	[die ?(abbrev !AT_name)] == [die !AT_name]'
 expect_count 1 ./duplicate-const -e '
-	[winfo ?(abbrev attribute ?AT_name)] == [winfo ?AT_name]'
+	[die ?(abbrev attribute ?AT_name)] == [die ?AT_name]'
 expect_count 1 ./bitcount.o -e '
-	[winfo (pos == 0) abbrev attribute ?FORM_strp label]
+	[die (pos == 0) abbrev attribute ?FORM_strp label]
 	== [DW_AT_producer, DW_AT_name, DW_AT_comp_dir]'
 
-expect_count 1 ./duplicate-const -e '[winfo label] == [winfo abbrev label]'
+expect_count 1 ./duplicate-const -e '[die label] == [die abbrev label]'
 
 expect_count 1 ./twocus -e '[abbrev offset] == [0, 0x34]'
 expect_count 1 ./twocus -e '?(abbrev elem (|A| A pos 1 add == A code))'
