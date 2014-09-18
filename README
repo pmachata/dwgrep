@@ -1011,13 +1011,15 @@
 
 ** ·T_DWARF
 *** •winfo :: ?T_DWARF ->* ?T_DIE
-     Yields all DIE's in a .debug_info section.  In produces values of
-     type T_DIE.
+     - Yields all DIE's in a .debug_info section.  In produces values
+       of type T_DIE.
+
+***  unit :: ?T_DWARF ->* ?T_CU
+     : winfo ?root unit
 
 *** •wabbrev :: ?T_DWARF ->* ?T_ABBREV
      - Yields all abbreviations in a .debug_abbrev sections.
 
-***  unit :: ?T_DWARF ->* ?T_CU
 ***  symtab :: ?T_DWARF ->* ?T_ELFSYM
      Yields all symbols in .symtab, or minisymtab, or .dynsym.  It
      produces values of type T_ELFSYM.
@@ -1030,11 +1032,17 @@
       would produce.  unit::?T_DIE wouldn't be ->*?T_DIE, but ->?T_CU.
     - CU DIE would be obtained by saying (elem ?root)
 ***  offset :: ?T_CU -> ?T_CONST
-***  elem :: ?T_CU ->* ?T_DIE
-***  next
-***  prev
+***  next :: ?T_CU ->? T_CU
+***  prev :: ?T_CU ->? T_CU
 ***  abbrev :: ?T_CU -> ?T_ABBREV_UNIT
+     - Produce an abbreviation unit associated with this CU.
+
 ***  version :: ?T_CU -> ?T_CONST
+***  root :: ?T_CU -> ?T_DIE
+     - Produce a CU DIE of a CU.
+
+***  elem :: ?T_CU ->* ?T_DIE
+     : root child*
 
 ** ·T_DIE
 *** •label :: ?T_DIE -> ?T_CONST
@@ -1401,11 +1409,13 @@
    :                ?TAG_lexical_block, ?TAG_label, ?TAG_with_stmt,
    :                ?TAG_try_block, ?TAG_catch_block);
    : let B := A (@AT_entry_pc, address);
-   : let C := A parent* ?root !(@AT_stmt_list address == B);
-   : "Address %( B %) referenced from %( C %) not found in line table."
+   : let C := A root address;
+   : ?(B C !overlaps || B C overlap != B)
+   : "Address range %( B %) referenced from %( A %)"\
+   : " not fully covered by line table."
 
 ** contains DW_OP_fbreg && ! @frame_base
-   : !AT_frame_base (@AT_location label == DW_OP_fbreg)
+   : winfo !AT_frame_base (@AT_location elem label == DW_OP_fbreg)
 
 ** uses register based operators
 
@@ -1416,10 +1426,10 @@
 
 ** whether it uses a deref operator
 
-   : ?(@AT_location label (?OP_deref, ?OP_xderef, ?OP_deref_size,
-   :                       ?OP_xderef_size, ?OP_GNU_deref_type))
+   : winfo ?(@AT_location elem label (?OP_deref, ?OP_xderef, ?OP_deref_size,
+   :                                  ?OP_xderef_size, ?OP_GNU_deref_type))
 
-   : ?(@AT_location label "%s" "deref" ?find)
+   : winfo ?(@AT_location elem label "%s" "deref" ?find)
 
 ** contains DW_OP_call_frame_cfa && $@low_pc == 0
 
@@ -1427,7 +1437,7 @@
 
 ** is an empty location expression
 
-   : winfo ?AT_location !(@AT_location)
+   : winfo ?(@AT_location !(elem))
 
 ** location expression ends with implicit_value or stack_value
 
