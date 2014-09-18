@@ -121,52 +121,30 @@ namespace
       std::shared_ptr <dwfl_context> m_dwctx;
       dwfl_module_iterator m_modit;
       cu_iterator m_cuit;
-      Dwarf_Off m_offset;
       size_t m_i;
 
       producer (std::shared_ptr <dwfl_context> dwctx)
 	: m_dwctx {(assert (dwctx != nullptr), dwctx)}
 	, m_modit {m_dwctx->get_dwfl ()}
 	, m_cuit {cu_iterator::end ()}
-	, m_offset {0}
 	, m_i {0}
       {}
 
       std::unique_ptr <value>
       next () override
       {
-	Dwarf_Abbrev *abbrev;
-	while (true)
+	while (m_cuit == cu_iterator::end ())
 	  {
-	    if (m_cuit == cu_iterator::end ())
-	      {
-		if (m_modit == dwfl_module_iterator::end ())
-		  {
-		    return nullptr;
-		  }
+	    if (m_modit == dwfl_module_iterator::end ())
+	      return nullptr;
 
-		auto ret = *m_modit++;
-		assert (ret.first != nullptr);
-		m_cuit = cu_iterator (ret.first);
-		m_offset = 0;
-	      }
-
-	    size_t length;
-	    abbrev = dwarf_getabbrev (*m_cuit, m_offset, &length);
-	    if (abbrev == nullptr)
-	      throw_libdw ();
-	    if (abbrev == DWARF_END_ABBREV)
-	      {
-		m_offset = 0;
-		m_cuit++;
-		continue;
-	      }
-
-	    m_offset += length;
-	    break;
+	    Dwarf *dw = (*m_modit++).first;
+	    assert (dw != nullptr);
+	    m_cuit = cu_iterator (dw);
 	  }
 
-	return std::make_unique <value_abbrev> (m_dwctx, *abbrev, m_i++);
+	return std::make_unique <value_abbrev_unit>
+	  (m_dwctx, *(*m_cuit++)->cu, m_i++);
       }
     };
 
@@ -379,7 +357,62 @@ namespace
     }
   };
 
-  template <bool forward>
+  template <bool Forward>
+  struct op_elem_abbrev_unit
+    : public op_yielding_overload <value_abbrev_unit>
+  {
+    using op_yielding_overload::op_yielding_overload;
+
+    struct producer
+      : public value_producer
+    {
+      std::shared_ptr <dwfl_context> m_dwctx;
+      std::vector <Dwarf_Abbrev *> m_abbrevs;
+      size_t m_i;
+
+      producer (std::unique_ptr <value_abbrev_unit> a)
+	: m_dwctx {a->get_dwctx ()}
+	, m_i {0}
+      {
+	Dwarf_Die cudie;
+	if (dwarf_cu_die (&a->get_cu (), &cudie, nullptr, nullptr,
+			  nullptr, nullptr, nullptr, nullptr) == nullptr)
+	  throw_libdw ();
+
+	Dwarf_Off offset = 0;
+	for (Dwarf_Abbrev *abbrev = nullptr;;)
+	  {
+	    size_t length;
+	    abbrev = dwarf_getabbrev (&cudie, offset, &length);
+	    if (abbrev == nullptr)
+	      throw_libdw ();
+	    if (abbrev == DWARF_END_ABBREV)
+	      break;
+	    m_abbrevs.push_back (abbrev);
+	    offset += length;
+	  }
+      }
+
+      std::unique_ptr <value>
+      next () override
+      {
+	if (m_i >= m_abbrevs.size ())
+	  return nullptr;
+
+	size_t idx = Forward ? m_i : m_abbrevs.size () - 1 - m_i;
+	return std::make_unique <value_abbrev>
+	  (m_dwctx, *m_abbrevs[idx], m_i++);
+      }
+    };
+
+    std::unique_ptr <value_producer>
+    operate (std::unique_ptr <value_abbrev_unit> a) override
+    {
+      return std::make_unique <producer> (std::move (a));
+    }
+  };
+
+  template <bool Forward>
   struct op_elem_aset
     : public op_yielding_overload <value_aset>
   {
@@ -403,7 +436,7 @@ namespace
 	if (m_i >= sz)
 	  return nullptr;
 
-	size_t idx = forward ? m_i : sz - 1 - m_i;
+	size_t idx = Forward ? m_i : sz - 1 - m_i;
 
 	coverage ret;
 	auto range = m_a->get_coverage ().at (idx);
@@ -518,6 +551,25 @@ namespace
     operate (std::unique_ptr <value_die> val) override
     {
       constant c {dwarf_dieoffset (&val->get_die ()), &dw_offset_dom};
+      return std::make_unique <value_cst> (c, 0);
+    }
+  };
+
+  struct op_offset_abbrev_unit
+    : public op_overload <value_abbrev_unit>
+  {
+    using op_overload::op_overload;
+
+    std::unique_ptr <value>
+    operate (std::unique_ptr <value_abbrev_unit> a) override
+    {
+      Dwarf_Die cudie;
+      Dwarf_Off abbrev_off;
+      if (dwarf_cu_die (&a->get_cu (), &cudie, nullptr, &abbrev_off,
+			nullptr, nullptr, nullptr, nullptr) == nullptr)
+	throw_libdw ();
+
+      constant c {abbrev_off, &dw_offset_dom};
       return std::make_unique <value_cst> (c, 0);
     }
   };
@@ -1605,6 +1657,7 @@ dwgrep_builtins_dw ()
   add_builtin_type_constant <value_dwarf> (dict);
   add_builtin_type_constant <value_die> (dict);
   add_builtin_type_constant <value_attr> (dict);
+  add_builtin_type_constant <value_abbrev_unit> (dict);
   add_builtin_type_constant <value_abbrev> (dict);
   add_builtin_type_constant <value_abbrev_attr> (dict);
   add_builtin_type_constant <value_aset> (dict);
@@ -1683,6 +1736,7 @@ dwgrep_builtins_dw ()
     auto t = std::make_shared <overload_tab> ();
 
     t->add_op_overload <op_elem_loclist_elem> ();
+    t->add_op_overload <op_elem_abbrev_unit <true>> ();
     t->add_op_overload <op_elem_aset <true>> ();
 
     dict.add (std::make_shared <overloaded_op_builtin> ("elem", t));
@@ -1692,6 +1746,7 @@ dwgrep_builtins_dw ()
     auto t = std::make_shared <overload_tab> ();
 
     t->add_op_overload <op_relem_loclist_elem> ();
+    t->add_op_overload <op_elem_abbrev_unit <false>> ();
     t->add_op_overload <op_elem_aset <false>> ();
 
     dict.add (std::make_shared <overloaded_op_builtin> ("relem", t));
@@ -1710,6 +1765,7 @@ dwgrep_builtins_dw ()
     auto t = std::make_shared <overload_tab> ();
 
     t->add_op_overload <op_offset_die> ();
+    t->add_op_overload <op_offset_abbrev_unit> ();
     t->add_op_overload <op_offset_abbrev> ();
     t->add_op_overload <op_offset_abbrev_attr> ();
     t->add_op_overload <op_offset_loclist_op> ();

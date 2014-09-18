@@ -1017,8 +1017,8 @@
 ***  unit :: ?T_DWARF ->* ?T_CU
      : winfo ?root unit
 
-*** •wabbrev :: ?T_DWARF ->* ?T_ABBREV
-     - Yields all abbreviations in a .debug_abbrev sections.
+*** •wabbrev :: ?T_DWARF ->* ?T_ABBREV_UNIT
+     - Yields all abbreviation units in a .debug_abbrev section.
 
 ***  symtab :: ?T_DWARF ->* ?T_ELFSYM
      Yields all symbols in .symtab, or minisymtab, or .dynsym.  It
@@ -1060,7 +1060,7 @@
 *** •low :: ?T_DIE ->? ?T_CONST
      : @AT_lowpc
 
-*** •address :: ?T_DIE ->* ?T_ADDR_RANGE
+*** •address :: ?T_DIE ->? ?T_ASET
      Like dwarf_ranges.
 
 *** •child :: ?T_DIE ->* ?T_DIE
@@ -1193,11 +1193,16 @@
 ***  ?ATE_* :: ?T_ATTR
      Holds if (?AT_encoding value == DW_ATE_*)
 
-**  T_ABBREV_UNIT
-    - maybe it would be better if wabbrev produced this instead of
-      unstructured dump of abbreviations.
-***  offset :: ?T_ABBREV_UNIT -> ?T_CONST
-***  elem :: ?T_ABBREV_UNIT ->* ?T_ABBREV
+** •T_ABBREV_UNIT
+*** •offset :: ?T_ABBREV_UNIT -> ?T_CONST
+     - Yield offset of this abbreviation unit.
+
+*** •elem :: ?T_ABBREV_UNIT ->* ?T_ABBREV
+     - Yield abbreviations defined in this unit.
+
+*** •relem :: ?T_ABBREV_UNIT ->* ?T_ABBREV
+     : [|A| A elem] relem
+
 ** •T_ABBREV
 *** •label :: ?T_ABBREV -> ?T_CONST
 *** •offset :: ?T_ABBREV -> ?T_CONST

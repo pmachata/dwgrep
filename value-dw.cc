@@ -188,6 +188,38 @@ value_attr::cmp (value const &that) const
 }
 
 
+value_type const value_abbrev_unit::vtype
+	= value_type::alloc ("T_ABBREV_UNIT");
+
+void
+value_abbrev_unit::show (std::ostream &o, brevity brv) const
+{
+  Dwarf_Die cudie;
+  Dwarf_Off abbrev_off;
+  if (dwarf_cu_die (&m_cu, &cudie, nullptr, &abbrev_off,
+		    nullptr, nullptr, nullptr, nullptr) == nullptr)
+    throw_libdw ();
+
+  ios_flag_saver s {o};
+  o << "abbrev unit " << std::hex << std::showbase << abbrev_off;
+}
+
+std::unique_ptr <value>
+value_abbrev_unit::clone () const
+{
+  return std::make_unique <value_abbrev_unit> (*this);
+}
+
+cmp_result
+value_abbrev_unit::cmp (value const &that) const
+{
+  if (auto v = value::as <value_abbrev_unit> (&that))
+    return compare (&m_cu, &v->m_cu);
+  else
+    return cmp_result::fail;
+}
+
+
 value_type const value_abbrev::vtype
 	= value_type::alloc ("T_ABBREV");
 

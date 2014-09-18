@@ -607,5 +607,8 @@ expect_count 1 ./bitcount.o -e '
 
 expect_count 1 ./duplicate-const -e '[winfo label] == [winfo abbrev label]'
 
+expect_count 1 ./twocus -e '[wabbrev offset] == [0, 0x34]'
+expect_count 1 ./twocus -e '?(wabbrev elem (|A| A pos 1 add == A code))'
+
 echo "$total tests total, $failures failures."
 [ $failures -eq 0 ]

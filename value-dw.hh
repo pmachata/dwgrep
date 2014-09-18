@@ -119,6 +119,35 @@ public:
   cmp_result cmp (value const &that) const override;
 };
 
+class value_abbrev_unit
+  : public value
+{
+  std::shared_ptr <dwfl_context> m_dwctx;
+  Dwarf_CU &m_cu;
+
+public:
+  static value_type const vtype;
+
+  value_abbrev_unit (std::shared_ptr <dwfl_context> dwctx,
+		     Dwarf_CU &cu, size_t pos)
+    : value {vtype, pos}
+    , m_dwctx {dwctx}
+    , m_cu {cu}
+  {}
+
+  value_abbrev_unit (value_abbrev_unit const &that) = default;
+
+  std::shared_ptr <dwfl_context> get_dwctx ()
+  { return m_dwctx; }
+
+  Dwarf_CU &get_cu ()
+  { return m_cu; }
+
+  void show (std::ostream &o, brevity brv) const override;
+  std::unique_ptr <value> clone () const override;
+  cmp_result cmp (value const &that) const override;
+};
+
 class value_abbrev
   : public value
 {
