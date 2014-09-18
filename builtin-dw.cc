@@ -109,7 +109,7 @@ namespace
   };
 }
 
-// wabbrev
+// unit
 namespace
 {
   bool
@@ -128,49 +128,6 @@ namespace
     return true;
   }
 
-
-  struct op_wabbrev_dwarf
-    : public op_yielding_overload <value_dwarf>
-  {
-    struct producer
-      : public value_producer
-    {
-      std::shared_ptr <dwfl_context> m_dwctx;
-      dwfl_module_iterator m_modit;
-      cu_iterator m_cuit;
-      size_t m_i;
-
-      producer (std::shared_ptr <dwfl_context> dwctx)
-	: m_dwctx {(assert (dwctx != nullptr), dwctx)}
-	, m_modit {m_dwctx->get_dwfl ()}
-	, m_cuit {cu_iterator::end ()}
-	, m_i {0}
-      {}
-
-      std::unique_ptr <value>
-      next () override
-      {
-	if (! maybe_next_module (m_modit, m_cuit))
-	  return nullptr;
-
-	return std::make_unique <value_abbrev_unit>
-	  (m_dwctx, *(*m_cuit++)->cu, m_i++);
-      }
-    };
-
-    using op_yielding_overload::op_yielding_overload;
-
-    std::unique_ptr <value_producer>
-    operate (std::unique_ptr <value_dwarf> a) override
-    {
-      return std::make_unique <producer> (a->get_dwctx ());
-    }
-  };
-}
-
-// unit
-namespace
-{
   struct op_unit_dwarf
     : public op_yielding_overload <value_dwarf>
   {
@@ -1356,6 +1313,44 @@ namespace
 // abbrev
 namespace
 {
+  struct op_abbrev_dwarf
+    : public op_yielding_overload <value_dwarf>
+  {
+    struct producer
+      : public value_producer
+    {
+      std::shared_ptr <dwfl_context> m_dwctx;
+      dwfl_module_iterator m_modit;
+      cu_iterator m_cuit;
+      size_t m_i;
+
+      producer (std::shared_ptr <dwfl_context> dwctx)
+	: m_dwctx {(assert (dwctx != nullptr), dwctx)}
+	, m_modit {m_dwctx->get_dwfl ()}
+	, m_cuit {cu_iterator::end ()}
+	, m_i {0}
+      {}
+
+      std::unique_ptr <value>
+      next () override
+      {
+	if (! maybe_next_module (m_modit, m_cuit))
+	  return nullptr;
+
+	return std::make_unique <value_abbrev_unit>
+	  (m_dwctx, *(*m_cuit++)->cu, m_i++);
+      }
+    };
+
+    using op_yielding_overload::op_yielding_overload;
+
+    std::unique_ptr <value_producer>
+    operate (std::unique_ptr <value_dwarf> a) override
+    {
+      return std::make_unique <producer> (a->get_dwctx ());
+    }
+  };
+
   struct op_abbrev_cu
     : public op_overload <value_cu>
   {
@@ -1778,14 +1773,6 @@ dwgrep_builtins_dw ()
   {
     auto t = std::make_shared <overload_tab> ();
 
-    t->add_op_overload <op_wabbrev_dwarf> ();
-
-    dict.add (std::make_shared <overloaded_op_builtin> ("wabbrev", t));
-  }
-
-  {
-    auto t = std::make_shared <overload_tab> ();
-
     t->add_op_overload <op_unit_dwarf> ();
     t->add_op_overload <op_unit_die> ();
     t->add_op_overload <op_unit_attr> ();
@@ -2016,6 +2003,7 @@ dwgrep_builtins_dw ()
   {
     auto t = std::make_shared <overload_tab> ();
 
+    t->add_op_overload <op_abbrev_dwarf> ();
     t->add_op_overload <op_abbrev_cu> ();
     t->add_op_overload <op_abbrev_die> ();
 

@@ -1017,7 +1017,7 @@
 *** •unit :: ?T_DWARF ->* ?T_CU
      : winfo ?root unit
 
-*** •wabbrev :: ?T_DWARF ->* ?T_ABBREV_UNIT
+*** •abbrev :: ?T_DWARF ->* ?T_ABBREV_UNIT
      - Yields all abbreviation units in a .debug_abbrev section.
 
 ***  symtab :: ?T_DWARF ->* ?T_ELFSYM

@@ -102,10 +102,6 @@ expect_count 1 ./nontrivial-types.o -e '
 expect_count 1 ./nontrivial-types.o -e '
 	winfo ?root attribute ?AT_stmt_list (pos == 6)'
 
-# Test that unit annotates position.
-expect_count 11 ./nontrivial-types.o -e '
-	let A := winfo; let B := A unit; (A pos == B pos)'
-
 # Test a bug with scope promotion.
 expect_count 1 ./empty -e '
 	let A:=1; ?(let X:=A;)'
@@ -607,8 +603,8 @@ expect_count 1 ./bitcount.o -e '
 
 expect_count 1 ./duplicate-const -e '[winfo label] == [winfo abbrev label]'
 
-expect_count 1 ./twocus -e '[wabbrev offset] == [0, 0x34]'
-expect_count 1 ./twocus -e '?(wabbrev elem (|A| A pos 1 add == A code))'
+expect_count 1 ./twocus -e '[abbrev offset] == [0, 0x34]'
+expect_count 1 ./twocus -e '?(abbrev elem (|A| A pos 1 add == A code))'
 
 echo "$total tests total, $failures failures."
 [ $failures -eq 0 ]
