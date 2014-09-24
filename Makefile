@@ -47,9 +47,6 @@ test-int: test-int.o int.o
 
 test-parser.o: CXXOPTFLAGS = -O0
 
-parser.cc: lexer.hh
-
-dwcst.o: known-dwarf.h
 known-dwarf.h: known-dwarf.awk /usr/include/dwarf.h
 	gawk -f $^ > $@.new
 	mv -f $@.new $@
@@ -63,7 +60,7 @@ known-dwarf.h: known-dwarf.awk /usr/include/dwarf.h
 -include $(DEPFILES)
 
 %.cc-dep: %.cc
-	$(CXX) $(CXXFLAGS) -MM -MT '$(<:%.cc=%.o) $@' $< > $@
+	$(CXX) $(CXXFLAGS) -MM -MG -MT '$(<:%.cc=%.o) $@' $< > $@
 
 $(TARGETS):
 	$(CXX) $^ -o $@ $(LDFLAGS)
