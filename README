@@ -966,6 +966,9 @@
        "sum" is:
        : [the sequence] 0 {add} fold
 
+***  rfold :: ?T_SEQ ?() ?T_CLOSURE ->* ?()
+     - Like fold, but works in reverse.
+
 ** ·T_STR
     Many words, applicable to sequences, are applicable to strings as
     well.  The semantics are as if the string was a sequence of all
@@ -993,10 +996,24 @@
 
 
 * Representation of Dwarf graph
-** Common words
-   Quite a few words are reused to be aplicable to objects of
-   different types.  These include label, offset, address, high, low,
-   name and value.
+** Vocabulary
+   - elem, relem, length -- container-like access
+   - child, parent -- vertical tree access
+   - next, prev -- horizontal tree access
+   - root -- access to root tree element
+   - high, low -- boundaries
+   - label -- node denotation (attribute code, DIE tag, ...)
+   - abbrev -- access to abbreviation(s)
+   - attribute -- access to attribute(s)
+   - form -- attribute form (a DW_FORM_* constant)
+   - name -- string associated with entity (file name, symbol name)
+   - offset -- constant describing where in the file the object is
+     defined
+   - address -- address(es) of where in user space the object is
+     defined
+   - merge -- re-establish logical view of the whole
+   - entry -- access to entries of a unit
+   - unit -- access to unit
 
 ** ·Entry points
 *** ·dwopen :: ?T_STR -> ?T_DWARF
@@ -1242,14 +1259,14 @@
 ***  label :: ?T_ELFSYM -> ?T_CONST
      Yields symbol type, such as STT_FUNC.
 
-***  value, address :: ?T_ELFSYM -> ?T_CONST
+***  address :: ?T_ELFSYM -> ?T_ASET
      Yield symbol value.
 
-***  @name :: ?T_ELFSYM -> ?T_STR
-***  @size :: ?T_ELFSYM -> ?T_CONST
-***  @bind :: ?T_ELFSYM -> ?T_CONST
-***  @visibility :: ?T_ELFSYM -> ?T_CONST
-***  @index :: ?T_ELFSYM ->? ?T_CONST
+***  name :: ?T_ELFSYM -> ?T_STR
+***  size :: ?T_ELFSYM -> ?T_CONST
+***  bind :: ?T_ELFSYM -> ?T_CONST
+***  vis :: ?T_ELFSYM -> ?T_CONST
+***  index :: ?T_ELFSYM ->? ?T_CONST
      XXX or maybe @section?
 
 ***  symbol :: ?T_CONST ->? T_ELFSYM
@@ -1264,9 +1281,6 @@
      fuzzy matching (getting symbol/offset) would be more involved.
 
 ** •T_LOCLIST_ELEM
-    XXX possibly a means of evaluating?  (Could we use the in-program
-    stack for evaluating the Dwarf expression?)
-
 *** •address :: ?T_LOCLIST_ELEM -> ?T_ASET
      Yields where given location expression applies.
 
@@ -1357,8 +1371,8 @@
       for DW_AT_macro_info and DW_AT_GNU_macros attributes, which
       would hold this as a value.
 
-***  child
-***  offset
+***  entry :: ?T_MACRO_UNIT ->* ?T_MACRO_ENTRY
+***  offset :: ?T_MACRO_UNIT ->* ?T_CONST
 ***  XXX :: something to get the prototype table???
 
 **  T_MACRO_ENTRY

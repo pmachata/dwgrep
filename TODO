@@ -171,12 +171,15 @@
      should have conversion facets for 16-bit and 32-bit character
      types, but that's not implemented in GCC yet.
 
-** stateful list iteration
-   - We need fold or something so that it's reasonably easy to
-     express sum (and whatever else).  Currently:
-     : let sum := {0 (over elem (pos == 0) add
-     : 	              swap [|A| A elem (pos != 0)] swap)*
-     :             swap (== []) drop};
-
 ** statistics?
-   akin to systemtap?  locstat would certainly use them.
+   - akin to systemtap?  locstat would certainly use them.
+   - but that might be overkill.  Maybe we just need reasonable
+     dictionaries or something.
+
+** location expression evaluation
+   - could we use the program stack for this?
+
+** address ranges vs. addresses, overloaded ?eq
+   - address::T_DIE yields T_ASET, but address::T_ATTR yields T_CONST.
+     Both should probably yield T_ASET, and T_ASET should be
+     comparable to T_CONST.
