@@ -61,10 +61,10 @@ namespace
   };
 }
 
-// die
+// entry
 namespace
 {
-  struct op_die_dwarf
+  struct op_entry_dwarf
     : public op_yielding_overload <value_dwarf>
   {
     struct producer
@@ -108,7 +108,7 @@ namespace
     }
   };
 
-  struct op_die_cu
+  struct op_entry_cu
     : public op_yielding_overload <value_cu>
   {
     using op_yielding_overload::op_yielding_overload;
@@ -156,15 +156,49 @@ namespace
     }
   };
 
-  struct op_die_attr
-    : public op_overload <value_attr>
+  struct op_entry_abbrev_unit
+    : public op_yielding_overload <value_abbrev_unit>
   {
-    using op_overload::op_overload;
+    using op_yielding_overload::op_yielding_overload;
 
-    std::unique_ptr <value>
-    operate (std::unique_ptr <value_attr> a) override
+    struct producer
+      : public value_producer
     {
-      return std::make_unique <value_die> (a->get_dwctx (), a->get_die (), 0);
+      std::shared_ptr <dwfl_context> m_dwctx;
+      std::vector <Dwarf_Abbrev *> m_abbrevs;
+      Dwarf_Die m_cudie;
+      Dwarf_Off m_offset;
+      size_t m_i;
+
+      producer (std::unique_ptr <value_abbrev_unit> a)
+	: m_dwctx {a->get_dwctx ()}
+	, m_offset {0}
+	, m_i {0}
+      {
+	if (dwarf_cu_die (&a->get_cu (), &m_cudie, nullptr, nullptr,
+			  nullptr, nullptr, nullptr, nullptr) == nullptr)
+	  throw_libdw ();
+      }
+
+      std::unique_ptr <value>
+      next () override
+      {
+	size_t length;
+	Dwarf_Abbrev *abbrev = dwarf_getabbrev (&m_cudie, m_offset, &length);
+	if (abbrev == nullptr)
+	  throw_libdw ();
+	if (abbrev == DWARF_END_ABBREV)
+	  return nullptr;
+
+	m_offset += length;
+	return std::make_unique <value_abbrev> (m_dwctx, *abbrev, m_i++);
+      }
+    };
+
+    std::unique_ptr <value_producer>
+    operate (std::unique_ptr <value_abbrev_unit> a) override
+    {
+      return std::make_unique <producer> (std::move (a));
     }
   };
 }
@@ -402,61 +436,6 @@ namespace
   };
 
   template <bool Forward>
-  struct op_elem_abbrev_unit
-    : public op_yielding_overload <value_abbrev_unit>
-  {
-    using op_yielding_overload::op_yielding_overload;
-
-    struct producer
-      : public value_producer
-    {
-      std::shared_ptr <dwfl_context> m_dwctx;
-      std::vector <Dwarf_Abbrev *> m_abbrevs;
-      size_t m_i;
-
-      producer (std::unique_ptr <value_abbrev_unit> a)
-	: m_dwctx {a->get_dwctx ()}
-	, m_i {0}
-      {
-	Dwarf_Die cudie;
-	if (dwarf_cu_die (&a->get_cu (), &cudie, nullptr, nullptr,
-			  nullptr, nullptr, nullptr, nullptr) == nullptr)
-	  throw_libdw ();
-
-	Dwarf_Off offset = 0;
-	for (Dwarf_Abbrev *abbrev = nullptr;;)
-	  {
-	    size_t length;
-	    abbrev = dwarf_getabbrev (&cudie, offset, &length);
-	    if (abbrev == nullptr)
-	      throw_libdw ();
-	    if (abbrev == DWARF_END_ABBREV)
-	      break;
-	    m_abbrevs.push_back (abbrev);
-	    offset += length;
-	  }
-      }
-
-      std::unique_ptr <value>
-      next () override
-      {
-	if (m_i >= m_abbrevs.size ())
-	  return nullptr;
-
-	size_t idx = Forward ? m_i : m_abbrevs.size () - 1 - m_i;
-	return std::make_unique <value_abbrev>
-	  (m_dwctx, *m_abbrevs[idx], m_i++);
-      }
-    };
-
-    std::unique_ptr <value_producer>
-    operate (std::unique_ptr <value_abbrev_unit> a) override
-    {
-      return std::make_unique <producer> (std::move (a));
-    }
-  };
-
-  template <bool Forward>
   struct op_elem_aset
     : public op_yielding_overload <value_aset>
   {
@@ -465,35 +444,50 @@ namespace
     struct producer
       : public value_producer
     {
-      std::unique_ptr <value_aset> m_a;
-      size_t m_i;
+      coverage cov;
+      size_t m_idx;	// position among ranges
+      uint64_t m_ai;	// iteration through a range
+      size_t m_i;	// produced value counter
 
-      producer (std::unique_ptr <value_aset> a)
-	: m_a {std::move (a)}
+      producer (coverage a_cov)
+	: cov {a_cov}
+	, m_idx {0}
+	, m_ai {0}
 	, m_i {0}
       {}
 
       std::unique_ptr <value>
       next () override
       {
-	size_t sz = m_a->get_coverage ().size ();
-	if (m_i >= sz)
+	if (m_idx >= cov.size ())
 	  return nullptr;
 
-	size_t idx = Forward ? m_i : sz - 1 - m_i;
+	auto idx = [&] () {
+	  return Forward ? m_idx : cov.size () - 1 - m_idx;
+	};
 
-	coverage ret;
-	auto range = m_a->get_coverage ().at (idx);
-	ret.add (range.start, range.length);
+	if (m_ai >= cov.at (idx ()).length)
+	  {
+	    m_idx++;
+	    if (m_idx >= cov.size ())
+	      return nullptr;
+	    assert (cov.at (idx ()).length > 0);
+	    m_ai = 0;
+	  }
 
-	return std::make_unique <value_aset> (ret, m_i++);
+	uint64_t ai = Forward ? m_ai : cov.at (idx ()).length - 1 - m_ai;
+	uint64_t addr = cov.at (idx ()).start + ai;
+	m_ai++;
+
+	return std::make_unique <value_cst>
+	  (constant {addr, &dw_address_dom}, m_i++);
       }
     };
 
     std::unique_ptr <value_producer>
-    operate (std::unique_ptr <value_aset> a) override
+    operate (std::unique_ptr <value_aset> val) override
     {
-      return std::make_unique <producer> (std::move (a));
+      return std::make_unique <producer> (val->get_coverage ());
     }
   };
 }
@@ -741,54 +735,6 @@ namespace
       coverage cov;
       cov.add (low, len);
       return std::make_unique <value_aset> (cov, 0);
-    }
-  };
-
-  struct op_address_aset
-    : public op_yielding_overload <value_aset>
-  {
-    using op_yielding_overload::op_yielding_overload;
-
-    struct producer
-      : public value_producer
-    {
-      coverage cov;
-      size_t m_idx;	// position among ranges
-      uint64_t m_addr;	// iteration through a range
-      size_t m_i;	// produced value counter
-
-      producer (coverage a_cov)
-	: cov {a_cov}
-	, m_idx {0}
-	, m_i {0}
-      {}
-
-      std::unique_ptr <value>
-      next () override
-      {
-	if (m_idx >= cov.size ())
-	  return nullptr;
-
-	if (m_i == 0)
-	  m_addr = cov.at (m_idx).start;
-
-	while (m_addr >= cov.at (m_idx).start + cov.at (m_idx).length)
-	  {
-	    m_idx++;
-	    if (m_idx >= cov.size ())
-	      return nullptr;
-	    m_addr = cov.at (m_idx).start;
-	  }
-
-	return std::make_unique <value_cst>
-	  (constant {m_addr++, &dw_address_dom}, m_i++);
-      }
-    };
-
-    std::unique_ptr <value_producer>
-    operate (std::unique_ptr <value_aset> val) override
-    {
-      return std::make_unique <producer> (val->get_coverage ());
     }
   };
 }
@@ -1256,6 +1202,48 @@ namespace
 
       return std::make_unique <value_cst>
 	(constant {length, &dec_constant_dom}, 0);
+    }
+  };
+}
+
+// range
+namespace
+{
+  struct op_range_aset
+    : public op_yielding_overload <value_aset>
+  {
+    using op_yielding_overload::op_yielding_overload;
+
+    struct producer
+      : public value_producer
+    {
+      std::unique_ptr <value_aset> m_a;
+      size_t m_i;
+
+      producer (std::unique_ptr <value_aset> a)
+	: m_a {std::move (a)}
+	, m_i {0}
+      {}
+
+      std::unique_ptr <value>
+      next () override
+      {
+	size_t sz = m_a->get_coverage ().size ();
+	if (m_i >= sz)
+	  return nullptr;
+
+	coverage ret;
+	auto range = m_a->get_coverage ().at (m_i);
+	ret.add (range.start, range.length);
+
+	return std::make_unique <value_aset> (ret, m_i++);
+      }
+    };
+
+    std::unique_ptr <value_producer>
+    operate (std::unique_ptr <value_aset> a) override
+    {
+      return std::make_unique <producer> (std::move (a));
     }
   };
 }
@@ -1813,11 +1801,11 @@ dwgrep_builtins_dw ()
   {
     auto t = std::make_shared <overload_tab> ();
 
-    t->add_op_overload <op_die_dwarf> ();
-    t->add_op_overload <op_die_cu> ();
-    t->add_op_overload <op_die_attr> ();
+    t->add_op_overload <op_entry_dwarf> ();
+    t->add_op_overload <op_entry_cu> ();
+    t->add_op_overload <op_entry_abbrev_unit> ();
 
-    dict.add (std::make_shared <overloaded_op_builtin> ("die", t));
+    dict.add (std::make_shared <overloaded_op_builtin> ("entry", t));
   }
 
   {
@@ -1870,7 +1858,6 @@ dwgrep_builtins_dw ()
     auto t = std::make_shared <overload_tab> ();
 
     t->add_op_overload <op_elem_loclist_elem> ();
-    t->add_op_overload <op_elem_abbrev_unit <true>> ();
     t->add_op_overload <op_elem_aset <true>> ();
 
     dict.add (std::make_shared <overloaded_op_builtin> ("elem", t));
@@ -1880,7 +1867,6 @@ dwgrep_builtins_dw ()
     auto t = std::make_shared <overload_tab> ();
 
     t->add_op_overload <op_relem_loclist_elem> ();
-    t->add_op_overload <op_elem_abbrev_unit <false>> ();
     t->add_op_overload <op_elem_aset <false>> ();
 
     dict.add (std::make_shared <overloaded_op_builtin> ("relem", t));
@@ -1914,7 +1900,6 @@ dwgrep_builtins_dw ()
     t->add_op_overload <op_address_die> ();
     t->add_op_overload <op_address_attr> ();
     t->add_op_overload <op_address_loclist_elem> ();
-    t->add_op_overload <op_address_aset> ();
 
     dict.add (std::make_shared <overloaded_op_builtin> ("address", t));
   }
@@ -2007,6 +1992,14 @@ dwgrep_builtins_dw ()
     t->add_op_overload <op_length_aset> ();
 
     dict.add (std::make_shared <overloaded_op_builtin> ("length", t));
+  }
+
+  {
+    auto t = std::make_shared <overload_tab> ();
+
+    t->add_op_overload <op_range_aset> ();
+
+    dict.add (std::make_shared <overloaded_op_builtin> ("range", t));
   }
 
   {

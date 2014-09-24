@@ -1010,7 +1010,7 @@
        : T_DWARF
 
 ** ·T_DWARF
-*** •die :: ?T_DWARF ->* ?T_DIE
+*** •entry :: ?T_DWARF ->* ?T_DIE
       - Yields all DIE's in a .debug_info section.
 
 *** •unit :: ?T_DWARF ->* ?T_CU
@@ -1032,7 +1032,7 @@
      - Produce an abbreviation unit associated with this CU.
 
 *** •version :: ?T_CU -> ?T_CONST
-*** •die :: ?T_CU ->* ?T_DIE
+*** •entry :: ?T_CU ->* ?T_DIE
      : root child*	# except in the right order
 
 *** •root :: ?T_CU -> ?T_DIE
@@ -1071,7 +1071,7 @@
 *** •root :: ?T_DIE -> ?T_DIE
      : root := {parent* ?root};
 
-*** •?root, !root :: ?T_DIE
+*** •?root :: ?T_DIE
      ?root holds if the DIE is a root node.  Equivalent to !(parent).
 
      : parent* ?root        # finds a root node of node on TOS
@@ -1164,7 +1164,7 @@
      Children of these nodes are T_LOCLIST_OP, individual operations
      of location expression.
 
-*** •address :: (?T_ATTR (?AT_high_pc, ?AT_low_pc, ?FORM_addr)) -> ?T_CONST
+*** •address :: (?T_ATTR (?AT_high_pc||?AT_low_pc||?FORM_addr)) -> ?T_CONST
      - For DW_AT_high_pc, DW_AT_entry_pc with constant forms, this
        converts the value to address.
 
@@ -1193,15 +1193,13 @@
 ***  ?ATE_* :: ?T_ATTR
      Holds if (?AT_encoding value == DW_ATE_*)
 
-** •T_ABBREV_UNIT
+** ·T_ABBREV_UNIT
 *** •offset :: ?T_ABBREV_UNIT -> ?T_CONST
      - Yield offset of this abbreviation unit.
 
-*** •elem :: ?T_ABBREV_UNIT ->* ?T_ABBREV
+*** •entry :: ?T_ABBREV_UNIT ->* ?T_ABBREV
      - Yield abbreviations defined in this unit.
-
-*** •relem :: ?T_ABBREV_UNIT ->* ?T_ABBREV
-     : [|A| A elem] relem
+       XXX this is currently done by elem.
 
 ** •T_ABBREV
 *** •label :: ?T_ABBREV -> ?T_CONST
@@ -1211,6 +1209,9 @@
 
 *** •code :: ?T_ABBREV -> ?T_CONST
      - Yields abbreviation code.
+
+***  unit :: ?T_ABBREV -> ?T_ABBREV_UNIT
+     - Yield an abbreviation unit that this abbreviation comes from.
 
 *** •?TAG_* :: ?T_ABBREV
      Holds if abbreviation has this tag.
@@ -1311,12 +1312,9 @@
 *** •sub :: ?T_ASET ?T_CONST -> ?T_ASET
 *** •sub :: ?T_ASET ?T_ASET -> ?T_ASET
 *** •aset :: ?T_CONST ?T_CONST -> ?T_ASET
-*** •elem :: ?T_ASET ->* ?T_ASET
+*** •range :: ?T_ASET ->* ?T_ASET
      - Extract continuous subranges of this aset and present them as
        individual asets.
-
-*** •relem :: ?T_ASET ->* ?T_ASET
-     : [|A| A elem] relem
 
 *** •high :: ?T_ASET ->? ?T_CONST
      Highest address set in this aset.  Doesn't yield at all if an
@@ -1346,9 +1344,12 @@
      Compute aset that contains addresses common to both asets.
      Produces an empty aset if there's no overlap.
 
-*** •address :: ?T_ASET ->* ?T_CONST
+*** •elem :: ?T_ASET ->* ?T_CONST
      - Actually enumerates all addresses in a range.  Potentially a
        very bad idea for ranges that cover whole address space.
+
+*** •relem :: ?T_ASET ->* ?T_CONST
+     : [|A| A elem] relem
 
 **  T_MACRO_UNIT ???
     - A value representing .debug_macro and .debug_macinfo units.
