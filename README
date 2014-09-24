@@ -24,7 +24,7 @@
 
   In particular, a simple expression in dwgrep might look like this:
 
-  : winfo ?DW_TAG_subprogram child ?DW_TAG_formal_parameter @DW_AT_name
+  : entry ?DW_TAG_subprogram child ?DW_TAG_formal_parameter @DW_AT_name
 
   Which (ignoring the initial colon that's part of meta-syntax) says:
   show me values of attribute DW_AT_name of DW_TAG_formal_parameter
@@ -36,7 +36,7 @@
 
   Another example comes from dwarflint:
 
-  : winfo ?DW_AT_decl_column !DW_AT_decl_line
+  : entry ?DW_AT_decl_column !DW_AT_decl_line
 
   ... which looks for DIE's that have DW_AT_decl_column, but don't
   have DW_AT_decl_line--a semantic violation that is worth reporting.
@@ -51,7 +51,7 @@
 
   We call what flows through the dwgrep expression a /working set/.
   Initial working set is empty.  Expressions will typically start with
-  selecting an appropriate working set--such as "winfo" seen above.
+  selecting an appropriate working set--such as "entry" seen above.
 
   As the working set is transformed, its elements can be more than
   just DIE's--as mentioned, they can be also integers, strings, etc.
@@ -92,24 +92,23 @@
   The initial colon is not part of the example, but an artifact of
   Emacs org-mode.
 
-** winfo — domain selection
+** entry, unit — DIE iteration
 
    Since the initial working set is empty, it is usually desirable to
-   select the domain that the query should be run over.  The entry
-   point of the whole Dwarf graph is a .debug_info section, and the
-   corresponding selector, winfo, selects all DIE's in the graph.
+   select the domain that the query should be run over.  There are
+   several words for entering the graph, the most useful one is likely
+   "entry", which selects all DIE's in the Dwarf graph.
 
-   XXX How this will handle .debug_types and partial units is unclear
-   as of now.
-
-   XXX A selector for ELF symbol table is planned as well, but as of
-   now not implemented.
+   Other words include "unit", which selects compilation and type
+   units, and "abbrev" which selects abbreviation units.  Likely
+   future additions include "macro" for selecting macro units and
+   "symbol" for selecting symbol table entries.
 
 ** ?DW_TAG_foo, ?TAG_foo — DIE tag assertion
 ** EXPR₁ EXPR₂ … — concatenation
 
    The assertion "?DW_TAG_foo" takes the value at top of stack (TOS).
-   If its tag is not DW_TAG_ID, this function yields nothing.
+   If its tag is not DW_TAG_foo, this function yields nothing.
    Otherwise it yields the input stack unchanged.  The functions which
    either yield an unmodified input or nothing at all are called
    assertions, and are very common in dwgrep expressions.
@@ -124,7 +123,7 @@
    For example, to list all subprograms, one would use the following
    expression:
 
-   : winfo ?TAG_subprogram
+   : entry ?TAG_subprogram
 
 ** ?DW_AT_foo, !DW_AT_foo — attribute presence/absence assertion
 
@@ -141,12 +140,12 @@
    for example, this is how we can get a list of all subprograms that
    have a declaration attribute:
 
-   : winfo ?TAG_subprogram ?AT_declaration
+   : entry ?TAG_subprogram ?AT_declaration
 
    Similarly, to get subprograms that do not have declaration
    attribute, we say:
 
-   : winfo ?TAG_subprogram !AT_declaration
+   : entry ?TAG_subprogram !AT_declaration
 
 ** child — child traversal
 
@@ -156,12 +155,12 @@
    get at the formal arguments of the subprograms from the previous
    example, one might say:
 
-   : winfo ?TAG_subprogram !AT_declaration child
+   : entry ?TAG_subprogram !AT_declaration child
 
    If we want to make sure these children are actually formal
    parameters:
 
-   : winfo ?TAG_subprogram !AT_declaration child ?TAG_formal_parameter
+   : entry ?TAG_subprogram !AT_declaration child ?TAG_formal_parameter
 
 ** @DW_AT_foo — value of attribute DW_AT_foo
 
@@ -170,7 +169,7 @@
    value of the attribute of that DIE.  E.g. we could obtain names of
    the formal parameters selected above:
 
-   : winfo ?TAG_subprogram !AT_declaration child ?TAG_formal_parameter @AT_name
+   : entry ?TAG_subprogram !AT_declaration child ?TAG_formal_parameter @AT_name
 
    The results would be strings with names of all formal parameters in
    the program.  That's not very useful, as that just lists a bunch of
@@ -181,14 +180,14 @@
    rooted at given attribute.  For example, we could get types of
    formal parameters thus:
 
-   : winfo ?TAG_subprogram !AT_declaration child ?TAG_formal_parameter @AT_type
+   : entry ?TAG_subprogram !AT_declaration child ?TAG_formal_parameter @AT_type
 
    ... which is a bit more useful.  We might use this to discover
    whether some formal parameters have structure types, and would
    therefore incur a potentially expensive copy when the subprogram is
    invoked:
 
-   : winfo ?TAG_subprogram !AT_declaration
+   : entry ?TAG_subprogram !AT_declaration
    : child ?TAG_formal_parameter @AT_type ?TAG_structure_type
 
    So that will let us know whether there are any offenders like that.
@@ -207,21 +206,21 @@
    at least one element.  We can use it to get to DIE's that have
    arguments that are structures:
 
-   : winfo ?TAG_subprogram !AT_declaration
+   : entry ?TAG_subprogram !AT_declaration
    : ?(child ?TAG_formal_parameter @AT_type ?TAG_structure_type)
 
    This asks whether, after going to types of children that are formal
    parameters, we get a structure.  Because the initial two assertions
    have no stack effects anyway, we might say the same thing thus:
 
-   : winfo ?(?TAG_subprogram !AT_declaration
+   : entry ?(?TAG_subprogram !AT_declaration
    :         child ?TAG_formal_parameter @AT_type ?TAG_structure_type)
 
    The other sub-expression assertion, !(), holds if EXPR produces no
    values at all.  We don't need that, but we could use it to reword
    the query thus:
 
-   : winfo ?TAG_subprogram !(?AT_declaration)
+   : entry ?TAG_subprogram !(?AT_declaration)
    : ?(child ?TAG_formal_parameter @AT_type ?TAG_structure_type)
 
    If a DIE is a pure declaration, the expression ?AT_declaration
@@ -267,7 +266,7 @@
    operator.  For example, to look for DIE's where one of the location
    expression opcodes is DW_OP_addr, you could say:
 
-   : winfo (@AT_location child label == DW_OP_addr)
+   : entry (@AT_location child label == DW_OP_addr)
 
    Due to this precedence setting, comparisons are typically enclosed
    in parens (as in the example), so that they don't force too much of
@@ -306,7 +305,7 @@
    the expressions are assertions, this happens to behave exactly like
    a logical or.  So:
 
-   : winfo ?TAG_subprogram !AT_declaration
+   : entry ?TAG_subprogram !AT_declaration
    : ?(child ?TAG_formal_parameter @AT_type
    :   (?TAG_structure_type, ?TAG_class_type))
 
@@ -328,7 +327,7 @@
    For example if we prefer DW_AT_MIPS_linkage_name to DW_AT_name, but
    can make do with the latter, that would be encoded as follows:
 
-   : winfo (@AT_MIPS_linkage_name || @AT_name)
+   : entry (@AT_MIPS_linkage_name || @AT_name)
 
    For selecting structures and classes, we can use either of these
    tools interchangeably.
@@ -350,7 +349,7 @@
    We can use this tool to remove const_type, volatile_type and
    typedef layers from our potential structure:
 
-   : winfo ?TAG_subprogram !AT_declaration
+   : entry ?TAG_subprogram !AT_declaration
    : ?(child ?TAG_formal_parameter
    :   @AT_type ((?TAG_const_type, ?TAG_volatile_type, ?TAG_typedef) @AT_type)*
    :   (?TAG_structure_type, ?TAG_class_type))
@@ -374,7 +373,7 @@
    directives.  To write a nice error message for our running example,
    we could do for example:
 
-   : winfo ?TAG_subprogram !AT_declaration
+   : entry ?TAG_subprogram !AT_declaration
    : ?(child ?TAG_formal_parameter
    :   @AT_type ((?TAG_const_type, ?TAG_volatile_type, ?TAG_typedef) @AT_type)*
    :   (?TAG_structure_type, ?TAG_class_type))
@@ -413,7 +412,7 @@
    Let's use this tool to remember the two elements that we care
    about: the subprogram (S) and its naked structure parameter (P):
 
-   : let S := winfo ?TAG_subprogram !AT_declaration;
+   : let S := entry ?TAG_subprogram !AT_declaration;
    :
    : let P := S child ?TAG_formal_parameter
    :          ?(@AT_type ((?TAG_const_type,
@@ -436,7 +435,7 @@
    With this tool, we can make the formatting string quite a bit
    clearer:
 
-   : let S := winfo ?TAG_subprogram !AT_declaration;
+   : let S := entry ?TAG_subprogram !AT_declaration;
    :
    : let P := S child ?TAG_formal_parameter
    :          ?(@AT_type ((?TAG_const_type,
@@ -452,7 +451,7 @@
    Dwarf offsets and tag names.  With splicing, it's actually quite
    easy:
 
-   : let S := winfo ?TAG_subprogram !AT_declaration;
+   : let S := entry ?TAG_subprogram !AT_declaration;
    :
    : let P := S child ?TAG_formal_parameter
    :          ?(@AT_type ((?TAG_const_type,
@@ -536,7 +535,7 @@
      expression is then evaluated as usual, except one can use the
      bound names:
 
-     : (|Dw| Dw winfo (name == Dw symtab name))
+     : (|Dw| Dw entry (name == Dw symtab name))
      : [foo] [bar] (|A B| A [B elem !(== A elem)] add)	# set union
 
 ** •EXPR₁ (“==” | “!=” | “<” | “<=” | “>” | “>=”) EXPR₂ — comparisons
@@ -1031,7 +1030,7 @@
       - Yields all DIE's in a .debug_info section.
 
 *** •unit :: ?T_DWARF ->* ?T_CU
-     : winfo ?root unit
+     : entry ?root unit
 
 *** •abbrev :: ?T_DWARF ->* ?T_ABBREV_UNIT
      - Yields all abbreviation units in a .debug_abbrev section.
@@ -1137,8 +1136,8 @@
      : let merge := { ?DW_TAG_imported_unit @AT_import child+ };
 
      A typical use would then be:
-     : winfo merge*		# if you want to see deref'd DIE's
-     : winfo merge* !(merge)	# if you care about the actual tree
+     : entry merge*		# if you want to see deref'd DIE's
+     : entry merge* !(merge)	# if you care about the actual tree
 
 *** •@AT_decl_file
      Value of this attribute is represented as actual string including
@@ -1390,7 +1389,7 @@
 ***  merge :: ?T_MACRO_ENTRY ->* ?T_MACRO_ENTRY
      : let merge := { ?DW_MACRO_GNU_transparent_include value };
 
-     Should be used as with winfo, depending on what exactly is needed
+     Should be used as with DIE's, depending on what exactly is needed
      either (merge*) or (merge* !(merge)).
 
 ***  @0, @1, ... or something???
@@ -1410,7 +1409,7 @@
 
 ** Josh Stone's nontrivial-parameters script
 
-   : let A := winfo ?TAG_subprogram !AT_declaration
+   : let A := entry ?TAG_subprogram !AT_declaration
    :          ?(@AT_decl_file ?("^/usr/" ?match) ?("^/usr/src/debug" !match));
    :
    : let B := A child ?TAG_formal_parameter
@@ -1421,11 +1420,11 @@
    : "`%( A @AT_name %)', parameter `%( B @AT_name %)' type is not trivial"
 
 ** check_die_decl_call:
-   : (winfo ?AT_decl_column !AT_decl_line "%s has decl_column, but NOT decl_line"
+   : (entry ?AT_decl_column !AT_decl_line "%s has decl_column, but NOT decl_line"
    : , etc.)
 
 ** check_die_line_info:
-   : let A := winfo (?TAG_subprogram, ?TAG_inlined_subroutine, ?TAG_entry_point,
+   : let A := entry (?TAG_subprogram, ?TAG_inlined_subroutine, ?TAG_entry_point,
    :                ?TAG_lexical_block, ?TAG_label, ?TAG_with_stmt,
    :                ?TAG_try_block, ?TAG_catch_block);
    : let B := A (@AT_entry_pc, address);
@@ -1435,39 +1434,39 @@
    : " not fully covered by line table."
 
 ** contains DW_OP_fbreg && ! @frame_base
-   : winfo !AT_frame_base (@AT_location elem label == DW_OP_fbreg)
+   : entry !AT_frame_base (@AT_location elem label == DW_OP_fbreg)
 
 ** uses register based operators
 
-   : winfo ?(@AT_location elem label
+   : entry ?(@AT_location elem label
    :         (== DW_OP_bregx || (>= DW_OP_reg0) (<= DW_OP_regx)))
 
-   : winfo ?(@AT_location elem label "%s" "_b?reg" ?find)
+   : entry ?(@AT_location elem label "%s" "_b?reg" ?find)
 
 ** whether it uses a deref operator
 
-   : winfo ?(@AT_location elem label (?OP_deref, ?OP_xderef, ?OP_deref_size,
+   : entry ?(@AT_location elem label (?OP_deref, ?OP_xderef, ?OP_deref_size,
    :                                  ?OP_xderef_size, ?OP_GNU_deref_type))
 
-   : winfo ?(@AT_location elem label "%s" "deref" ?find)
+   : entry ?(@AT_location elem label "%s" "deref" ?find)
 
 ** contains DW_OP_call_frame_cfa && $@low_pc == 0
 
-   : winfo (@AT_low_pc == 0) ?(@AT_frame_base ?OP_call_frame_cfa)
+   : entry (@AT_low_pc == 0) ?(@AT_frame_base ?OP_call_frame_cfa)
 
 ** is an empty location expression
 
-   : winfo ?(@AT_location !(elem))
+   : entry ?(@AT_location !(elem))
 
 ** location expression ends with implicit_value or stack_value
 
-   : winfo ?([@AT_location] relem (pos == 0) label
+   : entry ?([@AT_location] relem (pos == 0) label
    : (?DW_OP_implicit_value, ?DW_OP_stack_value))
 
 ** types inconsistent between instance and specification
    - http://gcc.gnu.org/bugzilla/show_bug.cgi?id=43053
 
-     : let A := winfo ?TAG_subprogram;
+     : let A := entry ?TAG_subprogram;
      : let B := A child ?TAG_formal_parameter;
      : let C := A @AT_specification child ?TAG_formal_parameter;
      : (B pos == C pos) (B @AT_type != C @AT_type) A
@@ -1476,7 +1475,7 @@
    - http://gcc.gnu.org/bugzilla/show_bug.cgi?id=56740
 
      : # Leaves on stack two DIE's that describe the same type.
-     : let A := winfo (?TAG_const_type||?TAG_volatile_type||?TAG_restrict_type);
+     : let A := entry (?TAG_const_type||?TAG_volatile_type||?TAG_restrict_type);
      : A root child* (> A) (label == A label) (@AT_type == A @AT_type) A
 
 ** find any attribute with value "blah"
@@ -1486,17 +1485,17 @@
    Check for two full DW_TAG_variable DIEs with the same DW_AT_name
    value.
 
-   : winfo ?TAG_variable (@AT_name == next+ ?TAG_variable @AT_name)
+   : entry ?TAG_variable (@AT_name == next+ ?TAG_variable @AT_name)
 
    - XXX
-     : winfo dup next+ <?TAG_variable @AT_name>?eq
+     : entry dup next+ <?TAG_variable @AT_name>?eq
 
 ** check_linkage_external_die.cc
 
      : (|Dw|
      :  let GetSym := {|X| Dw symtab (?STT_OBJECT, ?STT_FUNC)
      :                     (@name == X @AT_linkage_name)};
-     :  Dw winfo ?AT_linkage_name
+     :  Dw entry ?AT_linkage_name
      :  if !(GetSym) then (
      :      !AT_declaration !AT_const_value
      :      (!structure_type !enumeration_type !union_type, ?AT_name)
@@ -1527,7 +1526,7 @@
 
    : let imports := {parent* ?root child ?TAG_imported_unit @AT_import};
    :
-   : let U := winfo ?root ;
+   : let U := entry ?root ;
    : let A := U child ?TAG_imported_unit @AT_import ;
    : let B := U child ?TAG_imported_unit @AT_import (> A) ;
    : A imports B imports (== swap)
@@ -1547,7 +1546,7 @@
      [7b] typedef __off64_t long int (signed, 8 bytes);
      [...]
 
-     : let T := winfo ?TAG_typedef ;
+     : let T := entry ?TAG_typedef ;
      : let U := T @AT_type (?TAG_typedef @AT_type)* !TAG_typedef ;
      : "[%(T offset%)] typedef %(T @AT_name%) %(U @AT_name%) "\
      : "(%( U @AT_encoding || "???" %), %( U @AT_byte_size || "???" %) bytes)"
