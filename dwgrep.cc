@@ -31,6 +31,7 @@
 #include <iostream>
 #include <fstream>
 #include <memory>
+#include <libintl.h>
 
 #include "builtin-dw.hh"
 #include "op.hh"
@@ -60,6 +61,9 @@ show_help ()
 int
 main(int argc, char *argv[])
 {
+  setlocale (LC_ALL, "");
+  textdomain ("dwlocstats");
+
   elf_version (EV_CURRENT);
 
   enum
