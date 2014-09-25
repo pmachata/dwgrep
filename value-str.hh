@@ -104,6 +104,20 @@ struct pred_find_str
   pred_result result (value_str &haystack, value_str &needle) override;
 };
 
+struct pred_starts_str
+  : public pred_overload <value_str, value_str>
+{
+  using pred_overload::pred_overload;
+  pred_result result (value_str &haystack, value_str &needle) override;
+};
+
+struct pred_ends_str
+  : public pred_overload <value_str, value_str>
+{
+  using pred_overload::pred_overload;
+  pred_result result (value_str &haystack, value_str &needle) override;
+};
+
 struct pred_match_str
   : public pred_overload <value_str, value_str>
 {

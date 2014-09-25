@@ -922,6 +922,14 @@
     sort of thing directly, if possible:
     : [child ?(@AT_name ?"foo")]
 
+*** •?starts :: ?T_SEQ ?T_SEQ
+    (A B starts) asserts that the sequence A starts with sub-sequence B
+    (e.g. [hay stack] ?([needle] ?starts)).
+
+*** •?ends :: ?T_SEQ ?T_SEQ
+    (A B ends) asserts that the sequence A ends with sub-sequence B
+    (e.g. [hay stack] ?([needle] ?ends)).
+
 ***  at :: ?T_SEQ ?T_CONST -> ?()
 
      One can access a particular element by enumerating the array with
@@ -981,6 +989,8 @@
 *** •length (as T_SEQ)
 *** •?empty (as T_SEQ)
 *** •?find (as T_SEQ)
+*** •?starts (as T_SEQ)
+*** •?ends (as T_SEQ)
 *** •?match :: ?T_STR ?T_STR
      This asserts that TOS (which is a string with a regular
      expression) matches the value below TOS.  The whole string has to

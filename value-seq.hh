@@ -117,4 +117,18 @@ struct pred_find_seq
   pred_result result (value_seq &haystack, value_seq &needle) override;
 };
 
+struct pred_starts_seq
+  : public pred_overload <value_seq, value_seq>
+{
+  using pred_overload::pred_overload;
+  pred_result result (value_seq &haystack, value_seq &needle) override;
+};
+
+struct pred_ends_seq
+  : public pred_overload <value_seq, value_seq>
+{
+  using pred_overload::pred_overload;
+  pred_result result (value_seq &haystack, value_seq &needle) override;
+};
+
 #endif /* _VALUE_SEQ_H_ */

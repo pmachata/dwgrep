@@ -428,11 +428,31 @@ expect_count 1 ./empty -e '
 	?("123" "456" add "123456" ?eq)'
 expect_count 1 ./empty -e '
 	?("123456" ?("234" ?find) ?("123" ?find) ?("456" ?find) ?(dup ?find)
-		   !("234" !find) !("123" !find) !("456" !find) !(dup !find))
+		   !("234" !find) !("123" !find) !("456" !find) !(dup !find)
+		   ?("1234567" !find) !("1234567" ?find))
 	?([1,2,3,4,5,6] ?([2,3,4] ?find) ?([1,2,3] ?find)
 			?([4,5,6] ?find) ?(dup ?find)
 			!([2,3,4] !find) !([1,2,3] !find)
-			!([4,5,6] !find) !(dup !find))'
+			!([4,5,6] !find) !(dup !find)
+			?([1,2,3,4,5,6,7] !find) !([1,2,3,4,5,6,7] ?find))'
+expect_count 1 ./empty -e '
+	?("123456" ?("234" !starts) ?("123" ?starts) ?("456" !starts) ?(dup ?starts)
+		   !("234" ?starts) !("123" !starts) !("456" ?starts) !(dup !starts)
+		   ?("1234567" !starts) !("1234567" ?starts))
+	?([1,2,3,4,5,6] ?([2,3,4] !starts) ?([1,2,3] ?starts)
+			?([4,5,6] !starts) ?(dup ?starts)
+			!([2,3,4] ?starts) !([1,2,3] !starts)
+			!([4,5,6] ?starts) !(dup !starts)
+			?([1,2,3,4,5,6,7] !starts) !([1,2,3,4,5,6,7] ?starts))'
+expect_count 1 ./empty -e '
+	?("123456" ?("234" !ends) ?("123" !ends) ?("456" ?ends) ?(dup ?ends)
+		   !("234" ?ends) !("123" ?ends) !("456" !ends) !(dup !ends)
+		   ?("1234567" !ends) !("1234567" ?ends))
+	?([1,2,3,4,5,6] ?([2,3,4] !ends) ?([1,2,3] !ends)
+			?([4,5,6] ?ends) ?(dup ?ends)
+			!([2,3,4] ?ends) !([1,2,3] ?ends)
+			!([4,5,6] !ends) !(dup !ends)
+			?([1,2,3,4,5,6,7] !ends) !([1,2,3,4,5,6,7] ?ends))'
 
 # Check location expression support.
 

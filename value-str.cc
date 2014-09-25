@@ -152,6 +152,26 @@ pred_find_str::result (value_str &haystack, value_str &needle)
 }
 
 pred_result
+pred_starts_str::result (value_str &haystack, value_str &needle)
+{
+  auto const &hay = haystack.get_string ();
+  auto const &need = needle.get_string ();
+  return pred_result
+    (hay.size () >= need.size ()
+     && hay.compare (0, need.size (), need) == 0);
+}
+
+pred_result
+pred_ends_str::result (value_str &haystack, value_str &needle)
+{
+  auto const &hay = haystack.get_string ();
+  auto const &need = needle.get_string ();
+  return pred_result
+    (hay.size () >= need.size ()
+     && hay.compare (hay.size () - need.size (), need.size (), need) == 0);
+}
+
+pred_result
 pred_match_str::result (value_str &haystack, value_str &needle)
 {
   regex_t re;
