@@ -224,12 +224,46 @@ pred_empty_seq::result (value_seq &a)
 pred_result
 pred_find_seq::result (value_seq &haystack, value_seq &needle)
 {
+  auto const &hay = *haystack.get_seq ();
+  auto const &need = *needle.get_seq ();
   return pred_result
-    (std::search (haystack.get_seq ()->begin (), haystack.get_seq ()->end (),
-		  needle.get_seq ()->begin (), needle.get_seq ()->end (),
+    (std::search (hay.begin (), hay.end (),
+		  need.begin (), need.end (),
 		  [] (std::unique_ptr <value> const &a,
 		      std::unique_ptr <value> const &b)
 		  {
 		    return a->cmp (*b) == cmp_result::equal;
 		  }) != haystack.get_seq ()->end ());
+}
+
+pred_result
+pred_starts_seq::result (value_seq &haystack, value_seq &needle)
+{
+  auto const &hay = *haystack.get_seq ();
+  auto const &need = *needle.get_seq ();
+  return pred_result
+    (hay.size () >= need.size ()
+     && std::equal (hay.begin (), std::next (hay.begin (), need.size ()),
+		    need.begin (), need.end (),
+		    [] (std::unique_ptr <value> const &a,
+			std::unique_ptr <value> const &b)
+		    {
+		      return a->cmp (*b) == cmp_result::equal;
+		    }));
+}
+
+pred_result
+pred_ends_seq::result (value_seq &haystack, value_seq &needle)
+{
+  auto const &hay = *haystack.get_seq ();
+  auto const &need = *needle.get_seq ();
+  return pred_result
+    (hay.size () >= need.size ()
+     && std::equal (std::prev (hay.end (), need.size ()), hay.end (),
+		    need.begin (), need.end (),
+		    [] (std::unique_ptr <value> const &a,
+			std::unique_ptr <value> const &b)
+		    {
+		      return a->cmp (*b) == cmp_result::equal;
+		    }));
 }

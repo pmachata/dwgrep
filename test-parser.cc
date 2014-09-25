@@ -159,6 +159,10 @@ do_tests ()
   test ("!ge", "(F_BUILTIN<?lt>)");
   test ("?find", "(F_BUILTIN<?find>)");
   test ("!find", "(F_BUILTIN<!find>)");
+  test ("?starts", "(F_BUILTIN<?starts>)");
+  test ("!starts", "(F_BUILTIN<!starts>)");
+  test ("?ends", "(F_BUILTIN<?ends>)");
+  test ("!ends", "(F_BUILTIN<!ends>)");
 
   test ("?match", "(F_BUILTIN<?match>)");
   test ("!match", "(F_BUILTIN<!match>)");

@@ -187,6 +187,28 @@ dwgrep_builtins_core ()
     dict->add (std::make_shared <overloaded_pred_builtin <false>> ("!find", t));
   }
 
+  // "starts"
+  {
+    auto t = std::make_shared <overload_tab> ();
+
+    t->add_pred_overload <pred_starts_str> ();
+    t->add_pred_overload <pred_starts_seq> ();
+
+    dict->add (std::make_shared <overloaded_pred_builtin <true>> ("?starts", t));
+    dict->add (std::make_shared <overloaded_pred_builtin <false>> ("!starts", t));
+  }
+
+  // "ends"
+  {
+    auto t = std::make_shared <overload_tab> ();
+
+    t->add_pred_overload <pred_ends_str> ();
+    t->add_pred_overload <pred_ends_seq> ();
+
+    dict->add (std::make_shared <overloaded_pred_builtin <true>> ("?ends", t));
+    dict->add (std::make_shared <overloaded_pred_builtin <false>> ("!ends", t));
+  }
+
   // "match"
   {
     auto t = std::make_shared <overload_tab> ();
