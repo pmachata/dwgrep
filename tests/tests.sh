@@ -585,6 +585,9 @@ expect_count 1 ./aranges.o -e '
 expect_count 1 ./pointer_const_value.o -e '
 	entry @AT_const_value == 0'
 
+expect_count 1 ./ptrmember_const_value.o -e '
+	entry @AT_const_value == 0'
+
 expect_count 4 ./float_const_value.o -e '
 	entry
 	(?((@AT_name == "fv")

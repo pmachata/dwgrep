@@ -430,7 +430,8 @@ namespace
 	    }
 
 	  int tag = dwarf_tag (&type_die);
-	  if (tag == DW_TAG_pointer_type)
+	  if (tag == DW_TAG_pointer_type
+	      || tag == DW_TAG_ptr_to_member_type)
 	    return atval_unsigned_with_domain (attr, dw_address_dom);
 
 	  if (tag != DW_TAG_enumeration_type
