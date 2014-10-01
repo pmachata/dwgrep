@@ -150,9 +150,6 @@ class cu_iterator
 	  done ();
 	else if (dwarf_offdie (m_dw, m_old_offset + hsize, &m_cudie) == nullptr)
 	  continue;
-	else
-	  // XXX partial unit, type unit, what else?
-	  assert (dwarf_tag (&m_cudie) == DW_TAG_compile_unit);
       }
     while (false);
   }
