@@ -28,11 +28,11 @@
 
   Which (ignoring the initial colon that's part of meta-syntax) says:
   show me values of attribute DW_AT_name of DW_TAG_formal_parameter
-  nodes that are children of DW_TAG_subprogram nodes in .debug_info.
-  Reading forward, you get list of instructions to a matcher: take
-  .debug_info nodes, accept all DW_TAG_subprogram's, look at their
-  children, accept those that are DW_TAG_formal_parameter, take value
-  of attribute DW_AT_name.
+  nodes that are children of DW_TAG_subprogram entries (which here
+  means debug information entries, or DIE's).  Reading forward, you
+  get list of instructions to a matcher: take DIE's, accept all
+  DW_TAG_subprogram's, look at their children, accept those that are
+  DW_TAG_formal_parameter, take value of attribute DW_AT_name.
 
   Another example comes from dwarflint:
 
@@ -755,14 +755,16 @@
      "do..while" works similarly, but it first evaluates EXPR₁ and
      then tests whether EXPR₀ yields anything.
 
+     "until" loops work similarly, but test a reverse condition.
+
    - EXPR₀ is evaluated in sub-expression context.
    - EXPR₁ shall have neutral stack effect.
 
 ** •“\dbg” — debug print
 
-   Doesn't alter the stack in any way, but as a side effect prints
-   some information about the computation in whose context it
-   appeared.
+    Doesn't alter the stack in any way, but as a side effect prints
+    some information about the computation in whose context it
+    appeared.
 
 ** •colon infix syntax
     - When a word is followed by a colon, the following statement is
@@ -976,6 +978,14 @@
 ***  rfold :: ?T_SEQ ?() ?T_CLOSURE ->* ?()
      - Like fold, but works in reverse.
 
+***  fold1 :: ?T_SEQ ?T_CLOSURE ->* ?()
+     : let fold1 := {|L C| L (L elem (pos == 0)) {C} fold};
+     - I.e. takes initial value from the sequence.  Produces nothing
+       if the sequence is empty.
+
+***  rfold1 :: ?T_SEQ ?T_CLOSURE ->* ?()
+     - Like fold1, but in reverse order.
+
 ** ·T_STR
     Many words, applicable to sequences, are applicable to strings as
     well.  The semantics are as if the string was a sequence of all
@@ -1095,11 +1105,10 @@
      XXX DW_TAG_partial_unit
 
 *** •root :: ?T_DIE -> ?T_DIE
-     : root := {parent* ?root};
+     : root := {parent* !(parent)};
 
 *** •?root :: ?T_DIE
      ?root holds if the DIE is a root node.  Equivalent to !(parent).
-
      : parent* ?root        # finds a root node of node on TOS
 
 ***  next :: ?T_DIE ->? ?T_DIE
@@ -1137,6 +1146,7 @@
      : let integrate := {|Op| (!(Op) integrate1)* Op};
 
      This then can be used as follows:
+
      : {?AT_xyz} integrate		# find closest DIE with DW_AT_xyz
      : ?({?AT_xyz} integrate)		# dwarf_hasattr_integrate
      : {attribute ?AT_xyz} integrate	# dwarf_attr_integrate
@@ -1415,12 +1425,13 @@
 ***  value
 ***  form
 
+
 * Examples
 
 ** Josh Stone's nontrivial-parameters script
 
    : let A := entry ?TAG_subprogram !AT_declaration
-   :          ?(@AT_decl_file ?("^/usr/" ?match) ?("^/usr/src/debug" !match));
+   :          ?(@AT_decl_file (=~ "^/usr/") (!~ "^/usr/src/debug"));
    :
    : let B := A child ?TAG_formal_parameter
    :          ?(@AT_type ((?TAG_const_type, ?TAG_volatile_type, ?TAG_typedef)
@@ -1471,7 +1482,7 @@
 ** location expression ends with implicit_value or stack_value
 
    : entry ?([@AT_location] relem (pos == 0) label
-   : (?DW_OP_implicit_value, ?DW_OP_stack_value))
+   :         (?DW_OP_implicit_value, ?DW_OP_stack_value))
 
 ** types inconsistent between instance and specification
    - http://gcc.gnu.org/bugzilla/show_bug.cgi?id=43053
@@ -1496,9 +1507,6 @@
    value.
 
    : entry ?TAG_variable (@AT_name == next+ ?TAG_variable @AT_name)
-
-   - XXX
-     : entry dup next+ <?TAG_variable @AT_name>?eq
 
 ** check_linkage_external_die.cc
 
@@ -1530,7 +1538,7 @@
    @AT_linkage_name should be possible.
 
    An alternative start would be something like:
-   : let Dw := "$1" dwopen;
+   : let Dw := $1 dwopen;
 
 ** CU A imports two PU's B and C, and both import the same third PU
 
