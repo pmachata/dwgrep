@@ -281,11 +281,11 @@ public:
   all_dies_iterator
   operator++ ()
   {
-    if (dwarf_haschildren (&m_die))
+    Dwarf_Die child;
+    if (dwpp_child (m_die, child))
       {
 	m_stack.push_back (dwarf_dieoffset (&m_die));
-	if (dwarf_child (&m_die, &m_die))
-	  throw_libdw ();
+	m_die = child;
 	return *this;
       }
 

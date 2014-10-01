@@ -75,11 +75,14 @@ dwpp_siblingof (Dwarf_Die *die, Dwarf_Die *result)
     }
 }
 
-inline void
-dwpp_child (Dwarf_Die *die, Dwarf_Die *result)
+// Returns true if there was a child.
+inline bool
+dwpp_child (const Dwarf_Die &die, Dwarf_Die &result)
 {
-  if (dwarf_child (die, result) != 0)
+  int ret = dwarf_child (const_cast <Dwarf_Die *> (&die), &result);
+  if (ret < 0)
     throw_libdw ();
+  return ret == 0;
 }
 
 inline Dwarf_Die

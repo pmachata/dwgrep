@@ -44,13 +44,11 @@ parent_cache::recursively_populate_unit (unit_cache_t &uc, Dwarf_Die die,
       Dwarf_Off off = dwarf_dieoffset (&die);
       uc.push_back (std::make_pair (off, paroff));
 
-      if (dwarf_haschildren (&die))
-	{
-	  Dwarf_Die child;
-	  if (dwarf_child (&die, &child) != 0)
-	    throw_libdw ();
+      {
+	Dwarf_Die child;
+	if (dwpp_child (die, child))
 	  recursively_populate_unit (uc, child, off);
-	}
+      }
 
       switch (dwarf_siblingof (&die, &die))
 	{

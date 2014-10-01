@@ -641,5 +641,9 @@ expect_count 1 ./duplicate-const -e '[entry label] == [entry abbrev label]'
 expect_count 1 ./twocus -e '[abbrev offset] == [0, 0x34]'
 expect_count 1 ./twocus -e '?(abbrev entry (|A| A pos 1 add == A code))'
 
+# Test that dwgrep doesn't crash on a DIE whose abbrev claims to have
+# children, but that ends up having none.
+expect_count 3 ./haschildren_childless -e 'entry'
+
 echo "$total tests total, $failures failures."
 [ $failures -eq 0 ]
