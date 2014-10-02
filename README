@@ -26,13 +26,18 @@
 
   : entry ?DW_TAG_subprogram child ?DW_TAG_formal_parameter @DW_AT_name
 
-  Which (ignoring the initial colon that's part of meta-syntax) says:
-  show me values of attribute DW_AT_name of DW_TAG_formal_parameter
-  nodes that are children of DW_TAG_subprogram entries (which here
-  means debug information entries, or DIE's).  Reading forward, you
-  get list of instructions to a matcher: take DIE's, accept all
-  DW_TAG_subprogram's, look at their children, accept those that are
-  DW_TAG_formal_parameter, take value of attribute DW_AT_name.
+  On a commad line, you would issue it like this:
+
+  : dwgrep /some/file/somewhere -e 'entry ?DW_TAG_subprogram ...etc....'
+
+  The query itself (ignoring the initial colon that's part of
+  meta-syntax) says: show me values of attribute DW_AT_name of
+  DW_TAG_formal_parameter nodes that are children of DW_TAG_subprogram
+  entries (which here means debug information entries, or DIE's).
+  Reading forward, you get list of instructions to a matcher: take
+  DIE's, accept all DW_TAG_subprogram's, look at their children,
+  accept those that are DW_TAG_formal_parameter, take value of
+  attribute DW_AT_name.
 
   Another example comes from dwarflint:
 
