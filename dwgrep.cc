@@ -44,6 +44,9 @@ static void
 show_help ()
 {
   std::cout << "\
+Typical usage: dwgrep FILE... -e PATTERN\n\
+Searches for PATTER in FILEs.\n\
+\n\
 -e, --expr=EXPR		EXPR is a query to run\n\
 -f, --file=FILE		load query from FILE\n\
 \n\
