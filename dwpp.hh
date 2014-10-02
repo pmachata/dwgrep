@@ -30,6 +30,7 @@
 #define _DWPP_H_
 
 #include <cassert>
+#include <stdexcept>
 #include <elfutils/libdwfl.h>
 #include <elfutils/libdw.h>
 

@@ -33,7 +33,7 @@ builtin-dw.o: override CXXFLAGS += -fno-var-tracking-assignments
 dwgrep: coverage.o dwgrep.o parser.o lexer.o stack.o tree.o tree_cr.o op.o \
 	build.o cache.o atval.o builtin.o builtin-shf.o builtin-dw.o	\
 	builtin-closure.o builtin-cmp.o builtin-cst.o constant.o	\
-	dwfl_context.o init.o int.o overload.o selector.o value.o	\
+	dwfl_context.o dwit.o init.o int.o overload.o selector.o value.o \
 	value-closure.o value-cst.o value-dw.o value-seq.o		\
 	value-str.o dwcst.o
 
