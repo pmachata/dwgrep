@@ -45,6 +45,21 @@
 
 value_type const value_dwarf::vtype = value_type::alloc ("T_DWARF");
 
+static int
+prime_dwflmod (Dwfl_Module *dwflmod, void **userdata, const char *name,
+		 Dwarf_Addr base, void *arg)
+{
+  // Prime the ELF file associated with a Dwfl module.  This is
+  // necessary when later we request a Dwarf.  For dwz files, that
+  // would fail with a message about missing symbol table, but it
+  // doesn't if we first prime the ELF file.
+  GElf_Addr bias;
+  if (dwfl_module_getelf (dwflmod, &bias) == nullptr)
+    throw_libdwfl ();
+
+  return DWARF_CB_OK;
+}
+
 namespace
 {
   std::shared_ptr <Dwfl>
@@ -66,11 +81,12 @@ namespace
     if (dwfl == nullptr)
       throw_libdwfl ();
 
-    dwfl_report_begin (&*dwfl);
     if (dwfl_report_offline (&*dwfl, fn.c_str (), fn.c_str (), fd) == nullptr)
       throw_libdwfl ();
     if (dwfl_report_end (&*dwfl, nullptr, nullptr) != 0)
       throw_libdwfl ();
+
+    dwfl_getmodules (&*dwfl, &prime_dwflmod, nullptr, 0);
 
     return dwfl;
   }

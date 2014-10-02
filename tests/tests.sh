@@ -648,5 +648,8 @@ expect_count 1 ./twocus -e '?(abbrev entry (|A| A pos 1 add == A code))'
 # children, but that ends up having none.
 expect_count 3 ./haschildren_childless -e 'entry'
 
+# Test that dwgrep handles well "dwz -m" files with common debuginfo.
+expect_count 1 ./dwz-dupfile -e 'entry (@AT_name == "W")'
+
 echo "$total tests total, $failures failures."
 [ $failures -eq 0 ]
