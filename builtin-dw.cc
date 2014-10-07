@@ -1489,6 +1489,38 @@ namespace
   };
 }
 
+// name
+namespace
+{
+  struct op_name_dwarf
+    : public op_overload <value_dwarf>
+  {
+    using op_overload::op_overload;
+
+    std::unique_ptr <value>
+    operate (std::unique_ptr <value_dwarf> a) override
+    {
+      return std::make_unique <value_str> (std::string {a->get_fn ()}, 0);
+    }
+  };
+
+  struct op_name_die
+    : public op_overload <value_die>
+  {
+    using op_overload::op_overload;
+
+    std::unique_ptr <value>
+    operate (std::unique_ptr <value_die> a) override
+    {
+      const char *name = dwarf_diename (&a->get_die ());
+      if (name != nullptr)
+	return std::make_unique <value_str> (name, 0);
+      else
+	return nullptr;
+    }
+  };
+}
+
 // @AT_*
 namespace
 {
@@ -2078,6 +2110,15 @@ dwgrep_builtins_dw ()
     t->add_op_overload <op_version_cu> ();
 
     dict.add (std::make_shared <overloaded_op_builtin> ("version", t));
+  }
+
+  {
+    auto t = std::make_shared <overload_tab> ();
+
+    t->add_op_overload <op_name_dwarf> ();
+    t->add_op_overload <op_name_die> ();
+
+    dict.add (std::make_shared <overloaded_op_builtin> ("name", t));
   }
 
   auto add_dw_at = [&dict] (unsigned code,

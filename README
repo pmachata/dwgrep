@@ -1063,7 +1063,7 @@
 ***  symbol :: ?T_DWARF ->* ?T_ELFSYM
      - Yields all symbols in .symtab, or minisymtab, or .dynsym.
 
-***  name :: ?T_DWARF -> ?T_STR
+*** •name :: ?T_DWARF -> ?T_STR
 
 ** ·T_CU
 *** •offset :: ?T_CU -> ?T_CONST
@@ -1174,7 +1174,12 @@
      this is stored?  Or after it gets to be stored in general, where
      this is _not_ stored?)
 
-*** •abbrev :: ?T_DIE -> T_ABBREV
+*** •abbrev :: ?T_DIE -> ?T_ABBREV
+     Yield abbreviation associated with this DIE.
+
+*** •name :: ?T_DIE -> ?T_STR
+     : integrate* @AT_name
+
 *** •@AT_* :: ?T_DIE ->* ?()
      Syntactic sugar for (attribute ?(label == AT_*) value).
 
