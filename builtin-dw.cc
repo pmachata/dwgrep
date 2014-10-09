@@ -614,6 +614,13 @@ namespace
 // offset
 namespace
 {
+  std::unique_ptr <value>
+  cu_offset (Dwarf_Off offset)
+  {
+    constant c {offset, &dw_offset_dom};
+    return std::make_unique <value_cst> (c, 0);
+  }
+
   struct op_offset_cu
     : public op_overload <value_cu>
   {
@@ -622,8 +629,19 @@ namespace
     std::unique_ptr <value>
     operate (std::unique_ptr <value_cu> a) override
     {
-      constant c {a->get_offset (), &dw_offset_dom};
-      return std::make_unique <value_cst> (c, 0);
+      return cu_offset (a->get_offset ());
+    }
+  };
+
+  struct op_offset_rawcu
+    : public op_overload <value_rawcu>
+  {
+    using op_overload::op_overload;
+
+    std::unique_ptr <value>
+    operate (std::unique_ptr <value_rawcu> a) override
+    {
+      return cu_offset (a->get_offset ());
     }
   };
 
@@ -976,6 +994,16 @@ namespace
 // root
 namespace
 {
+  std::unique_ptr <value>
+  cu_root (std::shared_ptr <dwfl_context> dwctx, Dwarf_CU &cu)
+  {
+    Dwarf_Die cudie;
+    if (dwarf_cu_die (&cu, &cudie, nullptr, nullptr,
+		      nullptr, nullptr, nullptr, nullptr) == nullptr)
+      throw_libdw ();
+    return std::make_unique <value_die> (dwctx, cudie, 0);
+  }
+
   struct op_root_cu
     : public op_overload <value_cu>
   {
@@ -984,11 +1012,19 @@ namespace
     std::unique_ptr <value>
     operate (std::unique_ptr <value_cu> a) override
     {
-      Dwarf_Die cudie;
-      if (dwarf_cu_die (&a->get_cu (), &cudie, nullptr, nullptr,
-			nullptr, nullptr, nullptr, nullptr) == nullptr)
-	throw_libdw ();
-      return std::make_unique <value_die> (a->get_dwctx (), cudie, 0);
+      return cu_root (a->get_dwctx (), a->get_cu ());
+    }
+  };
+
+  struct op_root_rawcu
+    : public op_overload <value_rawcu>
+  {
+    using op_overload::op_overload;
+
+    std::unique_ptr <value>
+    operate (std::unique_ptr <value_rawcu> a) override
+    {
+      return cu_root (a->get_dwctx (), a->get_cu ());
     }
   };
 
@@ -1383,41 +1419,53 @@ namespace
 // abbrev
 namespace
 {
+  struct abbrev_producer
+    : public value_producer
+  {
+    std::shared_ptr <dwfl_context> m_dwctx;
+    dwfl_module_iterator m_modit;
+    cu_iterator m_cuit;
+    size_t m_i;
+
+    abbrev_producer (std::shared_ptr <dwfl_context> dwctx)
+      : m_dwctx {(assert (dwctx != nullptr), dwctx)}
+      , m_modit {m_dwctx->get_dwfl ()}
+      , m_cuit {cu_iterator::end ()}
+      , m_i {0}
+    {}
+
+    std::unique_ptr <value>
+    next () override
+    {
+      if (! maybe_next_module (m_modit, m_cuit))
+	return nullptr;
+
+      return std::make_unique <value_abbrev_unit>
+	(m_dwctx, *(*m_cuit++)->cu, m_i++);
+    }
+  };
+
   struct op_abbrev_dwarf
     : public op_yielding_overload <value_dwarf>
   {
-    struct producer
-      : public value_producer
-    {
-      std::shared_ptr <dwfl_context> m_dwctx;
-      dwfl_module_iterator m_modit;
-      cu_iterator m_cuit;
-      size_t m_i;
-
-      producer (std::shared_ptr <dwfl_context> dwctx)
-	: m_dwctx {(assert (dwctx != nullptr), dwctx)}
-	, m_modit {m_dwctx->get_dwfl ()}
-	, m_cuit {cu_iterator::end ()}
-	, m_i {0}
-      {}
-
-      std::unique_ptr <value>
-      next () override
-      {
-	if (! maybe_next_module (m_modit, m_cuit))
-	  return nullptr;
-
-	return std::make_unique <value_abbrev_unit>
-	  (m_dwctx, *(*m_cuit++)->cu, m_i++);
-      }
-    };
-
     using op_yielding_overload::op_yielding_overload;
 
     std::unique_ptr <value_producer>
     operate (std::unique_ptr <value_dwarf> a) override
     {
-      return std::make_unique <producer> (a->get_dwctx ());
+      return std::make_unique <abbrev_producer> (a->get_dwctx ());
+    }
+  };
+
+  struct op_abbrev_rawdwarf
+    : public op_yielding_overload <value_rawdwarf>
+  {
+    using op_yielding_overload::op_yielding_overload;
+
+    std::unique_ptr <value_producer>
+    operate (std::unique_ptr <value_rawdwarf> a) override
+    {
+      return std::make_unique <abbrev_producer> (a->get_dwctx ());
     }
   };
 
@@ -1428,6 +1476,19 @@ namespace
 
     std::unique_ptr <value>
     operate (std::unique_ptr <value_cu> a) override
+    {
+      return std::make_unique <value_abbrev_unit>
+	(a->get_dwctx (), a->get_cu (), 0);
+    }
+  };
+
+  struct op_abbrev_rawcu
+    : public op_overload <value_rawcu>
+  {
+    using op_overload::op_overload;
+
+    std::unique_ptr <value>
+    operate (std::unique_ptr <value_rawcu> a) override
     {
       return std::make_unique <value_abbrev_unit>
 	(a->get_dwctx (), a->get_cu (), 0);
@@ -1503,6 +1564,19 @@ namespace
 // version
 namespace
 {
+  std::unique_ptr <value>
+  cu_version (Dwarf_CU &cu)
+  {
+    Dwarf_Die cudie;
+    Dwarf_Half version;
+    if (dwarf_cu_die (&cu, &cudie, &version, nullptr,
+		      nullptr, nullptr, nullptr, nullptr) == nullptr)
+      throw_libdw ();
+
+    constant c {version, &dec_constant_dom};
+    return std::make_unique <value_cst> (c, 0);
+  }
+
   struct op_version_cu
     : public op_overload <value_cu>
   {
@@ -1511,14 +1585,19 @@ namespace
     std::unique_ptr <value>
     operate (std::unique_ptr <value_cu> a) override
     {
-      Dwarf_Die cudie;
-      Dwarf_Half version;
-      if (dwarf_cu_die (&a->get_cu (), &cudie, &version, nullptr,
-			nullptr, nullptr, nullptr, nullptr) == nullptr)
-	throw_libdw ();
+      return cu_version (a->get_cu ());
+    }
+  };
 
-      constant c {version, &dec_constant_dom};
-      return std::make_unique <value_cst> (c, 0);
+  struct op_version_rawcu
+    : public op_overload <value_rawcu>
+  {
+    using op_overload::op_overload;
+
+    std::unique_ptr <value>
+    operate (std::unique_ptr <value_rawcu> a) override
+    {
+      return cu_version (a->get_cu ());
     }
   };
 }
@@ -1930,7 +2009,15 @@ dwgrep_builtins_dw ()
     auto t = std::make_shared <overload_tab> ();
 
     t->add_op_overload <op_entry_dwarf> ();
+    // xxx rawdwarf
+    // entry on cooked dwarf only iterates full units, but
+    // transparently includes partial ones.  Thus entries from a
+    // certain partial unit may never be seen if that unit is never
+    // imported.
     t->add_op_overload <op_entry_cu> ();
+    // xxx rawcu
+    // entry on cooked CU transparently inlines partial units and
+    // presents entries in them as well.
     t->add_op_overload <op_entry_abbrev_unit> ();
 
     dict.add (std::make_shared <overloaded_op_builtin> ("entry", t));
@@ -1942,7 +2029,9 @@ dwgrep_builtins_dw ()
     t->add_op_overload <op_unit_dwarf> ();
     t->add_op_overload <op_unit_rawdwarf> ();
     t->add_op_overload <op_unit_die> ();
+    // xxx rawdie
     t->add_op_overload <op_unit_attr> ();
+    // xxx rawattr
 
     dict.add (std::make_shared <overloaded_op_builtin> ("unit", t));
   }
@@ -1951,6 +2040,9 @@ dwgrep_builtins_dw ()
     auto t = std::make_shared <overload_tab> ();
 
     t->add_op_overload <op_attribute_die> ();
+    // xxx rawdie
+    // should cooked DIE yield even integrated attributes?  It seems
+    // like it should, but it's somewhat surprising...
     t->add_op_overload <op_attribute_abbrev> ();
 
     dict.add (std::make_shared <overloaded_op_builtin> ("attribute", t));
@@ -1960,7 +2052,14 @@ dwgrep_builtins_dw ()
     auto t = std::make_shared <overload_tab> ();
 
     t->add_pred_overload <pred_rootp_die> ();
+    // xxx rawdie
     t->add_pred_overload <pred_rootp_attr> ();
+    // xxx rawattr
+    // xxx actually, does ?root over attributes make sense at all?
+    // This idea comes back to times where we thought about the tree
+    // as one whole.  But now the traversal interface is much more
+    // fine-grained, and asking for root attributes is simply
+    // meaningless.
 
     dict.add (std::make_shared <overloaded_pred_builtin <true>> ("?root", t));
     dict.add (std::make_shared <overloaded_pred_builtin <false>> ("!root", t));
@@ -1970,7 +2069,11 @@ dwgrep_builtins_dw ()
     auto t = std::make_shared <overload_tab> ();
 
     t->add_op_overload <op_root_cu> ();
+    t->add_op_overload <op_root_rawcu> ();
     t->add_op_overload <op_root_die> ();
+    // xxx rawdie
+    // cooked child returns to root of the original unit where it came
+    // from, across transparent partial unit inlines
 
     dict.add (std::make_shared <overloaded_op_builtin> ("root", t));
   }
@@ -1979,6 +2082,8 @@ dwgrep_builtins_dw ()
     auto t = std::make_shared <overload_tab> ();
 
     t->add_op_overload <op_child_die> ();
+    // xxx rawdie
+    // cooked child transparently inlines partial unit imports
 
     dict.add (std::make_shared <overloaded_op_builtin> ("child", t));
   }
@@ -2014,7 +2119,9 @@ dwgrep_builtins_dw ()
     auto t = std::make_shared <overload_tab> ();
 
     t->add_op_overload <op_offset_cu> ();
+    t->add_op_overload <op_offset_rawcu> ();
     t->add_op_overload <op_offset_die> ();
+    // xxx rawdie
     t->add_op_overload <op_offset_abbrev_unit> ();
     t->add_op_overload <op_offset_abbrev> ();
     t->add_op_overload <op_offset_abbrev_attr> ();
@@ -2027,6 +2134,7 @@ dwgrep_builtins_dw ()
     auto t = std::make_shared <overload_tab> ();
 
     t->add_op_overload <op_address_die> ();
+    // xxx rawdie
     t->add_op_overload <op_address_attr> ();
     t->add_op_overload <op_address_loclist_elem> ();
 
@@ -2037,7 +2145,9 @@ dwgrep_builtins_dw ()
     auto t = std::make_shared <overload_tab> ();
 
     t->add_op_overload <op_label_die> ();
+    // xxx rawdie
     t->add_op_overload <op_label_attr> ();
+    // xxx rawattr
     t->add_op_overload <op_label_abbrev> ();
     t->add_op_overload <op_label_abbrev_attr> ();
     t->add_op_overload <op_label_loclist_op> ();
@@ -2049,6 +2159,7 @@ dwgrep_builtins_dw ()
     auto t = std::make_shared <overload_tab> ();
 
     t->add_op_overload <op_form_attr> ();
+    // xxx rawattr
     t->add_op_overload <op_form_abbrev_attr> ();
 
     dict.add (std::make_shared <overloaded_op_builtin> ("form", t));
@@ -2058,6 +2169,11 @@ dwgrep_builtins_dw ()
     auto t = std::make_shared <overload_tab> ();
 
     t->add_op_overload <op_parent_die> ();
+    // xxx rawdie
+
+    // The difference here will be that cooked DIE's will travel
+    // across partial unit inlining boundaries, while raw DIE's will
+    // just stop.
 
     dict.add (std::make_shared <overloaded_op_builtin> ("parent", t));
   }
@@ -2066,6 +2182,8 @@ dwgrep_builtins_dw ()
     auto t = std::make_shared <overload_tab> ();
 
     t->add_op_overload <op_integrate_die> ();
+    // xxx rawdie
+    // xxx or will the whole integrate thing be dropped?
     t->add_op_overload <op_integrate_closure> ();
 
     dict.add (std::make_shared <overloaded_op_builtin> ("integrate", t));
@@ -2075,6 +2193,7 @@ dwgrep_builtins_dw ()
     auto t = std::make_shared <overload_tab> ();
 
     t->add_op_overload <op_low_die> ();
+    // xxx rawdie
     t->add_op_overload <op_low_aset> ();
 
     dict.add (std::make_shared <overloaded_op_builtin> ("low", t));
@@ -2084,6 +2203,7 @@ dwgrep_builtins_dw ()
     auto t = std::make_shared <overload_tab> ();
 
     t->add_op_overload <op_high_die> ();
+    // xxx rawdie
     t->add_op_overload <op_high_aset> ();
 
     dict.add (std::make_shared <overloaded_op_builtin> ("high", t));
@@ -2175,8 +2295,11 @@ dwgrep_builtins_dw ()
     auto t = std::make_shared <overload_tab> ();
 
     t->add_op_overload <op_abbrev_dwarf> ();
+    t->add_op_overload <op_abbrev_rawdwarf> ();
     t->add_op_overload <op_abbrev_cu> ();
+    t->add_op_overload <op_abbrev_rawcu> ();
     t->add_op_overload <op_abbrev_die> ();
+    // xxx rawdie
 
     dict.add (std::make_shared <overloaded_op_builtin> ("abbrev", t));
   }
@@ -2205,6 +2328,7 @@ dwgrep_builtins_dw ()
     auto t = std::make_shared <overload_tab> ();
 
     t->add_op_overload <op_version_cu> ();
+    t->add_op_overload <op_version_rawcu> ();
 
     dict.add (std::make_shared <overloaded_op_builtin> ("version", t));
   }
@@ -2247,7 +2371,9 @@ dwgrep_builtins_dw ()
 	auto t = std::make_shared <overload_tab> ();
 
 	t->add_pred_overload <pred_atname_die> (code);
+	// xxx rawdie
 	t->add_pred_overload <pred_atname_attr> (code);
+	// xxx rawattr
 	t->add_pred_overload <pred_atname_abbrev> (code);
 	t->add_pred_overload <pred_atname_abbrev_attr> (code);
 	t->add_pred_overload <pred_atname_cst> (code);
@@ -2267,6 +2393,7 @@ dwgrep_builtins_dw ()
 	auto t = std::make_shared <overload_tab> ();
 
 	t->add_op_overload <op_atval_die> (code);
+	// xxx rawdie
 
 	dict.add (std::make_shared <overloaded_op_builtin> (atname, t));
 	dict.add (std::make_shared <overloaded_op_builtin> (latname, t));
@@ -2289,6 +2416,7 @@ dwgrep_builtins_dw ()
       auto t = std::make_shared <overload_tab> ();
 
       t->add_pred_overload <pred_tag_die> (code);
+      // xxx rawdie
       t->add_pred_overload <pred_tag_abbrev> (code);
       t->add_pred_overload <pred_tag_cst> (code);
 
@@ -2312,6 +2440,7 @@ dwgrep_builtins_dw ()
       auto t = std::make_shared <overload_tab> ();
 
       t->add_pred_overload <pred_form_attr> (code);
+      // xxx rawattr
       t->add_pred_overload <pred_form_abbrev_attr> (code);
       t->add_pred_overload <pred_form_cst> (code);
 

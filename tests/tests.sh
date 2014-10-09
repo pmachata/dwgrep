@@ -660,6 +660,16 @@ expect_count 1 ./empty -e '
 	raw unit (type == T_RAW_CU)'
 expect_count 4 ./dwz-partial -e 'unit'
 expect_count 5 ./dwz-partial -e 'raw unit'
+expect_count 1 ./dwz-partial -e '
+	(|A| [A raw abbrev] == [A abbrev])'
+expect_count 1 ./twocus -e '
+	(|A| [A unit offset] == [A raw unit offset])'
+expect_count 1 ./twocus -e '
+	(|A| [A unit root] == [A raw unit root])'
+
+# Test version.
+expect_count 4 ./dwz-partial -e 'unit (version == 3)'
+expect_count 5 ./dwz-partial -e 'raw unit (version == 3)'
 
 echo "$total tests total, $failures failures."
 [ $failures -eq 0 ]
