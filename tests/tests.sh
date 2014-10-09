@@ -658,8 +658,8 @@ expect_count 1 ./empty -e '
 	unit (type == T_CU) raw (type == T_RAW_CU) cooked (type == T_CU)'
 expect_count 1 ./empty -e '
 	raw unit (type == T_RAW_CU)'
-expect_count 0 ./dwz-dupfile -e 'unit'
-expect_count 1 ./dwz-dupfile -e 'raw unit'
+expect_count 4 ./dwz-partial -e 'unit'
+expect_count 5 ./dwz-partial -e 'raw unit'
 
 echo "$total tests total, $failures failures."
 [ $failures -eq 0 ]
