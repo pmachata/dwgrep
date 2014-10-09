@@ -1164,6 +1164,36 @@
      : entry merge*		# if you want to see deref'd DIE's
      : entry merge* !(merge)	# if you care about the actual tree
 
+     XXX But that is fairly impractical, as one would have to use such
+     operation after each DIE traversal (in particular after every
+     (child) traversal).  You actually rarely need the (entry merge*)
+     thing above, because it already is the case that (entry) visits
+     everyone.  If you need anything at all, it is more likely to be:
+     : entry !(merge)
+
+     ... so that you filter out partial unit headers.
+
+     A better approach could be to have two types for DIE-related
+     elements--raw and cooked DIE's, raw and cooked CU's, etc.  Raw
+     values don't do attribute integration, don't inline imported
+     units and present attribute values as offsets instead of the
+     referenced thing.  Words (cooked) and (raw) switch between the
+     two types.  The default types would be "cooked".
+
+     It's not clear yet whether attributes that even raw DIE's yield
+     shouldn't be cooked implicitly, as things like getting string or
+     DIE offset instead of the thing itself seem rarely useful.Dwarf's.
+
+     Cooked DIE's will also have to keep track of the original DIE
+     where the partial unit import took place, so that when you ask
+     for (parent), you travel back to where you came from without
+     trouble, as if the whole thing were one monolithic unit.
+
+     (unit) on cooked Dwarf would skip partial units.  (entry) would
+     descend through CU's and include partial units this way, so that
+     the logical tree is presented in its whole, and parent/child
+     paths are preserved.
+
 *** •@AT_decl_file
      Value of this attribute is represented as actual string including
      path.
@@ -1195,8 +1225,10 @@
 ***  ?ATE_* :: ?T_DIE
      Holds if @AT_encoding == DW_ATE_*.
 
-*** •?haschildren :: ?T_DIE
-     - Holds for DIE's with children.
+***  ?haschildren :: ?T_DIE
+     : abbrev ?haschildren
+     Note that to find out whether a DIE actually does have children,
+     one asks simply ?(child).
 
 ** ·T_ATTR
 *** •label :: ?T_ATTR -> ?T_CONST
@@ -1552,7 +1584,7 @@
 
 ** CU A imports two PU's B and C, and both import the same third PU
 
-   : let imports := {parent* ?root child ?TAG_imported_unit @AT_import};
+   : let imports := {root child ?TAG_imported_unit @AT_import};
    :
    : let U := entry ?root ;
    : let A := U child ?TAG_imported_unit @AT_import ;

@@ -44,6 +44,7 @@
 #include "value-dw.hh"
 
 value_type const value_dwarf::vtype = value_type::alloc ("T_DWARF");
+value_type const value_rawdwarf::vtype = value_type::alloc ("T_RAW_DWARF");
 
 namespace
 {
@@ -92,26 +93,35 @@ namespace
   }
 }
 
-value_dwarf::value_dwarf (std::string const &fn, size_t pos)
+value_dwarf_base::value_dwarf_base (std::string const &fn,
+				    size_t pos, value_type vtype)
   : value {vtype, pos}
   , m_fn {fn}
   , m_dwctx {std::make_shared <dwfl_context> (open_dwfl (fn))}
 {}
 
+value_dwarf_base::value_dwarf_base (std::string const &fn,
+				    std::shared_ptr <dwfl_context> dwctx,
+				    size_t pos, value_type vtype)
+  : value {vtype, pos}
+  , m_fn {fn}
+  , m_dwctx {dwctx}
+{}
+
 void
-value_dwarf::show (std::ostream &o, brevity brv) const
+value_dwarf_base::show (std::ostream &o, brevity brv) const
 {
   o << "<Dwarf \"" << m_fn << "\">";
 }
 
 std::unique_ptr <value>
-value_dwarf::clone () const
+value_dwarf_base::clone () const
 {
-  return std::make_unique <value_dwarf> (*this);
+  return std::make_unique <value_dwarf_base> (*this);
 }
 
 cmp_result
-value_dwarf::cmp (value const &that) const
+value_dwarf_base::cmp (value const &that) const
 {
   if (auto v = value::as <value_dwarf> (&that))
     return compare (m_dwctx->get_dwfl (), v->m_dwctx->get_dwfl ());
@@ -121,22 +131,23 @@ value_dwarf::cmp (value const &that) const
 
 
 value_type const value_cu::vtype = value_type::alloc ("T_CU");
+value_type const value_rawcu::vtype = value_type::alloc ("T_RAW_CU");
 
 void
-value_cu::show (std::ostream &o, brevity brv) const
+value_cu_base::show (std::ostream &o, brevity brv) const
 {
   ios_flag_saver s {o};
   o << "CU " << std::hex << std::showbase << m_offset;
 }
 
 std::unique_ptr <value>
-value_cu::clone () const
+value_cu_base::clone () const
 {
-  return std::make_unique <value_cu> (*this);
+  return std::make_unique <value_cu_base> (*this);
 }
 
 cmp_result
-value_cu::cmp (value const &that) const
+value_cu_base::cmp (value const &that) const
 {
   if (auto v = value::as <value_cu> (&that))
     return compare (&m_cu, &v->m_cu);

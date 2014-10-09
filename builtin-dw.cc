@@ -222,43 +222,77 @@ namespace
     return true;
   }
 
+  bool
+  unit_acceptable (bool cooked, Dwarf_Die die)
+  {
+    if (! cooked)
+      return true;
+
+    // In cooked mode, we reject partial units.
+    // XXX Should we reject type units as well?
+    return dwarf_tag (&die) != DW_TAG_partial_unit;
+  }
+
+  template <bool Cooked>
+  struct dwarf_unit_producer
+    : public value_producer
+  {
+    std::shared_ptr <dwfl_context> m_dwctx;
+    dwfl_module_iterator m_modit;
+    cu_iterator m_cuit;
+    size_t m_i;
+
+    dwarf_unit_producer (std::shared_ptr <dwfl_context> dwctx)
+      : m_dwctx {dwctx}
+      , m_modit {m_dwctx->get_dwfl ()}
+      , m_cuit {cu_iterator::end ()}
+      , m_i {0}
+    {}
+
+    std::unique_ptr <value>
+    next () override
+    {
+      do
+	if (! maybe_next_module (m_modit, m_cuit))
+	  return nullptr;
+      while (unit_acceptable (Cooked, **m_cuit)
+	     ? false : (m_cuit++, true));
+
+      std::unique_ptr <value> ret;
+      if (Cooked)
+	ret = std::make_unique <value_cu>
+	  (m_dwctx, *(*m_cuit)->cu, m_cuit.offset (), m_i);
+      else
+	ret = std::make_unique <value_rawcu>
+	  (m_dwctx, *(*m_cuit)->cu, m_cuit.offset (), m_i);
+
+      m_i++;
+      m_cuit++;
+      return std::move (ret);
+    }
+  };
+
   struct op_unit_dwarf
     : public op_yielding_overload <value_dwarf>
   {
     using op_yielding_overload::op_yielding_overload;
 
-    struct producer
-      : public value_producer
-    {
-      std::shared_ptr <dwfl_context> m_dwctx;
-      dwfl_module_iterator m_modit;
-      cu_iterator m_cuit;
-      size_t m_i;
-
-      producer (std::shared_ptr <dwfl_context> dwctx)
-	: m_dwctx {dwctx}
-	, m_modit {m_dwctx->get_dwfl ()}
-	, m_cuit {cu_iterator::end ()}
-	, m_i {0}
-      {}
-
-      std::unique_ptr <value>
-      next () override
-      {
-	if (! maybe_next_module (m_modit, m_cuit))
-	  return nullptr;
-
-	auto ret = std::make_unique <value_cu>
-	  (m_dwctx, *(*m_cuit)->cu, m_cuit.offset (), m_i++);
-	m_cuit++;
-	return std::move (ret);
-      }
-    };
-
     std::unique_ptr <value_producer>
     operate (std::unique_ptr <value_dwarf> a) override
     {
-      return std::make_unique <producer> (a->get_dwctx ());
+      return std::make_unique <dwarf_unit_producer <true>> (a->get_dwctx ());
+    }
+  };
+
+  struct op_unit_rawdwarf
+    : public op_yielding_overload <value_rawdwarf>
+  {
+    using op_yielding_overload::op_yielding_overload;
+
+    std::unique_ptr <value_producer>
+    operate (std::unique_ptr <value_rawdwarf> a) override
+    {
+      return std::make_unique <dwarf_unit_producer <false>> (a->get_dwctx ());
     }
   };
 
@@ -1521,6 +1555,66 @@ namespace
   };
 }
 
+// raw
+namespace
+{
+  struct op_raw_dwarf
+    : public op_overload <value_dwarf>
+  {
+    using op_overload::op_overload;
+
+    std::unique_ptr <value>
+    operate (std::unique_ptr <value_dwarf> a) override
+    {
+      return std::make_unique <value_rawdwarf>
+	(a->get_fn (), a->get_dwctx (), 0);
+    }
+  };
+
+  struct op_raw_cu
+    : public op_overload <value_cu>
+  {
+    using op_overload::op_overload;
+
+    std::unique_ptr <value>
+    operate (std::unique_ptr <value_cu> a) override
+    {
+      return std::make_unique <value_rawcu>
+	(a->get_dwctx (), a->get_cu (), a->get_offset (), 0);
+    }
+  };
+}
+
+// cooked
+namespace
+{
+  struct op_cooked_rawdwarf
+    : public op_overload <value_rawdwarf>
+  {
+    using op_overload::op_overload;
+
+    std::unique_ptr <value>
+    operate (std::unique_ptr <value_rawdwarf> a) override
+    {
+      return std::make_unique <value_dwarf>
+	(a->get_fn (), a->get_dwctx (), 0);
+    }
+  };
+
+  struct op_cooked_rawcu
+    : public op_overload <value_rawcu>
+  {
+    using op_overload::op_overload;
+
+    std::unique_ptr <value>
+    operate (std::unique_ptr <value_rawcu> a) override
+    {
+      return std::make_unique <value_cu>
+	(a->get_dwctx (), a->get_cu (), a->get_offset (), 0);
+    }
+  };
+}
+
 // @AT_*
 namespace
 {
@@ -1812,7 +1906,9 @@ dwgrep_builtins_dw ()
   builtin_dict &dict = *ret;
 
   add_builtin_type_constant <value_dwarf> (dict);
+  add_builtin_type_constant <value_rawdwarf> (dict);
   add_builtin_type_constant <value_cu> (dict);
+  add_builtin_type_constant <value_rawcu> (dict);
   add_builtin_type_constant <value_die> (dict);
   add_builtin_type_constant <value_attr> (dict);
   add_builtin_type_constant <value_abbrev_unit> (dict);
@@ -1844,6 +1940,7 @@ dwgrep_builtins_dw ()
     auto t = std::make_shared <overload_tab> ();
 
     t->add_op_overload <op_unit_dwarf> ();
+    t->add_op_overload <op_unit_rawdwarf> ();
     t->add_op_overload <op_unit_die> ();
     t->add_op_overload <op_unit_attr> ();
 
@@ -2119,6 +2216,24 @@ dwgrep_builtins_dw ()
     t->add_op_overload <op_name_die> ();
 
     dict.add (std::make_shared <overloaded_op_builtin> ("name", t));
+  }
+
+  {
+    auto t = std::make_shared <overload_tab> ();
+
+    t->add_op_overload <op_raw_dwarf> ();
+    t->add_op_overload <op_raw_cu> ();
+
+    dict.add (std::make_shared <overloaded_op_builtin> ("raw", t));
+  }
+
+  {
+    auto t = std::make_shared <overload_tab> ();
+
+    t->add_op_overload <op_cooked_rawdwarf> ();
+    t->add_op_overload <op_cooked_rawcu> ();
+
+    dict.add (std::make_shared <overloaded_op_builtin> ("cooked", t));
   }
 
   auto add_dw_at = [&dict] (unsigned code,

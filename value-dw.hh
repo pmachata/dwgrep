@@ -34,17 +34,21 @@
 #include "dwfl_context.hh"
 #include "coverage.hh"
 
-class value_dwarf
+// Dwarf
+
+class value_dwarf_base
   : public value
 {
+protected:
   std::string m_fn;
   std::shared_ptr <dwfl_context> m_dwctx;
 
 public:
-  static value_type const vtype;
 
-  value_dwarf (std::string const &fn, size_t pos);
-  value_dwarf (value_dwarf const &that) = default;
+  value_dwarf_base (std::string const &fn, size_t pos, value_type vtype);
+  value_dwarf_base (std::string const &fn, std::shared_ptr <dwfl_context> dwctx,
+		    size_t pos, value_type vtype);
+  value_dwarf_base (value_dwarf_base const &that) = default;
 
   std::string &get_fn ()
   { return m_fn; }
@@ -57,7 +61,43 @@ public:
   cmp_result cmp (value const &that) const override;
 };
 
-class value_cu
+struct value_dwarf
+  : public value_dwarf_base
+{
+  static value_type const vtype;
+
+  value_dwarf (std::string const &fn, size_t pos)
+    : value_dwarf_base {fn, pos, vtype}
+  {}
+
+  value_dwarf (std::string const &fn, std::shared_ptr <dwfl_context> dwctx,
+	       size_t pos)
+    : value_dwarf_base {fn, dwctx, pos, vtype}
+  {}
+
+  value_dwarf (value_dwarf const &that) = default;
+};
+
+struct value_rawdwarf
+  : public value_dwarf_base
+{
+  static value_type const vtype;
+
+  value_rawdwarf (std::string const &fn, size_t pos)
+    : value_dwarf_base {fn, pos, vtype}
+  {}
+
+  value_rawdwarf (std::string const &fn, std::shared_ptr <dwfl_context> dwctx,
+		  size_t pos)
+    : value_dwarf_base {fn, dwctx, pos, vtype}
+  {}
+
+  value_rawdwarf (value_rawdwarf const &that) = default;
+};
+
+// CU
+
+class value_cu_base
   : public value
 {
   std::shared_ptr <dwfl_context> m_dwctx;
@@ -65,17 +105,15 @@ class value_cu
   Dwarf_CU &m_cu;
 
 public:
-  static value_type const vtype;
-
-  value_cu (std::shared_ptr <dwfl_context> dwctx, Dwarf_CU &cu,
-	    Dwarf_Off offset, size_t pos)
+  value_cu_base (std::shared_ptr <dwfl_context> dwctx, Dwarf_CU &cu,
+		 Dwarf_Off offset, size_t pos, value_type vtype)
     : value {vtype, pos}
     , m_dwctx {dwctx}
     , m_offset {offset}
     , m_cu {cu}
   {}
 
-  value_cu (value_cu const &that) = default;
+  value_cu_base (value_cu_base const &that) = default;
 
   std::shared_ptr <dwfl_context> get_dwctx ()
   { return m_dwctx; }
@@ -90,6 +128,34 @@ public:
   std::unique_ptr <value> clone () const override;
   cmp_result cmp (value const &that) const override;
 };
+
+struct value_cu
+  : public value_cu_base
+{
+  static value_type const vtype;
+
+  value_cu (std::shared_ptr <dwfl_context> dwctx, Dwarf_CU &cu,
+	    Dwarf_Off offset, size_t pos)
+    : value_cu_base {dwctx, cu, offset, pos, vtype}
+  {}
+
+  value_cu (value_cu const &that) = default;
+};
+
+struct value_rawcu
+  : public value_cu_base
+{
+  static value_type const vtype;
+
+  value_rawcu (std::shared_ptr <dwfl_context> dwctx, Dwarf_CU &cu,
+	    Dwarf_Off offset, size_t pos)
+    : value_cu_base {dwctx, cu, offset, pos, vtype}
+  {}
+
+  value_rawcu (value_rawcu const &that) = default;
+};
+
+// DIE
 
 class value_die
   : public value

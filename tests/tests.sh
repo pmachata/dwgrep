@@ -651,5 +651,15 @@ expect_count 3 ./haschildren_childless -e 'entry'
 # Test that dwgrep handles well "dwz -m" files with common debuginfo.
 expect_count 1 ./dwz-dupfile -e 'entry (@AT_name == "W")'
 
+# Test raw/cooked Dwarf interpretation.
+expect_count 1 ./empty -e '
+	(type == T_DWARF) raw (type == T_RAW_DWARF) cooked (type == T_DWARF)'
+expect_count 1 ./empty -e '
+	unit (type == T_CU) raw (type == T_RAW_CU) cooked (type == T_CU)'
+expect_count 1 ./empty -e '
+	raw unit (type == T_RAW_CU)'
+expect_count 0 ./dwz-dupfile -e 'unit'
+expect_count 1 ./dwz-dupfile -e 'raw unit'
+
 echo "$total tests total, $failures failures."
 [ $failures -eq 0 ]
