@@ -666,6 +666,12 @@ expect_count 1 ./twocus -e '
 	(|A| [A unit offset] == [A raw unit offset])'
 expect_count 1 ./twocus -e '
 	(|A| [A unit root] == [A raw unit root])'
+expect_count 1 ./dwz-partial -e '
+	[unit (pos == 0) entry offset] ==
+	[0x34, 0x14, 0x17, 0x1a, 0x1d, 0x1f, 0x21, 0x5b, 0x64, 0x80, 0x87]'
+expect_count 1 ./dwz-partial -e '
+	[unit (pos == 0) raw entry offset] ==
+	[0x34, 0x56, 0x5b, 0x64, 0x80, 0x87]'
 
 # Test version.
 expect_count 4 ./dwz-partial -e 'unit (version == 3)'

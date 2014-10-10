@@ -108,51 +108,107 @@ namespace
     }
   };
 
+  std::pair <all_dies_iterator, all_dies_iterator>
+  cu_it_range (Dwarf_Die cudie)
+  {
+    Dwarf *dw = dwarf_cu_getdwarf (cudie.cu);
+    cu_iterator cuit {dw, cudie};
+    std::cerr << "Will iterate through CU " << cuit.offset () << std::endl;
+    all_dies_iterator a (cuit);
+    all_dies_iterator e (++cuit);
+    return std::make_pair (a, e);
+  }
+
+  bool
+  inline_partial_units (std::vector <std::pair <all_dies_iterator,
+						all_dies_iterator>> &stack)
+  {
+    Dwarf_Die *die = *stack.back ().first;
+    Dwarf_Attribute at_import;
+    Dwarf_Die cudie;
+    if (dwarf_tag (die) == DW_TAG_imported_unit
+	&& dwarf_hasattr (die, DW_AT_import)
+	&& dwarf_attr (die, DW_AT_import, &at_import) != nullptr
+	&& dwarf_formref_die (&at_import, &cudie) != nullptr)
+      {
+	// Skip DW_TAG_imported_unit.
+	stack.back ().first++;
+
+	stack.push_back (cu_it_range (cudie));
+
+	// Skip root DIE of DW_TAG_partial_unit.
+	stack.back ().first++;
+	return true;
+      }
+
+    return false;
+  }
+
+  bool
+  drop_finished_it_range (std::vector <std::pair <all_dies_iterator,
+						  all_dies_iterator>> &stack)
+  {
+    assert (! stack.empty ());
+    if (stack.back ().first != stack.back ().second)
+      return false;
+
+    stack.pop_back ();
+    return true;
+  }
+
+  template <bool Cooked>
+  struct cu_entry_producer
+    : public value_producer
+  {
+    std::shared_ptr <dwfl_context> m_dwctx;
+    // Stack of iterator ranges.
+    std::vector <std::pair <all_dies_iterator, all_dies_iterator>> m_stack;
+    size_t m_i;
+
+    cu_entry_producer (std::shared_ptr <dwfl_context> dwctx, Dwarf_CU &cu)
+      : m_dwctx {dwctx}
+      , m_i {0}
+    {
+      m_stack.push_back (cu_it_range (dwpp_cudie (cu)));
+    }
+
+    std::unique_ptr <value>
+    next () override
+    {
+      do
+	if (m_stack.empty ())
+	  return nullptr;
+      while (drop_finished_it_range (m_stack)
+	     || (Cooked && inline_partial_units (m_stack)));
+
+      return std::make_unique <value_die>
+	(m_dwctx, **m_stack.back ().first++, m_i++);
+    }
+  };
+
   struct op_entry_cu
     : public op_yielding_overload <value_cu>
   {
     using op_yielding_overload::op_yielding_overload;
 
-    struct producer
-      : public value_producer
-    {
-      std::shared_ptr <dwfl_context> m_dwctx;
-      all_dies_iterator m_it;
-      all_dies_iterator m_end;
-      size_t m_i;
-
-      producer (std::shared_ptr <dwfl_context> dwctx, Dwarf_Die cudie)
-	: m_dwctx {dwctx}
-	, m_it {all_dies_iterator::end ()}
-	, m_end {all_dies_iterator::end ()}
-	, m_i {0}
-      {
-	Dwarf *dw = dwarf_cu_getdwarf (cudie.cu);
-
-	cu_iterator cuit {dw, cudie};
-	m_it = all_dies_iterator (cuit);
-	m_end = all_dies_iterator (++cuit);
-      }
-
-      std::unique_ptr <value>
-      next () override
-      {
-	if (m_it == m_end)
-	  return nullptr;
-
-	return std::make_unique <value_die> (m_dwctx, **m_it++, m_i++);
-      }
-    };
-
     std::unique_ptr <value_producer>
     operate (std::unique_ptr <value_cu> a) override
     {
-      Dwarf_Die cudie;
-      if (dwarf_cu_die (&a->get_cu (), &cudie, nullptr, nullptr,
-			nullptr, nullptr, nullptr, nullptr) == nullptr)
-	throw_libdw ();
+      return std::make_unique <cu_entry_producer <true>>
+	(a->get_dwctx (), a->get_cu ());
+    }
+  };
 
-      return std::make_unique <producer> (a->get_dwctx (), cudie);
+  struct op_entry_rawcu
+    : public op_yielding_overload <value_rawcu>
+  {
+    using op_yielding_overload::op_yielding_overload;
+
+    std::unique_ptr <value_producer>
+    operate (std::unique_ptr <value_rawcu> a) override
+    {
+      return std::make_unique <cu_entry_producer <false>>
+	(a->get_dwctx (), a->get_cu ());
     }
   };
 
@@ -2015,9 +2071,7 @@ dwgrep_builtins_dw ()
     // certain partial unit may never be seen if that unit is never
     // imported.
     t->add_op_overload <op_entry_cu> ();
-    // xxx rawcu
-    // entry on cooked CU transparently inlines partial units and
-    // presents entries in them as well.
+    t->add_op_overload <op_entry_rawcu> ();
     t->add_op_overload <op_entry_abbrev_unit> ();
 
     dict.add (std::make_shared <overloaded_op_builtin> ("entry", t));

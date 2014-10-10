@@ -129,4 +129,14 @@ dwpp_abbrev_attrcnt (Dwarf_Abbrev &abbrev)
   return ret;
 }
 
+inline Dwarf_Die
+dwpp_cudie (Dwarf_CU &cu)
+{
+  Dwarf_Die cudie;
+  if (dwarf_cu_die (&cu, &cudie, nullptr, nullptr,
+		    nullptr, nullptr, nullptr, nullptr) == nullptr)
+    throw_libdw ();
+  return cudie;
+}
+
 #endif /* _DWPP_H_ */
