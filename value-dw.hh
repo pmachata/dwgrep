@@ -34,7 +34,9 @@
 #include "dwfl_context.hh"
 #include "coverage.hh"
 
+// -------------------------------------------------------------------
 // Dwarf
+// -------------------------------------------------------------------
 
 class value_dwarf_base
   : public value
@@ -43,11 +45,12 @@ protected:
   std::string m_fn;
   std::shared_ptr <dwfl_context> m_dwctx;
 
-public:
-
+protected:
   value_dwarf_base (std::string const &fn, size_t pos, value_type vtype);
   value_dwarf_base (std::string const &fn, std::shared_ptr <dwfl_context> dwctx,
 		    size_t pos, value_type vtype);
+
+public:
   value_dwarf_base (value_dwarf_base const &that) = default;
 
   std::string &get_fn ()
@@ -74,8 +77,6 @@ struct value_dwarf
 	       size_t pos)
     : value_dwarf_base {fn, dwctx, pos, vtype}
   {}
-
-  value_dwarf (value_dwarf const &that) = default;
 };
 
 struct value_rawdwarf
@@ -91,11 +92,11 @@ struct value_rawdwarf
 		  size_t pos)
     : value_dwarf_base {fn, dwctx, pos, vtype}
   {}
-
-  value_rawdwarf (value_rawdwarf const &that) = default;
 };
 
+// -------------------------------------------------------------------
 // CU
+// -------------------------------------------------------------------
 
 class value_cu_base
   : public value
@@ -104,7 +105,7 @@ class value_cu_base
   Dwarf_Off m_offset;
   Dwarf_CU &m_cu;
 
-public:
+protected:
   value_cu_base (std::shared_ptr <dwfl_context> dwctx, Dwarf_CU &cu,
 		 Dwarf_Off offset, size_t pos, value_type vtype)
     : value {vtype, pos}
@@ -113,6 +114,7 @@ public:
     , m_cu {cu}
   {}
 
+public:
   value_cu_base (value_cu_base const &that) = default;
 
   std::shared_ptr <dwfl_context> get_dwctx ()
@@ -138,8 +140,6 @@ struct value_cu
 	    Dwarf_Off offset, size_t pos)
     : value_cu_base {dwctx, cu, offset, pos, vtype}
   {}
-
-  value_cu (value_cu const &that) = default;
 };
 
 struct value_rawcu
@@ -151,11 +151,11 @@ struct value_rawcu
 	    Dwarf_Off offset, size_t pos)
     : value_cu_base {dwctx, cu, offset, pos, vtype}
   {}
-
-  value_rawcu (value_rawcu const &that) = default;
 };
 
+// -------------------------------------------------------------------
 // DIE
+// -------------------------------------------------------------------
 
 class value_die_base
   : public value
@@ -163,9 +163,7 @@ class value_die_base
   std::shared_ptr <dwfl_context> m_dwctx;
   Dwarf_Die m_die;
 
-public:
-  static value_type const vtype;
-
+protected:
   value_die_base (std::shared_ptr <dwfl_context> dwctx,
 		  Dwarf_Die die, size_t pos, value_type vtype)
     : value {vtype, pos}
@@ -173,8 +171,7 @@ public:
     , m_die (die)
   {}
 
-  value_die_base (value_die_base const &that) = default;
-
+public:
   Dwarf_Die &get_die ()
   { return m_die; }
 
@@ -182,7 +179,6 @@ public:
   { return m_dwctx; }
 
   void show (std::ostream &o, brevity brv) const override;
-  std::unique_ptr <value> clone () const override;
   cmp_result cmp (value const &that) const override;
 };
 
@@ -196,6 +192,9 @@ struct value_die
   {}
 
   value_die (value_die const &that) = default;
+
+  std::unique_ptr <value> clone () const override
+  { return std::make_unique <value_die> (*this); }
 };
 
 struct value_rawdie
@@ -208,9 +207,14 @@ struct value_rawdie
   {}
 
   value_rawdie (value_rawdie const &that) = default;
+
+  std::unique_ptr <value> clone () const override
+  { return std::make_unique <value_rawdie> (*this); }
 };
 
+// -------------------------------------------------------------------
 // DIE Attribute
+// -------------------------------------------------------------------
 
 class value_attr
   : public value
@@ -246,6 +250,10 @@ public:
   cmp_result cmp (value const &that) const override;
 };
 
+// -------------------------------------------------------------------
+// Abbreviation unit
+// -------------------------------------------------------------------
+
 class value_abbrev_unit
   : public value
 {
@@ -274,6 +282,10 @@ public:
   std::unique_ptr <value> clone () const override;
   cmp_result cmp (value const &that) const override;
 };
+
+// -------------------------------------------------------------------
+// Abbreviation
+// -------------------------------------------------------------------
 
 class value_abbrev
   : public value
@@ -304,6 +316,10 @@ public:
   cmp_result cmp (value const &that) const override;
 };
 
+// -------------------------------------------------------------------
+// Abbreviation attribute
+// -------------------------------------------------------------------
+
 struct value_abbrev_attr
   : public value
 {
@@ -327,6 +343,10 @@ struct value_abbrev_attr
   std::unique_ptr <value> clone () const override;
   cmp_result cmp (value const &that) const override;
 };
+
+// -------------------------------------------------------------------
+// Location list element (an address-expression pair)
+// -------------------------------------------------------------------
 
 class value_loclist_elem
   : public value
@@ -378,7 +398,10 @@ public:
   cmp_result cmp (value const &that) const override;
 };
 
+// -------------------------------------------------------------------
 // Set of addresses.
+// -------------------------------------------------------------------
+
 struct value_aset
   : public value
 {
@@ -400,6 +423,10 @@ struct value_aset
   std::unique_ptr <value> clone () const override;
   cmp_result cmp (value const &that) const override;
 };
+
+// -------------------------------------------------------------------
+// Location list operation
+// -------------------------------------------------------------------
 
 class value_loclist_op
   : public value

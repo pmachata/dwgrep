@@ -177,12 +177,6 @@ value_die_base::show (std::ostream &o, brevity brv) const
       }
 }
 
-std::unique_ptr <value>
-value_die_base::clone () const
-{
-  return std::make_unique <value_die_base> (*this);
-}
-
 cmp_result
 value_die_base::cmp (value const &that) const
 {
