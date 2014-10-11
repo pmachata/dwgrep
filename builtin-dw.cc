@@ -300,51 +300,32 @@ namespace
     }
   };
 
-  struct op_entry_dwarf
-    : public op
+  template <class A, class B>
+  struct op_entry_dwarf_base
+    : public stub_op
   {
-    std::shared_ptr <op> m_upstream;
-
-    op_entry_dwarf (std::shared_ptr <op> upstream)
-      : m_upstream {std::make_shared <op_entry_cu>
-			(std::make_shared <op_unit_dwarf> (upstream))}
+    op_entry_dwarf_base (std::shared_ptr <op> upstream)
+      : stub_op {std::make_shared <B> (std::make_shared <A> (upstream))}
     {}
 
     stack::uptr
     next () override
     { return m_upstream->next (); }
+  };
 
-    void
-    reset () override
-    { m_upstream->reset (); }
-
-    std::string name () const override
-    { return "op_entry_dwarf"; }
+  struct op_entry_dwarf
+    : public op_entry_dwarf_base <op_unit_dwarf, op_entry_cu>
+  {
+    using op_entry_dwarf_base::op_entry_dwarf_base;
 
     static selector get_selector ()
     { return {value_dwarf::vtype}; }
   };
 
   struct op_entry_rawdwarf
-    : public op
+    : public op_entry_dwarf_base <op_unit_rawdwarf, op_entry_rawcu>
   {
-    std::shared_ptr <op> m_upstream;
-
-    op_entry_rawdwarf (std::shared_ptr <op> upstream)
-      : m_upstream {std::make_shared <op_entry_rawcu>
-			(std::make_shared <op_unit_rawdwarf> (upstream))}
-    {}
-
-    stack::uptr
-    next () override
-    { return m_upstream->next (); }
-
-    void
-    reset () override
-    { m_upstream->reset (); }
-
-    std::string name () const override
-    { return "op_entry_rawdwarf"; }
+    using op_entry_dwarf_base::op_entry_dwarf_base;
 
     static selector get_selector ()
     { return {value_rawdwarf::vtype}; }
