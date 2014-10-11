@@ -1038,19 +1038,6 @@ namespace
       return pred_result (a.get_dwctx ()->is_root (a.get_die ()));
     }
   };
-
-  struct pred_rootp_attr
-    : public pred_overload <value_attr>
-  {
-    using pred_overload::pred_overload;
-
-    pred_result
-    result (value_attr &a) override
-    {
-      // By definition, attributes are never root.
-      return pred_result::no;
-    }
-  };
 }
 
 // root
@@ -2109,13 +2096,6 @@ dwgrep_builtins_dw ()
 
     t->add_pred_overload <pred_rootp_die> ();
     // xxx rawdie
-    t->add_pred_overload <pred_rootp_attr> ();
-    // xxx rawattr
-    // xxx actually, does ?root over attributes make sense at all?
-    // This idea comes back to times where we thought about the tree
-    // as one whole.  But now the traversal interface is much more
-    // fine-grained, and asking for root attributes is simply
-    // meaningless.
 
     dict.add (std::make_shared <overloaded_pred_builtin <true>> ("?root", t));
     dict.add (std::make_shared <overloaded_pred_builtin <false>> ("!root", t));
