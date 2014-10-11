@@ -425,17 +425,10 @@ namespace
     std::unique_ptr <value_producer>
     operate (std::unique_ptr <value_die> a) override
     {
-      Dwarf_Die *die = &a->get_die ();
-      if (dwarf_haschildren (die))
-	{
-	  Dwarf_Die child;
-	  if (dwarf_child (die, &child) != 0)
-	    throw_libdw ();
-
-	  auto value = std::make_unique <value_die> (a->get_dwctx (), child, 0);
-	  return std::make_unique <producer> (std::move (value));
-	}
-
+      Dwarf_Die child;
+      if (dwpp_child (a->get_die (), child))
+	return std::make_unique <producer>
+	  (std::make_unique <value_die> (a->get_dwctx (), child, 0));
       return nullptr;
     }
   };
