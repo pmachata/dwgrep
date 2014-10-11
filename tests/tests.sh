@@ -649,7 +649,7 @@ expect_count 1 ./twocus -e '?(abbrev entry (|A| A pos 1 add == A code))'
 expect_count 3 ./haschildren_childless -e 'entry'
 
 # Test that dwgrep handles well "dwz -m" files with common debuginfo.
-expect_count 1 ./dwz-dupfile -e 'entry (@AT_name == "W")'
+expect_count 1 ./dwz-dupfile -e 'raw entry (@AT_name == "W")'
 
 # Test raw/cooked Dwarf interpretation.
 expect_count 1 ./empty -e '
