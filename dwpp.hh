@@ -61,9 +61,9 @@ throw_libelf ()
 }
 
 inline bool
-dwpp_siblingof (Dwarf_Die *die, Dwarf_Die *result)
+dwpp_siblingof (Dwarf_Die const &die, Dwarf_Die &result)
 {
-  switch (dwarf_siblingof (die, result))
+  switch (dwarf_siblingof (const_cast <Dwarf_Die *> (&die), &result))
     {
     case -1:
       throw_libdw ();

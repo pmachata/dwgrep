@@ -408,17 +408,14 @@ namespace
 
 	std::unique_ptr <value_die> ret = std::move (m_child);
 
-	Dwarf_Die child;
-	switch (dwarf_siblingof (&ret->get_die (), &child))
-	  {
-	  case 0:
+	{
+	  Dwarf_Die child;
+	  if (dwpp_siblingof (ret->get_die (), child))
 	    m_child = std::make_unique <value_die>
 	      (ret->get_dwctx (), child, ret->get_pos () + 1);
-	  case 1: // no more siblings
-	    return std::move (ret);
-	  }
+	}
 
-	throw_libdw ();
+	return std::move (ret);
       }
     };
 
