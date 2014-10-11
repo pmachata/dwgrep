@@ -157,7 +157,7 @@ struct value_rawcu
 
 // DIE
 
-class value_die
+class value_die_base
   : public value
 {
   std::shared_ptr <dwfl_context> m_dwctx;
@@ -166,13 +166,14 @@ class value_die
 public:
   static value_type const vtype;
 
-  value_die (std::shared_ptr <dwfl_context> dwctx, Dwarf_Die die, size_t pos)
+  value_die_base (std::shared_ptr <dwfl_context> dwctx,
+		  Dwarf_Die die, size_t pos, value_type vtype)
     : value {vtype, pos}
     , m_dwctx {(assert (dwctx != nullptr), dwctx)}
     , m_die (die)
   {}
 
-  value_die (value_die const &that) = default;
+  value_die_base (value_die_base const &that) = default;
 
   Dwarf_Die &get_die ()
   { return m_die; }
@@ -184,6 +185,32 @@ public:
   std::unique_ptr <value> clone () const override;
   cmp_result cmp (value const &that) const override;
 };
+
+struct value_die
+  : public value_die_base
+{
+  static value_type const vtype;
+
+  value_die (std::shared_ptr <dwfl_context> dwctx, Dwarf_Die die, size_t pos)
+    : value_die_base {dwctx, die, pos, vtype}
+  {}
+
+  value_die (value_die const &that) = default;
+};
+
+struct value_rawdie
+  : public value_die_base
+{
+  static value_type const vtype;
+
+  value_rawdie (std::shared_ptr <dwfl_context> dwctx, Dwarf_Die die, size_t pos)
+    : value_die_base {dwctx, die, pos, vtype}
+  {}
+
+  value_rawdie (value_rawdie const &that) = default;
+};
+
+// DIE Attribute
 
 class value_attr
   : public value

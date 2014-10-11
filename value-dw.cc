@@ -157,9 +157,10 @@ value_cu_base::cmp (value const &that) const
 
 
 value_type const value_die::vtype = value_type::alloc ("T_DIE");
+value_type const value_rawdie::vtype = value_type::alloc ("T_RAW_DIE");
 
 void
-value_die::show (std::ostream &o, brevity brv) const
+value_die_base::show (std::ostream &o, brevity brv) const
 {
   ios_flag_saver fs {o};
 
@@ -177,13 +178,13 @@ value_die::show (std::ostream &o, brevity brv) const
 }
 
 std::unique_ptr <value>
-value_die::clone () const
+value_die_base::clone () const
 {
-  return std::make_unique <value_die> (*this);
+  return std::make_unique <value_die_base> (*this);
 }
 
 cmp_result
-value_die::cmp (value const &that) const
+value_die_base::cmp (value const &that) const
 {
   if (auto v = value::as <value_die> (&that))
     return compare (dwarf_dieoffset ((Dwarf_Die *) &m_die),
