@@ -395,7 +395,7 @@ namespace
       : public value_producer
     {
       std::shared_ptr <dwfl_context> m_dwctx;
-      sibling_iterator m_it;
+      child_iterator m_it;
       size_t m_i;
 
       producer (std::shared_ptr <dwfl_context> dwctx, Dwarf_Die parent)
@@ -407,7 +407,7 @@ namespace
       std::unique_ptr <value>
       next () override
       {
-	if (m_it == sibling_iterator::end ())
+	if (m_it == child_iterator::end ())
 	  return nullptr;
 
 	return std::make_unique <value_die> (m_dwctx, **m_it++, m_i++);

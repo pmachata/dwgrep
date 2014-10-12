@@ -98,24 +98,24 @@ public:
   Dwarf_Off offset () const;
 };
 
-class sibling_iterator
+class child_iterator
   : public std::iterator <std::input_iterator_tag, Dwarf_Die *>
 {
   Dwarf_Die m_die;
 
-  sibling_iterator ();
+  child_iterator ();
 
 public:
-  explicit sibling_iterator (Dwarf_Die parent);
-  sibling_iterator (sibling_iterator const &other) = default;
+  explicit child_iterator (Dwarf_Die parent);
+  child_iterator (child_iterator const &other) = default;
 
-  static sibling_iterator end ();
+  static child_iterator end ();
 
-  bool operator== (sibling_iterator const &other) const;
-  bool operator!= (sibling_iterator const &other) const;
+  bool operator== (child_iterator const &other) const;
+  bool operator!= (child_iterator const &other) const;
 
-  sibling_iterator operator++ ();
-  sibling_iterator operator++ (int);
+  child_iterator operator++ ();
+  child_iterator operator++ (int);
 
   Dwarf_Die *operator* ();
 };
