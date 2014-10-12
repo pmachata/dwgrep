@@ -225,7 +225,9 @@ namespace
 
   template <class It>
   bool
-  inline_partial_units (std::vector <std::pair <It, It>> &stack)
+  import_partial_units (std::vector <std::pair <It, It>> &stack,
+			std::shared_ptr <dwfl_context> dwctx,
+			std::shared_ptr <value_die> &import)
   {
     Dwarf_Die *die = *stack.back ().first;
     Dwarf_Attribute at_import;
@@ -235,6 +237,10 @@ namespace
 	&& dwarf_attr (die, DW_AT_import, &at_import) != nullptr
 	&& dwarf_formref_die (&at_import, &cudie) != nullptr)
       {
+	// Do this first, before we bump the iterator and DIE gets
+	// invalidated.
+	import = std::make_shared <value_die> (dwctx, import, *die, 0);
+
 	// Skip DW_TAG_imported_unit.
 	stack.back ().first++;
 
@@ -248,13 +254,20 @@ namespace
 
   template <class It>
   bool
-  drop_finished_it_range (std::vector <std::pair <It, It>> &stack)
+  drop_finished_imports (std::vector <std::pair <It, It>> &stack,
+			 std::shared_ptr <value_die> &import)
   {
     assert (! stack.empty ());
     if (stack.back ().first != stack.back ().second)
       return false;
 
     stack.pop_back ();
+
+    // We have one more item in STACK than values in IMPORT chain, so
+    // this can actually be empty at this point.
+    if (import != nullptr)
+      import = import->get_import ();
+
     return true;
   }
 
@@ -266,8 +279,13 @@ namespace
     : public value_producer
   {
     std::shared_ptr <dwfl_context> m_dwctx;
+
     // Stack of iterator ranges.
     std::vector <std::pair <It, It>> m_stack;
+
+    // Chain of DIE's where partial units were imported.
+    std::shared_ptr <value_die> m_import;
+
     size_t m_i;
 
     die_it_producer (std::shared_ptr <dwfl_context> dwctx, Dwarf_Die die)
@@ -283,12 +301,12 @@ namespace
       do
 	if (m_stack.empty ())
 	  return nullptr;
-      while (drop_finished_it_range (m_stack)
-	     || (Cooked && inline_partial_units (m_stack)));
+      while (drop_finished_imports (m_stack, m_import)
+	     || (Cooked && import_partial_units (m_stack, m_dwctx, m_import)));
 
       if (Cooked)
 	return std::make_unique <value_die>
-	  (m_dwctx, **m_stack.back ().first++, m_i++);
+	  (m_dwctx, m_import, **m_stack.back ().first++, m_i++);
       else
 	return std::make_unique <value_rawdie>
 	  (m_dwctx, **m_stack.back ().first++, m_i++);
@@ -937,24 +955,69 @@ namespace
 // parent
 namespace
 {
+  template <class T>
+  bool
+  get_parent (T &value, Dwarf_Die &ret)
+  {
+    Dwarf_Off par_off = value.get_dwctx ()->find_parent (value.get_die ());
+    if (par_off == parent_cache::no_off)
+      return false;
+
+    if (dwarf_offdie (dwarf_cu_getdwarf (value.get_die ().cu),
+		      par_off, &ret) == nullptr)
+      throw_libdw ();
+
+    return true;
+  }
+
   struct op_parent_die
     : public op_overload <value_die>
   {
     using op_overload::op_overload;
 
+    bool
+    pop_import (std::shared_ptr <value_die> &a)
+    {
+      if (auto b = a->get_import ())
+	{
+	  a = b;
+	  return true;
+	}
+      return false;
+    }
+
+    std::unique_ptr <value>
+    do_operate (std::shared_ptr <value_die> a)
+    {
+      Dwarf_Die par_die;
+      do
+	if (! get_parent (*a, par_die))
+	  return nullptr;
+      while (dwarf_tag (&par_die) == DW_TAG_partial_unit
+	     && pop_import (a));
+
+      return std::make_unique <value_die> (a->get_dwctx (), par_die, 0);
+    }
+
     std::unique_ptr <value>
     operate (std::unique_ptr <value_die> a) override
     {
-      Dwarf_Off par_off = a->get_dwctx ()->find_parent (a->get_die ());
-      if (par_off == parent_cache::no_off)
-	return nullptr;
+      return do_operate (std::move (a));
+    }
+  };
 
+  struct op_parent_rawdie
+    : public op_overload <value_rawdie>
+  {
+    using op_overload::op_overload;
+
+    std::unique_ptr <value>
+    operate (std::unique_ptr <value_rawdie> a) override
+    {
       Dwarf_Die par_die;
-      if (dwarf_offdie (dwarf_cu_getdwarf (a->get_die ().cu),
-			par_off, &par_die) == nullptr)
-	throw_libdw ();
-
-      return std::make_unique <value_die> (a->get_dwctx (), par_die, 0);
+      if (! get_parent (*a, par_die))
+	return nullptr;
+      return std::make_unique <value_rawdie> (a->get_dwctx (), par_die, 0);
     }
   };
 }
@@ -2222,11 +2285,7 @@ dwgrep_builtins_dw ()
     auto t = std::make_shared <overload_tab> ();
 
     t->add_op_overload <op_parent_die> ();
-    // xxx rawdie
-
-    // The difference here will be that cooked DIE's will travel
-    // across partial unit inlining boundaries, while raw DIE's will
-    // just stop.
+    t->add_op_overload <op_parent_rawdie> ();
 
     dict.add (std::make_shared <overloaded_op_builtin> ("parent", t));
   }

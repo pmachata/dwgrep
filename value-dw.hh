@@ -182,14 +182,28 @@ public:
   cmp_result cmp (value const &that) const override;
 };
 
-struct value_die
+class value_die
   : public value_die_base
 {
+  // The DW_TAG_imported_unit DIE that this DIE went through during
+  // child traversals.
+  std::shared_ptr <value_die> m_import;
+
+public:
   static value_type const vtype;
 
   value_die (std::shared_ptr <dwfl_context> dwctx, Dwarf_Die die, size_t pos)
     : value_die_base {dwctx, die, pos, vtype}
   {}
+
+  value_die (std::shared_ptr <dwfl_context> dwctx,
+	     std::shared_ptr <value_die> import, Dwarf_Die die, size_t pos)
+    : value_die_base {dwctx, die, pos, vtype}
+    , m_import {import}
+  {}
+
+  std::shared_ptr <value_die> get_import ()
+  { return m_import; }
 
   value_die (value_die const &that) = default;
 
