@@ -394,39 +394,30 @@ namespace
     struct producer
       : public value_producer
     {
-      std::unique_ptr <value_die> m_child;
+      std::shared_ptr <dwfl_context> m_dwctx;
+      sibling_iterator m_it;
+      size_t m_i;
 
-      producer (std::unique_ptr <value_die> child)
-	: m_child {std::move (child)}
+      producer (std::shared_ptr <dwfl_context> dwctx, Dwarf_Die parent)
+	: m_dwctx {dwctx}
+	, m_it {parent}
+	, m_i {0}
       {}
 
       std::unique_ptr <value>
       next () override
       {
-	if (m_child == nullptr)
+	if (m_it == sibling_iterator::end ())
 	  return nullptr;
 
-	std::unique_ptr <value_die> ret = std::move (m_child);
-
-	{
-	  Dwarf_Die child;
-	  if (dwpp_siblingof (ret->get_die (), child))
-	    m_child = std::make_unique <value_die>
-	      (ret->get_dwctx (), child, ret->get_pos () + 1);
-	}
-
-	return std::move (ret);
+	return std::make_unique <value_die> (m_dwctx, **m_it++, m_i++);
       }
     };
 
     std::unique_ptr <value_producer>
     operate (std::unique_ptr <value_die> a) override
     {
-      Dwarf_Die child;
-      if (dwpp_child (a->get_die (), child))
-	return std::make_unique <producer>
-	  (std::make_unique <value_die> (a->get_dwctx (), child, 0));
-      return nullptr;
+      return std::make_unique <producer> (a->get_dwctx (), a->get_die ());
     }
   };
 }

@@ -197,6 +197,58 @@ cu_iterator::operator* ()
 }
 
 
+sibling_iterator::sibling_iterator ()
+  : m_die {(void *) -1}
+{}
+
+sibling_iterator::sibling_iterator (Dwarf_Die parent)
+{
+  if (! dwpp_child (parent, m_die))
+    *this = end ();
+}
+
+sibling_iterator
+sibling_iterator::end ()
+{
+  return {};
+}
+
+bool
+sibling_iterator::operator== (sibling_iterator const &other) const
+{
+  return m_die.addr == other.m_die.addr;
+}
+
+bool
+sibling_iterator::operator!= (sibling_iterator const &other) const
+{
+  return ! (*this == other);
+}
+
+sibling_iterator
+sibling_iterator::operator++ ()
+{
+  assert (*this != end ());
+  if (! dwpp_siblingof (m_die, m_die))
+    *this = end ();
+  return *this;
+}
+
+sibling_iterator
+sibling_iterator::operator++ (int)
+{
+  sibling_iterator ret = *this;
+  ++*this;
+  return ret;
+}
+
+Dwarf_Die *
+sibling_iterator::operator* ()
+{
+  assert (*this != end ());
+  return &m_die;
+}
+
 
 all_dies_iterator::all_dies_iterator (Dwarf_Off offset)
   : m_cuit (cu_iterator::end ())
