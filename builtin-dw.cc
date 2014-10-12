@@ -1027,6 +1027,7 @@ namespace
 // root
 namespace
 {
+  template <bool Cooked>
   std::unique_ptr <value>
   cu_root (std::shared_ptr <dwfl_context> dwctx, Dwarf_CU &cu)
   {
@@ -1034,7 +1035,11 @@ namespace
     if (dwarf_cu_die (&cu, &cudie, nullptr, nullptr,
 		      nullptr, nullptr, nullptr, nullptr) == nullptr)
       throw_libdw ();
-    return std::make_unique <value_die> (dwctx, cudie, 0);
+
+    if (Cooked)
+      return std::make_unique <value_die> (dwctx, cudie, 0);
+    else
+      return std::make_unique <value_rawdie> (dwctx, cudie, 0);
   }
 
   struct op_root_cu
@@ -1045,7 +1050,7 @@ namespace
     std::unique_ptr <value>
     operate (std::unique_ptr <value_cu> a) override
     {
-      return cu_root (a->get_dwctx (), a->get_cu ());
+      return cu_root <true> (a->get_dwctx (), a->get_cu ());
     }
   };
 
@@ -1057,7 +1062,7 @@ namespace
     std::unique_ptr <value>
     operate (std::unique_ptr <value_rawcu> a) override
     {
-      return cu_root (a->get_dwctx (), a->get_cu ());
+      return cu_root <false> (a->get_dwctx (), a->get_cu ());
     }
   };
 
