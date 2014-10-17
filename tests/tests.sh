@@ -706,6 +706,11 @@ expect_count 4 ./dwz-partial -e '
 	(|A| A entry (offset == 0x14)
 	     A raw entry (offset == 0x14) cooked) !eq'
 
+expect_count 4 ./dwz-partial -e '
+	entry (offset == 0x14)
+	?(root ?TAG_compile_unit)
+	?(raw root ?TAG_partial_unit)'
+
 # Test version.
 expect_count 4 ./dwz-partial -e 'unit (version == 3)'
 expect_count 5 ./dwz-partial -e 'raw unit (version == 3)'

@@ -1134,13 +1134,33 @@ namespace
   {
     using op_overload::op_overload;
 
+    static std::unique_ptr <value>
+    do_operate (std::shared_ptr <value_die> a)
+    {
+      while (a->get_import () != nullptr)
+	a = a->get_import ();
+
+      return std::make_unique <value_die>
+	(a->get_dwctx (), dwpp_cudie (a->get_die ()), 0);
+    }
+
     std::unique_ptr <value>
     operate (std::unique_ptr <value_die> a) override
     {
-      Dwarf_Die cudie;
-      if (dwarf_diecu (&a->get_die (), &cudie, nullptr, nullptr) == nullptr)
-	throw_libdw ();
-      return std::make_unique <value_die> (a->get_dwctx (), cudie, 0);
+      return do_operate (std::move (a));
+    }
+  };
+
+  struct op_root_rawdie
+    : public op_overload <value_rawdie>
+  {
+    using op_overload::op_overload;
+
+    std::unique_ptr <value>
+    operate (std::unique_ptr <value_rawdie> a) override
+    {
+      return std::make_unique <value_rawdie>
+	(a->get_dwctx (), dwpp_cudie (a->get_die ()), 0);
     }
   };
 }
@@ -2188,9 +2208,7 @@ dwgrep_builtins_dw ()
     t->add_op_overload <op_root_cu> ();
     t->add_op_overload <op_root_rawcu> ();
     t->add_op_overload <op_root_die> ();
-    // xxx rawdie
-    // cooked child returns to root of the original unit where it came
-    // from, across transparent partial unit inlines
+    t->add_op_overload <op_root_rawdie> ();
 
     dict.add (std::make_shared <overloaded_op_builtin> ("root", t));
   }

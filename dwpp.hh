@@ -139,4 +139,10 @@ dwpp_cudie (Dwarf_CU &cu)
   return cudie;
 }
 
+inline Dwarf_Die
+dwpp_cudie (Dwarf_Die &die)
+{
+  return dwpp_cudie (*die.cu);
+}
+
 #endif /* _DWPP_H_ */
