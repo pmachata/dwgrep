@@ -1738,6 +1738,28 @@ namespace
     }
   };
 
+  struct op_name_rawdwarf
+    : public op_overload <value_rawdwarf>
+  {
+    using op_overload::op_overload;
+
+    std::unique_ptr <value>
+    operate (std::unique_ptr <value_rawdwarf> a) override
+    {
+      return std::make_unique <value_str> (std::string {a->get_fn ()}, 0);
+    }
+  };
+
+  std::unique_ptr <value>
+  diename (Dwarf_Die &die)
+  {
+    const char *name = dwarf_diename (&die);
+    if (name != nullptr)
+      return std::make_unique <value_str> (name, 0);
+    else
+      return nullptr;
+  }
+
   struct op_name_die
     : public op_overload <value_die>
   {
@@ -1746,11 +1768,19 @@ namespace
     std::unique_ptr <value>
     operate (std::unique_ptr <value_die> a) override
     {
-      const char *name = dwarf_diename (&a->get_die ());
-      if (name != nullptr)
-	return std::make_unique <value_str> (name, 0);
-      else
-	return nullptr;
+      return diename (a->get_die ());
+    }
+  };
+
+  struct op_name_rawdie
+    : public op_overload <value_rawdie>
+  {
+    using op_overload::op_overload;
+
+    std::unique_ptr <value>
+    operate (std::unique_ptr <value_rawdie> a) override
+    {
+      return diename (a->get_die ());
     }
   };
 }
@@ -2467,7 +2497,9 @@ dwgrep_builtins_dw ()
     auto t = std::make_shared <overload_tab> ();
 
     t->add_op_overload <op_name_dwarf> ();
+    t->add_op_overload <op_name_rawdwarf> ();
     t->add_op_overload <op_name_die> ();
+    t->add_op_overload <op_name_rawdie> ();
 
     dict.add (std::make_shared <overloaded_op_builtin> ("name", t));
   }

@@ -715,5 +715,11 @@ expect_count 4 ./dwz-partial -e '
 expect_count 4 ./dwz-partial -e 'unit (version == 3)'
 expect_count 5 ./dwz-partial -e 'raw unit (version == 3)'
 
+# Test name.
+expect_count 1 ./empty -e 'name == "./empty"'
+expect_count 1 ./empty -e 'raw name == "./empty"'
+expect_count 1 ./empty -e 'entry name == "empty.c"'
+expect_count 1 ./empty -e 'raw entry name == "empty.c"'
+
 echo "$total tests total, $failures failures."
 [ $failures -eq 0 ]

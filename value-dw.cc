@@ -129,12 +129,18 @@ value_rawdwarf::clone () const
 namespace
 {
   template <class T>
+  T &
+  unconst (T const &t)
+  {
+    return const_cast <T &> (t);
+  }
+
+  template <class T>
   cmp_result
   cmp_dwarf (T const &a, T const &b)
   {
-    T &va = const_cast <T &> (a);
-    T &vb = const_cast <T &> (b);
-    return compare (va.get_dwctx ()->get_dwfl (), vb.get_dwctx ()->get_dwfl ());
+    return compare (unconst (a).get_dwctx ()->get_dwfl (),
+		    unconst (b).get_dwctx ()->get_dwfl ());
   }
 }
 
@@ -206,7 +212,7 @@ value_die_base::show (std::ostream &o, brevity brv) const
 {
   ios_flag_saver fs {o};
 
-  Dwarf_Die *die = const_cast <Dwarf_Die *> (&m_die);
+  Dwarf_Die *die = &unconst (m_die);
   o << '[' << std::hex << dwarf_dieoffset (die) << ']'
     << (brv == brevity::full ? '\t' : ' ')
     << constant (dwarf_tag (die), &dw_tag_dom, brevity::brief);
@@ -225,10 +231,8 @@ namespace
   cmp_result
   rawdie_cmp (T const &a, T const &b)
   {
-    T &va = const_cast <T &> (a);
-    T &vb = const_cast <T &> (b);
-    return compare (dwarf_dieoffset ((Dwarf_Die *) &va.get_die ()),
-		    dwarf_dieoffset ((Dwarf_Die *) &vb.get_die ()));
+    return compare (dwarf_dieoffset ((Dwarf_Die *) &unconst (a).get_die ()),
+		    dwarf_dieoffset ((Dwarf_Die *) &unconst (b).get_die ()));
   }
 }
 
