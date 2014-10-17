@@ -177,12 +177,46 @@ value_die_base::show (std::ostream &o, brevity brv) const
       }
 }
 
+namespace
+{
+  template <class T>
+  cmp_result
+  rawdie_cmp (T const &a, T const &b)
+  {
+    T &va = const_cast <T &> (a);
+    T &vb = const_cast <T &> (b);
+    return compare (dwarf_dieoffset ((Dwarf_Die *) &va.get_die ()),
+		    dwarf_dieoffset ((Dwarf_Die *) &vb.get_die ()));
+  }
+}
+
 cmp_result
-value_die_base::cmp (value const &that) const
+value_rawdie::cmp (value const &that) const
+{
+  if (auto v = value::as <value_rawdie> (&that))
+    return rawdie_cmp (*this, *v);
+  else
+    return cmp_result::fail;
+}
+
+cmp_result
+value_die::cmp (value const &that) const
 {
   if (auto v = value::as <value_die> (&that))
-    return compare (dwarf_dieoffset ((Dwarf_Die *) &m_die),
-		    dwarf_dieoffset ((Dwarf_Die *) &v->m_die));
+    {
+      auto ret = rawdie_cmp (*this, *v);
+      if (ret != cmp_result::equal)
+	return ret;
+
+      /* Compare nullness of import path.  Accept any difference, and
+	 accept if both are nullptr's.  */
+      ret = compare (m_import == nullptr, v->m_import == nullptr);
+      if (ret != cmp_result::equal || m_import == nullptr)
+	return ret;
+
+      /* Both DIE's have import path.  Explore it recursively.  */
+      return m_import->cmp (*v->m_import);
+    }
   else
     return cmp_result::fail;
 }

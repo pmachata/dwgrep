@@ -179,7 +179,6 @@ public:
   { return m_dwctx; }
 
   void show (std::ostream &o, brevity brv) const override;
-  cmp_result cmp (value const &that) const override;
 };
 
 class value_die
@@ -209,6 +208,8 @@ public:
 
   std::unique_ptr <value> clone () const override
   { return std::make_unique <value_die> (*this); }
+
+  cmp_result cmp (value const &that) const override;
 };
 
 struct value_rawdie
@@ -224,6 +225,8 @@ struct value_rawdie
 
   std::unique_ptr <value> clone () const override
   { return std::make_unique <value_rawdie> (*this); }
+
+  cmp_result cmp (value const &that) const override;
 };
 
 // -------------------------------------------------------------------

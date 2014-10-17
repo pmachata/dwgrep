@@ -695,6 +695,13 @@ expect_count 1 ./dwz-partial -e '
 	[unit root child (offset == 0x14) parent offset] ==
 	[0x34, 0xa4, 0xe1, 0x11e]'
 
+expect_count 4 ./dwz-partial -e '
+	(|A| A entry (offset == 0x14)
+	     A entry (offset == 0x14)) ?eq'
+expect_count 4 ./dwz-partial -e '
+	(|A| A entry (offset == 0x14)
+	     A raw entry (offset == 0x14) cooked) !eq'
+
 # Test version.
 expect_count 4 ./dwz-partial -e 'unit (version == 3)'
 expect_count 5 ./dwz-partial -e 'raw unit (version == 3)'
