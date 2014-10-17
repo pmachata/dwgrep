@@ -115,16 +115,43 @@ value_dwarf_base::show (std::ostream &o, brevity brv) const
 }
 
 std::unique_ptr <value>
-value_dwarf_base::clone () const
+value_dwarf::clone () const
 {
-  return std::make_unique <value_dwarf_base> (*this);
+  return std::make_unique <value_dwarf> (*this);
+}
+
+std::unique_ptr <value>
+value_rawdwarf::clone () const
+{
+  return std::make_unique <value_rawdwarf> (*this);
+}
+
+namespace
+{
+  template <class T>
+  cmp_result
+  cmp_dwarf (T const &a, T const &b)
+  {
+    T &va = const_cast <T &> (a);
+    T &vb = const_cast <T &> (b);
+    return compare (va.get_dwctx ()->get_dwfl (), vb.get_dwctx ()->get_dwfl ());
+  }
 }
 
 cmp_result
-value_dwarf_base::cmp (value const &that) const
+value_dwarf::cmp (value const &that) const
 {
   if (auto v = value::as <value_dwarf> (&that))
-    return compare (m_dwctx->get_dwfl (), v->m_dwctx->get_dwfl ());
+    return cmp_dwarf (*this, *v);
+  else
+    return cmp_result::fail;
+}
+
+cmp_result
+value_rawdwarf::cmp (value const &that) const
+{
+  if (auto v = value::as <value_rawdwarf> (&that))
+    return cmp_dwarf (*this, *v);
   else
     return cmp_result::fail;
 }
@@ -141,15 +168,30 @@ value_cu_base::show (std::ostream &o, brevity brv) const
 }
 
 std::unique_ptr <value>
-value_cu_base::clone () const
+value_cu::clone () const
 {
-  return std::make_unique <value_cu_base> (*this);
+  return std::make_unique <value_cu> (*this);
+}
+
+std::unique_ptr <value>
+value_rawcu::clone () const
+{
+  return std::make_unique <value_rawcu> (*this);
 }
 
 cmp_result
-value_cu_base::cmp (value const &that) const
+value_cu::cmp (value const &that) const
 {
   if (auto v = value::as <value_cu> (&that))
+    return compare (&m_cu, &v->m_cu);
+  else
+    return cmp_result::fail;
+}
+
+cmp_result
+value_rawcu::cmp (value const &that) const
+{
+  if (auto v = value::as <value_rawcu> (&that))
     return compare (&m_cu, &v->m_cu);
   else
     return cmp_result::fail;

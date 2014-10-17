@@ -60,8 +60,6 @@ public:
   { return m_dwctx; }
 
   void show (std::ostream &o, brevity brv) const override;
-  std::unique_ptr <value> clone () const override;
-  cmp_result cmp (value const &that) const override;
 };
 
 struct value_dwarf
@@ -77,6 +75,9 @@ struct value_dwarf
 	       size_t pos)
     : value_dwarf_base {fn, dwctx, pos, vtype}
   {}
+
+  cmp_result cmp (value const &that) const override;
+  std::unique_ptr <value> clone () const override;
 };
 
 struct value_rawdwarf
@@ -92,6 +93,9 @@ struct value_rawdwarf
 		  size_t pos)
     : value_dwarf_base {fn, dwctx, pos, vtype}
   {}
+
+  cmp_result cmp (value const &that) const override;
+  std::unique_ptr <value> clone () const override;
 };
 
 // -------------------------------------------------------------------
@@ -101,11 +105,11 @@ struct value_rawdwarf
 class value_cu_base
   : public value
 {
+protected:
   std::shared_ptr <dwfl_context> m_dwctx;
   Dwarf_Off m_offset;
   Dwarf_CU &m_cu;
 
-protected:
   value_cu_base (std::shared_ptr <dwfl_context> dwctx, Dwarf_CU &cu,
 		 Dwarf_Off offset, size_t pos, value_type vtype)
     : value {vtype, pos}
@@ -127,8 +131,6 @@ public:
   { return m_offset; }
 
   void show (std::ostream &o, brevity brv) const override;
-  std::unique_ptr <value> clone () const override;
-  cmp_result cmp (value const &that) const override;
 };
 
 struct value_cu
@@ -140,6 +142,9 @@ struct value_cu
 	    Dwarf_Off offset, size_t pos)
     : value_cu_base {dwctx, cu, offset, pos, vtype}
   {}
+
+  cmp_result cmp (value const &that) const override;
+  std::unique_ptr <value> clone () const override;
 };
 
 struct value_rawcu
@@ -151,6 +156,9 @@ struct value_rawcu
 	    Dwarf_Off offset, size_t pos)
     : value_cu_base {dwctx, cu, offset, pos, vtype}
   {}
+
+  cmp_result cmp (value const &that) const override;
+  std::unique_ptr <value> clone () const override;
 };
 
 // -------------------------------------------------------------------

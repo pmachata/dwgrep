@@ -666,6 +666,10 @@ expect_count 1 ./empty -e '
 	raw entry (type == T_RAW_DIE)'
 expect_count 4 ./dwz-partial -e 'unit'
 expect_count 5 ./dwz-partial -e 'raw unit'
+
+expect_count 1 ./duplicate-const -e 'raw (==)'
+expect_count 1 ./duplicate-const -e 'raw unit (==)'
+
 expect_count 1 ./twocus -e '
 	unit root type == T_DIE'
 expect_count 1 ./twocus -e '
