@@ -620,6 +620,7 @@ at_value (std::shared_ptr <dwfl_context> dwctx,
     case DW_FORM_ref4:
     case DW_FORM_ref8:
     case DW_FORM_ref_udata:
+    case DW_FORM_GNU_ref_alt:
       {
 	Dwarf_Die die;
 	if (dwarf_formref_die (&attr, &die) == nullptr)
@@ -662,7 +663,6 @@ at_value (std::shared_ptr <dwfl_context> dwctx,
       return std::make_unique <locexpr_producer> (dwctx, attr);
 
     case DW_FORM_ref_sig8:
-    case DW_FORM_GNU_ref_alt:
       std::cerr << "Form unhandled: "
 		<< constant (dwarf_whatform (&attr), &dw_form_dom)
 		<< std::endl;
