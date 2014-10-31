@@ -210,12 +210,14 @@ value_type const value_rawdie::vtype = value_type::alloc ("T_RAW_DIE");
 void
 value_die_base::show (std::ostream &o, brevity brv) const
 {
-  ios_flag_saver fs {o};
-
   Dwarf_Die *die = &unconst (m_die);
-  o << '[' << std::hex << dwarf_dieoffset (die) << ']'
-    << (brv == brevity::full ? '\t' : ' ')
-    << constant (dwarf_tag (die), &dw_tag_dom, brevity::brief);
+
+  {
+    ios_flag_saver fs {o};
+    o << '[' << std::hex << dwarf_dieoffset (die) << ']'
+      << (brv == brevity::full ? '\t' : ' ')
+      << constant (dwarf_tag (die), &dw_tag_dom, brevity::brief);
+  }
 
   if (brv == brevity::full)
     for (auto it = attr_iterator {die}; it != attr_iterator::end (); ++it)
@@ -276,15 +278,21 @@ value_attr::show (std::ostream &o, brevity brv) const
   unsigned name = (unsigned) dwarf_whatattr ((Dwarf_Attribute *) &m_attr);
   unsigned form = dwarf_whatform ((Dwarf_Attribute *) &m_attr);
 
-  ios_flag_saver s {o};
-  o << constant (name, &dw_attr_dom, brevity::brief) << " ("
-    << constant (form, &dw_form_dom, brevity::brief) << ")\t";
+  {
+    ios_flag_saver s {o};
+    o << constant (name, &dw_attr_dom, brevity::brief) << " ("
+      << constant (form, &dw_form_dom, brevity::brief) << ")\t";
+  }
+
   auto vpr = at_value (m_dwctx, m_die, m_attr);
   while (auto v = vpr->next ())
     {
       if (auto d = value::as <value_die> (v.get ()))
-	o << "[" << std::hex
-	  << dwarf_dieoffset ((Dwarf_Die *) &d->get_die ()) << "]";
+	{
+	  ios_flag_saver s {o};
+	  o << "[" << std::hex
+	    << dwarf_dieoffset ((Dwarf_Die *) &d->get_die ()) << "]";
+	}
       else
 	v->show (o, brv);
       o << ";";
@@ -353,11 +361,9 @@ value_type const value_abbrev::vtype
 void
 value_abbrev::show (std::ostream &o, brevity brv) const
 {
-  ios_flag_saver fs {o};
-
   o << '[' << dwarf_getabbrevcode (&m_abbrev) << "] "
     << "offset:" << constant (dwpp_abbrev_offset (m_abbrev),
-				&dw_offset_dom, brevity::full)
+			      &dw_offset_dom, brevity::full)
     << ", children:" << (dwarf_abbrevhaschildren (&m_abbrev) ? "yes" : "no")
     << ", tag:" << constant (dwarf_getabbrevtag (&m_abbrev),
 			     &dw_tag_dom, brevity::brief);
