@@ -548,8 +548,14 @@ namespace
       case DW_AT_stmt_list:
 	return atval_unsigned_with_domain (attr, hex_constant_dom);
 
-      case DW_AT_location:
       case DW_AT_data_member_location:
+      case DW_AT_data_location:
+      case DW_AT_frame_base:
+      case DW_AT_location:
+      case DW_AT_return_addr:
+      case DW_AT_segment:
+      case DW_AT_static_link:
+      case DW_AT_use_location:
       case DW_AT_vtable_elem_location:
 	return std::make_unique <locexpr_producer> (dwctx, attr);
 
