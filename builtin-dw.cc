@@ -596,39 +596,158 @@ namespace
 // attribute
 namespace
 {
+  struct attribute_producer
+    : public value_producer
+  {
+    std::shared_ptr <dwfl_context> m_dwctx;
+    Dwarf_Die m_die;
+    attr_iterator m_it;
+    size_t m_i;
+    bool m_integrate;
+    bool m_secondary;
+
+    // Already seen attributes.
+    std::vector <int> m_seen;
+
+    // We store full DIE's to allow DW_AT_specification's in a
+    // separate debug info files.
+    std::vector <Dwarf_Die> m_next;
+
+    void
+    schedule (Dwarf_Attribute &at)
+    {
+      assert (at.code == DW_AT_abstract_origin
+	      || at.code == DW_AT_specification);
+
+      Dwarf_Die die_mem;
+      if (dwarf_formref_die (&at, &die_mem) == nullptr)
+	throw_libdw ();
+
+      m_next.push_back (die_mem);
+    }
+
+    bool
+    next_die ()
+    {
+      if (m_next.empty ())
+	return false;
+
+      m_die = m_next.back ();
+      m_it = attr_iterator {&m_die};
+      m_next.pop_back ();
+      return true;
+    }
+
+    bool
+    seen (int atname) const
+    {
+      return std::find (std::begin (m_seen), std::end (m_seen),
+			atname) != std::end (m_seen);
+    }
+
+    attribute_producer (std::shared_ptr <dwfl_context> dwctx,
+			Dwarf_Die die, bool integrate)
+      : m_dwctx {dwctx}
+      , m_it {attr_iterator::end ()}
+      , m_i {0}
+      , m_integrate {integrate}
+      , m_secondary {false}
+    {
+      m_next.push_back (die);
+      next_die ();
+    }
+
+    attribute_producer (std::unique_ptr <value_die> value)
+      : attribute_producer {value->get_dwctx (), value->get_die (), true}
+    {}
+
+    attribute_producer (std::unique_ptr <value_rawdie> value)
+      : attribute_producer {value->get_dwctx (), value->get_die (), false}
+    {}
+
+    std::unique_ptr <value>
+    next () override
+    {
+      // Should DW_AT_abstract_origin and DW_AT_specification be
+      // expanded inline?  (And therefore themselves skipped?)  Should
+      // DW_AT_specification's DW_AT_declaration be skipped as well?
+      // Should DW_AT_declaration'd DIE's be ignored altogether?
+      //
+      // Note: page 187 describes the hashing algorithm, which handles
+      // DW_AT_specification.
+
+      Dwarf_Attribute at;
+      do
+	{
+	again:
+	  while (m_it == attr_iterator::end ())
+	    if (! m_integrate || ! next_die ())
+	      return nullptr;
+	    else
+	      m_secondary = true;
+
+	  at = **m_it++;
+	  if (m_integrate
+	      && (at.code == DW_AT_specification
+		  || at.code == DW_AT_abstract_origin))
+	    {
+	      // Schedule this for future traversal, but still show
+	      // the attribute in the output (i.e. skip the seen-check
+	      // to possibly also present this several times if we
+	      // went through several rounds of integration).  There's
+	      // no gain in hiding this from the user.
+	      schedule (at);
+	      break;
+	    }
+
+	  // Some attributes only make sense at the non-defining DIE
+	  // and shouldn't be brought down here.
+	  //
+	  // DW_AT_decl_* suite in particular is meaningful here as
+	  // well as the non-defining declaration.  But then we would
+	  // see local or remote set of attributes depending on
+	  // whether there is any local set.  It would be impossible
+	  // to distinguish in a script, which set is seen.
+	  //
+	  // XXX ?AT_* and @AT_* should have consistent rules for what
+	  // it brings from the specification/abstract_origin DIE's.
+	  if (m_secondary)
+	    switch (at.code)
+	    case DW_AT_sibling:
+	    case DW_AT_declaration:
+	    case DW_AT_decl_line:
+	    case DW_AT_decl_column:
+	    case DW_AT_decl_file:
+	      goto again;
+	}
+      while (m_integrate && seen (at.code));
+
+      m_seen.push_back (at.code);
+      return std::make_unique <value_attr> (m_dwctx, at, m_die, m_i++);
+    }
+  };
+
+  struct op_attribute_rawdie
+    : public op_yielding_overload <value_rawdie>
+  {
+    using op_yielding_overload::op_yielding_overload;
+
+    std::unique_ptr <value_producer>
+    operate (std::unique_ptr <value_rawdie> a) override
+    {
+      return std::make_unique <attribute_producer> (std::move (a));
+    }
+  };
+
   struct op_attribute_die
     : public op_yielding_overload <value_die>
   {
     using op_yielding_overload::op_yielding_overload;
 
-    struct producer
-      : public value_producer
-    {
-      std::unique_ptr <value_die> m_value;
-      attr_iterator m_it;
-      size_t m_i;
-
-      producer (std::unique_ptr <value_die> value)
-	: m_value {std::move (value)}
-	, m_it {attr_iterator {&m_value->get_die ()}}
-	, m_i {0}
-      {}
-
-      std::unique_ptr <value>
-      next () override
-      {
-	if (m_it != attr_iterator::end ())
-	  return std::make_unique <value_attr>
-	    (m_value->get_dwctx (), **m_it++, m_value->get_die (), m_i++);
-	else
-	  return nullptr;
-      }
-    };
-
     std::unique_ptr <value_producer>
     operate (std::unique_ptr <value_die> a) override
     {
-      return std::make_unique <producer> (std::move (a));
+      return std::make_unique <attribute_producer> (std::move (a));
     }
   };
 
@@ -2214,9 +2333,7 @@ dwgrep_builtins_dw ()
     auto t = std::make_shared <overload_tab> ();
 
     t->add_op_overload <op_attribute_die> ();
-    // xxx rawdie
-    // should cooked DIE yield even integrated attributes?  It seems
-    // like it should, but it's somewhat surprising...
+    t->add_op_overload <op_attribute_rawdie> ();
     t->add_op_overload <op_attribute_abbrev> ();
 
     dict.add (std::make_shared <overloaded_op_builtin> ("attribute", t));

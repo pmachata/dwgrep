@@ -711,6 +711,15 @@ expect_count 4 ./dwz-partial -e '
 	?(root ?TAG_compile_unit)
 	?(raw root ?TAG_partial_unit)'
 
+expect_count 1 ./nullptr.o -e '
+	[|A| A raw entry (offset == 0x6e) attribute label]
+	== [DW_AT_specification, DW_AT_inline, DW_AT_object_pointer,
+	    DW_AT_sibling]'
+expect_count 1 ./nullptr.o -e '
+	[|A| A entry (offset == 0x6e) attribute label]
+	== [DW_AT_specification, DW_AT_inline, DW_AT_object_pointer,
+	    DW_AT_sibling, DW_AT_external, DW_AT_name]'
+
 # Test version.
 expect_count 4 ./dwz-partial -e 'unit (version == 3)'
 expect_count 5 ./dwz-partial -e 'raw unit (version == 3)'
