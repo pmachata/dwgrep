@@ -1,0 +1,3 @@
+ADD_EXECUTABLE (dwgrep dwgrep.cc)
+INCLUDE_DIRECTORIES (${CMAKE_SOURCE_DIR}/libzwerg)
+TARGET_LINK_LIBRARIES (dwgrep libzwerg)

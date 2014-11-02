@@ -1,6 +1,5 @@
 *-dep
 *.o
-dwgrep
 test-parser
 test-int
 parser.cc

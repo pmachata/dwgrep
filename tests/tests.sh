@@ -1,5 +1,7 @@
 #!/bin/sh
 
+DWGREP=$1
+
 failures=0
 total=0
 
@@ -8,9 +10,9 @@ expect_count ()
     export total=$((total + 1))
     COUNT=$1
     shift
-    GOT=$(timeout 10 ../dwgrep -c "$@" 2>/dev/null)
+    GOT=$(timeout 10 $DWGREP -c "$@" 2>/dev/null)
     if [ "$GOT" != "$COUNT" ]; then
-	echo "FAIL: dwgrep -c" "$@"
+	echo "FAIL: $DWGREP -c" "$@"
 	echo "expected: $COUNT"
 	echo "     got: $GOT"
 	export failures=$((failures + 1))
