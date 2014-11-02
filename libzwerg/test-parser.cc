@@ -37,7 +37,7 @@
 
 static unsigned tests = 0, failed = 0;
 
-std::unique_ptr <builtin_dict> builtins;
+std::unique_ptr <vocabulary> builtins;
 
 void
 fail (std::string parse)
@@ -316,7 +316,7 @@ do_tests ()
 int
 main (int argc, char *argv[])
 {
-  builtins = dwgrep_builtins_core ();
+  builtins = dwgrep_vocabulary_core ();
 
   if (argc > 1)
     {

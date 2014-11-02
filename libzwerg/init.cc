@@ -40,18 +40,18 @@
 #include "builtin-cst.hh"
 #include "builtin-shf.hh"
 
-std::unique_ptr <builtin_dict>
-dwgrep_builtins_core ()
+std::unique_ptr <vocabulary>
+dwgrep_vocabulary_core ()
 {
-  auto dict = std::make_unique <builtin_dict> ();
+  auto voc = std::make_unique <vocabulary> ();
 
-  add_builtin_type_constant <value_cst> (*dict);
-  add_builtin_type_constant <value_str> (*dict);
-  add_builtin_type_constant <value_seq> (*dict);
-  add_builtin_type_constant <value_closure> (*dict);
+  add_builtin_type_constant <value_cst> (*voc);
+  add_builtin_type_constant <value_str> (*voc);
+  add_builtin_type_constant <value_seq> (*voc);
+  add_builtin_type_constant <value_closure> (*voc);
 
   // closure builtins
-  dict->add (std::make_shared <builtin_apply> ());
+  voc->add (std::make_shared <builtin_apply> ());
 
   // comparison assertions
   {
@@ -64,45 +64,45 @@ dwgrep_builtins_core ()
     auto gt = std::make_shared <builtin_gt> (true);
     auto ngt = std::make_shared <builtin_gt> (false);
 
-    dict->add (eq);
-    dict->add (neq);
-    dict->add (lt);
-    dict->add (nlt);
-    dict->add (gt);
-    dict->add (ngt);
+    voc->add (eq);
+    voc->add (neq);
+    voc->add (lt);
+    voc->add (nlt);
+    voc->add (gt);
+    voc->add (ngt);
 
-    dict->add (neq, "?ne");
-    dict->add (eq, "!ne");
-    dict->add (nlt, "?ge");
-    dict->add (lt, "!ge");
-    dict->add (ngt, "?le");
-    dict->add (gt, "!le");
+    voc->add (neq, "?ne");
+    voc->add (eq, "!ne");
+    voc->add (nlt, "?ge");
+    voc->add (lt, "!ge");
+    voc->add (ngt, "?le");
+    voc->add (gt, "!le");
 
-    dict->add (eq, "==");
-    dict->add (neq, "!=");
-    dict->add (lt, "<");
-    dict->add (nlt, ">=");
-    dict->add (gt, ">");
-    dict->add (ngt, "<=");
+    voc->add (eq, "==");
+    voc->add (neq, "!=");
+    voc->add (lt, "<");
+    voc->add (nlt, ">=");
+    voc->add (gt, ">");
+    voc->add (ngt, "<=");
   }
 
   // domain conversions
-  dict->add (std::make_shared <builtin_hex> ());
-  dict->add (std::make_shared <builtin_dec> ());
-  dict->add (std::make_shared <builtin_oct> ());
-  dict->add (std::make_shared <builtin_bin> ());
+  voc->add (std::make_shared <builtin_hex> ());
+  voc->add (std::make_shared <builtin_dec> ());
+  voc->add (std::make_shared <builtin_oct> ());
+  voc->add (std::make_shared <builtin_bin> ());
 
-  add_builtin_constant (*dict, constant (0, &bool_constant_dom), "false");
-  add_builtin_constant (*dict, constant (1, &bool_constant_dom), "true");
-  add_simple_exec_builtin <op_type> (*dict, "type");
-  add_simple_exec_builtin <op_pos> (*dict, "pos");
+  add_builtin_constant (*voc, constant (0, &bool_constant_dom), "false");
+  add_builtin_constant (*voc, constant (1, &bool_constant_dom), "true");
+  add_simple_exec_builtin <op_type> (*voc, "type");
+  add_simple_exec_builtin <op_pos> (*voc, "pos");
 
   // stack shuffling
-  add_simple_exec_builtin <op_drop> (*dict, "drop");
-  add_simple_exec_builtin <op_swap> (*dict, "swap");
-  add_simple_exec_builtin <op_dup> (*dict, "dup");
-  add_simple_exec_builtin <op_over> (*dict, "over");
-  add_simple_exec_builtin <op_rot> (*dict, "rot");
+  add_simple_exec_builtin <op_drop> (*voc, "drop");
+  add_simple_exec_builtin <op_swap> (*voc, "swap");
+  add_simple_exec_builtin <op_dup> (*voc, "dup");
+  add_simple_exec_builtin <op_over> (*voc, "over");
+  add_simple_exec_builtin <op_rot> (*voc, "rot");
 
   // "add"
   {
@@ -112,35 +112,35 @@ dwgrep_builtins_core ()
     t->add_op_overload <op_add_str> ();
     t->add_op_overload <op_add_seq> ();
 
-    dict->add (std::make_shared <overloaded_op_builtin> ("add", t));
+    voc->add (std::make_shared <overloaded_op_builtin> ("add", t));
   }
 
   // "sub"
   {
     auto t = std::make_shared <overload_tab> ();
     t->add_op_overload <op_sub_cst> ();
-    dict->add (std::make_shared <overloaded_op_builtin> ("sub", t));
+    voc->add (std::make_shared <overloaded_op_builtin> ("sub", t));
   }
 
   // "mul"
   {
     auto t = std::make_shared <overload_tab> ();
     t->add_op_overload <op_mul_cst> ();
-    dict->add (std::make_shared <overloaded_op_builtin> ("mul", t));
+    voc->add (std::make_shared <overloaded_op_builtin> ("mul", t));
   }
 
   // "div"
   {
     auto t = std::make_shared <overload_tab> ();
     t->add_op_overload <op_div_cst> ();
-    dict->add (std::make_shared <overloaded_op_builtin> ("div", t));
+    voc->add (std::make_shared <overloaded_op_builtin> ("div", t));
   }
 
   // "mod"
   {
     auto t = std::make_shared <overload_tab> ();
     t->add_op_overload <op_mod_cst> ();
-    dict->add (std::make_shared <overloaded_op_builtin> ("mod", t));
+    voc->add (std::make_shared <overloaded_op_builtin> ("mod", t));
   }
 
   // "elem"
@@ -150,7 +150,7 @@ dwgrep_builtins_core ()
     t->add_op_overload <op_elem_str> ();
     t->add_op_overload <op_elem_seq> ();
 
-    dict->add (std::make_shared <overloaded_op_builtin> ("elem", t));
+    voc->add (std::make_shared <overloaded_op_builtin> ("elem", t));
   }
 
   // "relem"
@@ -160,7 +160,7 @@ dwgrep_builtins_core ()
     t->add_op_overload <op_relem_str> ();
     t->add_op_overload <op_relem_seq> ();
 
-    dict->add (std::make_shared <overloaded_op_builtin> ("relem", t));
+    voc->add (std::make_shared <overloaded_op_builtin> ("relem", t));
   }
 
   // "empty"
@@ -170,9 +170,9 @@ dwgrep_builtins_core ()
     t->add_pred_overload <pred_empty_str> ();
     t->add_pred_overload <pred_empty_seq> ();
 
-    dict->add
+    voc->add
       (std::make_shared <overloaded_pred_builtin <true>> ("?empty", t));
-    dict->add
+    voc->add
       (std::make_shared <overloaded_pred_builtin <false>> ("!empty", t));
   }
 
@@ -183,8 +183,8 @@ dwgrep_builtins_core ()
     t->add_pred_overload <pred_find_str> ();
     t->add_pred_overload <pred_find_seq> ();
 
-    dict->add (std::make_shared <overloaded_pred_builtin <true>> ("?find", t));
-    dict->add (std::make_shared <overloaded_pred_builtin <false>> ("!find", t));
+    voc->add (std::make_shared <overloaded_pred_builtin <true>> ("?find", t));
+    voc->add (std::make_shared <overloaded_pred_builtin <false>> ("!find", t));
   }
 
   // "starts"
@@ -194,8 +194,8 @@ dwgrep_builtins_core ()
     t->add_pred_overload <pred_starts_str> ();
     t->add_pred_overload <pred_starts_seq> ();
 
-    dict->add (std::make_shared <overloaded_pred_builtin <true>> ("?starts", t));
-    dict->add (std::make_shared <overloaded_pred_builtin <false>> ("!starts", t));
+    voc->add (std::make_shared <overloaded_pred_builtin <true>> ("?starts", t));
+    voc->add (std::make_shared <overloaded_pred_builtin <false>> ("!starts", t));
   }
 
   // "ends"
@@ -205,8 +205,8 @@ dwgrep_builtins_core ()
     t->add_pred_overload <pred_ends_str> ();
     t->add_pred_overload <pred_ends_seq> ();
 
-    dict->add (std::make_shared <overloaded_pred_builtin <true>> ("?ends", t));
-    dict->add (std::make_shared <overloaded_pred_builtin <false>> ("!ends", t));
+    voc->add (std::make_shared <overloaded_pred_builtin <true>> ("?ends", t));
+    voc->add (std::make_shared <overloaded_pred_builtin <false>> ("!ends", t));
   }
 
   // "match"
@@ -215,13 +215,13 @@ dwgrep_builtins_core ()
 
     t->add_pred_overload <pred_match_str> ();
 
-    dict->add
+    voc->add
       (std::make_shared <overloaded_pred_builtin <true>> ("?match", t));
-    dict->add
+    voc->add
       (std::make_shared <overloaded_pred_builtin <false>> ("!match", t));
 
-    dict->add (std::make_shared <overloaded_pred_builtin <true>> ("=~", t));
-    dict->add (std::make_shared <overloaded_pred_builtin <false>> ("!~", t));
+    voc->add (std::make_shared <overloaded_pred_builtin <true>> ("=~", t));
+    voc->add (std::make_shared <overloaded_pred_builtin <false>> ("!~", t));
   }
 
   // "length"
@@ -231,15 +231,15 @@ dwgrep_builtins_core ()
     t->add_op_overload <op_length_str> ();
     t->add_op_overload <op_length_seq> ();
 
-    dict->add (std::make_shared <overloaded_op_builtin> ("length", t));
+    voc->add (std::make_shared <overloaded_op_builtin> ("length", t));
   }
 
   // "value"
   {
     auto t = std::make_shared <overload_tab> ();
     t->add_op_overload <op_value_cst> ();
-    dict->add (std::make_shared <overloaded_op_builtin> ("value", t));
+    voc->add (std::make_shared <overloaded_op_builtin> ("value", t));
   }
 
-  return dict;
+  return voc;
 }

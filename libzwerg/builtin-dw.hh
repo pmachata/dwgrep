@@ -29,7 +29,7 @@
 #ifndef _BUILTIN_DW_H_
 #define _BUILTIN_DW_H_
 
-struct builtin_dict;
-std::unique_ptr <builtin_dict> dwgrep_builtins_dw ();
+struct vocabulary;
+std::unique_ptr <vocabulary> dwgrep_vocabulary_dw ();
 
 #endif /* _BUILTIN_DW_H_ */

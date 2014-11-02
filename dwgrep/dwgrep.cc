@@ -99,7 +99,7 @@ main(int argc, char *argv[])
 
   std::vector <std::string> to_process;
 
-  builtin_dict builtins {*dwgrep_builtins_core (), *dwgrep_builtins_dw ()};
+  vocabulary builtins {*dwgrep_vocabulary_core (), *dwgrep_vocabulary_dw ()};
 
   tree query;
   bool seen_query = false;

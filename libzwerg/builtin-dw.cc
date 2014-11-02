@@ -2276,32 +2276,32 @@ namespace
   };
 }
 
-std::unique_ptr <builtin_dict>
-dwgrep_builtins_dw ()
+std::unique_ptr <vocabulary>
+dwgrep_vocabulary_dw ()
 {
-  auto ret = std::make_unique <builtin_dict> ();
-  builtin_dict &dict = *ret;
+  auto ret = std::make_unique <vocabulary> ();
+  vocabulary &voc = *ret;
 
-  add_builtin_type_constant <value_dwarf> (dict);
-  add_builtin_type_constant <value_rawdwarf> (dict);
-  add_builtin_type_constant <value_cu> (dict);
-  add_builtin_type_constant <value_rawcu> (dict);
-  add_builtin_type_constant <value_die> (dict);
-  add_builtin_type_constant <value_rawdie> (dict);
-  add_builtin_type_constant <value_attr> (dict);
-  add_builtin_type_constant <value_abbrev_unit> (dict);
-  add_builtin_type_constant <value_abbrev> (dict);
-  add_builtin_type_constant <value_abbrev_attr> (dict);
-  add_builtin_type_constant <value_aset> (dict);
-  add_builtin_type_constant <value_loclist_elem> (dict);
-  add_builtin_type_constant <value_loclist_op> (dict);
+  add_builtin_type_constant <value_dwarf> (voc);
+  add_builtin_type_constant <value_rawdwarf> (voc);
+  add_builtin_type_constant <value_cu> (voc);
+  add_builtin_type_constant <value_rawcu> (voc);
+  add_builtin_type_constant <value_die> (voc);
+  add_builtin_type_constant <value_rawdie> (voc);
+  add_builtin_type_constant <value_attr> (voc);
+  add_builtin_type_constant <value_abbrev_unit> (voc);
+  add_builtin_type_constant <value_abbrev> (voc);
+  add_builtin_type_constant <value_abbrev_attr> (voc);
+  add_builtin_type_constant <value_aset> (voc);
+  add_builtin_type_constant <value_loclist_elem> (voc);
+  add_builtin_type_constant <value_loclist_op> (voc);
 
   {
     auto t = std::make_shared <overload_tab> ();
 
     t->add_op_overload <op_dwopen_str> ();
 
-    dict.add (std::make_shared <overloaded_op_builtin> ("dwopen", t));
+    voc.add (std::make_shared <overloaded_op_builtin> ("dwopen", t));
   }
 
   {
@@ -2314,7 +2314,7 @@ dwgrep_builtins_dw ()
     t->add_op_overload <op_unit_attr> ();
     // xxx rawattr
 
-    dict.add (std::make_shared <overloaded_op_builtin> ("unit", t));
+    voc.add (std::make_shared <overloaded_op_builtin> ("unit", t));
   }
 
   {
@@ -2326,7 +2326,7 @@ dwgrep_builtins_dw ()
     t->add_op_overload <op_entry_rawcu> ();
     t->add_op_overload <op_entry_abbrev_unit> ();
 
-    dict.add (std::make_shared <overloaded_op_builtin> ("entry", t));
+    voc.add (std::make_shared <overloaded_op_builtin> ("entry", t));
   }
 
   {
@@ -2336,7 +2336,7 @@ dwgrep_builtins_dw ()
     t->add_op_overload <op_attribute_rawdie> ();
     t->add_op_overload <op_attribute_abbrev> ();
 
-    dict.add (std::make_shared <overloaded_op_builtin> ("attribute", t));
+    voc.add (std::make_shared <overloaded_op_builtin> ("attribute", t));
   }
 
   {
@@ -2345,8 +2345,8 @@ dwgrep_builtins_dw ()
     t->add_pred_overload <pred_rootp_die <value_die>> ();
     t->add_pred_overload <pred_rootp_die <value_rawdie>> ();
 
-    dict.add (std::make_shared <overloaded_pred_builtin <true>> ("?root", t));
-    dict.add (std::make_shared <overloaded_pred_builtin <false>> ("!root", t));
+    voc.add (std::make_shared <overloaded_pred_builtin <true>> ("?root", t));
+    voc.add (std::make_shared <overloaded_pred_builtin <false>> ("!root", t));
   }
 
   {
@@ -2357,7 +2357,7 @@ dwgrep_builtins_dw ()
     t->add_op_overload <op_root_die> ();
     t->add_op_overload <op_root_rawdie> ();
 
-    dict.add (std::make_shared <overloaded_op_builtin> ("root", t));
+    voc.add (std::make_shared <overloaded_op_builtin> ("root", t));
   }
 
   {
@@ -2366,7 +2366,7 @@ dwgrep_builtins_dw ()
     t->add_op_overload <op_child_die> ();
     t->add_op_overload <op_child_rawdie> ();
 
-    dict.add (std::make_shared <overloaded_op_builtin> ("child", t));
+    voc.add (std::make_shared <overloaded_op_builtin> ("child", t));
   }
 
   {
@@ -2375,7 +2375,7 @@ dwgrep_builtins_dw ()
     t->add_op_overload <op_elem_loclist_elem> ();
     t->add_op_overload <op_elem_aset <true>> ();
 
-    dict.add (std::make_shared <overloaded_op_builtin> ("elem", t));
+    voc.add (std::make_shared <overloaded_op_builtin> ("elem", t));
   }
 
   {
@@ -2384,7 +2384,7 @@ dwgrep_builtins_dw ()
     t->add_op_overload <op_relem_loclist_elem> ();
     t->add_op_overload <op_elem_aset <false>> ();
 
-    dict.add (std::make_shared <overloaded_op_builtin> ("relem", t));
+    voc.add (std::make_shared <overloaded_op_builtin> ("relem", t));
   }
 
   {
@@ -2393,7 +2393,7 @@ dwgrep_builtins_dw ()
     t->add_op_overload <op_value_attr> ();
     t->add_op_overload <op_value_loclist_op> ();
 
-    dict.add (std::make_shared <overloaded_op_builtin> ("value", t));
+    voc.add (std::make_shared <overloaded_op_builtin> ("value", t));
   }
 
   {
@@ -2408,7 +2408,7 @@ dwgrep_builtins_dw ()
     t->add_op_overload <op_offset_abbrev_attr> ();
     t->add_op_overload <op_offset_loclist_op> ();
 
-    dict.add (std::make_shared <overloaded_op_builtin> ("offset", t));
+    voc.add (std::make_shared <overloaded_op_builtin> ("offset", t));
   }
 
   {
@@ -2419,7 +2419,7 @@ dwgrep_builtins_dw ()
     t->add_op_overload <op_address_attr> ();
     t->add_op_overload <op_address_loclist_elem> ();
 
-    dict.add (std::make_shared <overloaded_op_builtin> ("address", t));
+    voc.add (std::make_shared <overloaded_op_builtin> ("address", t));
   }
 
   {
@@ -2433,7 +2433,7 @@ dwgrep_builtins_dw ()
     t->add_op_overload <op_label_abbrev_attr> ();
     t->add_op_overload <op_label_loclist_op> ();
 
-    dict.add (std::make_shared <overloaded_op_builtin> ("label", t));
+    voc.add (std::make_shared <overloaded_op_builtin> ("label", t));
   }
 
   {
@@ -2443,7 +2443,7 @@ dwgrep_builtins_dw ()
     // xxx rawattr
     t->add_op_overload <op_form_abbrev_attr> ();
 
-    dict.add (std::make_shared <overloaded_op_builtin> ("form", t));
+    voc.add (std::make_shared <overloaded_op_builtin> ("form", t));
   }
 
   {
@@ -2452,7 +2452,7 @@ dwgrep_builtins_dw ()
     t->add_op_overload <op_parent_die> ();
     t->add_op_overload <op_parent_rawdie> ();
 
-    dict.add (std::make_shared <overloaded_op_builtin> ("parent", t));
+    voc.add (std::make_shared <overloaded_op_builtin> ("parent", t));
   }
 
   {
@@ -2463,7 +2463,7 @@ dwgrep_builtins_dw ()
     // xxx or will the whole integrate thing be dropped?
     t->add_op_overload <op_integrate_closure> ();
 
-    dict.add (std::make_shared <overloaded_op_builtin> ("integrate", t));
+    voc.add (std::make_shared <overloaded_op_builtin> ("integrate", t));
   }
 
   {
@@ -2473,7 +2473,7 @@ dwgrep_builtins_dw ()
     // xxx rawdie
     t->add_op_overload <op_low_aset> ();
 
-    dict.add (std::make_shared <overloaded_op_builtin> ("low", t));
+    voc.add (std::make_shared <overloaded_op_builtin> ("low", t));
   }
 
   {
@@ -2483,7 +2483,7 @@ dwgrep_builtins_dw ()
     // xxx rawdie
     t->add_op_overload <op_high_aset> ();
 
-    dict.add (std::make_shared <overloaded_op_builtin> ("high", t));
+    voc.add (std::make_shared <overloaded_op_builtin> ("high", t));
   }
 
   {
@@ -2491,7 +2491,7 @@ dwgrep_builtins_dw ()
 
     t->add_op_overload <op_aset_cst_cst> ();
 
-    dict.add (std::make_shared <overloaded_op_builtin> ("aset", t));
+    voc.add (std::make_shared <overloaded_op_builtin> ("aset", t));
   }
 
   {
@@ -2500,7 +2500,7 @@ dwgrep_builtins_dw ()
     t->add_op_overload <op_add_aset_cst> ();
     t->add_op_overload <op_add_aset_aset> ();
 
-    dict.add (std::make_shared <overloaded_op_builtin> ("add", t));
+    voc.add (std::make_shared <overloaded_op_builtin> ("add", t));
   }
 
   {
@@ -2509,7 +2509,7 @@ dwgrep_builtins_dw ()
     t->add_op_overload <op_sub_aset_cst> ();
     t->add_op_overload <op_sub_aset_aset> ();
 
-    dict.add (std::make_shared <overloaded_op_builtin> ("sub", t));
+    voc.add (std::make_shared <overloaded_op_builtin> ("sub", t));
   }
 
   {
@@ -2517,7 +2517,7 @@ dwgrep_builtins_dw ()
 
     t->add_op_overload <op_length_aset> ();
 
-    dict.add (std::make_shared <overloaded_op_builtin> ("length", t));
+    voc.add (std::make_shared <overloaded_op_builtin> ("length", t));
   }
 
   {
@@ -2525,7 +2525,7 @@ dwgrep_builtins_dw ()
 
     t->add_op_overload <op_range_aset> ();
 
-    dict.add (std::make_shared <overloaded_op_builtin> ("range", t));
+    voc.add (std::make_shared <overloaded_op_builtin> ("range", t));
   }
 
   {
@@ -2534,9 +2534,9 @@ dwgrep_builtins_dw ()
     t->add_pred_overload <pred_containsp_aset_cst> ();
     t->add_pred_overload <pred_containsp_aset_aset> ();
 
-    dict.add
+    voc.add
       (std::make_shared <overloaded_pred_builtin <true>> ("?contains", t));
-    dict.add
+    voc.add
       (std::make_shared <overloaded_pred_builtin <false>> ("!contains", t));
   }
 
@@ -2545,9 +2545,9 @@ dwgrep_builtins_dw ()
 
     t->add_pred_overload <pred_overlapsp_aset_aset> ();
 
-    dict.add
+    voc.add
       (std::make_shared <overloaded_pred_builtin <true>> ("?overlaps", t));
-    dict.add
+    voc.add
       (std::make_shared <overloaded_pred_builtin <false>> ("!overlaps", t));
   }
 
@@ -2556,7 +2556,7 @@ dwgrep_builtins_dw ()
 
     t->add_op_overload <op_overlap_aset_aset> ();
 
-    dict.add (std::make_shared <overloaded_op_builtin> ("overlap", t));
+    voc.add (std::make_shared <overloaded_op_builtin> ("overlap", t));
   }
 
   {
@@ -2564,8 +2564,8 @@ dwgrep_builtins_dw ()
 
     t->add_pred_overload <pred_emptyp_aset> ();
 
-    dict.add (std::make_shared <overloaded_pred_builtin <true>> ("?empty", t));
-    dict.add (std::make_shared <overloaded_pred_builtin <false>> ("!empty", t));
+    voc.add (std::make_shared <overloaded_pred_builtin <true>> ("?empty", t));
+    voc.add (std::make_shared <overloaded_pred_builtin <false>> ("!empty", t));
   }
 
   {
@@ -2578,7 +2578,7 @@ dwgrep_builtins_dw ()
     t->add_op_overload <op_abbrev_die> ();
     // xxx rawdie
 
-    dict.add (std::make_shared <overloaded_op_builtin> ("abbrev", t));
+    voc.add (std::make_shared <overloaded_op_builtin> ("abbrev", t));
   }
 
   {
@@ -2587,9 +2587,9 @@ dwgrep_builtins_dw ()
     t->add_pred_overload <pred_haschildrenp_die> ();
     t->add_pred_overload <pred_haschildrenp_abbrev> ();
 
-    dict.add (std::make_shared
+    voc.add (std::make_shared
 		<overloaded_pred_builtin <true>> ("?haschildren", t));
-    dict.add (std::make_shared
+    voc.add (std::make_shared
 		<overloaded_pred_builtin <false>> ("!haschildren", t));
   }
 
@@ -2598,7 +2598,7 @@ dwgrep_builtins_dw ()
 
     t->add_op_overload <op_code_abbrev> ();
 
-    dict.add (std::make_shared <overloaded_op_builtin> ("code", t));
+    voc.add (std::make_shared <overloaded_op_builtin> ("code", t));
   }
 
   {
@@ -2607,7 +2607,7 @@ dwgrep_builtins_dw ()
     t->add_op_overload <op_version_cu> ();
     t->add_op_overload <op_version_rawcu> ();
 
-    dict.add (std::make_shared <overloaded_op_builtin> ("version", t));
+    voc.add (std::make_shared <overloaded_op_builtin> ("version", t));
   }
 
   {
@@ -2618,7 +2618,7 @@ dwgrep_builtins_dw ()
     t->add_op_overload <op_name_die> ();
     t->add_op_overload <op_name_rawdie> ();
 
-    dict.add (std::make_shared <overloaded_op_builtin> ("name", t));
+    voc.add (std::make_shared <overloaded_op_builtin> ("name", t));
   }
 
   {
@@ -2628,7 +2628,7 @@ dwgrep_builtins_dw ()
     t->add_op_overload <op_raw_cu> ();
     t->add_op_overload <op_raw_die> ();
 
-    dict.add (std::make_shared <overloaded_op_builtin> ("raw", t));
+    voc.add (std::make_shared <overloaded_op_builtin> ("raw", t));
   }
 
   {
@@ -2638,10 +2638,10 @@ dwgrep_builtins_dw ()
     t->add_op_overload <op_cooked_rawcu> ();
     t->add_op_overload <op_cooked_rawdie> ();
 
-    dict.add (std::make_shared <overloaded_op_builtin> ("cooked", t));
+    voc.add (std::make_shared <overloaded_op_builtin> ("cooked", t));
   }
 
-  auto add_dw_at = [&dict] (unsigned code,
+  auto add_dw_at = [&voc] (unsigned code,
 			    char const *qname, char const *bname,
 			    char const *atname,
 			    char const *lqname, char const *lbname,
@@ -2659,13 +2659,13 @@ dwgrep_builtins_dw ()
 	t->add_pred_overload <pred_atname_abbrev_attr> (code);
 	t->add_pred_overload <pred_atname_cst> (code);
 
-	dict.add
+	voc.add
 	  (std::make_shared <overloaded_pred_builtin <true>> (qname, t));
-	dict.add
+	voc.add
 	  (std::make_shared <overloaded_pred_builtin <false>> (bname, t));
-	dict.add
+	voc.add
 	  (std::make_shared <overloaded_pred_builtin <true>> (lqname, t));
-	dict.add
+	voc.add
 	  (std::make_shared <overloaded_pred_builtin <false>> (lbname, t));
       }
 
@@ -2676,12 +2676,12 @@ dwgrep_builtins_dw ()
 	t->add_op_overload <op_atval_die <value_die>> (code);
 	t->add_op_overload <op_atval_die <value_rawdie>> (code);
 
-	dict.add (std::make_shared <overloaded_op_builtin> (atname, t));
-	dict.add (std::make_shared <overloaded_op_builtin> (latname, t));
+	voc.add (std::make_shared <overloaded_op_builtin> (atname, t));
+	voc.add (std::make_shared <overloaded_op_builtin> (latname, t));
       }
 
       // DW_AT_*
-      add_builtin_constant (dict, constant (code, &dw_attr_dom), lqname + 1);
+      add_builtin_constant (voc, constant (code, &dw_attr_dom), lqname + 1);
     };
 
 #define ONE_KNOWN_DW_AT(NAME, CODE)					\
@@ -2690,7 +2690,7 @@ dwgrep_builtins_dw ()
   ALL_KNOWN_DW_AT;
 #undef ONE_KNOWN_DW_AT
 
-  auto add_dw_tag = [&dict] (int code,
+  auto add_dw_tag = [&voc] (int code,
 			     char const *qname, char const *bname,
 			     char const *lqname, char const *lbname)
     {
@@ -2701,12 +2701,12 @@ dwgrep_builtins_dw ()
       t->add_pred_overload <pred_tag_abbrev> (code);
       t->add_pred_overload <pred_tag_cst> (code);
 
-      dict.add (std::make_shared <overloaded_pred_builtin <true>> (qname, t));
-      dict.add (std::make_shared <overloaded_pred_builtin <false>> (bname, t));
-      dict.add (std::make_shared <overloaded_pred_builtin <true>> (lqname, t));
-      dict.add (std::make_shared <overloaded_pred_builtin <false>> (lbname, t));
+      voc.add (std::make_shared <overloaded_pred_builtin <true>> (qname, t));
+      voc.add (std::make_shared <overloaded_pred_builtin <false>> (bname, t));
+      voc.add (std::make_shared <overloaded_pred_builtin <true>> (lqname, t));
+      voc.add (std::make_shared <overloaded_pred_builtin <false>> (lbname, t));
 
-      add_builtin_constant (dict, constant (code, &dw_tag_dom), lqname + 1);
+      add_builtin_constant (voc, constant (code, &dw_tag_dom), lqname + 1);
     };
 
 #define ONE_KNOWN_DW_TAG(NAME, CODE)					\
@@ -2714,7 +2714,7 @@ dwgrep_builtins_dw ()
   ALL_KNOWN_DW_TAG;
 #undef ONE_KNOWN_DW_TAG
 
-  auto add_dw_form = [&dict] (unsigned code,
+  auto add_dw_form = [&voc] (unsigned code,
 			      char const *qname, char const *bname,
 			      char const *lqname, char const *lbname)
     {
@@ -2725,12 +2725,12 @@ dwgrep_builtins_dw ()
       t->add_pred_overload <pred_form_abbrev_attr> (code);
       t->add_pred_overload <pred_form_cst> (code);
 
-      dict.add (std::make_shared <overloaded_pred_builtin <true>> (qname, t));
-      dict.add (std::make_shared <overloaded_pred_builtin <false>> (bname, t));
-      dict.add (std::make_shared <overloaded_pred_builtin <true>> (lqname, t));
-      dict.add (std::make_shared <overloaded_pred_builtin <false>> (lbname, t));
+      voc.add (std::make_shared <overloaded_pred_builtin <true>> (qname, t));
+      voc.add (std::make_shared <overloaded_pred_builtin <false>> (bname, t));
+      voc.add (std::make_shared <overloaded_pred_builtin <true>> (lqname, t));
+      voc.add (std::make_shared <overloaded_pred_builtin <false>> (lbname, t));
 
-      add_builtin_constant (dict, constant (code, &dw_form_dom), lqname + 1);
+      add_builtin_constant (voc, constant (code, &dw_form_dom), lqname + 1);
     };
 
 #define ONE_KNOWN_DW_FORM_DESC(NAME, CODE, DESC) ONE_KNOWN_DW_FORM (NAME, CODE)
@@ -2740,7 +2740,7 @@ dwgrep_builtins_dw ()
 #undef ONE_KNOWN_DW_FORM
 #undef ONE_KNOWN_DW_FORM_DESC
 
-  auto add_dw_op = [&dict] (unsigned code,
+  auto add_dw_op = [&voc] (unsigned code,
 			    char const *qname, char const *bname,
 			    char const *lqname, char const *lbname)
     {
@@ -2750,12 +2750,12 @@ dwgrep_builtins_dw ()
       t->add_pred_overload <pred_op_loclist_op> (code);
       t->add_pred_overload <pred_op_cst> (code);
 
-      dict.add (std::make_shared <overloaded_pred_builtin <true>> (qname, t));
-      dict.add (std::make_shared <overloaded_pred_builtin <false>> (bname, t));
-      dict.add (std::make_shared <overloaded_pred_builtin <true>> (lqname, t));
-      dict.add (std::make_shared <overloaded_pred_builtin <false>> (lbname, t));
+      voc.add (std::make_shared <overloaded_pred_builtin <true>> (qname, t));
+      voc.add (std::make_shared <overloaded_pred_builtin <false>> (bname, t));
+      voc.add (std::make_shared <overloaded_pred_builtin <true>> (lqname, t));
+      voc.add (std::make_shared <overloaded_pred_builtin <false>> (lbname, t));
 
-      add_builtin_constant (dict, constant (code, &dw_locexpr_opcode_dom),
+      add_builtin_constant (voc, constant (code, &dw_locexpr_opcode_dom),
 			    lqname + 1);
     };
 
@@ -2768,63 +2768,63 @@ dwgrep_builtins_dw ()
 
 #define ONE_KNOWN_DW_LANG_DESC(NAME, CODE, DESC)			\
   {									\
-    add_builtin_constant (dict, constant (CODE, &dw_lang_dom), #CODE);	\
+    add_builtin_constant (voc, constant (CODE, &dw_lang_dom), #CODE);	\
   }
   ALL_KNOWN_DW_LANG;
 #undef ONE_KNOWN_DW_LANG_DESC
 
 #define ONE_KNOWN_DW_MACINFO(NAME, CODE)				\
   {									\
-    add_builtin_constant (dict, constant (CODE, &dw_macinfo_dom), #CODE); \
+    add_builtin_constant (voc, constant (CODE, &dw_macinfo_dom), #CODE); \
   }
   ALL_KNOWN_DW_MACINFO;
 #undef ONE_KNOWN_DW_MACINFO
 
 #define ONE_KNOWN_DW_MACRO_GNU(NAME, CODE)				\
   {									\
-    add_builtin_constant (dict, constant (CODE, &dw_macro_dom), #CODE); \
+    add_builtin_constant (voc, constant (CODE, &dw_macro_dom), #CODE); \
   }
   ALL_KNOWN_DW_MACRO_GNU;
 #undef ONE_KNOWN_DW_MACRO_GNU
 
 #define ONE_KNOWN_DW_INL(NAME, CODE)					\
   {									\
-    add_builtin_constant (dict, constant (CODE, &dw_inline_dom), #CODE); \
+    add_builtin_constant (voc, constant (CODE, &dw_inline_dom), #CODE); \
   }
   ALL_KNOWN_DW_INL;
 #undef ONE_KNOWN_DW_INL
 
 #define ONE_KNOWN_DW_ATE(NAME, CODE)					\
   {									\
-    add_builtin_constant (dict, constant (CODE, &dw_encoding_dom), #CODE); \
+    add_builtin_constant (voc, constant (CODE, &dw_encoding_dom), #CODE); \
   }
   ALL_KNOWN_DW_ATE;
 #undef ONE_KNOWN_DW_ATE
 
 #define ONE_KNOWN_DW_ACCESS(NAME, CODE)					\
   {									\
-    add_builtin_constant (dict, constant (CODE, &dw_access_dom), #CODE); \
+    add_builtin_constant (voc, constant (CODE, &dw_access_dom), #CODE); \
   }
   ALL_KNOWN_DW_ACCESS;
 #undef ONE_KNOWN_DW_ACCESS
 
 #define ONE_KNOWN_DW_VIS(NAME, CODE)					\
   {									\
-    add_builtin_constant (dict, constant (CODE, &dw_visibility_dom), #CODE); \
+    add_builtin_constant (voc, constant (CODE, &dw_visibility_dom), #CODE); \
   }
   ALL_KNOWN_DW_VIS;
 #undef ONE_KNOWN_DW_VIS
 
 #define ONE_KNOWN_DW_VIRTUALITY(NAME, CODE)				\
   {									\
-    add_builtin_constant (dict, constant (CODE, &dw_virtuality_dom), #CODE); \
+    add_builtin_constant (voc, constant (CODE, &dw_virtuality_dom), #CODE); \
   }
   ALL_KNOWN_DW_VIRTUALITY;
 #undef ONE_KNOWN_DW_VIRTUALITY
 
 #define ONE_KNOWN_DW_ID(NAME, CODE)					\
   {									\
-    add_builtin_constant (dict,						\
+    add_builtin_constant (voc,						\
 			  constant (CODE, &dw_identifier_case_dom), #CODE); \
   }
   ALL_KNOWN_DW_ID;
@@ -2832,7 +2832,7 @@ dwgrep_builtins_dw ()
 
 #define ONE_KNOWN_DW_CC(NAME, CODE)					\
   {									\
-    add_builtin_constant (dict,						\
+    add_builtin_constant (voc,						\
 			  constant (CODE, &dw_calling_convention_dom), #CODE); \
   }
   ALL_KNOWN_DW_CC;
@@ -2840,32 +2840,32 @@ dwgrep_builtins_dw ()
 
 #define ONE_KNOWN_DW_ORD(NAME, CODE)					\
   {									\
-    add_builtin_constant (dict, constant (CODE, &dw_ordering_dom), #CODE); \
+    add_builtin_constant (voc, constant (CODE, &dw_ordering_dom), #CODE); \
   }
   ALL_KNOWN_DW_ORD;
 #undef ONE_KNOWN_DW_ORD
 
 #define ONE_KNOWN_DW_DSC(NAME, CODE)					\
   {									\
-    add_builtin_constant (dict, constant (CODE, &dw_discr_list_dom), #CODE); \
+    add_builtin_constant (voc, constant (CODE, &dw_discr_list_dom), #CODE); \
   }
   ALL_KNOWN_DW_DSC;
 #undef ONE_KNOWN_DW_DSC
 
 #define ONE_KNOWN_DW_DS(NAME, CODE)					\
   {									\
-    add_builtin_constant (dict,						\
+    add_builtin_constant (voc,						\
 			  constant (CODE, &dw_decimal_sign_dom), #CODE); \
   }
   ALL_KNOWN_DW_DS;
 #undef ONE_KNOWN_DW_DS
 
-  add_builtin_constant (dict, constant (DW_ADDR_none, &dw_address_class_dom),
+  add_builtin_constant (voc, constant (DW_ADDR_none, &dw_address_class_dom),
 			"DW_ADDR_none");
 
 #define ONE_KNOWN_DW_END(NAME, CODE)					\
   {									\
-    add_builtin_constant (dict, constant (CODE, &dw_endianity_dom), #CODE); \
+    add_builtin_constant (voc, constant (CODE, &dw_endianity_dom), #CODE); \
   }
   ALL_KNOWN_DW_END;
 #undef ONE_KNOWN_DW_END

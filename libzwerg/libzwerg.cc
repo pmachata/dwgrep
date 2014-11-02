@@ -31,6 +31,7 @@
 #include <iostream>
 
 #include "builtin.hh"
+#include "builtin-dw.hh"
 
 extern "C"
 struct zw_error_s
@@ -96,7 +97,7 @@ namespace
 extern "C"
 struct zw_vocabulary_s
 {
-  builtin_dict m_builtins;
+  std::unique_ptr <vocabulary> m_voc;
 };
 
 extern "C" void
@@ -111,15 +112,29 @@ zw_error_message (zw_error err)
   return err->m_message.c_str ();
 }
 
-zw_vocabulary
+extern "C" zw_vocabulary
 zw_vocabulary_init (zw_error out_err)
 {
   return capture_errors ([&] () { return new zw_vocabulary_s {}; },
 			 nullptr, out_err);
 }
 
-void
+extern "C" void
 zw_vocabulary_destroy (zw_vocabulary voc)
 {
   delete voc;
+}
+
+extern "C" c_zw_vocabulary
+zw_vocabulary_core (void)
+{
+  static zw_vocabulary_s v {dwgrep_vocabulary_core ()};
+  return &v;
+}
+
+extern "C" c_zw_vocabulary
+zw_vocabulary_dwarf (void)
+{
+  static zw_vocabulary_s v {dwgrep_vocabulary_dw ()};
+  return &v;
 }

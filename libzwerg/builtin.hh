@@ -66,34 +66,34 @@ public:
   std::unique_ptr <pred> maybe_invert (std::unique_ptr <pred> pred) const;
 };
 
-class builtin_dict
+class vocabulary
 {
   struct builtins;
   std::unique_ptr <builtins> m_builtins;
 
 public:
-  builtin_dict ();
-  builtin_dict (builtin_dict const &a, builtin_dict const &b);
-  ~builtin_dict ();
+  vocabulary ();
+  vocabulary (vocabulary const &a, vocabulary const &b);
+  ~vocabulary ();
 
   void add (std::shared_ptr <builtin const> b);
   void add (std::shared_ptr <builtin const> b, std::string const &name);
   std::shared_ptr <builtin const> find (std::string const &name) const;
 };
 
-void add_builtin_constant (builtin_dict &dict, constant cst, char const *name);
+void add_builtin_constant (vocabulary &voc, constant cst, char const *name);
 
 template <class T>
 void
-add_builtin_type_constant (builtin_dict &dict)
+add_builtin_type_constant (vocabulary &voc)
 {
-  add_builtin_constant (dict, value::get_type_const_of <T> (),
+  add_builtin_constant (voc, value::get_type_const_of <T> (),
 			T::vtype.name ());
 }
 
 template <class Op>
 void
-add_simple_exec_builtin (builtin_dict &dict, char const *name)
+add_simple_exec_builtin (vocabulary &voc, char const *name)
 {
   struct this_op
     : public Op
@@ -133,7 +133,7 @@ add_simple_exec_builtin (builtin_dict &dict, char const *name)
     }
   };
 
-  dict.add (std::make_shared <simple_exec_builtin> (name));
+  voc.add (std::make_shared <simple_exec_builtin> (name));
 }
 
 #endif /* _BUILTIN_H_ */

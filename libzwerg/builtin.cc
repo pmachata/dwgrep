@@ -57,16 +57,16 @@ pred_builtin::maybe_invert (std::unique_ptr <pred> pred) const
     return std::make_unique <pred_not> (std::move (pred));
 }
 
-struct builtin_dict::builtins
+struct vocabulary::builtins
   : public std::map <std::string, std::shared_ptr <builtin const>>
 {};
 
-builtin_dict::builtin_dict ()
+vocabulary::vocabulary ()
   : m_builtins {std::make_unique <builtins> ()}
 {}
 
-builtin_dict::builtin_dict (builtin_dict const &a, builtin_dict const &b)
-  : builtin_dict {}
+vocabulary::vocabulary (vocabulary const &a, vocabulary const &b)
+  : vocabulary {}
 {
   std::set <std::string> all_names;
   for (auto const &builtin: *a.m_builtins)
@@ -96,34 +96,34 @@ builtin_dict::builtin_dict (builtin_dict const &a, builtin_dict const &b)
 	  auto ta = ola->get_overload_tab ();
 	  auto tb = olb->get_overload_tab ();
 
-	  // Note: overload tables can be shared.  But when we
-	  // are merging dicts, they are already a done deal and
-	  // nothing should be added to them, so it shouldn't be
-	  // a problem that we unsare some of the tables.
+	  // Note: overload tables can be shared.  But when we are
+	  // merging vocabularies, they are already a done deal and
+	  // nothing should be added to them, so it shouldn't be a
+	  // problem that we unshare some of the tables.
 	  auto tc = std::make_shared <overload_tab> (*ta, *tb);
 	  add (ola->create_merged (tc), name);
 	}
     }
 }
 
-builtin_dict::~builtin_dict ()
+vocabulary::~vocabulary ()
 {}
 
 void
-builtin_dict::add (std::shared_ptr <builtin const> b)
+vocabulary::add (std::shared_ptr <builtin const> b)
 {
   add (b, b->name ());
 }
 
 void
-builtin_dict::add (std::shared_ptr <builtin const> b, std::string const &name)
+vocabulary::add (std::shared_ptr <builtin const> b, std::string const &name)
 {
   assert (find (name) == nullptr);
   m_builtins->insert (std::make_pair (name, b));
 }
 
 std::shared_ptr <builtin const>
-builtin_dict::find (std::string const &name) const
+vocabulary::find (std::string const &name) const
 {
   auto it = m_builtins->find (name);
   if (it == m_builtins->end ())
@@ -133,9 +133,9 @@ builtin_dict::find (std::string const &name) const
 }
 
 void
-add_builtin_constant (builtin_dict &dict, constant cst, char const *name)
+add_builtin_constant (vocabulary &voc, constant cst, char const *name)
 {
   auto builtin = std::make_shared <builtin_constant>
     (std::make_unique <value_cst> (cst, 0));
-  dict.add (builtin, name);
+  voc.add (builtin, name);
 }

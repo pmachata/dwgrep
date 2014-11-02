@@ -32,8 +32,8 @@
 #include <memory>
 #include <vector>
 
-struct builtin_dict;
-std::unique_ptr <builtin_dict> dwgrep_builtins_core ();
+struct vocabulary;
+std::unique_ptr <vocabulary> dwgrep_vocabulary_core ();
 
 class dwgrep_expr
 {

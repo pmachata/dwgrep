@@ -58,13 +58,13 @@
 }
 
 %code provides {
-  tree parse_query (builtin_dict const &builtins, std::string str);
-  tree parse_query (builtin_dict const &builtins,
+  tree parse_query (vocabulary const &builtins, std::string str);
+  tree parse_query (vocabulary const &builtins,
 		    char const *begin, char const *end);
 
   // These two are for sub-expression parsing.
-  tree parse_subquery (builtin_dict const &builtins, std::string str);
-  tree parse_subquery (builtin_dict const &builtins,
+  tree parse_subquery (vocabulary const &builtins, std::string str);
+  tree parse_subquery (vocabulary const &builtins,
 		       char const *begin, char const *end);
 }
 
@@ -81,7 +81,7 @@
   {
     void
     yyerror (std::unique_ptr <tree> &t, yyscan_t lex,
-	     builtin_dict const &builtins, char const *s)
+	     vocabulary const &builtins, char const *s)
     {
       fprintf (stderr, "%s\n", s);
     }
@@ -164,7 +164,7 @@
     }
 
     tree *
-    parse_word (builtin_dict const &builtins, std::string str)
+    parse_word (vocabulary const &builtins, std::string str)
     {
       if (auto bi = builtins.find (str))
 	return tree::create_builtin (bi);
@@ -173,7 +173,7 @@
     }
 
     tree *
-    tree_for_id_block (builtin_dict const &builtins,
+    tree_for_id_block (vocabulary const &builtins,
 		       std::vector <std::string> *ids)
     {
       tree *ret = nullptr;
@@ -212,7 +212,7 @@
     }
 
     tree *
-    parse_op (builtin_dict const &builtins, tree *a, tree *b,
+    parse_op (vocabulary const &builtins, tree *a, tree *b,
 	      std::string const &word)
     {
       auto t = tree::create_ternary <tree_type::PRED_SUBX_CMP>
@@ -249,7 +249,7 @@
 %error-verbose
 %parse-param { std::unique_ptr <tree> &ret }
 %parse-param { void *yyscanner }
-%parse-param { builtin_dict const &builtins }
+%parse-param { vocabulary const &builtins }
 %lex-param { yyscanner }
 
 %token TOK_LPAREN TOK_RPAREN TOK_LBRACKET TOK_RBRACKET TOK_LBRACE TOK_RBRACE
@@ -477,7 +477,7 @@ struct lexer
 {
   yyscan_t m_sc;
 
-  explicit lexer (builtin_dict const &builtins,
+  explicit lexer (vocabulary const &builtins,
 		  char const *begin, char const *end)
   {
     if (yylex_init_extra (&builtins, &m_sc) != 0)
@@ -494,28 +494,28 @@ struct lexer
 };
 
 tree
-parse_query (builtin_dict const &builtins, std::string str)
+parse_query (vocabulary const &builtins, std::string str)
 {
   char const *buf = str.c_str ();
   return parse_query (builtins, buf, buf + str.length ());
 }
 
 tree
-parse_subquery (builtin_dict const &builtins, std::string str)
+parse_subquery (vocabulary const &builtins, std::string str)
 {
   char const *buf = str.c_str ();
   return parse_subquery (builtins, buf, buf + str.length ());
 }
 
 tree
-parse_query (builtin_dict const &builtins,
+parse_query (vocabulary const &builtins,
 	     char const *begin, char const *end)
 {
   return tree::resolve_scopes (parse_subquery (builtins, begin, end));
 }
 
 tree
-parse_subquery (builtin_dict const &builtins,
+parse_subquery (vocabulary const &builtins,
 		char const *begin, char const *end)
 {
   lexer lex {builtins, begin, end};

@@ -43,7 +43,7 @@
 %option noyywrap nounput batch noinput
 
 %option reentrant
-%option extra-type="builtin_dict const *"
+%option extra-type="vocabulary const *"
 
 ID  [_a-zA-Z][_a-zA-Z0-9]*
 HEX [a-fA-F0-9]
