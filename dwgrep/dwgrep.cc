@@ -40,6 +40,8 @@
 #include "tree.hh"
 #include "value-dw.hh"
 
+#include "libzwerg.h"
+
 static void
 show_help ()
 {
@@ -60,6 +62,12 @@ Searches for PATTER in FILEs.\n\
     --help		this message\n\
 ";
 }
+
+extern "C"
+struct zw_vocabulary
+{
+  std::unique_ptr <vocabulary> m_voc;
+};
 
 int
 main(int argc, char *argv[])
@@ -99,7 +107,25 @@ main(int argc, char *argv[])
 
   std::vector <std::string> to_process;
 
-  vocabulary builtins {*dwgrep_vocabulary_core (), *dwgrep_vocabulary_dw ()};
+  zw_error *err;
+  zw_vocabulary *voc = zw_vocabulary_init (&err);
+  assert (voc != nullptr); // XXX
+
+  zw_vocabulary const *voc_core = zw_vocabulary_core (&err);
+  assert (voc_core != nullptr); // XXX
+
+  zw_vocabulary const *voc_dw = zw_vocabulary_dwarf (&err);
+  assert (voc_dw != nullptr); // XXX
+
+  if (! zw_vocabulary_add (voc, voc_core, &err)
+      || ! zw_vocabulary_add (voc, voc_dw, &err))
+    {
+      std::string what = zw_error_message (err);
+      zw_error_destroy (err);
+      throw std::runtime_error (what);
+    }
+
+  std::unique_ptr <vocabulary> builtins = std::move (voc->m_voc);
 
   tree query;
   bool seen_query = false;
@@ -113,7 +139,7 @@ main(int argc, char *argv[])
       switch (c)
 	{
 	case 'e':
-	  query = parse_query (builtins, optarg);
+	  query = parse_query (*builtins, optarg);
 	  seen_query = true;
 	  break;
 
@@ -150,7 +176,7 @@ main(int argc, char *argv[])
 	    std::ifstream ifs {optarg};
 	    std::string str {std::istreambuf_iterator <char> {ifs},
 			     std::istreambuf_iterator <char> {}};
-	    query = parse_query (builtins, str);
+	    query = parse_query (*builtins, str);
 	    seen_query = true;
 	    break;
 	  }
@@ -182,7 +208,7 @@ main(int argc, char *argv[])
 	  std::cerr << "No query specified.\n";
 	  return 2;
 	}
-      query = parse_query (builtins, *argv++);
+      query = parse_query (*builtins, *argv++);
       argc--;
     }
 

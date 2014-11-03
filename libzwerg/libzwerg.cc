@@ -32,29 +32,56 @@
 
 #include "builtin.hh"
 #include "builtin-dw.hh"
+#include "value-dw.hh"
+#include "stack.hh"
+#include "tree.hh"
+#include "parser.hh"
 
-extern "C"
-struct zw_error_s
+struct zw_error
 {
   std::string m_message;
 };
 
+struct zw_vocabulary
+{
+  std::unique_ptr <vocabulary> m_voc;
+};
+
+struct zw_query
+{
+  tree m_query;
+};
+
+struct zw_value
+{
+  std::unique_ptr <value> m_value;
+
+  zw_value (std::unique_ptr <value> value)
+    : m_value {std::move (value)}
+  {}
+};
+
+struct zw_stack
+{
+  std::vector <std::unique_ptr <zw_value>> m_values;
+};
+
 namespace
 {
-  zw_error
+  zw_error *
   zw_error_new (char const *message)
   {
-    return new zw_error_s {message};
+    return new zw_error {message};
   }
 
   template <class U>
   U
-  allocate_error (char const *message, U fail_return, zw_error err)
+  allocate_error (char const *message, U fail_return, zw_error **out_err)
   {
-    assert (err != nullptr);
+    assert (out_err != nullptr);
     try
       {
-	*err = *zw_error_new (message);
+	*out_err = zw_error_new (message);
 	return fail_return;
       }
     catch (std::exception const &exc)
@@ -77,7 +104,7 @@ namespace
   template <class T>
   auto
   capture_errors (T &&callback, decltype (callback ()) fail_return,
-		  zw_error err) -> auto
+		  zw_error **out_err) -> auto
   {
     try
       {
@@ -85,56 +112,150 @@ namespace
       }
     catch (std::exception const &exc)
       {
-	return allocate_error (exc.what (), fail_return, err);
+	return allocate_error (exc.what (), fail_return, out_err);
       }
     catch (...)
       {
-	return allocate_error ("unknown error", fail_return, err);
+	return allocate_error ("unknown error", fail_return, out_err);
       }
   }
 }
 
-extern "C"
-struct zw_vocabulary_s
-{
-  std::unique_ptr <vocabulary> m_voc;
-};
 
 extern "C" void
-zw_error_destroy (zw_error err)
+zw_error_destroy (zw_error *err)
 {
   delete err;
 }
 
 extern "C" char const *
-zw_error_message (zw_error err)
+zw_error_message (zw_error const *err)
 {
   return err->m_message.c_str ();
 }
 
-extern "C" zw_vocabulary
-zw_vocabulary_init (zw_error out_err)
+extern "C" zw_vocabulary *
+zw_vocabulary_init (zw_error **out_err)
 {
-  return capture_errors ([&] () { return new zw_vocabulary_s {}; },
-			 nullptr, out_err);
+  return capture_errors ([&] () {
+      return new zw_vocabulary { std::make_unique <vocabulary> () };
+    }, nullptr, out_err);
 }
 
 extern "C" void
-zw_vocabulary_destroy (zw_vocabulary voc)
+zw_vocabulary_destroy (zw_vocabulary *voc)
 {
   delete voc;
 }
 
-extern "C" c_zw_vocabulary
-zw_vocabulary_core (void)
+extern "C" zw_vocabulary const *
+zw_vocabulary_core (zw_error **out_err)
 {
-  static zw_vocabulary_s v {dwgrep_vocabulary_core ()};
-  return &v;
+  return capture_errors ([&] () {
+      static zw_vocabulary v {dwgrep_vocabulary_core ()};
+      return &v;
+    }, nullptr, out_err);
 }
 
-extern "C" c_zw_vocabulary
-zw_vocabulary_dwarf (void)
+extern "C" zw_vocabulary const *
+zw_vocabulary_dwarf (zw_error **out_err)
 {
-  static zw_vocabulary_s v {dwgrep_vocabulary_dw ()};
-  return &v;
+  return capture_errors ([&] () {
+      static zw_vocabulary v {dwgrep_vocabulary_dw ()};
+      return &v;
+    }, nullptr, out_err);
+}
+
+extern "C" bool
+zw_vocabulary_add (zw_vocabulary *voc, zw_vocabulary const *to_add,
+		   zw_error **out_err)
+{
+  assert (voc != nullptr);
+  assert (to_add != nullptr);
+  assert (voc->m_voc != nullptr);
+  assert (to_add->m_voc != nullptr);
+  return capture_errors ([&] () {
+      voc->m_voc = std::make_unique <vocabulary> (*voc->m_voc, *to_add->m_voc);
+      return true;
+    }, false, out_err);
+}
+
+
+zw_stack *
+zw_stack_init (zw_error **out_err)
+{
+  return capture_errors ([&] () {
+      return new zw_stack;
+    }, nullptr, out_err);
+}
+
+void
+zw_stack_destroy (zw_stack *stack)
+{
+  delete stack;
+}
+
+bool
+zw_stack_push (zw_stack *stack, zw_value const *value, zw_error **out_err)
+{
+  return capture_errors ([&] () {
+      stack->m_values.push_back
+	(std::make_unique <zw_value> (value->m_value->clone ()));
+      return true;
+    }, false, out_err);
+}
+
+bool
+zw_stack_push_take (zw_stack *stack, zw_value *value, zw_error **out_err)
+{
+  return capture_errors ([&] () {
+      stack->m_values.push_back
+	(std::make_unique <zw_value> (std::move (value->m_value)));
+      zw_value_destroy (value);
+      return true;
+    }, false, out_err);
+}
+
+size_t
+zw_stack_depth (zw_stack const *stack)
+{
+  return stack->m_values.size ();
+}
+
+zw_value const *
+zw_stack_at (zw_stack const *stack, size_t depth)
+{
+  assert (stack != nullptr);
+  assert (depth < stack->m_values.size ());
+  return stack->m_values[stack->m_values.size () - 1 - depth].get ();
+}
+
+
+zw_query *
+zw_query_parse (zw_vocabulary const *voc, char const *query,
+		zw_error **out_err)
+{
+  return capture_errors ([&] () {
+      return new zw_query { parse_query (*voc->m_voc, query) };
+    }, nullptr, out_err);
+}
+
+void
+zw_query_destroy (zw_query *query)
+{
+  delete query;
+}
+
+zw_value *
+zw_value_init_dwarf (char const *filename, zw_error **out_err)
+{
+  return capture_errors ([&] () {
+      return new zw_value { std::make_unique <value_dwarf> (filename, 0) };
+    }, nullptr, out_err);
+}
+
+void
+zw_value_destroy (zw_value *value)
+{
+  delete value;
 }

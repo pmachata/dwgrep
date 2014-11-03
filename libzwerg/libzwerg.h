@@ -35,95 +35,106 @@
 extern "C" {
 #endif
 
-  typedef struct zw_error_s *zw_error;
-
-  typedef struct zw_vocabulary_s *zw_vocabulary;
-  typedef struct zw_vocabulary_s const *c_zw_vocabulary;
-
-  typedef struct zw_query_s *zw_query;
-
-  typedef struct zw_constant_dom const *c_zw_constant_dom;
-
-  typedef struct zw_value_s *zw_value;
+  typedef struct zw_error zw_error;
+  typedef struct zw_vocabulary zw_vocabulary;
+  typedef struct zw_query zw_query;
+  typedef struct zw_constant_dom zw_constant_dom;
+  typedef struct zw_value zw_value;
+  typedef struct zw_stack zw_stack;
 
 
-  void zw_error_destroy (zw_error err);
+  void zw_error_destroy (zw_error *err);
 
-  char const *zw_error_message (zw_error err);
-
-
-  zw_vocabulary zw_vocabulary_init (zw_error out_err);
-  void zw_vocabulary_destroy (zw_vocabulary voc);
-
-  c_zw_vocabulary zw_vocabulary_core (void);
-  c_zw_vocabulary zw_vocabulary_dwarf (void);
-
-  bool zw_vocabulary_add (zw_vocabulary voc, c_zw_vocabulary to_add,
-			  zw_error out_err);
-
-  bool zw_vocabulary_add_argv (zw_vocabulary voc,
-			       zw_value values[], size_t nvalues,
-			       zw_error out_err);
+  char const *zw_error_message (zw_error const *err);
 
 
-  zw_query zw_query_parse (c_zw_vocabulary voc, char const *query,
-			   zw_value stack[], size_t stksz,
-			   zw_error out_err);
+  zw_vocabulary *zw_vocabulary_init (zw_error **out_err);
+  void zw_vocabulary_destroy (zw_vocabulary *voc);
 
-  void zw_query_destroy (zw_query query);
+  zw_vocabulary const *zw_vocabulary_core (zw_error **out_err);
+  zw_vocabulary const *zw_vocabulary_dwarf (zw_error **out_err);
 
+  bool zw_vocabulary_add (zw_vocabulary *voc, zw_vocabulary const *to_add,
+			  zw_error **out_err);
 
-  c_zw_constant_dom zw_constant_dom_dec (void);
-  c_zw_constant_dom zw_constant_dom_hex (void);
-  c_zw_constant_dom zw_constant_dom_oct (void);
-  c_zw_constant_dom zw_constant_dom_bin (void);
-  c_zw_constant_dom zw_constant_dom_bool (void);
-  c_zw_constant_dom zw_constant_dom_column (void);
-  c_zw_constant_dom zw_constant_dom_line (void);
-
-  c_zw_constant_dom zw_constant_dom_address (void);
-  c_zw_constant_dom zw_constant_dom_offset (void);
-  c_zw_constant_dom zw_constant_dom_abbrevcode (void);
-
-  c_zw_constant_dom zw_constant_dom_tag (void);
-  c_zw_constant_dom zw_constant_dom_attr (void);
-  c_zw_constant_dom zw_constant_dom_form (void);
-  c_zw_constant_dom zw_constant_dom_lang (void);
-  c_zw_constant_dom zw_constant_dom_macinfo (void);
-  c_zw_constant_dom zw_constant_dom_macro (void);
-  c_zw_constant_dom zw_constant_dom_inline (void);
-  c_zw_constant_dom zw_constant_dom_encoding (void);
-  c_zw_constant_dom zw_constant_dom_access (void);
-  c_zw_constant_dom zw_constant_dom_visibility (void);
-  c_zw_constant_dom zw_constant_dom_virtuality (void);
-  c_zw_constant_dom zw_constant_dom_identifier_case (void);
-  c_zw_constant_dom zw_constant_dom_calling_convention (void);
-  c_zw_constant_dom zw_constant_dom_ordering (void);
-  c_zw_constant_dom zw_constant_dom_discr_list (void);
-  c_zw_constant_dom zw_constant_dom_decimal_sign (void);
-  c_zw_constant_dom zw_constant_dom_locexpr_opcode (void);
-  c_zw_constant_dom zw_constant_dom_address_class (void);
-  c_zw_constant_dom zw_constant_dom_endianity (void);
+  bool zw_vocabulary_add_argv (zw_vocabulary *voc,
+			       zw_value const *values[], size_t nvalues,
+			       zw_error **out_err);
 
 
-  zw_value zw_value_init_const_i64 (int64_t i, c_zw_constant_dom dom,
-					  zw_error out_err);
+  zw_stack *zw_stack_init (zw_error **out_err);
 
-  zw_value zw_value_init_const_u64 (uint64_t i, c_zw_constant_dom dom,
-					  zw_error out_err);
+  void zw_stack_destroy (zw_stack *stack);
 
-  zw_value zw_value_init_str (char const *str, zw_error out_err);
+  bool zw_stack_push (zw_stack *stack, zw_value const *value,
+		      zw_error **out_err);
+  bool zw_stack_push_take (zw_stack *stack, zw_value *value,
+			   zw_error **out_err);
 
-  zw_value zw_value_init_str_len (char const *str, size_t len,
-					zw_error out_err);
+  size_t zw_stack_depth (zw_stack const *stack);
+
+  zw_value const *zw_stack_at (zw_stack const *stack, size_t depth);
+
+
+  zw_query *zw_query_parse (zw_vocabulary const *voc, char const *query,
+			    zw_error **out_err);
+
+  void zw_query_destroy (zw_query *query);
+
+
+  zw_constant_dom const *zw_constant_dom_dec (void);
+  zw_constant_dom const *zw_constant_dom_hex (void);
+  zw_constant_dom const *zw_constant_dom_oct (void);
+  zw_constant_dom const *zw_constant_dom_bin (void);
+  zw_constant_dom const *zw_constant_dom_bool (void);
+  zw_constant_dom const *zw_constant_dom_column (void);
+  zw_constant_dom const *zw_constant_dom_line (void);
+
+  zw_constant_dom const *zw_constant_dom_address (void);
+  zw_constant_dom const *zw_constant_dom_offset (void);
+  zw_constant_dom const *zw_constant_dom_abbrevcode (void);
+
+  zw_constant_dom const *zw_constant_dom_tag (void);
+  zw_constant_dom const *zw_constant_dom_attr (void);
+  zw_constant_dom const *zw_constant_dom_form (void);
+  zw_constant_dom const *zw_constant_dom_lang (void);
+  zw_constant_dom const *zw_constant_dom_macinfo (void);
+  zw_constant_dom const *zw_constant_dom_macro (void);
+  zw_constant_dom const *zw_constant_dom_inline (void);
+  zw_constant_dom const *zw_constant_dom_encoding (void);
+  zw_constant_dom const *zw_constant_dom_access (void);
+  zw_constant_dom const *zw_constant_dom_visibility (void);
+  zw_constant_dom const *zw_constant_dom_virtuality (void);
+  zw_constant_dom const *zw_constant_dom_identifier_case (void);
+  zw_constant_dom const *zw_constant_dom_calling_convention (void);
+  zw_constant_dom const *zw_constant_dom_ordering (void);
+  zw_constant_dom const *zw_constant_dom_discr_list (void);
+  zw_constant_dom const *zw_constant_dom_decimal_sign (void);
+  zw_constant_dom const *zw_constant_dom_locexpr_opcode (void);
+  zw_constant_dom const *zw_constant_dom_address_class (void);
+  zw_constant_dom const *zw_constant_dom_endianity (void);
+
+
+  zw_value *zw_value_init_const_i64 (int64_t i, zw_constant_dom const *dom,
+				     zw_error **out_err);
+
+  zw_value *zw_value_init_const_u64 (uint64_t i, zw_constant_dom const *dom,
+				     zw_error **out_err);
+
+  zw_value *zw_value_init_str (char const *str, zw_error **out_err);
+
+  zw_value *zw_value_init_str_len (char const *str, size_t len,
+				   zw_error **out_err);
 
   // N.B.: Run NAME as a program on an empty stack collect the
   // singular pushed value, and return.
-  zw_value zw_value_init_named (c_zw_vocabulary voc, char const *name,
-				zw_error out_err);
+  zw_value *zw_value_init_named (zw_vocabulary const *voc, char const *name,
+				 zw_error **out_err);
 
-  zw_value zw_value_init_dwarf (char const *filename);
-  zw_value zw_value_init_dwarf_raw (char const *filename);
+  zw_value *zw_value_init_dwarf (char const *filename, zw_error **out_err);
+  zw_value *zw_value_init_dwarf_raw (char const *filename, zw_error **out_err);
+
+  void zw_value_destroy (zw_value *value);
 
 #ifdef __cplusplus
 }
