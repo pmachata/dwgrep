@@ -1,0 +1,39 @@
+LIBZWERG_0.1 {
+  global:
+	zw_error_destroy;
+	zw_error_message;
+
+	zw_vocabulary_init;
+	zw_vocabulary_destroy;
+	zw_vocabulary_core;
+	zw_vocabulary_dwarf;
+	zw_vocabulary_add;
+	zw_vocabulary_add_argv;
+
+	zw_stack_init;
+	zw_stack_destroy;
+	zw_stack_push;
+	zw_stack_push_take;
+	zw_stack_depth;
+	zw_stack_at;
+	zw_stack_dump_xxx;
+
+	zw_query_parse;
+	zw_query_destroy;
+	zw_query_execute;
+
+	zw_result_next;
+	zw_result_destroy;
+
+	zw_value_init_const_i64;
+	zw_value_init_const_u64;
+	zw_value_init_str;
+	zw_value_init_str_len;
+	zw_value_init_named;
+	zw_value_init_dwarf;
+	zw_value_init_dwarf_raw;
+	zw_value_destroy;
+
+  local:
+	*;
+};
