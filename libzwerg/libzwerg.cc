@@ -36,6 +36,7 @@
 #include "stack.hh"
 #include "tree.hh"
 #include "parser.hh"
+#include "op.hh"
 
 struct zw_error
 {
@@ -50,6 +51,11 @@ struct zw_vocabulary
 struct zw_query
 {
   tree m_query;
+};
+
+struct zw_result
+{
+  std::shared_ptr <op> m_op;
 };
 
 struct zw_value
@@ -230,13 +236,26 @@ zw_stack_at (zw_stack const *stack, size_t depth)
   return stack->m_values[stack->m_values.size () - 1 - depth].get ();
 }
 
+bool
+zw_stack_dump_xxx (zw_stack const *stack, zw_error **out_err)
+{
+  return capture_errors ([&] () {
+      auto const &values = stack->m_values;
+      for (auto it = values.rbegin (); it != values.rend (); ++it)
+	std::cout << *((*it)->m_value) << std::endl;
+      return true;
+    }, false, out_err);
+}
+
 
 zw_query *
 zw_query_parse (zw_vocabulary const *voc, char const *query,
 		zw_error **out_err)
 {
   return capture_errors ([&] () {
-      return new zw_query { parse_query (*voc->m_voc, query) };
+      tree t = parse_query (*voc->m_voc, query);
+      t.simplify ();
+      return new zw_query { t };
     }, nullptr, out_err);
 }
 
@@ -258,4 +277,49 @@ void
 zw_value_destroy (zw_value *value)
 {
   delete value;
+}
+
+
+zw_result *
+zw_query_execute (zw_query const *query, zw_stack const *input_stack,
+		  zw_error **out_err)
+{
+  return capture_errors ([&] () {
+      auto stk = std::make_unique <stack> ();
+      for (auto const &emt: input_stack->m_values)
+	stk->push (emt->m_value->clone ());
+      auto upstream = std::make_shared <op_origin> (std::move (stk));
+      return new zw_result { query->m_query.build_exec (upstream) };
+    }, nullptr, out_err);
+}
+
+bool
+zw_result_next (zw_result *result, zw_stack **out_stack, zw_error **out_err)
+{
+  return capture_errors ([&] () {
+      std::unique_ptr <stack> ret = result->m_op->next ();
+      if (ret == nullptr)
+	{
+	  *out_stack = nullptr;
+	  return true;
+	}
+
+      size_t sz = ret->size ();
+
+      std::vector <std::unique_ptr <zw_value>> values;
+      values.resize (sz);
+
+      auto it = values.rbegin ();
+      for (size_t i = 0; i < sz; ++i)
+	*it++ = std::make_unique <zw_value> (ret->pop ());
+
+      *out_stack = new zw_stack { std::move (values) };
+      return true;
+    }, false, out_err);
+}
+
+void
+zw_result_destroy (zw_result *result)
+{
+  delete result;
 }

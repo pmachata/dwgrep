@@ -32,15 +32,11 @@
 #include <fstream>
 #include <memory>
 #include <libintl.h>
-
-#include "builtin-dw.hh"
-#include "op.hh"
-#include "parser.hh"
-#include "stack.hh"
-#include "tree.hh"
-#include "value-dw.hh"
+#include <vector>
+#include <cassert>
 
 #include "libzwerg.h"
+
 
 static void
 show_help ()
@@ -63,19 +59,11 @@ Searches for PATTER in FILEs.\n\
 ";
 }
 
-extern "C"
-struct zw_vocabulary
-{
-  std::unique_ptr <vocabulary> m_voc;
-};
-
 int
 main(int argc, char *argv[])
 {
   setlocale (LC_ALL, "");
-  textdomain ("dwlocstats");
-
-  elf_version (EV_CURRENT);
+  textdomain ("dwgrep");
 
   enum
   {
@@ -103,7 +91,6 @@ main(int argc, char *argv[])
   bool show_count = false;
   bool with_filename = false;
   bool no_filename = false;
-  bool optimize = true;
 
   std::vector <std::string> to_process;
 
@@ -117,18 +104,18 @@ main(int argc, char *argv[])
   zw_vocabulary const *voc_dw = zw_vocabulary_dwarf (&err);
   assert (voc_dw != nullptr); // XXX
 
-  if (! zw_vocabulary_add (voc, voc_core, &err)
-      || ! zw_vocabulary_add (voc, voc_dw, &err))
+  auto error_throw = [] (zw_error *err)
     {
       std::string what = zw_error_message (err);
       zw_error_destroy (err);
       throw std::runtime_error (what);
-    }
+    };
 
-  std::unique_ptr <vocabulary> builtins = std::move (voc->m_voc);
+  if (! zw_vocabulary_add (voc, voc_core, &err)
+      || ! zw_vocabulary_add (voc, voc_dw, &err))
+    error_throw (err);
 
-  tree query;
-  bool seen_query = false;
+  zw_query *query = nullptr;
 
   while (true)
     {
@@ -139,8 +126,8 @@ main(int argc, char *argv[])
       switch (c)
 	{
 	case 'e':
-	  query = parse_query (*builtins, optarg);
-	  seen_query = true;
+	  if ((query = zw_query_parse (voc, optarg, &err)) == nullptr)
+	    error_throw (err);
 	  break;
 
 	case 'c':
@@ -176,22 +163,10 @@ main(int argc, char *argv[])
 	    std::ifstream ifs {optarg};
 	    std::string str {std::istreambuf_iterator <char> {ifs},
 			     std::istreambuf_iterator <char> {}};
-	    query = parse_query (*builtins, str);
-	    seen_query = true;
+	    if ((query = zw_query_parse (voc, str.c_str (), &err)) == nullptr)
+	      error_throw (err);
 	    break;
 	  }
-
-	case 'O':
-	  if (std::string {optarg} == "1")
-	    optimize = true;
-	  else if (std::string {optarg} == "0")
-	    optimize = false;
-	  else
-	    {
-	      std::cerr << "Unknown optimization level " << optarg << std::endl;
-	      return 2;
-	    }
-	  break;
 
 	default:
 	  std::exit (2);
@@ -201,22 +176,17 @@ main(int argc, char *argv[])
   argc -= optind;
   argv += optind;
 
-  if (! seen_query)
+  if (query == nullptr)
     {
       if (argc == 0)
 	{
 	  std::cerr << "No query specified.\n";
 	  return 2;
 	}
-      query = parse_query (*builtins, *argv++);
+      if ((query = zw_query_parse (voc, *argv++, &err)) == nullptr)
+	error_throw (err);
       argc--;
     }
-
-  if (optimize)
-    query.simplify ();
-
-  if (verbosity > 0)
-    std::cerr << query << std::endl;
 
   if (argc == 0)
     {
@@ -236,41 +206,43 @@ main(int argc, char *argv[])
   bool match = false;
   for (auto const &fn: to_process)
     {
-      auto stk = std::make_unique <stack> ();
-
-      std::unique_ptr <value_dwarf> vdw;
-      try
+      zw_stack *stack = zw_stack_init (&err);
+      if (stack == nullptr)
 	{
-	  vdw = std::make_unique <value_dwarf> (fn, 0);
-	}
-      catch (std::runtime_error e)
-	{
+	fail:
 	  if (! no_messages)
-	    std::cout << "dwgrep: " << fn << ": " << e.what () << std::endl;
+	    std::cout << "dwgrep: " << fn << ": "
+		      << zw_error_message (err) << std::endl;
+	  zw_error_destroy (err);
 	  if (verbosity >= 0)
 	    errors = true;
 	  continue;
 	}
 
-      stk->push (std::move (vdw));
-      auto upstream = std::make_shared <op_origin> (std::move (stk));
-      auto program = query.build_exec (upstream);
+      {
+	zw_value *dwv = zw_value_init_dwarf (fn.c_str (), &err);
+	if (dwv == nullptr
+	    || ! zw_stack_push_take (stack, dwv, &err))
+	  goto fail;
+      }
+
+      zw_result *result = zw_query_execute (query, stack, &err);
+      if (result == nullptr)
+	goto fail;
 
       uint64_t count = 0;
       while (true)
 	{
-	  stack::uptr result;
-	  try
+	  zw_stack *out;
+	  if (! zw_result_next (result, &out, &err))
 	    {
-	      result = program->next ();
-	    }
-	  catch (std::runtime_error e)
-	    {
-	      std::cerr << "dwgrep: " << fn << ": " << e.what () << std::endl;
+	      if (! no_messages)
+		std::cerr << "dwgrep: " << fn << ": "
+			  << zw_error_message (err) << std::endl;
+	      zw_error_destroy (err);
 	      break;
 	    }
-
-	  if (result == nullptr)
+	  if (out == nullptr)
 	    break;
 
 	  // grep: Exit immediately with zero status if any match
@@ -283,10 +255,10 @@ main(int argc, char *argv[])
 	    {
 	      if (with_filename)
 		std::cout << fn << ":\n";
-	      if (result->size () > 1)
+	      if (zw_stack_depth (out) > 1)
 		std::cout << "---\n";
-	      while (result->size () > 0)
-		std::cout << *result->pop () << std::endl;
+	      if (! zw_stack_dump_xxx (out, &err))
+		error_throw (err);
 	    }
 	  else
 	    ++count;

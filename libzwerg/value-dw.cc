@@ -78,6 +78,8 @@ namespace
 	.section_address = dwfl_offline_section_address,
       };
 
+    elf_version (EV_CURRENT);
+
     auto dwfl = std::shared_ptr <Dwfl> (dwfl_begin (&callbacks), dwfl_end);
     if (dwfl == nullptr)
       throw_libdwfl ();

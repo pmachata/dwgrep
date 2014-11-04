@@ -41,6 +41,7 @@ extern "C" {
   typedef struct zw_constant_dom zw_constant_dom;
   typedef struct zw_value zw_value;
   typedef struct zw_stack zw_stack;
+  typedef struct zw_result zw_result;
 
 
   void zw_error_destroy (zw_error *err);
@@ -75,11 +76,23 @@ extern "C" {
 
   zw_value const *zw_stack_at (zw_stack const *stack, size_t depth);
 
+  bool zw_stack_dump_xxx (zw_stack const *stack, zw_error **out_err);
+
 
   zw_query *zw_query_parse (zw_vocabulary const *voc, char const *query,
 			    zw_error **out_err);
 
   void zw_query_destroy (zw_query *query);
+
+
+  zw_result *zw_query_execute (zw_query const *query,
+			       zw_stack const *input_stack,
+			       zw_error **out_err);
+
+  bool zw_result_next (zw_result *result,
+		       zw_stack **out_stack, zw_error **out_err);
+
+  void zw_result_destroy (zw_result *result);
 
 
   zw_constant_dom const *zw_constant_dom_dec (void);
