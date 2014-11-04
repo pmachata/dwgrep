@@ -31,29 +31,29 @@
 
 struct constant_dom;
 
-extern constant_dom const &dw_tag_dom;
-extern constant_dom const &dw_attr_dom;
-extern constant_dom const &dw_form_dom;
+constant_dom const &dw_tag_dom ();
+constant_dom const &dw_attr_dom ();
+constant_dom const &dw_form_dom ();
 
-extern constant_dom const &dw_lang_dom;
-extern constant_dom const &dw_macinfo_dom;
-extern constant_dom const &dw_macro_dom;
-extern constant_dom const &dw_inline_dom;
-extern constant_dom const &dw_encoding_dom;
-extern constant_dom const &dw_access_dom;
-extern constant_dom const &dw_visibility_dom;
-extern constant_dom const &dw_virtuality_dom;
-extern constant_dom const &dw_identifier_case_dom;
-extern constant_dom const &dw_calling_convention_dom;
-extern constant_dom const &dw_ordering_dom;
-extern constant_dom const &dw_discr_list_dom;
-extern constant_dom const &dw_decimal_sign_dom;
-extern constant_dom const &dw_locexpr_opcode_dom;
-extern constant_dom const &dw_address_class_dom;
-extern constant_dom const &dw_endianity_dom;
+constant_dom const &dw_access_dom ();
+constant_dom const &dw_address_class_dom ();
+constant_dom const &dw_calling_convention_dom ();
+constant_dom const &dw_decimal_sign_dom ();
+constant_dom const &dw_discr_list_dom ();
+constant_dom const &dw_encoding_dom ();
+constant_dom const &dw_endianity_dom ();
+constant_dom const &dw_identifier_case_dom ();
+constant_dom const &dw_inline_dom ();
+constant_dom const &dw_lang_dom ();
+constant_dom const &dw_locexpr_opcode_dom ();
+constant_dom const &dw_macinfo_dom ();
+constant_dom const &dw_macro_dom ();
+constant_dom const &dw_ordering_dom ();
+constant_dom const &dw_virtuality_dom ();
+constant_dom const &dw_visibility_dom ();
 
-extern constant_dom const &dw_address_dom;	// Dwarf_Addr
-extern constant_dom const &dw_offset_dom;	// Dwarf_Off
-extern constant_dom const &dw_abbrevcode_dom;
+constant_dom const &dw_address_dom ();	// Dwarf_Addr
+constant_dom const &dw_offset_dom ();	// Dwarf_Off
+constant_dom const &dw_abbrevcode_dom ();
 
 #endif /* _DWCST_H_ */

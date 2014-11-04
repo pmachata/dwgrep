@@ -581,7 +581,7 @@ namespace
 	m_ai++;
 
 	return std::make_unique <value_cst>
-	  (constant {addr, &dw_address_dom}, m_i++);
+	  (constant {addr, &dw_address_dom ()}, m_i++);
       }
     };
 
@@ -803,7 +803,7 @@ namespace
   std::unique_ptr <value>
   cu_offset (Dwarf_Off offset)
   {
-    constant c {offset, &dw_offset_dom};
+    constant c {offset, &dw_offset_dom ()};
     return std::make_unique <value_cst> (c, 0);
   }
 
@@ -829,7 +829,7 @@ namespace
     std::unique_ptr <value>
     operate (std::unique_ptr <T> val) override
     {
-      constant c {dwarf_dieoffset (&val->get_die ()), &dw_offset_dom};
+      constant c {dwarf_dieoffset (&val->get_die ()), &dw_offset_dom ()};
       return std::make_unique <value_cst> (c, 0);
     }
   };
@@ -848,7 +848,7 @@ namespace
 			nullptr, nullptr, nullptr, nullptr) == nullptr)
 	throw_libdw ();
 
-      constant c {abbrev_off, &dw_offset_dom};
+      constant c {abbrev_off, &dw_offset_dom ()};
       return std::make_unique <value_cst> (c, 0);
     }
   };
@@ -861,7 +861,7 @@ namespace
     std::unique_ptr <value>
     operate (std::unique_ptr <value_abbrev> a) override
     {
-      constant c {dwpp_abbrev_offset (a->get_abbrev ()), &dw_offset_dom};
+      constant c {dwpp_abbrev_offset (a->get_abbrev ()), &dw_offset_dom ()};
       return std::make_unique <value_cst> (c, 0);
     }
   };
@@ -874,7 +874,7 @@ namespace
     std::unique_ptr <value>
     operate (std::unique_ptr <value_abbrev_attr> a) override
     {
-      constant c {a->offset, &dw_offset_dom};
+      constant c {a->offset, &dw_offset_dom ()};
       return std::make_unique <value_cst> (c, 0);
     }
   };
@@ -888,7 +888,7 @@ namespace
     operate (std::unique_ptr <value_loclist_op> val) override
     {
       Dwarf_Op const *dwop = val->get_dwop ();
-      constant c {dwop->offset, &dw_offset_dom};
+      constant c {dwop->offset, &dw_offset_dom ()};
       return std::make_unique <value_cst> (c, 0);
     }
   };
@@ -915,7 +915,8 @@ namespace
     Dwarf_Addr addr;
     if (cb (die, &addr) < 0)
       throw_libdw ();
-    return std::make_unique <value_cst> (constant {addr, &dw_address_dom}, 0);
+    return std::make_unique <value_cst>
+      (constant {addr, &dw_address_dom ()}, 0);
   }
 
   struct op_address_attr
@@ -938,7 +939,7 @@ namespace
 	  if (dwarf_formaddr (&a->get_attr (), &addr) < 0)
 	    throw_libdw ();
 	  return std::make_unique <value_cst>
-	    (constant {addr, &dw_address_dom}, 0);
+	    (constant {addr, &dw_address_dom ()}, 0);
 	}
 
       std::cerr << "`address' applied to non-address attribute:\n    ";
@@ -980,7 +981,7 @@ namespace
     {
       int tag = dwarf_tag (&val->get_die ());
       assert (tag >= 0);
-      constant cst {(unsigned) tag, &dw_tag_dom};
+      constant cst {(unsigned) tag, &dw_tag_dom ()};
       return std::make_unique <value_cst> (cst, 0);
     }
   };
@@ -993,7 +994,7 @@ namespace
     std::unique_ptr <value>
     operate (std::unique_ptr <value_attr> val) override
     {
-      constant cst {dwarf_whatattr (&val->get_attr ()), &dw_attr_dom};
+      constant cst {dwarf_whatattr (&val->get_attr ()), &dw_attr_dom ()};
       return std::make_unique <value_cst> (cst, 0);
     }
   };
@@ -1008,7 +1009,7 @@ namespace
     {
       unsigned int tag = dwarf_getabbrevtag (&a->get_abbrev ());
       assert (tag >= 0);
-      constant cst {(unsigned) tag, &dw_tag_dom};
+      constant cst {(unsigned) tag, &dw_tag_dom ()};
       return std::make_unique <value_cst> (cst, 0);
     }
   };
@@ -1021,7 +1022,7 @@ namespace
     std::unique_ptr <value>
     operate (std::unique_ptr <value_abbrev_attr> a) override
     {
-      constant cst {a->name, &dw_attr_dom};
+      constant cst {a->name, &dw_attr_dom ()};
       return std::make_unique <value_cst> (cst, 0);
     }
   };
@@ -1034,7 +1035,7 @@ namespace
     std::unique_ptr <value>
     operate (std::unique_ptr <value_loclist_op> val) override
     {
-      constant cst {val->get_dwop ()->atom, &dw_locexpr_opcode_dom,
+      constant cst {val->get_dwop ()->atom, &dw_locexpr_opcode_dom (),
 		    brevity::brief};
       return std::make_unique <value_cst> (cst, 0);
     }
@@ -1052,7 +1053,7 @@ namespace
     std::unique_ptr <value>
     operate (std::unique_ptr <value_attr> val) override
     {
-      constant cst {dwarf_whatform (&val->get_attr ()), &dw_form_dom};
+      constant cst {dwarf_whatform (&val->get_attr ()), &dw_form_dom ()};
       return std::make_unique <value_cst> (cst, 0);
     }
   };
@@ -1065,7 +1066,7 @@ namespace
     std::unique_ptr <value>
     operate (std::unique_ptr <value_abbrev_attr> a) override
     {
-      constant cst {a->form, &dw_form_dom};
+      constant cst {a->form, &dw_form_dom ()};
       return std::make_unique <value_cst> (cst, 0);
     }
   };
@@ -1344,7 +1345,7 @@ namespace
 	return nullptr;
 
       return std::make_unique <value_cst>
-	(constant {cov.at (0).start, &dw_address_dom}, 0);
+	(constant {cov.at (0).start, &dw_address_dom ()}, 0);
     }
   };
 }
@@ -1381,7 +1382,7 @@ namespace
       auto range = cov.at (cov.size () - 1);
 
       return std::make_unique <value_cst>
-	(constant {range.start + range.length, &dw_address_dom}, 0);
+	(constant {range.start + range.length, &dw_address_dom ()}, 0);
     }
   };
 }
@@ -1795,7 +1796,7 @@ namespace
     operate (std::unique_ptr <value_abbrev> a) override
     {
       constant cst {dwarf_getabbrevcode (&a->get_abbrev ()),
-		    &dw_abbrevcode_dom};
+		    &dw_abbrevcode_dom ()};
       return std::make_unique <value_cst> (cst, 0);
     }
   };
@@ -2101,7 +2102,7 @@ namespace
     constant m_const;
 
     pred_atname_cst (unsigned atname)
-      : m_const {atname, &dw_attr_dom}
+      : m_const {atname, &dw_attr_dom ()}
     {}
 
     pred_result
@@ -2155,7 +2156,7 @@ namespace
     constant m_const;
 
     pred_tag_cst (int tag)
-      : m_const {(unsigned) tag, &dw_tag_dom}
+      : m_const {(unsigned) tag, &dw_tag_dom ()}
     {}
 
     pred_result
@@ -2208,7 +2209,7 @@ namespace
     constant m_const;
 
     pred_form_cst (unsigned form)
-      : m_const {form, &dw_form_dom}
+      : m_const {form, &dw_form_dom ()}
     {}
 
     pred_result
@@ -2264,7 +2265,7 @@ namespace
     constant m_const;
 
     pred_op_cst (unsigned form)
-      : m_const {form, &dw_locexpr_opcode_dom}
+      : m_const {form, &dw_locexpr_opcode_dom ()}
     {}
 
     pred_result
@@ -2681,7 +2682,7 @@ dwgrep_vocabulary_dw ()
       }
 
       // DW_AT_*
-      add_builtin_constant (voc, constant (code, &dw_attr_dom), lqname + 1);
+      add_builtin_constant (voc, constant (code, &dw_attr_dom ()), lqname + 1);
     };
 
 #define ONE_KNOWN_DW_AT(NAME, CODE)					\
@@ -2706,7 +2707,7 @@ dwgrep_vocabulary_dw ()
       voc.add (std::make_shared <overloaded_pred_builtin <true>> (lqname, t));
       voc.add (std::make_shared <overloaded_pred_builtin <false>> (lbname, t));
 
-      add_builtin_constant (voc, constant (code, &dw_tag_dom), lqname + 1);
+      add_builtin_constant (voc, constant (code, &dw_tag_dom ()), lqname + 1);
     };
 
 #define ONE_KNOWN_DW_TAG(NAME, CODE)					\
@@ -2730,7 +2731,7 @@ dwgrep_vocabulary_dw ()
       voc.add (std::make_shared <overloaded_pred_builtin <true>> (lqname, t));
       voc.add (std::make_shared <overloaded_pred_builtin <false>> (lbname, t));
 
-      add_builtin_constant (voc, constant (code, &dw_form_dom), lqname + 1);
+      add_builtin_constant (voc, constant (code, &dw_form_dom ()), lqname + 1);
     };
 
 #define ONE_KNOWN_DW_FORM_DESC(NAME, CODE, DESC) ONE_KNOWN_DW_FORM (NAME, CODE)
@@ -2755,7 +2756,7 @@ dwgrep_vocabulary_dw ()
       voc.add (std::make_shared <overloaded_pred_builtin <true>> (lqname, t));
       voc.add (std::make_shared <overloaded_pred_builtin <false>> (lbname, t));
 
-      add_builtin_constant (voc, constant (code, &dw_locexpr_opcode_dom),
+      add_builtin_constant (voc, constant (code, &dw_locexpr_opcode_dom ()),
 			    lqname + 1);
     };
 
@@ -2768,56 +2769,56 @@ dwgrep_vocabulary_dw ()
 
 #define ONE_KNOWN_DW_LANG_DESC(NAME, CODE, DESC)			\
   {									\
-    add_builtin_constant (voc, constant (CODE, &dw_lang_dom), #CODE);	\
+    add_builtin_constant (voc, constant (CODE, &dw_lang_dom ()), #CODE); \
   }
   ALL_KNOWN_DW_LANG;
 #undef ONE_KNOWN_DW_LANG_DESC
 
 #define ONE_KNOWN_DW_MACINFO(NAME, CODE)				\
   {									\
-    add_builtin_constant (voc, constant (CODE, &dw_macinfo_dom), #CODE); \
+    add_builtin_constant (voc, constant (CODE, &dw_macinfo_dom ()), #CODE); \
   }
   ALL_KNOWN_DW_MACINFO;
 #undef ONE_KNOWN_DW_MACINFO
 
 #define ONE_KNOWN_DW_MACRO_GNU(NAME, CODE)				\
   {									\
-    add_builtin_constant (voc, constant (CODE, &dw_macro_dom), #CODE); \
+    add_builtin_constant (voc, constant (CODE, &dw_macro_dom ()), #CODE); \
   }
   ALL_KNOWN_DW_MACRO_GNU;
 #undef ONE_KNOWN_DW_MACRO_GNU
 
 #define ONE_KNOWN_DW_INL(NAME, CODE)					\
   {									\
-    add_builtin_constant (voc, constant (CODE, &dw_inline_dom), #CODE); \
+    add_builtin_constant (voc, constant (CODE, &dw_inline_dom ()), #CODE); \
   }
   ALL_KNOWN_DW_INL;
 #undef ONE_KNOWN_DW_INL
 
 #define ONE_KNOWN_DW_ATE(NAME, CODE)					\
   {									\
-    add_builtin_constant (voc, constant (CODE, &dw_encoding_dom), #CODE); \
+    add_builtin_constant (voc, constant (CODE, &dw_encoding_dom ()), #CODE); \
   }
   ALL_KNOWN_DW_ATE;
 #undef ONE_KNOWN_DW_ATE
 
 #define ONE_KNOWN_DW_ACCESS(NAME, CODE)					\
   {									\
-    add_builtin_constant (voc, constant (CODE, &dw_access_dom), #CODE); \
+    add_builtin_constant (voc, constant (CODE, &dw_access_dom ()), #CODE); \
   }
   ALL_KNOWN_DW_ACCESS;
 #undef ONE_KNOWN_DW_ACCESS
 
 #define ONE_KNOWN_DW_VIS(NAME, CODE)					\
   {									\
-    add_builtin_constant (voc, constant (CODE, &dw_visibility_dom), #CODE); \
+    add_builtin_constant (voc, constant (CODE, &dw_visibility_dom ()), #CODE); \
   }
   ALL_KNOWN_DW_VIS;
 #undef ONE_KNOWN_DW_VIS
 
 #define ONE_KNOWN_DW_VIRTUALITY(NAME, CODE)				\
   {									\
-    add_builtin_constant (voc, constant (CODE, &dw_virtuality_dom), #CODE); \
+    add_builtin_constant (voc, constant (CODE, &dw_virtuality_dom ()), #CODE); \
   }
   ALL_KNOWN_DW_VIRTUALITY;
 #undef ONE_KNOWN_DW_VIRTUALITY
@@ -2825,7 +2826,7 @@ dwgrep_vocabulary_dw ()
 #define ONE_KNOWN_DW_ID(NAME, CODE)					\
   {									\
     add_builtin_constant (voc,						\
-			  constant (CODE, &dw_identifier_case_dom), #CODE); \
+			  constant (CODE, &dw_identifier_case_dom ()), #CODE); \
   }
   ALL_KNOWN_DW_ID;
 #undef ONE_KNOWN_DW_ID
@@ -2833,21 +2834,22 @@ dwgrep_vocabulary_dw ()
 #define ONE_KNOWN_DW_CC(NAME, CODE)					\
   {									\
     add_builtin_constant (voc,						\
-			  constant (CODE, &dw_calling_convention_dom), #CODE); \
+			  constant (CODE, &dw_calling_convention_dom ()), \
+			  #CODE);					\
   }
   ALL_KNOWN_DW_CC;
 #undef ONE_KNOWN_DW_CC
 
 #define ONE_KNOWN_DW_ORD(NAME, CODE)					\
   {									\
-    add_builtin_constant (voc, constant (CODE, &dw_ordering_dom), #CODE); \
+    add_builtin_constant (voc, constant (CODE, &dw_ordering_dom ()), #CODE); \
   }
   ALL_KNOWN_DW_ORD;
 #undef ONE_KNOWN_DW_ORD
 
 #define ONE_KNOWN_DW_DSC(NAME, CODE)					\
   {									\
-    add_builtin_constant (voc, constant (CODE, &dw_discr_list_dom), #CODE); \
+    add_builtin_constant (voc, constant (CODE, &dw_discr_list_dom ()), #CODE); \
   }
   ALL_KNOWN_DW_DSC;
 #undef ONE_KNOWN_DW_DSC
@@ -2855,17 +2857,17 @@ dwgrep_vocabulary_dw ()
 #define ONE_KNOWN_DW_DS(NAME, CODE)					\
   {									\
     add_builtin_constant (voc,						\
-			  constant (CODE, &dw_decimal_sign_dom), #CODE); \
+			  constant (CODE, &dw_decimal_sign_dom ()), #CODE); \
   }
   ALL_KNOWN_DW_DS;
 #undef ONE_KNOWN_DW_DS
 
-  add_builtin_constant (voc, constant (DW_ADDR_none, &dw_address_class_dom),
+  add_builtin_constant (voc, constant (DW_ADDR_none, &dw_address_class_dom ()),
 			"DW_ADDR_none");
 
 #define ONE_KNOWN_DW_END(NAME, CODE)					\
   {									\
-    add_builtin_constant (voc, constant (CODE, &dw_endianity_dom), #CODE); \
+    add_builtin_constant (voc, constant (CODE, &dw_endianity_dom ()), #CODE); \
   }
   ALL_KNOWN_DW_END;
 #undef ONE_KNOWN_DW_END

@@ -124,7 +124,7 @@ namespace
     if (dwarf_formaddr (&attr, &addr) != 0)
       throw_libdw ();
     return pass_single_value
-      (std::make_unique <value_cst> (constant {addr, &dw_address_dom}, 0));
+      (std::make_unique <value_cst> (constant {addr, &dw_address_dom ()}, 0));
   }
 
   struct locexpr_producer
@@ -200,7 +200,7 @@ namespace
 	throw_libdw ();
 
       {
-	constant c {opcode, &dw_macinfo_dom};
+	constant c {opcode, &dw_macinfo_dom ()};
 	seq.push_back (std::make_unique <value_cst> (c, 0));
       }
 
@@ -308,40 +308,40 @@ namespace
     switch (dwarf_whatattr (&attr))
       {
       case DW_AT_language:
-	return atval_unsigned_with_domain (attr, dw_lang_dom);
+	return atval_unsigned_with_domain (attr, dw_lang_dom ());
 
       case DW_AT_inline:
-	return atval_unsigned_with_domain (attr, dw_inline_dom);
+	return atval_unsigned_with_domain (attr, dw_inline_dom ());
 
       case DW_AT_encoding:
-	return atval_unsigned_with_domain (attr, dw_encoding_dom);
+	return atval_unsigned_with_domain (attr, dw_encoding_dom ());
 
       case DW_AT_accessibility:
-	return atval_unsigned_with_domain (attr, dw_access_dom);
+	return atval_unsigned_with_domain (attr, dw_access_dom ());
 
       case DW_AT_visibility:
-	return atval_unsigned_with_domain (attr, dw_visibility_dom);
+	return atval_unsigned_with_domain (attr, dw_visibility_dom ());
 
       case DW_AT_virtuality:
-	return atval_unsigned_with_domain (attr, dw_virtuality_dom);
+	return atval_unsigned_with_domain (attr, dw_virtuality_dom ());
 
       case DW_AT_identifier_case:
-	return atval_unsigned_with_domain (attr, dw_identifier_case_dom);
+	return atval_unsigned_with_domain (attr, dw_identifier_case_dom ());
 
       case DW_AT_calling_convention:
-	return atval_unsigned_with_domain (attr, dw_calling_convention_dom);
+	return atval_unsigned_with_domain (attr, dw_calling_convention_dom ());
 
       case DW_AT_ordering:
-	return atval_unsigned_with_domain (attr, dw_ordering_dom);
+	return atval_unsigned_with_domain (attr, dw_ordering_dom ());
 
       case DW_AT_decimal_sign:
-	return atval_unsigned_with_domain (attr, dw_decimal_sign_dom);
+	return atval_unsigned_with_domain (attr, dw_decimal_sign_dom ());
 
       case DW_AT_address_class:
-	return atval_unsigned_with_domain (attr, dw_address_class_dom);
+	return atval_unsigned_with_domain (attr, dw_address_class_dom ());
 
       case DW_AT_endianity:
-	return atval_unsigned_with_domain (attr, dw_endianity_dom);
+	return atval_unsigned_with_domain (attr, dw_endianity_dom ());
 
       case DW_AT_decl_line:
       case DW_AT_call_line:
@@ -432,7 +432,7 @@ namespace
 	  int tag = dwarf_tag (&type_die);
 	  if (tag == DW_TAG_pointer_type
 	      || tag == DW_TAG_ptr_to_member_type)
-	    return atval_unsigned_with_domain (attr, dw_address_dom);
+	    return atval_unsigned_with_domain (attr, dw_address_dom ());
 
 	  if (tag != DW_TAG_enumeration_type
 	      && (tag != DW_TAG_base_type
@@ -446,7 +446,7 @@ namespace
 		}
 	      else
 		if ("decltype(nullptr)"s == name)
-		  return atval_unsigned_with_domain (attr, dw_address_dom);
+		  return atval_unsigned_with_domain (attr, dw_address_dom ());
 
 	      // Ho hum.  This could be a structure or something
 	      // similarly useless.  See if it's a block form at
@@ -670,7 +670,7 @@ at_value (std::shared_ptr <dwfl_context> dwctx,
 
     case DW_FORM_ref_sig8:
       std::cerr << "Form unhandled: "
-		<< constant (dwarf_whatform (&attr), &dw_form_dom)
+		<< constant (dwarf_whatform (&attr), &dw_form_dom ())
 		<< std::endl;
       return pass_single_value
 	(std::make_unique <value_str> ("(form unhandled)", 0));

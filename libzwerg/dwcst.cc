@@ -30,7 +30,7 @@ abbreviate (char const *name, size_t prefix_len, brevity brv)
 }
 
 static const char *
-dwarf_tag_string (unsigned int tag, brevity brv)
+dwarf_tag_string (int tag, brevity brv)
 {
   switch (tag)
     {
@@ -357,390 +357,193 @@ namespace
   }
 }
 
-static struct
-  : public constant_dom
+namespace
 {
-  void
-  show (mpz_class const &v, std::ostream &o, brevity brv) const override
+  struct dw_simple_dom
+    : public constant_dom
   {
-    int tag = positive_int_from_mpz (v);
-    const char *ret = dwarf_tag_string (tag, brv);
-    o << string_or_unknown (ret, "DW_TAG_", brv,
-			    tag, DW_TAG_lo_user, DW_TAG_hi_user, true);
-  }
+    char const *m_name;
+    char const *(*m_stringer) (int, brevity);
+    int m_low_user;
+    int m_high_user;
+    bool m_print_unknown;
 
-  std::string name () const override
-  {
-    return "DW_TAG_*";
-  }
-} dw_tag_dom_obj;
+    dw_simple_dom (char const *name, char const *(*stringer) (int, brevity),
+		   int low_user, int high_user, bool print_unknown)
+      : m_name {name}
+      , m_stringer {stringer}
+      , m_low_user {low_user}
+      , m_high_user {high_user}
+      , m_print_unknown {print_unknown}
+    {}
 
-constant_dom const &dw_tag_dom = dw_tag_dom_obj;
+    void
+    show (mpz_class const &v, std::ostream &o, brevity brv) const override
+    {
+      int code = positive_int_from_mpz (v);
+      const char *ret = m_stringer (code, brv);
+      o << string_or_unknown (ret, m_name, brv, code,
+			      m_low_user, m_high_user, m_print_unknown);
+    }
 
+    std::string name () const override
+    {
+      return m_name;
+    }
+  };
+}
 
-static struct
-  : public constant_dom
+constant_dom const &
+dw_tag_dom ()
 {
-  void
-  show (mpz_class const &v, std::ostream &o, brevity brv) const override
-  {
-    int attr = positive_int_from_mpz (v);
-    const char *ret = dwarf_attr_string (attr, brv);
-    o << string_or_unknown (ret, "DW_AT_", brv,
-			    attr, DW_AT_lo_user, DW_AT_hi_user, true);
-  }
+  static dw_simple_dom dom {"DW_TAG_", dwarf_tag_string,
+			    DW_TAG_lo_user, DW_TAG_hi_user, true};
+  return dom;
+}
 
-  std::string name () const override
-  {
-    return "DW_ATTR_*";
-  }
-} dw_attr_dom_obj;
-
-constant_dom const &dw_attr_dom = dw_attr_dom_obj;
-
-
-static struct
-  : public constant_dom
+constant_dom const &
+dw_attr_dom ()
 {
-  void
-  show (mpz_class const &v, std::ostream &o, brevity brv) const override
-  {
-    int form = positive_int_from_mpz (v);
-    const char *ret = dwarf_form_string (form, brv);
-    o << string_or_unknown (ret, "DW_FORM_", brv, form, 0, 0, true);
-  }
+  static dw_simple_dom dom {"DW_AT_", dwarf_attr_string,
+			    DW_AT_lo_user, DW_AT_hi_user, true};
+  return dom;
+}
 
-  std::string name () const override
-  {
-    return "DW_FORM_*";
-  }
-} dw_form_dom_obj;
-
-constant_dom const &dw_form_dom = dw_form_dom_obj;
-
-
-static struct
-  : public constant_dom
+constant_dom const &
+dw_form_dom ()
 {
-  void
-  show (mpz_class const &v, std::ostream &o, brevity brv) const override
-  {
-    int lang = positive_int_from_mpz (v);
-    const char *ret = dwarf_lang_string (lang, brv);
-    o << string_or_unknown (ret, "DW_LANG_", brv,
-			    lang, DW_LANG_lo_user, DW_LANG_hi_user, false);
-  }
+  static dw_simple_dom dom {"DW_FORM_", dwarf_form_string,
+			    0, 0, true};
+  return dom;
+}
 
-  std::string name () const override
-  {
-    return "DW_LANG_*";
-  }
-} dw_lang_dom_obj;
-
-constant_dom const &dw_lang_dom = dw_lang_dom_obj;
-
-
-static struct
-  : public constant_dom
+constant_dom const &
+dw_lang_dom ()
 {
-  void
-  show (mpz_class const &v, std::ostream &o, brevity brv) const override
-  {
-    int code = positive_int_from_mpz (v);
-    const char *ret = dwarf_macinfo_string (code, brv);
-    o << string_or_unknown (ret, "DW_MACINFO_", brv, code, 0, 0, false);
-  }
+  static dw_simple_dom dom {"DW_LANG_", dwarf_lang_string,
+			    DW_LANG_lo_user, DW_LANG_hi_user, false};
+  return dom;
+}
 
-  std::string name () const override
-  {
-    return "DW_MACINFO_*";
-  }
-} dw_macinfo_dom_obj;
-
-constant_dom const &dw_macinfo_dom = dw_macinfo_dom_obj;
-
-
-static struct
-  : public constant_dom
+constant_dom const &
+dw_macinfo_dom ()
 {
-  void
-  show (mpz_class const &v, std::ostream &o, brevity brv) const override
-  {
-    int code = positive_int_from_mpz (v);
-    const char *ret = dwarf_macro_string (code, brv);
-    o << string_or_unknown (ret, "DW_MACRO_", brv, code, 0, 0, false);
-  }
+  static dw_simple_dom dom {"DW_MACINFO_", dwarf_macinfo_string,
+			    0, 0, false};
+  return dom;
+}
 
-  std::string name () const override
-  {
-    return "DW_MACRO_*";
-  }
-} dw_macro_dom_obj;
-
-constant_dom const &dw_macro_dom = dw_macro_dom_obj;
-
-
-static struct
-  : public constant_dom
+constant_dom const &
+dw_macro_dom ()
 {
-  void
-  show (mpz_class const &v, std::ostream &o, brevity brv) const override
-  {
-    int code = positive_int_from_mpz (v);
-    const char *ret = dwarf_inline_string (code, brv);
-    o << string_or_unknown (ret, "DW_INL_", brv, code, 0, 0, false);
-  }
+  static dw_simple_dom dom {"DW_MACRO_", dwarf_macro_string,
+			    DW_MACRO_GNU_lo_user, DW_MACRO_GNU_hi_user, true};
+  return dom;
+}
 
-  std::string name () const override
-  {
-    return "DW_INL_*";
-  }
-} dw_inline_dom_obj;
-
-constant_dom const &dw_inline_dom = dw_inline_dom_obj;
-
-
-static struct
-  : public constant_dom
+constant_dom const &
+dw_inline_dom ()
 {
-  void
-  show (mpz_class const &v, std::ostream &o, brevity brv) const override
-  {
-    int code = positive_int_from_mpz (v);
-    const char *ret = dwarf_encoding_string (code, brv);
-    o << string_or_unknown (ret, "DW_ATE_", brv,
-			    code, DW_ATE_lo_user, DW_ATE_hi_user, false);
-  }
+  static dw_simple_dom dom {"DW_INL_", dwarf_inline_string,
+			    0, 0, false};
+  return dom;
+}
 
-  std::string name () const override
-  {
-    return "DW_ATE_*";
-  }
-} dw_encoding_dom_obj;
-
-constant_dom const &dw_encoding_dom = dw_encoding_dom_obj;
-
-
-static struct
-  : public constant_dom
+constant_dom const &
+dw_encoding_dom ()
 {
-  void
-  show (mpz_class const &v, std::ostream &o, brevity brv) const override
-  {
-    int code = positive_int_from_mpz (v);
-    const char *ret = dwarf_access_string (code, brv);
-    o << string_or_unknown (ret, "DW_ACCESS_", brv, code, 0, 0, false);
-  }
+  static dw_simple_dom dom {"DW_ATE_", dwarf_encoding_string,
+			    DW_ATE_lo_user, DW_ATE_hi_user, false};
+  return dom;
+}
 
-  std::string name () const override
-  {
-    return "DW_ACCESS_*";
-  }
-} dw_access_dom_obj;
-
-constant_dom const &dw_access_dom = dw_access_dom_obj;
-
-
-static struct
-  : public constant_dom
+constant_dom const &
+dw_access_dom ()
 {
-  void
-  show (mpz_class const &v, std::ostream &o, brevity brv) const override
-  {
-    int code = positive_int_from_mpz (v);
-    const char *ret = dwarf_visibility_string (code, brv);
-    o << string_or_unknown (ret, "DW_VIS_", brv, code, 0, 0, false);
-  }
+  static dw_simple_dom dom {"DW_ACCESS_", dwarf_access_string,
+			    0, 0, false};
+  return dom;
+}
 
-  std::string name () const override
-  {
-    return "DW_VIS_*";
-  }
-} dw_visibility_dom_obj;
-
-constant_dom const &dw_visibility_dom = dw_visibility_dom_obj;
-
-
-static struct
-  : public constant_dom
+constant_dom const &
+dw_visibility_dom ()
 {
-  void
-  show (mpz_class const &v, std::ostream &o, brevity brv) const override
-  {
-    int code = positive_int_from_mpz (v);
-    const char *ret = dwarf_virtuality_string (code, brv);
-    o << string_or_unknown (ret, "DW_VIRTUALITY_", brv, code, 0, 0, false);
-  }
+  static dw_simple_dom dom {"DW_VIS_", dwarf_visibility_string,
+			    0, 0, false};
+  return dom;
+}
 
-  std::string name () const override
-  {
-    return "DW_VIRTUALITY_*";
-  }
-} dw_virtuality_dom_obj;
-
-constant_dom const &dw_virtuality_dom = dw_virtuality_dom_obj;
-
-
-static struct
-  : public constant_dom
+constant_dom const &
+dw_virtuality_dom ()
 {
-  void
-  show (mpz_class const &v, std::ostream &o, brevity brv) const override
-  {
-    int code = positive_int_from_mpz (v);
-    const char *ret = dwarf_identifier_case_string (code, brv);
-    o << string_or_unknown (ret, "DW_ID_", brv, code, 0, 0, false);
-  }
+  static dw_simple_dom dom {"DW_VIRTUALITY_", dwarf_virtuality_string,
+			    0, 0, false};
+  return dom;
+}
 
-  std::string name () const override
-  {
-    return "DW_ID_*";
-  }
-} dw_identifier_case_dom_obj;
-
-constant_dom const &dw_identifier_case_dom = dw_identifier_case_dom_obj;
-
-
-static struct
-  : public constant_dom
+constant_dom const &
+dw_identifier_case_dom ()
 {
-  void
-  show (mpz_class const &v, std::ostream &o, brevity brv) const override
-  {
-    int code = positive_int_from_mpz (v);
-    const char *ret = dwarf_calling_convention_string (code, brv);
-    o << string_or_unknown (ret, "DW_CC_", brv,
-			    code, DW_CC_lo_user, DW_CC_hi_user, false);
-  }
+  static dw_simple_dom dom {"DW_ID_", dwarf_identifier_case_string,
+			    0, 0, false};
+  return dom;
+}
 
-  std::string name () const override
-  {
-    return "DW_CC_*";
-  }
-} dw_calling_convention_dom_obj;
-
-constant_dom const &dw_calling_convention_dom = dw_calling_convention_dom_obj;
-
-
-static struct
-  : public constant_dom
+constant_dom const &
+dw_calling_convention_dom ()
 {
-  void
-  show (mpz_class const &v, std::ostream &o, brevity brv) const override
-  {
-    int code = positive_int_from_mpz (v);
-    const char *ret = dwarf_ordering_string (code, brv);
-    o << string_or_unknown (ret, "DW_ORD_", brv, code, 0, 0, false);
-  }
+  static dw_simple_dom dom {"DW_CC_", dwarf_calling_convention_string,
+			    DW_CC_lo_user, DW_CC_hi_user, false};
+  return dom;
+}
 
-  std::string name () const override
-  {
-    return "DW_ORD_*";
-  }
-} dw_ordering_dom_obj;
-
-constant_dom const &dw_ordering_dom = dw_ordering_dom_obj;
-
-
-static struct
-  : public constant_dom
+constant_dom const &
+dw_ordering_dom ()
 {
-  void
-  show (mpz_class const &v, std::ostream &o, brevity brv) const override
-  {
-    int code = positive_int_from_mpz (v);
-    const char *ret = dwarf_discr_list_string (code, brv);
-    o << string_or_unknown (ret, "DW_DSC_", brv, code, 0, 0, false);
-  }
+  static dw_simple_dom dom {"DW_ORD_", dwarf_ordering_string,
+			    0, 0, false};
+  return dom;
+}
 
-  std::string name () const override
-  {
-    return "DW_DSC_*";
-  }
-} dw_discr_list_dom_obj;
-
-constant_dom const &dw_discr_list_dom = dw_discr_list_dom_obj;
-
-
-static struct
-  : public constant_dom
+constant_dom const &
+dw_discr_list_dom ()
 {
-  void
-  show (mpz_class const &v, std::ostream &o, brevity brv) const override
-  {
-    int code = positive_int_from_mpz (v);
-    const char *ret = dwarf_decimal_sign_string (code, brv);
-    o << string_or_unknown (ret, "DW_DS_", brv, code, 0, 0, false);
-  }
+  static dw_simple_dom dom {"DW_DSC_", dwarf_discr_list_string,
+			    0, 0, false};
+  return dom;
+}
 
-  std::string name () const override
-  {
-    return "DW_DS_*";
-  }
-} dw_decimal_sign_dom_obj;
-
-constant_dom const &dw_decimal_sign_dom = dw_decimal_sign_dom_obj;
-
-
-static struct
-  : public constant_dom
+constant_dom const &
+dw_decimal_sign_dom ()
 {
-  void
-  show (mpz_class const &v, std::ostream &o, brevity brv) const override
-  {
-    int code = positive_int_from_mpz (v);
-    const char *ret = dwarf_locexpr_opcode_string (code, brv);
-    o << string_or_unknown (ret, "DW_OP_", brv,
-			    code, DW_OP_lo_user, DW_OP_hi_user, true);
-  }
+  static dw_simple_dom dom {"DW_DS_", dwarf_decimal_sign_string,
+			    0, 0, false};
+  return dom;
+}
 
-  std::string name () const override
-  {
-    return "DW_OP_*";
-  }
-} dw_locexpr_opcode_dom_obj;
-
-constant_dom const &dw_locexpr_opcode_dom = dw_locexpr_opcode_dom_obj;
-
-
-static struct
-  : public constant_dom
+constant_dom const &
+dw_locexpr_opcode_dom ()
 {
-  void
-  show (mpz_class const &v, std::ostream &o, brevity brv) const override
-  {
-    int code = positive_int_from_mpz (v);
-    const char *ret = dwarf_address_class_string (code, brv);
-    o << string_or_unknown (ret, "DW_ADDR_", brv, code, 0, 0, false);
-  }
+  static dw_simple_dom dom {"DW_OP_", dwarf_locexpr_opcode_string,
+			    DW_OP_lo_user, DW_OP_hi_user, true};
+  return dom;
+}
 
-  std::string name () const override
-  {
-    return "DW_ADDR_*";
-  }
-} dw_address_class_dom_obj;
-
-constant_dom const &dw_address_class_dom = dw_address_class_dom_obj;
-
-
-static struct
-  : public constant_dom
+constant_dom const &
+dw_address_class_dom ()
 {
-  void
-  show (mpz_class const &v, std::ostream &o, brevity brv) const override
-  {
-    int code = positive_int_from_mpz (v);
-    const char *ret = dwarf_endianity_string (code, brv);
-    o << string_or_unknown (ret, "DW_END_", brv, code, 0, 0, false);
-  }
+  static dw_simple_dom dom {"DW_ADDR_", dwarf_address_class_string,
+			    0, 0, false};
+  return dom;
+}
 
-  std::string name () const override
-  {
-    return "DW_END_*";
-  }
-} dw_endianity_dom_obj;
-
-constant_dom const &dw_endianity_dom = dw_endianity_dom_obj;
+constant_dom const &
+dw_endianity_dom ()
+{
+  static dw_simple_dom dom {"DW_END_", dwarf_endianity_string,
+			    0, 0, false};
+  return dom;
+}
 
 namespace
 {
@@ -771,11 +574,23 @@ namespace
   };
 }
 
-dw_hex_constant_dom_t dw_address_dom_obj ("Dwarf_Address");
-constant_dom const &dw_address_dom = dw_address_dom_obj;
+constant_dom const &
+dw_address_dom ()
+{
+  static dw_hex_constant_dom_t dw_address_dom_obj ("Dwarf_Address");
+  return dw_address_dom_obj;
+}
 
-dw_hex_constant_dom_t dw_offset_dom_obj ("Dwarf_Off");
-constant_dom const &dw_offset_dom = dw_offset_dom_obj;
+constant_dom const &
+dw_offset_dom ()
+{
+  static dw_hex_constant_dom_t dw_offset_dom_obj ("Dwarf_Off");
+  return dw_offset_dom_obj;
+}
 
-dw_dec_constant_dom_t dw_abbrevcode_dom_obj ("Dwarf_Abbrev code");
-constant_dom const &dw_abbrevcode_dom = dw_abbrevcode_dom_obj;
+constant_dom const &
+dw_abbrevcode_dom ()
+{
+  static dw_dec_constant_dom_t dw_abbrevcode_dom_obj ("Dwarf_Abbrev code");
+  return dw_abbrevcode_dom_obj;
+}

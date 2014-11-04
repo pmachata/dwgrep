@@ -218,7 +218,7 @@ value_die_base::show (std::ostream &o, brevity brv) const
     ios_flag_saver fs {o};
     o << '[' << std::hex << dwarf_dieoffset (die) << ']'
       << (brv == brevity::full ? '\t' : ' ')
-      << constant (dwarf_tag (die), &dw_tag_dom, brevity::brief);
+      << constant (dwarf_tag (die), &dw_tag_dom (), brevity::brief);
   }
 
   if (brv == brevity::full)
@@ -282,8 +282,8 @@ value_attr::show (std::ostream &o, brevity brv) const
 
   {
     ios_flag_saver s {o};
-    o << constant (name, &dw_attr_dom, brevity::brief) << " ("
-      << constant (form, &dw_form_dom, brevity::brief) << ")\t";
+    o << constant (name, &dw_attr_dom (), brevity::brief) << " ("
+      << constant (form, &dw_form_dom (), brevity::brief) << ")\t";
   }
 
   auto vpr = at_value (m_dwctx, m_die, m_attr);
@@ -365,10 +365,10 @@ value_abbrev::show (std::ostream &o, brevity brv) const
 {
   o << '[' << dwarf_getabbrevcode (&m_abbrev) << "] "
     << "offset:" << constant (dwpp_abbrev_offset (m_abbrev),
-			      &dw_offset_dom, brevity::full)
+			      &dw_offset_dom (), brevity::full)
     << ", children:" << (dwarf_abbrevhaschildren (&m_abbrev) ? "yes" : "no")
     << ", tag:" << constant (dwarf_getabbrevtag (&m_abbrev),
-			     &dw_tag_dom, brevity::brief);
+			     &dw_tag_dom (), brevity::brief);
 
   if (brv == brevity::full)
     {
@@ -410,9 +410,9 @@ value_type const value_abbrev_attr::vtype
 void
 value_abbrev_attr::show (std::ostream &o, brevity brv) const
 {
-  o << constant (offset, &dw_offset_dom, brevity::full)
-    << ' ' << constant (name, &dw_attr_dom, brevity::brief)
-    << " (" << constant (form, &dw_form_dom, brevity::brief) << ")";
+  o << constant (offset, &dw_offset_dom (), brevity::full)
+    << ' ' << constant (name, &dw_attr_dom (), brevity::brief)
+    << " (" << constant (form, &dw_form_dom (), brevity::brief) << ")";
 }
 
 std::unique_ptr <value>
@@ -439,7 +439,7 @@ namespace
 		   Dwarf_Attribute const &attr, Dwarf_Op *dwop)
   {
     o << dwop->offset << ':'
-      << constant {dwop->atom, &dw_locexpr_opcode_dom, brevity::brief};
+      << constant {dwop->atom, &dw_locexpr_opcode_dom (), brevity::brief};
     {
       auto prod = dwop_number (dwctx, attr, dwop);
       while (auto v = prod->next ())
