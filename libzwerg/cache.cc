@@ -32,7 +32,6 @@
 
 #include "cache.hh"
 #include "dwpp.hh"
-#include "dwgrep.hh"
 #include "dwit.hh"
 
 void

@@ -32,7 +32,6 @@
 #include <memory>
 #include <string>
 
-#include "dwgrep.hh"
 #include "constant.hh"
 #include "value.hh"
 

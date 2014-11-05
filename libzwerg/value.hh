@@ -32,7 +32,6 @@
 #include <memory>
 
 #include "constant.hh"
-#include "dwgrep.hh"
 
 enum class cmp_result
   {

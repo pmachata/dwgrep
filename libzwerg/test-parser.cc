@@ -34,6 +34,7 @@
 #include "tree.hh"
 #include "parser.hh"
 #include "lexer.hh"
+#include "init.hh"
 
 static unsigned tests = 0, failed = 0;
 

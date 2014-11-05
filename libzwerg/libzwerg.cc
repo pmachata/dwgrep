@@ -30,13 +30,14 @@
 #include <string>
 #include <iostream>
 
-#include "builtin.hh"
 #include "builtin-dw.hh"
-#include "value-dw.hh"
+#include "builtin.hh"
+#include "init.hh"
+#include "op.hh"
+#include "parser.hh"
 #include "stack.hh"
 #include "tree.hh"
-#include "parser.hh"
-#include "op.hh"
+#include "value-dw.hh"
 
 struct zw_error
 {

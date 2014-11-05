@@ -32,7 +32,6 @@
 #include <memory>
 #include <cassert>
 
-#include "dwgrep.hh"
 #include "stack.hh"
 #include "pred_result.hh"
 #include "tree.hh"

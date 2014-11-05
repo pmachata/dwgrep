@@ -29,6 +29,8 @@
 #ifndef _BUILTIN_DW_H_
 #define _BUILTIN_DW_H_
 
+#include <memory>
+
 struct vocabulary;
 std::unique_ptr <vocabulary> dwgrep_vocabulary_dw ();
 
