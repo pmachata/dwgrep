@@ -1,10 +1,2 @@
-*-dep
-*.o
-test-parser
-test-int
-parser.cc
-parser.hh
-lexer.cc
-lexer.hh
-known-dwarf.h
 tmp/
+build/
