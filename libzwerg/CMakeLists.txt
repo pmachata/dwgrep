@@ -15,7 +15,7 @@ ADD_CUSTOM_COMMAND (OUTPUT known-dwarf.h
   DEPENDS ${CMAKE_SOURCE_DIR}/known-dwarf.awk ${DWARF_INCLUDE_DIR}/dwarf.h
 )
 
-# Core pseudo-library to reuse in test-parser.
+# Core pseudo-library.
 ADD_LIBRARY (LibzwergCore OBJECT
 
   ${BISON_Parser_OUTPUTS}
@@ -43,22 +43,13 @@ ADD_LIBRARY (LibzwergCore OBJECT
   value.cc
 )
 
-SET_TARGET_PROPERTIES(LibzwergCore PROPERTIES
+SET_TARGET_PROPERTIES (LibzwergCore PROPERTIES
   COMPILE_FLAGS "-fPIC"
 )
 
-# This file is too large for variable tracking assignments, so single
-# it out for customization.
-ADD_LIBRARY (BuiltinDw OBJECT builtin-dw.cc known-dwarf.h)
-SET_TARGET_PROPERTIES(BuiltinDw PROPERTIES
-  COMPILE_FLAGS "-fno-var-tracking-assignments -fPIC"
-)
+# Dwarf pseudo-library.
+ADD_LIBRARY (LibzwergDw OBJECT
 
-# libzwerg DSO
-ADD_LIBRARY (libzwerg SHARED
-
-  $<TARGET_OBJECTS:BuiltinDw>
-  $<TARGET_OBJECTS:LibzwergCore>
   known-dwarf.h
   atval.cc
   cache.cc
@@ -70,9 +61,28 @@ ADD_LIBRARY (libzwerg SHARED
   value-dw.cc
 )
 
-SET (libzwerg_HEADERS
+SET_TARGET_PROPERTIES (LibzwergDw PROPERTIES
+  COMPILE_FLAGS "-fPIC"
+)
 
-  libzwerg.h)
+# This file is too large for variable tracking assignments, so single
+# it out for customization.
+ADD_LIBRARY (BuiltinDw OBJECT builtin-dw.cc known-dwarf.h)
+SET_TARGET_PROPERTIES (BuiltinDw PROPERTIES
+  COMPILE_FLAGS "-fno-var-tracking-assignments -fPIC"
+)
+
+SET (LibzwergAll
+
+  $<TARGET_OBJECTS:LibzwergCore>
+  $<TARGET_OBJECTS:LibzwergDw>
+  $<TARGET_OBJECTS:BuiltinDw>
+)
+
+# libzwerg DSO
+ADD_LIBRARY (libzwerg SHARED ${LibzwergAll})
+
+SET (libzwerg_HEADERS libzwerg.h)
 
 TARGET_LINK_LIBRARIES (libzwerg ${LIBELF_LIBRARY} ${DWARF_LIBRARIES})
 
@@ -99,3 +109,12 @@ ADD_EXECUTABLE (test-parser
   test-parser.cc
 )
 ADD_TEST (TestParser test-parser)
+
+IF (GTEST_FOUND)
+  ADD_LIBRARY (TestStub OBJECT test-stub.cc)
+
+  ADD_EXECUTABLE (test-dw test-dw.cc $<TARGET_OBJECTS:TestStub> ${LibzwergAll})
+  TARGET_LINK_LIBRARIES (test-dw
+    ${GTEST_LIBRARIES} ${LIBELF_LIBRARY} ${DWARF_LIBRARIES})
+  ADD_TEST (TestDw test-dw --test-case-directory=${CMAKE_SOURCE_DIR}/tests/)
+ENDIF ()
