@@ -113,7 +113,7 @@ namespace
 std::unique_ptr <pred>
 builtin_eq::build_pred () const
 {
-  return maybe_invert (std::make_unique <pred_eq> ());
+  return maybe_invert (std::make_unique <pred_eq> (), m_positive);
 }
 
 char const *
@@ -129,7 +129,7 @@ builtin_eq::name () const
 std::unique_ptr <pred>
 builtin_lt::build_pred () const
 {
-  return maybe_invert (std::make_unique <pred_lt> ());
+  return maybe_invert (std::make_unique <pred_lt> (), m_positive);
 }
 
 char const *
@@ -145,7 +145,7 @@ builtin_lt::name () const
 std::unique_ptr <pred>
 builtin_gt::build_pred () const
 {
-  return maybe_invert (std::make_unique <pred_gt> ());
+  return maybe_invert (std::make_unique <pred_gt> (), m_positive);
 }
 
 char const *

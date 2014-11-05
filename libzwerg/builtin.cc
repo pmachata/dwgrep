@@ -49,9 +49,9 @@ builtin::build_exec (std::shared_ptr <op> upstream) const
 }
 
 std::unique_ptr <pred>
-pred_builtin::maybe_invert (std::unique_ptr <pred> pred) const
+maybe_invert (std::unique_ptr <pred> pred, bool positive)
 {
-  if (m_positive)
+  if (positive)
     return pred;
   else
     return std::make_unique <pred_not> (std::move (pred));

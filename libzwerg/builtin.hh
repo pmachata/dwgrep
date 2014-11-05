@@ -51,6 +51,10 @@ public:
   virtual char const *name () const = 0;
 };
 
+// Return either PRED, or PRED_NOT(PRED), depending on POSITIVE.
+std::unique_ptr <pred> maybe_invert (std::unique_ptr <pred> pred,
+				     bool positive);
+
 class pred_builtin
   : public builtin
 {
@@ -61,9 +65,6 @@ public:
   explicit pred_builtin (bool positive)
     : m_positive {positive}
   {}
-
-  // Return either PRED, or PRED_NOT(PRED), depending on M_POSITIVE.
-  std::unique_ptr <pred> maybe_invert (std::unique_ptr <pred> pred) const;
 };
 
 class vocabulary

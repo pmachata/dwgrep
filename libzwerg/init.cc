@@ -171,9 +171,9 @@ dwgrep_vocabulary_core ()
     t->add_pred_overload <pred_empty_seq> ();
 
     voc->add
-      (std::make_shared <overloaded_pred_builtin <true>> ("?empty", t));
+      (std::make_shared <overloaded_pred_builtin> ("?empty", t, true));
     voc->add
-      (std::make_shared <overloaded_pred_builtin <false>> ("!empty", t));
+      (std::make_shared <overloaded_pred_builtin> ("!empty", t, false));
   }
 
   // "find"
@@ -183,8 +183,8 @@ dwgrep_vocabulary_core ()
     t->add_pred_overload <pred_find_str> ();
     t->add_pred_overload <pred_find_seq> ();
 
-    voc->add (std::make_shared <overloaded_pred_builtin <true>> ("?find", t));
-    voc->add (std::make_shared <overloaded_pred_builtin <false>> ("!find", t));
+    voc->add (std::make_shared <overloaded_pred_builtin> ("?find", t, true));
+    voc->add (std::make_shared <overloaded_pred_builtin> ("!find", t, false));
   }
 
   // "starts"
@@ -194,8 +194,8 @@ dwgrep_vocabulary_core ()
     t->add_pred_overload <pred_starts_str> ();
     t->add_pred_overload <pred_starts_seq> ();
 
-    voc->add (std::make_shared <overloaded_pred_builtin <true>> ("?starts", t));
-    voc->add (std::make_shared <overloaded_pred_builtin <false>> ("!starts", t));
+    voc->add (std::make_shared <overloaded_pred_builtin> ("?starts", t, true));
+    voc->add (std::make_shared <overloaded_pred_builtin> ("!starts", t, false));
   }
 
   // "ends"
@@ -205,8 +205,8 @@ dwgrep_vocabulary_core ()
     t->add_pred_overload <pred_ends_str> ();
     t->add_pred_overload <pred_ends_seq> ();
 
-    voc->add (std::make_shared <overloaded_pred_builtin <true>> ("?ends", t));
-    voc->add (std::make_shared <overloaded_pred_builtin <false>> ("!ends", t));
+    voc->add (std::make_shared <overloaded_pred_builtin> ("?ends", t, true));
+    voc->add (std::make_shared <overloaded_pred_builtin> ("!ends", t, false));
   }
 
   // "match"
@@ -216,12 +216,12 @@ dwgrep_vocabulary_core ()
     t->add_pred_overload <pred_match_str> ();
 
     voc->add
-      (std::make_shared <overloaded_pred_builtin <true>> ("?match", t));
+      (std::make_shared <overloaded_pred_builtin> ("?match", t, true));
     voc->add
-      (std::make_shared <overloaded_pred_builtin <false>> ("!match", t));
+      (std::make_shared <overloaded_pred_builtin> ("!match", t, false));
 
-    voc->add (std::make_shared <overloaded_pred_builtin <true>> ("=~", t));
-    voc->add (std::make_shared <overloaded_pred_builtin <false>> ("!~", t));
+    voc->add (std::make_shared <overloaded_pred_builtin> ("=~", t, true));
+    voc->add (std::make_shared <overloaded_pred_builtin> ("!~", t, false));
   }
 
   // "length"

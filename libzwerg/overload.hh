@@ -174,11 +174,16 @@ struct overloaded_op_builtin
 };
 
 // Base class for overloaded predicate builtins.
-template <bool Positive>
 struct overloaded_pred_builtin
   : public overloaded_builtin
 {
-  using overloaded_builtin::overloaded_builtin;
+  bool m_positive;
+  overloaded_pred_builtin (char const *name,
+			   std::shared_ptr <overload_tab> ovl_tab,
+			   bool positive)
+    : overloaded_builtin {name, ovl_tab}
+    , m_positive {positive}
+  {}
 
   std::unique_ptr <pred> build_pred () const override final;
 

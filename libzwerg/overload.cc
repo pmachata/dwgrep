@@ -289,26 +289,17 @@ namespace
   };
 }
 
-template <bool Positive>
 std::unique_ptr <pred>
-overloaded_pred_builtin <Positive>::build_pred () const
+overloaded_pred_builtin::build_pred () const
 {
-  auto pred = std::make_unique <named_overload_pred>
-    (get_overload_tab ()->instantiate (), name ());
-
-  if (Positive)
-    return std::move (pred);
-  else
-    return std::make_unique <pred_not> (std::move (pred));
+  return maybe_invert (std::make_unique <named_overload_pred>
+				(get_overload_tab ()->instantiate (), name ()),
+		       m_positive);
 }
 
-template <bool Positive>
 std::shared_ptr <overloaded_builtin>
-overloaded_pred_builtin <Positive>::create_merged
+overloaded_pred_builtin::create_merged
 	(std::shared_ptr <overload_tab> tab) const
 {
-  return std::make_shared <overloaded_pred_builtin> (name (), tab);
+  return std::make_shared <overloaded_pred_builtin> (name (), tab, m_positive);
 }
-
-template class overloaded_pred_builtin <true>;
-template class overloaded_pred_builtin <false>;

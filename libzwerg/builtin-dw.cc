@@ -463,26 +463,34 @@ namespace
 // elem, relem
 namespace
 {
-  template <class T>
   struct elem_loclist_producer
     : public value_producer
   {
     std::unique_ptr <value_loclist_elem> m_value;
     size_t m_i;
+    size_t m_n;
+    bool m_forward;
 
-    elem_loclist_producer (std::unique_ptr <value_loclist_elem> value)
+    elem_loclist_producer (std::unique_ptr <value_loclist_elem> value,
+			   bool forward)
       : m_value {std::move (value)}
       , m_i {0}
+      , m_n {m_value->get_exprlen ()}
+      , m_forward {forward}
     {}
 
     std::unique_ptr <value>
     next () override
     {
       size_t idx = m_i++;
-      if (idx < m_value->get_exprlen ())
-	return std::make_unique <value_loclist_op>
-	  (m_value->get_dwctx (), m_value->get_attr (),
-	   T::get_expr (*m_value, idx), idx);
+      if (idx < m_n)
+	{
+	  if (! m_forward)
+	    idx = m_n - 1 - idx;
+	  return std::make_unique <value_loclist_op>
+	    (m_value->get_dwctx (), m_value->get_attr (),
+	     m_value->get_expr () + idx, idx);
+	}
       else
 	return nullptr;
     }
@@ -493,22 +501,10 @@ namespace
   {
     using op_yielding_overload::op_yielding_overload;
 
-    struct producer
-      : public elem_loclist_producer <producer>
-    {
-      using elem_loclist_producer::elem_loclist_producer;
-
-      static Dwarf_Op *
-      get_expr (value_loclist_elem &v, size_t idx)
-      {
-	return v.get_expr () + idx;
-      }
-    };
-
     std::unique_ptr <value_producer>
     operate (std::unique_ptr <value_loclist_elem> a) override
     {
-      return std::make_unique <producer> (std::move (a));
+      return std::make_unique <elem_loclist_producer> (std::move (a), true);
     }
   };
 
@@ -517,78 +513,81 @@ namespace
   {
     using op_yielding_overload::op_yielding_overload;
 
-    struct producer
-      : public elem_loclist_producer <producer>
-    {
-      using elem_loclist_producer::elem_loclist_producer;
-
-      static Dwarf_Op *
-      get_expr (value_loclist_elem &v, size_t idx)
-      {
-	return v.get_expr () + v.get_exprlen () - 1 - idx;
-      }
-    };
-
     std::unique_ptr <value_producer>
     operate (std::unique_ptr <value_loclist_elem> a) override
     {
-      return std::make_unique <producer> (std::move (a));
+      return std::make_unique <elem_loclist_producer> (std::move (a), false);
     }
   };
 
-  template <bool Forward>
+  struct elem_aset_producer
+    : public value_producer
+  {
+    coverage cov;
+    size_t m_idx;	// position among ranges
+    uint64_t m_ai;	// iteration through a range
+    size_t m_i;		// produced value counter
+    bool m_forward;
+
+    elem_aset_producer (coverage a_cov, bool forward)
+      : cov {a_cov}
+      , m_idx {0}
+      , m_ai {0}
+      , m_i {0}
+      , m_forward {forward}
+    {}
+
+    std::unique_ptr <value>
+    next () override
+    {
+      if (m_idx >= cov.size ())
+	return nullptr;
+
+      auto idx = [&] () {
+	return m_forward ? m_idx : cov.size () - 1 - m_idx;
+      };
+
+      if (m_ai >= cov.at (idx ()).length)
+	{
+	  m_idx++;
+	  if (m_idx >= cov.size ())
+	    return nullptr;
+	  assert (cov.at (idx ()).length > 0);
+	  m_ai = 0;
+	}
+
+      uint64_t ai = m_forward ? m_ai : cov.at (idx ()).length - 1 - m_ai;
+      uint64_t addr = cov.at (idx ()).start + ai;
+      m_ai++;
+
+      return std::make_unique <value_cst>
+	(constant {addr, &dw_address_dom ()}, m_i++);
+    }
+  };
+
   struct op_elem_aset
     : public op_yielding_overload <value_aset>
   {
     using op_yielding_overload::op_yielding_overload;
 
-    struct producer
-      : public value_producer
+    std::unique_ptr <value_producer>
+    operate (std::unique_ptr <value_aset> val) override
     {
-      coverage cov;
-      size_t m_idx;	// position among ranges
-      uint64_t m_ai;	// iteration through a range
-      size_t m_i;	// produced value counter
+      return std::make_unique <elem_aset_producer>
+	(val->get_coverage (), true);
+    }
+  };
 
-      producer (coverage a_cov)
-	: cov {a_cov}
-	, m_idx {0}
-	, m_ai {0}
-	, m_i {0}
-      {}
-
-      std::unique_ptr <value>
-      next () override
-      {
-	if (m_idx >= cov.size ())
-	  return nullptr;
-
-	auto idx = [&] () {
-	  return Forward ? m_idx : cov.size () - 1 - m_idx;
-	};
-
-	if (m_ai >= cov.at (idx ()).length)
-	  {
-	    m_idx++;
-	    if (m_idx >= cov.size ())
-	      return nullptr;
-	    assert (cov.at (idx ()).length > 0);
-	    m_ai = 0;
-	  }
-
-	uint64_t ai = Forward ? m_ai : cov.at (idx ()).length - 1 - m_ai;
-	uint64_t addr = cov.at (idx ()).start + ai;
-	m_ai++;
-
-	return std::make_unique <value_cst>
-	  (constant {addr, &dw_address_dom ()}, m_i++);
-      }
-    };
+  struct op_relem_aset
+    : public op_yielding_overload <value_aset>
+  {
+    using op_yielding_overload::op_yielding_overload;
 
     std::unique_ptr <value_producer>
     operate (std::unique_ptr <value_aset> val) override
     {
-      return std::make_unique <producer> (val->get_coverage ());
+      return std::make_unique <elem_aset_producer>
+	(val->get_coverage (), false);
     }
   };
 }
@@ -2346,8 +2345,8 @@ dwgrep_vocabulary_dw ()
     t->add_pred_overload <pred_rootp_die <value_die>> ();
     t->add_pred_overload <pred_rootp_die <value_rawdie>> ();
 
-    voc.add (std::make_shared <overloaded_pred_builtin <true>> ("?root", t));
-    voc.add (std::make_shared <overloaded_pred_builtin <false>> ("!root", t));
+    voc.add (std::make_shared <overloaded_pred_builtin> ("?root", t, true));
+    voc.add (std::make_shared <overloaded_pred_builtin> ("!root", t, false));
   }
 
   {
@@ -2374,7 +2373,7 @@ dwgrep_vocabulary_dw ()
     auto t = std::make_shared <overload_tab> ();
 
     t->add_op_overload <op_elem_loclist_elem> ();
-    t->add_op_overload <op_elem_aset <true>> ();
+    t->add_op_overload <op_elem_aset> ();
 
     voc.add (std::make_shared <overloaded_op_builtin> ("elem", t));
   }
@@ -2383,7 +2382,7 @@ dwgrep_vocabulary_dw ()
     auto t = std::make_shared <overload_tab> ();
 
     t->add_op_overload <op_relem_loclist_elem> ();
-    t->add_op_overload <op_elem_aset <false>> ();
+    t->add_op_overload <op_relem_aset> ();
 
     voc.add (std::make_shared <overloaded_op_builtin> ("relem", t));
   }
@@ -2536,9 +2535,9 @@ dwgrep_vocabulary_dw ()
     t->add_pred_overload <pred_containsp_aset_aset> ();
 
     voc.add
-      (std::make_shared <overloaded_pred_builtin <true>> ("?contains", t));
+      (std::make_shared <overloaded_pred_builtin> ("?contains", t, true));
     voc.add
-      (std::make_shared <overloaded_pred_builtin <false>> ("!contains", t));
+      (std::make_shared <overloaded_pred_builtin> ("!contains", t, false));
   }
 
   {
@@ -2547,9 +2546,9 @@ dwgrep_vocabulary_dw ()
     t->add_pred_overload <pred_overlapsp_aset_aset> ();
 
     voc.add
-      (std::make_shared <overloaded_pred_builtin <true>> ("?overlaps", t));
+      (std::make_shared <overloaded_pred_builtin> ("?overlaps", t, true));
     voc.add
-      (std::make_shared <overloaded_pred_builtin <false>> ("!overlaps", t));
+      (std::make_shared <overloaded_pred_builtin> ("!overlaps", t, false));
   }
 
   {
@@ -2565,8 +2564,8 @@ dwgrep_vocabulary_dw ()
 
     t->add_pred_overload <pred_emptyp_aset> ();
 
-    voc.add (std::make_shared <overloaded_pred_builtin <true>> ("?empty", t));
-    voc.add (std::make_shared <overloaded_pred_builtin <false>> ("!empty", t));
+    voc.add (std::make_shared <overloaded_pred_builtin> ("?empty", t, true));
+    voc.add (std::make_shared <overloaded_pred_builtin> ("!empty", t, false));
   }
 
   {
@@ -2589,9 +2588,9 @@ dwgrep_vocabulary_dw ()
     t->add_pred_overload <pred_haschildrenp_abbrev> ();
 
     voc.add (std::make_shared
-		<overloaded_pred_builtin <true>> ("?haschildren", t));
+	     <overloaded_pred_builtin> ("?haschildren", t, true));
     voc.add (std::make_shared
-		<overloaded_pred_builtin <false>> ("!haschildren", t));
+	     <overloaded_pred_builtin> ("!haschildren", t, false));
   }
 
   {
@@ -2661,13 +2660,13 @@ dwgrep_vocabulary_dw ()
 	t->add_pred_overload <pred_atname_cst> (code);
 
 	voc.add
-	  (std::make_shared <overloaded_pred_builtin <true>> (qname, t));
+	(std::make_shared <overloaded_pred_builtin> (qname, t, true));
 	voc.add
-	  (std::make_shared <overloaded_pred_builtin <false>> (bname, t));
+	(std::make_shared <overloaded_pred_builtin> (bname, t, false));
 	voc.add
-	  (std::make_shared <overloaded_pred_builtin <true>> (lqname, t));
+	(std::make_shared <overloaded_pred_builtin> (lqname, t, true));
 	voc.add
-	  (std::make_shared <overloaded_pred_builtin <false>> (lbname, t));
+	(std::make_shared <overloaded_pred_builtin> (lbname, t, false));
       }
 
       // @AT_* etc.
@@ -2702,10 +2701,10 @@ dwgrep_vocabulary_dw ()
       t->add_pred_overload <pred_tag_abbrev> (code);
       t->add_pred_overload <pred_tag_cst> (code);
 
-      voc.add (std::make_shared <overloaded_pred_builtin <true>> (qname, t));
-      voc.add (std::make_shared <overloaded_pred_builtin <false>> (bname, t));
-      voc.add (std::make_shared <overloaded_pred_builtin <true>> (lqname, t));
-      voc.add (std::make_shared <overloaded_pred_builtin <false>> (lbname, t));
+      voc.add (std::make_shared <overloaded_pred_builtin> (qname, t, true));
+      voc.add (std::make_shared <overloaded_pred_builtin> (bname, t, false));
+      voc.add (std::make_shared <overloaded_pred_builtin> (lqname, t, true));
+      voc.add (std::make_shared <overloaded_pred_builtin> (lbname, t, false));
 
       add_builtin_constant (voc, constant (code, &dw_tag_dom ()), lqname + 1);
     };
@@ -2726,10 +2725,10 @@ dwgrep_vocabulary_dw ()
       t->add_pred_overload <pred_form_abbrev_attr> (code);
       t->add_pred_overload <pred_form_cst> (code);
 
-      voc.add (std::make_shared <overloaded_pred_builtin <true>> (qname, t));
-      voc.add (std::make_shared <overloaded_pred_builtin <false>> (bname, t));
-      voc.add (std::make_shared <overloaded_pred_builtin <true>> (lqname, t));
-      voc.add (std::make_shared <overloaded_pred_builtin <false>> (lbname, t));
+      voc.add (std::make_shared <overloaded_pred_builtin> (qname, t, true));
+      voc.add (std::make_shared <overloaded_pred_builtin> (bname, t, false));
+      voc.add (std::make_shared <overloaded_pred_builtin> (lqname, t, true));
+      voc.add (std::make_shared <overloaded_pred_builtin> (lbname, t, false));
 
       add_builtin_constant (voc, constant (code, &dw_form_dom ()), lqname + 1);
     };
@@ -2751,10 +2750,10 @@ dwgrep_vocabulary_dw ()
       t->add_pred_overload <pred_op_loclist_op> (code);
       t->add_pred_overload <pred_op_cst> (code);
 
-      voc.add (std::make_shared <overloaded_pred_builtin <true>> (qname, t));
-      voc.add (std::make_shared <overloaded_pred_builtin <false>> (bname, t));
-      voc.add (std::make_shared <overloaded_pred_builtin <true>> (lqname, t));
-      voc.add (std::make_shared <overloaded_pred_builtin <false>> (lbname, t));
+      voc.add (std::make_shared <overloaded_pred_builtin> (qname, t, true));
+      voc.add (std::make_shared <overloaded_pred_builtin> (bname, t, false));
+      voc.add (std::make_shared <overloaded_pred_builtin> (lqname, t, true));
+      voc.add (std::make_shared <overloaded_pred_builtin> (lbname, t, false));
 
       add_builtin_constant (voc, constant (code, &dw_locexpr_opcode_dom ()),
 			    lqname + 1);
