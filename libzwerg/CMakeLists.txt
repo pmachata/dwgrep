@@ -16,7 +16,7 @@ ADD_CUSTOM_COMMAND (OUTPUT known-dwarf.h
 )
 
 # Core pseudo-library to reuse in test-parser.
-ADD_LIBRARY (libzwerg_core OBJECT
+ADD_LIBRARY (LibzwergCore OBJECT
 
   ${BISON_Parser_OUTPUTS}
   ${FLEX_Lexer_OUTPUTS}
@@ -43,22 +43,22 @@ ADD_LIBRARY (libzwerg_core OBJECT
   value.cc
 )
 
-SET_TARGET_PROPERTIES(libzwerg_core PROPERTIES
+SET_TARGET_PROPERTIES(LibzwergCore PROPERTIES
   COMPILE_FLAGS "-fPIC"
 )
 
 # This file is too large for variable tracking assignments, so single
 # it out for customization.
-ADD_LIBRARY (builtin_dw OBJECT builtin-dw.cc known-dwarf.h)
-SET_TARGET_PROPERTIES(builtin_dw PROPERTIES
+ADD_LIBRARY (BuiltinDw OBJECT builtin-dw.cc known-dwarf.h)
+SET_TARGET_PROPERTIES(BuiltinDw PROPERTIES
   COMPILE_FLAGS "-fno-var-tracking-assignments -fPIC"
 )
 
 # libzwerg DSO
 ADD_LIBRARY (libzwerg SHARED
 
-  $<TARGET_OBJECTS:builtin_dw>
-  $<TARGET_OBJECTS:libzwerg_core>
+  $<TARGET_OBJECTS:BuiltinDw>
+  $<TARGET_OBJECTS:LibzwergCore>
   known-dwarf.h
   atval.cc
   cache.cc
@@ -95,7 +95,7 @@ ADD_TEST (TestInt test-int)
 
 ADD_EXECUTABLE (test-parser
 
-  $<TARGET_OBJECTS:libzwerg_core>
+  $<TARGET_OBJECTS:LibzwergCore>
   test-parser.cc
 )
 ADD_TEST (TestParser test-parser)
