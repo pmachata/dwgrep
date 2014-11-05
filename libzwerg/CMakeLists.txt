@@ -1,9 +1,26 @@
-FLEX_TARGET (Lexer lexer.ll ${CMAKE_CURRENT_BINARY_DIR}/lexer.cc)
+INCLUDE_DIRECTORIES (${CMAKE_CURRENT_BINARY_DIR})
+
+FLEX_TARGET (Lexer lexer.ll
+  ${CMAKE_CURRENT_BINARY_DIR}/lexer.cc
+  COMPILE_FLAGS --header-file=${CMAKE_CURRENT_BINARY_DIR}/lexer.hh)
+
 BISON_TARGET (Parser parser.yy ${CMAKE_CURRENT_BINARY_DIR}/parser.cc)
+
+ADD_FLEX_BISON_DEPENDENCY (Lexer Parser)
+
+ADD_CUSTOM_COMMAND (OUTPUT known-dwarf.h
+  COMMAND gawk -f
+  	${CMAKE_SOURCE_DIR}/known-dwarf.awk
+	${DWARF_INCLUDE_DIR}/dwarf.h > known-dwarf.h
+  DEPENDS ${CMAKE_SOURCE_DIR}/known-dwarf.awk ${DWARF_INCLUDE_DIR}/dwarf.h
+)
 
 # Core pseudo-library to reuse in test-parser.
 ADD_LIBRARY (libzwerg_core OBJECT
 
+  ${BISON_Parser_OUTPUTS}
+  ${FLEX_Lexer_OUTPUTS}
+  known-dwarf.h
   build.cc
   builtin-closure.cc
   builtin-cmp.cc
@@ -13,10 +30,8 @@ ADD_LIBRARY (libzwerg_core OBJECT
   constant.cc
   init.cc
   int.cc
-  lexer.cc
   op.cc
   overload.cc
-  parser.cc
   selector.cc
   stack.cc
   tree.cc
@@ -34,7 +49,7 @@ SET_TARGET_PROPERTIES(libzwerg_core PROPERTIES
 
 # This file is too large for variable tracking assignments, so single
 # it out for customization.
-ADD_LIBRARY (builtin_dw OBJECT builtin-dw.cc)
+ADD_LIBRARY (builtin_dw OBJECT builtin-dw.cc known-dwarf.h)
 SET_TARGET_PROPERTIES(builtin_dw PROPERTIES
   COMPILE_FLAGS "-fno-var-tracking-assignments -fPIC"
 )
@@ -44,6 +59,7 @@ ADD_LIBRARY (libzwerg SHARED
 
   $<TARGET_OBJECTS:builtin_dw>
   $<TARGET_OBJECTS:libzwerg_core>
+  known-dwarf.h
   atval.cc
   cache.cc
   coverage.cc

@@ -39,7 +39,6 @@
 %}
 
 %option 8bit bison-bridge warn yylineno
-%option outfile="lexer.cc" header-file="lexer.hh"
 %option noyywrap nounput batch noinput
 
 %option reentrant

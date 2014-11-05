@@ -1,6 +1,7 @@
 #!/bin/sh
 
 DWGREP=$1
+cd $(dirname $0)
 
 failures=0
 total=0
