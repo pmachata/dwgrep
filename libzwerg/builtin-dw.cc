@@ -56,7 +56,8 @@ namespace
     std::unique_ptr <value>
     operate (std::unique_ptr <value_str> a) override
     {
-      return std::make_unique <value_dwarf> (a->get_string (), 0);
+      return std::make_unique <value_dwarf> (a->get_string (), 0,
+					     doneness::cooked);
     }
   };
 }
@@ -120,10 +121,10 @@ namespace
       std::unique_ptr <value> ret;
       if (Cooked)
 	ret = std::make_unique <value_cu>
-	  (m_dwctx, *(*m_cuit)->cu, m_cuit.offset (), m_i);
+	  (m_dwctx, *(*m_cuit)->cu, m_cuit.offset (), m_i, doneness::cooked);
       else
-	ret = std::make_unique <value_rawcu>
-	  (m_dwctx, *(*m_cuit)->cu, m_cuit.offset (), m_i);
+	ret = std::make_unique <value_cu>
+	  (m_dwctx, *(*m_cuit)->cu, m_cuit.offset (), m_i, doneness::raw);
 
       m_i++;
       m_cuit++;
@@ -139,24 +140,15 @@ namespace
     std::unique_ptr <value_producer>
     operate (std::unique_ptr <value_dwarf> a) override
     {
-      return std::make_unique <dwarf_unit_producer <true>> (a->get_dwctx ());
-    }
-  };
-
-  struct op_unit_rawdwarf
-    : public op_yielding_overload <value_rawdwarf>
-  {
-    using op_yielding_overload::op_yielding_overload;
-
-    std::unique_ptr <value_producer>
-    operate (std::unique_ptr <value_rawdwarf> a) override
-    {
-      return std::make_unique <dwarf_unit_producer <false>> (a->get_dwctx ());
+      if (a->is_cooked ())
+	return std::make_unique <dwarf_unit_producer <true>> (a->get_dwctx ());
+      else
+	return std::make_unique <dwarf_unit_producer <false>> (a->get_dwctx ());
     }
   };
 
   std::unique_ptr <value>
-  cu_for_die (std::shared_ptr <dwfl_context> dwctx, Dwarf_Die die)
+  cu_for_die (std::shared_ptr <dwfl_context> dwctx, Dwarf_Die die, doneness d)
   {
     Dwarf_Die cudie;
     if (dwarf_diecu (&die, &cudie, nullptr, nullptr) == nullptr)
@@ -166,19 +158,30 @@ namespace
     cu_iterator cuit {dw, cudie};
 
     return std::make_unique <value_cu> (dwctx, *(*cuit)->cu,
-					cuit.offset (), 0);
+					cuit.offset (), 0, d);
   }
 
-  template <class T>
   struct op_unit_die
-    : public op_overload <T>
+    : public op_overload <value_die>
   {
-    using op_overload <T>::op_overload;
+    using op_overload <value_die>::op_overload;
 
     std::unique_ptr <value>
-    operate (std::unique_ptr <T> a) override
+    operate (std::unique_ptr <value_die> a) override
     {
-      return cu_for_die (a->get_dwctx (), a->get_die ());
+      return cu_for_die (a->get_dwctx (), a->get_die (), doneness::cooked);
+    }
+  };
+
+  struct op_unit_rawdie
+    : public op_overload <value_rawdie>
+  {
+    using op_overload <value_rawdie>::op_overload;
+
+    std::unique_ptr <value>
+    operate (std::unique_ptr <value_rawdie> a) override
+    {
+      return cu_for_die (a->get_dwctx (), a->get_die (), doneness::raw);
     }
   };
 
@@ -190,7 +193,7 @@ namespace
     std::unique_ptr <value>
     operate (std::unique_ptr <value_attr> a) override
     {
-      return cu_for_die (a->get_dwctx (), a->get_die ());
+      return cu_for_die (a->get_dwctx (), a->get_die (), doneness::cooked);
     }
   };
 }
@@ -329,19 +332,10 @@ namespace
     std::unique_ptr <value_producer>
     operate (std::unique_ptr <value_cu> a) override
     {
-      return make_cu_entry_producer <true> (a->get_dwctx (), a->get_cu ());
-    }
-  };
-
-  struct op_entry_rawcu
-    : public op_yielding_overload <value_rawcu>
-  {
-    using op_yielding_overload::op_yielding_overload;
-
-    std::unique_ptr <value_producer>
-    operate (std::unique_ptr <value_rawcu> a) override
-    {
-      return make_cu_entry_producer <false> (a->get_dwctx (), a->get_cu ());
+      if (a->is_cooked ())
+	return make_cu_entry_producer <true> (a->get_dwctx (), a->get_cu ());
+      else
+	return make_cu_entry_producer <false> (a->get_dwctx (), a->get_cu ());
     }
   };
 
@@ -365,15 +359,6 @@ namespace
 
     static selector get_selector ()
     { return {value_dwarf::vtype}; }
-  };
-
-  struct op_entry_rawdwarf
-    : public op_entry_dwarf_base <op_unit_rawdwarf, op_entry_rawcu>
-  {
-    using op_entry_dwarf_base::op_entry_dwarf_base;
-
-    static selector get_selector ()
-    { return {value_rawdwarf::vtype}; }
   };
 
   struct op_entry_abbrev_unit
@@ -1209,16 +1194,15 @@ namespace
 // root
 namespace
 {
-  template <bool Cooked>
   std::unique_ptr <value>
-  cu_root (std::shared_ptr <dwfl_context> dwctx, Dwarf_CU &cu)
+  cu_root (bool cooked, std::shared_ptr <dwfl_context> dwctx, Dwarf_CU &cu)
   {
     Dwarf_Die cudie;
     if (dwarf_cu_die (&cu, &cudie, nullptr, nullptr,
 		      nullptr, nullptr, nullptr, nullptr) == nullptr)
       throw_libdw ();
 
-    if (Cooked)
+    if (cooked)
       return std::make_unique <value_die> (dwctx, cudie, 0);
     else
       return std::make_unique <value_rawdie> (dwctx, cudie, 0);
@@ -1232,19 +1216,7 @@ namespace
     std::unique_ptr <value>
     operate (std::unique_ptr <value_cu> a) override
     {
-      return cu_root <true> (a->get_dwctx (), a->get_cu ());
-    }
-  };
-
-  struct op_root_rawcu
-    : public op_overload <value_rawcu>
-  {
-    using op_overload::op_overload;
-
-    std::unique_ptr <value>
-    operate (std::unique_ptr <value_rawcu> a) override
-    {
-      return cu_root <false> (a->get_dwctx (), a->get_cu ());
+      return cu_root (a->is_cooked (), a->get_dwctx (), a->get_cu ());
     }
   };
 
@@ -1697,18 +1669,6 @@ namespace
     }
   };
 
-  struct op_abbrev_rawdwarf
-    : public op_yielding_overload <value_rawdwarf>
-  {
-    using op_yielding_overload::op_yielding_overload;
-
-    std::unique_ptr <value_producer>
-    operate (std::unique_ptr <value_rawdwarf> a) override
-    {
-      return std::make_unique <abbrev_producer> (a->get_dwctx ());
-    }
-  };
-
   struct op_abbrev_cu
     : public op_overload <value_cu>
   {
@@ -1716,19 +1676,6 @@ namespace
 
     std::unique_ptr <value>
     operate (std::unique_ptr <value_cu> a) override
-    {
-      return std::make_unique <value_abbrev_unit>
-	(a->get_dwctx (), a->get_cu (), 0);
-    }
-  };
-
-  struct op_abbrev_rawcu
-    : public op_overload <value_rawcu>
-  {
-    using op_overload::op_overload;
-
-    std::unique_ptr <value>
-    operate (std::unique_ptr <value_rawcu> a) override
     {
       return std::make_unique <value_abbrev_unit>
 	(a->get_dwctx (), a->get_cu (), 0);
@@ -1804,19 +1751,6 @@ namespace
 // version
 namespace
 {
-  std::unique_ptr <value>
-  cu_version (Dwarf_CU &cu)
-  {
-    Dwarf_Die cudie;
-    Dwarf_Half version;
-    if (dwarf_cu_die (&cu, &cudie, &version, nullptr,
-		      nullptr, nullptr, nullptr, nullptr) == nullptr)
-      throw_libdw ();
-
-    constant c {version, &dec_constant_dom};
-    return std::make_unique <value_cst> (c, 0);
-  }
-
   struct op_version_cu
     : public op_overload <value_cu>
   {
@@ -1825,19 +1759,15 @@ namespace
     std::unique_ptr <value>
     operate (std::unique_ptr <value_cu> a) override
     {
-      return cu_version (a->get_cu ());
-    }
-  };
+      Dwarf_CU &cu = a->get_cu ();
+      Dwarf_Die cudie;
+      Dwarf_Half version;
+      if (dwarf_cu_die (&cu, &cudie, &version, nullptr,
+			nullptr, nullptr, nullptr, nullptr) == nullptr)
+	throw_libdw ();
 
-  struct op_version_rawcu
-    : public op_overload <value_rawcu>
-  {
-    using op_overload::op_overload;
-
-    std::unique_ptr <value>
-    operate (std::unique_ptr <value_rawcu> a) override
-    {
-      return cu_version (a->get_cu ());
+      constant c {version, &dec_constant_dom};
+      return std::make_unique <value_cst> (c, 0);
     }
   };
 }
@@ -1852,18 +1782,6 @@ namespace
 
     std::unique_ptr <value>
     operate (std::unique_ptr <value_dwarf> a) override
-    {
-      return std::make_unique <value_str> (std::string {a->get_fn ()}, 0);
-    }
-  };
-
-  struct op_name_rawdwarf
-    : public op_overload <value_rawdwarf>
-  {
-    using op_overload::op_overload;
-
-    std::unique_ptr <value>
-    operate (std::unique_ptr <value_rawdwarf> a) override
     {
       return std::make_unique <value_str> (std::string {a->get_fn ()}, 0);
     }
@@ -1915,8 +1833,8 @@ namespace
     std::unique_ptr <value>
     operate (std::unique_ptr <value_dwarf> a) override
     {
-      return std::make_unique <value_rawdwarf>
-	(a->get_fn (), a->get_dwctx (), 0);
+      return std::make_unique <value_dwarf>
+	(a->get_fn (), a->get_dwctx (), 0, doneness::raw);
     }
   };
 
@@ -1928,8 +1846,8 @@ namespace
     std::unique_ptr <value>
     operate (std::unique_ptr <value_cu> a) override
     {
-      return std::make_unique <value_rawcu>
-	(a->get_dwctx (), a->get_cu (), a->get_offset (), 0);
+      return std::make_unique <value_cu>
+	(a->get_dwctx (), a->get_cu (), a->get_offset (), 0, doneness::raw);
     }
   };
 
@@ -1950,29 +1868,29 @@ namespace
 // cooked
 namespace
 {
-  struct op_cooked_rawdwarf
-    : public op_overload <value_rawdwarf>
+  struct op_cooked_dwarf
+    : public op_overload <value_dwarf>
   {
     using op_overload::op_overload;
 
     std::unique_ptr <value>
-    operate (std::unique_ptr <value_rawdwarf> a) override
+    operate (std::unique_ptr <value_dwarf> a) override
     {
       return std::make_unique <value_dwarf>
-	(a->get_fn (), a->get_dwctx (), 0);
+	(a->get_fn (), a->get_dwctx (), 0, doneness::cooked);
     }
   };
 
-  struct op_cooked_rawcu
-    : public op_overload <value_rawcu>
+  struct op_cooked_cu
+    : public op_overload <value_cu>
   {
     using op_overload::op_overload;
 
     std::unique_ptr <value>
-    operate (std::unique_ptr <value_rawcu> a) override
+    operate (std::unique_ptr <value_cu> a) override
     {
       return std::make_unique <value_cu>
-	(a->get_dwctx (), a->get_cu (), a->get_offset (), 0);
+	(a->get_dwctx (), a->get_cu (), a->get_offset (), 0, doneness::cooked);
     }
   };
 
@@ -2283,9 +2201,7 @@ dwgrep_vocabulary_dw ()
   vocabulary &voc = *ret;
 
   add_builtin_type_constant <value_dwarf> (voc);
-  add_builtin_type_constant <value_rawdwarf> (voc);
   add_builtin_type_constant <value_cu> (voc);
-  add_builtin_type_constant <value_rawcu> (voc);
   add_builtin_type_constant <value_die> (voc);
   add_builtin_type_constant <value_rawdie> (voc);
   add_builtin_type_constant <value_attr> (voc);
@@ -2308,9 +2224,8 @@ dwgrep_vocabulary_dw ()
     auto t = std::make_shared <overload_tab> ();
 
     t->add_op_overload <op_unit_dwarf> ();
-    t->add_op_overload <op_unit_rawdwarf> ();
-    t->add_op_overload <op_unit_die <value_die>> ();
-    t->add_op_overload <op_unit_die <value_rawdie>> ();
+    t->add_op_overload <op_unit_die> ();
+    t->add_op_overload <op_unit_rawdie> ();
     t->add_op_overload <op_unit_attr> ();
     // xxx rawattr
 
@@ -2321,9 +2236,7 @@ dwgrep_vocabulary_dw ()
     auto t = std::make_shared <overload_tab> ();
 
     t->add_op_overload <op_entry_dwarf> ();
-    t->add_op_overload <op_entry_rawdwarf> ();
     t->add_op_overload <op_entry_cu> ();
-    t->add_op_overload <op_entry_rawcu> ();
     t->add_op_overload <op_entry_abbrev_unit> ();
 
     voc.add (std::make_shared <overloaded_op_builtin> ("entry", t));
@@ -2353,7 +2266,6 @@ dwgrep_vocabulary_dw ()
     auto t = std::make_shared <overload_tab> ();
 
     t->add_op_overload <op_root_cu> ();
-    t->add_op_overload <op_root_rawcu> ();
     t->add_op_overload <op_root_die> ();
     t->add_op_overload <op_root_rawdie> ();
 
@@ -2400,7 +2312,6 @@ dwgrep_vocabulary_dw ()
     auto t = std::make_shared <overload_tab> ();
 
     t->add_op_overload <op_offset_cu <value_cu>> ();
-    t->add_op_overload <op_offset_cu <value_rawcu>> ();
     t->add_op_overload <op_offset_die <value_die>> ();
     t->add_op_overload <op_offset_die <value_rawdie>> ();
     t->add_op_overload <op_offset_abbrev_unit> ();
@@ -2572,9 +2483,7 @@ dwgrep_vocabulary_dw ()
     auto t = std::make_shared <overload_tab> ();
 
     t->add_op_overload <op_abbrev_dwarf> ();
-    t->add_op_overload <op_abbrev_rawdwarf> ();
     t->add_op_overload <op_abbrev_cu> ();
-    t->add_op_overload <op_abbrev_rawcu> ();
     t->add_op_overload <op_abbrev_die> ();
     // xxx rawdie
 
@@ -2605,7 +2514,6 @@ dwgrep_vocabulary_dw ()
     auto t = std::make_shared <overload_tab> ();
 
     t->add_op_overload <op_version_cu> ();
-    t->add_op_overload <op_version_rawcu> ();
 
     voc.add (std::make_shared <overloaded_op_builtin> ("version", t));
   }
@@ -2614,7 +2522,6 @@ dwgrep_vocabulary_dw ()
     auto t = std::make_shared <overload_tab> ();
 
     t->add_op_overload <op_name_dwarf> ();
-    t->add_op_overload <op_name_rawdwarf> ();
     t->add_op_overload <op_name_die> ();
     t->add_op_overload <op_name_rawdie> ();
 
@@ -2634,8 +2541,8 @@ dwgrep_vocabulary_dw ()
   {
     auto t = std::make_shared <overload_tab> ();
 
-    t->add_op_overload <op_cooked_rawdwarf> ();
-    t->add_op_overload <op_cooked_rawcu> ();
+    t->add_op_overload <op_cooked_dwarf> ();
+    t->add_op_overload <op_cooked_cu> ();
     t->add_op_overload <op_cooked_rawdie> ();
 
     voc.add (std::make_shared <overloaded_op_builtin> ("cooked", t));

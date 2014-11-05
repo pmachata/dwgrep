@@ -34,24 +34,46 @@
 #include "dwfl_context.hh"
 #include "coverage.hh"
 
+enum class doneness
+  {
+    raw,
+    cooked
+  };
+
+class doneness_aspect
+{
+protected:
+  doneness m_doneness;
+
+  explicit doneness_aspect (doneness d)
+    : m_doneness {d}
+  {}
+
+public:
+  doneness get_doneness () const { return m_doneness; }
+  bool is_raw () const { return m_doneness == doneness::raw; }
+  bool is_cooked () const { return m_doneness == doneness::cooked; }
+};
+
 // -------------------------------------------------------------------
 // Dwarf
 // -------------------------------------------------------------------
 
-class value_dwarf_base
+class value_dwarf
   : public value
+  , public doneness_aspect
 {
-protected:
   std::string m_fn;
   std::shared_ptr <dwfl_context> m_dwctx;
 
-protected:
-  value_dwarf_base (std::string const &fn, size_t pos, value_type vtype);
-  value_dwarf_base (std::string const &fn, std::shared_ptr <dwfl_context> dwctx,
-		    size_t pos, value_type vtype);
-
 public:
-  value_dwarf_base (value_dwarf_base const &that) = default;
+  static value_type const vtype;
+
+  value_dwarf (std::string const &fn, size_t pos, doneness d);
+  value_dwarf (std::string const &fn, std::shared_ptr <dwfl_context> dwctx,
+	       size_t pos, doneness d);
+
+  value_dwarf (value_dwarf const &that) = default;
 
   std::string &get_fn ()
   { return m_fn; }
@@ -60,40 +82,6 @@ public:
   { return m_dwctx; }
 
   void show (std::ostream &o, brevity brv) const override;
-};
-
-struct value_dwarf
-  : public value_dwarf_base
-{
-  static value_type const vtype;
-
-  value_dwarf (std::string const &fn, size_t pos)
-    : value_dwarf_base {fn, pos, vtype}
-  {}
-
-  value_dwarf (std::string const &fn, std::shared_ptr <dwfl_context> dwctx,
-	       size_t pos)
-    : value_dwarf_base {fn, dwctx, pos, vtype}
-  {}
-
-  cmp_result cmp (value const &that) const override;
-  std::unique_ptr <value> clone () const override;
-};
-
-struct value_rawdwarf
-  : public value_dwarf_base
-{
-  static value_type const vtype;
-
-  value_rawdwarf (std::string const &fn, size_t pos)
-    : value_dwarf_base {fn, pos, vtype}
-  {}
-
-  value_rawdwarf (std::string const &fn, std::shared_ptr <dwfl_context> dwctx,
-		  size_t pos)
-    : value_dwarf_base {fn, dwctx, pos, vtype}
-  {}
-
   cmp_result cmp (value const &that) const override;
   std::unique_ptr <value> clone () const override;
 };
@@ -102,24 +90,27 @@ struct value_rawdwarf
 // CU
 // -------------------------------------------------------------------
 
-class value_cu_base
+class value_cu
   : public value
+  , public doneness_aspect
 {
-protected:
   std::shared_ptr <dwfl_context> m_dwctx;
   Dwarf_Off m_offset;
   Dwarf_CU &m_cu;
 
-  value_cu_base (std::shared_ptr <dwfl_context> dwctx, Dwarf_CU &cu,
-		 Dwarf_Off offset, size_t pos, value_type vtype)
+public:
+  static value_type const vtype;
+
+  value_cu (std::shared_ptr <dwfl_context> dwctx, Dwarf_CU &cu,
+	    Dwarf_Off offset, size_t pos, doneness d)
     : value {vtype, pos}
+    , doneness_aspect {d}
     , m_dwctx {dwctx}
     , m_offset {offset}
     , m_cu {cu}
   {}
 
-public:
-  value_cu_base (value_cu_base const &that) = default;
+  value_cu (value_cu const &that) = default;
 
   std::shared_ptr <dwfl_context> get_dwctx ()
   { return m_dwctx; }
@@ -131,32 +122,6 @@ public:
   { return m_offset; }
 
   void show (std::ostream &o, brevity brv) const override;
-};
-
-struct value_cu
-  : public value_cu_base
-{
-  static value_type const vtype;
-
-  value_cu (std::shared_ptr <dwfl_context> dwctx, Dwarf_CU &cu,
-	    Dwarf_Off offset, size_t pos)
-    : value_cu_base {dwctx, cu, offset, pos, vtype}
-  {}
-
-  cmp_result cmp (value const &that) const override;
-  std::unique_ptr <value> clone () const override;
-};
-
-struct value_rawcu
-  : public value_cu_base
-{
-  static value_type const vtype;
-
-  value_rawcu (std::shared_ptr <dwfl_context> dwctx, Dwarf_CU &cu,
-	    Dwarf_Off offset, size_t pos)
-    : value_cu_base {dwctx, cu, offset, pos, vtype}
-  {}
-
   cmp_result cmp (value const &that) const override;
   std::unique_ptr <value> clone () const override;
 };

@@ -656,13 +656,7 @@ expect_count 1 ./dwz-dupfile -e 'raw entry (@AT_name == "W")'
 
 # Test raw/cooked Dwarf interpretation.
 expect_count 1 ./empty -e '
-	(type == T_DWARF) raw (type == T_RAW_DWARF) cooked (type == T_DWARF)'
-expect_count 1 ./empty -e '
-	unit (type == T_CU) raw (type == T_RAW_CU) cooked (type == T_CU)'
-expect_count 1 ./empty -e '
 	entry (type == T_DIE) raw (type == T_RAW_DIE) cooked (type == T_DIE)'
-expect_count 1 ./empty -e '
-	raw unit (type == T_RAW_CU)'
 expect_count 1 ./empty -e '
 	raw unit entry (type == T_RAW_DIE)'
 expect_count 1 ./empty -e '

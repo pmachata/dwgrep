@@ -44,7 +44,6 @@
 #include "value-dw.hh"
 
 value_type const value_dwarf::vtype = value_type::alloc ("T_DWARF");
-value_type const value_rawdwarf::vtype = value_type::alloc ("T_RAW_DWARF");
 
 namespace
 {
@@ -95,23 +94,24 @@ namespace
   }
 }
 
-value_dwarf_base::value_dwarf_base (std::string const &fn,
-				    size_t pos, value_type vtype)
+value_dwarf::value_dwarf (std::string const &fn, size_t pos, doneness d)
   : value {vtype, pos}
+  , doneness_aspect {d}
   , m_fn {fn}
   , m_dwctx {std::make_shared <dwfl_context> (open_dwfl (fn))}
 {}
 
-value_dwarf_base::value_dwarf_base (std::string const &fn,
-				    std::shared_ptr <dwfl_context> dwctx,
-				    size_t pos, value_type vtype)
+value_dwarf::value_dwarf (std::string const &fn,
+			  std::shared_ptr <dwfl_context> dwctx,
+			  size_t pos, doneness d)
   : value {vtype, pos}
+  , doneness_aspect {d}
   , m_fn {fn}
   , m_dwctx {dwctx}
 {}
 
 void
-value_dwarf_base::show (std::ostream &o, brevity brv) const
+value_dwarf::show (std::ostream &o, brevity brv) const
 {
   o << "<Dwarf \"" << m_fn << "\">";
 }
@@ -122,54 +122,20 @@ value_dwarf::clone () const
   return std::make_unique <value_dwarf> (*this);
 }
 
-std::unique_ptr <value>
-value_rawdwarf::clone () const
-{
-  return std::make_unique <value_rawdwarf> (*this);
-}
-
-namespace
-{
-  template <class T>
-  T &
-  unconst (T const &t)
-  {
-    return const_cast <T &> (t);
-  }
-
-  template <class T>
-  cmp_result
-  cmp_dwarf (T const &a, T const &b)
-  {
-    return compare (unconst (a).get_dwctx ()->get_dwfl (),
-		    unconst (b).get_dwctx ()->get_dwfl ());
-  }
-}
-
 cmp_result
 value_dwarf::cmp (value const &that) const
 {
   if (auto v = value::as <value_dwarf> (&that))
-    return cmp_dwarf (*this, *v);
-  else
-    return cmp_result::fail;
-}
-
-cmp_result
-value_rawdwarf::cmp (value const &that) const
-{
-  if (auto v = value::as <value_rawdwarf> (&that))
-    return cmp_dwarf (*this, *v);
+    return compare (m_dwctx->get_dwfl (), v->m_dwctx->get_dwfl ());
   else
     return cmp_result::fail;
 }
 
 
 value_type const value_cu::vtype = value_type::alloc ("T_CU");
-value_type const value_rawcu::vtype = value_type::alloc ("T_RAW_CU");
 
 void
-value_cu_base::show (std::ostream &o, brevity brv) const
+value_cu::show (std::ostream &o, brevity brv) const
 {
   ios_flag_saver s {o};
   o << "CU " << std::hex << std::showbase << m_offset;
@@ -181,12 +147,6 @@ value_cu::clone () const
   return std::make_unique <value_cu> (*this);
 }
 
-std::unique_ptr <value>
-value_rawcu::clone () const
-{
-  return std::make_unique <value_rawcu> (*this);
-}
-
 cmp_result
 value_cu::cmp (value const &that) const
 {
@@ -196,15 +156,16 @@ value_cu::cmp (value const &that) const
     return cmp_result::fail;
 }
 
-cmp_result
-value_rawcu::cmp (value const &that) const
-{
-  if (auto v = value::as <value_rawcu> (&that))
-    return compare (&m_cu, &v->m_cu);
-  else
-    return cmp_result::fail;
-}
 
+namespace
+{
+  template <class T>
+  T &
+  unconst (T const &t)
+  {
+    return const_cast <T &> (t);
+  }
+}
 
 value_type const value_die::vtype = value_type::alloc ("T_DIE");
 value_type const value_rawdie::vtype = value_type::alloc ("T_RAW_DIE");

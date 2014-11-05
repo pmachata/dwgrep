@@ -266,12 +266,27 @@ zw_query_destroy (zw_query *query)
   delete query;
 }
 
+namespace
+{
+  zw_value *
+  init_dwarf (char const *filename, doneness d, zw_error **out_err)
+  {
+    return capture_errors ([&] () {
+	return new zw_value { std::make_unique <value_dwarf> (filename, 0, d) };
+      }, nullptr, out_err);
+  }
+}
+
 zw_value *
 zw_value_init_dwarf (char const *filename, zw_error **out_err)
 {
-  return capture_errors ([&] () {
-      return new zw_value { std::make_unique <value_dwarf> (filename, 0) };
-    }, nullptr, out_err);
+  return init_dwarf (filename, doneness::cooked, out_err);
+}
+
+zw_value *
+zw_value_init_dwarf_raw (char const *filename, zw_error **out_err)
+{
+  return init_dwarf (filename, doneness::raw, out_err);
 }
 
 void
