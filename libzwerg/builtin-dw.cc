@@ -584,7 +584,7 @@ namespace
     Dwarf_Die m_die;
     attr_iterator m_it;
     size_t m_i;
-    bool m_integrate;
+    doneness m_doneness;
     bool m_secondary;
 
     // Already seen attributes.
@@ -630,7 +630,7 @@ namespace
       : m_dwctx {value->get_dwctx ()}
       , m_it {attr_iterator::end ()}
       , m_i {0}
-      , m_integrate {value->is_cooked ()}
+      , m_doneness {value->get_doneness ()}
       , m_secondary {false}
     {
       m_next.push_back (value->get_die ());
@@ -641,17 +641,18 @@ namespace
     next () override
     {
       Dwarf_Attribute at;
+      bool const integrate = m_doneness == doneness::cooked;
       do
 	{
 	again:
 	  while (m_it == attr_iterator::end ())
-	    if (! m_integrate || ! next_die ())
+	    if (! integrate || ! next_die ())
 	      return nullptr;
 	    else
 	      m_secondary = true;
 
 	  at = **m_it++;
-	  if (m_integrate
+	  if (integrate
 	      && (at.code == DW_AT_specification
 		  || at.code == DW_AT_abstract_origin))
 	    {
@@ -667,10 +668,11 @@ namespace
 	  if (m_secondary && ! attr_should_be_integrated (at.code))
 	    goto again;
 	}
-      while (m_integrate && seen (at.code));
+      while (integrate && seen (at.code));
 
       m_seen.push_back (at.code);
-      return std::make_unique <value_attr> (m_dwctx, at, m_die, m_i++);
+      return std::make_unique <value_attr>
+		(m_dwctx, at, m_die, m_i++, m_doneness);
     }
   };
 
@@ -1744,6 +1746,19 @@ namespace
 	(a->get_dwctx (), a->get_die (), 0, doneness::raw);
     }
   };
+
+  struct op_raw_attr
+    : public op_overload <value_attr>
+  {
+    using op_overload::op_overload;
+
+    std::unique_ptr <value>
+    operate (std::unique_ptr <value_attr> a) override
+    {
+      return std::make_unique <value_attr>
+	(a->get_dwctx (), a->get_attr (), a->get_die (), 0, doneness::raw);
+    }
+  };
 }
 
 // cooked
@@ -1785,6 +1800,19 @@ namespace
     {
       return std::make_unique <value_die>
 	(a->get_dwctx (), a->get_die (), 0, doneness::cooked);
+    }
+  };
+
+  struct op_cooked_attr
+    : public op_overload <value_attr>
+  {
+    using op_overload::op_overload;
+
+    std::unique_ptr <value>
+    operate (std::unique_ptr <value_attr> a) override
+    {
+      return std::make_unique <value_attr>
+	(a->get_dwctx (), a->get_attr (), a->get_die (), 0, doneness::cooked);
     }
   };
 }
@@ -2207,6 +2235,7 @@ dwgrep_vocabulary_dw ()
     auto t = std::make_shared <overload_tab> ();
 
     t->add_op_overload <op_value_attr> ();
+    // xxx raw
     t->add_op_overload <op_value_loclist_op> ();
 
     voc.add (std::make_shared <overloaded_op_builtin> ("value", t));
@@ -2229,7 +2258,6 @@ dwgrep_vocabulary_dw ()
     auto t = std::make_shared <overload_tab> ();
 
     t->add_op_overload <op_address_die> ();
-    // xxx rawdie
     t->add_op_overload <op_address_attr> ();
     t->add_op_overload <op_address_loclist_elem> ();
 
@@ -2240,9 +2268,7 @@ dwgrep_vocabulary_dw ()
     auto t = std::make_shared <overload_tab> ();
 
     t->add_op_overload <op_label_die> ();
-    // xxx rawdie
     t->add_op_overload <op_label_attr> ();
-    // xxx rawattr
     t->add_op_overload <op_label_abbrev> ();
     t->add_op_overload <op_label_abbrev_attr> ();
     t->add_op_overload <op_label_loclist_op> ();
@@ -2254,7 +2280,6 @@ dwgrep_vocabulary_dw ()
     auto t = std::make_shared <overload_tab> ();
 
     t->add_op_overload <op_form_attr> ();
-    // xxx rawattr
     t->add_op_overload <op_form_abbrev_attr> ();
 
     voc.add (std::make_shared <overloaded_op_builtin> ("form", t));
@@ -2421,6 +2446,7 @@ dwgrep_vocabulary_dw ()
     t->add_op_overload <op_raw_dwarf> ();
     t->add_op_overload <op_raw_cu> ();
     t->add_op_overload <op_raw_die> ();
+    t->add_op_overload <op_raw_attr> ();
 
     voc.add (std::make_shared <overloaded_op_builtin> ("raw", t));
   }
@@ -2431,6 +2457,7 @@ dwgrep_vocabulary_dw ()
     t->add_op_overload <op_cooked_dwarf> ();
     t->add_op_overload <op_cooked_cu> ();
     t->add_op_overload <op_cooked_die> ();
+    t->add_op_overload <op_cooked_attr> ();
 
     voc.add (std::make_shared <overloaded_op_builtin> ("cooked", t));
   }
@@ -2451,14 +2478,10 @@ dwgrep_vocabulary_dw ()
 	t->add_pred_overload <pred_atname_abbrev_attr> (code);
 	t->add_pred_overload <pred_atname_cst> (code);
 
-	voc.add
-	(std::make_shared <overloaded_pred_builtin> (qname, t, true));
-	voc.add
-	(std::make_shared <overloaded_pred_builtin> (bname, t, false));
-	voc.add
-	(std::make_shared <overloaded_pred_builtin> (lqname, t, true));
-	voc.add
-	(std::make_shared <overloaded_pred_builtin> (lbname, t, false));
+	voc.add (std::make_shared <overloaded_pred_builtin> (qname, t, true));
+	voc.add (std::make_shared <overloaded_pred_builtin> (bname, t, false));
+	voc.add (std::make_shared <overloaded_pred_builtin> (lqname, t, true));
+	voc.add (std::make_shared <overloaded_pred_builtin> (lbname, t, false));
       }
 
       // @AT_* etc.
@@ -2466,6 +2489,7 @@ dwgrep_vocabulary_dw ()
 	auto t = std::make_shared <overload_tab> ();
 
 	t->add_op_overload <op_atval_die> (code);
+	// xxx raw shouldn't interpret values
 
 	voc.add (std::make_shared <overloaded_op_builtin> (atname, t));
 	voc.add (std::make_shared <overloaded_op_builtin> (latname, t));

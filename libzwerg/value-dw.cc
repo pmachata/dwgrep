@@ -185,7 +185,8 @@ value_die::show (std::ostream &o, brevity brv) const
     for (auto it = attr_iterator {die}; it != attr_iterator::end (); ++it)
       {
 	o << "\n\t";
-	value_attr {m_dwctx, **it, m_die, 0}.show (o, brevity::full);
+	value_attr {m_dwctx, **it, m_die, 0, doneness::raw}
+		.show (o, brevity::full);
       }
 }
 

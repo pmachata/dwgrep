@@ -186,6 +186,7 @@ public:
 
 class value_attr
   : public value
+  , public doneness_aspect
 {
   std::shared_ptr <dwfl_context> m_dwctx;
   Dwarf_Die m_die;
@@ -195,8 +196,9 @@ public:
   static value_type const vtype;
 
   value_attr (std::shared_ptr <dwfl_context> dwctx,
-	      Dwarf_Attribute attr, Dwarf_Die die, size_t pos)
+	      Dwarf_Attribute attr, Dwarf_Die die, size_t pos, doneness d)
     : value {vtype, pos}
+    , doneness_aspect {d}
     , m_dwctx {dwctx}
     , m_die (die)
     , m_attr (attr)

@@ -201,6 +201,44 @@ TEST_F (ZwTest, words_die_raw_cooked)
   }
 }
 
+TEST_F (ZwTest, words_attr_raw_cooked)
+{
+  {
+    auto yielded = run_dwquery (*builtins, "empty",
+				"entry attribute (pos == 0)");
+    auto produced = SOLE_YIELDED_VALUE (value_attr, yielded);
+    ASSERT_TRUE (produced.is_cooked ());
+  }
+
+  {
+    auto yielded = run_dwquery (*builtins, "empty",
+				"entry attribute (pos == 0) raw");
+    auto produced = SOLE_YIELDED_VALUE (value_attr, yielded);
+    ASSERT_TRUE (produced.is_raw ());
+  }
+
+  {
+    auto yielded = run_dwquery (*builtins, "empty",
+				"raw entry attribute (pos == 0)");
+    auto produced = SOLE_YIELDED_VALUE (value_attr, yielded);
+    ASSERT_TRUE (produced.is_raw ());
+  }
+
+  {
+    auto yielded = run_dwquery (*builtins, "empty",
+				"raw entry attribute (pos == 0) cooked");
+    auto produced = SOLE_YIELDED_VALUE (value_attr, yielded);
+    ASSERT_TRUE (produced.is_cooked ());
+  }
+
+  {
+    auto yielded = run_dwquery (*builtins, "empty",
+				"entry raw attribute (pos == 0)");
+    auto produced = SOLE_YIELDED_VALUE (value_attr, yielded);
+    EXPECT_TRUE (produced.is_raw ());
+  }
+}
+
 TEST_F (ZwTest, cooked_attribute_assertion_integrates_attributes)
 {
   ASSERT_EQ (1, run_dwquery (*builtins, "nullptr.o",
