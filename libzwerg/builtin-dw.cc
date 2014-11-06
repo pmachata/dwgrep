@@ -842,7 +842,7 @@ namespace
     }
   };
 
-  static std::unique_ptr <value>
+  std::unique_ptr <value>
   get_die_addr (Dwarf_Die *die, int (cb) (Dwarf_Die *, Dwarf_Addr *))
   {
     Dwarf_Addr addr;
@@ -1220,6 +1220,9 @@ namespace
     std::unique_ptr <value>
     operate (std::unique_ptr <value_die> a) override
     {
+      // Attributes that hold addresses shouldn't generally be found
+      // in abstract origins and declarations, so we don't need to
+      // concern ourselves with integrating here.
       if (! dwarf_hasattr (&a->get_die (), DW_AT_low_pc))
 	return nullptr;
       return get_die_addr (&a->get_die (), &dwarf_lowpc);
@@ -1255,6 +1258,9 @@ namespace
     std::unique_ptr <value>
     operate (std::unique_ptr <value_die> a) override
     {
+      // Attributes that hold addresses shouldn't generally be found
+      // in abstract origins and declarations, so we don't need to
+      // concern ourselves with integrating here.
       if (! dwarf_hasattr (&a->get_die (), DW_AT_high_pc))
 	return nullptr;
       return get_die_addr (&a->get_die (), &dwarf_highpc);
@@ -2316,7 +2322,6 @@ dwgrep_vocabulary_dw ()
     auto t = std::make_shared <overload_tab> ();
 
     t->add_op_overload <op_low_die> ();
-    // xxx rawdie
     t->add_op_overload <op_low_aset> ();
 
     voc.add (std::make_shared <overloaded_op_builtin> ("low", t));
@@ -2326,7 +2331,6 @@ dwgrep_vocabulary_dw ()
     auto t = std::make_shared <overload_tab> ();
 
     t->add_op_overload <op_high_die> ();
-    // xxx rawdie
     t->add_op_overload <op_high_aset> ();
 
     voc.add (std::make_shared <overloaded_op_builtin> ("high", t));
@@ -2420,7 +2424,6 @@ dwgrep_vocabulary_dw ()
     t->add_op_overload <op_abbrev_dwarf> ();
     t->add_op_overload <op_abbrev_cu> ();
     t->add_op_overload <op_abbrev_die> ();
-    // xxx rawdie
 
     voc.add (std::make_shared <overloaded_op_builtin> ("abbrev", t));
   }
@@ -2494,7 +2497,6 @@ dwgrep_vocabulary_dw ()
 
 	t->add_pred_overload <pred_atname_die> (code);
 	t->add_pred_overload <pred_atname_attr> (code);
-	// xxx rawattr
 	t->add_pred_overload <pred_atname_abbrev> (code);
 	t->add_pred_overload <pred_atname_abbrev_attr> (code);
 	t->add_pred_overload <pred_atname_cst> (code);
@@ -2560,7 +2562,6 @@ dwgrep_vocabulary_dw ()
       auto t = std::make_shared <overload_tab> ();
 
       t->add_pred_overload <pred_form_attr> (code);
-      // xxx rawattr
       t->add_pred_overload <pred_form_abbrev_attr> (code);
       t->add_pred_overload <pred_form_cst> (code);
 
