@@ -83,9 +83,9 @@ namespace
   }
 
   bool
-  unit_acceptable (bool cooked, Dwarf_Die die)
+  unit_acceptable (doneness d, Dwarf_Die die)
   {
-    if (! cooked)
+    if (d == doneness::raw)
       return true;
 
     // In cooked mode, we reject partial units.
@@ -93,7 +93,6 @@ namespace
     return dwarf_tag (&die) != DW_TAG_partial_unit;
   }
 
-  template <bool Cooked>
   struct dwarf_unit_producer
     : public value_producer
   {
@@ -101,12 +100,14 @@ namespace
     dwfl_module_iterator m_modit;
     cu_iterator m_cuit;
     size_t m_i;
+    doneness m_doneness;
 
-    dwarf_unit_producer (std::shared_ptr <dwfl_context> dwctx)
+    dwarf_unit_producer (std::shared_ptr <dwfl_context> dwctx, doneness d)
       : m_dwctx {dwctx}
       , m_modit {m_dwctx->get_dwfl ()}
       , m_cuit {cu_iterator::end ()}
       , m_i {0}
+      , m_doneness {d}
     {}
 
     std::unique_ptr <value>
@@ -115,16 +116,12 @@ namespace
       do
 	if (! maybe_next_module (m_modit, m_cuit))
 	  return nullptr;
-      while (unit_acceptable (Cooked, **m_cuit)
+      while (unit_acceptable (m_doneness, **m_cuit)
 	     ? false : (m_cuit++, true));
 
       std::unique_ptr <value> ret;
-      if (Cooked)
-	ret = std::make_unique <value_cu>
-	  (m_dwctx, *(*m_cuit)->cu, m_cuit.offset (), m_i, doneness::cooked);
-      else
-	ret = std::make_unique <value_cu>
-	  (m_dwctx, *(*m_cuit)->cu, m_cuit.offset (), m_i, doneness::raw);
+      ret = std::make_unique <value_cu>
+	(m_dwctx, *(*m_cuit)->cu, m_cuit.offset (), m_i, m_doneness);
 
       m_i++;
       m_cuit++;
@@ -140,10 +137,8 @@ namespace
     std::unique_ptr <value_producer>
     operate (std::unique_ptr <value_dwarf> a) override
     {
-      if (a->is_cooked ())
-	return std::make_unique <dwarf_unit_producer <true>> (a->get_dwctx ());
-      else
-	return std::make_unique <dwarf_unit_producer <false>> (a->get_dwctx ());
+      return std::make_unique <dwarf_unit_producer> (a->get_dwctx (),
+						     a->get_doneness ());
     }
   };
 
@@ -276,8 +271,8 @@ namespace
 
   // This producer encapsulates the logic for iteration through a
   // range of DIE's, with optional inlining of partial units along the
-  // way.  Cooked producers do inline, raw ones (!Cooked) don't.
-  template <bool Cooked, class It>
+  // way.  Cooked producers do inline, raw ones don't.
+  template <class It>
   struct die_it_producer
     : public value_producer
   {
@@ -290,10 +285,13 @@ namespace
     std::shared_ptr <value_die> m_import;
 
     size_t m_i;
+    doneness m_doneness;
 
-    die_it_producer (std::shared_ptr <dwfl_context> dwctx, Dwarf_Die die)
+    die_it_producer (std::shared_ptr <dwfl_context> dwctx, Dwarf_Die die,
+		     doneness d)
       : m_dwctx {dwctx}
       , m_i {0}
+      , m_doneness {d}
     {
       m_stack.push_back (get_it_range <It> (die, false));
     }
@@ -305,9 +303,10 @@ namespace
 	if (m_stack.empty ())
 	  return nullptr;
       while (drop_finished_imports (m_stack, m_import)
-	     || (Cooked && import_partial_units (m_stack, m_dwctx, m_import)));
+	     || (m_doneness == doneness::cooked
+		 && import_partial_units (m_stack, m_dwctx, m_import)));
 
-      if (Cooked)
+      if (m_doneness == doneness::cooked)
 	return std::make_unique <value_die>
 	  (m_dwctx, m_import, **m_stack.back ().first++, m_i++);
       else
@@ -316,12 +315,12 @@ namespace
     }
   };
 
-  template <bool Cooked>
   std::unique_ptr <value_producer>
-  make_cu_entry_producer (std::shared_ptr <dwfl_context> dwctx, Dwarf_CU &cu)
+  make_cu_entry_producer (std::shared_ptr <dwfl_context> dwctx, Dwarf_CU &cu,
+			  doneness d)
   {
-    return std::make_unique <die_it_producer <Cooked, all_dies_iterator>>
-      (dwctx, dwpp_cudie (cu));
+    return std::make_unique <die_it_producer <all_dies_iterator>>
+      (dwctx, dwpp_cudie (cu), d);
   }
 
   struct op_entry_cu
@@ -332,10 +331,8 @@ namespace
     std::unique_ptr <value_producer>
     operate (std::unique_ptr <value_cu> a) override
     {
-      if (a->is_cooked ())
-	return make_cu_entry_producer <true> (a->get_dwctx (), a->get_cu ());
-      else
-	return make_cu_entry_producer <false> (a->get_dwctx (), a->get_cu ());
+      return make_cu_entry_producer (a->get_dwctx (), a->get_cu (),
+				     a->get_doneness ());
     }
   };
 
@@ -411,13 +408,12 @@ namespace
 // child
 namespace
 {
-  template <bool Cooked>
   std::unique_ptr <value_producer>
   make_die_child_producer (std::shared_ptr <dwfl_context> dwctx,
-			   Dwarf_Die parent)
+			   Dwarf_Die parent, doneness d)
   {
-    return std::make_unique <die_it_producer <Cooked, child_iterator>>
-      (dwctx, parent);
+    return std::make_unique <die_it_producer <child_iterator>>
+      (dwctx, parent, d);
   }
 
   struct op_child_die
@@ -428,7 +424,8 @@ namespace
     std::unique_ptr <value_producer>
     operate (std::unique_ptr <value_die> a) override
     {
-      return make_die_child_producer <true> (a->get_dwctx (), a->get_die ());
+      return make_die_child_producer (a->get_dwctx (), a->get_die (),
+				      doneness::cooked);
     }
   };
 
@@ -440,7 +437,8 @@ namespace
     std::unique_ptr <value_producer>
     operate (std::unique_ptr <value_rawdie> a) override
     {
-      return make_die_child_producer <false> (a->get_dwctx (), a->get_die ());
+      return make_die_child_producer (a->get_dwctx (), a->get_die (),
+				      doneness::raw);
     }
   };
 }
@@ -1194,20 +1192,6 @@ namespace
 // root
 namespace
 {
-  std::unique_ptr <value>
-  cu_root (bool cooked, std::shared_ptr <dwfl_context> dwctx, Dwarf_CU &cu)
-  {
-    Dwarf_Die cudie;
-    if (dwarf_cu_die (&cu, &cudie, nullptr, nullptr,
-		      nullptr, nullptr, nullptr, nullptr) == nullptr)
-      throw_libdw ();
-
-    if (cooked)
-      return std::make_unique <value_die> (dwctx, cudie, 0);
-    else
-      return std::make_unique <value_rawdie> (dwctx, cudie, 0);
-  }
-
   struct op_root_cu
     : public op_overload <value_cu>
   {
@@ -1216,7 +1200,16 @@ namespace
     std::unique_ptr <value>
     operate (std::unique_ptr <value_cu> a) override
     {
-      return cu_root (a->is_cooked (), a->get_dwctx (), a->get_cu ());
+      Dwarf_CU &cu = a->get_cu ();
+      Dwarf_Die cudie;
+      if (dwarf_cu_die (&cu, &cudie, nullptr, nullptr,
+			nullptr, nullptr, nullptr, nullptr) == nullptr)
+	throw_libdw ();
+
+      if (a->get_doneness () == doneness::cooked)
+	return std::make_unique <value_die> (a->get_dwctx (), cudie, 0);
+      else
+	return std::make_unique <value_rawdie> (a->get_dwctx (), cudie, 0);
     }
   };
 
