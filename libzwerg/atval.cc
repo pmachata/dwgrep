@@ -631,7 +631,8 @@ at_value (std::shared_ptr <dwfl_context> dwctx,
 	Dwarf_Die die;
 	if (dwarf_formref_die (&attr, &die) == nullptr)
 	  throw_libdw ();
-	return pass_single_value (std::make_unique <value_die> (dwctx, die, 0));
+	return pass_single_value
+	  (std::make_unique <value_die> (dwctx, die, 0, doneness::cooked));
       }
 
     case DW_FORM_sdata:
@@ -792,10 +793,12 @@ namespace
 	    throw_libdw ();
 
 	  return select <N>
-	    (pass_single_value (std::make_unique <value_die> (dwctx, die, 0)),
-	     pass_single_value (std::make_unique <value_cst>
-				(signed_cst (op->number2,
-					     &dec_constant_dom), 0)));
+	    (pass_single_value
+		(std::make_unique <value_die> (dwctx, die, 0,
+					       doneness::cooked)),
+	     pass_single_value
+		(std::make_unique <value_cst>
+			(signed_cst (op->number2, &dec_constant_dom), 0)));
 	}
 
       case DW_OP_implicit_value:
@@ -836,7 +839,9 @@ namespace
 	    throw_libdw ();
 
 	  return select <N>
-	    (pass_single_value (std::make_unique <value_die> (dwctx, die, 0)),
+	    (pass_single_value
+		(std::make_unique <value_die> (dwctx, die, 0,
+					       doneness::cooked)),
 	     pass_block (block));
 	}
       }

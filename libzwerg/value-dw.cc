@@ -168,10 +168,9 @@ namespace
 }
 
 value_type const value_die::vtype = value_type::alloc ("T_DIE");
-value_type const value_rawdie::vtype = value_type::alloc ("T_RAW_DIE");
 
 void
-value_die_base::show (std::ostream &o, brevity brv) const
+value_die::show (std::ostream &o, brevity brv) const
 {
   Dwarf_Die *die = &unconst (m_die);
 
@@ -190,33 +189,14 @@ value_die_base::show (std::ostream &o, brevity brv) const
       }
 }
 
-namespace
-{
-  template <class T>
-  cmp_result
-  rawdie_cmp (T const &a, T const &b)
-  {
-    return compare (dwarf_dieoffset ((Dwarf_Die *) &unconst (a).get_die ()),
-		    dwarf_dieoffset ((Dwarf_Die *) &unconst (b).get_die ()));
-  }
-}
-
-cmp_result
-value_rawdie::cmp (value const &that) const
-{
-  if (auto v = value::as <value_rawdie> (&that))
-    return rawdie_cmp (*this, *v);
-  else
-    return cmp_result::fail;
-}
-
 cmp_result
 value_die::cmp (value const &that) const
 {
   if (auto v = value::as <value_die> (&that))
     {
-      auto ret = rawdie_cmp (*this, *v);
-      if (ret != cmp_result::equal)
+      auto ret = compare (dwarf_dieoffset ((Dwarf_Die *) &m_die),
+			  dwarf_dieoffset ((Dwarf_Die *) &v->m_die));
+      if (ret != cmp_result::equal || is_raw ())
 	return ret;
 
       /* Compare nullness of import path.  Accept any difference, and

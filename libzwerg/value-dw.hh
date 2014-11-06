@@ -130,21 +130,42 @@ public:
 // DIE
 // -------------------------------------------------------------------
 
-class value_die_base
+class value_die
   : public value
+  , public doneness_aspect
 {
   std::shared_ptr <dwfl_context> m_dwctx;
   Dwarf_Die m_die;
 
-protected:
-  value_die_base (std::shared_ptr <dwfl_context> dwctx,
-		  Dwarf_Die die, size_t pos, value_type vtype)
-    : value {vtype, pos}
-    , m_dwctx {(assert (dwctx != nullptr), dwctx)}
-    , m_die (die)
-  {}
+  // For cooked DIE's, the DW_TAG_imported_unit DIE that this DIE went
+  // through during child traversals.
+  std::shared_ptr <value_die> m_import;
 
 public:
+  static value_type const vtype;
+
+  value_die (std::shared_ptr <dwfl_context> dwctx,
+	     std::shared_ptr <value_die> import,
+	     Dwarf_Die die, size_t pos, doneness d)
+    : value {vtype, pos}
+    , doneness_aspect {d}
+    , m_dwctx {(assert (dwctx != nullptr), dwctx)}
+    , m_die (die)
+    , m_import {import}
+  {}
+
+  value_die (std::shared_ptr <dwfl_context> dwctx,
+	     Dwarf_Die die, size_t pos, doneness d)
+    : value_die {dwctx, nullptr, die, pos, d}
+  {}
+
+  std::shared_ptr <value_die>
+  get_import ()
+  {
+    assert (is_cooked ());
+    return m_import;
+  }
+
   Dwarf_Die &get_die ()
   { return m_die; }
 
@@ -152,52 +173,9 @@ public:
   { return m_dwctx; }
 
   void show (std::ostream &o, brevity brv) const override;
-};
-
-class value_die
-  : public value_die_base
-{
-  // The DW_TAG_imported_unit DIE that this DIE went through during
-  // child traversals.
-  std::shared_ptr <value_die> m_import;
-
-public:
-  static value_type const vtype;
-
-  value_die (std::shared_ptr <dwfl_context> dwctx, Dwarf_Die die, size_t pos)
-    : value_die_base {dwctx, die, pos, vtype}
-  {}
-
-  value_die (std::shared_ptr <dwfl_context> dwctx,
-	     std::shared_ptr <value_die> import, Dwarf_Die die, size_t pos)
-    : value_die_base {dwctx, die, pos, vtype}
-    , m_import {import}
-  {}
-
-  std::shared_ptr <value_die> get_import ()
-  { return m_import; }
-
-  value_die (value_die const &that) = default;
 
   std::unique_ptr <value> clone () const override
   { return std::make_unique <value_die> (*this); }
-
-  cmp_result cmp (value const &that) const override;
-};
-
-struct value_rawdie
-  : public value_die_base
-{
-  static value_type const vtype;
-
-  value_rawdie (std::shared_ptr <dwfl_context> dwctx, Dwarf_Die die, size_t pos)
-    : value_die_base {dwctx, die, pos, vtype}
-  {}
-
-  value_rawdie (value_rawdie const &that) = default;
-
-  std::unique_ptr <value> clone () const override
-  { return std::make_unique <value_rawdie> (*this); }
 
   cmp_result cmp (value const &that) const override;
 };

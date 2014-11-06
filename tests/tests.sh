@@ -655,12 +655,6 @@ expect_count 3 ./haschildren_childless -e 'entry'
 expect_count 1 ./dwz-dupfile -e 'raw entry (@AT_name == "W")'
 
 # Test raw/cooked Dwarf interpretation.
-expect_count 1 ./empty -e '
-	entry (type == T_DIE) raw (type == T_RAW_DIE) cooked (type == T_DIE)'
-expect_count 1 ./empty -e '
-	raw unit entry (type == T_RAW_DIE)'
-expect_count 1 ./empty -e '
-	raw entry (type == T_RAW_DIE)'
 expect_count 4 ./dwz-partial -e 'unit'
 expect_count 5 ./dwz-partial -e 'raw unit'
 
@@ -669,8 +663,6 @@ expect_count 1 ./duplicate-const -e 'raw unit (==)'
 
 expect_count 1 ./twocus -e '
 	unit root type == T_DIE'
-expect_count 1 ./twocus -e '
-	raw unit root type == T_RAW_DIE'
 expect_count 1 ./dwz-partial -e '
 	(|A| [A raw abbrev] == [A abbrev])'
 expect_count 1 ./twocus -e '

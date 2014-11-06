@@ -142,6 +142,61 @@ TEST_F (ZwTest, words_cu_raw_cooked)
     auto produced = SOLE_YIELDED_VALUE (value_cu, yielded);
     ASSERT_TRUE (produced.is_cooked ());
   }
+
+  {
+    auto yielded = run_dwquery (*builtins, "empty", "entry raw unit");
+    auto produced = SOLE_YIELDED_VALUE (value_cu, yielded);
+    EXPECT_TRUE (produced.is_raw ());
+  }
 }
 
-// TODO: entry raw unit (type == T_RAW_CU)
+TEST_F (ZwTest, words_die_raw_cooked)
+{
+  {
+    auto yielded = run_dwquery (*builtins, "empty", "entry");
+    auto produced = SOLE_YIELDED_VALUE (value_die, yielded);
+    EXPECT_TRUE (produced.is_cooked ());
+  }
+
+  {
+    auto yielded = run_dwquery (*builtins, "empty", "entry raw");
+    auto produced = SOLE_YIELDED_VALUE (value_die, yielded);
+    EXPECT_TRUE (produced.is_raw ());
+  }
+
+  {
+    auto yielded = run_dwquery (*builtins, "empty", "raw entry");
+    auto produced = SOLE_YIELDED_VALUE (value_die, yielded);
+    EXPECT_TRUE (produced.is_raw ());
+  }
+
+  {
+    auto yielded = run_dwquery (*builtins, "empty", "raw entry cooked");
+    auto produced = SOLE_YIELDED_VALUE (value_die, yielded);
+    EXPECT_TRUE (produced.is_cooked ());
+  }
+
+  {
+    auto yielded = run_dwquery (*builtins, "empty", "raw unit entry");
+    auto produced = SOLE_YIELDED_VALUE (value_die, yielded);
+    EXPECT_TRUE (produced.is_raw ());
+  }
+
+  {
+    auto yielded = run_dwquery (*builtins, "twocus", "raw unit root");
+    ASSERT_EQ (2, yielded.size ());
+    for (auto &stk: yielded)
+      {
+	ASSERT_EQ (1, stk->size ());
+	auto produced = value::as <value_die> (&stk->get (0));
+	ASSERT_TRUE (produced != nullptr);
+	ASSERT_TRUE (produced->is_raw ());
+      }
+  }
+
+  {
+    auto yielded = run_dwquery (*builtins, "empty", "raw unit entry");
+    auto produced = SOLE_YIELDED_VALUE (value_die, yielded);
+    EXPECT_TRUE (produced.is_raw ());
+  }
+}
