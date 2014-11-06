@@ -270,3 +270,23 @@ TEST_F (ZwTest, name_on_raw_cooked_die)
   ASSERT_EQ (0, run_dwquery (*builtins, "nullptr.o",
 			     "entry (offset == 0x6e) raw name").size ());
 }
+
+TEST_F (ZwTest, raw_and_cooked_values_compare_equal)
+{
+  ASSERT_EQ (1, run_dwquery
+	     (*builtins, "empty",
+	      "(|A| [A] == [A raw])").size ());
+
+  ASSERT_EQ (1, run_dwquery
+	     (*builtins, "empty",
+	      "(|A| [A unit] == [A raw unit])").size ());
+
+  ASSERT_EQ (1, run_dwquery
+	     (*builtins, "empty",
+	      "(|A| [A unit entry] == [A raw unit entry])").size ());
+
+  ASSERT_EQ (1, run_dwquery
+	     (*builtins, "empty",
+	      "(|A| [A unit entry attribute] "
+	      "== [A raw unit entry attribute])").size ());
+}
