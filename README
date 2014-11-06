@@ -1127,36 +1127,6 @@
 ***  prev :: ?T_DIE ->? ?T_DIE
      The opposite of next.
 
-*** •integrate :: ?T_DIE ->? ?T_DIE
-     Equivalent to the following:
-     : (@AT_abstract_origin || @AT_specification)
-
-     It is meant to be used as named edge between a DIE and its
-     abstract instance(s).  In particular, the following idioms might
-     be useful:
-
-     : integrate* ?AT_xyz		# find DIE's with DW_AT_xyz
-     : integrate* @AT_xyz		# all AT_xyz's in chain
-     : [integrate*]			# the whole integration chain
-
-     : (!AT_xyz integrate)* ?AT_xyz	# find closest DIE with DW_AT_xyz
-     : ?(integrate* ?AT_xyz)		# dwarf_hasattr_integrate
-     : (!AT_xyz integrate)* attribute ?AT_xyz	# dwarf_attr_integrate
-     : (!AT_xyz integrate)* @AT_xyz	# value of integrated DW_AT_xyz
-
-***  integrate :: ?T_DIE ?T_CLOSURE ->* ?()
-     Given the above as "integrate1", the behavior of this "integrate"
-     can be specified thus:
-
-     : let integrate := {|Op| (!(Op) integrate1)* Op};
-
-     This then can be used as follows:
-
-     : {?AT_xyz} integrate		# find closest DIE with DW_AT_xyz
-     : ?({?AT_xyz} integrate)		# dwarf_hasattr_integrate
-     : {attribute ?AT_xyz} integrate	# dwarf_attr_integrate
-     : {@AT_xyz} integrate		# value of integrated DW_AT_xyz
-
 ***  merge :: ?T_DIE ->* ?T_DIE
      : let merge := { ?DW_TAG_imported_unit @AT_import child+ };
 

@@ -1067,49 +1067,6 @@ namespace
   };
 }
 
-// integrate
-namespace
-{
-  struct op_integrate_die
-    : public op_overload <value_die>
-  {
-    using op_overload::op_overload;
-
-    std::unique_ptr <value>
-    operate (std::unique_ptr <value_die> val) override
-    {
-      Dwarf_Attribute attr_mem, *attr
-	= dwarf_attr (&val->get_die (), DW_AT_abstract_origin, &attr_mem);
-
-      if (attr == nullptr)
-	attr = dwarf_attr (&val->get_die (), DW_AT_specification, &attr_mem);
-
-      if (attr == nullptr)
-	return nullptr;
-
-      Dwarf_Die die_mem, *die2 = dwarf_formref_die (attr, &die_mem);
-      if (die2 == nullptr)
-	throw_libdw ();
-
-      return std::make_unique <value_die> (val->get_dwctx (),
-					   *die2, 0, val->get_doneness ());
-    }
-  };
-
-  struct op_integrate_closure
-    : public op_overload <value_die, value_closure>
-  {
-    using op_overload::op_overload;
-
-    std::unique_ptr <value>
-    operate (std::unique_ptr <value_die> die,
-	     std::unique_ptr <value_closure> action) override
-    {
-      throw std::runtime_error ("integrate over closures not implemented");
-    }
-  };
-}
-
 // ?root
 namespace
 {
@@ -2314,17 +2271,6 @@ dwgrep_vocabulary_dw ()
   {
     auto t = std::make_shared <overload_tab> ();
 
-    t->add_op_overload <op_integrate_die> ();
-    // xxx rawdie
-    // xxx or will the whole integrate thing be dropped?
-    t->add_op_overload <op_integrate_closure> ();
-
-    voc.add (std::make_shared <overloaded_op_builtin> ("integrate", t));
-  }
-
-  {
-    auto t = std::make_shared <overload_tab> ();
-
     t->add_op_overload <op_low_die> ();
     t->add_op_overload <op_low_aset> ();
 
@@ -2520,7 +2466,6 @@ dwgrep_vocabulary_dw ()
 	auto t = std::make_shared <overload_tab> ();
 
 	t->add_op_overload <op_atval_die> (code);
-	// xxx rawdie
 
 	voc.add (std::make_shared <overloaded_op_builtin> (atname, t));
 	voc.add (std::make_shared <overloaded_op_builtin> (latname, t));
