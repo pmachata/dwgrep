@@ -207,6 +207,8 @@ TEST_F (ZwTest, cooked_attribute_assertion_integrates_attributes)
 			     "entry (offset == 0x6e) ?AT_name").size ());
   ASSERT_EQ (0, run_dwquery (*builtins, "nullptr.o",
 			     "entry (offset == 0x6e) !AT_name").size ());
+  ASSERT_EQ (1, run_dwquery (*builtins, "nullptr.o",
+			     "entry (offset == 0x6e) @AT_name").size ());
 
   // But it shouldn't blindly integrate everything.
   ASSERT_EQ (0, run_dwquery (*builtins, "nullptr.o",
@@ -219,6 +221,8 @@ TEST_F (ZwTest, cooked_attribute_assertion_integrates_attributes)
 			     "entry (offset == 0x6e) raw ?AT_name").size ());
   ASSERT_EQ (1, run_dwquery (*builtins, "nullptr.o",
 			     "entry (offset == 0x6e) raw !AT_name").size ());
+  ASSERT_EQ (0, run_dwquery (*builtins, "nullptr.o",
+			     "entry (offset == 0x6e) raw @AT_name").size ());
 }
 
 TEST_F (ZwTest, name_on_raw_cooked_die)

@@ -1208,7 +1208,7 @@
      Yield abbreviation associated with this DIE.
 
 *** •name :: ?T_DIE -> ?T_STR
-     : integrate* @AT_name
+     : @AT_name
 
 *** •@AT_* :: ?T_DIE ->* ?()
      Syntactic sugar for (attribute ?(label == AT_*) value).

@@ -1835,6 +1835,35 @@ namespace
 // @AT_*
 namespace
 {
+  bool
+  find_attribute (Dwarf_Die a, int atname, doneness d, Dwarf_Attribute *ret)
+  {
+    if (dwarf_hasattr (&a, atname))
+      {
+	if (ret != nullptr)
+	  *ret = dwpp_attr (a, atname);
+	return true;
+      }
+    else if (d == doneness::cooked && attr_should_be_integrated (atname))
+      {
+	auto recursively_find_at = [&] (int atname2)
+	  {
+	    if (dwarf_hasattr (&a, atname2))
+	      {
+		Dwarf_Attribute at = dwpp_attr (a, atname2);
+		return find_attribute (dwpp_formref_die (at), atname, d, ret);
+	      }
+	    else
+	      return false;
+	  };
+
+	return recursively_find_at (DW_AT_specification)
+	  || recursively_find_at (DW_AT_abstract_origin);
+      }
+    else
+      return false;
+  }
+
   class op_atval_die
     : public op_yielding_overload <value_die>
   {
@@ -1849,10 +1878,10 @@ namespace
     std::unique_ptr <value_producer>
     operate (std::unique_ptr <value_die> a)
     {
-      // XXX this needs to integrate for cooked dies.
       Dwarf_Attribute attr;
-      if (dwarf_attr (&a->get_die (), m_atname, &attr) == nullptr)
-	return false;
+      if (! find_attribute (a->get_die (), m_atname,
+			    a->get_doneness (), &attr))
+	return nullptr;
 
       return at_value (a->get_dwctx (), a->get_die (), attr);
     }
@@ -1872,36 +1901,11 @@ namespace
     {}
 
     pred_result
-    look_at (Dwarf_Die a, doneness d)
-    {
-      if (dwarf_hasattr (&a, m_atname))
-	return pred_result::yes;
-      else if (d == doneness::cooked && attr_should_be_integrated (m_atname))
-	{
-	  auto recursively_look_at = [&] (int atname)
-	    {
-	      if (dwarf_hasattr (&a, DW_AT_specification))
-		{
-		  Dwarf_Attribute at = dwpp_attr (a, atname);
-		  return look_at (dwpp_formref_die (at), d);
-		}
-	      else
-		return pred_result::no;
-	    };
-
-	  pred_result ret = recursively_look_at (DW_AT_specification);
-	  if (ret != pred_result::no)
-	    return ret;
-	  return recursively_look_at (DW_AT_abstract_origin);
-	}
-
-      return pred_result::no;
-    }
-
-    pred_result
     result (value_die &a) override
     {
-      return look_at (a.get_die (), a.get_doneness ());
+      return find_attribute (a.get_die (), m_atname,
+			     a.get_doneness (), nullptr)
+	? pred_result::yes : pred_result::no;
     }
   };
 
