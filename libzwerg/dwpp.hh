@@ -29,6 +29,7 @@
 #ifndef _DWPP_H_
 #define _DWPP_H_
 
+#include <string>
 #include <cassert>
 #include <stdexcept>
 #include <elfutils/libdwfl.h>
@@ -144,6 +145,14 @@ dwpp_formref_die (Dwarf_Attribute &at)
   if (dwarf_formref_die (&at, &ret) == nullptr)
     throw_libdw ();
   return ret;
+}
+
+inline std::string
+dwpp_formstring (Dwarf_Attribute &at)
+{
+  if (char const *name = dwarf_formstring (&at))
+    return name;
+  throw_libdw ();
 }
 
 #endif /* _DWPP_H_ */

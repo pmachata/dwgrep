@@ -220,3 +220,11 @@ TEST_F (ZwTest, cooked_attribute_assertion_integrates_attributes)
   ASSERT_EQ (1, run_dwquery (*builtins, "nullptr.o",
 			     "entry (offset == 0x6e) raw !AT_name").size ());
 }
+
+TEST_F (ZwTest, name_on_raw_cooked_die)
+{
+  ASSERT_EQ (1, run_dwquery (*builtins, "nullptr.o",
+			     "entry (offset == 0x6e) name").size ());
+  ASSERT_EQ (0, run_dwquery (*builtins, "nullptr.o",
+			     "entry (offset == 0x6e) raw name").size ());
+}

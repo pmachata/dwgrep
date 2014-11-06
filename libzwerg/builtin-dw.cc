@@ -1710,16 +1710,6 @@ namespace
     }
   };
 
-  std::unique_ptr <value>
-  diename (Dwarf_Die &die)
-  {
-    const char *name = dwarf_diename (&die);
-    if (name != nullptr)
-      return std::make_unique <value_str> (name, 0);
-    else
-      return nullptr;
-  }
-
   struct op_name_die
     : public op_overload <value_die>
   {
@@ -1728,7 +1718,24 @@ namespace
     std::unique_ptr <value>
     operate (std::unique_ptr <value_die> a) override
     {
-      return diename (a->get_die ());
+      if (a->is_cooked ())
+	{
+	  // On cooked DIE's, `name` integrates.
+	  const char *name = dwarf_diename (&a->get_die ());
+	  if (name != nullptr)
+	    return std::make_unique <value_str> (name, 0);
+	  else
+	    return nullptr;
+	}
+      // Unfortunately there's no non-integrating dwarf_diename
+      // counterpart.
+      else if (dwarf_hasattr (&a->get_die (), DW_AT_name))
+	{
+	  Dwarf_Attribute attr = dwpp_attr (a->get_die (), DW_AT_name);
+	  return std::make_unique <value_str> (dwpp_formstring (attr), 0);
+	}
+      else
+	return nullptr;
     }
   };
 }
