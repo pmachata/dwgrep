@@ -550,6 +550,33 @@ namespace
 // attribute
 namespace
 {
+  bool
+  attr_should_be_integrated (int code)
+  {
+    // Some attributes only make sense at the non-defining DIE and
+    // shouldn't be brought down through DW_AT_specification or
+    // DW_AT_abstract_origin.
+    //
+    // DW_AT_decl_* suite in particular is meaningful here as well as
+    // the non-defining declaration.  But then we would see local or
+    // remote set of attributes depending on whether there is any
+    // local set.  It would be impossible to distinguish in a script,
+    // which set is seen.
+
+    switch (code)
+      {
+      case DW_AT_sibling:
+      case DW_AT_declaration:
+      case DW_AT_decl_line:
+      case DW_AT_decl_column:
+      case DW_AT_decl_file:
+	return false;
+
+      default:
+	return true;
+      }
+  }
+
   struct attribute_producer
     : public value_producer
   {
@@ -613,14 +640,6 @@ namespace
     std::unique_ptr <value>
     next () override
     {
-      // Should DW_AT_abstract_origin and DW_AT_specification be
-      // expanded inline?  (And therefore themselves skipped?)  Should
-      // DW_AT_specification's DW_AT_declaration be skipped as well?
-      // Should DW_AT_declaration'd DIE's be ignored altogether?
-      //
-      // Note: page 187 describes the hashing algorithm, which handles
-      // DW_AT_specification.
-
       Dwarf_Attribute at;
       do
 	{
@@ -645,25 +664,8 @@ namespace
 	      break;
 	    }
 
-	  // Some attributes only make sense at the non-defining DIE
-	  // and shouldn't be brought down here.
-	  //
-	  // DW_AT_decl_* suite in particular is meaningful here as
-	  // well as the non-defining declaration.  But then we would
-	  // see local or remote set of attributes depending on
-	  // whether there is any local set.  It would be impossible
-	  // to distinguish in a script, which set is seen.
-	  //
-	  // XXX ?AT_* and @AT_* should have consistent rules for what
-	  // it brings from the specification/abstract_origin DIE's.
-	  if (m_secondary)
-	    switch (at.code)
-	    case DW_AT_sibling:
-	    case DW_AT_declaration:
-	    case DW_AT_decl_line:
-	    case DW_AT_decl_column:
-	    case DW_AT_decl_file:
-	      goto again;
+	  if (m_secondary && ! attr_should_be_integrated (at.code))
+	    goto again;
 	}
       while (m_integrate && seen (at.code));
 
@@ -1857,10 +1859,36 @@ namespace
     {}
 
     pred_result
+    look_at (Dwarf_Die a, doneness d)
+    {
+      if (dwarf_hasattr (&a, m_atname))
+	return pred_result::yes;
+      else if (d == doneness::cooked && attr_should_be_integrated (m_atname))
+	{
+	  auto recursively_look_at = [&] (int atname)
+	    {
+	      if (dwarf_hasattr (&a, DW_AT_specification))
+		{
+		  Dwarf_Attribute at = dwpp_attr (a, atname);
+		  return look_at (dwpp_formref_die (at), d);
+		}
+	      else
+		return pred_result::no;
+	    };
+
+	  pred_result ret = recursively_look_at (DW_AT_specification);
+	  if (ret != pred_result::no)
+	    return ret;
+	  return recursively_look_at (DW_AT_abstract_origin);
+	}
+
+      return pred_result::no;
+    }
+
+    pred_result
     result (value_die &a) override
     {
-      Dwarf_Die *die = &a.get_die ();
-      return pred_result (dwarf_hasattr (die, m_atname) != 0);
+      return look_at (a.get_die (), a.get_doneness ());
     }
   };
 
@@ -2458,7 +2486,6 @@ dwgrep_vocabulary_dw ()
 	auto t = std::make_shared <overload_tab> ();
 
 	t->add_pred_overload <pred_atname_die> (code);
-	// xxx rawdie
 	t->add_pred_overload <pred_atname_attr> (code);
 	// xxx rawattr
 	t->add_pred_overload <pred_atname_abbrev> (code);
@@ -2480,6 +2507,7 @@ dwgrep_vocabulary_dw ()
 	auto t = std::make_shared <overload_tab> ();
 
 	t->add_op_overload <op_atval_die> (code);
+	// xxx rawdie
 
 	voc.add (std::make_shared <overloaded_op_builtin> (atname, t));
 	voc.add (std::make_shared <overloaded_op_builtin> (latname, t));

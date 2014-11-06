@@ -200,3 +200,23 @@ TEST_F (ZwTest, words_die_raw_cooked)
     EXPECT_TRUE (produced.is_raw ());
   }
 }
+
+TEST_F (ZwTest, cooked_attribute_assertion_integrates_attributes)
+{
+  ASSERT_EQ (1, run_dwquery (*builtins, "nullptr.o",
+			     "entry (offset == 0x6e) ?AT_name").size ());
+  ASSERT_EQ (0, run_dwquery (*builtins, "nullptr.o",
+			     "entry (offset == 0x6e) !AT_name").size ());
+
+  // But it shouldn't blindly integrate everything.
+  ASSERT_EQ (0, run_dwquery (*builtins, "nullptr.o",
+			     "entry (offset == 0x6e) ?AT_declaration").size ());
+  ASSERT_EQ (1, run_dwquery (*builtins, "nullptr.o",
+			     "entry (offset == 0x6e) !AT_declaration").size ());
+
+  // And shouldn't integrate in raw mode either.
+  ASSERT_EQ (0, run_dwquery (*builtins, "nullptr.o",
+			     "entry (offset == 0x6e) raw ?AT_name").size ());
+  ASSERT_EQ (1, run_dwquery (*builtins, "nullptr.o",
+			     "entry (offset == 0x6e) raw !AT_name").size ());
+}

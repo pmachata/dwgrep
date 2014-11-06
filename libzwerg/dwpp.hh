@@ -95,21 +95,13 @@ dwpp_offdie (Dwarf *dbg, Dwarf_Off offset)
   return result;
 }
 
-inline bool
-dwpp_attr_integrate (Dwarf_Die *die, unsigned int search_name,
-		     Dwarf_Attribute *result)
+inline Dwarf_Attribute
+dwpp_attr (Dwarf_Die &die, unsigned int search_name)
 {
-  // Clear the error code.
-  dwarf_errno ();
-  if (dwarf_attr_integrate (die, search_name, result) == nullptr)
-    {
-      int dwerr = dwarf_errno ();
-      if (dwerr != 0)
-	throw_libdw (dwerr);
-      else
-	return false;
-    }
-  return true;
+  Dwarf_Attribute ret;
+  if (dwarf_attr (&die, search_name, &ret) == nullptr)
+    throw_libdw ();
+  return ret;
 }
 
 inline Dwarf_Off
@@ -143,6 +135,15 @@ inline Dwarf_Die
 dwpp_cudie (Dwarf_Die &die)
 {
   return dwpp_cudie (*die.cu);
+}
+
+inline Dwarf_Die
+dwpp_formref_die (Dwarf_Attribute &at)
+{
+  Dwarf_Die ret;
+  if (dwarf_formref_die (&at, &ret) == nullptr)
+    throw_libdw ();
+  return ret;
 }
 
 #endif /* _DWPP_H_ */
