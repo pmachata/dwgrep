@@ -66,45 +66,63 @@ namespace
 // unit
 namespace
 {
+  std::vector <Dwarf *>
+  all_dwarfs (dwfl_context &dwctx)
+  {
+    std::vector <Dwarf *> ret;
+    std::for_each (dwfl_module_iterator {dwctx.get_dwfl ()},
+		   dwfl_module_iterator::end (),
+		   [&] (std::pair <Dwarf *, Dwarf_Addr> p)
+		   {
+		     ret.push_back (p.first);
+		     if (Dwarf *alt = dwarf_getalt (p.first))
+		       ret.push_back (alt);
+		   });
+    return ret;
+  }
+
   bool
-  maybe_next_module (dwfl_module_iterator &modit, cu_iterator &cuit)
+  maybe_next_dwarf (cu_iterator &cuit,
+		    std::vector <Dwarf *>::iterator &it,
+		    std::vector <Dwarf *>::iterator const end)
   {
     while (cuit == cu_iterator::end ())
-      {
-	if (modit == dwfl_module_iterator::end ())
-	  return false;
-
-	Dwarf *dw = (*modit++).first;
-	assert (dw != nullptr);
-	cuit = cu_iterator (dw);
-      }
-
+      if (it == end)
+	return false;
+      else
+	cuit = cu_iterator {*it++};
     return true;
   }
 
   bool
-  unit_acceptable (doneness d, Dwarf_Die die)
+  next_acceptable_unit (doneness d, cu_iterator &it)
   {
     if (d == doneness::raw)
       return true;
 
-    // In cooked mode, we reject partial units.
-    // XXX Should we reject type units as well?
-    return dwarf_tag (&die) != DW_TAG_partial_unit;
+    for (; it != cu_iterator::end (); ++it)
+      // In cooked mode, we reject partial units.
+      // XXX Should we reject type units as well?
+      if (dwarf_tag (*it) != DW_TAG_partial_unit)
+	return true;
+
+    return false;
   }
 
   struct dwarf_unit_producer
     : public value_producer
   {
     std::shared_ptr <dwfl_context> m_dwctx;
-    dwfl_module_iterator m_modit;
+    std::vector <Dwarf *> m_dwarfs;
+    std::vector <Dwarf *>::iterator m_it;
     cu_iterator m_cuit;
     size_t m_i;
     doneness m_doneness;
 
     dwarf_unit_producer (std::shared_ptr <dwfl_context> dwctx, doneness d)
       : m_dwctx {dwctx}
-      , m_modit {m_dwctx->get_dwfl ()}
+      , m_dwarfs {all_dwarfs (*dwctx)}
+      , m_it {m_dwarfs.begin ()}
       , m_cuit {cu_iterator::end ()}
       , m_i {0}
       , m_doneness {d}
@@ -114,18 +132,15 @@ namespace
     next () override
     {
       do
-	if (! maybe_next_module (m_modit, m_cuit))
+	if (! maybe_next_dwarf (m_cuit, m_it, m_dwarfs.end ()))
 	  return nullptr;
-      while (unit_acceptable (m_doneness, **m_cuit)
-	     ? false : (m_cuit++, true));
+      while (! next_acceptable_unit (m_doneness, m_cuit));
 
-      std::unique_ptr <value> ret;
-      ret = std::make_unique <value_cu>
-	(m_dwctx, *(*m_cuit)->cu, m_cuit.offset (), m_i, m_doneness);
-
-      m_i++;
+      Dwarf_CU &cu = *(*m_cuit)->cu;
+      Dwarf_Off off = m_cuit.offset ();
       m_cuit++;
-      return std::move (ret);
+
+      return std::make_unique <value_cu> (m_dwctx, cu, off, m_i++, m_doneness);
     }
   };
 
@@ -1523,13 +1538,15 @@ namespace
     : public value_producer
   {
     std::shared_ptr <dwfl_context> m_dwctx;
-    dwfl_module_iterator m_modit;
+    std::vector <Dwarf *> m_dwarfs;
+    std::vector <Dwarf *>::iterator m_it;
     cu_iterator m_cuit;
     size_t m_i;
 
     abbrev_producer (std::shared_ptr <dwfl_context> dwctx)
       : m_dwctx {(assert (dwctx != nullptr), dwctx)}
-      , m_modit {m_dwctx->get_dwfl ()}
+      , m_dwarfs {all_dwarfs (*dwctx)}
+      , m_it {m_dwarfs.begin ()}
       , m_cuit {cu_iterator::end ()}
       , m_i {0}
     {}
@@ -1537,7 +1554,7 @@ namespace
     std::unique_ptr <value>
     next () override
     {
-      if (! maybe_next_module (m_modit, m_cuit))
+      if (! maybe_next_dwarf (m_cuit, m_it, m_dwarfs.end ()))
 	return nullptr;
 
       return std::make_unique <value_abbrev_unit>

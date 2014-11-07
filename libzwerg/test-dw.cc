@@ -290,3 +290,28 @@ TEST_F (ZwTest, raw_and_cooked_values_compare_equal)
 	      "(|A| [A unit entry attribute] "
 	      "== [A raw unit entry attribute])").size ());
 }
+
+TEST_F (ZwTest, entry_unit_abbrev_iterate_through_alt_file)
+{
+  // Show root entries in a1.out, which should show a compile unit
+  // from the main file and a partial unit entries from the alt file.
+  ASSERT_EQ (1, run_dwquery
+	     (*builtins, "a1.out",
+	      "[raw entry ?root] "
+	      "?(elem ?TAG_compile_unit) ?(elem ?TAG_partial_unit) (length==2)"
+	      ).size ());
+
+  // Check that unit behaves like that as well.
+  ASSERT_EQ (1, run_dwquery
+	     (*builtins, "a1.out",
+	      "[raw unit root] "
+	      "?(elem ?TAG_compile_unit) ?(elem ?TAG_partial_unit) (length==2)"
+	      ).size ());
+
+  // And abbrev should show also abbreviation units from the alt file.
+  ASSERT_EQ (1, run_dwquery
+	     (*builtins, "a1.out",
+	      "[abbrev entry (?TAG_partial_unit, ?TAG_compile_unit)] "
+	      "?(elem ?TAG_compile_unit) ?(elem ?TAG_partial_unit) (length==2)"
+	      ).size ());
+}
