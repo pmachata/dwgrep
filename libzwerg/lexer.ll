@@ -195,6 +195,10 @@ BIN [01]
   yylval->f->str += *yyget_text (yyscanner);
 }
 
+<STRING><<EOF>> {
+  throw std::runtime_error ("string literal not terminated");
+}
+
 <STRING_EMBEDDED>[\(\[\{] {
   yylval->f->str += *yyget_text (yyscanner);
   if (! yylval->f->in_string)

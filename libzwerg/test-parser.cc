@@ -120,6 +120,7 @@ do_tests ()
   test ("017", "(CONST<017>)");
 
   test ("\"string\"", "(FORMAT (STR<string>))");
+  ftestx ("\"unterminated", "terminated");
 
   test ("swap", "(F_BUILTIN<swap>)");
   test ("dup", "(F_BUILTIN<dup>)");
