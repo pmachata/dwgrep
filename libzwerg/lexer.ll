@@ -29,6 +29,7 @@
 
 #include <iostream>
 #include <sstream>
+#include <cctype>
 #include "parser.hh"
 
   static yytokentype pass_string (yyscan_t yyscanner,
@@ -273,8 +274,13 @@ BIN [01]
 
 . {
   using namespace std::literals::string_literals;
+  char buf[5];
+  if (std::isprint (*yytext))
+    sprintf (buf, "%c", *yytext);
+  else
+    sprintf (buf, "0x%02x", (unsigned int) (unsigned char) *yytext);
   throw std::runtime_error
-    ("Invalid character in input stream: `"s + *yytext + "'");
+    ("Invalid character in input stream: `"s + buf + "'");
 }
 
 <<EOF>> return TOK_EOF;

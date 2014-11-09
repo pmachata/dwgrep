@@ -121,6 +121,7 @@ do_tests ()
 
   test ("\"string\"", "(FORMAT (STR<string>))");
   ftestx ("\"unterminated", "terminated");
+  ftestx ("\x01", "0x01");
 
   test ("swap", "(F_BUILTIN<swap>)");
   test ("dup", "(F_BUILTIN<dup>)");
