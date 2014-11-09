@@ -719,5 +719,11 @@ expect_count 1 ./empty -e 'raw name == "./empty"'
 expect_count 1 ./empty -e 'entry name == "empty.c"'
 expect_count 1 ./empty -e 'raw entry name == "empty.c"'
 
+# Test that zero bytes don't terminate the query too soon.
+TMP=$(mktemp)
+echo -e '7 == "foo\x00bar" length' > $TMP
+expect_count 1 ./empty -f $TMP
+rm $TMP
+
 echo "$total tests total, $failures failures."
 [ $failures -eq 0 ]

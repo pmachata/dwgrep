@@ -29,6 +29,7 @@
 
 #include <string>
 #include <iostream>
+#include <cstring>
 
 #include "builtin-dw.hh"
 #include "builtin.hh"
@@ -253,8 +254,16 @@ zw_query *
 zw_query_parse (zw_vocabulary const *voc, char const *query,
 		zw_error **out_err)
 {
+  return zw_query_parse_len (voc, query, strlen (query), out_err);
+}
+
+zw_query *
+zw_query_parse_len (zw_vocabulary const *voc,
+		    char const *query, size_t query_len,
+		    zw_error **out_err)
+{
   return capture_errors ([&] () {
-      tree t = parse_query (*voc->m_voc, query);
+      tree t = parse_query (*voc->m_voc, {query, query_len});
       t.simplify ();
       return new zw_query { t };
     }, nullptr, out_err);

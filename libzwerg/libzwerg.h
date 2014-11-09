@@ -82,6 +82,10 @@ extern "C" {
   zw_query *zw_query_parse (zw_vocabulary const *voc, char const *query,
 			    zw_error **out_err);
 
+  zw_query *zw_query_parse_len (zw_vocabulary const *voc,
+				char const *query, size_t query_len,
+				zw_error **out_err);
+
   void zw_query_destroy (zw_query *query);
 
 

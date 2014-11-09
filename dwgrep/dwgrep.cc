@@ -162,7 +162,8 @@ main(int argc, char *argv[])
 	    std::ifstream ifs {optarg};
 	    std::string str {std::istreambuf_iterator <char> {ifs},
 			     std::istreambuf_iterator <char> {}};
-	    if ((query = zw_query_parse (voc, str.c_str (), &err)) == nullptr)
+	    if ((query = zw_query_parse_len
+		 (voc, str.c_str (), str.length (), &err)) == nullptr)
 	      error_throw (err);
 	    break;
 	  }

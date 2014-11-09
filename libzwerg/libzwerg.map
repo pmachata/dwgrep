@@ -19,6 +19,7 @@ LIBZWERG_0.1 {
 	zw_stack_dump_xxx;
 
 	zw_query_parse;
+	zw_query_parse_len;
 	zw_query_destroy;
 	zw_query_execute;
 
