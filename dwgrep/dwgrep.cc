@@ -106,9 +106,8 @@ main(int argc, char *argv[])
 
   auto error_throw = [] (zw_error *err)
     {
-      std::string what = zw_error_message (err);
-      zw_error_destroy (err);
-      throw std::runtime_error (what);
+      std::cerr << "Error: " << zw_error_message (err) << std::endl;
+      std::exit (1);
     };
 
   if (! zw_vocabulary_add (voc, voc_core, &err)
