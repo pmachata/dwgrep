@@ -6,7 +6,6 @@
     line tables, so that it's better understood how these will need to
     be used.
 
-** stack underruns are ungraceful
 ** domain comparability
    - whether domain is arithmetic is currently used for deciding
      whether it's meaningful to compare a constant this domain to

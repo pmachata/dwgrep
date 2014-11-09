@@ -109,10 +109,17 @@ public:
     m_values.push_back (std::move (vp));
   }
 
+  void
+  need (unsigned depth) const
+  {
+    if (depth > m_values.size ())
+      throw std::runtime_error ("stack overflow");
+  }
+
   std::unique_ptr <value>
   pop ()
   {
-    assert (! m_values.empty ());
+    need (1);
     auto ret = std::move (m_values.back ());
     m_values.pop_back ();
     m_profile >>= 8;
@@ -136,21 +143,21 @@ public:
   value &
   top ()
   {
-    assert (! m_values.empty ());
+    need (1);
     return *m_values.back ().get ();
   }
 
   value &
   get (unsigned depth)
   {
-    assert (m_values.size () > depth);
+    need (depth + 1);
     return *(m_values.rbegin () + depth)->get ();
   }
 
   value const &
   get (unsigned depth) const
   {
-    assert (m_values.size () > depth);
+    need (depth + 1);
     return *(m_values.rbegin () + depth)->get ();
   }
 
