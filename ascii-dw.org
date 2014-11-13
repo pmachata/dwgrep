@@ -1,0 +1,51 @@
+* alt dwarf 4 64bit
+** info
+*** pu1 = DW_TAG_partial_unit
+    - DW_AT_stmt_list = 0
+    - DW_AT_comp_dir = dir	# DW_FORM_strp deduced
+
+**** p1 = DW_TAG_pointer_type abbrev 7	# assign ID explicitly for whatever reason
+     - DW_AT_byte_size = 8
+     - DW_AT_type = p2
+
+**** p2 = DW_TAG_pointer_type abbrev 7	# abbrev consistency will be checked
+     - DW_AT_byte_size = 8
+     - DW_AT_type = p3
+
+**** p3 = DW_TAG_pointer_type	# this will likely get 7 as well automatically
+     - DW_AT_byte_size = 8
+     - DW_AT_type = cv
+
+**** cv = DW_TAG_const_type
+     - DW_AT_type = v
+
+**** v = DW_TAG_volatile_type
+     - DW_AT_type = i8
+
+**** i8 = DW_TAG_base_type
+     - DW_AT_byte_size = 8
+     - DW_AT_encoding = DW_ATE_unsigned
+     - DW_AT_name = "long long unsigned int"
+
+** strings
+   - prod = "GNU C 4.6.3 20120306 (Red Hat 4.6.3-2)"
+   - name = "tests/dwz-partial.c"
+   - dir = "/home/petr/proj/dwgrep"
+   - xyz = &dir + 7	# for forming references to inside other strings
+
+* dwarf 4 64bit
+** info
+*** DW_TAG_compile_unit
+    - DW_AT_producer = alt prod
+    - DW_AT_language = DW_LANG_C89
+    - DW_AT_name = alt name
+    - DW_AT_comp_dir = alt dir
+    - DW_AT_low_pc = (DW_FORM_addr) 0x4004b2
+    - DW_AT_high_pc = (DW_FORM_addr) 0x4004b8
+
+**** DW_TAG_imported_unit
+     - DW_AT_import = alt pu1
+
+**** DW_TAG_typedef
+     - DW_AT_name = "W"
+     - DW_AT_type = alt p1
