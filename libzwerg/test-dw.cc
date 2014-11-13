@@ -318,17 +318,31 @@ TEST_F (ZwTest, entry_unit_abbrev_iterate_through_alt_file)
 
 TEST_F (ZwTest, root_with_alt_file)
 {
-  // Test that ?root doesn't consider non-root DIE's to be root just
-  // because there is a root DIE at the same offset in alt file.
-  ASSERT_EQ (0, run_dwquery
-	     (*builtins, "dwz-partial3-1",
-	      "entry ?root !TAG_compile_unit").size ());
-  ASSERT_EQ (0, run_dwquery
-	     (*builtins, "dwz-partial3-1",
-	      "raw entry ?root !TAG_compile_unit !TAG_partial_unit").size ());
+#define DOIT(FN)							\
+  do									\
+    {									\
+      ASSERT_EQ (0, run_dwquery						\
+		 (*builtins, FN,					\
+		  "entry ?root !TAG_compile_unit").size ());		\
+      ASSERT_EQ (0, run_dwquery						\
+		 (*builtins, "dwz-partial3-1",				\
+		  "raw entry ?root "					\
+		  "!TAG_compile_unit !TAG_partial_unit").size ());	\
+									\
+      /* Test that we actually see all roots.  */			\
+      ASSERT_EQ (7, run_dwquery						\
+		 (*builtins, "dwz-partial3-1",				\
+		  "raw entry ?root").size ());				\
+    }									\
+  while (false)
 
-  // Test that we actually see all of them.
-  ASSERT_EQ (7, run_dwquery
-	     (*builtins, "dwz-partial3-1",
-	      "raw entry ?root").size ());
+  // These two files are very similar.  The first one has a property
+  // that there's a root DIE in gnu_debugaltlink file that has the
+  // same offset as a non-root DIE in main file.  The other has a
+  // symmetrical property.  We use these files to make sure that
+  // offsets are not confused between main and altfile.
+  DOIT ("dwz-partial2-1");
+  DOIT ("dwz-partial3-1");
+
+#unde DOIT
 }
