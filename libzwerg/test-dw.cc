@@ -315,3 +315,20 @@ TEST_F (ZwTest, entry_unit_abbrev_iterate_through_alt_file)
 	      "?(elem ?TAG_compile_unit) ?(elem ?TAG_partial_unit) (length==2)"
 	      ).size ());
 }
+
+TEST_F (ZwTest, root_with_alt_file)
+{
+  // Test that ?root doesn't consider non-root DIE's to be root just
+  // because there is a root DIE at the same offset in alt file.
+  ASSERT_EQ (0, run_dwquery
+	     (*builtins, "dwz-partial3-1",
+	      "entry ?root !TAG_compile_unit").size ());
+  ASSERT_EQ (0, run_dwquery
+	     (*builtins, "dwz-partial3-1",
+	      "raw entry ?root !TAG_compile_unit !TAG_partial_unit").size ());
+
+  // Test that we actually see all of them.
+  ASSERT_EQ (7, run_dwquery
+	     (*builtins, "dwz-partial3-1",
+	      "raw entry ?root").size ());
+}

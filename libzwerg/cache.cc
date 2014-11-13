@@ -99,15 +99,18 @@ parent_cache::find (Dwarf_Die die)
 bool
 root_cache::is_root (Dwarf_Die die, Dwarf *dw)
 {
-  if (m_roots == nullptr)
+  auto it = m_cache.find (dw);
+  if (it == m_cache.end ())
     {
-      m_roots = std::make_unique <root_map_t> ();
-      for (auto it = cu_iterator { dw }; it != cu_iterator::end (); ++it)
-	m_roots->insert (std::make_pair (unit_type::INFO,
-					 dwarf_dieoffset (*it)));
+      off_vect v;
+      for (auto jt = cu_iterator { dw }; jt != cu_iterator::end (); ++jt)
+	v.push_back (dwarf_dieoffset (*jt));
+
+      // Populate the cache for this Dwarf.
+      it = m_cache.insert (std::make_pair (dw, std::move (v))).first;
     }
 
-  Dwarf_Off off = dwarf_dieoffset (&die);
-  return m_roots->find (std::make_pair (unit_type::INFO, off))
-    != m_roots->end ();
+  Dwarf_Off dieoff = dwarf_dieoffset (&die);
+  auto jt = std::lower_bound (it->second.begin (), it->second.end (), dieoff);
+  return jt != it->second.end () && *jt == dieoff;
 }

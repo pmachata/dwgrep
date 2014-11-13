@@ -71,20 +71,10 @@ public:
 
 class root_cache
 {
-  typedef std::pair <unit_type, Dwarf_Off> typed_off_t;
+  using off_vect = std::vector <Dwarf_Off>;
+  using cache_t = std::map <Dwarf *, off_vect>;
 
-  struct hash
-  {
-    size_t
-    operator() (typed_off_t p) const
-    {
-      return std::hash <int> () ((int) p.first)
-	^ std::hash <Dwarf_Off> () (p.second);
-    }
-  };
-
-  typedef std::unordered_set <typed_off_t, hash> root_map_t;
-  std::unique_ptr <root_map_t> m_roots;
+  cache_t m_cache;
 
 public:
   bool is_root (Dwarf_Die die, Dwarf *dw);
