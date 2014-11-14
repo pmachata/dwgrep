@@ -195,8 +195,13 @@ value_die::cmp (value const &that) const
 {
   if (auto v = value::as <value_die> (&that))
     {
-      auto ret = compare (dwarf_dieoffset ((Dwarf_Die *) &m_die),
-			  dwarf_dieoffset ((Dwarf_Die *) &v->m_die));
+      auto ret = compare (dwarf_cu_getdwarf (m_die.cu),
+			  dwarf_cu_getdwarf (v->m_die.cu));
+      if (ret != cmp_result::equal)
+	return ret;
+
+      ret = compare (dwarf_dieoffset ((Dwarf_Die *) &m_die),
+		     dwarf_dieoffset ((Dwarf_Die *) &v->m_die));
       if (ret != cmp_result::equal || is_raw ())
 	return ret;
 

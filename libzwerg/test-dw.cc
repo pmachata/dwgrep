@@ -365,3 +365,12 @@ TEST_F (ZwTest, parent_with_alt_file)
 	     (*builtins, "a1.out",
 	      "entry (offset == 0x14) parent").size ());
 }
+
+TEST_F (ZwTest, dies_from_two_files_neq)
+{
+  // Two DIE's with the same offset should not compare equal if one of
+  // them comes from alt-file and the other from the main file.
+  ASSERT_EQ (0, run_dwquery
+	     (*builtins, "a1.out",
+	      "[raw unit root] (elem (pos == 0) == elem (pos == 1))").size ());
+}
