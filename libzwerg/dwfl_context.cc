@@ -41,9 +41,9 @@ struct dwfl_context::pimpl
   }
 
   bool
-  is_root (Dwarf_Die die, Dwarf *dw)
+  is_root (Dwarf_Die die)
   {
-    return m_rootcache.is_root (die, dw);
+    return m_rootcache.is_root (die);
   }
 };
 
@@ -64,5 +64,5 @@ dwfl_context::find_parent (Dwarf_Die die)
 bool
 dwfl_context::is_root (Dwarf_Die die)
 {
-  return m_pimpl->is_root (die, dwarf_cu_getdwarf (die.cu));
+  return m_pimpl->is_root (die);
 }

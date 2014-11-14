@@ -36,27 +36,10 @@
 
 #include <elfutils/libdw.h>
 
-enum class unit_type
-  {
-    INFO,
-  };
-
 class parent_cache
 {
-  struct unit_key
-  {
-    unit_type ut;
-    Dwarf_Off off;	// CU offset.
-
-    bool
-    operator< (unit_key other) const
-    {
-      return ut < other.ut || (ut == other.ut && off < other.off);
-    }
-  };
-
-  typedef std::vector <std::pair <Dwarf_Off, Dwarf_Off> > unit_cache_t;
-  typedef std::map <unit_key, unit_cache_t> cache_t;
+  using unit_cache_t = std::vector <std::pair <Dwarf_Off, Dwarf_Off>>;
+  using cache_t = std::map <std::pair <Dwarf *, Dwarf_Off>, unit_cache_t>;
 
   cache_t m_cache;
 
@@ -77,7 +60,7 @@ class root_cache
   cache_t m_cache;
 
 public:
-  bool is_root (Dwarf_Die die, Dwarf *dw);
+  bool is_root (Dwarf_Die die);
 };
 
 

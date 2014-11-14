@@ -77,7 +77,9 @@ parent_cache::find (Dwarf_Die die)
     throw_libdw ();
 
   Dwarf_Off cuoff = dwarf_dieoffset (&cudie);
-  auto key = unit_key {unit_type::INFO, cuoff};
+  Dwarf *dw = dwarf_cu_getdwarf (die.cu);
+  auto key = std::make_pair (dw, cuoff);
+
   auto it = m_cache.find (key);
   if (it == m_cache.end ())
     it = m_cache.insert (std::make_pair (key, populate_unit (cudie))).first;
@@ -97,8 +99,9 @@ parent_cache::find (Dwarf_Die die)
 
 
 bool
-root_cache::is_root (Dwarf_Die die, Dwarf *dw)
+root_cache::is_root (Dwarf_Die die)
 {
+  Dwarf *dw = dwarf_cu_getdwarf (die.cu);
   auto it = m_cache.find (dw);
   if (it == m_cache.end ())
     {

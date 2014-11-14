@@ -346,3 +346,22 @@ TEST_F (ZwTest, root_with_alt_file)
 
 #undef DOIT
 }
+
+TEST_F (ZwTest, parent_with_alt_file)
+{
+  // dwz-partial4-1.o uses dwz-partial4-C as its altlink file.  Both
+  // files have DIE's on the same offset, but their structure is
+  // different.  When DIE's with offset 0xd are selected, that matches
+  // one DIE from the main file and one from the altfile.  Then we
+  // request parent, and that has to yield 0xb in the main file and
+  // 0xc in the altfile.
+  ASSERT_EQ (1, run_dwquery
+	     (*builtins, "dwz-partial4-1.o",
+	      "raw entry (offset == 0xd) parent (offset == 0xb)").size ());
+
+  // Check that parent can go back from altfile to main file across
+  // partial imports.
+  ASSERT_EQ (1, run_dwquery
+	     (*builtins, "a1.out",
+	      "entry (offset == 0x14) parent").size ());
+}
