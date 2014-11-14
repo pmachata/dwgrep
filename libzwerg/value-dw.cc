@@ -195,23 +195,34 @@ value_die::cmp (value const &that) const
 {
   if (auto v = value::as <value_die> (&that))
     {
-      auto ret = compare (dwarf_cu_getdwarf (m_die.cu),
-			  dwarf_cu_getdwarf (v->m_die.cu));
-      if (ret != cmp_result::equal)
-	return ret;
+      {
+	auto ret = compare (dwarf_cu_getdwarf (m_die.cu),
+			    dwarf_cu_getdwarf (v->m_die.cu));
+	if (ret != cmp_result::equal)
+	  return ret;
+      }
 
-      ret = compare (dwarf_dieoffset ((Dwarf_Die *) &m_die),
-		     dwarf_dieoffset ((Dwarf_Die *) &v->m_die));
-      if (ret != cmp_result::equal || is_raw ())
-	return ret;
+      {
+	auto ret = compare (dwarf_dieoffset ((Dwarf_Die *) &m_die),
+			    dwarf_dieoffset ((Dwarf_Die *) &v->m_die));
+	if (ret != cmp_result::equal)
+	  return ret;
 
-      /* Compare nullness of import path.  Accept any difference, and
-	 accept if both are nullptr's.  */
-      ret = compare (m_import == nullptr, v->m_import == nullptr);
-      if (ret != cmp_result::equal || m_import == nullptr)
-	return ret;
+	// If import paths are different, then each DIE comes from a
+	// different part of the tree and they are logically
+	// different.  But if one of DIE's has an import path and the
+	// other does not, the other is in a sense a template that
+	// describes potentially several DIEs.  If one of the DIE's is
+	// raw, its import path (if any) is ignored.
+	if (is_raw () || m_import == nullptr
+	    || v->is_raw () || v->m_import == nullptr)
+	  return ret;
+      }
 
-      /* Both DIE's have import path.  Explore it recursively.  */
+      assert (m_import != nullptr);
+      assert (v->m_import != nullptr);
+
+      // Explore recursively.
       return m_import->cmp (*v->m_import);
     }
   else

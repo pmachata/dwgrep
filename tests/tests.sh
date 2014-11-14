@@ -691,9 +691,11 @@ expect_count 1 ./dwz-partial -e '
 expect_count 4 ./dwz-partial -e '
 	(|A| A entry (offset == 0x14)
 	     A entry (offset == 0x14)) ?eq'
+# Also check that an entry with no or incomplete import history ends
+# up comparing equal to an entry with full history.
 expect_count 4 ./dwz-partial -e '
 	(|A| A entry (offset == 0x14)
-	     A raw entry (offset == 0x14) cooked) !eq'
+	     A raw entry (offset == 0x14) cooked) ?eq'
 
 expect_count 4 ./dwz-partial -e '
 	entry (offset == 0x14)
