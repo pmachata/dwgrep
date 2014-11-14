@@ -344,5 +344,5 @@ TEST_F (ZwTest, root_with_alt_file)
   DOIT ("dwz-partial2-1");
   DOIT ("dwz-partial3-1");
 
-#unde DOIT
+#undef DOIT
 }
