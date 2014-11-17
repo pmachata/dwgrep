@@ -189,10 +189,8 @@ main(int argc, char *argv[])
     }
 
   if (argc == 0)
-    {
-      std::cerr << "No input files.\n";
-      return 2;
-    }
+    // No input files.
+    to_process.push_back ("");
   else
     for (int i = 0; i < argc; ++i)
       to_process.push_back (argv[i]);
@@ -219,12 +217,13 @@ main(int argc, char *argv[])
 	  continue;
 	}
 
-      {
-	zw_value *dwv = zw_value_init_dwarf (fn.c_str (), &err);
-	if (dwv == nullptr
-	    || ! zw_stack_push_take (stack, dwv, &err))
-	  goto fail;
-      }
+      if (fn != "")
+	{
+	  zw_value *dwv = zw_value_init_dwarf (fn.c_str (), &err);
+	  if (dwv == nullptr
+	      || ! zw_stack_push_take (stack, dwv, &err))
+	    goto fail;
+	}
 
       zw_result *result = zw_query_execute (query, stack, &err);
       if (result == nullptr)
