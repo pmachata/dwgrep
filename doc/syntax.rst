@@ -1,5 +1,5 @@
-Syntax Reference
-================
+Syntax
+======
 
 This section describes all syntactic constructs in Zwerg language.
 You may want to check out a XXX tutorial, which introduces many (but
@@ -196,9 +196,9 @@ A presence of binding block in a parenthesized construct converts the
 whole form into a function that pops as many arguments as there are
 identifiers in the binding block, and binds them to these identifiers
 such that the rightmost one gets the value on TOS and then
-progressively lefter ID's get progressively deeper stack values.  The
-expression is then evaluated as usual, except one can use the bound
-names.
+progressively lefter *ID*'s get progressively deeper stack values.
+The expression is then evaluated as usual, except one can use the
+bound names.
 
 Sometimes it's useful to enclose the whole expression into a scope and
 pop and bound the initial Dwarf value::
@@ -267,55 +267,62 @@ and fallback cases::
 	let has_loc := (?(@DW_AT_location) true || false);
 
 
-Comparisons
------------
+Syntactical assertions (``==`` et.al.)
+--------------------------------------
 
 Form::
 
-	EXPR₁ “==” EXPR₂
-	EXPR₁ “!=” EXPR₂
-	EXPR₁ “<” EXPR₂
-	EXPR₁ “<=” EXPR₂
-	EXPR₁ “>” EXPR₂
-	EXPR₁ “>=” EXPR₂
+	EXPR₁ OP₁ EXPR₂
 
-An expression such as ``A OP B``, where *OP* refers to one of the
-comparison operators mentioned in the above listing, behaves as
+Zwerg has support for binary assertions.  These forms are evaluated as
 follows::
 
-	?(let .tmp1 := A; let .tmp2 := B; .tmp1 .tmp2 OP2)
+	?(let .tmp1 := EXPR₁; let .tmp2 := EXPR₂; .tmp1 .tmp2 OP₂)
 
-Depending on operator in question, *OP2* refers to, respectively, ?eq,
-?ne, ?lt, ?le, ?gt, and ?ge.
+In plain English, *EXPR₁* and *EXPR₂* are each evaluated in
+sub-expression context.  The TOS's of the stacks that this produces
+are then put to stack and a certain operator is evaluated.  This shows
+that the two expressions are independent of each other.
 
-In plain English, the two constituent expressions are both evaluated
-in separate sub-expression contexts.  Their TOS's are gathered and
-compared using a comparison assertion word.
+What actual word *OP₂* refers to depends on what operator OP₁ is, but
+it will be an assertion that looks at top two stack slots.  There
+might be no actual word per se, but conceptually this is how the form
+behaves.
 
-The comparison assertions are words that hold if the top two stack
-values fulfill the relation implied by their name::
+Another thing worth noticing is that the whole form behaves as an
+assertion.  No side effects leak from the constituent *EXPR*'s or from
+the operator itself.
 
-	1 2 ?lt        # holds
-	1 2 ?gt        # doesn't hold
-	2 2 ?eq        # holds
-	2 2 ?ne        # doesn't hold
-	2 2 !eq        # also doesn't hold
+Individual operators are essentially just words, just with a bit of
+syntactical support on Zwerg side.  So which operators are available
+depends on which vocabularies any particular wrapper brings in.  Zwerg
+core defines the following *OP₁*'s with the following associated
+*OP₂*'s::
+
+	EXPR₁ “==” EXPR₂	# ?eq
+	EXPR₁ “!=” EXPR₂	# ?ne
+	EXPR₁ “<” EXPR₂		# ?lt
+	EXPR₁ “<=” EXPR₂	# ?le
+	EXPR₁ “>” EXPR₂		# ?gt
+	EXPR₁ “>=” EXPR₂	# ?ge
+	EXPR₁ “=~” EXPR₂	# ?match
+	EXPR₁ “!~” EXPR₂	# !match
+
+See XXX (a link here) to learn about comparison operators.  See XXX (a
+link here) to learn about regular expression matching.
+
+For example::
+
+	$ dwgrep ./tests/typedef.o -e 'entry (offset == 0x1d)'
+	[1d]	typedef
+		name (strp)	int_t;
+		decl_file (data1)	/home/petr/proj/dwgrep/typedef.c;
+		decl_line (data1)	1;
+		type (ref4)	[28];
 
 
-Regular expression matching
----------------------------
-
-Form::
-
-	EXPR₁ “=~” EXPR₂
-	EXPR₁ “!~” EXPR₂
-
-These are comparison operators (see above) associated with words,
-respectively, ``?match`` and ``!match``.  XXX link
-
-
-Iteration
----------
+Iteration, Kleene star
+----------------------
 
 Form::
 
@@ -366,8 +373,6 @@ escaped by another backslash::
 	"a simple string"
 	"a string \"with\" quotes"
 	"a string with backslash: \\"
-
-Zwerg string literals are enclosed in quotation marks.
 
 If a string literal is prefixed by ``r``, it's actually a raw string
 literal.  These work the same as normal formatting strings, but escape
@@ -454,8 +459,8 @@ the others:
 - ``%b`` stands for ``%( value bin %)``
 
 
-Sequence capture
-----------------
+Sequence capture (``[]``)
+-------------------------
 
 Form::
 
@@ -464,37 +469,86 @@ Form::
 Sequences offer a way to gather values yielded by another expression.
 If you think of alternation as a fork, then capture is a join.
 
-All input stacks are passed to 
+The resulting expression passes any input stacks to *EXPR₁*.  For each
+input stack, it gathers the stacks produced by *EXPR₁*, takes the top
+value off each of them, and collects these values in a sequence.  This
+sequence it then pushes to TOS.
 
-*EXPR₁* is evaluated in sub-expression context, gathers TOS's of what
-it yields, and pushes a sequence with those elements.
+*EXPR₁* is evaluated in sub-expression context.  That means that the
+sequence is pushed to TOS *in addition* to whatever was already
+there--nothing is removed.
 
-     : [1, 2, 3]        # produces a list with elements 1, 2 and 3
-     : [child]          # list of immediate children
-     : [child*]         # list of all descendants
+Of particular interest is interplay between alternation and capture,
+which allows easy and syntactically familiar construction of sequence
+literals::
 
-   - [] produces an empty list.  It is exactly equivalent to (among
-     others):
-     : [ 0 == 1 ]
+	$ dwgrep '[1, 2, 3]'
+	[1, 2, 3]
 
-   - [()] is a capture of nop.  It wraps TOS in a list and pushes it.
-     : 1 [()]	# gives 1 [1]
+Or you can use this construct to e.g. collect children of a node on
+TOS::
+
+	$ dwgrep ./tests/typedef.o -e 'entry ?root [child]'
+	---
+	[[1d] typedef, [28] base_type, [2f] typedef, [3a] typedef, [45] variable]
+	[b]	compile_unit
+		producer (strp)	GNU C 4.6.3 20120306 (Red Hat 4.6.3-2);
+		language (data1)	DW_LANG_C89;
+		name (strp)	typedef.c;
+		comp_dir (strp)	/home/petr/proj/dwgrep;
+		stmt_list (data4)	0;
+
+Or the whole tree rooted at node on TOS::
+
+	dwgrep ./tests/typedef.o -e 'entry ?root [child*]'
+	---
+	[[b] compile_unit, [45] variable, [3a] typedef, [2f] typedef, [28] base_type, [1d] typedef]
+	[b]	compile_unit
+		producer (strp)	GNU C 4.6.3 20120306 (Red Hat 4.6.3-2);
+		language (data1)	DW_LANG_C89;
+		name (strp)	typedef.c;
+		comp_dir (strp)	/home/petr/proj/dwgrep;
+		stmt_list (data4)	0;
 
 Form::
 
-	“[” (“|” ID₁ ID₂ … “|”)? EXPR₁ “]”
+	“[” “]”
 
-   - Sub-expression capture allows a binding block.  A presence of
-     such block converts the whole form into a function that pops as
-     many arguments as there are identifiers in the binding block, and
-     binds them to these identifiers such that the rightmost one get
-     the value on TOS and then progressively lefter ID's get
-     progressively deeper stack values.  The expression is then
-     evaluated as usual, except one can use the bound names:
+This produces an empty list.  Alternatively, one could also do::
 
-     : [|A| A child]		# convert DIE on TOS into a list of its children
-     : [|A B| A foo B bar]
-     : [|A| A]			# wrap TOS in a list
+	[!()]
+
+But that's somewhat awkward.
+
+To capture an empty expression, one would need to explicitly
+parenthesize it::
+
+	$ dwgrep '1 [()]'
+	---
+	[1]
+	1
+
+Form::
+
+	“[” “|” ID₁ ID₂ … “|” EXPR₁ “]”
+
+Sub-expression capture allows a binding block.  A presence of such
+block converts the whole form into a function that pops as many
+arguments as there are identifiers in the binding block, and binds
+them to these identifiers such that the rightmost one get the value on
+TOS and then progressively lefter *ID*'s get progressively deeper
+stack values.  The expression is then evaluated as usual, except one
+can use the bound names::
+
+	$ dwgrep ./tests/typedef.o -e 'entry ?root [|A| A child]'
+	[[1d] typedef, [28] base_type, [2f] typedef, [3a] typedef, [45] variable]
+
+	$ dwgrep '1 [|A| A]'	# or you could just write '[1]' ;)
+	[1]
+
+
+``let``
+-------
 
 ** •“let” ID₁ ID₂ … “:=” EXPR₁ “;” — binding
     - EXPR₁ is evaluated in sub-expression context.  Then values near
