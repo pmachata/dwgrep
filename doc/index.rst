@@ -4,9 +4,10 @@ Welcome to dwgrep's documentation!
 Contents:
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 1
 
    tutorial
+   syntax
 
 
 Introduction
@@ -17,7 +18,7 @@ Dwgrep is a tool, an associated language (called Zwerg) and a library
 out more about Dwarf, check out a `short introductory text`__ or
 download a `Dwarf standard`__.  But you can also pretend that Dwarf is
 like XML, except nodes are called DIE's.  That, and perusing the
-output of eu-readelf -winfo, should be enough to get you started.
+output of ``eu-readelf -winfo``, should be enough to get you started.
 
 .. __: http://www.dwarfstd.org/doc/Debugging%20using%20DWARF.pdf
 .. __: http://dwarfstd.org/Download.php
