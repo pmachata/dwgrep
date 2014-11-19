@@ -7,6 +7,19 @@ not all) of these in a gradual manner, and XXX vocabulary reference,
 to learn about the actual function words that you can use inside this
 syntax.
 
+
+Comments
+--------
+
+Form::
+
+	// Ignored until the end of the line.
+	# This one as well.
+	/* C-like comments work as well.  */
+
+Comments are ignored.  Nesting comments is not allowed.
+
+
 Empty expression
 ----------------
 
@@ -211,7 +224,7 @@ first-class Zwerg support::
 	[foo] [bar] (|A B| A [B elem !(== A elem)] add)
 
 
-Alternation
+An ALT-list
 -----------
 
 Form::
@@ -233,7 +246,7 @@ would do::
 
 	(== (1, 2, 3))
 
-You would also use alternation to create a sequence value::
+You would also use ALT-lists to create a sequence value::
 
 	[1, 2, 3]
 
@@ -467,7 +480,7 @@ Form::
 	“[” EXPR₁ “]”
 
 Sequences offer a way to gather values yielded by another expression.
-If you think of alternation as a fork, then capture is a join.
+If you think of ALT-list as a fork, then capture is a join.
 
 The resulting expression passes any input stacks to *EXPR₁*.  For each
 input stack, it gathers the stacks produced by *EXPR₁*, takes the top
@@ -478,7 +491,7 @@ sequence it then pushes to TOS.
 sequence is pushed to TOS *in addition* to whatever was already
 there--nothing is removed.
 
-Of particular interest is interplay between alternation and capture,
+Of particular interest is interplay between ALT-list and capture,
 which allows easy and syntactically familiar construction of sequence
 literals::
 
@@ -547,25 +560,150 @@ can use the bound names::
 	[1]
 
 
-``let``
--------
+Name binding (``let``)
+----------------------
 
-** •“let” ID₁ ID₂ … “:=” EXPR₁ “;” — binding
-    - EXPR₁ is evaluated in sub-expression context.  Then values near
-      TOS are bound to given identifiers and exported into surrounding
-      context.  From that point on, mentioning ID is the same as
-      pushing the value to TOS.
+Form::
 
-    - Ordering of ID's is such that the rightmost is bound to TOS, the
-      next one to the left to one below TOS, etc.  E.g.:
+	“let” ID₁ ID₂ … “:=” EXPR₁ “;”
 
-      : let A B := 1 2 ;	# A is 1, B is 2
+This form introduces a new name into the current scope.  It passes the
+input stack to *EXPR₁*, which is evaluated in sub-expression context.
+Then values near TOS are bound to given identifiers and exported into
+surrounding context.  Then the original stack is yielded as many times
+as *EXPR₁* yields, each time with a possibly different set of
+bindings.  Bound names may be mentioned later, and they push the bound
+value to the stack.
 
-      The mnemonic for this is that the list of variables describes
-      stack layout, with TOS being on the right.
+Consider the following examples::
 
-    - When a binding is mentioned that references a block, that counts
-      as invocation of the referenced block.  In other words, there's
-      an implicit "apply" for bindings that reference blocks.
-      : let inc := { 1 add };
-      : 2 inc	# 3
+	$ dwgrep 'let X := 1; X'
+	1
+
+	$ dwgrep 'let X := 1, 2; X'
+	1
+	2
+
+Ordering of ID's is such that the rightmost is bound to TOS, the next
+one to the left to one below TOS, etc.  The mnemonic for this is that
+the list of variables describes stack layout, with TOS being on the
+right.  E.g.::
+
+	$ dwgrep 'let A B := 1 2, 3 4; A B'
+	---
+	2
+	1
+	---
+	4
+	3
+
+The following constructs comprise a scope:
+
+- Any sub-expression context has a scope of its own::
+
+	$ dwgrep '?(let A := 1;) A'
+	Error: Unknown identifier `A'.
+
+- Each branch of an OR-list or ALT-list has a scope of its own::
+
+	$ dwgrep '(let A := 1;, let A := 2;) A'
+	Error: Unknown identifier `A'.
+
+- Parenthesized expressions with name binding blocks are a scope::
+
+	$ dwgrep '"" (|X| let A := 1;) A'
+	Error: Unknown identifier `A'.
+
+- ``then`` and ``else`` branches of an ``if-then-else`` form
+  each introduce a scope::
+
+	$ dwgrep 'if ?() then let A := 1; else let A := 2; A'
+	Error: Unknown identifier `A'.
+
+  Typically these constructs can be rewritten as follows::
+
+	$ dwgrep 'let A := if ?() then 1 else 2; A'
+	1
+
+On the other hand, simple parenthesizing does not introduce a scope::
+
+	$ dwgrep '(let A := 1;) A'
+	1
+
+It is not allowed to rebind an once-bound name within the same scope::
+
+	$ dwgrep 'let A := 1; let A := 1;'
+	Error: Name `A' rebound.
+
+It is also not possible to access names from outer scopes if they are
+covered by the same name in an inner scope.  In the following, the
+inner reference to ``A`` will always resolve to ``2``, and there is no
+way to access the outer ``A`` of ``1``::
+
+	$ dwgrep 'let A := 1; 2 [|A| A]'
+	[2]
+
+Finally, it's not allowed to rebind existing words::
+
+	$ dwgrep 'let child := 1;'
+	Error: Can't rebind a builtin: `child'
+
+
+Sub-expression assertions (``?()``, ``!()``)
+--------------------------------------------
+
+Form::
+
+	“?(” EXPR₁ “)”
+	“!(” EXPR₁ “)”
+
+The form ``?(...)`` sends an input stack to *EXPR₁*, which is then
+evaluated in sub-expression context.  If it yields anything, the
+overall assertion succeeds and yields the original stack.  The form
+``!(...)`` has the inverse semantics: it succeeds when *EXPR₁* yields
+nothing.
+
+The behavior of these two forms is equivalent to the following::
+
+	([ EXPR₁ ] != [])	# ?( EXPR₁ )
+	([ EXPR₁ ] == [])	# !( EXPR₁ )
+
+For example, to select leaf DIE's of a Dwarf graph::
+
+	!(child)
+
+To test whether one of the DIE's contains an empty location
+expression::
+
+	entry ?(@AT_location !(elem))
+
+
+Conditionals (``if-then-else``)
+-------------------------------
+
+Form::
+
+	“if” EXPR₀ “then” EXPR₁ “else” EXPR₂
+
+Input stack is passed to *EXPR₀*, which is evaluated in sub-expression
+context.  Next a body expression is evaluated, which is either *EXPR₁*
+if *EXPR₀* yielded anything.  Or, if *EXPR₀* yielded nothing, *EXPR₂*
+is the body expression.
+
+The input stack is then passed to the body expression, which is
+evaluated in plain context.  The overall form then yields anything
+that the body expression yields.
+
+This form could be circumscribed by the following snippet::
+
+	(?(EXPR₀) (EXPR₁), !(EXPR₀) (EXPR₂))
+
+As an example, consider the following snippet from a script::
+
+	if ?DW_TAG_formal_parameter then (
+	  // Of formal parameters we ignore those that are children of
+	  // subprograms that are themselves declarations.
+	  ?(parent !DW_TAG_subroutine_type !(@DW_AT_declaration == true))
+	) else (
+	  ?DW_TAG_variable
+	)

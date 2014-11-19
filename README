@@ -119,25 +119,6 @@
       : let rot_ := {|a b c| b c a};
       : let over_ := {|a b| a b a};
 
-** •“?(” EXPR₁ “)” | “!(” EXPR₁ “)” — sub-expression assertions
-
-    ?(EXPR₁) is an assertion that holds if EXPR₁ yields at least once.
-    !(EXPR₁) holds when it doesn't yield at all.
-
-    - ?( EXPR₁ ) is exactly equivalent to:
-      : ([ EXPR₁ ] != [])
-    - !( EXPR₁ ) is exactly equivalent to:
-      : ([ EXPR₁ ] == [])
-
-    - Examples:
-      : !(child)       # keep leaf DIE's only
-
-** •“if” EXPR₀ “then” EXPR₁ “else” EXPR₂ — conditionals
-
-   - EXPR₀ is evaluated in sub-expression context.  If it yields
-     anything, EXPR₁ is evaluated in plain context.  Otherwise EXPR₂
-     is evaluated in plain context.
-
 **  (“while” | “until”) EXPR₀ “do” EXPR₁ | “do” EXPR₁ (“while” | “until”) EXPR₀
 
    - The "while..do" loop checks whether EXPR₀ yields anything.  If
@@ -164,11 +145,6 @@
       operators, where it makes sense, in infix form.  For example:
       : 10 add: 1	# equivalent to (10 1 add)
       : [10 range] sort: {a | if (a mod: 2 == 0) then 0 else 1}
-
-** •comments
-    - Comments start with either # or // and continue until the end of
-      the line; or they start with /* and continue until */.  Nesting
-      comments is not allowed.
 
 
 * Fundamental words
