@@ -35,7 +35,7 @@ In particular, a simple expression in dwgrep might look like this::
 
 	entry ?DW_TAG_subprogram child ?DW_TAG_formal_parameter @DW_AT_name
 
-On a `commad line`__, you would issue it like this::
+On a `command line`__, you would issue it like this::
 
 	$ dwgrep /some/file/somewhere -e 'entry ?DW_TAG_subprogram ...etc....'
 
