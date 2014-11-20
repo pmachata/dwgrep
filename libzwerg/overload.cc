@@ -284,15 +284,19 @@ overloaded_builtin::docstring () const
       if (! pm.empty ())
 	{
 	  auto const &pm0 = pm[0];
-	  ss << " ->";
 	  switch (std::get <1> (pm0))
 	    {
 	    case yield::many:
-	      ss << "*";
+	      ss << " ->*";
+	      break;
 	    case yield::once:
+	      ss << " ->";
 	      break;
 	    case yield::maybe:
-	      ss << "?";
+	      ss << " ->?";
+	      break;
+	    case yield::pred:
+	      break;
 	    }
 
 	  for (auto const &vt: std::get <2> (pm0))

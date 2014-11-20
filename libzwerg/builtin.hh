@@ -45,6 +45,9 @@ enum class yield
     maybe,	// The operator may yield once, or not at all.
     once,	// The operator yields exactly once.
     many,	// The operator yields zero or more times.
+    pred,	// Like maybe, but in addition, the builtin is a
+		// predicate.  The input arguments are not consumed,
+		// and output arguments are ignored.
   };
 
 // Prototype map for builtins.  A vector of prototype rules.  Each

@@ -301,6 +301,18 @@ overload_tab::add_pred_overload (Args &&... args)
     {
       return "overload";
     }
+
+    std::string
+    docstring () const override
+    {
+      return Pred::docstring ();
+    }
+
+    builtin_protomap
+    protomap () const override
+    {
+      return Pred::protomap ();
+    }
   };
 
   add_overload (Pred::get_selector (),
@@ -575,6 +587,19 @@ public:
 
   static selector get_selector ()
   { return {VT::vtype...}; }
+
+  static builtin_protomap
+  protomap ()
+  {
+    return {
+      builtin_prototype ({VT::vtype...}, yield::pred, {}),
+    };
+  }
+
+  // This implementation is picked if the sub-class doesn't overload
+  // the docstring () static itself.
+  static std::string docstring ()
+  { return ""; }
 };
 
 #endif /* _OVERLOAD_H_ */
