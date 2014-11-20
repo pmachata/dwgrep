@@ -27,7 +27,7 @@
    not, see <http://www.gnu.org/licenses/>.  */
 
 #include <iostream>
-#include <memory>
+#include "std-memory.hh"
 
 #include "value-closure.hh"
 #include "tree.hh"

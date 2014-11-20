@@ -85,7 +85,8 @@ private:
   }
 
 public:
-  template <class... Ts, std::enable_if_t <(sizeof... (Ts) <= W), int> Fake = 0>
+  template <class... Ts,
+	    typename std::enable_if <(sizeof... (Ts) <= W), int>::type Fake = 0>
   selector (Ts... vts)
     : m_imprint {unshift (compute_imprint ((vts.code ())...), sizeof... (Ts))}
     , m_mask {unshift (compute_mask ((vts.code ())...), sizeof... (Ts))}

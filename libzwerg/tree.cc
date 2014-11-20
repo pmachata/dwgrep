@@ -30,7 +30,7 @@
 #include <cassert>
 #include <climits>
 #include <iostream>
-#include <memory>
+#include "std-memory.hh"
 #include <set>
 #include <stdexcept>
 

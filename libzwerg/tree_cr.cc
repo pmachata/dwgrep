@@ -29,8 +29,6 @@
 #include "scope.hh"
 #include "tree_cr.hh"
 
-using namespace std::literals::string_literals;
-
 tree *
 tree::create_builtin (std::shared_ptr <builtin const> b)
 {
@@ -89,7 +87,8 @@ namespace
       {
       case tree_type::BIND:
 	if (scp->has_name (t.str ()))
-	  throw std::runtime_error ("Name `"s + t.str () + "' rebound.");
+	  throw std::runtime_error (std::string ("Name `")
+				    + t.str () + "' rebound.");
 
 	scp->add_name (t.str ());
 	assert (t.m_children.size () == 0);
@@ -142,8 +141,8 @@ namespace
 		return;
 	      }
 
-	  using namespace std::literals::string_literals;
-	  throw std::runtime_error ("Unknown identifier `"s + t.str () + "'.");
+	  throw std::runtime_error (std::string ("Unknown identifier `")
+				    + t.str () + "'.");
 	}
 
       default:

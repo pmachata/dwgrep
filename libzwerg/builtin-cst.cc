@@ -98,12 +98,10 @@ builtin_constant::name () const
 std::string
 builtin_constant::docstring () const
 {
-  using namespace std::literals;
-
   auto val = value::as <value_cst> (&*m_value);
   assert (val != nullptr);
   auto dom = val->get_constant ().dom ();
-  return "@"s + dom->name ();
+  return std::string ("@") + dom->name ();
 }
 
 

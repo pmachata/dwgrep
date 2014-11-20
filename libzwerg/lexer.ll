@@ -273,14 +273,13 @@ BIN [01]
 }
 
 . {
-  using namespace std::literals::string_literals;
   char buf[5];
   if (std::isprint (*yytext))
     sprintf (buf, "%c", *yytext);
   else
     sprintf (buf, "0x%02x", (unsigned int) (unsigned char) *yytext);
   throw std::runtime_error
-    ("Invalid character in input stream: `"s + buf + "'");
+    (std::string ("Invalid character in input stream: `") + buf + "'");
 }
 
 <<EOF>> return TOK_EOF;

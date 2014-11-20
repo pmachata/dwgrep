@@ -31,8 +31,8 @@
 
 #include <vector>
 #include <tuple>
-#include <memory>
-#include <utility>
+#include "std-memory.hh"
+#include "std-utility.hh"
 #include <iostream>
 
 #include "op.hh"
@@ -209,7 +209,8 @@ struct overload_op_builder_impl
   static std::shared_ptr <op>
   build (std::shared_ptr <op> upstream,
 	 std::index_sequence <I...>,
-	 std::tuple <std::remove_reference_t <Args>...> const &args)
+	 std::tuple <typename std::remove_reference <Args>::type...>
+	 	const &args)
   {
     return std::make_shared <Op> (upstream, std::get <I> (args)...);
   }
@@ -222,7 +223,7 @@ overload_tab::add_op_overload (Args &&... args)
   struct overload_op_builtin
     : public builtin
   {
-    std::tuple <std::remove_reference_t <Args>...> m_args;
+    std::tuple <typename std::remove_reference <Args>::type...> m_args;
 
     overload_op_builtin (Args &&... args2)
       : m_args (std::forward <Args> (args2)...)
@@ -270,7 +271,8 @@ struct overload_pred_builder_impl
   template <size_t... I>
   static std::unique_ptr <pred>
   build (std::index_sequence <I...>,
-	 std::tuple <std::remove_reference_t <Args>...> const &args)
+	 std::tuple <typename std::remove_reference <Args>::type...>
+	 	const &args)
   {
     return std::make_unique <Pred> (std::get <I> (args)...);
   }
@@ -283,7 +285,7 @@ overload_tab::add_pred_overload (Args &&... args)
   struct overload_pred_builtin
     : public builtin
   {
-    std::tuple <std::remove_reference_t <Args>...> const m_args;
+    std::tuple <typename std::remove_reference <Args>::type...> const m_args;
 
     overload_pred_builtin (Args... args2)
       : m_args (args2...)
@@ -351,7 +353,7 @@ struct op_overload_impl
 {
 protected:
   template <class T>
-  static auto collect1 (stack &stk)
+  static std::tuple <std::unique_ptr <T>> collect1 (stack &stk)
   {
     auto dv = stk.pop_as <T> ();
     assert (dv != nullptr);
@@ -359,13 +361,14 @@ protected:
   }
 
   template <size_t Fake>
-  static auto collect (stack &stk)
+  static std::tuple <> collect (stack &stk)
   {
     return std::tuple <> {};
   }
 
   template <size_t Fake, class T, class... Ts>
-  static auto collect (stack &stk)
+  static std::tuple <std::unique_ptr <T>,
+		     std::unique_ptr <Ts>...> collect (stack &stk)
   {
     auto rest = collect <Fake, Ts...> (stk);
     return std::tuple_cat (collect1 <T> (stk), std::move (rest));
@@ -548,7 +551,7 @@ struct pred_overload
   : public stub_pred
 {
   template <class T>
-  static auto collect1 (stack &stk, size_t depth)
+  static std::tuple <T &> collect1 (stack &stk, size_t depth)
   {
     auto dv = stk.get_as <T> (depth);
     assert (dv != nullptr);
@@ -556,13 +559,13 @@ struct pred_overload
   }
 
   template <size_t N>
-  static auto collect (stack &stk)
+  static std::tuple <> collect (stack &stk)
   {
     return std::tuple <> {};
   }
 
   template <size_t N, class T, class... Ts>
-  static auto collect (stack &stk)
+  static std::tuple <T &, Ts &...> collect (stack &stk)
   {
     auto rest = collect <N - 1, Ts...> (stk);
     return std::tuple_cat (collect1 <T> (stk, N - 1), rest);

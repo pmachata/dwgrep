@@ -261,7 +261,6 @@ namespace
 std::string
 overloaded_builtin::docstring () const
 {
-  using namespace std::literals;
   std::stringstream ss;
   for (auto const &ovl: m_ovl_tab->get_overloads ())
     {

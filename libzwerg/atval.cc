@@ -39,8 +39,6 @@
 #include "value-seq.hh"
 #include "value-str.hh"
 
-using namespace std::literals::string_literals;
-
 namespace
 {
   struct single_value
@@ -445,7 +443,7 @@ namespace
 		    throw_libdw (e);
 		}
 	      else
-		if ("decltype(nullptr)"s == name)
+		if (name == std::string ("decltype(nullptr)"))
 		  return atval_unsigned_with_domain (attr, dw_address_dom ());
 
 	      // Ho hum.  This could be a structure or something

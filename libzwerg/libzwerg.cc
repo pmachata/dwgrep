@@ -112,7 +112,7 @@ namespace
   template <class T>
   auto
   capture_errors (T &&callback, decltype (callback ()) fail_return,
-		  zw_error **out_err) -> auto
+		  zw_error **out_err) -> decltype (callback ())
   {
     try
       {

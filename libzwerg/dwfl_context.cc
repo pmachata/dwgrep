@@ -26,6 +26,7 @@
    the GNU Lesser General Public License along with this program.  If
    not, see <http://www.gnu.org/licenses/>.  */
 
+#include "std-memory.hh"
 #include "dwfl_context.hh"
 #include "cache.hh"
 
