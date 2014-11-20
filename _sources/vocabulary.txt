@@ -1,0 +1,323 @@
+.. _vocabulary:
+
+Vocabulary reference
+====================
+
+``!=``, ``!eq``, ``!ge``, ``!gt``, ``!le``, ``!lt``, ``!ne``, ``<``, ``<=``, ``==``, ``>``, ``>=``, ``?eq``, ``?ge``, ``?gt``, ``?le``, ``?lt``, ``?ne``
+========================================================================================================================================================
+
+
+
+These are comparison operators.  The ones with no alphanumeric
+characters in them, ``==``, ``!=``, ``<`` etc., are for use in infix
+expressions, such as::
+
+	entry (offset == 0x123)
+
+The others are low-level assertions with equivalent behavior.
+
+Two elements are inspected: one below TOS and TOS (*A* and *B*,
+respectively).  The assertion holds if *A* and *B* satisfy a relation
+implied by the word.
+
+For example::
+
+	$ dwgrep '1 2 ?lt "yep"'
+	---
+	yep
+	2
+	1
+
+Note that there is both ``!eq`` and ``?ne``, ``!lt`` and ``?ge``, etc.
+These are mostly for symmetry.  For consistency, the first character
+of any assertion is always either ``?`` or ``!``, and both flavors are
+always available.
+
+
+
+``!empty``, ``?empty``
+======================
+
+``T_STR``
+---------
+
+
+``T_SEQ``
+---------
+Asserts whether a sequence on TOS is empty.
+
+
+
+``!ends``, ``?ends``
+====================
+
+``T_STR`` ``T_STR``
+-------------------
+
+
+``T_SEQ`` ``T_SEQ``
+-------------------
+``(A B ?ends)`` asserts that the sequence A ends with sub-sequence
+B (e.g. ``[hay stack] ?([needle] ?ends)``).
+
+
+
+``!find``, ``?find``
+====================
+
+``T_STR`` ``T_STR``
+-------------------
+
+
+``T_SEQ`` ``T_SEQ``
+-------------------
+(A B ?find) asserts that the sequence A contains sub-sequence B
+(e.g. ``[hay stack] ?([needle] ?find)``).
+
+To determine whether a sequence contains a particular element, you
+would use the following construct::
+
+	[that sequence] (elem == something)
+
+E.g.::
+
+	[child @AT_name] ?(elem == "foo")
+	[child] ?(elem @AT_name == "foo")
+
+To filter only those elements that match, you could do the\
+following::
+
+	[child] [|L| L elem ?(@AT_name == "foo")]
+
+The above is suitable for a function that takes a list on input
+and wants to filter it.  It is of course preferable to write this
+sort of thing directly, if possible::
+
+	[child ?(@AT_name == "foo")]
+
+
+
+``!match``, ``!~``, ``=~``, ``?match``
+======================================
+
+``T_STR`` ``T_STR``
+-------------------
+
+
+
+
+``!starts``, ``?starts``
+========================
+
+``T_STR`` ``T_STR``
+-------------------
+
+
+``T_SEQ`` ``T_SEQ``
+-------------------
+``(A B ?starts)`` asserts that the sequence A starts with sub-sequence
+B (e.g. ``[hay stack] ?([needle] ?starts)``).
+
+
+
+``T_CLOSURE``, ``T_CONST``, ``T_SEQ``, ``T_STR``
+================================================
+
+@T_*
+
+``add``
+=======
+
+``T_CONST`` ``T_CONST`` ``->?`` ``T_CONST``
+-------------------------------------------
+
+
+``T_STR`` ``T_STR`` ``->`` ``T_STR``
+------------------------------------
+
+
+``T_SEQ`` ``T_SEQ`` ``->`` ``T_SEQ``
+------------------------------------
+Concatenate two sequences and yield the resulting sequence.
+
+
+
+``bin``, ``dec``, ``hex``, ``oct``
+==================================
+
+
+
+``bin`` is used for converting constants to base-2, ``oct`` to base-8,
+``dec`` to base-10 and ``hex`` to base-16.  These operators yield
+incoming stack, except the domain of constant on TOS is changed.
+Examples::
+
+	$ dwgrep '64 hex'
+	0x40
+
+	$ dwgrep 'DW_AT_name hex'
+	0x3
+
+The value remains a constant, only the way it's displayed changes.
+You can use ``"%s"`` to convert it to a string, in which case it's rendered
+with the newly-selected domain::
+
+	$ dwgrep 'DW_AT_name "=%s="'
+	=DW_AT_name=
+	$ dwgrep 'DW_AT_name hex "=%s="'
+	=0x3=
+
+Though you can achieve the same effect with formatting directives
+``%b``, ``%o``, ``%d`` and ``%x``::
+
+	$ dwgrep 'DW_AT_name "=%x="'
+	=0x3=
+
+
+
+``div``, ``mod``, ``mul``, ``sub``
+==================================
+
+``T_CONST`` ``T_CONST`` ``->?`` ``T_CONST``
+-------------------------------------------
+
+
+
+
+``drop``, ``dup``, ``over``, ``rot``, ``swap``
+==============================================
+
+
+
+These words reorder elements on stack according to the following
+schemes:
+
++------+---------+-----------+
+| op   | before  | after     |
++======+=========+===========+
+| dup  | A B C D | A B C D D |
++------+---------+-----------+
+| over | A B C D | A B C D C |
++------+---------+-----------+
+| swap | A B C D | A B D C   |
++------+---------+-----------+
+| rot  | A B C D | A C D B   |
++------+---------+-----------+
+| drop | A B C D | A B C     |
++------+---------+-----------+
+
+Realistically, most of what end users should write will be an
+occasional dup, possibly a swap.  Drop shouldn't be needed (that's
+what sub-expressions are for), and the deep stack manipulation should
+be unnecessary as well.  But they are present for completeness' sake.
+
+
+
+``elem``, ``relem``
+===================
+
+``T_STR`` ``->*`` ``T_STR``
+---------------------------
+
+
+``T_SEQ`` ``->*`` ``T_???``
+---------------------------
+For each element in the input sequence, which is popped, yield a stack
+with that element pushed on top.
+
+To zip contents of two top lists near TOS, do::
+
+	$ dwgrep '[1, 2, 3] ["a", "b", "c"]
+	          (|A B| A elem B elem) ?((|A B| A pos == B pos)) [|A B| A, B]'
+	[1, a]
+	[2, b]
+	[3, c]
+
+The first parenthesis enumerates all combinations of elements.  The
+second then allows only those that correspond to each other
+position-wise.  At that point we get three stacks, each with two
+values.  The last bracket then packs the values on stacks back to
+sequences, thus we get three stacks, each with a two-element sequence
+on top.
+
+The expression could be simplified a bit on expense of clarity::
+
+	[1, 2, 3] ["a", "b", "c"]
+	(|A B| A elem B elem (pos == drop pos)) [|A B| A, B]
+
+``relem`` operates in the same fashion as ``elem``, but backwards.
+
+
+
+``false``, ``true``
+===================
+
+@bool
+
+``length``
+==========
+
+``T_STR`` ``->`` ``T_CONST``
+----------------------------
+Yields length of string on TOS.
+
+``T_SEQ`` ``->`` ``T_CONST``
+----------------------------
+Yield number of elements of sequence on TOS.
+
+
+
+``pos``
+=======
+
+
+
+Each function numbers elements that it produces, and stores number of
+each element along with the element.  That number can be recalled by
+saying ``pos``::
+
+	$ dwgrep ./tests/dwz-partial -e 'unit (|A| A root "%s" A pos)'
+	---
+	0
+	[34] compile_unit
+	---
+	1
+	[a4] compile_unit
+	---
+	2
+	[e1] compile_unit
+	---
+	3
+	[11e] compile_unit
+
+If you wish to know the number of values produced, you have to count
+them by hand::
+
+	[|Die| Die child]
+	let Len := length;
+	(|Lst| Lst elem)
+
+At this point, ``pos`` and ``Len`` can be used to figure out both
+absolute and relative position of a given element.
+
+
+
+``type``
+========
+
+
+
+This produces a constant according to the type of value on TOS (such
+as T_CONST, T_DIE, T_STR, etc.).
+
+
+
+``value``
+=========
+
+``T_CONST`` ``->`` ``T_CONST``
+------------------------------
+
+
+
+
