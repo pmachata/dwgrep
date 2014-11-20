@@ -38,7 +38,7 @@ class ios_flag_saver
 
 public:
   explicit ios_flag_saver (std::ios &stream)
-    : m_stream {stream}
+    : m_stream (stream)
     , m_flags {stream.flags ()}
   {}
 

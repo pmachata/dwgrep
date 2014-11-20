@@ -108,7 +108,7 @@ public:
     , doneness_aspect {d}
     , m_dwctx {dwctx}
     , m_offset {offset}
-    , m_cu {cu}
+    , m_cu (cu)
   {}
 
   value_cu (value_cu const &that) = default;
@@ -238,7 +238,7 @@ public:
 		     Dwarf_CU &cu, size_t pos)
     : value {vtype, pos}
     , m_dwctx {dwctx}
-    , m_cu {cu}
+    , m_cu (cu)
   {}
 
   value_abbrev_unit (value_abbrev_unit const &that) = default;
@@ -271,7 +271,7 @@ public:
 		Dwarf_Abbrev &abbrev, size_t pos)
     : value {vtype, pos}
     , m_dwctx {dwctx}
-    , m_abbrev {abbrev}
+    , m_abbrev (abbrev)
   {}
 
   value_abbrev (value_abbrev const &that) = default;

@@ -83,13 +83,13 @@ namespace
   ({									\
     std::vector <std::unique_ptr <stack>> &_yielded = (YIELDED);	\
     									\
-    ASSERT_EQ (1, yielded.size ())					\
+    ASSERT_EQ (1, _yielded.size ())					\
       << "One result expected.";					\
 									\
-    ASSERT_EQ (1, yielded[0]->size ())					\
+    ASSERT_EQ (1, _yielded[0]->size ())					\
       << "Stack with one value expected.";				\
 									\
-    auto produced = value::as <TYPE> (&yielded[0]->get (0));		\
+    auto produced = value::as <TYPE> (&_yielded[0]->get (0));		\
     ASSERT_TRUE (produced != nullptr);					\
 									\
     *produced;								\
