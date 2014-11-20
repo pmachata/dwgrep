@@ -89,18 +89,22 @@ struct builtin_bin
   char const *name () const override;
 };
 
-class op_type
+struct op_type
   : public inner_op
 {
   using inner_op::inner_op;
   stack::uptr next () override;
+
+  static std::string docstring ();
 };
 
-class op_pos
+struct op_pos
   : public inner_op
 {
   using inner_op::inner_op;
   stack::uptr next () override;
+
+  static std::string docstring ();
 };
 
 #endif /* _BUILTIN_CST_H_ */

@@ -170,6 +170,18 @@ op_type::next ()
   return nullptr;
 }
 
+std::string
+op_type::docstring ()
+{
+  return
+R"docstring(
+
+This produces a constant according to the type of value on TOS (such
+as T_CONST, T_DIE, T_STR, etc.).
+
+)docstring";
+}
+
 stack::uptr
 op_pos::next ()
 {
@@ -183,4 +195,38 @@ op_pos::next ()
     }
 
   return nullptr;
+}
+
+std::string
+op_pos::docstring ()
+{
+  return R"docstring(
+
+Each function numbers elements that it produces, and stores number of
+each element along with the element.  That number can be recalled by
+saying ``pos``::
+
+	$ dwgrep ./tests/dwz-partial -e 'unit (|A| A root "%s" A pos)'
+	---
+	0
+	[34] compile_unit
+	---
+	1
+	[a4] compile_unit
+	---
+	2
+	[e1] compile_unit
+	---
+	3
+	[11e] compile_unit
+
+If you wish to know the number of values produced, you have to count
+them by hand::
+
+	[|Die| Die child] let Len := length; (|Lst| Lst elem)
+
+At this point, ``pos`` and ``Len`` can be used to figure out both
+absolute and relative position of a given element.
+
+)docstring";
 }

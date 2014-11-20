@@ -108,6 +108,35 @@ namespace
 
     void reset () override {}
   };
+
+  char const *const cmp_docstring = R"docstring(
+
+These are comparison operators.  The ones with no alphanumeric
+characters in them, ``==``, ``!=``, ``<`` etc., are for use in infix
+expressions, such as::
+
+	entry (offset == 0x123)
+
+The others are low-level assertions with equivalent behavior.
+
+Two elements are inspected: one below TOS and TOS (*A* and *B*,
+respectively).  The assertion holds if *A* and *B* satisfy a relation
+implied by the word.
+
+For example::
+
+	$ dwgrep '1 2 ?lt "yep"'
+	---
+	yep
+	2
+	1
+
+Note that there is both ``!eq`` and ``?ne``, ``!lt`` and ``?ge``, etc.
+These are mostly for symmetry.  For consistency, the first character
+of any assertion is always either ``?`` or ``!``, and both flavors are
+always available.
+
+)docstring";
 }
 
 std::unique_ptr <pred>
@@ -123,6 +152,12 @@ builtin_eq::name () const
     return "?eq";
   else
     return "!eq";
+}
+
+std::string
+builtin_eq::docstring () const
+{
+  return cmp_docstring;
 }
 
 
@@ -141,6 +176,12 @@ builtin_lt::name () const
     return "!lt";
 }
 
+std::string
+builtin_lt::docstring () const
+{
+  return cmp_docstring;
+}
+
 
 std::unique_ptr <pred>
 builtin_gt::build_pred () const
@@ -155,4 +196,10 @@ builtin_gt::name () const
     return "?gt";
   else
     return "!gt";
+}
+
+std::string
+builtin_gt::docstring () const
+{
+  return cmp_docstring;
 }

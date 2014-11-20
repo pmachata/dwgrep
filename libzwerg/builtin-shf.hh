@@ -36,6 +36,8 @@ struct op_drop
 {
   using inner_op::inner_op;
   stack::uptr next () override;
+
+  static std::string docstring ();
 };
 
 struct op_swap
@@ -43,6 +45,8 @@ struct op_swap
 {
   using inner_op::inner_op;
   stack::uptr next () override;
+
+  static std::string docstring ();
 };
 
 struct op_dup
@@ -50,6 +54,8 @@ struct op_dup
 {
   using inner_op::inner_op;
   stack::uptr next () override;
+
+  static std::string docstring ();
 };
 
 struct op_over
@@ -57,6 +63,8 @@ struct op_over
 {
   using inner_op::inner_op;
   stack::uptr next () override;
+
+  static std::string docstring ();
 };
 
 struct op_rot
@@ -64,6 +72,8 @@ struct op_rot
 {
   using inner_op::inner_op;
   stack::uptr next () override;
+
+  static std::string docstring ();
 };
 
 #endif /* _BUILTIN_SHF_H_ */

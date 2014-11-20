@@ -35,11 +35,37 @@
 int
 main (int argc, char const **argv)
 {
-  auto voc = dwgrep_vocabulary_core ();
-  for (auto const &bi: voc->get_builtins ())
+  std::map <std::vector <std::string>, std::string> bis;
+
+  {
+    // A map from descriptions to operators that fit that description.
+    // Typically this will be useful for pairing ?X to its matching !X
+    // without really relying on the naming too much.
+    std::map <std::string, std::vector <std::string>> ds;
+
+    auto voc = dwgrep_vocabulary_core ();
+    for (auto const &bi: voc->get_builtins ())
+      ds[bi.second->docstring ()].push_back (bi.first);
+
+    while (! ds.empty ())
+      {
+	bis.insert (std::make_pair (std::move (ds.begin ()->second),
+				    std::move (ds.begin ()->first)));
+	ds.erase (ds.begin ());
+      }
+  }
+
+  for (auto const &bi: bis)
     {
-      std::cout << "``" << bi.first << "``\n===\n\n"
-		<< bi.second->docstring ()
-		<< std::endl << std::endl;
+      bool seen = false;
+      for (auto const &n: bi.first)
+	{
+	  if (seen)
+	    std::cout << ", ";
+	  seen = true;
+	  std::cout << "``" << n << "``";
+	}
+
+      std::cout << "\n==========\n\n" << bi.second << "\n\n";
     }
 }

@@ -166,6 +166,12 @@ add_simple_exec_builtin (vocabulary &voc, char const *name)
     {
       return m_name;
     }
+
+    std::string
+    docstring () const override
+    {
+      return Op::docstring ();
+    }
   };
 
   voc.add (std::make_shared <simple_exec_builtin> (name));

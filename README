@@ -150,55 +150,6 @@
       : [10 range] sort: {a | if (a mod: 2 == 0) then 0 else 1}
 
 
-* Fundamental words
-** •dup, over, swap, rot, drop — stack shuffling
-   These words reorder elements on stack according to the following
-   schemes:
-
-   |------+---------+-----------|
-   | op   | before  | after     |
-   |------+---------+-----------|
-   | dup  | A B C D | A B C D D |
-   | over | A B C D | A B C D C |
-   | swap | A B C D | A B D C   |
-   | rot  | A B C D | A C D B   |
-   | drop | A B C D | A B C     |
-   |------+---------+-----------|
-
-   Realistically, most of what end users should write will be an
-   occasional dup, possibly a swap.  Drop shouldn't be needed (that's
-   what sub-expressions are for), and the deep stack manipulation
-   should be unnecessary as well.  But they are present for
-   completeness' sake.
-
-** •type :: ?() -> ?T_CONST
-   This produces a constant according to the type of value on TOS
-   (such as T_CONST, T_DIE, T_STR, etc.).
-
-** •pos :: ?() -> ?T_CONST
-    Each function numbers elements that it produces, and stores number
-    of each element along with the element.  That number can be
-    recalled by saying "pos".
-
-    If you wish to know the number of values produced, you have to
-    count them by hand:
-    : [ child ] let L := length; elem
-
-** •?eq, ?ne, ?gt, ?ge, ?lt, ?le :: ?() ?()
-    These are low-level assertions that can be used instead of ==, !=,
-    etc.
-
-    Two elements are inspected: TOS and one below that (B and A,
-    respectively).  The assertion holds if A op B is true.  Comparing
-    values of different types is not defined, and such assertions fail
-    as well.
-
-    Note that there is both !eq and ?ne, !lt and ?ge, etc.  These are
-    mostly for symmetry--the assertions need "?" to denote that they
-    are assertions, so why not have "!" forms as well.  For !eq it
-    even makes a good sense.
-
-
 * Words for intrinsic types
 ** ·T_CONST
 *** •value :: ?T_CONST -> ?T_CONST
@@ -247,61 +198,10 @@
      should, say, "17 uintptr_t" do?  There's no CU in sight...
 
 ** ·T_SEQ
-*** •add :: ?T_SEQ ?T_SEQ -> ?T_SEQ
-     Concatenates two sequences.
-
 *** •elem :: ?T_SEQ ->* ?()
-     Pops a list, and for each element yield a stack with that element
-     pushed on top.
-
-     To zip contents of two top lists near TOS, do:
-     : ->A B; A elem B elem (pos == swap pos)
-
-     This takes two lists from the stack, and produces stacks that
-     have those lists replaced with individual elements that
-     correspond to each other.  For example:
-     : A B [C₁, C₂, C₃] [D₁, D₂, D₃]
-
-     ... would be replaced with three stacks:
-     : (A B C₁ D₁, A B C₂ D₂, A B C₃ D₃)
 
 *** •relem :: ?T_SEQ ->* ?()
      This is like elem, but yields elements in reverse order.
-
-*** •length :: ?T_SEQ -> ?T_CONST
-     Yields length of sequence on TOS.
-
-*** •?empty :: ?T_SEQ
-     Asserts whether a sequence on TOS is empty.
-
-*** •?find :: ?T_SEQ ?T_SEQ
-    (A B find) asserts that the sequence A contains sub-sequence B
-    (e.g. [hay stack] ?([needle] ?find)).
-
-    To determine whether a sequence contains a particular element, you
-    would use the following construct:
-    : [that sequence] (elem == something)
-
-    E.g.:
-    : [child @AT_name] ?(elem == "foo")
-    : [child] ?(elem @AT_name == "foo")
-
-    To pick only those elements that match, you could do the
-    following:
-    : [child] [|L| L elem ?(@AT_name ?"foo")]
-
-    The above is suitable for a function that takes a list on input
-    and wants to filter it.  It is of course preferable to write this
-    sort of thing directly, if possible:
-    : [child ?(@AT_name ?"foo")]
-
-*** •?starts :: ?T_SEQ ?T_SEQ
-    (A B starts) asserts that the sequence A starts with sub-sequence B
-    (e.g. [hay stack] ?([needle] ?starts)).
-
-*** •?ends :: ?T_SEQ ?T_SEQ
-    (A B ends) asserts that the sequence A ends with sub-sequence B
-    (e.g. [hay stack] ?([needle] ?ends)).
 
 ***  at :: ?T_SEQ ?T_CONST -> ?()
 

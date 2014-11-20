@@ -39,6 +39,7 @@ struct builtin_eq
   std::unique_ptr <pred> build_pred () const override;
 
   char const *name () const override;
+  std::string docstring () const override;
 };
 
 struct builtin_lt
@@ -49,6 +50,7 @@ struct builtin_lt
   std::unique_ptr <pred> build_pred () const override;
 
   char const *name () const override;
+  std::string docstring () const override;
 };
 
 struct builtin_gt
@@ -59,6 +61,7 @@ struct builtin_gt
   std::unique_ptr <pred> build_pred () const override;
 
   char const *name () const override;
+  std::string docstring () const override;
 };
 
 #endif /* _BUILTIN_CMP_H_ */
