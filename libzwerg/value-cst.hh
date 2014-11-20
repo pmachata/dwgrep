@@ -57,11 +57,11 @@ public:
 };
 
 struct op_value_cst
-  : public op_overload <value_cst, value_cst>
+  : public op_once_overload <value_cst, value_cst>
 {
-  using op_overload::op_overload;
+  using op_once_overload::op_once_overload;
 
-  std::unique_ptr <value_cst> operate (std::unique_ptr <value_cst> a) override;
+  value_cst operate (std::unique_ptr <value_cst> a) override;
 };
 
 

@@ -69,11 +69,10 @@ value_cst::cmp (value const &that) const
     return cmp_result::fail;
 }
 
-std::unique_ptr <value_cst>
+value_cst
 op_value_cst::operate (std::unique_ptr <value_cst> a)
 {
-  constant cst {a->get_constant ().value (), &dec_constant_dom};
-  return std::make_unique <value_cst> (cst, 0);
+  return {constant {a->get_constant ().value (), &dec_constant_dom}, 0};
 }
 
 namespace
