@@ -140,10 +140,30 @@ op_add_seq::operate (std::unique_ptr <value_seq> a,
   return {seq, 0};
 }
 
+std::string
+op_add_seq::docstring ()
+{
+  return R"docstring(
+
+Concatenate two sequences and yield the resulting sequence.
+
+)docstring";
+}
+
 value_cst
 op_length_seq::operate (std::unique_ptr <value_seq> a)
 {
   return {constant {a->get_seq ()->size (), &dec_constant_dom}, 0};
+}
+
+std::string
+op_length_seq::docstring ()
+{
+  return R"docstring(
+
+Yield number of elements of sequence on TOS.
+
+)docstring";
 }
 
 
@@ -208,16 +228,63 @@ op_elem_seq::operate (std::unique_ptr <value_seq> a)
   return std::make_unique <seq_elem_producer> (a->get_seq ());
 }
 
+std::string
+op_elem_seq::docstring ()
+{
+  return R"docstring(
+
+For each element in the input sequence, which is popped, yield a stack
+with that element pushed on top.
+
+To zip contents of two top lists near TOS, do::
+
+	$ dwgrep '[1, 2, 3] ["a", "b", "c"]
+	          (|A B| A elem B elem) ?((|A B| A pos == B pos)) [|A B| A, B]'
+	[1, a]
+	[2, b]
+	[3, c]
+
+The first parenthesis enumerates all combinations of elements.  The
+second then allows only those that correspond to each other
+position-wise.  At that point we get three stacks, each with two
+values.  The third parenthesis packs the values on stacks back to
+sequences, thus we get three stacks, each with a two-element sequence
+on top.
+
+The expression could be simplified a bit on expense of clarity::
+
+	[1, 2, 3] ["a", "b", "c"]
+	(|A B| A elem B elem (pos == drop pos)) [|A B| A, B]
+
+)docstring";
+}
+
 std::unique_ptr <value_producer <value>>
 op_relem_seq::operate (std::unique_ptr <value_seq> a)
 {
   return std::make_unique <seq_relem_producer> (a->get_seq ());
 }
 
+std::string
+op_relem_seq::docstring ()
+{
+  return R"docstring(
+
+This is like ``elem``, but yields elements in reverse order.
+
+)docstring";
+}
+
 pred_result
 pred_empty_seq::result (value_seq &a)
 {
   return pred_result (a.get_seq ()->empty ());
+}
+
+std::string
+pred_empty_seq::docstring ()
+{
+  return "Asserts whether a sequence on TOS is empty.";
 }
 
 pred_result
@@ -233,6 +300,38 @@ pred_find_seq::result (value_seq &haystack, value_seq &needle)
 		  {
 		    return a->cmp (*b) == cmp_result::equal;
 		  }) != haystack.get_seq ()->end ());
+}
+
+std::string
+pred_find_seq::docstring ()
+{
+return R"docstring(
+
+(A B ?find) asserts that the sequence A contains sub-sequence B
+(e.g. ``[hay stack] ?([needle] ?find)``).
+
+To determine whether a sequence contains a particular element, you
+would use the following construct::
+
+	[that sequence] (elem == something)
+
+E.g.::
+
+	[child @AT_name] ?(elem == "foo")
+	[child] ?(elem @AT_name == "foo")
+
+To filter only those elements that match, you could do the\
+following::
+
+	[child] [|L| L elem ?(@AT_name == "foo")]
+
+The above is suitable for a function that takes a list on input
+and wants to filter it.  It is of course preferable to write this
+sort of thing directly, if possible::
+
+	[child ?(@AT_name == "foo")]
+
+)docstring";
 }
 
 pred_result
@@ -251,6 +350,17 @@ pred_starts_seq::result (value_seq &haystack, value_seq &needle)
 		    }));
 }
 
+std::string
+pred_starts_seq::docstring ()
+{
+  return R"docstring(
+
+``(A B ?starts)`` asserts that the sequence A starts with sub-sequence
+B (e.g. ``[hay stack] ?([needle] ?starts)``).
+
+)docstring";
+}
+
 pred_result
 pred_ends_seq::result (value_seq &haystack, value_seq &needle)
 {
@@ -265,4 +375,15 @@ pred_ends_seq::result (value_seq &haystack, value_seq &needle)
 		    {
 		      return a->cmp (*b) == cmp_result::equal;
 		    }));
+}
+
+std::string
+pred_ends_seq::docstring ()
+{
+  return R"docstring(
+
+``(A B ?ends)`` asserts that the sequence A ends with sub-sequence
+B (e.g. ``[hay stack] ?([needle] ?ends)``).
+
+)docstring";
 }

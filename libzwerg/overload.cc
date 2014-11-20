@@ -304,8 +304,26 @@ overloaded_builtin::docstring () const
 	}
       else
 	ss << " -> ???";
+      ss << "\n----------\n\n";
 
-      ss << std::endl << bi->docstring () << std::endl << std::endl;
+      auto doc = bi->docstring ();
+
+      // Trim new-lines at the beginning, because the docstrings may
+      // include these to make it clear where the raw-string header
+      // ends and actual documentation begins.  We don't trim spaces
+      // though, those are significant.
+      std::string::size_type fst = doc.find_first_not_of ("\n", 0);
+      if (fst == std::string::npos)
+	doc = "";
+      else
+	{
+	  // And the same at the end.
+	  auto lst = doc.find_last_not_of ("\n");
+	  assert (lst != std::string::npos);
+	  doc = doc.substr (fst, lst - fst + 1);
+	}
+
+      ss << doc << std::endl;
     }
 
   return ss.str ();

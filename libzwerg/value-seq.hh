@@ -76,6 +76,8 @@ struct op_add_seq
 
   value_seq operate (std::unique_ptr <value_seq> a,
 		     std::unique_ptr <value_seq> b) override;
+
+  static std::string docstring ();
 };
 
 struct op_length_seq
@@ -84,6 +86,8 @@ struct op_length_seq
   using op_once_overload::op_once_overload;
 
   value_cst operate (std::unique_ptr <value_seq> a) override;
+
+  static std::string docstring ();
 };
 
 struct op_elem_seq
@@ -93,6 +97,8 @@ struct op_elem_seq
 
   std::unique_ptr <value_producer <value>>
   operate (std::unique_ptr <value_seq> a) override;
+
+  static std::string docstring ();
 };
 
 struct op_relem_seq
@@ -102,6 +108,8 @@ struct op_relem_seq
 
   std::unique_ptr <value_producer <value>>
   operate (std::unique_ptr <value_seq> a) override;
+
+  static std::string docstring ();
 };
 
 struct pred_empty_seq
@@ -109,6 +117,8 @@ struct pred_empty_seq
 {
   using pred_overload::pred_overload;
   pred_result result (value_seq &a) override;
+
+  static std::string docstring ();
 };
 
 struct pred_find_seq
@@ -116,6 +126,8 @@ struct pred_find_seq
 {
   using pred_overload::pred_overload;
   pred_result result (value_seq &haystack, value_seq &needle) override;
+
+  static std::string docstring ();
 };
 
 struct pred_starts_seq
@@ -123,6 +135,8 @@ struct pred_starts_seq
 {
   using pred_overload::pred_overload;
   pred_result result (value_seq &haystack, value_seq &needle) override;
+
+  static std::string docstring ();
 };
 
 struct pred_ends_seq
@@ -130,6 +144,8 @@ struct pred_ends_seq
 {
   using pred_overload::pred_overload;
   pred_result result (value_seq &haystack, value_seq &needle) override;
+
+  static std::string docstring ();
 };
 
 #endif /* _VALUE_SEQ_H_ */
