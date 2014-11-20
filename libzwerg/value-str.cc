@@ -84,12 +84,14 @@ namespace
   struct str_elem_producer_base
   {
     std::unique_ptr <value_str> m_v;
-    std::string const &m_str;
+    size_t m_sz;
+    char const *m_buf;
     size_t m_idx;
 
     str_elem_producer_base (std::unique_ptr <value_str> v)
       : m_v {std::move (v)}
-      , m_str {m_v->get_string ()}
+      , m_sz {m_v->get_string ().size ()}
+      , m_buf {m_v->get_string ().c_str ()}
       , m_idx {0}
     {}
   };
@@ -103,9 +105,9 @@ namespace
     std::unique_ptr <value_str>
     next () override
     {
-      if (m_idx < m_str.size ())
+      if (m_idx < m_sz)
 	{
-	  char c = m_str[m_idx];
+	  char c = m_buf[m_idx];
 	  return std::make_unique <value_str> (std::string {c}, m_idx++);
 	}
 
@@ -122,9 +124,9 @@ namespace
     std::unique_ptr <value_str>
     next () override
     {
-      if (m_idx < m_str.size ())
+      if (m_idx < m_sz)
 	{
-	  char c = m_str[m_str.size () - 1 - m_idx];
+	  char c = m_buf[m_sz - 1 - m_idx];
 	  return std::make_unique <value_str> (std::string {c}, m_idx++);
 	}
 
