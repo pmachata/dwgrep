@@ -228,10 +228,10 @@ op_elem_seq::operate (std::unique_ptr <value_seq> a)
   return std::make_unique <seq_elem_producer> (a->get_seq ());
 }
 
-std::string
-op_elem_seq::docstring ()
+namespace
 {
-  return R"docstring(
+  char const *const elem_seq_docstring =
+R"docstring(
 
 For each element in the input sequence, which is popped, yield a stack
 with that element pushed on top.
@@ -247,7 +247,7 @@ To zip contents of two top lists near TOS, do::
 The first parenthesis enumerates all combinations of elements.  The
 second then allows only those that correspond to each other
 position-wise.  At that point we get three stacks, each with two
-values.  The third parenthesis packs the values on stacks back to
+values.  The last bracket then packs the values on stacks back to
 sequences, thus we get three stacks, each with a two-element sequence
 on top.
 
@@ -256,7 +256,15 @@ The expression could be simplified a bit on expense of clarity::
 	[1, 2, 3] ["a", "b", "c"]
 	(|A B| A elem B elem (pos == drop pos)) [|A B| A, B]
 
+``relem`` operates in the same fashion as ``elem``, but backwards.
+
 )docstring";
+}
+
+std::string
+op_elem_seq::docstring ()
+{
+  return elem_seq_docstring;
 }
 
 std::unique_ptr <value_producer <value>>
@@ -268,11 +276,7 @@ op_relem_seq::operate (std::unique_ptr <value_seq> a)
 std::string
 op_relem_seq::docstring ()
 {
-  return R"docstring(
-
-This is like ``elem``, but yields elements in reverse order.
-
-)docstring";
+  return elem_seq_docstring;
 }
 
 pred_result

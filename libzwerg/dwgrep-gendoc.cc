@@ -27,14 +27,22 @@
    not, see <http://www.gnu.org/licenses/>.  */
 
 #include <iostream>
+#include <iomanip>
+#include <sstream>
 
 #include "builtin.hh"
 #include "init.hh"
 #include "builtin-dw.hh"
 
+void underline (std::stringstream &ss, char c);
+
 int
 main (int argc, char const **argv)
 {
+  std::cout << ".. _vocabulary:\n\n"
+    "Vocabulary reference\n"
+    "====================\n\n";
+
   std::map <std::vector <std::string>, std::string> bis;
 
   {
@@ -45,7 +53,11 @@ main (int argc, char const **argv)
 
     auto voc = dwgrep_vocabulary_core ();
     for (auto const &bi: voc->get_builtins ())
-      ds[bi.second->docstring ()].push_back (bi.first);
+      {
+	auto doc = bi.second->docstring ();
+	if (doc != "@hide")
+	  ds[doc].push_back (bi.first);
+      }
 
     while (! ds.empty ())
       {
@@ -57,15 +69,17 @@ main (int argc, char const **argv)
 
   for (auto const &bi: bis)
     {
+      std::stringstream ss;
       bool seen = false;
       for (auto const &n: bi.first)
 	{
 	  if (seen)
-	    std::cout << ", ";
+	    ss << ", ";
 	  seen = true;
-	  std::cout << "``" << n << "``";
+	  ss << "``" << n << "``";
 	}
-
-      std::cout << "\n==========\n\n" << bi.second << "\n\n";
+      underline (ss, '=');
+      std::cout << ss.str () << "\n"
+		<< bi.second << "\n\n";
     }
 }

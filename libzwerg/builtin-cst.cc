@@ -105,6 +105,41 @@ builtin_constant::docstring () const
 }
 
 
+namespace
+{
+  char const *const radices_docstring =
+R"docstring(
+
+``bin`` is used for converting constants to base-2, ``oct`` to base-8,
+``dec`` to base-10 and ``hex`` to base-16.  These operators yield
+incoming stack, except the domain of constant on TOS is changed.
+Examples::
+
+	$ dwgrep '64 hex'
+	0x40
+
+	$ dwgrep 'DW_AT_name hex'
+	0x3
+
+The value remains a constant, only the way it's displayed changes.
+You can use ``"%s"`` to convert it to a string, in which case it's rendered
+with the newly-selected domain::
+
+	$ dwgrep 'DW_AT_name "=%s="'
+	=DW_AT_name=
+	$ dwgrep 'DW_AT_name hex "=%s="'
+	=0x3=
+
+Though you can achieve the same effect with formatting directives
+``%b``, ``%o``, ``%d`` and ``%x``::
+
+	$ dwgrep 'DW_AT_name "=%x="'
+	=0x3=
+
+)docstring";
+}
+
+
 std::shared_ptr <op>
 builtin_hex::build_exec (std::shared_ptr <op> upstream) const
 {
@@ -115,6 +150,12 @@ char const *
 builtin_hex::name () const
 {
   return "hex";
+}
+
+std::string
+builtin_hex::docstring () const
+{
+  return radices_docstring;
 }
 
 
@@ -130,6 +171,12 @@ builtin_dec::name () const
   return "dec";
 }
 
+std::string
+builtin_dec::docstring () const
+{
+  return radices_docstring;
+}
+
 
 std::shared_ptr <op>
 builtin_oct::build_exec (std::shared_ptr <op> upstream) const
@@ -143,6 +190,12 @@ builtin_oct::name () const
   return "oct";
 }
 
+std::string
+builtin_oct::docstring () const
+{
+  return radices_docstring;
+}
+
 
 std::shared_ptr <op>
 builtin_bin::build_exec (std::shared_ptr <op> upstream) const
@@ -154,6 +207,12 @@ char const *
 builtin_bin::name () const
 {
   return "bin";
+}
+
+std::string
+builtin_bin::docstring () const
+{
+  return radices_docstring;
 }
 
 
@@ -223,7 +282,9 @@ saying ``pos``::
 If you wish to know the number of values produced, you have to count
 them by hand::
 
-	[|Die| Die child] let Len := length; (|Lst| Lst elem)
+	[|Die| Die child]
+	let Len := length;
+	(|Lst| Lst elem)
 
 At this point, ``pos`` and ``Len`` can be used to figure out both
 absolute and relative position of a given element.

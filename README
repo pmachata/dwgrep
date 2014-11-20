@@ -163,18 +163,6 @@
      division and modulo by zero produce an error message and abort
      current computation.
 
-*** •hex, oct, bin :: ?T_CONST -> ?T_CONST
-     These yield incoming stack, except the domain of constant on TOS
-     is changed.
-     : 64 hex		# gives 0x40
-     : DW_AT_name hex	# gives 0x3
-
-     The value remains a constant, only the way it's displayed
-     changes.  You can use "%s" to convert it to a string, in which
-     case it's rendered with the newly-selected domain.
-     : DW_AT_name "%s"		# gives "DW_AT_name"
-     : DW_AT_name hex "%s"	# gives "0x3"
-
 ***  int32_t, uint32_t, int64_t, uint64_t :: ?T_CONST -> ?T_CONST
      The idea behind uint32_t et.al. is that a two-complement
      representation of a given constant is taken, if necessary, it's

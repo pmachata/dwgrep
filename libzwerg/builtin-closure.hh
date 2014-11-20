@@ -55,6 +55,7 @@ struct builtin_apply
     const override;
 
   char const *name () const override;
+  std::string docstring () const override;
 };
 
 #endif /* _BUILTIN_CLOSURE_H_ */

@@ -36,15 +36,19 @@ namespace
 These words reorder elements on stack according to the following
 schemes:
 
-|------+---------+-----------|
++------+---------+-----------+
 | op   | before  | after     |
-|------+---------+-----------|
++======+=========+===========+
 | dup  | A B C D | A B C D D |
++------+---------+-----------+
 | over | A B C D | A B C D C |
++------+---------+-----------+
 | swap | A B C D | A B D C   |
++------+---------+-----------+
 | rot  | A B C D | A C D B   |
++------+---------+-----------+
 | drop | A B C D | A B C     |
-|------+---------+-----------|
++------+---------+-----------+
 
 Realistically, most of what end users should write will be an
 occasional dup, possibly a swap.  Drop shouldn't be needed (that's

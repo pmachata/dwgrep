@@ -128,3 +128,9 @@ builtin_apply::name () const
 {
   return "apply";
 }
+
+std::string
+builtin_apply::docstring () const
+{
+  return "@hide";
+}

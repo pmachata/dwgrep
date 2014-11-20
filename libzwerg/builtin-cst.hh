@@ -60,6 +60,7 @@ struct builtin_hex
     const override;
 
   char const *name () const override;
+  std::string docstring () const override;
 };
 
 struct builtin_dec
@@ -69,6 +70,7 @@ struct builtin_dec
     const override;
 
   char const *name () const override;
+  std::string docstring () const override;
 };
 
 struct builtin_oct
@@ -78,6 +80,7 @@ struct builtin_oct
     const override;
 
   char const *name () const override;
+  std::string docstring () const override;
 };
 
 struct builtin_bin
@@ -87,6 +90,7 @@ struct builtin_bin
     const override;
 
   char const *name () const override;
+  std::string docstring () const override;
 };
 
 struct op_type

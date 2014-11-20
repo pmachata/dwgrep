@@ -19,5 +19,11 @@ ADD_CUSTOM_TARGET (doc-html ALL
 	-d "${SPHINX_CACHE_DIR}" "${CMAKE_CURRENT_SOURCE_DIR}" "${SPHINX_HTML_DIR}"
     COMMENT "Building HTML documentation")
 
+ADD_CUSTOM_TARGET (GenerateDocs ALL
+  ../libzwerg/dwgrep-gendoc > vocabulary.rst
+  DEPENDS ../libzwerg/dwgrep-gendoc
+  COMMENT "Building vocabulary reference")
+
 ADD_CUSTOM_TARGET (doc)
 ADD_DEPENDENCIES (doc doc-html)
+ADD_DEPENDENCIES (doc-html GenerateDocs)

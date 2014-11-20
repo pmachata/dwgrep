@@ -3,6 +3,12 @@
 Welcome to dwgrep's documentation!
 ==================================
 
+- :ref:`tutorial`
+
+- :ref:`syntax`
+
+- :ref:`vocabulary`
+
 For complete table of contents, see :ref:`fulltoc`.
 
 
@@ -96,10 +102,4 @@ Now would be a good time to read through the :ref:`tutorial`, which
 gives a step-by-step account on fundamental tools of Zwerg language.
 You might also want to look at :ref:`syntax`, where individual Zwerg
 forms are introduced and described.
-
-Indices and tables
-==================
-
-* :ref:`genindex`
-* :ref:`search`
 
