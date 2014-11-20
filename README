@@ -1,6 +1,9 @@
 -*-org-*-
 * Introduction
 
+  (See http://pmachata.github.io/dwgrep/ for a HTML version of this
+  documentation.)
+
   Dwgrep is a tool and an associated language for querying Dwarf
   (debuginfo) graphs.  If you want to find out more about Dwarf, you
   can check out the following links.  But you can also pretend that
