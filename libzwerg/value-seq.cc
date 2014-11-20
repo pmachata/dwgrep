@@ -130,21 +130,20 @@ value_seq::cmp (value const &that) const
     return cmp_result::fail;
 }
 
-std::unique_ptr <value>
+value_seq
 op_add_seq::operate (std::unique_ptr <value_seq> a,
 		     std::unique_ptr <value_seq> b)
 {
   auto seq = a->get_seq ();
   for (auto &v: *b->get_seq ())
     seq->push_back (std::move (v));
-  return std::move (a);
+  return {seq, 0};
 }
 
-std::unique_ptr <value>
+value_cst
 op_length_seq::operate (std::unique_ptr <value_seq> a)
 {
-  constant t {a->get_seq ()->size (), &dec_constant_dom};
-  return std::make_unique <value_cst> (t, 0);
+  return {constant {a->get_seq ()->size (), &dec_constant_dom}, 0};
 }
 
 
@@ -162,7 +161,7 @@ namespace
   };
 
   struct seq_elem_producer
-    : public value_producer
+    : public value_producer <value>
     , public seq_elem_producer_base
   {
     using seq_elem_producer_base::seq_elem_producer_base;
@@ -182,7 +181,7 @@ namespace
   };
 
   struct seq_relem_producer
-    : public value_producer
+    : public value_producer <value>
     , public seq_elem_producer_base
   {
     using seq_elem_producer_base::seq_elem_producer_base;
@@ -203,13 +202,13 @@ namespace
   };
 }
 
-std::unique_ptr <value_producer>
+std::unique_ptr <value_producer <value>>
 op_elem_seq::operate (std::unique_ptr <value_seq> a)
 {
   return std::make_unique <seq_elem_producer> (a->get_seq ());
 }
 
-std::unique_ptr <value_producer>
+std::unique_ptr <value_producer <value>>
 op_relem_seq::operate (std::unique_ptr <value_seq> a)
 {
   return std::make_unique <seq_relem_producer> (a->get_seq ());

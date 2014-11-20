@@ -1,3 +1,5 @@
+.. _syntax:
+
 Syntax
 ======
 
@@ -198,8 +200,8 @@ decimal numbers, depending on what is deemed the best fit::
 	0x80482f0
 
 
-Lexical scopes
---------------
+Lexical scopes (``(|A|…)``)
+------------------------------
 
 Form::
 
@@ -224,8 +226,8 @@ first-class Zwerg support::
 	[foo] [bar] (|A B| A [B elem !(== A elem)] add)
 
 
-An ALT-list
------------
+ALT-lists (``,``)
+-----------------
 
 Form::
 
@@ -251,8 +253,8 @@ You would also use ALT-lists to create a sequence value::
 	[1, 2, 3]
 
 
-An OR-list
-----------
+OR-lists (``||``)
+-----------------
 
 Form::
 
@@ -280,15 +282,15 @@ and fallback cases::
 	let has_loc := (?(@DW_AT_location) true || false);
 
 
-Syntactical assertions (``==`` et.al.)
---------------------------------------
+Infix assertions (``==``)
+-------------------------
 
 Form::
 
 	EXPR₁ OP₁ EXPR₂
 
-Zwerg has support for binary assertions.  These forms are evaluated as
-follows::
+Zwerg has support for infix binary assertions.  These forms are
+evaluated as follows::
 
 	?(let .tmp1 := EXPR₁; let .tmp2 := EXPR₂; .tmp1 .tmp2 OP₂)
 
@@ -334,8 +336,8 @@ For example::
 		type (ref4)	[28];
 
 
-Iteration, Kleene star
-----------------------
+Iteration (``*``)
+-----------------
 
 Form::
 
@@ -694,6 +696,10 @@ The input stack is then passed to the body expression, which is
 evaluated in plain context.  The overall form then yields anything
 that the body expression yields.
 
+Both *EXPR₁* and *EXPR₂* shall have the same overall stack effect (the
+number of slots pushed minus number of slots popped will be the same
+for each branch).
+
 This form could be circumscribed by the following snippet::
 
 	(?(EXPR₀) (EXPR₁), !(EXPR₀) (EXPR₂))
@@ -707,3 +713,14 @@ As an example, consider the following snippet from a script::
 	) else (
 	  ?DW_TAG_variable
 	)
+
+In particular, note that following unintuitive example::
+
+	$ dwgrep 'if false then "yes" else "no"'	# WARNING!
+	yes
+
+The reason is that ``false`` is a named constant, which means the
+tested expression always yields a stack: namely a stack with ``false``
+on top.  This is how Booleans should be tested in Zwerg::
+
+	if (@AT_declaration == true) then … else …

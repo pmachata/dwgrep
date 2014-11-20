@@ -29,6 +29,8 @@
 #include <iostream>
 #include <memory>
 #include <algorithm>
+#include <sstream>
+#include <iterator>
 
 #include "overload.hh"
 
@@ -254,6 +256,55 @@ namespace
       return m_name;
     }
   };
+}
+
+std::string
+overloaded_builtin::docstring () const
+{
+  using namespace std::literals;
+  std::stringstream ss;
+  for (auto const &ovl: m_ovl_tab->get_overloads ())
+    {
+      auto vts = std::get <0> (ovl).get_types ();
+      for (auto itb = vts.begin (), ite = vts.end (), it = itb; it != ite; ++it)
+	{
+	  if (it != itb)
+	    ss << " ";
+	  ss << "``" << *it << "``";
+	}
+
+      auto const &bi = std::get <1> (ovl);
+      auto const &pm = bi->protomap ();
+
+      // OVL now refers to an individual overload.  It ought to
+      // contain at most one prototype.  It might contain none if the
+      // prototype isn't or for whatever reason can't be declared.
+      assert (pm.size () <= 1);
+
+      if (! pm.empty ())
+	{
+	  auto const &pm0 = pm[0];
+	  ss << " ->";
+	  switch (std::get <1> (pm0))
+	    {
+	    case yield::many:
+	      ss << "*";
+	    case yield::once:
+	      break;
+	    case yield::maybe:
+	      ss << "?";
+	    }
+
+	  for (auto const &vt: std::get <2> (pm0))
+	    ss << " ``" << vt << "``";
+	}
+      else
+	ss << " -> ???";
+
+      ss << std::endl << bi->docstring () << std::endl << std::endl;
+    }
+
+  return ss.str ();
 }
 
 std::shared_ptr <op>

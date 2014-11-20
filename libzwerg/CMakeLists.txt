@@ -118,3 +118,8 @@ IF (GTEST_FOUND)
     ${GTEST_LIBRARIES} ${LIBELF_LIBRARY} ${DWARF_LIBRARIES})
   ADD_TEST (TestDw test-dw --test-case-directory=${CMAKE_SOURCE_DIR}/tests/)
 ENDIF ()
+
+IF (SPHINX_EXECUTABLE)
+  ADD_EXECUTABLE (dwgrep-gendoc dwgrep-gendoc.cc ${LibzwergAll})
+  TARGET_LINK_LIBRARIES (dwgrep-gendoc ${LIBELF_LIBRARY} ${DWARF_LIBRARIES})
+ENDIF ()

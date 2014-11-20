@@ -26,29 +26,20 @@
    the GNU Lesser General Public License along with this program.  If
    not, see <http://www.gnu.org/licenses/>.  */
 
-#ifndef _ATVAL_H_
-#define _ATVAL_H_
+#include <iostream>
 
-#include "dwfl_context.hh"
-#include "op.hh"
+#include "builtin.hh"
+#include "init.hh"
+#include "builtin-dw.hh"
 
-class value;
-class value_aset;
-
-// Obtain a value of ATTR at DIE.
-std::unique_ptr <value_producer <value>>
-at_value (std::shared_ptr <dwfl_context> dwctx,
-	  Dwarf_Die die, Dwarf_Attribute attr);
-
-// Obtain DIE's ranges.
-std::unique_ptr <value_aset> die_ranges (Dwarf_Die die);
-
-std::unique_ptr <value_producer <value>>
-dwop_number (std::shared_ptr <dwfl_context> dwctx,
-	     Dwarf_Attribute const &attr, Dwarf_Op const *op);
-
-std::unique_ptr <value_producer <value>>
-dwop_number2 (std::shared_ptr <dwfl_context> dwctx,
-	      Dwarf_Attribute const &attr, Dwarf_Op const *op);
-
-#endif /* _ATVAL_H_ */
+int
+main (int argc, char const **argv)
+{
+  auto voc = dwgrep_vocabulary_core ();
+  for (auto const &bi: voc->get_builtins ())
+    {
+      std::cout << "``" << bi.first << "``\n===\n\n"
+		<< bi.second->docstring ()
+		<< std::endl << std::endl;
+    }
+}

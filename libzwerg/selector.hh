@@ -29,9 +29,9 @@
 #ifndef _SELECTOR_H_
 #define _SELECTOR_H_
 
-#include <array>
 #include <type_traits>
 #include <climits>
+#include <vector>
 
 #include "value.hh"
 
@@ -103,6 +103,8 @@ public:
   {
     return (profile.m_imprint & m_mask) == m_imprint;
   }
+
+  std::vector <value_type> get_types () const;
 
   bool operator< (selector const &that) const
   { return m_imprint < that.m_imprint; }

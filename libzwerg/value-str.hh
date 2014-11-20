@@ -30,9 +30,11 @@
 #define _VALUE_STR_H_
 
 #include <string>
+
 #include "value.hh"
 #include "op.hh"
 #include "overload.hh"
+#include "value-cst.hh"
 
 class value_str
   : public value
@@ -56,37 +58,39 @@ public:
 };
 
 struct op_add_str
-  : public op_overload <value_str, value_str>
+  : public op_once_overload <value_str, value_str, value_str>
 {
-  using op_overload::op_overload;
+  using op_once_overload::op_once_overload;
 
-  std::unique_ptr <value> operate (std::unique_ptr <value_str> a,
-				   std::unique_ptr <value_str> b) override;
+  value_str operate (std::unique_ptr <value_str> a,
+		     std::unique_ptr <value_str> b) override;
 };
 
 struct op_length_str
-  : public op_overload <value_str>
+  : public op_once_overload <value_cst, value_str>
 {
-  using op_overload::op_overload;
+  using op_once_overload::op_once_overload;
 
-  std::unique_ptr <value> operate (std::unique_ptr <value_str> a) override;
+  value_cst operate (std::unique_ptr <value_str> a) override;
+
+  static std::string docstring ();
 };
 
 struct op_elem_str
-  : public op_yielding_overload <value_str>
+  : public op_yielding_overload <value_str, value_str>
 {
   using op_yielding_overload::op_yielding_overload;
 
-  std::unique_ptr <value_producer>
+  std::unique_ptr <value_producer <value_str>>
   operate (std::unique_ptr <value_str> a) override;
 };
 
 struct op_relem_str
-  : public op_yielding_overload <value_str>
+  : public op_yielding_overload <value_str, value_str>
 {
   using op_yielding_overload::op_yielding_overload;
 
-  std::unique_ptr <value_producer>
+  std::unique_ptr <value_producer <value_str>>
   operate (std::unique_ptr <value_str> a) override;
 };
 

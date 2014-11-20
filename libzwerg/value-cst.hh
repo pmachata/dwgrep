@@ -57,59 +57,59 @@ public:
 };
 
 struct op_value_cst
-  : public op_overload <value_cst>
+  : public op_overload <value_cst, value_cst>
 {
   using op_overload::op_overload;
 
-  std::unique_ptr <value> operate (std::unique_ptr <value_cst> a) override;
+  std::unique_ptr <value_cst> operate (std::unique_ptr <value_cst> a) override;
 };
 
 
 // Arithmetic operator overloads.
 
 struct op_add_cst
-  : public op_overload <value_cst, value_cst>
+  : public op_overload <value_cst, value_cst, value_cst>
 {
   using op_overload::op_overload;
 
-  std::unique_ptr <value> operate (std::unique_ptr <value_cst> a,
-				   std::unique_ptr <value_cst> b) override;
+  std::unique_ptr <value_cst> operate (std::unique_ptr <value_cst> a,
+				       std::unique_ptr <value_cst> b) override;
 };
 
 struct op_sub_cst
-  : public op_overload <value_cst, value_cst>
+  : public op_overload <value_cst, value_cst, value_cst>
 {
   using op_overload::op_overload;
 
-  std::unique_ptr <value> operate (std::unique_ptr <value_cst> a,
-				   std::unique_ptr <value_cst> b) override;
+  std::unique_ptr <value_cst> operate (std::unique_ptr <value_cst> a,
+				       std::unique_ptr <value_cst> b) override;
 };
 
 struct op_mul_cst
-  : public op_overload <value_cst, value_cst>
+  : public op_overload <value_cst, value_cst, value_cst>
 {
   using op_overload::op_overload;
 
-  std::unique_ptr <value> operate (std::unique_ptr <value_cst> a,
-				   std::unique_ptr <value_cst> b) override;
+  std::unique_ptr <value_cst> operate (std::unique_ptr <value_cst> a,
+				       std::unique_ptr <value_cst> b) override;
 };
 
 struct op_div_cst
-  : public op_overload <value_cst, value_cst>
+  : public op_overload <value_cst, value_cst, value_cst>
 {
   using op_overload::op_overload;
 
-  std::unique_ptr <value> operate (std::unique_ptr <value_cst> a,
-				   std::unique_ptr <value_cst> b) override;
+  std::unique_ptr <value_cst> operate (std::unique_ptr <value_cst> a,
+				       std::unique_ptr <value_cst> b) override;
 };
 
 struct op_mod_cst
-  : public op_overload <value_cst, value_cst>
+  : public op_overload <value_cst, value_cst, value_cst>
 {
   using op_overload::op_overload;
 
-  std::unique_ptr <value> operate (std::unique_ptr <value_cst> a,
-				   std::unique_ptr <value_cst> b) override;
+  std::unique_ptr <value_cst> operate (std::unique_ptr <value_cst> a,
+				       std::unique_ptr <value_cst> b) override;
 };
 
 #endif /* _VALUE_CST_H_ */

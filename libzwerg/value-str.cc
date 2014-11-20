@@ -57,20 +57,27 @@ value_str::cmp (value const &that) const
     return cmp_result::fail;
 }
 
-std::unique_ptr <value>
+value_str
 op_add_str::operate (std::unique_ptr <value_str> a,
 		     std::unique_ptr <value_str> b)
 {
-  a->get_string () += b->get_string ();
-  return std::move (a);
+  return value_str {a->get_string () + b->get_string (), 0};
 }
 
-std::unique_ptr <value>
+value_cst
 op_length_str::operate (std::unique_ptr <value_str> a)
 {
   constant t {a->get_string ().length (), &dec_constant_dom};
-  return std::make_unique <value_cst> (t, 0);
+  return value_cst {t, 0};
 }
+
+std::string
+op_length_str::docstring ()
+{
+  return "Yields length of string on TOS.";
+}
+
+
 
 namespace
 {
@@ -88,12 +95,12 @@ namespace
   };
 
   struct str_elem_producer
-    : public value_producer
+    : public value_producer <value_str>
     , public str_elem_producer_base
   {
     using str_elem_producer_base::str_elem_producer_base;
 
-    std::unique_ptr <value>
+    std::unique_ptr <value_str>
     next () override
     {
       if (m_idx < m_str.size ())
@@ -107,12 +114,12 @@ namespace
   };
 
   struct str_relem_producer
-    : public value_producer
+    : public value_producer <value_str>
     , public str_elem_producer_base
   {
     using str_elem_producer_base::str_elem_producer_base;
 
-    std::unique_ptr <value>
+    std::unique_ptr <value_str>
     next () override
     {
       if (m_idx < m_str.size ())
@@ -126,13 +133,13 @@ namespace
   };
 }
 
-std::unique_ptr <value_producer>
+std::unique_ptr <value_producer <value_str>>
 op_elem_str::operate (std::unique_ptr <value_str> a)
 {
   return std::make_unique <str_elem_producer> (std::move (a));
 }
 
-std::unique_ptr <value_producer>
+std::unique_ptr <value_producer <value_str>>
 op_relem_str::operate (std::unique_ptr <value_str> a)
 {
   return std::make_unique <str_relem_producer> (std::move (a));

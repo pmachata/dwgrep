@@ -69,7 +69,7 @@ value_cst::cmp (value const &that) const
     return cmp_result::fail;
 }
 
-std::unique_ptr <value>
+std::unique_ptr <value_cst>
 op_value_cst::operate (std::unique_ptr <value_cst> a)
 {
   constant cst {a->get_constant ().value (), &dec_constant_dom};
@@ -79,7 +79,7 @@ op_value_cst::operate (std::unique_ptr <value_cst> a)
 namespace
 {
   template <class F>
-  std::unique_ptr <value>
+  std::unique_ptr <value_cst>
   simple_arith_op (value_cst const &a, value_cst const &b, F f)
   {
     constant const &cst_a = a.get_constant ();
@@ -102,7 +102,7 @@ namespace
   }
 }
 
-std::unique_ptr <value>
+std::unique_ptr <value_cst>
 op_add_cst::operate (std::unique_ptr <value_cst> a,
 		     std::unique_ptr <value_cst> b)
 {
@@ -116,7 +116,7 @@ op_add_cst::operate (std::unique_ptr <value_cst> a,
      });
 }
 
-std::unique_ptr <value>
+std::unique_ptr <value_cst>
 op_sub_cst::operate (std::unique_ptr <value_cst> a,
 		     std::unique_ptr <value_cst> b)
 {
@@ -130,42 +130,42 @@ op_sub_cst::operate (std::unique_ptr <value_cst> a,
      });
 }
 
-std::unique_ptr <value>
+std::unique_ptr <value_cst>
 op_mul_cst::operate (std::unique_ptr <value_cst> a,
 		     std::unique_ptr <value_cst> b)
 {
   return simple_arith_op
     (*a, *b,
      [] (constant const &cst_a, constant const &cst_b,
-	 constant_dom const *d) -> std::unique_ptr <value>
+	 constant_dom const *d) -> std::unique_ptr <value_cst>
      {
        constant r {cst_a.value () * cst_b.value (), d};
        return std::make_unique <value_cst> (r, 0);
      });
 }
 
-std::unique_ptr <value>
+std::unique_ptr <value_cst>
 op_div_cst::operate (std::unique_ptr <value_cst> a,
 		     std::unique_ptr <value_cst> b)
 {
   return simple_arith_op
     (*a, *b,
      [] (constant const &cst_a, constant const &cst_b,
-	 constant_dom const *d) -> std::unique_ptr <value>
+	 constant_dom const *d) -> std::unique_ptr <value_cst>
      {
        constant r {cst_a.value () / cst_b.value (), d};
        return std::make_unique <value_cst> (r, 0);
      });
 }
 
-std::unique_ptr <value>
+std::unique_ptr <value_cst>
 op_mod_cst::operate (std::unique_ptr <value_cst> a,
 		     std::unique_ptr <value_cst> b)
 {
   return simple_arith_op
     (*a, *b,
      [] (constant const &cst_a, constant const &cst_b,
-	 constant_dom const *d) -> std::unique_ptr <value>
+	 constant_dom const *d) -> std::unique_ptr <value_cst>
      {
        constant r {cst_a.value () % cst_b.value (), d};
        return std::make_unique <value_cst> (r, 0);

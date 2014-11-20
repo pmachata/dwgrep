@@ -50,18 +50,20 @@ public:
   virtual std::string name () const = 0;
 };
 
+template <class RT>
 struct value_producer
 {
   virtual ~value_producer () {}
 
   // Produce next value.
-  virtual std::unique_ptr <value> next () = 0;
+  virtual std::unique_ptr <RT> next () = 0;
 };
 
+template <class RT>
 struct value_producer_cat
-  : public value_producer
+  : public value_producer <RT>
 {
-  std::vector <std::unique_ptr <value_producer>> m_vprs;
+  std::vector <std::unique_ptr <value_producer <RT>>> m_vprs;
   size_t m_i;
 
   value_producer_cat ()
@@ -69,14 +71,21 @@ struct value_producer_cat
   {}
 
   template <class... Ts>
-  value_producer_cat (std::unique_ptr <value_producer> vpr1,
+  value_producer_cat (std::unique_ptr <value_producer <RT>> vpr1,
 		      std::unique_ptr <Ts>... vprs)
     : value_producer_cat {std::move (vprs)...}
   {
     m_vprs.insert (m_vprs.begin (), std::move (vpr1));
   }
 
-  std::unique_ptr <value> next () override;
+  std::unique_ptr <RT>
+  next () override
+  {
+    for (; m_i < m_vprs.size (); ++m_i)
+      if (auto v = m_vprs[m_i]->next ())
+	return v;
+    return nullptr;
+  }
 };
 
 // An op that's not an origin has an upstream.

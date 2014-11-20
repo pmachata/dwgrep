@@ -31,12 +31,36 @@
 
 #include <memory>
 #include <string>
+#include <map>
+#include <vector>
 
 #include "constant.hh"
 #include "value.hh"
 
 struct pred;
 struct op;
+
+enum class yield
+  {
+    maybe,	// The operator may yield once, or not at all.
+    once,	// The operator yields exactly once.
+    many,	// The operator yields zero or more times.
+  };
+
+// Prototype map for builtins.  A vector of prototype rules.  Each
+// rule reads as follows:
+//
+//   - <1>: A vector of value types near TOS.  rbegin represents TOS.
+//
+//   - <2>: A yield declaration (see above).
+//
+//   - <3>: A vector of value types left on stack.  rbegin is what
+//     will be on TOS after the operator is done.
+//
+// An empty map implicitly means "who knows".
+using builtin_prototype = std::tuple <std::vector <value_type>, yield,
+				      std::vector <value_type>>;
+using builtin_protomap = std::vector <builtin_prototype>;
 
 class builtin
 {
@@ -48,6 +72,9 @@ public:
   build_exec (std::shared_ptr <op> upstream) const;
 
   virtual char const *name () const = 0;
+
+  virtual std::string docstring () const;
+  virtual builtin_protomap protomap () const;
 };
 
 // Return either PRED, or PRED_NOT(PRED), depending on POSITIVE.
@@ -66,10 +93,12 @@ public:
   {}
 };
 
-class vocabulary
+struct vocabulary
 {
-  struct builtins;
-  std::unique_ptr <builtins> m_builtins;
+  using builtin_map = std::map <std::string, std::shared_ptr <builtin const>>;
+
+public:
+  builtin_map m_builtins;
 
 public:
   vocabulary ();
@@ -79,6 +108,9 @@ public:
   void add (std::shared_ptr <builtin const> b);
   void add (std::shared_ptr <builtin const> b, std::string const &name);
   std::shared_ptr <builtin const> find (std::string const &name) const;
+
+  builtin_map const &get_builtins () const
+  { return m_builtins; }
 };
 
 void add_builtin_constant (vocabulary &voc, constant cst, char const *name);

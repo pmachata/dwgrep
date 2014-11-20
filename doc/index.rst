@@ -1,13 +1,9 @@
+.. _index:
+
 Welcome to dwgrep's documentation!
 ==================================
 
-Contents:
-
-.. toctree::
-   :maxdepth: 1
-
-   tutorial
-   syntax
+For complete table of contents, see :ref:`fulltoc`.
 
 
 Introduction
@@ -92,8 +88,14 @@ stack with top value replaced with its length::
 	$ dwgrep '"Hello, world!" length'
 	13
 
-Now would be a good time to read through a tutorial (XXX link), which
+
+Further reading
+===============
+
+Now would be a good time to read through the :ref:`tutorial`, which
 gives a step-by-step account on fundamental tools of Zwerg language.
+You might also want to look at :ref:`syntax`, where individual Zwerg
+forms are introduced and described.
 
 Indices and tables
 ==================

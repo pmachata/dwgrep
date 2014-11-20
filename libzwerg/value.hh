@@ -121,6 +121,8 @@ protected:
   value (value const &that) = default;
 
 public:
+  static value_type const vtype;
+
   value_type get_type () const { return m_type; }
   constant get_type_const () const;
 

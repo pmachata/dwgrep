@@ -35,19 +35,30 @@ selector::selector (stack const &s)
   , m_mask {0}
 {}
 
+std::vector <value_type>
+selector::get_types () const
+{
+  std::vector <value_type> ret;
+
+  const unsigned shift = 8 * (sizeof (selector::sel_t) - 1);
+  for (auto imprint = m_imprint; imprint != 0; imprint <<= 8)
+    if (uint8_t code = (imprint & (0xff << shift)) >> shift)
+      ret.push_back (value_type {code});
+
+  return ret;
+}
+
 std::ostream &
 operator<< (std::ostream &o, selector const &sel)
 {
-  const unsigned shift = 8 * (sizeof (selector::sel_t) - 1);
   bool seen = false;
-  for (auto imprint = sel.m_imprint; imprint != 0; imprint <<= 8)
-    if (uint8_t code = (imprint & (0xff << shift)) >> shift)
-      {
-	if (seen)
-	  o << " ";
-	seen = true;
-	o << value_type {code}.name ();
-      }
+  for (auto const &vt: sel.get_types ())
+    {
+      if (seen)
+	o << " ";
+      seen = true;
+      o << vt.name ();
+    }
 
   return o;
 }

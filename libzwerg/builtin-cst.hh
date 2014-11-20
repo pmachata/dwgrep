@@ -49,6 +49,8 @@ public:
     const override;
 
   char const *name () const override;
+
+  std::string docstring () const override;
 };
 
 struct builtin_hex

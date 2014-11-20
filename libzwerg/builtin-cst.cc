@@ -95,6 +95,17 @@ builtin_constant::name () const
   return "constant";
 }
 
+std::string
+builtin_constant::docstring () const
+{
+  using namespace std::literals;
+
+  auto val = value::as <value_cst> (&*m_value);
+  assert (val != nullptr);
+  auto dom = val->get_constant ().dom ();
+  return "@"s + dom->name ();
+}
+
 
 std::shared_ptr <op>
 builtin_hex::build_exec (std::shared_ptr <op> upstream) const

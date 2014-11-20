@@ -32,6 +32,7 @@
 #include "value.hh"
 #include "op.hh"
 #include "overload.hh"
+#include "value-cst.hh"
 
 class value_seq
   : public value
@@ -69,37 +70,37 @@ public:
 };
 
 struct op_add_seq
-  : public op_overload <value_seq, value_seq>
+  : public op_once_overload <value_seq, value_seq, value_seq>
 {
-  using op_overload::op_overload;
+  using op_once_overload::op_once_overload;
 
-  std::unique_ptr <value> operate (std::unique_ptr <value_seq> a,
-				   std::unique_ptr <value_seq> b) override;
+  value_seq operate (std::unique_ptr <value_seq> a,
+		     std::unique_ptr <value_seq> b) override;
 };
 
 struct op_length_seq
-  : public op_overload <value_seq>
+  : public op_once_overload <value_cst, value_seq>
 {
-  using op_overload::op_overload;
+  using op_once_overload::op_once_overload;
 
-  std::unique_ptr <value> operate (std::unique_ptr <value_seq> a) override;
+  value_cst operate (std::unique_ptr <value_seq> a) override;
 };
 
 struct op_elem_seq
-  : public op_yielding_overload <value_seq>
+  : public op_yielding_overload <value, value_seq>
 {
   using op_yielding_overload::op_yielding_overload;
 
-  std::unique_ptr <value_producer>
+  std::unique_ptr <value_producer <value>>
   operate (std::unique_ptr <value_seq> a) override;
 };
 
 struct op_relem_seq
-  : public op_yielding_overload <value_seq>
+  : public op_yielding_overload <value, value_seq>
 {
   using op_yielding_overload::op_yielding_overload;
 
-  std::unique_ptr <value_producer>
+  std::unique_ptr <value_producer <value>>
   operate (std::unique_ptr <value_seq> a) override;
 };
 

@@ -49,11 +49,11 @@
 namespace
 {
   struct op_dwopen_str
-    : public op_overload <value_str>
+    : public op_overload <value_dwarf, value_str>
   {
     using op_overload::op_overload;
 
-    std::unique_ptr <value>
+    std::unique_ptr <value_dwarf>
     operate (std::unique_ptr <value_str> a) override
     {
       return std::make_unique <value_dwarf> (a->get_string (), 0,
@@ -110,7 +110,7 @@ namespace
   }
 
   struct dwarf_unit_producer
-    : public value_producer
+    : public value_producer <value_cu>
   {
     std::shared_ptr <dwfl_context> m_dwctx;
     std::vector <Dwarf *> m_dwarfs;
@@ -128,7 +128,7 @@ namespace
       , m_doneness {d}
     {}
 
-    std::unique_ptr <value>
+    std::unique_ptr <value_cu>
     next () override
     {
       do
@@ -145,11 +145,11 @@ namespace
   };
 
   struct op_unit_dwarf
-    : public op_yielding_overload <value_dwarf>
+    : public op_yielding_overload <value_cu, value_dwarf>
   {
     using op_yielding_overload::op_yielding_overload;
 
-    std::unique_ptr <value_producer>
+    std::unique_ptr <value_producer <value_cu>>
     operate (std::unique_ptr <value_dwarf> a) override
     {
       return std::make_unique <dwarf_unit_producer> (a->get_dwctx (),
@@ -157,7 +157,7 @@ namespace
     }
   };
 
-  std::unique_ptr <value>
+  std::unique_ptr <value_cu>
   cu_for_die (std::shared_ptr <dwfl_context> dwctx, Dwarf_Die die, doneness d)
   {
     Dwarf_Die cudie;
@@ -172,11 +172,11 @@ namespace
   }
 
   struct op_unit_die
-    : public op_overload <value_die>
+    : public op_overload <value_cu, value_die>
   {
-    using op_overload <value_die>::op_overload;
+    using op_overload::op_overload;
 
-    std::unique_ptr <value>
+    std::unique_ptr <value_cu>
     operate (std::unique_ptr <value_die> a) override
     {
       return cu_for_die (a->get_dwctx (), a->get_die (), a->get_doneness ());
@@ -184,11 +184,11 @@ namespace
   };
 
   struct op_unit_attr
-    : public op_overload <value_attr>
+    : public op_overload <value_cu, value_attr>
   {
     using op_overload::op_overload;
 
-    std::unique_ptr <value>
+    std::unique_ptr <value_cu>
     operate (std::unique_ptr <value_attr> a) override
     {
       return cu_for_die (a->get_dwctx (), a->get_die (), doneness::cooked);
@@ -278,7 +278,7 @@ namespace
   // way.  Cooked producers do inline, raw ones don't.
   template <class It>
   struct die_it_producer
-    : public value_producer
+    : public value_producer <value_die>
   {
     std::shared_ptr <dwfl_context> m_dwctx;
 
@@ -300,7 +300,7 @@ namespace
       m_stack.push_back (get_it_range <It> (die, false));
     }
 
-    std::unique_ptr <value>
+    std::unique_ptr <value_die>
     next () override
     {
       do
@@ -315,7 +315,7 @@ namespace
     }
   };
 
-  std::unique_ptr <value_producer>
+  std::unique_ptr <value_producer <value_die>>
   make_cu_entry_producer (std::shared_ptr <dwfl_context> dwctx, Dwarf_CU &cu,
 			  doneness d)
   {
@@ -324,11 +324,11 @@ namespace
   }
 
   struct op_entry_cu
-    : public op_yielding_overload <value_cu>
+    : public op_yielding_overload <value_die, value_cu>
   {
     using op_yielding_overload::op_yielding_overload;
 
-    std::unique_ptr <value_producer>
+    std::unique_ptr <value_producer <value_die>>
     operate (std::unique_ptr <value_cu> a) override
     {
       return make_cu_entry_producer (a->get_dwctx (), a->get_cu (),
@@ -354,17 +354,30 @@ namespace
   {
     using op_entry_dwarf_base::op_entry_dwarf_base;
 
+    static std::string
+    docstring ()
+    {
+      return "Behaves identically to ``unit entry``.";
+    }
+
+    static builtin_protomap
+    protomap ()
+    {
+      return { builtin_prototype ({value_dwarf::vtype}, yield::many,
+				  {value_die::vtype}) };
+    }
+
     static selector get_selector ()
     { return {value_dwarf::vtype}; }
   };
 
   struct op_entry_abbrev_unit
-    : public op_yielding_overload <value_abbrev_unit>
+    : public op_yielding_overload <value_abbrev, value_abbrev_unit>
   {
     using op_yielding_overload::op_yielding_overload;
 
     struct producer
-      : public value_producer
+      : public value_producer <value_abbrev>
     {
       std::shared_ptr <dwfl_context> m_dwctx;
       std::vector <Dwarf_Abbrev *> m_abbrevs;
@@ -382,7 +395,7 @@ namespace
 	  throw_libdw ();
       }
 
-      std::unique_ptr <value>
+      std::unique_ptr <value_abbrev>
       next () override
       {
 	size_t length;
@@ -397,7 +410,7 @@ namespace
       }
     };
 
-    std::unique_ptr <value_producer>
+    std::unique_ptr <value_producer <value_abbrev>>
     operate (std::unique_ptr <value_abbrev_unit> a) override
     {
       return std::make_unique <producer> (std::move (a));
@@ -408,7 +421,7 @@ namespace
 // child
 namespace
 {
-  std::unique_ptr <value_producer>
+  std::unique_ptr <value_producer <value_die>>
   make_die_child_producer (std::shared_ptr <dwfl_context> dwctx,
 			   Dwarf_Die parent, doneness d)
   {
@@ -417,11 +430,11 @@ namespace
   }
 
   struct op_child_die
-    : public op_yielding_overload <value_die>
+    : public op_yielding_overload <value_die, value_die>
   {
     using op_yielding_overload::op_yielding_overload;
 
-    std::unique_ptr <value_producer>
+    std::unique_ptr <value_producer <value_die>>
     operate (std::unique_ptr <value_die> a) override
     {
       return make_die_child_producer (a->get_dwctx (), a->get_die (),
@@ -434,7 +447,7 @@ namespace
 namespace
 {
   struct elem_loclist_producer
-    : public value_producer
+    : public value_producer <value_loclist_op>
   {
     std::unique_ptr <value_loclist_elem> m_value;
     size_t m_i;
@@ -449,7 +462,7 @@ namespace
       , m_forward {forward}
     {}
 
-    std::unique_ptr <value>
+    std::unique_ptr <value_loclist_op>
     next () override
     {
       size_t idx = m_i++;
@@ -467,11 +480,11 @@ namespace
   };
 
   struct op_elem_loclist_elem
-    : public op_yielding_overload <value_loclist_elem>
+    : public op_yielding_overload <value_loclist_op, value_loclist_elem>
   {
     using op_yielding_overload::op_yielding_overload;
 
-    std::unique_ptr <value_producer>
+    std::unique_ptr <value_producer <value_loclist_op>>
     operate (std::unique_ptr <value_loclist_elem> a) override
     {
       return std::make_unique <elem_loclist_producer> (std::move (a), true);
@@ -479,11 +492,11 @@ namespace
   };
 
   struct op_relem_loclist_elem
-    : public op_yielding_overload <value_loclist_elem>
+    : public op_yielding_overload <value_loclist_op, value_loclist_elem>
   {
     using op_yielding_overload::op_yielding_overload;
 
-    std::unique_ptr <value_producer>
+    std::unique_ptr <value_producer <value_loclist_op>>
     operate (std::unique_ptr <value_loclist_elem> a) override
     {
       return std::make_unique <elem_loclist_producer> (std::move (a), false);
@@ -491,7 +504,7 @@ namespace
   };
 
   struct elem_aset_producer
-    : public value_producer
+    : public value_producer <value_cst>
   {
     coverage cov;
     size_t m_idx;	// position among ranges
@@ -507,7 +520,7 @@ namespace
       , m_forward {forward}
     {}
 
-    std::unique_ptr <value>
+    std::unique_ptr <value_cst>
     next () override
     {
       if (m_idx >= cov.size ())
@@ -536,11 +549,11 @@ namespace
   };
 
   struct op_elem_aset
-    : public op_yielding_overload <value_aset>
+    : public op_yielding_overload <value_cst, value_aset>
   {
     using op_yielding_overload::op_yielding_overload;
 
-    std::unique_ptr <value_producer>
+    std::unique_ptr <value_producer <value_cst>>
     operate (std::unique_ptr <value_aset> val) override
     {
       return std::make_unique <elem_aset_producer>
@@ -549,11 +562,11 @@ namespace
   };
 
   struct op_relem_aset
-    : public op_yielding_overload <value_aset>
+    : public op_yielding_overload <value_cst, value_aset>
   {
     using op_yielding_overload::op_yielding_overload;
 
-    std::unique_ptr <value_producer>
+    std::unique_ptr <value_producer <value_cst>>
     operate (std::unique_ptr <value_aset> val) override
     {
       return std::make_unique <elem_aset_producer>
@@ -593,7 +606,7 @@ namespace
   }
 
   struct attribute_producer
-    : public value_producer
+    : public value_producer <value_attr>
   {
     std::shared_ptr <dwfl_context> m_dwctx;
     Dwarf_Die m_die;
@@ -652,7 +665,7 @@ namespace
       next_die ();
     }
 
-    std::unique_ptr <value>
+    std::unique_ptr <value_attr>
     next () override
     {
       Dwarf_Attribute at;
@@ -692,11 +705,11 @@ namespace
   };
 
   struct op_attribute_die
-    : public op_yielding_overload <value_die>
+    : public op_yielding_overload <value_attr, value_die>
   {
     using op_yielding_overload::op_yielding_overload;
 
-    std::unique_ptr <value_producer>
+    std::unique_ptr <value_producer <value_attr>>
     operate (std::unique_ptr <value_die> a) override
     {
       return std::make_unique <attribute_producer> (std::move (a));
@@ -704,12 +717,12 @@ namespace
   };
 
   struct op_attribute_abbrev
-    : public op_yielding_overload <value_abbrev>
+    : public op_yielding_overload <value_abbrev_attr, value_abbrev>
   {
     using op_yielding_overload::op_yielding_overload;
 
     struct producer
-      : public value_producer
+      : public value_producer <value_abbrev_attr>
     {
       std::unique_ptr <value_abbrev> m_value;
       size_t m_n;
@@ -721,7 +734,7 @@ namespace
 	, m_i {0}
       {}
 
-      std::unique_ptr <value>
+      std::unique_ptr <value_abbrev_attr>
       next () override
       {
 	if (m_i < m_n)
@@ -741,7 +754,7 @@ namespace
       }
     };
 
-    std::unique_ptr <value_producer>
+    std::unique_ptr <value_producer <value_abbrev_attr>>
     operate (std::unique_ptr <value_abbrev> a) override
     {
       return std::make_unique <producer> (std::move (a));
@@ -752,7 +765,7 @@ namespace
 // offset
 namespace
 {
-  std::unique_ptr <value>
+  std::unique_ptr <value_cst>
   cu_offset (Dwarf_Off offset)
   {
     constant c {offset, &dw_offset_dom ()};
@@ -760,11 +773,11 @@ namespace
   }
 
   struct op_offset_cu
-    : public op_overload <value_cu>
+    : public op_overload <value_cst, value_cu>
   {
-    using op_overload <value_cu>::op_overload;
+    using op_overload::op_overload;
 
-    std::unique_ptr <value>
+    std::unique_ptr <value_cst>
     operate (std::unique_ptr <value_cu> a) override
     {
       return cu_offset (a->get_offset ());
@@ -772,11 +785,11 @@ namespace
   };
 
   struct op_offset_die
-    : public op_overload <value_die>
+    : public op_overload <value_cst, value_die>
   {
-    using op_overload <value_die>::op_overload;
+    using op_overload::op_overload;
 
-    std::unique_ptr <value>
+    std::unique_ptr <value_cst>
     operate (std::unique_ptr <value_die> val) override
     {
       constant c {dwarf_dieoffset (&val->get_die ()), &dw_offset_dom ()};
@@ -785,11 +798,11 @@ namespace
   };
 
   struct op_offset_abbrev_unit
-    : public op_overload <value_abbrev_unit>
+    : public op_overload <value_cst, value_abbrev_unit>
   {
     using op_overload::op_overload;
 
-    std::unique_ptr <value>
+    std::unique_ptr <value_cst>
     operate (std::unique_ptr <value_abbrev_unit> a) override
     {
       Dwarf_Die cudie;
@@ -804,11 +817,11 @@ namespace
   };
 
   struct op_offset_abbrev
-    : public op_overload <value_abbrev>
+    : public op_overload <value_cst, value_abbrev>
   {
     using op_overload::op_overload;
 
-    std::unique_ptr <value>
+    std::unique_ptr <value_cst>
     operate (std::unique_ptr <value_abbrev> a) override
     {
       constant c {dwpp_abbrev_offset (a->get_abbrev ()), &dw_offset_dom ()};
@@ -817,11 +830,11 @@ namespace
   };
 
   struct op_offset_abbrev_attr
-    : public op_overload <value_abbrev_attr>
+    : public op_overload <value_cst, value_abbrev_attr>
   {
     using op_overload::op_overload;
 
-    std::unique_ptr <value>
+    std::unique_ptr <value_cst>
     operate (std::unique_ptr <value_abbrev_attr> a) override
     {
       constant c {a->offset, &dw_offset_dom ()};
@@ -830,11 +843,11 @@ namespace
   };
 
   struct op_offset_loclist_op
-    : public op_overload <value_loclist_op>
+    : public op_overload <value_cst, value_loclist_op>
   {
     using op_overload::op_overload;
 
-    std::unique_ptr <value>
+    std::unique_ptr <value_cst>
     operate (std::unique_ptr <value_loclist_op> val) override
     {
       Dwarf_Op const *dwop = val->get_dwop ();
@@ -848,18 +861,18 @@ namespace
 namespace
 {
   struct op_address_die
-    : public op_overload <value_die>
+    : public op_overload <value_aset, value_die>
   {
     using op_overload::op_overload;
 
-    std::unique_ptr <value>
+    std::unique_ptr <value_aset>
     operate (std::unique_ptr <value_die> a) override
     {
       return die_ranges (a->get_die ());
     }
   };
 
-  std::unique_ptr <value>
+  std::unique_ptr <value_cst>
   get_die_addr (Dwarf_Die *die, int (cb) (Dwarf_Die *, Dwarf_Addr *))
   {
     Dwarf_Addr addr;
@@ -870,11 +883,11 @@ namespace
   }
 
   struct op_address_attr
-    : public op_overload <value_attr>
+    : public op_overload <value_cst, value_attr>
   {
     using op_overload::op_overload;
 
-    std::unique_ptr <value>
+    std::unique_ptr <value_cst>
     operate (std::unique_ptr <value_attr> a) override
     {
       if (dwarf_whatattr (&a->get_attr ()) == DW_AT_high_pc)
@@ -901,11 +914,11 @@ namespace
   };
 
   struct op_address_loclist_elem
-    : public op_overload <value_loclist_elem>
+    : public op_overload <value_aset, value_loclist_elem>
   {
     using op_overload::op_overload;
 
-    std::unique_ptr <value>
+    std::unique_ptr <value_aset>
     operate (std::unique_ptr <value_loclist_elem> val) override
     {
       uint64_t low = val->get_low ();
@@ -922,11 +935,11 @@ namespace
 namespace
 {
   struct op_label_die
-    : public op_overload <value_die>
+    : public op_overload <value_cst, value_die>
   {
     using op_overload::op_overload;
 
-    std::unique_ptr <value>
+    std::unique_ptr <value_cst>
     operate (std::unique_ptr <value_die> val) override
     {
       int tag = dwarf_tag (&val->get_die ());
@@ -937,11 +950,11 @@ namespace
   };
 
   struct op_label_attr
-    : public op_overload <value_attr>
+    : public op_overload <value_cst, value_attr>
   {
     using op_overload::op_overload;
 
-    std::unique_ptr <value>
+    std::unique_ptr <value_cst>
     operate (std::unique_ptr <value_attr> val) override
     {
       constant cst {dwarf_whatattr (&val->get_attr ()), &dw_attr_dom ()};
@@ -950,11 +963,11 @@ namespace
   };
 
   struct op_label_abbrev
-    : public op_overload <value_abbrev>
+    : public op_overload <value_cst, value_abbrev>
   {
     using op_overload::op_overload;
 
-    std::unique_ptr <value>
+    std::unique_ptr <value_cst>
     operate (std::unique_ptr <value_abbrev> a) override
     {
       unsigned int tag = dwarf_getabbrevtag (&a->get_abbrev ());
@@ -965,11 +978,11 @@ namespace
   };
 
   struct op_label_abbrev_attr
-    : public op_overload <value_abbrev_attr>
+    : public op_overload <value_cst, value_abbrev_attr>
   {
     using op_overload::op_overload;
 
-    std::unique_ptr <value>
+    std::unique_ptr <value_cst>
     operate (std::unique_ptr <value_abbrev_attr> a) override
     {
       constant cst {a->name, &dw_attr_dom ()};
@@ -978,11 +991,11 @@ namespace
   };
 
   struct op_label_loclist_op
-    : public op_overload <value_loclist_op>
+    : public op_overload <value_cst, value_loclist_op>
   {
     using op_overload::op_overload;
 
-    std::unique_ptr <value>
+    std::unique_ptr <value_cst>
     operate (std::unique_ptr <value_loclist_op> val) override
     {
       constant cst {val->get_dwop ()->atom, &dw_locexpr_opcode_dom (),
@@ -996,11 +1009,11 @@ namespace
 namespace
 {
   struct op_form_attr
-    : public op_overload <value_attr>
+    : public op_overload <value_cst, value_attr>
   {
     using op_overload::op_overload;
 
-    std::unique_ptr <value>
+    std::unique_ptr <value_cst>
     operate (std::unique_ptr <value_attr> val) override
     {
       constant cst {dwarf_whatform (&val->get_attr ()), &dw_form_dom ()};
@@ -1009,11 +1022,11 @@ namespace
   };
 
   struct op_form_abbrev_attr
-    : public op_overload <value_abbrev_attr>
+    : public op_overload <value_cst, value_abbrev_attr>
   {
     using op_overload::op_overload;
 
-    std::unique_ptr <value>
+    std::unique_ptr <value_cst>
     operate (std::unique_ptr <value_abbrev_attr> a) override
     {
       constant cst {a->form, &dw_form_dom ()};
@@ -1041,7 +1054,7 @@ namespace
   }
 
   struct op_parent_die
-    : public op_overload <value_die>
+    : public op_overload <value_die, value_die>
   {
     using op_overload::op_overload;
 
@@ -1056,7 +1069,7 @@ namespace
       return false;
     }
 
-    std::unique_ptr <value>
+    std::unique_ptr <value_die>
     do_operate (std::shared_ptr <value_die> a)
     {
       doneness d = a->get_doneness ();
@@ -1076,7 +1089,7 @@ namespace
       return std::make_unique <value_die> (a->get_dwctx (), par_die, 0, d);
     }
 
-    std::unique_ptr <value>
+    std::unique_ptr <value_die>
     operate (std::unique_ptr <value_die> a) override
     {
       return do_operate (std::move (a));
@@ -1110,11 +1123,11 @@ namespace
 namespace
 {
   struct op_root_cu
-    : public op_overload <value_cu>
+    : public op_overload <value_die, value_cu>
   {
     using op_overload::op_overload;
 
-    std::unique_ptr <value>
+    std::unique_ptr <value_die>
     operate (std::unique_ptr <value_cu> a) override
     {
       Dwarf_CU &cu = a->get_cu ();
@@ -1129,11 +1142,11 @@ namespace
   };
 
   struct op_root_die
-    : public op_overload <value_die>
+    : public op_overload <value_die, value_die>
   {
     using op_overload::op_overload;
 
-    static std::unique_ptr <value>
+    static std::unique_ptr <value_die>
     do_operate (std::shared_ptr <value_die> a)
     {
       auto d = a->get_doneness ();
@@ -1145,7 +1158,7 @@ namespace
 	(a->get_dwctx (), dwpp_cudie (a->get_die ()), 0, d);
     }
 
-    std::unique_ptr <value>
+    std::unique_ptr <value_die>
     operate (std::unique_ptr <value_die> a) override
     {
       return do_operate (std::move (a));
@@ -1157,11 +1170,11 @@ namespace
 namespace
 {
   struct op_value_attr
-    : public op_yielding_overload <value_attr>
+    : public op_yielding_overload <value, value_attr>
   {
     using op_yielding_overload::op_yielding_overload;
 
-    std::unique_ptr <value_producer>
+    std::unique_ptr <value_producer <value>>
     operate (std::unique_ptr <value_attr> a) override
     {
       return at_value (a->get_dwctx (), a->get_die (), a->get_attr ());
@@ -1169,14 +1182,14 @@ namespace
   };
 
   struct op_value_loclist_op
-    : public op_yielding_overload <value_loclist_op>
+    : public op_yielding_overload <value, value_loclist_op>
   {
     using op_yielding_overload::op_yielding_overload;
 
-    std::unique_ptr <value_producer>
+    std::unique_ptr <value_producer <value>>
     operate (std::unique_ptr <value_loclist_op> a) override
     {
-      return std::make_unique <value_producer_cat>
+      return std::make_unique <value_producer_cat <value>>
 	(dwop_number (a->get_dwctx (), a->get_attr (), a->get_dwop ()),
 	 dwop_number2 (a->get_dwctx (), a->get_attr (), a->get_dwop ()));
     }
@@ -1187,11 +1200,11 @@ namespace
 namespace
 {
   struct op_low_die
-    : public op_overload <value_die>
+    : public op_overload <value_cst, value_die>
   {
     using op_overload::op_overload;
 
-    std::unique_ptr <value>
+    std::unique_ptr <value_cst>
     operate (std::unique_ptr <value_die> a) override
     {
       // Attributes that hold addresses shouldn't generally be found
@@ -1204,11 +1217,11 @@ namespace
   };
 
   struct op_low_aset
-    : public op_overload <value_aset>
+    : public op_overload <value_cst, value_aset>
   {
     using op_overload::op_overload;
 
-    std::unique_ptr <value>
+    std::unique_ptr <value_cst>
     operate (std::unique_ptr <value_aset> a) override
     {
       auto &cov = a->get_coverage ();
@@ -1225,11 +1238,11 @@ namespace
 namespace
 {
   struct op_high_die
-    : public op_overload <value_die>
+    : public op_overload <value_cst, value_die>
   {
     using op_overload::op_overload;
 
-    std::unique_ptr <value>
+    std::unique_ptr <value_cst>
     operate (std::unique_ptr <value_die> a) override
     {
       // Attributes that hold addresses shouldn't generally be found
@@ -1242,11 +1255,11 @@ namespace
   };
 
   struct op_high_aset
-    : public op_overload <value_aset>
+    : public op_overload <value_cst, value_aset>
   {
     using op_overload::op_overload;
 
-    std::unique_ptr <value>
+    std::unique_ptr <value_cst>
     operate (std::unique_ptr <value_aset> a) override
     {
       auto &cov = a->get_coverage ();
@@ -1284,11 +1297,11 @@ namespace
   }
 
   struct op_aset_cst_cst
-    : public op_overload <value_cst, value_cst>
+    : public op_overload <value_aset, value_cst, value_cst>
   {
     using op_overload::op_overload;
 
-    std::unique_ptr <value>
+    std::unique_ptr <value_aset>
     operate (std::unique_ptr <value_cst> a,
 	     std::unique_ptr <value_cst> b) override
     {
@@ -1308,11 +1321,11 @@ namespace
 namespace
 {
   struct op_add_aset_cst
-    : public op_overload <value_aset, value_cst>
+    : public op_overload <value_aset, value_aset, value_cst>
   {
     using op_overload::op_overload;
 
-    std::unique_ptr <value>
+    std::unique_ptr <value_aset>
     operate (std::unique_ptr <value_aset> a,
 	     std::unique_ptr <value_cst> b) override
     {
@@ -1323,11 +1336,11 @@ namespace
   };
 
   struct op_add_aset_aset
-    : public op_overload <value_aset, value_aset>
+    : public op_overload <value_aset, value_aset, value_aset>
   {
     using op_overload::op_overload;
 
-    std::unique_ptr <value>
+    std::unique_ptr <value_aset>
     operate (std::unique_ptr <value_aset> a,
 	     std::unique_ptr <value_aset> b) override
     {
@@ -1341,11 +1354,11 @@ namespace
 namespace
 {
   struct op_sub_aset_cst
-    : public op_overload <value_aset, value_cst>
+    : public op_overload <value_aset, value_aset, value_cst>
   {
     using op_overload::op_overload;
 
-    std::unique_ptr <value>
+    std::unique_ptr <value_aset>
     operate (std::unique_ptr <value_aset> a,
 	     std::unique_ptr <value_cst> b) override
     {
@@ -1356,11 +1369,11 @@ namespace
   };
 
   struct op_sub_aset_aset
-    : public op_overload <value_aset, value_aset>
+    : public op_overload <value_aset, value_aset, value_aset>
   {
     using op_overload::op_overload;
 
-    std::unique_ptr <value>
+    std::unique_ptr <value_aset>
     operate (std::unique_ptr <value_aset> a,
 	     std::unique_ptr <value_aset> b) override
     {
@@ -1374,11 +1387,11 @@ namespace
 namespace
 {
   struct op_length_aset
-    : public op_overload <value_aset>
+    : public op_overload <value_cst, value_aset>
   {
     using op_overload::op_overload;
 
-    std::unique_ptr <value>
+    std::unique_ptr <value_cst>
     operate (std::unique_ptr <value_aset> a) override
     {
       uint64_t length = 0;
@@ -1395,12 +1408,12 @@ namespace
 namespace
 {
   struct op_range_aset
-    : public op_yielding_overload <value_aset>
+    : public op_yielding_overload <value_aset, value_aset>
   {
     using op_yielding_overload::op_yielding_overload;
 
     struct producer
-      : public value_producer
+      : public value_producer <value_aset>
     {
       std::unique_ptr <value_aset> m_a;
       size_t m_i;
@@ -1410,7 +1423,7 @@ namespace
 	, m_i {0}
       {}
 
-      std::unique_ptr <value>
+      std::unique_ptr <value_aset>
       next () override
       {
 	size_t sz = m_a->get_coverage ().size ();
@@ -1425,7 +1438,7 @@ namespace
       }
     };
 
-    std::unique_ptr <value_producer>
+    std::unique_ptr <value_producer <value_aset>>
     operate (std::unique_ptr <value_aset> a) override
     {
       return std::make_unique <producer> (std::move (a));
@@ -1495,11 +1508,11 @@ namespace
 namespace
 {
   struct op_overlap_aset_aset
-    : public op_overload <value_aset, value_aset>
+    : public op_overload <value_aset, value_aset, value_aset>
   {
     using op_overload::op_overload;
 
-    std::unique_ptr <value>
+    std::unique_ptr <value_aset>
     operate (std::unique_ptr <value_aset> a,
 	     std::unique_ptr <value_aset> b) override
     {
@@ -1535,7 +1548,7 @@ namespace
 namespace
 {
   struct abbrev_producer
-    : public value_producer
+    : public value_producer <value_abbrev_unit>
   {
     std::shared_ptr <dwfl_context> m_dwctx;
     std::vector <Dwarf *> m_dwarfs;
@@ -1551,7 +1564,7 @@ namespace
       , m_i {0}
     {}
 
-    std::unique_ptr <value>
+    std::unique_ptr <value_abbrev_unit>
     next () override
     {
       if (! maybe_next_dwarf (m_cuit, m_it, m_dwarfs.end ()))
@@ -1563,11 +1576,11 @@ namespace
   };
 
   struct op_abbrev_dwarf
-    : public op_yielding_overload <value_dwarf>
+    : public op_yielding_overload <value_abbrev_unit, value_dwarf>
   {
     using op_yielding_overload::op_yielding_overload;
 
-    std::unique_ptr <value_producer>
+    std::unique_ptr <value_producer <value_abbrev_unit>>
     operate (std::unique_ptr <value_dwarf> a) override
     {
       return std::make_unique <abbrev_producer> (a->get_dwctx ());
@@ -1575,11 +1588,11 @@ namespace
   };
 
   struct op_abbrev_cu
-    : public op_overload <value_cu>
+    : public op_overload <value_abbrev_unit, value_cu>
   {
     using op_overload::op_overload;
 
-    std::unique_ptr <value>
+    std::unique_ptr <value_abbrev_unit>
     operate (std::unique_ptr <value_cu> a) override
     {
       return std::make_unique <value_abbrev_unit>
@@ -1588,11 +1601,11 @@ namespace
   };
 
   struct op_abbrev_die
-    : public op_overload <value_die>
+    : public op_overload <value_abbrev, value_die>
   {
     using op_overload::op_overload;
 
-    std::unique_ptr <value>
+    std::unique_ptr <value_abbrev>
     operate (std::unique_ptr <value_die> a) override
     {
       // If the DIE doesn't have an abbreviation yet, force its
@@ -1639,11 +1652,11 @@ namespace
 namespace
 {
   struct op_code_abbrev
-    : public op_overload <value_abbrev>
+    : public op_overload <value_cst, value_abbrev>
   {
     using op_overload::op_overload;
 
-    std::unique_ptr <value>
+    std::unique_ptr <value_cst>
     operate (std::unique_ptr <value_abbrev> a) override
     {
       constant cst {dwarf_getabbrevcode (&a->get_abbrev ()),
@@ -1657,11 +1670,11 @@ namespace
 namespace
 {
   struct op_version_cu
-    : public op_overload <value_cu>
+    : public op_overload <value_cst, value_cu>
   {
     using op_overload::op_overload;
 
-    std::unique_ptr <value>
+    std::unique_ptr <value_cst>
     operate (std::unique_ptr <value_cu> a) override
     {
       Dwarf_CU &cu = a->get_cu ();
@@ -1681,11 +1694,11 @@ namespace
 namespace
 {
   struct op_name_dwarf
-    : public op_overload <value_dwarf>
+    : public op_overload <value_str, value_dwarf>
   {
     using op_overload::op_overload;
 
-    std::unique_ptr <value>
+    std::unique_ptr <value_str>
     operate (std::unique_ptr <value_dwarf> a) override
     {
       return std::make_unique <value_str> (std::string {a->get_fn ()}, 0);
@@ -1693,11 +1706,11 @@ namespace
   };
 
   struct op_name_die
-    : public op_overload <value_die>
+    : public op_overload <value_str, value_die>
   {
     using op_overload::op_overload;
 
-    std::unique_ptr <value>
+    std::unique_ptr <value_str>
     operate (std::unique_ptr <value_die> a) override
     {
       if (a->is_cooked ())
@@ -1726,11 +1739,11 @@ namespace
 namespace
 {
   struct op_raw_dwarf
-    : public op_overload <value_dwarf>
+    : public op_overload <value_dwarf, value_dwarf>
   {
     using op_overload::op_overload;
 
-    std::unique_ptr <value>
+    std::unique_ptr <value_dwarf>
     operate (std::unique_ptr <value_dwarf> a) override
     {
       return std::make_unique <value_dwarf>
@@ -1739,11 +1752,11 @@ namespace
   };
 
   struct op_raw_cu
-    : public op_overload <value_cu>
+    : public op_overload <value_cu, value_cu>
   {
     using op_overload::op_overload;
 
-    std::unique_ptr <value>
+    std::unique_ptr <value_cu>
     operate (std::unique_ptr <value_cu> a) override
     {
       return std::make_unique <value_cu>
@@ -1752,11 +1765,11 @@ namespace
   };
 
   struct op_raw_die
-    : public op_overload <value_die>
+    : public op_overload <value_die, value_die>
   {
     using op_overload::op_overload;
 
-    std::unique_ptr <value>
+    std::unique_ptr <value_die>
     operate (std::unique_ptr <value_die> a) override
     {
       return std::make_unique <value_die>
@@ -1765,11 +1778,11 @@ namespace
   };
 
   struct op_raw_attr
-    : public op_overload <value_attr>
+    : public op_overload <value_attr, value_attr>
   {
     using op_overload::op_overload;
 
-    std::unique_ptr <value>
+    std::unique_ptr <value_attr>
     operate (std::unique_ptr <value_attr> a) override
     {
       return std::make_unique <value_attr>
@@ -1782,11 +1795,11 @@ namespace
 namespace
 {
   struct op_cooked_dwarf
-    : public op_overload <value_dwarf>
+    : public op_overload <value_dwarf, value_dwarf>
   {
     using op_overload::op_overload;
 
-    std::unique_ptr <value>
+    std::unique_ptr <value_dwarf>
     operate (std::unique_ptr <value_dwarf> a) override
     {
       return std::make_unique <value_dwarf>
@@ -1795,11 +1808,11 @@ namespace
   };
 
   struct op_cooked_cu
-    : public op_overload <value_cu>
+    : public op_overload <value_cu, value_cu>
   {
     using op_overload::op_overload;
 
-    std::unique_ptr <value>
+    std::unique_ptr <value_cu>
     operate (std::unique_ptr <value_cu> a) override
     {
       return std::make_unique <value_cu>
@@ -1808,11 +1821,11 @@ namespace
   };
 
   struct op_cooked_die
-    : public op_overload <value_die>
+    : public op_overload <value_die, value_die>
   {
     using op_overload::op_overload;
 
-    std::unique_ptr <value>
+    std::unique_ptr <value_die>
     operate (std::unique_ptr <value_die> a) override
     {
       return std::make_unique <value_die>
@@ -1821,11 +1834,11 @@ namespace
   };
 
   struct op_cooked_attr
-    : public op_overload <value_attr>
+    : public op_overload <value_attr, value_attr>
   {
     using op_overload::op_overload;
 
-    std::unique_ptr <value>
+    std::unique_ptr <value_attr>
     operate (std::unique_ptr <value_attr> a) override
     {
       return std::make_unique <value_attr>
@@ -1867,17 +1880,17 @@ namespace
   }
 
   class op_atval_die
-    : public op_yielding_overload <value_die>
+    : public op_yielding_overload <value, value_die>
   {
     int m_atname;
 
   public:
     op_atval_die (std::shared_ptr <op> upstream, int atname)
-      : op_yielding_overload <value_die> {upstream}
+      : op_yielding_overload {upstream}
       , m_atname {atname}
     {}
 
-    std::unique_ptr <value_producer>
+    std::unique_ptr <value_producer <value>>
     operate (std::unique_ptr <value_die> a)
     {
       Dwarf_Attribute attr;
@@ -2480,10 +2493,10 @@ dwgrep_vocabulary_dw ()
   }
 
   auto add_dw_at = [&voc] (unsigned code,
-			    char const *qname, char const *bname,
-			    char const *atname,
-			    char const *lqname, char const *lbname,
-			    char const *latname)
+			   char const *qname, char const *bname,
+			   char const *atname,
+			   char const *lqname, char const *lbname,
+			   char const *latname)
     {
       // ?AT_* etc.
       {

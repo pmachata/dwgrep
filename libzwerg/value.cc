@@ -47,6 +47,8 @@ value_type::alloc (char const *name)
   return vt;
 }
 
+value_type const value::vtype = value_type::alloc ("T_???");
+
 namespace
 {
   std::vector <std::pair <uint8_t, char const *>> &

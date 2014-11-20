@@ -48,6 +48,18 @@ builtin::build_exec (std::shared_ptr <op> upstream) const
   return nullptr;
 }
 
+std::string
+builtin::docstring () const
+{
+  return "";
+}
+
+builtin_protomap
+builtin::protomap () const
+{
+  return {};
+}
+
 std::unique_ptr <pred>
 maybe_invert (std::unique_ptr <pred> pred, bool positive)
 {
@@ -57,21 +69,17 @@ maybe_invert (std::unique_ptr <pred> pred, bool positive)
     return std::make_unique <pred_not> (std::move (pred));
 }
 
-struct vocabulary::builtins
-  : public std::map <std::string, std::shared_ptr <builtin const>>
-{};
-
 vocabulary::vocabulary ()
-  : m_builtins {std::make_unique <builtins> ()}
+  : m_builtins {}
 {}
 
 vocabulary::vocabulary (vocabulary const &a, vocabulary const &b)
   : vocabulary {}
 {
   std::set <std::string> all_names;
-  for (auto const &builtin: *a.m_builtins)
+  for (auto const &builtin: a.m_builtins)
     all_names.insert (builtin.first);
-  for (auto const &builtin: *b.m_builtins)
+  for (auto const &builtin: b.m_builtins)
     all_names.insert (builtin.first);
 
   for (auto const &name: all_names)
@@ -119,14 +127,14 @@ void
 vocabulary::add (std::shared_ptr <builtin const> b, std::string const &name)
 {
   assert (find (name) == nullptr);
-  m_builtins->insert (std::make_pair (name, b));
+  m_builtins.insert (std::make_pair (name, b));
 }
 
 std::shared_ptr <builtin const>
 vocabulary::find (std::string const &name) const
 {
-  auto it = m_builtins->find (name);
-  if (it == m_builtins->end ())
+  auto it = m_builtins.find (name);
+  if (it == m_builtins.end ())
     return nullptr;
   else
     return it->second;

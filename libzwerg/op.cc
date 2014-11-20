@@ -79,15 +79,6 @@ namespace
   }
 }
 
-std::unique_ptr <value>
-value_producer_cat::next ()
-{
-  for (; m_i < m_vprs.size (); ++m_i)
-    if (auto v = m_vprs[m_i]->next ())
-      return v;
-  return nullptr;
-}
-
 stack::uptr
 op_origin::next ()
 {

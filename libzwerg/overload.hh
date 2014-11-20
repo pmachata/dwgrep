@@ -48,13 +48,12 @@
 // handles the type that this overload is specialized to.  Most of the
 // time, both the op and the bulitin that wraps it are boring and
 // predictable.  You will most likely want to inherit the op off
-// stub_op, and then create a simple builtin by creating an object of
-// type overload_builtin <your_op>.
+// either of op_overload, op_yielding_overload or pred_overload.
 //
 // These individual overloads are collected into an overload table,
 // which maps value types to builtins.
 //
-// The overaching operator is then a builtin as well.  It creates an
+// The overarching operator is then a builtin as well.  It creates an
 // op (or a pred) that inherits off overload_op (overload_pred), which
 // handles the dispatching itself.  Constructor of that class needs an
 // overload instance, which is created from overload table above.
@@ -86,9 +85,13 @@ public:
   void show_error (std::string const &name, selector profile);
 };
 
-class overload_tab
+struct overload_tab
 {
-  std::vector <std::tuple <selector, std::shared_ptr <builtin>>> m_overloads;
+  using overload_vec = std::vector <std::tuple <selector,
+						std::shared_ptr <builtin>>>;
+
+private:
+  overload_vec m_overloads;
 
 public:
   overload_tab () = default;
@@ -101,6 +104,7 @@ public:
   template <class T, class... As> void add_pred_overload (As &&... arg);
 
   overload_instance instantiate ();
+  overload_vec const &get_overloads () const { return m_overloads; }
 };
 
 class overload_op
@@ -154,7 +158,10 @@ public:
   std::shared_ptr <overload_tab> get_overload_tab () const
   { return m_ovl_tab; }
 
-  char const *name () const override final { return m_name; }
+  char const *name () const override final
+  { return m_name; }
+
+  std::string docstring () const override final;
 
   virtual std::shared_ptr <overloaded_builtin>
   create_merged (std::shared_ptr <overload_tab> tab) const = 0;
@@ -232,6 +239,18 @@ overload_tab::add_op_overload (Args &&... args)
     name () const override final
     {
       return "overload";
+    }
+
+    std::string
+    docstring () const override
+    {
+      return Op::docstring ();
+    }
+
+    builtin_protomap
+    protomap () const override
+    {
+      return Op::protomap ();
     }
   };
 
@@ -343,15 +362,20 @@ protected:
 public:
   static selector get_selector ()
   { return {VT::vtype...}; }
+
+  // This implementation is picked if the sub-class doesn't overload
+  // the docstring () static itself.
+  static std::string docstring ()
+  { return ""; }
 };
 
-template <class... VT>
+template <class RT, class... VT>
 struct op_overload
   : public op_overload_impl <VT...>
   , public stub_op
 {
   template <size_t... I>
-  std::unique_ptr <value>
+  std::unique_ptr <RT>
   call_operate (std::index_sequence <I...>,
 		std::tuple <std::unique_ptr <VT>...> args)
   {
@@ -378,16 +402,68 @@ public:
     return nullptr;
   }
 
-  virtual std::unique_ptr <value> operate (std::unique_ptr <VT>... vals) = 0;
+  virtual std::unique_ptr <RT> operate (std::unique_ptr <VT>... vals) = 0;
+
+  static builtin_protomap
+  protomap ()
+  {
+    return {
+      builtin_prototype ({VT::vtype...}, yield::maybe, {RT::vtype}),
+    };
+  }
 };
 
-template <class... VT>
+template <class RT, class... VT>
+struct op_once_overload
+  : public op_overload_impl <VT...>
+  , public stub_op
+{
+  template <size_t... I>
+  RT
+  call_operate (std::index_sequence <I...>,
+		std::tuple <std::unique_ptr <VT>...> args)
+  {
+    return operate (std::move (std::get <I> (args))...);
+  }
+
+public:
+  op_once_overload (std::shared_ptr <op> upstream)
+    : stub_op {upstream}
+  {}
+
+  stack::uptr
+  next () override final
+  {
+    if (auto stk = this->m_upstream->next ())
+      {
+	auto ret = call_operate
+		(std::index_sequence_for <VT...> {},
+		 op_overload_impl <VT...>::template collect <0, VT...> (*stk));
+	stk->push (std::make_unique <RT> (std::move (ret)));
+	return stk;
+      }
+
+    return nullptr;
+  }
+
+  virtual RT operate (std::unique_ptr <VT>... vals) = 0;
+
+  static builtin_protomap
+  protomap ()
+  {
+    return {
+      builtin_prototype ({VT::vtype...}, yield::once, {RT::vtype}),
+    };
+  }
+};
+
+template <class RT, class... VT>
 class op_yielding_overload
   : public op_overload_impl <VT...>
   , public stub_op
 {
   template <size_t... I>
-  std::unique_ptr <value_producer>
+  std::unique_ptr <value_producer <RT>>
   call_operate (std::index_sequence <I...>,
 		std::tuple <std::unique_ptr <VT>...> args)
   {
@@ -395,7 +471,7 @@ class op_yielding_overload
   }
 
   stack::uptr m_stk;
-  std::unique_ptr <value_producer> m_prod;
+  std::unique_ptr <value_producer <RT>> m_prod;
 
   void
   reset_me ()
@@ -443,8 +519,16 @@ public:
     stub_op::reset ();
   }
 
-  virtual std::unique_ptr <value_producer>
+  virtual std::unique_ptr <value_producer <RT>>
 	operate (std::unique_ptr <VT>... vals) = 0;
+
+  static builtin_protomap
+  protomap ()
+  {
+    return {
+      builtin_prototype ({VT::vtype...}, yield::many, {RT::vtype}),
+    };
+  }
 };
 
 template <class... VT>

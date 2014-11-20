@@ -44,7 +44,7 @@ using namespace std::literals::string_literals;
 namespace
 {
   struct single_value
-    : public value_producer
+    : public value_producer <value>
   {
     std::unique_ptr <value> m_value;
 
@@ -62,7 +62,7 @@ namespace
   };
 
   struct null_producer
-    : public value_producer
+    : public value_producer <value>
   {
     std::unique_ptr <value>
     next () override
@@ -71,13 +71,13 @@ namespace
     }
   };
 
-  std::unique_ptr <value_producer>
+  std::unique_ptr <value_producer <value>>
   pass_single_value (std::unique_ptr <value> value)
   {
     return std::make_unique <single_value> (std::move (value));
   }
 
-  std::unique_ptr <value_producer>
+  std::unique_ptr <value_producer <value>>
   pass_block (Dwarf_Block const &block)
   {
     value_seq::seq_t vv;
@@ -88,7 +88,7 @@ namespace
       (std::make_unique <value_seq> (std::move (vv), 0));
   }
 
-  std::unique_ptr <value_producer>
+  std::unique_ptr <value_producer <value>>
   atval_unsigned_with_domain (Dwarf_Attribute attr, constant_dom const &dom)
   {
     Dwarf_Word uval;
@@ -98,13 +98,13 @@ namespace
       (std::make_unique <value_cst> (constant {uval, &dom}, 0));
   }
 
-  std::unique_ptr <value_producer>
+  std::unique_ptr <value_producer <value>>
   atval_unsigned (Dwarf_Attribute attr)
   {
     return atval_unsigned_with_domain (attr, dec_constant_dom);
   }
 
-  std::unique_ptr <value_producer>
+  std::unique_ptr <value_producer <value>>
   atval_signed (Dwarf_Attribute attr)
   {
     Dwarf_Sword sval;
@@ -114,7 +114,7 @@ namespace
       (std::make_unique <value_cst> (constant {sval, &dec_constant_dom}, 0));
   }
 
-  std::unique_ptr <value_producer>
+  std::unique_ptr <value_producer <value>>
   atval_addr (Dwarf_Attribute attr)
   {
     // XXX Eventually we might want to have a dedicated type that
@@ -128,7 +128,7 @@ namespace
   }
 
   struct locexpr_producer
-    : public value_producer
+    : public value_producer <value>
   {
     std::shared_ptr <dwfl_context> m_dwctx;
     Dwarf_Attribute m_attr;
@@ -169,7 +169,7 @@ namespace
 namespace
 {
   struct macinfo_producer
-    : public value_producer
+    : public value_producer <value>
   {
     std::shared_ptr <dwfl_context> m_dwctx;
     Dwarf_Die m_cudie;
@@ -279,7 +279,7 @@ namespace
   };
 }
 
-std::unique_ptr <value>
+std::unique_ptr <value_aset>
 die_ranges (Dwarf_Die die)
 {
   coverage cov;
@@ -301,7 +301,7 @@ die_ranges (Dwarf_Die die)
 
 namespace
 {
-  std::unique_ptr <value_producer>
+  std::unique_ptr <value_producer <value>>
   handle_at_dependent_value (Dwarf_Attribute attr, Dwarf_Die die,
 			     std::shared_ptr <dwfl_context> dwctx)
   {
@@ -604,7 +604,7 @@ namespace
   }
 }
 
-std::unique_ptr <value_producer>
+std::unique_ptr <value_producer <value>>
 at_value (std::shared_ptr <dwfl_context> dwctx,
 	  Dwarf_Die die, Dwarf_Attribute attr)
 {
@@ -688,22 +688,22 @@ at_value (std::shared_ptr <dwfl_context> dwctx,
 namespace
 {
   template <unsigned N>
-  std::unique_ptr <value_producer>
-  select (std::unique_ptr <value_producer> a,
-	  std::unique_ptr <value_producer> b);
+  std::unique_ptr <value_producer <value>>
+  select (std::unique_ptr <value_producer <value>> a,
+	  std::unique_ptr <value_producer <value>> b);
 
   template <>
-  std::unique_ptr <value_producer>
-  select<0> (std::unique_ptr <value_producer> a,
-	     std::unique_ptr <value_producer> b)
+  std::unique_ptr <value_producer <value>>
+  select<0> (std::unique_ptr <value_producer <value>> a,
+	     std::unique_ptr <value_producer <value>> b)
   {
     return a;
   }
 
   template <>
-  std::unique_ptr <value_producer>
-  select<1> (std::unique_ptr <value_producer> a,
-	     std::unique_ptr <value_producer> b)
+  std::unique_ptr <value_producer <value>>
+  select<1> (std::unique_ptr <value_producer <value>> a,
+	     std::unique_ptr <value_producer <value>> b)
   {
     return b;
   }
@@ -713,7 +713,7 @@ namespace
   // well.  Both default represent nullary operands, one non-default
   // represents unary, both non-default represent binary op.
   template <unsigned N>
-  std::unique_ptr <value_producer>
+  std::unique_ptr <value_producer <value>>
   locexpr_op_values (std::shared_ptr <dwfl_context> dwctx,
 		     Dwarf_Attribute const &at, Dwarf_Op const *op)
   {
@@ -848,14 +848,14 @@ namespace
   }
 }
 
-std::unique_ptr <value_producer>
+std::unique_ptr <value_producer <value>>
 dwop_number (std::shared_ptr <dwfl_context> dwctx,
 	     Dwarf_Attribute const &attr, Dwarf_Op const *op)
 {
   return locexpr_op_values <0> (dwctx, attr, op);
 }
 
-std::unique_ptr <value_producer>
+std::unique_ptr <value_producer <value>>
 dwop_number2 (std::shared_ptr <dwfl_context> dwctx,
 	     Dwarf_Attribute const &attr, Dwarf_Op const *op)
 {
