@@ -1,0 +1,131 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Table of contents &mdash; dwgrep 0.1 documentation</title>
+    
+    <link rel="stylesheet" href="_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '0.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="dwgrep 0.1 documentation" href="index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li><a href="index.html">dwgrep 0.1 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="table-of-contents">
+<span id="fulltoc"></span><h1>Table of contents<a class="headerlink" href="#table-of-contents" title="Permalink to this headline">¶</a></h1>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="tutorial.html">Tutorial</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="tutorial.html#entry-unit-die-iteration"><tt class="docutils literal"><span class="pre">entry</span></tt>, <tt class="docutils literal"><span class="pre">unit</span></tt> &#8212; DIE iteration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tutorial.html#dw-tag-foo-tag-foo-die-tag-assertion"><tt class="docutils literal"><span class="pre">?DW_TAG_foo</span></tt>, <tt class="docutils literal"><span class="pre">?TAG_foo</span></tt> &#8212; DIE tag assertion</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tutorial.html#dw-at-foo-dw-at-foo-attribute-presence-assertion"><tt class="docutils literal"><span class="pre">?DW_AT_foo</span></tt>, <tt class="docutils literal"><span class="pre">!DW_AT_foo</span></tt> &#8212; attribute presence assertion</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tutorial.html#child-child-traversal"><tt class="docutils literal"><span class="pre">child</span></tt> &#8212; child traversal</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tutorial.html#dw-at-foo-value-of-attribute-dw-at-foo"><tt class="docutils literal"><span class="pre">&#64;DW_AT_foo</span></tt> &#8212; value of attribute <tt class="docutils literal"><span class="pre">DW_AT_foo</span></tt></a></li>
+<li class="toctree-l2"><a class="reference internal" href="tutorial.html#expr-expr-sub-expressions-assertions"><tt class="docutils literal"><span class="pre">?(EXPR)</span></tt>, <tt class="docutils literal"><span class="pre">!(EXPR)</span></tt> &#8212; Sub-expressions assertions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tutorial.html#expr-expr-expr-expr-comparisons"><tt class="docutils literal"><span class="pre">EXPR</span> <span class="pre">==</span> <span class="pre">EXPR</span></tt>, <tt class="docutils literal"><span class="pre">EXPR</span> <span class="pre">!=</span> <span class="pre">EXPR</span></tt> &#8212; comparisons</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tutorial.html#expr-expr-alternation"><tt class="docutils literal"><span class="pre">EXPR,</span> <span class="pre">EXPR</span></tt> &#8212; alternation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tutorial.html#expr-expr-c-style-fallback"><tt class="docutils literal"><span class="pre">EXPR</span> <span class="pre">||</span> <span class="pre">EXPR</span></tt> &#8212; C-style fallback</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tutorial.html#expr-expr-expr-expression-iteration"><tt class="docutils literal"><span class="pre">EXPR*</span></tt>, <tt class="docutils literal"><span class="pre">EXPR+</span></tt>, <tt class="docutils literal"><span class="pre">EXPR?</span></tt> &#8212; expression iteration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tutorial.html#literals-strings-formatting">Literals, Strings, Formatting</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tutorial.html#let-x-expr-name-binding"><tt class="docutils literal"><span class="pre">let</span> <span class="pre">X</span> <span class="pre">:=</span> <span class="pre">EXPR;</span></tt> &#8212; name binding</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tutorial.html#expr-format-string-splicing"><tt class="docutils literal"><span class="pre">%(</span> <span class="pre">EXPR</span> <span class="pre">%)</span></tt> &#8212; format string splicing</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tutorial.html#x-y-expr-scoped-bindings"><tt class="docutils literal"><span class="pre">(|X</span> <span class="pre">Y|</span> <span class="pre">EXPR)</span></tt> &#8212; scoped bindings</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="syntax.html">Syntax</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="syntax.html#comments">Comments</a></li>
+<li class="toctree-l2"><a class="reference internal" href="syntax.html#empty-expression">Empty expression</a></li>
+<li class="toctree-l2"><a class="reference internal" href="syntax.html#words">Words</a></li>
+<li class="toctree-l2"><a class="reference internal" href="syntax.html#concatenation">Concatenation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="syntax.html#parenthesizing">Parenthesizing</a></li>
+<li class="toctree-l2"><a class="reference internal" href="syntax.html#integer-literals">Integer literals</a></li>
+<li class="toctree-l2"><a class="reference internal" href="syntax.html#named-constants">Named constants</a></li>
+<li class="toctree-l2"><a class="reference internal" href="syntax.html#lexical-scopes-a">Lexical scopes (<tt class="docutils literal"><span class="pre">(|A|…)</span></tt>)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="syntax.html#alt-lists">ALT-lists (<tt class="docutils literal"><span class="pre">,</span></tt>)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="syntax.html#or-lists">OR-lists (<tt class="docutils literal"><span class="pre">||</span></tt>)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="syntax.html#infix-assertions">Infix assertions (<tt class="docutils literal"><span class="pre">==</span></tt>)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="syntax.html#iteration">Iteration (<tt class="docutils literal"><span class="pre">*</span></tt>)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="syntax.html#formatting-strings">Formatting strings</a></li>
+<li class="toctree-l2"><a class="reference internal" href="syntax.html#sequence-capture">Sequence capture (<tt class="docutils literal"><span class="pre">[]</span></tt>)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="syntax.html#name-binding-let">Name binding (<tt class="docutils literal"><span class="pre">let</span></tt>)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="syntax.html#sub-expression-assertions">Sub-expression assertions (<tt class="docutils literal"><span class="pre">?()</span></tt>, <tt class="docutils literal"><span class="pre">!()</span></tt>)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="syntax.html#conditionals-if-then-else">Conditionals (<tt class="docutils literal"><span class="pre">if-then-else</span></tt>)</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/fulltoc.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li><a href="index.html">dwgrep 0.1 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2014, Petr Machata.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.2.
+    </div>
+  </body>
+</html>
