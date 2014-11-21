@@ -67,35 +67,51 @@ This predicate holds if the string on TOS is empty::
 !ends, ?ends
 ------------
 
-``T_STR`` ``T_STR``
-...................
+``T_SEQ`` ``T_SEQ``, ``T_STR`` ``T_STR``
+........................................
 
+The word ``?ends`` asserts that the value on TOS forms a suffix of the
+value below it.  This would be used e.g. like so::
 
+	(hay stack expression) ?("needle" ?ends)
 
-``T_SEQ`` ``T_SEQ``
-...................
+This word is applicable to sequences as well as strings::
 
-``(A B ?ends)`` asserts that the sequence A ends with sub-sequence
-B (e.g. ``[hay stack] ?([needle] ?ends)``).
+	[hay stack] ?([needle] ?ends)
+
+For example::
+
+	$ dwgrep '"foobar" "bar" ?ends'
+	---
+	bar
+	foobar
 
 
 
 !find, ?find
 ------------
 
-``T_STR`` ``T_STR``
-...................
+``T_SEQ`` ``T_SEQ``, ``T_STR`` ``T_STR``
+........................................
 
+``?find`` asserts that the value on top of stack is contained within
+the one below it.   This would be used e.g. like so::
 
+	(hay stack expression) ?("needle" ?find)
 
-``T_SEQ`` ``T_SEQ``
-...................
+This word is applicable to sequences as well as strings::
 
-(A B ?find) asserts that the sequence A contains sub-sequence B
-(e.g. ``[hay stack] ?([needle] ?find)``).
+	[hay stack] ?([needle] ?find)
 
-To determine whether a sequence contains a particular element, you
-would use the following construct::
+For example::
+
+	$ dwgrep '"foobar" "oba" ?find'
+	---
+	oba
+	foobar
+
+To determine whether a sequence (or a string) contains a particular
+element, you would use the following construct instead::
 
 	[that sequence] (elem == something)
 
@@ -104,14 +120,13 @@ E.g.::
 	[child @AT_name] ?(elem == "foo")
 	[child] ?(elem @AT_name == "foo")
 
-To filter only those elements that match, you could do the\
-following::
+To filter only those elements that match, you could do the following::
 
 	[child] [|L| L elem ?(@AT_name == "foo")]
 
-The above is suitable for a function that takes a list on input
-and wants to filter it.  It is of course preferable to write this
-sort of thing directly, if possible::
+The above is suitable if the origin of the sequence is out of your
+control.  It is of course preferable to write this sort of thing
+directly, if possible::
 
 	[child ?(@AT_name == "foo")]
 
@@ -123,23 +138,43 @@ sort of thing directly, if possible::
 ``T_STR`` ``T_STR``
 ...................
 
+This asserts that TOS (which is a string with a regular expression)
+matches the string below TOS.  The whole string has to match.  If you
+want to look for matches anywhere in the string, just surround your
+expression with ``.*``'s::
 
+	"haystack" ?(".*needle.*" ?match)
+
+For example::
+
+	$ dwgrep '"foobar" "f.*r" ?match'
+	---
+	f.*r
+	foobar
 
 
 
 !starts, ?starts
 ----------------
 
-``T_STR`` ``T_STR``
-...................
+``T_SEQ`` ``T_SEQ``, ``T_STR`` ``T_STR``
+........................................
 
+The word ``?start`` asserts that the value on TOS forms a prefix of
+the value below it.  This would be used e.g. like so::
 
+	(hay stack expression) ?("needle" ?starts)
 
-``T_SEQ`` ``T_SEQ``
-...................
+This word is applicable to sequences as well as strings::
 
-``(A B ?starts)`` asserts that the sequence A starts with sub-sequence
-B (e.g. ``[hay stack] ?([needle] ?starts)``).
+	[hay stack] ?([needle] ?starts)
+
+For example::
+
+	$ dwgrep '"foobar" "foo" ?starts'
+	---
+	foo
+	foobar
 
 
 
@@ -420,7 +455,14 @@ value
 ``T_CONST`` ``->`` ``T_CONST``
 ..............................
 
+Returns underlying value of the constant, with plain domain.  For
+example::
 
+	$ dwgrep 'DW_FORM_flag value'
+	12
+
+	$ dwgrep '0xc value'
+	12
 
 
 

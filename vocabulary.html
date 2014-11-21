@@ -97,26 +97,48 @@ $ dwgrep &#39;&quot;\x00&quot; !empty &quot;&gt;%s&lt; is not empty&quot;&#39;
 </div>
 <div class="section" id="ends-ends">
 <h2>!ends, ?ends<a class="headerlink" href="#ends-ends" title="Permalink to this headline">¶</a></h2>
-<div class="section" id="t-str-t-str">
-<h3><tt class="docutils literal"><span class="pre">T_STR</span></tt> <tt class="docutils literal"><span class="pre">T_STR</span></tt><a class="headerlink" href="#t-str-t-str" title="Permalink to this headline">¶</a></h3>
+<div class="section" id="t-seq-t-seq-t-str-t-str">
+<h3><tt class="docutils literal"><span class="pre">T_SEQ</span></tt> <tt class="docutils literal"><span class="pre">T_SEQ</span></tt>, <tt class="docutils literal"><span class="pre">T_STR</span></tt> <tt class="docutils literal"><span class="pre">T_STR</span></tt><a class="headerlink" href="#t-seq-t-seq-t-str-t-str" title="Permalink to this headline">¶</a></h3>
+<p>The word <tt class="docutils literal"><span class="pre">?ends</span></tt> asserts that the value on TOS forms a suffix of the
+value below it.  This would be used e.g. like so:</p>
+<div class="highlight-python"><div class="highlight"><pre>(hay stack expression) ?(&quot;needle&quot; ?ends)
+</pre></div>
 </div>
-<div class="section" id="t-seq-t-seq">
-<h3><tt class="docutils literal"><span class="pre">T_SEQ</span></tt> <tt class="docutils literal"><span class="pre">T_SEQ</span></tt><a class="headerlink" href="#t-seq-t-seq" title="Permalink to this headline">¶</a></h3>
-<p><tt class="docutils literal"><span class="pre">(A</span> <span class="pre">B</span> <span class="pre">?ends)</span></tt> asserts that the sequence A ends with sub-sequence
-B (e.g. <tt class="docutils literal"><span class="pre">[hay</span> <span class="pre">stack]</span> <span class="pre">?([needle]</span> <span class="pre">?ends)</span></tt>).</p>
+<p>This word is applicable to sequences as well as strings:</p>
+<div class="highlight-python"><div class="highlight"><pre>[hay stack] ?([needle] ?ends)
+</pre></div>
+</div>
+<p>For example:</p>
+<div class="highlight-python"><div class="highlight"><pre>$ dwgrep &#39;&quot;foobar&quot; &quot;bar&quot; ?ends&#39;
+---
+bar
+foobar
+</pre></div>
+</div>
 </div>
 </div>
 <div class="section" id="find-find">
 <h2>!find, ?find<a class="headerlink" href="#find-find" title="Permalink to this headline">¶</a></h2>
 <div class="section" id="id1">
-<h3><tt class="docutils literal"><span class="pre">T_STR</span></tt> <tt class="docutils literal"><span class="pre">T_STR</span></tt><a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h3>
+<h3><tt class="docutils literal"><span class="pre">T_SEQ</span></tt> <tt class="docutils literal"><span class="pre">T_SEQ</span></tt>, <tt class="docutils literal"><span class="pre">T_STR</span></tt> <tt class="docutils literal"><span class="pre">T_STR</span></tt><a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h3>
+<p><tt class="docutils literal"><span class="pre">?find</span></tt> asserts that the value on top of stack is contained within
+the one below it.   This would be used e.g. like so:</p>
+<div class="highlight-python"><div class="highlight"><pre>(hay stack expression) ?(&quot;needle&quot; ?find)
+</pre></div>
 </div>
-<div class="section" id="id2">
-<h3><tt class="docutils literal"><span class="pre">T_SEQ</span></tt> <tt class="docutils literal"><span class="pre">T_SEQ</span></tt><a class="headerlink" href="#id2" title="Permalink to this headline">¶</a></h3>
-<p>(A B ?find) asserts that the sequence A contains sub-sequence B
-(e.g. <tt class="docutils literal"><span class="pre">[hay</span> <span class="pre">stack]</span> <span class="pre">?([needle]</span> <span class="pre">?find)</span></tt>).</p>
-<p>To determine whether a sequence contains a particular element, you
-would use the following construct:</p>
+<p>This word is applicable to sequences as well as strings:</p>
+<div class="highlight-python"><div class="highlight"><pre>[hay stack] ?([needle] ?find)
+</pre></div>
+</div>
+<p>For example:</p>
+<div class="highlight-python"><div class="highlight"><pre>$ dwgrep &#39;&quot;foobar&quot; &quot;oba&quot; ?find&#39;
+---
+oba
+foobar
+</pre></div>
+</div>
+<p>To determine whether a sequence (or a string) contains a particular
+element, you would use the following construct instead:</p>
 <div class="highlight-python"><div class="highlight"><pre>[that sequence] (elem == something)
 </pre></div>
 </div>
@@ -125,13 +147,13 @@ would use the following construct:</p>
 [child] ?(elem @AT_name == &quot;foo&quot;)
 </pre></div>
 </div>
-<p>To filter only those elements that match, you could do thefollowing:</p>
+<p>To filter only those elements that match, you could do the following:</p>
 <div class="highlight-python"><div class="highlight"><pre>[child] [|L| L elem ?(@AT_name == &quot;foo&quot;)]
 </pre></div>
 </div>
-<p>The above is suitable for a function that takes a list on input
-and wants to filter it.  It is of course preferable to write this
-sort of thing directly, if possible:</p>
+<p>The above is suitable if the origin of the sequence is out of your
+control.  It is of course preferable to write this sort of thing
+directly, if possible:</p>
 <div class="highlight-python"><div class="highlight"><pre>[child ?(@AT_name == &quot;foo&quot;)]
 </pre></div>
 </div>
@@ -139,19 +161,44 @@ sort of thing directly, if possible:</p>
 </div>
 <div class="section" id="match-match">
 <h2>!match, !~, =~, ?match<a class="headerlink" href="#match-match" title="Permalink to this headline">¶</a></h2>
-<div class="section" id="id3">
-<h3><tt class="docutils literal"><span class="pre">T_STR</span></tt> <tt class="docutils literal"><span class="pre">T_STR</span></tt><a class="headerlink" href="#id3" title="Permalink to this headline">¶</a></h3>
+<div class="section" id="t-str-t-str">
+<h3><tt class="docutils literal"><span class="pre">T_STR</span></tt> <tt class="docutils literal"><span class="pre">T_STR</span></tt><a class="headerlink" href="#t-str-t-str" title="Permalink to this headline">¶</a></h3>
+<p>This asserts that TOS (which is a string with a regular expression)
+matches the string below TOS.  The whole string has to match.  If you
+want to look for matches anywhere in the string, just surround your
+expression with <tt class="docutils literal"><span class="pre">.*</span></tt>&#8216;s:</p>
+<div class="highlight-python"><div class="highlight"><pre>&quot;haystack&quot; ?(&quot;.*needle.*&quot; ?match)
+</pre></div>
+</div>
+<p>For example:</p>
+<div class="highlight-python"><div class="highlight"><pre>$ dwgrep &#39;&quot;foobar&quot; &quot;f.*r&quot; ?match&#39;
+---
+f.*r
+foobar
+</pre></div>
+</div>
 </div>
 </div>
 <div class="section" id="starts-starts">
 <h2>!starts, ?starts<a class="headerlink" href="#starts-starts" title="Permalink to this headline">¶</a></h2>
-<div class="section" id="id4">
-<h3><tt class="docutils literal"><span class="pre">T_STR</span></tt> <tt class="docutils literal"><span class="pre">T_STR</span></tt><a class="headerlink" href="#id4" title="Permalink to this headline">¶</a></h3>
+<div class="section" id="id2">
+<h3><tt class="docutils literal"><span class="pre">T_SEQ</span></tt> <tt class="docutils literal"><span class="pre">T_SEQ</span></tt>, <tt class="docutils literal"><span class="pre">T_STR</span></tt> <tt class="docutils literal"><span class="pre">T_STR</span></tt><a class="headerlink" href="#id2" title="Permalink to this headline">¶</a></h3>
+<p>The word <tt class="docutils literal"><span class="pre">?start</span></tt> asserts that the value on TOS forms a prefix of
+the value below it.  This would be used e.g. like so:</p>
+<div class="highlight-python"><div class="highlight"><pre>(hay stack expression) ?(&quot;needle&quot; ?starts)
+</pre></div>
 </div>
-<div class="section" id="id5">
-<h3><tt class="docutils literal"><span class="pre">T_SEQ</span></tt> <tt class="docutils literal"><span class="pre">T_SEQ</span></tt><a class="headerlink" href="#id5" title="Permalink to this headline">¶</a></h3>
-<p><tt class="docutils literal"><span class="pre">(A</span> <span class="pre">B</span> <span class="pre">?starts)</span></tt> asserts that the sequence A starts with sub-sequence
-B (e.g. <tt class="docutils literal"><span class="pre">[hay</span> <span class="pre">stack]</span> <span class="pre">?([needle]</span> <span class="pre">?starts)</span></tt>).</p>
+<p>This word is applicable to sequences as well as strings:</p>
+<div class="highlight-python"><div class="highlight"><pre>[hay stack] ?([needle] ?starts)
+</pre></div>
+</div>
+<p>For example:</p>
+<div class="highlight-python"><div class="highlight"><pre>$ dwgrep &#39;&quot;foobar&quot; &quot;foo&quot; ?starts&#39;
+---
+foo
+foobar
+</pre></div>
+</div>
 </div>
 </div>
 <div class="section" id="t-closure-t-const-t-seq-t-str">
@@ -239,8 +286,8 @@ $ dwgrep &#39;DW_AT_name hex &quot;=%s=&quot;&#39;
 </div>
 <div class="section" id="div-mod-mul-sub">
 <h2>div, mod, mul, sub<a class="headerlink" href="#div-mod-mul-sub" title="Permalink to this headline">¶</a></h2>
-<div class="section" id="id6">
-<h3><tt class="docutils literal"><span class="pre">T_CONST</span></tt> <tt class="docutils literal"><span class="pre">T_CONST</span></tt> <tt class="docutils literal"><span class="pre">-&gt;?</span></tt> <tt class="docutils literal"><span class="pre">T_CONST</span></tt><a class="headerlink" href="#id6" title="Permalink to this headline">¶</a></h3>
+<div class="section" id="id3">
+<h3><tt class="docutils literal"><span class="pre">T_CONST</span></tt> <tt class="docutils literal"><span class="pre">T_CONST</span></tt> <tt class="docutils literal"><span class="pre">-&gt;?</span></tt> <tt class="docutils literal"><span class="pre">T_CONST</span></tt><a class="headerlink" href="#id3" title="Permalink to this headline">¶</a></h3>
 <p>Zwerg contains a suite of basic operators for integer arithmetic:
 <tt class="docutils literal"><span class="pre">add</span></tt>, <tt class="docutils literal"><span class="pre">sub</span></tt>, <tt class="docutils literal"><span class="pre">mul</span></tt>, <tt class="docutils literal"><span class="pre">div</span></tt> and <tt class="docutils literal"><span class="pre">mod</span></tt>.  Two elements are
 popped: A and B, with B the original TOS, and <tt class="docutils literal"><span class="pre">A</span> <span class="pre">OP</span> <span class="pre">B</span></tt> is pushed
@@ -331,8 +378,8 @@ on top.</p>
 </div>
 <p><tt class="docutils literal"><span class="pre">relem</span></tt> operates in the same fashion as <tt class="docutils literal"><span class="pre">elem</span></tt>, but backwards.</p>
 </div>
-<div class="section" id="id7">
-<h3><tt class="docutils literal"><span class="pre">T_STR</span></tt> <tt class="docutils literal"><span class="pre">-&gt;*</span></tt> <tt class="docutils literal"><span class="pre">T_STR</span></tt><a class="headerlink" href="#id7" title="Permalink to this headline">¶</a></h3>
+<div class="section" id="id4">
+<h3><tt class="docutils literal"><span class="pre">T_STR</span></tt> <tt class="docutils literal"><span class="pre">-&gt;*</span></tt> <tt class="docutils literal"><span class="pre">T_STR</span></tt><a class="headerlink" href="#id4" title="Permalink to this headline">¶</a></h3>
 <p>The description at <tt class="docutils literal"><span class="pre">T_SEQ</span></tt> overload applies.  For strings, <tt class="docutils literal"><span class="pre">elem</span></tt>
 and <tt class="docutils literal"><span class="pre">relem</span></tt> yield individual characters of the string, again as
 strings:</p>
@@ -411,6 +458,15 @@ as T_CONST, T_DIE, T_STR, etc.).</p>
 <h2>value<a class="headerlink" href="#value" title="Permalink to this headline">¶</a></h2>
 <div class="section" id="t-const-t-const">
 <h3><tt class="docutils literal"><span class="pre">T_CONST</span></tt> <tt class="docutils literal"><span class="pre">-&gt;</span></tt> <tt class="docutils literal"><span class="pre">T_CONST</span></tt><a class="headerlink" href="#t-const-t-const" title="Permalink to this headline">¶</a></h3>
+<p>Returns underlying value of the constant, with plain domain.  For
+example:</p>
+<div class="highlight-python"><div class="highlight"><pre>$ dwgrep &#39;DW_FORM_flag value&#39;
+12
+
+$ dwgrep &#39;0xc value&#39;
+12
+</pre></div>
+</div>
 </div>
 </div>
 </div>
@@ -431,22 +487,19 @@ as T_CONST, T_DIE, T_STR, etc.).</p>
 </ul>
 </li>
 <li><a class="reference internal" href="#ends-ends">!ends, ?ends</a><ul>
-<li><a class="reference internal" href="#t-str-t-str"><tt class="docutils literal"><span class="pre">T_STR</span></tt> <tt class="docutils literal"><span class="pre">T_STR</span></tt></a></li>
-<li><a class="reference internal" href="#t-seq-t-seq"><tt class="docutils literal"><span class="pre">T_SEQ</span></tt> <tt class="docutils literal"><span class="pre">T_SEQ</span></tt></a></li>
+<li><a class="reference internal" href="#t-seq-t-seq-t-str-t-str"><tt class="docutils literal"><span class="pre">T_SEQ</span></tt> <tt class="docutils literal"><span class="pre">T_SEQ</span></tt>, <tt class="docutils literal"><span class="pre">T_STR</span></tt> <tt class="docutils literal"><span class="pre">T_STR</span></tt></a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#find-find">!find, ?find</a><ul>
-<li><a class="reference internal" href="#id1"><tt class="docutils literal"><span class="pre">T_STR</span></tt> <tt class="docutils literal"><span class="pre">T_STR</span></tt></a></li>
-<li><a class="reference internal" href="#id2"><tt class="docutils literal"><span class="pre">T_SEQ</span></tt> <tt class="docutils literal"><span class="pre">T_SEQ</span></tt></a></li>
+<li><a class="reference internal" href="#id1"><tt class="docutils literal"><span class="pre">T_SEQ</span></tt> <tt class="docutils literal"><span class="pre">T_SEQ</span></tt>, <tt class="docutils literal"><span class="pre">T_STR</span></tt> <tt class="docutils literal"><span class="pre">T_STR</span></tt></a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#match-match">!match, !~, =~, ?match</a><ul>
-<li><a class="reference internal" href="#id3"><tt class="docutils literal"><span class="pre">T_STR</span></tt> <tt class="docutils literal"><span class="pre">T_STR</span></tt></a></li>
+<li><a class="reference internal" href="#t-str-t-str"><tt class="docutils literal"><span class="pre">T_STR</span></tt> <tt class="docutils literal"><span class="pre">T_STR</span></tt></a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#starts-starts">!starts, ?starts</a><ul>
-<li><a class="reference internal" href="#id4"><tt class="docutils literal"><span class="pre">T_STR</span></tt> <tt class="docutils literal"><span class="pre">T_STR</span></tt></a></li>
-<li><a class="reference internal" href="#id5"><tt class="docutils literal"><span class="pre">T_SEQ</span></tt> <tt class="docutils literal"><span class="pre">T_SEQ</span></tt></a></li>
+<li><a class="reference internal" href="#id2"><tt class="docutils literal"><span class="pre">T_SEQ</span></tt> <tt class="docutils literal"><span class="pre">T_SEQ</span></tt>, <tt class="docutils literal"><span class="pre">T_STR</span></tt> <tt class="docutils literal"><span class="pre">T_STR</span></tt></a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#t-closure-t-const-t-seq-t-str">T_CLOSURE, T_CONST, T_SEQ, T_STR</a></li>
@@ -458,13 +511,13 @@ as T_CONST, T_DIE, T_STR, etc.).</p>
 </li>
 <li><a class="reference internal" href="#bin-dec-hex-oct">bin, dec, hex, oct</a></li>
 <li><a class="reference internal" href="#div-mod-mul-sub">div, mod, mul, sub</a><ul>
-<li><a class="reference internal" href="#id6"><tt class="docutils literal"><span class="pre">T_CONST</span></tt> <tt class="docutils literal"><span class="pre">T_CONST</span></tt> <tt class="docutils literal"><span class="pre">-&gt;?</span></tt> <tt class="docutils literal"><span class="pre">T_CONST</span></tt></a></li>
+<li><a class="reference internal" href="#id3"><tt class="docutils literal"><span class="pre">T_CONST</span></tt> <tt class="docutils literal"><span class="pre">T_CONST</span></tt> <tt class="docutils literal"><span class="pre">-&gt;?</span></tt> <tt class="docutils literal"><span class="pre">T_CONST</span></tt></a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#drop-dup-over-rot-swap">drop, dup, over, rot, swap</a></li>
 <li><a class="reference internal" href="#elem-relem">elem, relem</a><ul>
 <li><a class="reference internal" href="#t-seq-t"><tt class="docutils literal"><span class="pre">T_SEQ</span></tt> <tt class="docutils literal"><span class="pre">-&gt;*</span></tt> <tt class="docutils literal"><span class="pre">T_???</span></tt></a></li>
-<li><a class="reference internal" href="#id7"><tt class="docutils literal"><span class="pre">T_STR</span></tt> <tt class="docutils literal"><span class="pre">-&gt;*</span></tt> <tt class="docutils literal"><span class="pre">T_STR</span></tt></a></li>
+<li><a class="reference internal" href="#id4"><tt class="docutils literal"><span class="pre">T_STR</span></tt> <tt class="docutils literal"><span class="pre">-&gt;*</span></tt> <tt class="docutils literal"><span class="pre">T_STR</span></tt></a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#false-true">false, true</a></li>
