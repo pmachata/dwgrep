@@ -388,6 +388,78 @@ escaped by another backslash:</p>
 <span class="s">&quot;a string with backslash: </span><span class="se">\\</span><span class="s">&quot;</span>
 </pre></div>
 </div>
+<p>Other recognized escapes include:</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="12%" />
+<col width="88%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">escape</th>
+<th class="head">meaning</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td>\</td>
+<td><p class="first">Escaped backslash stands for a backslash:</p>
+<div class="last highlight-python"><div class="highlight"><pre>$ dwgrep &#39;&quot;\\a\\&quot;&#39;
+\a\
+</pre></div>
+</div>
+</td>
+</tr>
+<tr class="row-odd"><td>\123</td>
+<td><p class="first"><em>123</em> stands for octal number.  The escape is replaced
+with an ASCII character the code of which is the octal
+number:</p>
+<div class="last highlight-python"><div class="highlight"><pre>$ dwgrep &#39;&quot;\110\145\154\154\157&quot;&#39;
+Hello
+</pre></div>
+</div>
+</td>
+</tr>
+<tr class="row-even"><td>\xab</td>
+<td><p class="first"><em>ab</em> stands for hexadecimal number.  The meaning is
+analogous to that of \123:</p>
+<div class="last highlight-python"><div class="highlight"><pre>$ dwgrep &#39;&quot;\x77\x6f\x72\x6c\x64\x21&quot;&#39;
+world!
+</pre></div>
+</div>
+</td>
+</tr>
+<tr class="row-odd"><td>\t</td>
+<td>Stands for the tab character.</td>
+</tr>
+<tr class="row-even"><td><p class="first">\n</p>
+<p class="last">&lt;EOL&gt;</p>
+</td>
+<td><p class="first">Both a literal end-of-line character, as well as the
+<tt class="docutils literal"><span class="pre">\n</span></tt> escape stand for new line:</p>
+<div class="last highlight-python"><div class="highlight"><pre>$ dwgrep &#39;&quot;foo\nbar&quot;&#39;
+foo
+bar
+
+$ dwgrep &#39;&quot;foo
+bar&quot;&#39;
+foo
+bar
+</pre></div>
+</div>
+</td>
+</tr>
+<tr class="row-odd"><td>\&lt;EOL&gt;</td>
+<td><p class="first">Escaped newline is ignored:</p>
+<div class="last highlight-python"><div class="highlight"><pre>$ dwgrep &#39;&quot;foo\
+bar&quot;&#39;
+foobar
+</pre></div>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+<p>There are more escape sequences (essentially those mentioned in <tt class="docutils literal"><span class="pre">man</span>
+<span class="pre">ascii</span></tt> are supported as well).</p>
 <p>If a string literal is prefixed by <tt class="docutils literal"><span class="pre">r</span></tt>, it&#8217;s actually a raw string
 literal.  These work the same as normal formatting strings, but escape
 sequences are left intact in the string:</p>

@@ -3,8 +3,8 @@
 Vocabulary reference
 ====================
 
-``!=``, ``!eq``, ``!ge``, ``!gt``, ``!le``, ``!lt``, ``!ne``, ``<``, ``<=``, ``==``, ``>``, ``>=``, ``?eq``, ``?ge``, ``?gt``, ``?le``, ``?lt``, ``?ne``
-========================================================================================================================================================
+!=, !eq, !ge, !gt, !le, !lt, !ne, <, <=, ==, >, >=, ?eq, ?ge, ?gt, ?le, ?lt, ?ne
+--------------------------------------------------------------------------------
 
 
 
@@ -35,42 +35,62 @@ always available.
 
 
 
-``!empty``, ``?empty``
-======================
-
-``T_STR``
----------
-
+!empty, ?empty
+--------------
 
 ``T_SEQ``
----------
-Asserts whether a sequence on TOS is empty.
+.........
+
+Asserts that a sequence on TOS is empty.  This predicate holds for
+both empty sequence literals as well as sequences that just happen to
+be empty::
+
+	$ dwgrep '[] ?empty'
+	[]
+
+	$ dwgrep 'dwgrep '[(1, 2, 3) (== 0)] ?empty'
+	[]
+
+``T_STR``
+.........
+
+This predicate holds if the string on TOS is empty::
+
+	$ dwgrep '"" ?empty ">%s< is empty"'
+	>< is empty
+
+	$ dwgrep '"\x00" !empty ">%s< is not empty"'
+	>< is not empty
 
 
 
-``!ends``, ``?ends``
-====================
+!ends, ?ends
+------------
 
 ``T_STR`` ``T_STR``
--------------------
+...................
+
 
 
 ``T_SEQ`` ``T_SEQ``
--------------------
+...................
+
 ``(A B ?ends)`` asserts that the sequence A ends with sub-sequence
 B (e.g. ``[hay stack] ?([needle] ?ends)``).
 
 
 
-``!find``, ``?find``
-====================
+!find, ?find
+------------
 
 ``T_STR`` ``T_STR``
--------------------
+...................
+
 
 
 ``T_SEQ`` ``T_SEQ``
--------------------
+...................
+
 (A B ?find) asserts that the sequence A contains sub-sequence B
 (e.g. ``[hay stack] ?([needle] ?find)``).
 
@@ -97,53 +117,93 @@ sort of thing directly, if possible::
 
 
 
-``!match``, ``!~``, ``=~``, ``?match``
-======================================
+!match, !~, =~, ?match
+----------------------
 
 ``T_STR`` ``T_STR``
--------------------
+...................
 
 
 
 
-``!starts``, ``?starts``
-========================
+
+!starts, ?starts
+----------------
 
 ``T_STR`` ``T_STR``
--------------------
+...................
+
 
 
 ``T_SEQ`` ``T_SEQ``
--------------------
+...................
+
 ``(A B ?starts)`` asserts that the sequence A starts with sub-sequence
 B (e.g. ``[hay stack] ?([needle] ?starts)``).
 
 
 
-``T_CLOSURE``, ``T_CONST``, ``T_SEQ``, ``T_STR``
-================================================
+T_CLOSURE, T_CONST, T_SEQ, T_STR
+--------------------------------
 
 @T_*
 
-``add``
-=======
-
-``T_CONST`` ``T_CONST`` ``->?`` ``T_CONST``
--------------------------------------------
-
-
-``T_STR`` ``T_STR`` ``->`` ``T_STR``
-------------------------------------
-
+add
+---
 
 ``T_SEQ`` ``T_SEQ`` ``->`` ``T_SEQ``
-------------------------------------
-Concatenate two sequences and yield the resulting sequence.
+....................................
+
+Concatenate two sequences and yield the resulting sequence::
+
+	$ dwgrep '[1, 2, 3] [4, 5, 6] add'
+	[1, 2, 3, 4, 5, 6]
+
+Using sub-expression capture may be a more flexible alternative to
+using ``add``::
+
+	$ dwgrep '[1, 2, 3] [4, 5, 6] [7, 8, 9] [|A B C| (A, B, C) elem]'
+	[1, 2, 3, 4, 5, 6, 7, 8, 9]
+
+``T_CONST`` ``T_CONST`` ``->?`` ``T_CONST``
+...........................................
+
+Zwerg contains a suite of basic operators for integer arithmetic:
+``add``, ``sub``, ``mul``, ``div`` and ``mod``.  Two elements are
+popped: A and B, with B the original TOS, and ``A OP B`` is pushed
+again.  *OP* is an operation suggested by the operator name.
+
+Integers in Zwerg are 64-bit signed or unsigned quantities.  A value
+of type ``T_CONST`` can hold either signed or unsigned number.  Which
+it is is decided automatically.  Arithmetic operators handle these
+cases transparently.
+
+Overflows and division and modulo by zero produce an error message and
+abort current computation, which is the reason this operation is
+denoted with ``->?`` relation::
+
+	$ dwgrep '5 (2, 0, 3) div'
+	2
+	Error: division by zero occured when computing 5/0
+	1
+
+``T_STR`` ``T_STR`` ``->`` ``T_STR``
+....................................
+
+``add`` concatenates two strings on TOS and yields the resulting string::
+
+	$ dwgrep '"foo" "bar" add'
+	foobar
+
+Using formatting strings may be a better way to concatenate strings::
+
+	$ dwgrep '"foo" "bar" "baz" "%s%s%s"'
+	foobarbaz
 
 
 
-``bin``, ``dec``, ``hex``, ``oct``
-==================================
+bin, dec, hex, oct
+------------------
 
 
 
@@ -175,17 +235,35 @@ Though you can achieve the same effect with formatting directives
 
 
 
-``div``, ``mod``, ``mul``, ``sub``
-==================================
+div, mod, mul, sub
+------------------
 
 ``T_CONST`` ``T_CONST`` ``->?`` ``T_CONST``
--------------------------------------------
+...........................................
+
+Zwerg contains a suite of basic operators for integer arithmetic:
+``add``, ``sub``, ``mul``, ``div`` and ``mod``.  Two elements are
+popped: A and B, with B the original TOS, and ``A OP B`` is pushed
+again.  *OP* is an operation suggested by the operator name.
+
+Integers in Zwerg are 64-bit signed or unsigned quantities.  A value
+of type ``T_CONST`` can hold either signed or unsigned number.  Which
+it is is decided automatically.  Arithmetic operators handle these
+cases transparently.
+
+Overflows and division and modulo by zero produce an error message and
+abort current computation, which is the reason this operation is
+denoted with ``->?`` relation::
+
+	$ dwgrep '5 (2, 0, 3) div'
+	2
+	Error: division by zero occured when computing 5/0
+	1
 
 
 
-
-``drop``, ``dup``, ``over``, ``rot``, ``swap``
-==============================================
+drop, dup, over, rot, swap
+--------------------------
 
 
 
@@ -213,15 +291,12 @@ be unnecessary as well.  But they are present for completeness' sake.
 
 
 
-``elem``, ``relem``
-===================
-
-``T_STR`` ``->*`` ``T_STR``
----------------------------
-
+elem, relem
+-----------
 
 ``T_SEQ`` ``->*`` ``T_???``
----------------------------
+...........................
+
 For each element in the input sequence, which is popped, yield a stack
 with that element pushed on top.
 
@@ -247,28 +322,55 @@ The expression could be simplified a bit on expense of clarity::
 
 ``relem`` operates in the same fashion as ``elem``, but backwards.
 
+``T_STR`` ``->*`` ``T_STR``
+...........................
+
+The description at ``T_SEQ`` overload applies.  For strings, ``elem``
+and ``relem`` yield individual characters of the string, again as
+strings::
+
+	$ dwgrep '["foo" elem]'
+	[f, o, o]
 
 
-``false``, ``true``
-===================
+
+false, true
+-----------
 
 @bool
 
-``length``
-==========
-
-``T_STR`` ``->`` ``T_CONST``
-----------------------------
-Yields length of string on TOS.
+length
+------
 
 ``T_SEQ`` ``->`` ``T_CONST``
-----------------------------
+............................
+
 Yield number of elements of sequence on TOS.
 
+E.g. the following tests whether the DIE's whose all attributes report
+the same form as their abbreviations suggest, comprises all DIE's.
+This test comes from dwgrep's test suite::
+
+	[entry ([abbrev attribute label] == [attribute label])] length
+	== [entry] length
+
+(Note that this isn't anything that should be universally true, though
+it typically will, and it is for the particular file that this test is
+run on.  Attributes for which their abbreviation suggests
+``DW_FORM_indirect`` will themselves have a different form.)
+
+``T_STR`` ``->`` ``T_CONST``
+............................
+
+Yields length of string on TOS::
+
+	dwgrep '"foo" length'
+	3
 
 
-``pos``
-=======
+
+pos
+---
 
 
 
@@ -302,8 +404,8 @@ absolute and relative position of a given element.
 
 
 
-``type``
-========
+type
+----
 
 
 
@@ -312,11 +414,12 @@ as T_CONST, T_DIE, T_STR, etc.).
 
 
 
-``value``
-=========
+value
+-----
 
 ``T_CONST`` ``->`` ``T_CONST``
-------------------------------
+..............................
+
 
 
 

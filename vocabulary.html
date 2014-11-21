@@ -43,9 +43,8 @@
             
   <div class="section" id="vocabulary-reference">
 <span id="vocabulary"></span><h1>Vocabulary reference<a class="headerlink" href="#vocabulary-reference" title="Permalink to this headline">¶</a></h1>
-</div>
 <div class="section" id="eq-ge-gt-le-lt-ne-eq-ge-gt-le-lt-ne">
-<h1><tt class="docutils literal"><span class="pre">!=</span></tt>, <tt class="docutils literal"><span class="pre">!eq</span></tt>, <tt class="docutils literal"><span class="pre">!ge</span></tt>, <tt class="docutils literal"><span class="pre">!gt</span></tt>, <tt class="docutils literal"><span class="pre">!le</span></tt>, <tt class="docutils literal"><span class="pre">!lt</span></tt>, <tt class="docutils literal"><span class="pre">!ne</span></tt>, <tt class="docutils literal"><span class="pre">&lt;</span></tt>, <tt class="docutils literal"><span class="pre">&lt;=</span></tt>, <tt class="docutils literal"><span class="pre">==</span></tt>, <tt class="docutils literal"><span class="pre">&gt;</span></tt>, <tt class="docutils literal"><span class="pre">&gt;=</span></tt>, <tt class="docutils literal"><span class="pre">?eq</span></tt>, <tt class="docutils literal"><span class="pre">?ge</span></tt>, <tt class="docutils literal"><span class="pre">?gt</span></tt>, <tt class="docutils literal"><span class="pre">?le</span></tt>, <tt class="docutils literal"><span class="pre">?lt</span></tt>, <tt class="docutils literal"><span class="pre">?ne</span></tt><a class="headerlink" href="#eq-ge-gt-le-lt-ne-eq-ge-gt-le-lt-ne" title="Permalink to this headline">¶</a></h1>
+<h2>!=, !eq, !ge, !gt, !le, !lt, !ne, &lt;, &lt;=, ==, &gt;, &gt;=, ?eq, ?ge, ?gt, ?le, ?lt, ?ne<a class="headerlink" href="#eq-ge-gt-le-lt-ne-eq-ge-gt-le-lt-ne" title="Permalink to this headline">¶</a></h2>
 <p>These are comparison operators.  The ones with no alphanumeric
 characters in them, <tt class="docutils literal"><span class="pre">==</span></tt>, <tt class="docutils literal"><span class="pre">!=</span></tt>, <tt class="docutils literal"><span class="pre">&lt;</span></tt> etc., are for use in infix
 expressions, such as:</p>
@@ -70,33 +69,50 @@ of any assertion is always either <tt class="docutils literal"><span class="pre"
 always available.</p>
 </div>
 <div class="section" id="empty-empty">
-<h1><tt class="docutils literal"><span class="pre">!empty</span></tt>, <tt class="docutils literal"><span class="pre">?empty</span></tt><a class="headerlink" href="#empty-empty" title="Permalink to this headline">¶</a></h1>
-<div class="section" id="t-str">
-<h2><tt class="docutils literal"><span class="pre">T_STR</span></tt><a class="headerlink" href="#t-str" title="Permalink to this headline">¶</a></h2>
-</div>
+<h2>!empty, ?empty<a class="headerlink" href="#empty-empty" title="Permalink to this headline">¶</a></h2>
 <div class="section" id="t-seq">
-<h2><tt class="docutils literal"><span class="pre">T_SEQ</span></tt><a class="headerlink" href="#t-seq" title="Permalink to this headline">¶</a></h2>
-<p>Asserts whether a sequence on TOS is empty.</p>
+<h3><tt class="docutils literal"><span class="pre">T_SEQ</span></tt><a class="headerlink" href="#t-seq" title="Permalink to this headline">¶</a></h3>
+<p>Asserts that a sequence on TOS is empty.  This predicate holds for
+both empty sequence literals as well as sequences that just happen to
+be empty:</p>
+<div class="highlight-python"><div class="highlight"><pre>$ dwgrep &#39;[] ?empty&#39;
+[]
+
+$ dwgrep &#39;dwgrep &#39;[(1, 2, 3) (== 0)] ?empty&#39;
+[]
+</pre></div>
+</div>
+</div>
+<div class="section" id="t-str">
+<h3><tt class="docutils literal"><span class="pre">T_STR</span></tt><a class="headerlink" href="#t-str" title="Permalink to this headline">¶</a></h3>
+<p>This predicate holds if the string on TOS is empty:</p>
+<div class="highlight-python"><div class="highlight"><pre>$ dwgrep &#39;&quot;&quot; ?empty &quot;&gt;%s&lt; is empty&quot;&#39;
+&gt;&lt; is empty
+
+$ dwgrep &#39;&quot;\x00&quot; !empty &quot;&gt;%s&lt; is not empty&quot;&#39;
+&gt;&lt; is not empty
+</pre></div>
+</div>
 </div>
 </div>
 <div class="section" id="ends-ends">
-<h1><tt class="docutils literal"><span class="pre">!ends</span></tt>, <tt class="docutils literal"><span class="pre">?ends</span></tt><a class="headerlink" href="#ends-ends" title="Permalink to this headline">¶</a></h1>
+<h2>!ends, ?ends<a class="headerlink" href="#ends-ends" title="Permalink to this headline">¶</a></h2>
 <div class="section" id="t-str-t-str">
-<h2><tt class="docutils literal"><span class="pre">T_STR</span></tt> <tt class="docutils literal"><span class="pre">T_STR</span></tt><a class="headerlink" href="#t-str-t-str" title="Permalink to this headline">¶</a></h2>
+<h3><tt class="docutils literal"><span class="pre">T_STR</span></tt> <tt class="docutils literal"><span class="pre">T_STR</span></tt><a class="headerlink" href="#t-str-t-str" title="Permalink to this headline">¶</a></h3>
 </div>
 <div class="section" id="t-seq-t-seq">
-<h2><tt class="docutils literal"><span class="pre">T_SEQ</span></tt> <tt class="docutils literal"><span class="pre">T_SEQ</span></tt><a class="headerlink" href="#t-seq-t-seq" title="Permalink to this headline">¶</a></h2>
+<h3><tt class="docutils literal"><span class="pre">T_SEQ</span></tt> <tt class="docutils literal"><span class="pre">T_SEQ</span></tt><a class="headerlink" href="#t-seq-t-seq" title="Permalink to this headline">¶</a></h3>
 <p><tt class="docutils literal"><span class="pre">(A</span> <span class="pre">B</span> <span class="pre">?ends)</span></tt> asserts that the sequence A ends with sub-sequence
 B (e.g. <tt class="docutils literal"><span class="pre">[hay</span> <span class="pre">stack]</span> <span class="pre">?([needle]</span> <span class="pre">?ends)</span></tt>).</p>
 </div>
 </div>
 <div class="section" id="find-find">
-<h1><tt class="docutils literal"><span class="pre">!find</span></tt>, <tt class="docutils literal"><span class="pre">?find</span></tt><a class="headerlink" href="#find-find" title="Permalink to this headline">¶</a></h1>
+<h2>!find, ?find<a class="headerlink" href="#find-find" title="Permalink to this headline">¶</a></h2>
 <div class="section" id="id1">
-<h2><tt class="docutils literal"><span class="pre">T_STR</span></tt> <tt class="docutils literal"><span class="pre">T_STR</span></tt><a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h2>
+<h3><tt class="docutils literal"><span class="pre">T_STR</span></tt> <tt class="docutils literal"><span class="pre">T_STR</span></tt><a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h3>
 </div>
 <div class="section" id="id2">
-<h2><tt class="docutils literal"><span class="pre">T_SEQ</span></tt> <tt class="docutils literal"><span class="pre">T_SEQ</span></tt><a class="headerlink" href="#id2" title="Permalink to this headline">¶</a></h2>
+<h3><tt class="docutils literal"><span class="pre">T_SEQ</span></tt> <tt class="docutils literal"><span class="pre">T_SEQ</span></tt><a class="headerlink" href="#id2" title="Permalink to this headline">¶</a></h3>
 <p>(A B ?find) asserts that the sequence A contains sub-sequence B
 (e.g. <tt class="docutils literal"><span class="pre">[hay</span> <span class="pre">stack]</span> <span class="pre">?([needle]</span> <span class="pre">?find)</span></tt>).</p>
 <p>To determine whether a sequence contains a particular element, you
@@ -122,41 +138,78 @@ sort of thing directly, if possible:</p>
 </div>
 </div>
 <div class="section" id="match-match">
-<h1><tt class="docutils literal"><span class="pre">!match</span></tt>, <tt class="docutils literal"><span class="pre">!~</span></tt>, <tt class="docutils literal"><span class="pre">=~</span></tt>, <tt class="docutils literal"><span class="pre">?match</span></tt><a class="headerlink" href="#match-match" title="Permalink to this headline">¶</a></h1>
+<h2>!match, !~, =~, ?match<a class="headerlink" href="#match-match" title="Permalink to this headline">¶</a></h2>
 <div class="section" id="id3">
-<h2><tt class="docutils literal"><span class="pre">T_STR</span></tt> <tt class="docutils literal"><span class="pre">T_STR</span></tt><a class="headerlink" href="#id3" title="Permalink to this headline">¶</a></h2>
+<h3><tt class="docutils literal"><span class="pre">T_STR</span></tt> <tt class="docutils literal"><span class="pre">T_STR</span></tt><a class="headerlink" href="#id3" title="Permalink to this headline">¶</a></h3>
 </div>
 </div>
 <div class="section" id="starts-starts">
-<h1><tt class="docutils literal"><span class="pre">!starts</span></tt>, <tt class="docutils literal"><span class="pre">?starts</span></tt><a class="headerlink" href="#starts-starts" title="Permalink to this headline">¶</a></h1>
+<h2>!starts, ?starts<a class="headerlink" href="#starts-starts" title="Permalink to this headline">¶</a></h2>
 <div class="section" id="id4">
-<h2><tt class="docutils literal"><span class="pre">T_STR</span></tt> <tt class="docutils literal"><span class="pre">T_STR</span></tt><a class="headerlink" href="#id4" title="Permalink to this headline">¶</a></h2>
+<h3><tt class="docutils literal"><span class="pre">T_STR</span></tt> <tt class="docutils literal"><span class="pre">T_STR</span></tt><a class="headerlink" href="#id4" title="Permalink to this headline">¶</a></h3>
 </div>
 <div class="section" id="id5">
-<h2><tt class="docutils literal"><span class="pre">T_SEQ</span></tt> <tt class="docutils literal"><span class="pre">T_SEQ</span></tt><a class="headerlink" href="#id5" title="Permalink to this headline">¶</a></h2>
+<h3><tt class="docutils literal"><span class="pre">T_SEQ</span></tt> <tt class="docutils literal"><span class="pre">T_SEQ</span></tt><a class="headerlink" href="#id5" title="Permalink to this headline">¶</a></h3>
 <p><tt class="docutils literal"><span class="pre">(A</span> <span class="pre">B</span> <span class="pre">?starts)</span></tt> asserts that the sequence A starts with sub-sequence
 B (e.g. <tt class="docutils literal"><span class="pre">[hay</span> <span class="pre">stack]</span> <span class="pre">?([needle]</span> <span class="pre">?starts)</span></tt>).</p>
 </div>
 </div>
 <div class="section" id="t-closure-t-const-t-seq-t-str">
-<h1><tt class="docutils literal"><span class="pre">T_CLOSURE</span></tt>, <tt class="docutils literal"><span class="pre">T_CONST</span></tt>, <tt class="docutils literal"><span class="pre">T_SEQ</span></tt>, <tt class="docutils literal"><span class="pre">T_STR</span></tt><a class="headerlink" href="#t-closure-t-const-t-seq-t-str" title="Permalink to this headline">¶</a></h1>
+<h2>T_CLOSURE, T_CONST, T_SEQ, T_STR<a class="headerlink" href="#t-closure-t-const-t-seq-t-str" title="Permalink to this headline">¶</a></h2>
 <p>&#64;T_*</p>
 </div>
 <div class="section" id="add">
-<h1><tt class="docutils literal"><span class="pre">add</span></tt><a class="headerlink" href="#add" title="Permalink to this headline">¶</a></h1>
+<h2>add<a class="headerlink" href="#add" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="t-seq-t-seq-t-seq">
+<h3><tt class="docutils literal"><span class="pre">T_SEQ</span></tt> <tt class="docutils literal"><span class="pre">T_SEQ</span></tt> <tt class="docutils literal"><span class="pre">-&gt;</span></tt> <tt class="docutils literal"><span class="pre">T_SEQ</span></tt><a class="headerlink" href="#t-seq-t-seq-t-seq" title="Permalink to this headline">¶</a></h3>
+<p>Concatenate two sequences and yield the resulting sequence:</p>
+<div class="highlight-python"><div class="highlight"><pre>$ dwgrep &#39;[1, 2, 3] [4, 5, 6] add&#39;
+[1, 2, 3, 4, 5, 6]
+</pre></div>
+</div>
+<p>Using sub-expression capture may be a more flexible alternative to
+using <tt class="docutils literal"><span class="pre">add</span></tt>:</p>
+<div class="highlight-python"><div class="highlight"><pre>$ dwgrep &#39;[1, 2, 3] [4, 5, 6] [7, 8, 9] [|A B C| (A, B, C) elem]&#39;
+[1, 2, 3, 4, 5, 6, 7, 8, 9]
+</pre></div>
+</div>
+</div>
 <div class="section" id="t-const-t-const-t-const">
-<h2><tt class="docutils literal"><span class="pre">T_CONST</span></tt> <tt class="docutils literal"><span class="pre">T_CONST</span></tt> <tt class="docutils literal"><span class="pre">-&gt;?</span></tt> <tt class="docutils literal"><span class="pre">T_CONST</span></tt><a class="headerlink" href="#t-const-t-const-t-const" title="Permalink to this headline">¶</a></h2>
+<h3><tt class="docutils literal"><span class="pre">T_CONST</span></tt> <tt class="docutils literal"><span class="pre">T_CONST</span></tt> <tt class="docutils literal"><span class="pre">-&gt;?</span></tt> <tt class="docutils literal"><span class="pre">T_CONST</span></tt><a class="headerlink" href="#t-const-t-const-t-const" title="Permalink to this headline">¶</a></h3>
+<p>Zwerg contains a suite of basic operators for integer arithmetic:
+<tt class="docutils literal"><span class="pre">add</span></tt>, <tt class="docutils literal"><span class="pre">sub</span></tt>, <tt class="docutils literal"><span class="pre">mul</span></tt>, <tt class="docutils literal"><span class="pre">div</span></tt> and <tt class="docutils literal"><span class="pre">mod</span></tt>.  Two elements are
+popped: A and B, with B the original TOS, and <tt class="docutils literal"><span class="pre">A</span> <span class="pre">OP</span> <span class="pre">B</span></tt> is pushed
+again.  <em>OP</em> is an operation suggested by the operator name.</p>
+<p>Integers in Zwerg are 64-bit signed or unsigned quantities.  A value
+of type <tt class="docutils literal"><span class="pre">T_CONST</span></tt> can hold either signed or unsigned number.  Which
+it is is decided automatically.  Arithmetic operators handle these
+cases transparently.</p>
+<p>Overflows and division and modulo by zero produce an error message and
+abort current computation, which is the reason this operation is
+denoted with <tt class="docutils literal"><span class="pre">-&gt;?</span></tt> relation:</p>
+<div class="highlight-python"><div class="highlight"><pre>$ dwgrep &#39;5 (2, 0, 3) div&#39;
+2
+Error: division by zero occured when computing 5/0
+1
+</pre></div>
+</div>
 </div>
 <div class="section" id="t-str-t-str-t-str">
-<h2><tt class="docutils literal"><span class="pre">T_STR</span></tt> <tt class="docutils literal"><span class="pre">T_STR</span></tt> <tt class="docutils literal"><span class="pre">-&gt;</span></tt> <tt class="docutils literal"><span class="pre">T_STR</span></tt><a class="headerlink" href="#t-str-t-str-t-str" title="Permalink to this headline">¶</a></h2>
+<h3><tt class="docutils literal"><span class="pre">T_STR</span></tt> <tt class="docutils literal"><span class="pre">T_STR</span></tt> <tt class="docutils literal"><span class="pre">-&gt;</span></tt> <tt class="docutils literal"><span class="pre">T_STR</span></tt><a class="headerlink" href="#t-str-t-str-t-str" title="Permalink to this headline">¶</a></h3>
+<p><tt class="docutils literal"><span class="pre">add</span></tt> concatenates two strings on TOS and yields the resulting string:</p>
+<div class="highlight-python"><div class="highlight"><pre>$ dwgrep &#39;&quot;foo&quot; &quot;bar&quot; add&#39;
+foobar
+</pre></div>
 </div>
-<div class="section" id="t-seq-t-seq-t-seq">
-<h2><tt class="docutils literal"><span class="pre">T_SEQ</span></tt> <tt class="docutils literal"><span class="pre">T_SEQ</span></tt> <tt class="docutils literal"><span class="pre">-&gt;</span></tt> <tt class="docutils literal"><span class="pre">T_SEQ</span></tt><a class="headerlink" href="#t-seq-t-seq-t-seq" title="Permalink to this headline">¶</a></h2>
-<p>Concatenate two sequences and yield the resulting sequence.</p>
+<p>Using formatting strings may be a better way to concatenate strings:</p>
+<div class="highlight-python"><div class="highlight"><pre>$ dwgrep &#39;&quot;foo&quot; &quot;bar&quot; &quot;baz&quot; &quot;%s%s%s&quot;&#39;
+foobarbaz
+</pre></div>
+</div>
 </div>
 </div>
 <div class="section" id="bin-dec-hex-oct">
-<h1><tt class="docutils literal"><span class="pre">bin</span></tt>, <tt class="docutils literal"><span class="pre">dec</span></tt>, <tt class="docutils literal"><span class="pre">hex</span></tt>, <tt class="docutils literal"><span class="pre">oct</span></tt><a class="headerlink" href="#bin-dec-hex-oct" title="Permalink to this headline">¶</a></h1>
+<h2>bin, dec, hex, oct<a class="headerlink" href="#bin-dec-hex-oct" title="Permalink to this headline">¶</a></h2>
 <p><tt class="docutils literal"><span class="pre">bin</span></tt> is used for converting constants to base-2, <tt class="docutils literal"><span class="pre">oct</span></tt> to base-8,
 <tt class="docutils literal"><span class="pre">dec</span></tt> to base-10 and <tt class="docutils literal"><span class="pre">hex</span></tt> to base-16.  These operators yield
 incoming stack, except the domain of constant on TOS is changed.
@@ -185,13 +238,30 @@ $ dwgrep &#39;DW_AT_name hex &quot;=%s=&quot;&#39;
 </div>
 </div>
 <div class="section" id="div-mod-mul-sub">
-<h1><tt class="docutils literal"><span class="pre">div</span></tt>, <tt class="docutils literal"><span class="pre">mod</span></tt>, <tt class="docutils literal"><span class="pre">mul</span></tt>, <tt class="docutils literal"><span class="pre">sub</span></tt><a class="headerlink" href="#div-mod-mul-sub" title="Permalink to this headline">¶</a></h1>
+<h2>div, mod, mul, sub<a class="headerlink" href="#div-mod-mul-sub" title="Permalink to this headline">¶</a></h2>
 <div class="section" id="id6">
-<h2><tt class="docutils literal"><span class="pre">T_CONST</span></tt> <tt class="docutils literal"><span class="pre">T_CONST</span></tt> <tt class="docutils literal"><span class="pre">-&gt;?</span></tt> <tt class="docutils literal"><span class="pre">T_CONST</span></tt><a class="headerlink" href="#id6" title="Permalink to this headline">¶</a></h2>
+<h3><tt class="docutils literal"><span class="pre">T_CONST</span></tt> <tt class="docutils literal"><span class="pre">T_CONST</span></tt> <tt class="docutils literal"><span class="pre">-&gt;?</span></tt> <tt class="docutils literal"><span class="pre">T_CONST</span></tt><a class="headerlink" href="#id6" title="Permalink to this headline">¶</a></h3>
+<p>Zwerg contains a suite of basic operators for integer arithmetic:
+<tt class="docutils literal"><span class="pre">add</span></tt>, <tt class="docutils literal"><span class="pre">sub</span></tt>, <tt class="docutils literal"><span class="pre">mul</span></tt>, <tt class="docutils literal"><span class="pre">div</span></tt> and <tt class="docutils literal"><span class="pre">mod</span></tt>.  Two elements are
+popped: A and B, with B the original TOS, and <tt class="docutils literal"><span class="pre">A</span> <span class="pre">OP</span> <span class="pre">B</span></tt> is pushed
+again.  <em>OP</em> is an operation suggested by the operator name.</p>
+<p>Integers in Zwerg are 64-bit signed or unsigned quantities.  A value
+of type <tt class="docutils literal"><span class="pre">T_CONST</span></tt> can hold either signed or unsigned number.  Which
+it is is decided automatically.  Arithmetic operators handle these
+cases transparently.</p>
+<p>Overflows and division and modulo by zero produce an error message and
+abort current computation, which is the reason this operation is
+denoted with <tt class="docutils literal"><span class="pre">-&gt;?</span></tt> relation:</p>
+<div class="highlight-python"><div class="highlight"><pre>$ dwgrep &#39;5 (2, 0, 3) div&#39;
+2
+Error: division by zero occured when computing 5/0
+1
+</pre></div>
+</div>
 </div>
 </div>
 <div class="section" id="drop-dup-over-rot-swap">
-<h1><tt class="docutils literal"><span class="pre">drop</span></tt>, <tt class="docutils literal"><span class="pre">dup</span></tt>, <tt class="docutils literal"><span class="pre">over</span></tt>, <tt class="docutils literal"><span class="pre">rot</span></tt>, <tt class="docutils literal"><span class="pre">swap</span></tt><a class="headerlink" href="#drop-dup-over-rot-swap" title="Permalink to this headline">¶</a></h1>
+<h2>drop, dup, over, rot, swap<a class="headerlink" href="#drop-dup-over-rot-swap" title="Permalink to this headline">¶</a></h2>
 <p>These words reorder elements on stack according to the following
 schemes:</p>
 <table border="1" class="docutils">
@@ -235,12 +305,9 @@ what sub-expressions are for), and the deep stack manipulation should
 be unnecessary as well.  But they are present for completeness&#8217; sake.</p>
 </div>
 <div class="section" id="elem-relem">
-<h1><tt class="docutils literal"><span class="pre">elem</span></tt>, <tt class="docutils literal"><span class="pre">relem</span></tt><a class="headerlink" href="#elem-relem" title="Permalink to this headline">¶</a></h1>
-<div class="section" id="id7">
-<h2><tt class="docutils literal"><span class="pre">T_STR</span></tt> <tt class="docutils literal"><span class="pre">-&gt;*</span></tt> <tt class="docutils literal"><span class="pre">T_STR</span></tt><a class="headerlink" href="#id7" title="Permalink to this headline">¶</a></h2>
-</div>
+<h2>elem, relem<a class="headerlink" href="#elem-relem" title="Permalink to this headline">¶</a></h2>
 <div class="section" id="t-seq-t">
-<h2><tt class="docutils literal"><span class="pre">T_SEQ</span></tt> <tt class="docutils literal"><span class="pre">-&gt;*</span></tt> <tt class="docutils literal"><span class="pre">T_???</span></tt><a class="headerlink" href="#t-seq-t" title="Permalink to this headline">¶</a></h2>
+<h3><tt class="docutils literal"><span class="pre">T_SEQ</span></tt> <tt class="docutils literal"><span class="pre">-&gt;*</span></tt> <tt class="docutils literal"><span class="pre">T_???</span></tt><a class="headerlink" href="#t-seq-t" title="Permalink to this headline">¶</a></h3>
 <p>For each element in the input sequence, which is popped, yield a stack
 with that element pushed on top.</p>
 <p>To zip contents of two top lists near TOS, do:</p>
@@ -264,24 +331,49 @@ on top.</p>
 </div>
 <p><tt class="docutils literal"><span class="pre">relem</span></tt> operates in the same fashion as <tt class="docutils literal"><span class="pre">elem</span></tt>, but backwards.</p>
 </div>
+<div class="section" id="id7">
+<h3><tt class="docutils literal"><span class="pre">T_STR</span></tt> <tt class="docutils literal"><span class="pre">-&gt;*</span></tt> <tt class="docutils literal"><span class="pre">T_STR</span></tt><a class="headerlink" href="#id7" title="Permalink to this headline">¶</a></h3>
+<p>The description at <tt class="docutils literal"><span class="pre">T_SEQ</span></tt> overload applies.  For strings, <tt class="docutils literal"><span class="pre">elem</span></tt>
+and <tt class="docutils literal"><span class="pre">relem</span></tt> yield individual characters of the string, again as
+strings:</p>
+<div class="highlight-python"><div class="highlight"><pre>$ dwgrep &#39;[&quot;foo&quot; elem]&#39;
+[f, o, o]
+</pre></div>
+</div>
+</div>
 </div>
 <div class="section" id="false-true">
-<h1><tt class="docutils literal"><span class="pre">false</span></tt>, <tt class="docutils literal"><span class="pre">true</span></tt><a class="headerlink" href="#false-true" title="Permalink to this headline">¶</a></h1>
+<h2>false, true<a class="headerlink" href="#false-true" title="Permalink to this headline">¶</a></h2>
 <p>&#64;bool</p>
 </div>
 <div class="section" id="length">
-<h1><tt class="docutils literal"><span class="pre">length</span></tt><a class="headerlink" href="#length" title="Permalink to this headline">¶</a></h1>
-<div class="section" id="t-str-t-const">
-<h2><tt class="docutils literal"><span class="pre">T_STR</span></tt> <tt class="docutils literal"><span class="pre">-&gt;</span></tt> <tt class="docutils literal"><span class="pre">T_CONST</span></tt><a class="headerlink" href="#t-str-t-const" title="Permalink to this headline">¶</a></h2>
-<p>Yields length of string on TOS.</p>
-</div>
+<h2>length<a class="headerlink" href="#length" title="Permalink to this headline">¶</a></h2>
 <div class="section" id="t-seq-t-const">
-<h2><tt class="docutils literal"><span class="pre">T_SEQ</span></tt> <tt class="docutils literal"><span class="pre">-&gt;</span></tt> <tt class="docutils literal"><span class="pre">T_CONST</span></tt><a class="headerlink" href="#t-seq-t-const" title="Permalink to this headline">¶</a></h2>
+<h3><tt class="docutils literal"><span class="pre">T_SEQ</span></tt> <tt class="docutils literal"><span class="pre">-&gt;</span></tt> <tt class="docutils literal"><span class="pre">T_CONST</span></tt><a class="headerlink" href="#t-seq-t-const" title="Permalink to this headline">¶</a></h3>
 <p>Yield number of elements of sequence on TOS.</p>
+<p>E.g. the following tests whether the DIE&#8217;s whose all attributes report
+the same form as their abbreviations suggest, comprises all DIE&#8217;s.
+This test comes from dwgrep&#8217;s test suite:</p>
+<div class="highlight-python"><div class="highlight"><pre>[entry ([abbrev attribute label] == [attribute label])] length
+== [entry] length
+</pre></div>
+</div>
+<p>(Note that this isn&#8217;t anything that should be universally true, though
+it typically will, and it is for the particular file that this test is
+run on.  Attributes for which their abbreviation suggests
+<tt class="docutils literal"><span class="pre">DW_FORM_indirect</span></tt> will themselves have a different form.)</p>
+</div>
+<div class="section" id="t-str-t-const">
+<h3><tt class="docutils literal"><span class="pre">T_STR</span></tt> <tt class="docutils literal"><span class="pre">-&gt;</span></tt> <tt class="docutils literal"><span class="pre">T_CONST</span></tt><a class="headerlink" href="#t-str-t-const" title="Permalink to this headline">¶</a></h3>
+<p>Yields length of string on TOS:</p>
+<div class="highlight-python"><div class="highlight"><pre>dwgrep &#39;&quot;foo&quot; length&#39;
+3
+</pre></div>
+</div>
 </div>
 </div>
 <div class="section" id="pos">
-<h1><tt class="docutils literal"><span class="pre">pos</span></tt><a class="headerlink" href="#pos" title="Permalink to this headline">¶</a></h1>
+<h2>pos<a class="headerlink" href="#pos" title="Permalink to this headline">¶</a></h2>
 <p>Each function numbers elements that it produces, and stores number of
 each element along with the element.  That number can be recalled by
 saying <tt class="docutils literal"><span class="pre">pos</span></tt>:</p>
@@ -311,14 +403,15 @@ let Len := length;
 absolute and relative position of a given element.</p>
 </div>
 <div class="section" id="type">
-<h1><tt class="docutils literal"><span class="pre">type</span></tt><a class="headerlink" href="#type" title="Permalink to this headline">¶</a></h1>
+<h2>type<a class="headerlink" href="#type" title="Permalink to this headline">¶</a></h2>
 <p>This produces a constant according to the type of value on TOS (such
 as T_CONST, T_DIE, T_STR, etc.).</p>
 </div>
 <div class="section" id="value">
-<h1><tt class="docutils literal"><span class="pre">value</span></tt><a class="headerlink" href="#value" title="Permalink to this headline">¶</a></h1>
+<h2>value<a class="headerlink" href="#value" title="Permalink to this headline">¶</a></h2>
 <div class="section" id="t-const-t-const">
-<h2><tt class="docutils literal"><span class="pre">T_CONST</span></tt> <tt class="docutils literal"><span class="pre">-&gt;</span></tt> <tt class="docutils literal"><span class="pre">T_CONST</span></tt><a class="headerlink" href="#t-const-t-const" title="Permalink to this headline">¶</a></h2>
+<h3><tt class="docutils literal"><span class="pre">T_CONST</span></tt> <tt class="docutils literal"><span class="pre">-&gt;</span></tt> <tt class="docutils literal"><span class="pre">T_CONST</span></tt><a class="headerlink" href="#t-const-t-const" title="Permalink to this headline">¶</a></h3>
+</div>
 </div>
 </div>
 
@@ -330,60 +423,62 @@ as T_CONST, T_DIE, T_STR, etc.).</p>
         <div class="sphinxsidebarwrapper">
   <h3><a href="index.html">Table Of Contents</a></h3>
   <ul>
-<li><a class="reference internal" href="#">Vocabulary reference</a></li>
-<li><a class="reference internal" href="#eq-ge-gt-le-lt-ne-eq-ge-gt-le-lt-ne"><tt class="docutils literal"><span class="pre">!=</span></tt>, <tt class="docutils literal"><span class="pre">!eq</span></tt>, <tt class="docutils literal"><span class="pre">!ge</span></tt>, <tt class="docutils literal"><span class="pre">!gt</span></tt>, <tt class="docutils literal"><span class="pre">!le</span></tt>, <tt class="docutils literal"><span class="pre">!lt</span></tt>, <tt class="docutils literal"><span class="pre">!ne</span></tt>, <tt class="docutils literal"><span class="pre">&lt;</span></tt>, <tt class="docutils literal"><span class="pre">&lt;=</span></tt>, <tt class="docutils literal"><span class="pre">==</span></tt>, <tt class="docutils literal"><span class="pre">&gt;</span></tt>, <tt class="docutils literal"><span class="pre">&gt;=</span></tt>, <tt class="docutils literal"><span class="pre">?eq</span></tt>, <tt class="docutils literal"><span class="pre">?ge</span></tt>, <tt class="docutils literal"><span class="pre">?gt</span></tt>, <tt class="docutils literal"><span class="pre">?le</span></tt>, <tt class="docutils literal"><span class="pre">?lt</span></tt>, <tt class="docutils literal"><span class="pre">?ne</span></tt></a></li>
-<li><a class="reference internal" href="#empty-empty"><tt class="docutils literal"><span class="pre">!empty</span></tt>, <tt class="docutils literal"><span class="pre">?empty</span></tt></a><ul>
-<li><a class="reference internal" href="#t-str"><tt class="docutils literal"><span class="pre">T_STR</span></tt></a></li>
+<li><a class="reference internal" href="#">Vocabulary reference</a><ul>
+<li><a class="reference internal" href="#eq-ge-gt-le-lt-ne-eq-ge-gt-le-lt-ne">!=, !eq, !ge, !gt, !le, !lt, !ne, &lt;, &lt;=, ==, &gt;, &gt;=, ?eq, ?ge, ?gt, ?le, ?lt, ?ne</a></li>
+<li><a class="reference internal" href="#empty-empty">!empty, ?empty</a><ul>
 <li><a class="reference internal" href="#t-seq"><tt class="docutils literal"><span class="pre">T_SEQ</span></tt></a></li>
+<li><a class="reference internal" href="#t-str"><tt class="docutils literal"><span class="pre">T_STR</span></tt></a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#ends-ends"><tt class="docutils literal"><span class="pre">!ends</span></tt>, <tt class="docutils literal"><span class="pre">?ends</span></tt></a><ul>
+<li><a class="reference internal" href="#ends-ends">!ends, ?ends</a><ul>
 <li><a class="reference internal" href="#t-str-t-str"><tt class="docutils literal"><span class="pre">T_STR</span></tt> <tt class="docutils literal"><span class="pre">T_STR</span></tt></a></li>
 <li><a class="reference internal" href="#t-seq-t-seq"><tt class="docutils literal"><span class="pre">T_SEQ</span></tt> <tt class="docutils literal"><span class="pre">T_SEQ</span></tt></a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#find-find"><tt class="docutils literal"><span class="pre">!find</span></tt>, <tt class="docutils literal"><span class="pre">?find</span></tt></a><ul>
+<li><a class="reference internal" href="#find-find">!find, ?find</a><ul>
 <li><a class="reference internal" href="#id1"><tt class="docutils literal"><span class="pre">T_STR</span></tt> <tt class="docutils literal"><span class="pre">T_STR</span></tt></a></li>
 <li><a class="reference internal" href="#id2"><tt class="docutils literal"><span class="pre">T_SEQ</span></tt> <tt class="docutils literal"><span class="pre">T_SEQ</span></tt></a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#match-match"><tt class="docutils literal"><span class="pre">!match</span></tt>, <tt class="docutils literal"><span class="pre">!~</span></tt>, <tt class="docutils literal"><span class="pre">=~</span></tt>, <tt class="docutils literal"><span class="pre">?match</span></tt></a><ul>
+<li><a class="reference internal" href="#match-match">!match, !~, =~, ?match</a><ul>
 <li><a class="reference internal" href="#id3"><tt class="docutils literal"><span class="pre">T_STR</span></tt> <tt class="docutils literal"><span class="pre">T_STR</span></tt></a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#starts-starts"><tt class="docutils literal"><span class="pre">!starts</span></tt>, <tt class="docutils literal"><span class="pre">?starts</span></tt></a><ul>
+<li><a class="reference internal" href="#starts-starts">!starts, ?starts</a><ul>
 <li><a class="reference internal" href="#id4"><tt class="docutils literal"><span class="pre">T_STR</span></tt> <tt class="docutils literal"><span class="pre">T_STR</span></tt></a></li>
 <li><a class="reference internal" href="#id5"><tt class="docutils literal"><span class="pre">T_SEQ</span></tt> <tt class="docutils literal"><span class="pre">T_SEQ</span></tt></a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#t-closure-t-const-t-seq-t-str"><tt class="docutils literal"><span class="pre">T_CLOSURE</span></tt>, <tt class="docutils literal"><span class="pre">T_CONST</span></tt>, <tt class="docutils literal"><span class="pre">T_SEQ</span></tt>, <tt class="docutils literal"><span class="pre">T_STR</span></tt></a></li>
-<li><a class="reference internal" href="#add"><tt class="docutils literal"><span class="pre">add</span></tt></a><ul>
+<li><a class="reference internal" href="#t-closure-t-const-t-seq-t-str">T_CLOSURE, T_CONST, T_SEQ, T_STR</a></li>
+<li><a class="reference internal" href="#add">add</a><ul>
+<li><a class="reference internal" href="#t-seq-t-seq-t-seq"><tt class="docutils literal"><span class="pre">T_SEQ</span></tt> <tt class="docutils literal"><span class="pre">T_SEQ</span></tt> <tt class="docutils literal"><span class="pre">-&gt;</span></tt> <tt class="docutils literal"><span class="pre">T_SEQ</span></tt></a></li>
 <li><a class="reference internal" href="#t-const-t-const-t-const"><tt class="docutils literal"><span class="pre">T_CONST</span></tt> <tt class="docutils literal"><span class="pre">T_CONST</span></tt> <tt class="docutils literal"><span class="pre">-&gt;?</span></tt> <tt class="docutils literal"><span class="pre">T_CONST</span></tt></a></li>
 <li><a class="reference internal" href="#t-str-t-str-t-str"><tt class="docutils literal"><span class="pre">T_STR</span></tt> <tt class="docutils literal"><span class="pre">T_STR</span></tt> <tt class="docutils literal"><span class="pre">-&gt;</span></tt> <tt class="docutils literal"><span class="pre">T_STR</span></tt></a></li>
-<li><a class="reference internal" href="#t-seq-t-seq-t-seq"><tt class="docutils literal"><span class="pre">T_SEQ</span></tt> <tt class="docutils literal"><span class="pre">T_SEQ</span></tt> <tt class="docutils literal"><span class="pre">-&gt;</span></tt> <tt class="docutils literal"><span class="pre">T_SEQ</span></tt></a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#bin-dec-hex-oct"><tt class="docutils literal"><span class="pre">bin</span></tt>, <tt class="docutils literal"><span class="pre">dec</span></tt>, <tt class="docutils literal"><span class="pre">hex</span></tt>, <tt class="docutils literal"><span class="pre">oct</span></tt></a></li>
-<li><a class="reference internal" href="#div-mod-mul-sub"><tt class="docutils literal"><span class="pre">div</span></tt>, <tt class="docutils literal"><span class="pre">mod</span></tt>, <tt class="docutils literal"><span class="pre">mul</span></tt>, <tt class="docutils literal"><span class="pre">sub</span></tt></a><ul>
+<li><a class="reference internal" href="#bin-dec-hex-oct">bin, dec, hex, oct</a></li>
+<li><a class="reference internal" href="#div-mod-mul-sub">div, mod, mul, sub</a><ul>
 <li><a class="reference internal" href="#id6"><tt class="docutils literal"><span class="pre">T_CONST</span></tt> <tt class="docutils literal"><span class="pre">T_CONST</span></tt> <tt class="docutils literal"><span class="pre">-&gt;?</span></tt> <tt class="docutils literal"><span class="pre">T_CONST</span></tt></a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#drop-dup-over-rot-swap"><tt class="docutils literal"><span class="pre">drop</span></tt>, <tt class="docutils literal"><span class="pre">dup</span></tt>, <tt class="docutils literal"><span class="pre">over</span></tt>, <tt class="docutils literal"><span class="pre">rot</span></tt>, <tt class="docutils literal"><span class="pre">swap</span></tt></a></li>
-<li><a class="reference internal" href="#elem-relem"><tt class="docutils literal"><span class="pre">elem</span></tt>, <tt class="docutils literal"><span class="pre">relem</span></tt></a><ul>
-<li><a class="reference internal" href="#id7"><tt class="docutils literal"><span class="pre">T_STR</span></tt> <tt class="docutils literal"><span class="pre">-&gt;*</span></tt> <tt class="docutils literal"><span class="pre">T_STR</span></tt></a></li>
+<li><a class="reference internal" href="#drop-dup-over-rot-swap">drop, dup, over, rot, swap</a></li>
+<li><a class="reference internal" href="#elem-relem">elem, relem</a><ul>
 <li><a class="reference internal" href="#t-seq-t"><tt class="docutils literal"><span class="pre">T_SEQ</span></tt> <tt class="docutils literal"><span class="pre">-&gt;*</span></tt> <tt class="docutils literal"><span class="pre">T_???</span></tt></a></li>
+<li><a class="reference internal" href="#id7"><tt class="docutils literal"><span class="pre">T_STR</span></tt> <tt class="docutils literal"><span class="pre">-&gt;*</span></tt> <tt class="docutils literal"><span class="pre">T_STR</span></tt></a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#false-true"><tt class="docutils literal"><span class="pre">false</span></tt>, <tt class="docutils literal"><span class="pre">true</span></tt></a></li>
-<li><a class="reference internal" href="#length"><tt class="docutils literal"><span class="pre">length</span></tt></a><ul>
-<li><a class="reference internal" href="#t-str-t-const"><tt class="docutils literal"><span class="pre">T_STR</span></tt> <tt class="docutils literal"><span class="pre">-&gt;</span></tt> <tt class="docutils literal"><span class="pre">T_CONST</span></tt></a></li>
+<li><a class="reference internal" href="#false-true">false, true</a></li>
+<li><a class="reference internal" href="#length">length</a><ul>
 <li><a class="reference internal" href="#t-seq-t-const"><tt class="docutils literal"><span class="pre">T_SEQ</span></tt> <tt class="docutils literal"><span class="pre">-&gt;</span></tt> <tt class="docutils literal"><span class="pre">T_CONST</span></tt></a></li>
+<li><a class="reference internal" href="#t-str-t-const"><tt class="docutils literal"><span class="pre">T_STR</span></tt> <tt class="docutils literal"><span class="pre">-&gt;</span></tt> <tt class="docutils literal"><span class="pre">T_CONST</span></tt></a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#pos"><tt class="docutils literal"><span class="pre">pos</span></tt></a></li>
-<li><a class="reference internal" href="#type"><tt class="docutils literal"><span class="pre">type</span></tt></a></li>
-<li><a class="reference internal" href="#value"><tt class="docutils literal"><span class="pre">value</span></tt></a><ul>
+<li><a class="reference internal" href="#pos">pos</a></li>
+<li><a class="reference internal" href="#type">type</a></li>
+<li><a class="reference internal" href="#value">value</a><ul>
 <li><a class="reference internal" href="#t-const-t-const"><tt class="docutils literal"><span class="pre">T_CONST</span></tt> <tt class="docutils literal"><span class="pre">-&gt;</span></tt> <tt class="docutils literal"><span class="pre">T_CONST</span></tt></a></li>
+</ul>
+</li>
 </ul>
 </li>
 </ul>
