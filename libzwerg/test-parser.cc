@@ -120,6 +120,9 @@ do_tests ()
   test ("017", "(CONST<017>)");
 
   test ("\"string\"", "(FORMAT (STR<string>))");
+  test ("\"ab\ncd\"", "(FORMAT (STR<ab\ncd>))");
+  test ("\"ab\\\ncd\"", "(FORMAT (STR<abcd>))");
+
   ftestx ("\"unterminated", "terminated");
   ftestx ("\x01", "0x01");
 

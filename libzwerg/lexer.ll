@@ -108,7 +108,7 @@ BIN [01]
 				   yyget_leng (yyscanner), 2, 16);
 }
 
-<STRING>"\\". {
+<STRING>"\\"(.|[\n]) {
   if (yylval->f->raw)
     {
       yylval->f->str += yyget_text (yyscanner)[0];
@@ -192,7 +192,7 @@ BIN [01]
   yylval->f->t.push_child (parse_subquery (*yyextra, "value"));
 }
 
-<STRING>. {
+<STRING>(.|[\n]) {
   yylval->f->str += *yyget_text (yyscanner);
 }
 
