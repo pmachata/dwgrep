@@ -325,6 +325,50 @@ be empty::
 )docstring";
 }
 
+
+// ?find
+
+extern char const g_find_docstring[] =
+R"docstring(
+
+``?find`` asserts that the value on top of stack is contained within
+the one below it.   This would be used e.g. like so::
+
+	(hay stack expression) ?("needle" ?find)
+
+This word is applicable to sequences as well as strings::
+
+	[hay stack] ?([needle] ?find)
+
+For example::
+
+	$ dwgrep '"foobar" "oba" ?find'
+	---
+	oba
+	foobar
+
+To determine whether a sequence (or a string) contains a particular
+element, you would use the following construct instead::
+
+	[that sequence] (elem == something)
+
+E.g.::
+
+	[child @AT_name] ?(elem == "foo")
+	[child] ?(elem @AT_name == "foo")
+
+To filter only those elements that match, you could do the following::
+
+	[child] [|L| L elem ?(@AT_name == "foo")]
+
+The above is suitable if the origin of the sequence is out of your
+control.  It is of course preferable to write this sort of thing
+directly, if possible::
+
+	[child ?(@AT_name == "foo")]
+
+)docstring";
+
 pred_result
 pred_find_seq::result (value_seq &haystack, value_seq &needle)
 {
@@ -343,34 +387,32 @@ pred_find_seq::result (value_seq &haystack, value_seq &needle)
 std::string
 pred_find_seq::docstring ()
 {
-return R"docstring(
+  return g_find_docstring;
+}
 
-(A B ?find) asserts that the sequence A contains sub-sequence B
-(e.g. ``[hay stack] ?([needle] ?find)``).
 
-To determine whether a sequence contains a particular element, you
-would use the following construct::
+// ?starts
 
-	[that sequence] (elem == something)
+extern char const g_starts_docstring[] =
+R"docstring(
 
-E.g.::
+The word ``?start`` asserts that the value on TOS forms a prefix of
+the value below it.  This would be used e.g. like so::
 
-	[child @AT_name] ?(elem == "foo")
-	[child] ?(elem @AT_name == "foo")
+	(hay stack expression) ?("needle" ?starts)
 
-To filter only those elements that match, you could do the\
-following::
+This word is applicable to sequences as well as strings::
 
-	[child] [|L| L elem ?(@AT_name == "foo")]
+	[hay stack] ?([needle] ?starts)
 
-The above is suitable for a function that takes a list on input
-and wants to filter it.  It is of course preferable to write this
-sort of thing directly, if possible::
+For example::
 
-	[child ?(@AT_name == "foo")]
+	$ dwgrep '"foobar" "foo" ?starts'
+	---
+	foo
+	foobar
 
 )docstring";
-}
 
 pred_result
 pred_starts_seq::result (value_seq &haystack, value_seq &needle)
@@ -391,13 +433,32 @@ pred_starts_seq::result (value_seq &haystack, value_seq &needle)
 std::string
 pred_starts_seq::docstring ()
 {
-  return R"docstring(
+  return g_starts_docstring;
+}
 
-``(A B ?starts)`` asserts that the sequence A starts with sub-sequence
-B (e.g. ``[hay stack] ?([needle] ?starts)``).
+
+// ?ends
+
+extern char const g_ends_docstring[] =
+R"docstring(
+
+The word ``?ends`` asserts that the value on TOS forms a suffix of the
+value below it.  This would be used e.g. like so::
+
+	(hay stack expression) ?("needle" ?ends)
+
+This word is applicable to sequences as well as strings::
+
+	[hay stack] ?([needle] ?ends)
+
+For example::
+
+	$ dwgrep '"foobar" "bar" ?ends'
+	---
+	bar
+	foobar
 
 )docstring";
-}
 
 pred_result
 pred_ends_seq::result (value_seq &haystack, value_seq &needle)
@@ -418,10 +479,5 @@ pred_ends_seq::result (value_seq &haystack, value_seq &needle)
 std::string
 pred_ends_seq::docstring ()
 {
-  return R"docstring(
-
-``(A B ?ends)`` asserts that the sequence A ends with sub-sequence
-B (e.g. ``[hay stack] ?([needle] ?ends)``).
-
-)docstring";
+  return g_ends_docstring;
 }

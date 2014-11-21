@@ -233,6 +233,9 @@ This predicate holds if the string on TOS is empty::
 
 
 // ?find
+
+extern char const g_find_docstring[];
+
 pred_result
 pred_find_str::result (value_str &haystack, value_str &needle)
 {
@@ -243,14 +246,14 @@ pred_find_str::result (value_str &haystack, value_str &needle)
 std::string
 pred_find_str::docstring ()
 {
-  return
-R"docstring(
-
-)docstring";
+  return g_find_docstring;
 }
 
 
 // ?starts
+
+extern char const g_starts_docstring[];
+
 pred_result
 pred_starts_str::result (value_str &haystack, value_str &needle)
 {
@@ -264,14 +267,14 @@ pred_starts_str::result (value_str &haystack, value_str &needle)
 std::string
 pred_starts_str::docstring ()
 {
-  return
-R"docstring(
-
-)docstring";
+  return g_starts_docstring;
 }
 
 
 // ?ends
+
+extern char const g_ends_docstring[];
+
 pred_result
 pred_ends_str::result (value_str &haystack, value_str &needle)
 {
@@ -285,14 +288,12 @@ pred_ends_str::result (value_str &haystack, value_str &needle)
 std::string
 pred_ends_str::docstring ()
 {
-  return
-R"docstring(
-
-)docstring";
+  return g_ends_docstring;
 }
 
 
 // ?match
+
 pred_result
 pred_match_str::result (value_str &haystack, value_str &needle)
 {
@@ -331,6 +332,20 @@ pred_match_str::docstring ()
 {
   return
 R"docstring(
+
+This asserts that TOS (which is a string with a regular expression)
+matches the string below TOS.  The whole string has to match.  If you
+want to look for matches anywhere in the string, just surround your
+expression with ``.*``'s::
+
+	"haystack" ?(".*needle.*" ?match)
+
+For example::
+
+	$ dwgrep '"foobar" "f.*r" ?match'
+	---
+	f.*r
+	foobar
 
 )docstring";
 }

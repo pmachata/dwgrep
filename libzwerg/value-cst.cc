@@ -69,11 +69,33 @@ value_cst::cmp (value const &that) const
     return cmp_result::fail;
 }
 
+
+// value
+
 value_cst
 op_value_cst::operate (std::unique_ptr <value_cst> a)
 {
   return {constant {a->get_constant ().value (), &dec_constant_dom}, 0};
 }
+
+std::string
+op_value_cst::docstring ()
+{
+  return
+R"docstring(
+
+Returns underlying value of the constant, with plain domain.  For
+example::
+
+	$ dwgrep 'DW_FORM_flag value'
+	12
+
+	$ dwgrep '0xc value'
+	12
+
+)docstring";
+}
+
 
 namespace
 {

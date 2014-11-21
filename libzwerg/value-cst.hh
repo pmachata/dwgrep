@@ -62,6 +62,8 @@ struct op_value_cst
   using op_once_overload::op_once_overload;
 
   value_cst operate (std::unique_ptr <value_cst> a) override;
+
+  static std::string docstring ();
 };
 
 
