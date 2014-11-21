@@ -156,13 +156,6 @@
      Returns underlying value of the constant, with plain domain.
      : DW_FORM_flag value	# gives 12
 
-*** •add, sub, mul, div, mod :: ?T_CONST ?T_CONST -> ?T_CONST
-     Two elements are popped: A and B, with B the original TOS, and "A
-     op B" is pushed again.
-
-     division and modulo by zero produce an error message and abort
-     current computation.
-
 ***  int32_t, uint32_t, int64_t, uint64_t :: ?T_CONST -> ?T_CONST
      The idea behind uint32_t et.al. is that a two-complement
      representation of a given constant is taken, if necessary, it's
@@ -252,11 +245,7 @@
     type T_STR).  The prototypes are as if T_SEQ was replaced with
     T_STR.
 
-*** •add (as T_SEQ)
-*** •elem (as T_SEQ)
-*** •relem (as T_SEQ)
 *** •length (as T_SEQ)
-*** •?empty (as T_SEQ)
 *** •?find (as T_SEQ)
 *** •?starts (as T_SEQ)
 *** •?ends (as T_SEQ)

@@ -74,6 +74,7 @@ struct op_add_cst
 
   std::unique_ptr <value_cst> operate (std::unique_ptr <value_cst> a,
 				       std::unique_ptr <value_cst> b) override;
+  static std::string docstring ();
 };
 
 struct op_sub_cst
@@ -83,6 +84,7 @@ struct op_sub_cst
 
   std::unique_ptr <value_cst> operate (std::unique_ptr <value_cst> a,
 				       std::unique_ptr <value_cst> b) override;
+  static std::string docstring ();
 };
 
 struct op_mul_cst
@@ -92,6 +94,7 @@ struct op_mul_cst
 
   std::unique_ptr <value_cst> operate (std::unique_ptr <value_cst> a,
 				       std::unique_ptr <value_cst> b) override;
+  static std::string docstring ();
 };
 
 struct op_div_cst
@@ -101,6 +104,7 @@ struct op_div_cst
 
   std::unique_ptr <value_cst> operate (std::unique_ptr <value_cst> a,
 				       std::unique_ptr <value_cst> b) override;
+  static std::string docstring ();
 };
 
 struct op_mod_cst
@@ -110,6 +114,7 @@ struct op_mod_cst
 
   std::unique_ptr <value_cst> operate (std::unique_ptr <value_cst> a,
 				       std::unique_ptr <value_cst> b) override;
+  static std::string docstring ();
 };
 
 #endif /* _VALUE_CST_H_ */

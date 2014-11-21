@@ -57,12 +57,33 @@ value_str::cmp (value const &that) const
     return cmp_result::fail;
 }
 
+
 value_str
 op_add_str::operate (std::unique_ptr <value_str> a,
 		     std::unique_ptr <value_str> b)
 {
   return value_str {a->get_string () + b->get_string (), 0};
 }
+
+std::string
+op_add_str::docstring ()
+{
+  return
+R"docstring(
+
+``add`` concatenates two strings on TOS and yields the resulting string::
+
+	$ dwgrep '"foo" "bar" add'
+	foobar
+
+Using formatting strings may be a better way to concatenate strings::
+
+	$ dwgrep '"foo" "bar" "baz" "%s%s%s"'
+	foobarbaz
+
+)docstring";
+}
+
 
 value_cst
 op_length_str::operate (std::unique_ptr <value_str> a)
@@ -74,7 +95,15 @@ op_length_str::operate (std::unique_ptr <value_str> a)
 std::string
 op_length_str::docstring ()
 {
-  return "Yields length of string on TOS.";
+  return
+R"docstring(
+
+Yields length of string on TOS::
+
+	dwgrep '"foo" length'
+	3
+
+)docstring";
 }
 
 
@@ -135,24 +164,75 @@ namespace
   };
 }
 
+namespace
+{
+  char const *const elem_str_docstring =
+R"docstring(
+
+The description at ``T_SEQ`` overload applies.  For strings, ``elem``
+and ``relem`` yield individual characters of the string, again as
+strings::
+
+	$ dwgrep '["foo" elem]'
+	[f, o, o]
+
+)docstring";
+}
+
+// elem
 std::unique_ptr <value_producer <value_str>>
 op_elem_str::operate (std::unique_ptr <value_str> a)
 {
   return std::make_unique <str_elem_producer> (std::move (a));
 }
 
+std::string
+op_elem_str::docstring ()
+{
+  return elem_str_docstring;
+}
+
+
+// relem
 std::unique_ptr <value_producer <value_str>>
 op_relem_str::operate (std::unique_ptr <value_str> a)
 {
   return std::make_unique <str_relem_producer> (std::move (a));
 }
 
+std::string
+op_relem_str::docstring ()
+{
+  return elem_str_docstring;
+}
+
+
+// ?empty
 pred_result
 pred_empty_str::result (value_str &a)
 {
   return pred_result (a.get_string () == "");
 }
 
+std::string
+pred_empty_str::docstring ()
+{
+  return
+R"docstring(
+
+This predicate holds if the string on TOS is empty::
+
+	$ dwgrep '"" ?empty ">%s< is empty"'
+	>< is empty
+
+	$ dwgrep '"\x00" !empty ">%s< is not empty"'
+	>< is not empty
+
+)docstring";
+}
+
+
+// ?find
 pred_result
 pred_find_str::result (value_str &haystack, value_str &needle)
 {
@@ -160,6 +240,17 @@ pred_find_str::result (value_str &haystack, value_str &needle)
 		      != std::string::npos);
 }
 
+std::string
+pred_find_str::docstring ()
+{
+  return
+R"docstring(
+
+)docstring";
+}
+
+
+// ?starts
 pred_result
 pred_starts_str::result (value_str &haystack, value_str &needle)
 {
@@ -170,6 +261,17 @@ pred_starts_str::result (value_str &haystack, value_str &needle)
      && hay.compare (0, need.size (), need) == 0);
 }
 
+std::string
+pred_starts_str::docstring ()
+{
+  return
+R"docstring(
+
+)docstring";
+}
+
+
+// ?ends
 pred_result
 pred_ends_str::result (value_str &haystack, value_str &needle)
 {
@@ -180,6 +282,17 @@ pred_ends_str::result (value_str &haystack, value_str &needle)
      && hay.compare (hay.size () - need.size (), need.size (), need) == 0);
 }
 
+std::string
+pred_ends_str::docstring ()
+{
+  return
+R"docstring(
+
+)docstring";
+}
+
+
+// ?match
 pred_result
 pred_match_str::result (value_str &haystack, value_str &needle)
 {
@@ -211,4 +324,13 @@ pred_match_str::result (value_str &haystack, value_str &needle)
 
   regfree (&re);
   return retval;
+}
+
+std::string
+pred_match_str::docstring ()
+{
+  return
+R"docstring(
+
+)docstring";
 }

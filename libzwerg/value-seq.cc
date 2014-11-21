@@ -145,7 +145,16 @@ op_add_seq::docstring ()
 {
   return R"docstring(
 
-Concatenate two sequences and yield the resulting sequence.
+Concatenate two sequences and yield the resulting sequence::
+
+	$ dwgrep '[1, 2, 3] [4, 5, 6] add'
+	[1, 2, 3, 4, 5, 6]
+
+Using sub-expression capture may be a more flexible alternative to
+using ``add``::
+
+	$ dwgrep '[1, 2, 3] [4, 5, 6] [7, 8, 9] [|A B C| (A, B, C) elem]'
+	[1, 2, 3, 4, 5, 6, 7, 8, 9]
 
 )docstring";
 }
@@ -159,9 +168,22 @@ op_length_seq::operate (std::unique_ptr <value_seq> a)
 std::string
 op_length_seq::docstring ()
 {
-  return R"docstring(
+  return
+R"docstring(
 
 Yield number of elements of sequence on TOS.
+
+E.g. the following tests whether the DIE's whose all attributes report
+the same form as their abbreviations suggest, comprises all DIE's.
+This test comes from dwgrep's test suite::
+
+	[entry ([abbrev attribute label] == [attribute label])] length
+	== [entry] length
+
+(Note that this isn't anything that should be universally true, though
+it typically will, and it is for the particular file that this test is
+run on.  Attributes for which their abbreviation suggests
+``DW_FORM_indirect`` will themselves have a different form.)
 
 )docstring";
 }
@@ -288,7 +310,19 @@ pred_empty_seq::result (value_seq &a)
 std::string
 pred_empty_seq::docstring ()
 {
-  return "Asserts whether a sequence on TOS is empty.";
+return R"docstring(
+
+Asserts that a sequence on TOS is empty.  This predicate holds for
+both empty sequence literals as well as sequences that just happen to
+be empty::
+
+	$ dwgrep '[] ?empty'
+	[]
+
+	$ dwgrep 'dwgrep '[(1, 2, 3) (== 0)] ?empty'
+	[]
+
+)docstring";
 }
 
 pred_result

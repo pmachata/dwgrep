@@ -316,7 +316,7 @@ overloaded_builtin::docstring () const
 	else
 	  sss << " ``-> ???``";
 
-	underline (sss, '-');
+	underline (sss, '.');
 	ss << sss.str ();
       }
 

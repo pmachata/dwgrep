@@ -99,6 +99,30 @@ namespace
 	return nullptr;
       }
   }
+
+  char const *const arith_docstring =
+R"docstring(
+
+Zwerg contains a suite of basic operators for integer arithmetic:
+``add``, ``sub``, ``mul``, ``div`` and ``mod``.  Two elements are
+popped: A and B, with B the original TOS, and ``A OP B`` is pushed
+again.  *OP* is an operation suggested by the operator name.
+
+Integers in Zwerg are 64-bit signed or unsigned quantities.  A value
+of type ``T_CONST`` can hold either signed or unsigned number.  Which
+it is is decided automatically.  Arithmetic operators handle these
+cases transparently.
+
+Overflows and division and modulo by zero produce an error message and
+abort current computation, which is the reason this operation is
+denoted with ``->?`` relation::
+
+	$ dwgrep '5 (2, 0, 3) div'
+	2
+	Error: division by zero occured when computing 5/0
+	1
+
+)docstring";
 }
 
 std::unique_ptr <value_cst>
@@ -115,6 +139,13 @@ op_add_cst::operate (std::unique_ptr <value_cst> a,
      });
 }
 
+std::string
+op_add_cst::docstring ()
+{
+  return arith_docstring;
+}
+
+
 std::unique_ptr <value_cst>
 op_sub_cst::operate (std::unique_ptr <value_cst> a,
 		     std::unique_ptr <value_cst> b)
@@ -128,6 +159,13 @@ op_sub_cst::operate (std::unique_ptr <value_cst> a,
        return std::make_unique <value_cst> (r, 0);
      });
 }
+
+std::string
+op_sub_cst::docstring ()
+{
+  return arith_docstring;
+}
+
 
 std::unique_ptr <value_cst>
 op_mul_cst::operate (std::unique_ptr <value_cst> a,
@@ -143,6 +181,13 @@ op_mul_cst::operate (std::unique_ptr <value_cst> a,
      });
 }
 
+std::string
+op_mul_cst::docstring ()
+{
+  return arith_docstring;
+}
+
+
 std::unique_ptr <value_cst>
 op_div_cst::operate (std::unique_ptr <value_cst> a,
 		     std::unique_ptr <value_cst> b)
@@ -157,6 +202,13 @@ op_div_cst::operate (std::unique_ptr <value_cst> a,
      });
 }
 
+std::string
+op_div_cst::docstring ()
+{
+  return arith_docstring;
+}
+
+
 std::unique_ptr <value_cst>
 op_mod_cst::operate (std::unique_ptr <value_cst> a,
 		     std::unique_ptr <value_cst> b)
@@ -169,4 +221,10 @@ op_mod_cst::operate (std::unique_ptr <value_cst> a,
        constant r {cst_a.value () % cst_b.value (), d};
        return std::make_unique <value_cst> (r, 0);
      });
+}
+
+std::string
+op_mod_cst::docstring ()
+{
+  return arith_docstring;
 }

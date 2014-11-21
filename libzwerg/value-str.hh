@@ -64,6 +64,8 @@ struct op_add_str
 
   value_str operate (std::unique_ptr <value_str> a,
 		     std::unique_ptr <value_str> b) override;
+
+  static std::string docstring ();
 };
 
 struct op_length_str
@@ -83,6 +85,8 @@ struct op_elem_str
 
   std::unique_ptr <value_producer <value_str>>
   operate (std::unique_ptr <value_str> a) override;
+
+  static std::string docstring ();
 };
 
 struct op_relem_str
@@ -92,6 +96,8 @@ struct op_relem_str
 
   std::unique_ptr <value_producer <value_str>>
   operate (std::unique_ptr <value_str> a) override;
+
+  static std::string docstring ();
 };
 
 struct pred_empty_str
@@ -99,6 +105,8 @@ struct pred_empty_str
 {
   using pred_overload::pred_overload;
   pred_result result (value_str &a) override;
+
+  static std::string docstring ();
 };
 
 struct pred_find_str
@@ -106,6 +114,8 @@ struct pred_find_str
 {
   using pred_overload::pred_overload;
   pred_result result (value_str &haystack, value_str &needle) override;
+
+  static std::string docstring ();
 };
 
 struct pred_starts_str
@@ -113,6 +123,8 @@ struct pred_starts_str
 {
   using pred_overload::pred_overload;
   pred_result result (value_str &haystack, value_str &needle) override;
+
+  static std::string docstring ();
 };
 
 struct pred_ends_str
@@ -120,6 +132,8 @@ struct pred_ends_str
 {
   using pred_overload::pred_overload;
   pred_result result (value_str &haystack, value_str &needle) override;
+
+  static std::string docstring ();
 };
 
 struct pred_match_str
@@ -127,6 +141,8 @@ struct pred_match_str
 {
   using pred_overload::pred_overload;
   pred_result result (value_str &haystack, value_str &needle) override;
+
+  static std::string docstring ();
 };
 
 #endif /* _VALUE_STR_H_ */

@@ -78,7 +78,7 @@ main (int argc, char const **argv)
 	  seen = true;
 	  ss << "``" << n << "``";
 	}
-      underline (ss, '=');
+      underline (ss, '-');
       std::cout << ss.str () << "\n"
 		<< bi.second << "\n\n";
     }
