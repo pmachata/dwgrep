@@ -28,6 +28,7 @@ ADD_LIBRARY (LibzwergCore OBJECT
   builtin-shf.cc
   builtin.cc
   constant.cc
+  docstring.cc
   init.cc
   int.cc
   op.cc

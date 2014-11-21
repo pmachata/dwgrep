@@ -26,14 +26,12 @@
    the GNU Lesser General Public License along with this program.  If
    not, see <http://www.gnu.org/licenses/>.  */
 
-#include <iostream>
-#include <iomanip>
 #include <memory>
 #include <algorithm>
-#include <sstream>
 #include <iterator>
 
 #include "overload.hh"
+#include "docstring.hh"
 
 overload_instance::overload_instance
 	(std::vector <std::tuple <selector,
@@ -259,88 +257,16 @@ namespace
   };
 }
 
-void
-underline (std::stringstream &ss, char c)
-{
-  size_t n = ss.str ().length ();
-  ss << "\n" << std::setw (n + 1) << std::setfill (c) << "\n";
-}
-
 std::string
 overloaded_builtin::docstring () const
 {
-  std::stringstream ss;
-  for (auto const &ovl: m_ovl_tab->get_overloads ())
-    {
-      auto const &bi = std::get <1> (ovl);
-      auto const &pm = bi->protomap ();
+  std::vector <std::pair <std::string, std::string>> entries;
 
-      {
-	std::stringstream sss;
-	auto vts = std::get <0> (ovl).get_types ();
-	for (auto itb = vts.begin (), ite = vts.end (), it = itb;
-	     it != ite; ++it)
-	  {
-	    if (it != itb)
-	      sss << " ";
-	    sss << "``" << *it << "``";
-	  }
+  auto const &ovls = m_ovl_tab->get_overloads ();
+  std::transform (ovls.begin (), ovls.end (), std::back_inserter (entries),
+		  format_overload);
 
-	// OVL now refers to an individual overload.  It ought to
-	// contain at most one prototype.  It might contain none if
-	// the prototype isn't or for whatever reason can't be
-	// declared.
-	assert (pm.size () <= 1);
-
-	if (! pm.empty ())
-	  {
-	    auto const &pm0 = pm[0];
-	    switch (std::get <1> (pm0))
-	      {
-	      case yield::many:
-		sss << " ``->*``";
-		break;
-	      case yield::once:
-		sss << " ``->``";
-		break;
-	      case yield::maybe:
-		sss << " ``->?``";
-		break;
-	      case yield::pred:
-		break;
-	      }
-
-	    for (auto const &vt: std::get <2> (pm0))
-	      sss << " ``" << vt << "``";
-	  }
-	else
-	  sss << " ``-> ???``";
-
-	underline (sss, '.');
-	ss << sss.str ();
-      }
-
-      auto doc = bi->docstring ();
-
-      // Trim new-lines at the beginning, because the docstrings may
-      // include these to make it clear where the raw-string header
-      // ends and actual documentation begins.  We don't trim spaces
-      // though, those are significant.
-      std::string::size_type fst = doc.find_first_not_of ("\n", 0);
-      if (fst == std::string::npos)
-	doc = "";
-      else
-	{
-	  // And the same at the end.
-	  auto lst = doc.find_last_not_of ("\n");
-	  assert (lst != std::string::npos);
-	  doc = doc.substr (fst, lst - fst + 1);
-	}
-
-      ss << doc << "\n\n";
-    }
-
-  return ss.str ();
+  return format_entry_map (doc_deduplicate (entries), '.');
 }
 
 std::shared_ptr <op>

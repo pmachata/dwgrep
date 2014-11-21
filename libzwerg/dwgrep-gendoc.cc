@@ -27,12 +27,12 @@
    not, see <http://www.gnu.org/licenses/>.  */
 
 #include <iostream>
-#include <iomanip>
-#include <sstream>
+#include <algorithm>
 
 #include "builtin.hh"
 #include "init.hh"
 #include "builtin-dw.hh"
+#include "docstring.hh"
 
 void underline (std::stringstream &ss, char c);
 
@@ -43,43 +43,37 @@ main (int argc, char const **argv)
     "Vocabulary reference\n"
     "====================\n\n";
 
-  std::map <std::vector <std::string>, std::string> bis;
 
-  {
-    // A map from descriptions to operators that fit that description.
-    // Typically this will be useful for pairing ?X to its matching !X
-    // without really relying on the naming too much.
-    std::map <std::string, std::vector <std::string>> ds;
+  std::vector <std::pair <std::string, std::string>> entries;
 
-    auto voc = dwgrep_vocabulary_core ();
-    for (auto const &bi: voc->get_builtins ())
-      {
-	auto doc = bi.second->docstring ();
-	if (doc != "@hide")
-	  ds[doc].push_back (bi.first);
-      }
+  auto bis = dwgrep_vocabulary_core ()->get_builtins ();
+  std::transform (bis.begin (), bis.end (), std::back_inserter (entries),
+		  [] (std::pair <std::string,
+				 std::shared_ptr <builtin const>> const &bi)
+		  {
+		    return std::make_pair (bi.first, bi.second->docstring ());
+		  });
 
-    while (! ds.empty ())
-      {
-	bis.insert (std::make_pair (std::move (ds.begin ()->second),
-				    std::move (ds.begin ()->first)));
-	ds.erase (ds.begin ());
-      }
-  }
+  entries.erase
+    (std::remove_if (entries.begin (), entries.end (),
+		     [] (std::pair <std::string, std::string> const &p)
+		     {
+		       return p.second == "@hide";
+		     }),
+     entries.end ());
 
-  for (auto const &bi: bis)
-    {
-      std::stringstream ss;
-      bool seen = false;
-      for (auto const &n: bi.first)
-	{
-	  if (seen)
-	    ss << ", ";
-	  seen = true;
-	  ss << "``" << n << "``";
-	}
-      underline (ss, '-');
-      std::cout << ss.str () << "\n"
-		<< bi.second << "\n\n";
-    }
+  auto dentries = doc_deduplicate (entries);
+
+  for (auto &dentry: dentries)
+    std::sort (dentry.first.begin (), dentry.first.end ());
+
+  std::sort (dentries.begin (), dentries.end (),
+	     [] (std::pair <std::vector <std::string>, std::string> const &p1,
+		 std::pair <std::vector <std::string>, std::string> const &p2)
+	     {
+	       return p1.first < p2.first;
+	     });
+
+  std::cout << format_entry_map (dentries, '-');
+
 }
