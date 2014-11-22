@@ -23,7 +23,10 @@
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <link rel="top" title="dwgrep 0.1 documentation" href="index.html" /> 
+    <link rel="top" title="dwgrep 0.1 documentation" href="index.html" />
+    <link rel="up" title="Table of contents" href="fulltoc.html" />
+    <link rel="next" title="Core vocabulary" href="vocabulary-core.html" />
+    <link rel="prev" title="Tutorial" href="tutorial.html" /> 
   </head>
   <body>
     <div class="related">
@@ -32,7 +35,14 @@
         <li class="right" style="margin-right: 10px">
           <a href="genindex.html" title="General Index"
              accesskey="I">index</a></li>
-        <li><a href="index.html">dwgrep 0.1 documentation</a> &raquo;</li> 
+        <li class="right" >
+          <a href="vocabulary-core.html" title="Core vocabulary"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="tutorial.html" title="Tutorial"
+             accesskey="P">previous</a> |</li>
+        <li><a href="index.html">dwgrep 0.1 documentation</a> &raquo;</li>
+          <li><a href="fulltoc.html" accesskey="U">Table of contents</a> &raquo;</li> 
       </ul>
     </div>  
 
@@ -605,6 +615,9 @@ parenthesize it:</p>
 1
 </pre></div>
 </div>
+</div>
+<div class="section" id="capture-with-binding-a">
+<h2>Capture with binding (<tt class="docutils literal"><span class="pre">[|A|…]</span></tt>)<a class="headerlink" href="#capture-with-binding-a" title="Permalink to this headline">¶</a></h2>
 <p>Form:</p>
 <div class="highlight-python"><div class="highlight"><pre>“[” “|” ID₁ ID₂ … “|” EXPR₁ “]”
 </pre></div>
@@ -773,7 +786,7 @@ for each branch).</p>
 )
 </pre></div>
 </div>
-<p>In particular, note that following unintuitive example:</p>
+<p>In particular, note that following surprising example:</p>
 <div class="highlight-python"><div class="highlight"><pre>$ dwgrep &#39;if false then &quot;yes&quot; else &quot;no&quot;&#39;        # WARNING!
 yes
 </pre></div>
@@ -810,6 +823,7 @@ on top.  This is how Booleans should be tested in Zwerg:</p>
 <li><a class="reference internal" href="#iteration">Iteration (<tt class="docutils literal"><span class="pre">*</span></tt>)</a></li>
 <li><a class="reference internal" href="#formatting-strings">Formatting strings</a></li>
 <li><a class="reference internal" href="#sequence-capture">Sequence capture (<tt class="docutils literal"><span class="pre">[]</span></tt>)</a></li>
+<li><a class="reference internal" href="#capture-with-binding-a">Capture with binding (<tt class="docutils literal"><span class="pre">[|A|…]</span></tt>)</a></li>
 <li><a class="reference internal" href="#name-binding-let">Name binding (<tt class="docutils literal"><span class="pre">let</span></tt>)</a></li>
 <li><a class="reference internal" href="#sub-expression-assertions">Sub-expression assertions (<tt class="docutils literal"><span class="pre">?()</span></tt>, <tt class="docutils literal"><span class="pre">!()</span></tt>)</a></li>
 <li><a class="reference internal" href="#conditionals-if-then-else">Conditionals (<tt class="docutils literal"><span class="pre">if-then-else</span></tt>)</a></li>
@@ -817,6 +831,12 @@ on top.  This is how Booleans should be tested in Zwerg:</p>
 </li>
 </ul>
 
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="tutorial.html"
+                        title="previous chapter">Tutorial</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="vocabulary-core.html"
+                        title="next chapter">Core vocabulary</a></p>
   <h3>This Page</h3>
   <ul class="this-page-menu">
     <li><a href="_sources/syntax.txt"
@@ -845,7 +865,14 @@ on top.  This is how Booleans should be tested in Zwerg:</p>
         <li class="right" style="margin-right: 10px">
           <a href="genindex.html" title="General Index"
              >index</a></li>
-        <li><a href="index.html">dwgrep 0.1 documentation</a> &raquo;</li> 
+        <li class="right" >
+          <a href="vocabulary-core.html" title="Core vocabulary"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="tutorial.html" title="Tutorial"
+             >previous</a> |</li>
+        <li><a href="index.html">dwgrep 0.1 documentation</a> &raquo;</li>
+          <li><a href="fulltoc.html" >Table of contents</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">

@@ -8,4 +8,5 @@ Table of contents
 
    tutorial
    syntax
-   vocabulary
+   vocabulary-core
+   vocabulary-dwarf

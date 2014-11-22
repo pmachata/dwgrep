@@ -3,13 +3,14 @@
 Welcome to dwgrep's documentation!
 ==================================
 
-- :ref:`tutorial`
+.. toctree::
+   :maxdepth: 1
 
-- :ref:`syntax`
-
-- :ref:`vocabulary`
-
-For complete table of contents, see :ref:`fulltoc`.
+   tutorial
+   syntax
+   vocabulary-core
+   vocabulary-dwarf
+   fulltoc
 
 
 Introduction

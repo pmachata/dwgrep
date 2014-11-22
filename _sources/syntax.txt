@@ -590,6 +590,10 @@ parenthesize it::
 	[1]
 	1
 
+
+Capture with binding (``[|A|…]``)
+---------------------------------
+
 Form::
 
 	“[” “|” ID₁ ID₂ … “|” EXPR₁ “]”
@@ -761,7 +765,7 @@ As an example, consider the following snippet from a script::
 	  ?DW_TAG_variable
 	)
 
-In particular, note that following unintuitive example::
+In particular, note that following surprising example::
 
 	$ dwgrep 'if false then "yes" else "no"'	# WARNING!
 	yes
