@@ -20,7 +20,12 @@ ADD_CUSTOM_TARGET (doc-html ALL
     COMMENT "Building HTML documentation")
 
 ADD_CUSTOM_TARGET (GenerateDocs ALL
-  ../libzwerg/dwgrep-gendoc > vocabulary.rst
+  COMMAND ../libzwerg/dwgrep-gendoc
+	zw_vocabulary_core "Core vocabulary" > vocabulary-core.rst
+
+  COMMAND   ../libzwerg/dwgrep-gendoc
+	zw_vocabulary_dwarf "Dwarf vocabulary" > vocabulary-dwarf.rst
+
   DEPENDS ../libzwerg/dwgrep-gendoc
   COMMENT "Building vocabulary reference")
 
