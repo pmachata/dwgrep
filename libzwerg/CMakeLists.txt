@@ -122,5 +122,6 @@ ENDIF ()
 
 IF (SPHINX_EXECUTABLE)
   ADD_EXECUTABLE (dwgrep-gendoc dwgrep-gendoc.cc ${LibzwergAll})
-  TARGET_LINK_LIBRARIES (dwgrep-gendoc ${LIBELF_LIBRARY} ${DWARF_LIBRARIES})
+  TARGET_LINK_LIBRARIES (dwgrep-gendoc
+    ${LIBELF_LIBRARY} ${DWARF_LIBRARIES} -ldl)
 ENDIF ()

@@ -25,7 +25,7 @@
   the GNU Lesser General Public License along with this program.  If
   not, see <http://www.gnu.org/licenses/>.  */
 
-#include "libzwerg.h"
+#include "libzwergP.hh"
 
 #include <string>
 #include <iostream>
@@ -39,40 +39,6 @@
 #include "stack.hh"
 #include "tree.hh"
 #include "value-dw.hh"
-
-struct zw_error
-{
-  std::string m_message;
-};
-
-struct zw_vocabulary
-{
-  std::unique_ptr <vocabulary> m_voc;
-};
-
-struct zw_query
-{
-  tree m_query;
-};
-
-struct zw_result
-{
-  std::shared_ptr <op> m_op;
-};
-
-struct zw_value
-{
-  std::unique_ptr <value> m_value;
-
-  zw_value (std::unique_ptr <value> value)
-    : m_value {std::move (value)}
-  {}
-};
-
-struct zw_stack
-{
-  std::vector <std::unique_ptr <zw_value>> m_values;
-};
 
 namespace
 {

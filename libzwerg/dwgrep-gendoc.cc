@@ -28,25 +28,58 @@
 
 #include <iostream>
 #include <algorithm>
+#include <dlfcn.h>
+#include <iomanip>
 
+#include "libzwergP.hh"
 #include "builtin.hh"
 #include "init.hh"
 #include "builtin-dw.hh"
 #include "docstring.hh"
-
-void underline (std::stringstream &ss, char c);
+#include "flag_saver.hh"
 
 int
 main (int argc, char const **argv)
 {
-  std::cout << ".. _vocabulary:\n\n"
-    "Vocabulary reference\n"
-    "====================\n\n";
+  if (argc != 3)
+    {
+      std::cerr << "usage: " << argv[0] << " <vocabulary handle> <title>\n";
+      return -1;
+    }
 
+  std::string handle = argv[1];
+  std::string title = argv[2];
+
+  void *sym = dlsym (RTLD_DEFAULT, handle.c_str ());
+  if (sym == nullptr)
+    {
+      std::cerr << "Couldn't find a vocabulary with handle " << handle << "\n"
+		<< dlerror () << std::endl;
+      return -1;
+    }
+
+  {
+    ios_flag_saver s {std::cout};
+    std::cout << ".. _" << handle << ":\n\n"
+	      << title << "\n"
+	      << std::setw (title.length ()) << std::setfill ('=') << '='
+	      << "\n\n";
+  }
 
   std::vector <std::pair <std::string, std::string>> entries;
 
-  auto bis = dwgrep_vocabulary_core ()->get_builtins ();
+  auto bis = [&] ()
+    {
+      auto bldr = reinterpret_cast <decltype (&zw_vocabulary_core)> (sym);
+
+      zw_error *err;
+      zw_vocabulary const *voc = bldr (&err);
+      if (voc == nullptr)
+	  throw std::runtime_error (zw_error_message (err));
+
+      return voc->m_voc->get_builtins ();
+    } ();
+
   std::transform (bis.begin (), bis.end (), std::back_inserter (entries),
 		  [] (std::pair <std::string,
 				 std::shared_ptr <builtin const>> const &bi)
