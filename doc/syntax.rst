@@ -391,47 +391,47 @@ escaped by another backslash::
 
 Other recognized escapes include:
 
-+--------+---------------------------------------------------------+
-| escape | meaning                                                 |
-+========+=========================================================+
-| \\\\   | Escaped backslash stands for a backslash::              |
-|        |                                                         |
-|        |	$ dwgrep '"\\a\\"'                                 |
-|        |	\a\                                                |
-+--------+---------------------------------------------------------+
-| \\123  | *123* stands for octal number.  The escape is replaced  |
-|        | with an ASCII character the code of which is the octal  |
-|        | number::                                                |
-|        |                                                         |
-|        |	$ dwgrep '"\110\145\154\154\157"'                  |
-|        |	Hello                                              |
-+--------+---------------------------------------------------------+
-| \\xab  | *ab* stands for hexadecimal number.  The meaning is     |
-|        | analogous to that of \\123::                            |
-|        |                                                         |
-|        |	$ dwgrep '"\x77\x6f\x72\x6c\x64\x21"'              |
-|        |	world!                                             |
-+--------+---------------------------------------------------------+
-| \\t    | Stands for the tab character.                           |
-+--------+---------------------------------------------------------+
-| \\n    | Both a literal end-of-line character, as well as the    |
-|        | ``\n`` escape stand for new line::                      |
-|        |                                                         |
-| <EOL>  |	$ dwgrep '"foo\nbar"'                              |
-|        |	foo                                                |
-|        |	bar                                                |
-|        |                                                         |
-|        |	$ dwgrep '"foo                                     |
-|        |	bar"'                                              |
-|        |	foo                                                |
-|        |	bar                                                |
-+--------+---------------------------------------------------------+
-| \\<EOL>| Escaped newline is ignored::                            |
-|        |                                                         |
-|        |	$ dwgrep '"foo\                                    |
-|        |	bar"'                                              |
-|        |	foobar                                             |
-+--------+---------------------------------------------------------+
++-----------+---------------------------------------------------------+
+| escape    | meaning                                                 |
++===========+=========================================================+
+| ``\\``    | Escaped backslash stands for a backslash::              |
+|           |                                                         |
+|           |	$ dwgrep '"\\a\\"'                                    |
+|           |	\a\                                                   |
++-----------+---------------------------------------------------------+
+| ``\123``  | *123* stands for octal number.  The escape is replaced  |
+|           | with an ASCII character the code of which is the octal  |
+|           | number::                                                |
+|           |                                                         |
+|           |	$ dwgrep '"\110\145\154\154\157"'                     |
+|           |	Hello                                                 |
++-----------+---------------------------------------------------------+
+| ``\xab``  | *ab* stands for hexadecimal number.  The meaning is     |
+|           | analogous to that of \\123::                            |
+|           |                                                         |
+|           |	$ dwgrep '"\x77\x6f\x72\x6c\x64\x21"'                 |
+|           |	world!                                                |
++-----------+---------------------------------------------------------+
+| ``\t``    | Stands for the tab character.                           |
++-----------+---------------------------------------------------------+
+| ``\n``    | Both a literal end-of-line character, as well as the    |
+|           | ``\n`` escape stand for new line::                      |
+|           |                                                         |
+| ``<EOL>`` |	$ dwgrep '"foo\nbar"'                                 |
+|           |	foo                                                   |
+|           |	bar                                                   |
+|           |                                                         |
+|           |	$ dwgrep '"foo                                        |
+|           |	bar"'                                                 |
+|           |	foo                                                   |
+|           |	bar                                                   |
++-----------+---------------------------------------------------------+
+| ``\<EOL>``| Escaped newline is ignored::                            |
+|           |                                                         |
+|           |	$ dwgrep '"foo\                                       |
+|           |	bar"'                                                 |
+|           |	foobar                                                |
++-----------+---------------------------------------------------------+
 
 There are more escape sequences (essentially those mentioned in ``man
 ascii`` are supported as well).
