@@ -355,7 +355,7 @@ expect_count 1 ./empty -e '
 	[if !(1) then (2,3) else (4,5)] ?([4,5] ?eq)'
 expect_count 6 ./typedef.o -e '
 	[entry] ?(length 6 ?eq)
-	elem if child then 1 else 0 "%s %(offset%)"
+	elem if child then 1 else 0 "%s %(swap offset%)"
 	?(("1 0xb","0 0x1d","0 0x28","0 0x2f","0 0x3a","0 0x45") ?eq)'
 
 # Check various Dwarf operators.

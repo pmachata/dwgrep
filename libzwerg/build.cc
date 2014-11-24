@@ -169,15 +169,19 @@ tree::build_exec (std::shared_ptr <op> upstream) const
       {
 	auto s_origin = std::make_shared <stringer_origin> ();
 	std::shared_ptr <stringer> strgr = s_origin;
-	for (auto const &tree: m_children)
-	  if (tree.m_tt == tree_type::STR)
-	    strgr = std::make_shared <stringer_lit> (strgr, tree.str ());
-	  else
-	    {
-	      auto origin2 = std::make_shared <op_origin> (nullptr);
-	      auto op = tree.build_exec (origin2);
-	      strgr = std::make_shared <stringer_op> (strgr, origin2, op);
-	    }
+	for (auto it = m_children.rbegin (), eit = m_children.rend ();
+	     it != eit; ++it)
+	  {
+	    auto const &tree = *it;
+	    if (tree.m_tt == tree_type::STR)
+	      strgr = std::make_shared <stringer_lit> (strgr, tree.str ());
+	    else
+	      {
+		auto origin2 = std::make_shared <op_origin> (nullptr);
+		auto op = tree.build_exec (origin2);
+		strgr = std::make_shared <stringer_op> (strgr, origin2, op);
+	      }
+	  }
 
 	return std::make_shared <op_format> (upstream, s_origin, strgr);
       }

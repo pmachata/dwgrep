@@ -171,7 +171,7 @@ stringer_lit::next ()
   auto up = m_upstream->next ();
   if (up.first == nullptr)
     return std::make_pair (nullptr, "");
-  up.second += m_str;
+  up.second = m_str + up.second;
   return up;
 }
 
@@ -203,7 +203,7 @@ stringer_op::next ()
 	{
 	  std::stringstream ss;
 	  (stk->pop ())->show (ss, brevity::brief);
-	  return std::make_pair (std::move (stk), m_str + ss.str ());
+	  return std::make_pair (std::move (stk), ss.str () + m_str);
 	}
 
       m_have = false;
