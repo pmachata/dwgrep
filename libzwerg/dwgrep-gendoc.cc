@@ -107,6 +107,6 @@ main (int argc, char const **argv)
 	       return p1.first < p2.first;
 	     });
 
-  std::cout << format_entry_map (dentries, '-');
+  std::cout << format_entry_map (dentries, '-', handle);
 
 }

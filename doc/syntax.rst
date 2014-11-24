@@ -4,10 +4,10 @@ Syntax
 ======
 
 This section describes all syntactic constructs in Zwerg language.
-You may want to check out a XXX tutorial, which introduces many (but
-not all) of these in a gradual manner, and XXX vocabulary reference,
-to learn about the actual function words that you can use inside this
-syntax.
+You may want to check out :ref:`tutorial`, which introduces many (but
+not all) of these concepts on an example, and
+:ref:`zw_vocabulary_core` or :ref:`zw_vocabulary_dwarf` to learn about
+the actual function words that you can use.
 
 
 Comments
@@ -323,8 +323,9 @@ core defines the following *OP₁*'s with the following associated
 	EXPR₁ “=~” EXPR₂	# ?match
 	EXPR₁ “!~” EXPR₂	# !match
 
-See XXX (a link here) to learn about comparison operators.  See XXX (a
-link here) to learn about regular expression matching.
+See :ref:`?eq <zw_vocabulary_core ?eq>` to learn about comparison
+operators.  See :ref:`?match <zw_vocabulary_core ?match>` to learn
+about regular expression matching.
 
 For example::
 
@@ -501,9 +502,8 @@ If there's more than one formatting directive in a given string, they
 are resolved in the order from right to left (sic!): rightmost
 formatting directive gets TOS value::
 
-	$ dwgrep '1 2 3 "%s %s %s"'
-	3 2 1
-	XXX update when this is implemented correctly
+	$ dwgrep 'dwgrep '1 2 3 "{%s [%s (%s)]}"'
+	{1 [2 (3)]}
 
 This principle is applied throughout Zwerg: when a binding block
 contains several names the rightmost name is bound to value on TOS.

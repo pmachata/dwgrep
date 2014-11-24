@@ -148,12 +148,19 @@ doc_deduplicate (std::vector <std::pair <std::string, std::string>> &entries)
 std::string
 format_entry_map (std::vector <std::pair <std::vector <std::string>,
 					  std::string>> entries,
-		  char udc)
+		  char udc, std::string label)
 {
   std::stringstream ret;
 
   for (auto const &entry: entries)
     {
+      if (label != "")
+	{
+	  for (auto const &n: entry.first)
+	    ret << ".. _" << label << ' ' << n << ":\n";
+	  ret << "\n";
+	}
+
       std::stringstream ss;
       bool seen = false;
       for (auto const &n: entry.first)

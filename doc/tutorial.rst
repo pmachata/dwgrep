@@ -659,5 +659,8 @@ name::
 	/home/petr/proj/dwgrep/x.c: 3: note: in function `blah', parameter `f' type is not trivial.
 
 So, that's it.  This was a quick tour through the interesting parts of
-``dwgrep``.  XXX link to reference.
+``dwgrep``.  You may now want to check out :ref:`syntax`, and
+:ref:`zw_vocabulary_core` or :ref:`zw_vocabulary_dwarf` to learn about
+the actual function words that you can use.
+
 

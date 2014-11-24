@@ -47,4 +47,4 @@ doc_deduplicate (std::vector <std::pair <std::string, std::string>> &entries);
 // Formats the map that the above deduplication step returned.
 std::string format_entry_map (std::vector <std::pair <std::vector <std::string>,
 						      std::string>> entries,
-			      char udc);
+			      char udc, std::string label = "");
