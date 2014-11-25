@@ -54,10 +54,10 @@
   <div class="section" id="syntax">
 <span id="id1"></span><h1>Syntax<a class="headerlink" href="#syntax" title="Permalink to this headline">¶</a></h1>
 <p>This section describes all syntactic constructs in Zwerg language.
-You may want to check out a XXX tutorial, which introduces many (but
-not all) of these in a gradual manner, and XXX vocabulary reference,
-to learn about the actual function words that you can use inside this
-syntax.</p>
+You may want to check out <a class="reference internal" href="tutorial.html#tutorial"><em>Tutorial</em></a>, which introduces many (but
+not all) of these concepts on an example, and
+<a class="reference internal" href="vocabulary-core.html#zw-vocabulary-core"><em>Core vocabulary</em></a> or <a class="reference internal" href="vocabulary-dwarf.html#zw-vocabulary-dwarf"><em>Dwarf vocabulary</em></a> to learn about
+the actual function words that you can use.</p>
 <div class="section" id="comments">
 <h2>Comments<a class="headerlink" href="#comments" title="Permalink to this headline">¶</a></h2>
 <p>Form:</p>
@@ -339,8 +339,9 @@ EXPR₁ “=~” EXPR₂        # ?match
 EXPR₁ “!~” EXPR₂        # !match
 </pre></div>
 </div>
-<p>See XXX (a link here) to learn about comparison operators.  See XXX (a
-link here) to learn about regular expression matching.</p>
+<p>See <a class="reference internal" href="vocabulary-core.html#id7"><em>?eq</em></a> to learn about comparison
+operators.  See <a class="reference internal" href="vocabulary-core.html#id19"><em>?match</em></a> to learn
+about regular expression matching.</p>
 <p>For example:</p>
 <div class="highlight-python"><div class="highlight"><pre>$ dwgrep ./tests/typedef.o -e &#39;entry (offset == 0x1d)&#39;
 [1d]    typedef
@@ -401,8 +402,8 @@ escaped by another backslash:</p>
 <p>Other recognized escapes include:</p>
 <table border="1" class="docutils">
 <colgroup>
-<col width="12%" />
-<col width="88%" />
+<col width="16%" />
+<col width="84%" />
 </colgroup>
 <thead valign="bottom">
 <tr class="row-odd"><th class="head">escape</th>
@@ -410,7 +411,7 @@ escaped by another backslash:</p>
 </tr>
 </thead>
 <tbody valign="top">
-<tr class="row-even"><td>\</td>
+<tr class="row-even"><td><tt class="docutils literal"><span class="pre">\\</span></tt></td>
 <td><p class="first">Escaped backslash stands for a backslash:</p>
 <div class="last highlight-python"><div class="highlight"><pre>$ dwgrep &#39;&quot;\\a\\&quot;&#39;
 \a\
@@ -418,7 +419,7 @@ escaped by another backslash:</p>
 </div>
 </td>
 </tr>
-<tr class="row-odd"><td>\123</td>
+<tr class="row-odd"><td><tt class="docutils literal"><span class="pre">\123</span></tt></td>
 <td><p class="first"><em>123</em> stands for octal number.  The escape is replaced
 with an ASCII character the code of which is the octal
 number:</p>
@@ -428,7 +429,7 @@ Hello
 </div>
 </td>
 </tr>
-<tr class="row-even"><td>\xab</td>
+<tr class="row-even"><td><tt class="docutils literal"><span class="pre">\xab</span></tt></td>
 <td><p class="first"><em>ab</em> stands for hexadecimal number.  The meaning is
 analogous to that of \123:</p>
 <div class="last highlight-python"><div class="highlight"><pre>$ dwgrep &#39;&quot;\x77\x6f\x72\x6c\x64\x21&quot;&#39;
@@ -437,11 +438,11 @@ world!
 </div>
 </td>
 </tr>
-<tr class="row-odd"><td>\t</td>
+<tr class="row-odd"><td><tt class="docutils literal"><span class="pre">\t</span></tt></td>
 <td>Stands for the tab character.</td>
 </tr>
-<tr class="row-even"><td><p class="first">\n</p>
-<p class="last">&lt;EOL&gt;</p>
+<tr class="row-even"><td><p class="first"><tt class="docutils literal"><span class="pre">\n</span></tt></p>
+<p class="last"><tt class="docutils literal"><span class="pre">&lt;EOL&gt;</span></tt></p>
 </td>
 <td><p class="first">Both a literal end-of-line character, as well as the
 <tt class="docutils literal"><span class="pre">\n</span></tt> escape stand for new line:</p>
@@ -457,7 +458,7 @@ bar
 </div>
 </td>
 </tr>
-<tr class="row-odd"><td>\&lt;EOL&gt;</td>
+<tr class="row-odd"><td><tt class="docutils literal"><span class="pre">\&lt;EOL&gt;</span></tt></td>
 <td><p class="first">Escaped newline is ignored:</p>
 <div class="last highlight-python"><div class="highlight"><pre>$ dwgrep &#39;&quot;foo\
 bar&quot;&#39;
@@ -531,9 +532,8 @@ EOF
 <p>If there&#8217;s more than one formatting directive in a given string, they
 are resolved in the order from right to left (sic!): rightmost
 formatting directive gets TOS value:</p>
-<div class="highlight-python"><div class="highlight"><pre>$ dwgrep &#39;1 2 3 &quot;%s %s %s&quot;&#39;
-3 2 1
-XXX update when this is implemented correctly
+<div class="highlight-python"><div class="highlight"><pre>$ dwgrep &#39;dwgrep &#39;1 2 3 &quot;{%s [%s (%s)]}&quot;&#39;
+{1 [2 (3)]}
 </pre></div>
 </div>
 <p>This principle is applied throughout Zwerg: when a binding block

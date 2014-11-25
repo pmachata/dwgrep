@@ -3,6 +3,91 @@
 Core vocabulary
 ===============
 
+.. include:: zw_vocabulary_core-blurb.txt
+
+.. _zw_vocabulary_core type T_CONST:
+
+T_CONST
+-------
+
+
+
+Values of this type are used to hold integral constants.  Zwerg
+constants allow storing signed or unsigned 64-bit numbers.  Arithmetic
+operators handle transitions between signed and unsigned values
+transparently::
+
+	$ dwgrep '0xffffffffffffff00 0xffffffffffffffff sub'
+	-0xff
+
+Note that division and modulo by zero, as well as overflow, are caught
+at runtime::
+
+	$ dwgrep '5 (2, 0, 3) div'
+	2
+	Error: division by zero occured when computing 5/0
+	1
+
+	$ dwgrep '0xffffffffffffffff (-1, 0, 1) add'
+	0xfffffffffffffffe
+	0xffffffffffffffff
+	Error: overflow occured when computing 18446744073709551615+1
+
+
+
+.. _zw_vocabulary_core type T_SEQ:
+
+T_SEQ
+-----
+
+
+
+Values of this type hold sequences, ordered heterogeneous collections
+of other values (including other sequences)::
+
+	$ dwgrep '[[], 2, "yes"] elem type'
+	T_SEQ
+	T_CONST
+	T_STR
+
+
+
+.. _zw_vocabulary_core type T_STR:
+
+T_STR
+-----
+
+
+
+Values of this type hold strings (sequences of characters).  No
+unicode support is provided as such, though UTF-8 should naturally
+work.  Zwerg strings are not NUL-terminated::
+
+	$ dwgrep '"abc \x00 def" (, length)'
+	abc  def
+	9
+
+
+
+.. _zw_vocabulary_core !=:
+.. _zw_vocabulary_core !eq:
+.. _zw_vocabulary_core !ge:
+.. _zw_vocabulary_core !gt:
+.. _zw_vocabulary_core !le:
+.. _zw_vocabulary_core !lt:
+.. _zw_vocabulary_core !ne:
+.. _zw_vocabulary_core <:
+.. _zw_vocabulary_core <=:
+.. _zw_vocabulary_core ==:
+.. _zw_vocabulary_core >:
+.. _zw_vocabulary_core >=:
+.. _zw_vocabulary_core ?eq:
+.. _zw_vocabulary_core ?ge:
+.. _zw_vocabulary_core ?gt:
+.. _zw_vocabulary_core ?le:
+.. _zw_vocabulary_core ?lt:
+.. _zw_vocabulary_core ?ne:
+
 !=, !eq, !ge, !gt, !le, !lt, !ne, <, <=, ==, >, >=, ?eq, ?ge, ?gt, ?le, ?lt, ?ne
 --------------------------------------------------------------------------------
 
@@ -35,6 +120,9 @@ always available.
 
 
 
+.. _zw_vocabulary_core !empty:
+.. _zw_vocabulary_core ?empty:
+
 !empty, ?empty
 --------------
 
@@ -64,6 +152,9 @@ This predicate holds if the string on TOS is empty::
 
 
 
+.. _zw_vocabulary_core !ends:
+.. _zw_vocabulary_core ?ends:
+
 !ends, ?ends
 ------------
 
@@ -87,6 +178,9 @@ For example::
 	foobar
 
 
+
+.. _zw_vocabulary_core !find:
+.. _zw_vocabulary_core ?find:
 
 !find, ?find
 ------------
@@ -132,6 +226,11 @@ directly, if possible::
 
 
 
+.. _zw_vocabulary_core !match:
+.. _zw_vocabulary_core !~:
+.. _zw_vocabulary_core =~:
+.. _zw_vocabulary_core ?match:
+
 !match, !~, =~, ?match
 ----------------------
 
@@ -153,6 +252,9 @@ For example::
 	foobar
 
 
+
+.. _zw_vocabulary_core !starts:
+.. _zw_vocabulary_core ?starts:
 
 !starts, ?starts
 ----------------
@@ -178,10 +280,7 @@ For example::
 
 
 
-T_CLOSURE, T_CONST, T_SEQ, T_STR
---------------------------------
-
-@T_*
+.. _zw_vocabulary_core add:
 
 add
 ---
@@ -237,6 +336,11 @@ Using formatting strings may be a better way to concatenate strings::
 
 
 
+.. _zw_vocabulary_core bin:
+.. _zw_vocabulary_core dec:
+.. _zw_vocabulary_core hex:
+.. _zw_vocabulary_core oct:
+
 bin, dec, hex, oct
 ------------------
 
@@ -270,6 +374,11 @@ Though you can achieve the same effect with formatting directives
 
 
 
+.. _zw_vocabulary_core div:
+.. _zw_vocabulary_core mod:
+.. _zw_vocabulary_core mul:
+.. _zw_vocabulary_core sub:
+
 div, mod, mul, sub
 ------------------
 
@@ -296,6 +405,12 @@ denoted with ``->?`` relation::
 	1
 
 
+
+.. _zw_vocabulary_core drop:
+.. _zw_vocabulary_core dup:
+.. _zw_vocabulary_core over:
+.. _zw_vocabulary_core rot:
+.. _zw_vocabulary_core swap:
 
 drop, dup, over, rot, swap
 --------------------------
@@ -325,6 +440,9 @@ what sub-expressions are for), and the deep stack manipulation should
 be unnecessary as well.  But they are present for completeness' sake.
 
 
+
+.. _zw_vocabulary_core elem:
+.. _zw_vocabulary_core relem:
 
 elem, relem
 -----------
@@ -369,10 +487,15 @@ strings::
 
 
 
+.. _zw_vocabulary_core false:
+.. _zw_vocabulary_core true:
+
 false, true
 -----------
 
 @bool
+
+.. _zw_vocabulary_core length:
 
 length
 ------
@@ -403,6 +526,8 @@ Yields length of string on TOS::
 	3
 
 
+
+.. _zw_vocabulary_core pos:
 
 pos
 ---
@@ -439,6 +564,8 @@ absolute and relative position of a given element.
 
 
 
+.. _zw_vocabulary_core type:
+
 type
 ----
 
@@ -448,6 +575,8 @@ This produces a constant according to the type of value on TOS (such
 as T_CONST, T_DIE, T_STR, etc.).
 
 
+
+.. _zw_vocabulary_core value:
 
 value
 -----

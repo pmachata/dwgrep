@@ -4,10 +4,10 @@ Syntax
 ======
 
 This section describes all syntactic constructs in Zwerg language.
-You may want to check out a XXX tutorial, which introduces many (but
-not all) of these in a gradual manner, and XXX vocabulary reference,
-to learn about the actual function words that you can use inside this
-syntax.
+You may want to check out :ref:`tutorial`, which introduces many (but
+not all) of these concepts on an example, and
+:ref:`zw_vocabulary_core` or :ref:`zw_vocabulary_dwarf` to learn about
+the actual function words that you can use.
 
 
 Comments
@@ -323,8 +323,9 @@ core defines the following *OP₁*'s with the following associated
 	EXPR₁ “=~” EXPR₂	# ?match
 	EXPR₁ “!~” EXPR₂	# !match
 
-See XXX (a link here) to learn about comparison operators.  See XXX (a
-link here) to learn about regular expression matching.
+See :ref:`?eq <zw_vocabulary_core ?eq>` to learn about comparison
+operators.  See :ref:`?match <zw_vocabulary_core ?match>` to learn
+about regular expression matching.
 
 For example::
 
@@ -391,47 +392,47 @@ escaped by another backslash::
 
 Other recognized escapes include:
 
-+--------+---------------------------------------------------------+
-| escape | meaning                                                 |
-+========+=========================================================+
-| \\     | Escaped backslash stands for a backslash::              |
-|        |                                                         |
-|        |	$ dwgrep '"\\a\\"'                                 |
-|        |	\a\                                                |
-+--------+---------------------------------------------------------+
-| \\123  | *123* stands for octal number.  The escape is replaced  |
-|        | with an ASCII character the code of which is the octal  |
-|        | number::                                                |
-|        |                                                         |
-|        |	$ dwgrep '"\110\145\154\154\157"'                  |
-|        |	Hello                                              |
-+--------+---------------------------------------------------------+
-| \\xab  | *ab* stands for hexadecimal number.  The meaning is     |
-|        | analogous to that of \\123::                            |
-|        |                                                         |
-|        |	$ dwgrep '"\x77\x6f\x72\x6c\x64\x21"'              |
-|        |	world!                                             |
-+--------+---------------------------------------------------------+
-| \\t    | Stands for the tab character.                           |
-+--------+---------------------------------------------------------+
-| \\n    | Both a literal end-of-line character, as well as the    |
-|        | ``\n`` escape stand for new line::                      |
-|        |                                                         |
-| <EOL>  |	$ dwgrep '"foo\nbar"'                              |
-|        |	foo                                                |
-|        |	bar                                                |
-|        |                                                         |
-|        |	$ dwgrep '"foo                                     |
-|        |	bar"'                                              |
-|        |	foo                                                |
-|        |	bar                                                |
-+--------+---------------------------------------------------------+
-| \\<EOL>| Escaped newline is ignored::                            |
-|        |                                                         |
-|        |	$ dwgrep '"foo\                                    |
-|        |	bar"'                                              |
-|        |	foobar                                             |
-+--------+---------------------------------------------------------+
++-----------+---------------------------------------------------------+
+| escape    | meaning                                                 |
++===========+=========================================================+
+| ``\\``    | Escaped backslash stands for a backslash::              |
+|           |                                                         |
+|           |	$ dwgrep '"\\a\\"'                                    |
+|           |	\a\                                                   |
++-----------+---------------------------------------------------------+
+| ``\123``  | *123* stands for octal number.  The escape is replaced  |
+|           | with an ASCII character the code of which is the octal  |
+|           | number::                                                |
+|           |                                                         |
+|           |	$ dwgrep '"\110\145\154\154\157"'                     |
+|           |	Hello                                                 |
++-----------+---------------------------------------------------------+
+| ``\xab``  | *ab* stands for hexadecimal number.  The meaning is     |
+|           | analogous to that of \\123::                            |
+|           |                                                         |
+|           |	$ dwgrep '"\x77\x6f\x72\x6c\x64\x21"'                 |
+|           |	world!                                                |
++-----------+---------------------------------------------------------+
+| ``\t``    | Stands for the tab character.                           |
++-----------+---------------------------------------------------------+
+| ``\n``    | Both a literal end-of-line character, as well as the    |
+|           | ``\n`` escape stand for new line::                      |
+|           |                                                         |
+| ``<EOL>`` |	$ dwgrep '"foo\nbar"'                                 |
+|           |	foo                                                   |
+|           |	bar                                                   |
+|           |                                                         |
+|           |	$ dwgrep '"foo                                        |
+|           |	bar"'                                                 |
+|           |	foo                                                   |
+|           |	bar                                                   |
++-----------+---------------------------------------------------------+
+| ``\<EOL>``| Escaped newline is ignored::                            |
+|           |                                                         |
+|           |	$ dwgrep '"foo\                                       |
+|           |	bar"'                                                 |
+|           |	foobar                                                |
++-----------+---------------------------------------------------------+
 
 There are more escape sequences (essentially those mentioned in ``man
 ascii`` are supported as well).
@@ -501,9 +502,8 @@ If there's more than one formatting directive in a given string, they
 are resolved in the order from right to left (sic!): rightmost
 formatting directive gets TOS value::
 
-	$ dwgrep '1 2 3 "%s %s %s"'
-	3 2 1
-	XXX update when this is implemented correctly
+	$ dwgrep 'dwgrep '1 2 3 "{%s [%s (%s)]}"'
+	{1 [2 (3)]}
 
 This principle is applied throughout Zwerg: when a binding block
 contains several names the rightmost name is bound to value on TOS.
