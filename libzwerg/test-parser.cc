@@ -123,6 +123,10 @@ do_tests ()
   test ("\"ab\ncd\"", "(FORMAT (STR<ab\ncd>))");
   test ("\"ab\\\ncd\"", "(FORMAT (STR<abcd>))");
 
+  // This tests single-line comments that don't end in an EOL.
+  test ("17 //blah blah", "(CONST<17>)");
+  test ("17 #blah blah", "(CONST<17>)");
+
   ftestx ("\"unterminated", "terminated");
   ftestx ("\x01", "0x01");
 

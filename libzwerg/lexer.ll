@@ -256,7 +256,7 @@ BIN [01]
 
 [ \t\n]+ // Skip whitespace.
 
-(#|[/][/])[^\n]*\n // Skip # or // comment.
+(#|[/][/])[^\n]* // Skip # or // comment.
 [/][*]([^*]|[*][^/])*[*][/] // Skip /**/ comment.
 
 [^[:space:][:alnum:]()[\]{}]+ {
