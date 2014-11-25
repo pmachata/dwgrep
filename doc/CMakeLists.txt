@@ -14,12 +14,12 @@ CONFIGURE_FILE ("${CMAKE_CURRENT_SOURCE_DIR}/conf.py.in"
   		"${BINARY_BUILD_DIR}/conf.py"
 		@ONLY)
 
-ADD_CUSTOM_TARGET (doc-html ALL
+ADD_CUSTOM_TARGET (doc-html
     ${SPHINX_EXECUTABLE} -q -b html -c "${BINARY_BUILD_DIR}"
 	-d "${SPHINX_CACHE_DIR}" "${CMAKE_CURRENT_SOURCE_DIR}" "${SPHINX_HTML_DIR}"
     COMMENT "Building HTML documentation")
 
-ADD_CUSTOM_TARGET (GenerateDocs ALL
+ADD_CUSTOM_TARGET (GenerateDocs
   COMMAND ../libzwerg/dwgrep-gendoc
 	zw_vocabulary_core "Core vocabulary" > vocabulary-core.rst
 
