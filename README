@@ -69,24 +69,7 @@
    - entry -- access to entries of a unit
    - unit -- access to unit
 
-** ·Entry points
-*** ·dwopen :: ?T_STR -> ?T_DWARF
-     - Pops a file name, opens an ELF with that name, and pushes a
-       value representing that file to TOS.
-
-     - When files are passed on command line, those are pre-opened and
-       pre-pushed by the query driver, and appear as sole value on
-       runtime stack:
-       : $ dwgrep ./a.out -e 'type'
-       : T_DWARF
-
 ** ·T_DWARF
-*** •entry :: ?T_DWARF ->* ?T_DIE
-      - Yields all DIE's in a .debug_info section.
-
-*** •unit :: ?T_DWARF ->* ?T_CU
-     : entry ?root unit
-
 *** •abbrev :: ?T_DWARF ->* ?T_ABBREV_UNIT
      - Yields all abbreviation units in a .debug_abbrev section.
 
@@ -103,8 +86,6 @@
      - Produce an abbreviation unit associated with this CU.
 
 *** •version :: ?T_CU -> ?T_CONST
-*** •entry :: ?T_CU ->* ?T_DIE
-     : root child*	# except in the right order
 
 *** •root :: ?T_CU -> ?T_DIE
      - Produce a CU DIE of a CU.
@@ -116,9 +97,6 @@
 *** •offset :: ?T_DIE -> ?T_CONST
      Like dwarf_dieoffset.
 
-*** •unit :: ?T_DIE -> ?T_CU
-     - Selects unit that this DIE comes from.
-
 *** •high :: ?T_DIE ->? ?T_CONST
      : attribute ?AT_highpc address
 
@@ -127,12 +105,6 @@
 
 *** •address :: ?T_DIE ->? ?T_ASET
      Like dwarf_ranges.
-
-*** •child :: ?T_DIE ->* ?T_DIE
-     Yields children of the DIE.
-
-*** •attribute :: ?T_DIE ->* ?T_ATTR
-     Yields attributes of the DIE.
 
 *** •parent :: ?T_DIE ->? ?T_DIE
      Yields the parent of the DIE, if there's any.
@@ -256,9 +228,6 @@
 *** •die :: ?T_ATTR -> ?T_DIE
      - Yield a DIE that this attribute is associated with.
 
-*** •unit :: ?T_ATTR -> ?T_CU
-     : die unit
-
 *** •?AT_* :: ?T_ATTR
      Holds if it is this attribute.
 
@@ -275,15 +244,9 @@
 *** •offset :: ?T_ABBREV_UNIT -> ?T_CONST
      - Yield offset of this abbreviation unit.
 
-*** •entry :: ?T_ABBREV_UNIT ->* ?T_ABBREV
-     - Yield abbreviations defined in this unit.
-       XXX this is currently done by elem.
-
 ** •T_ABBREV
 *** •label :: ?T_ABBREV -> ?T_CONST
 *** •offset :: ?T_ABBREV -> ?T_CONST
-*** •attribute :: ?T_ABBREV ->* ?T_ABBREV_ATTR
-     - Yields all abbreviation attributes.
 
 *** •code :: ?T_ABBREV -> ?T_CONST
      - Yields abbreviation code.
@@ -344,12 +307,6 @@
 ** •T_LOCLIST_ELEM
 *** •address :: ?T_LOCLIST_ELEM -> ?T_ASET
      Yields where given location expression applies.
-
-*** •elem :: ?T_LOCLIST_ELEM ->* ?T_LOCLIST_OP
-     Yields individual location expression operators.
-
-*** •relem :: ?T_LOCLIST_ELEM ->* ?T_LOCLIST_OP
-     Like elem, but yields in opposite direction.
 
 *** •?OP_* :: ?T_LOCLIST_ELEM
      Holds if this location expression contains an operation with this
@@ -418,13 +375,6 @@
 *** •overlap :: ?T_ASET ?T_ASET -> ?T_ASET
      Compute aset that contains addresses common to both asets.
      Produces an empty aset if there's no overlap.
-
-*** •elem :: ?T_ASET ->* ?T_CONST
-     - Actually enumerates all addresses in a range.  Potentially a
-       very bad idea for ranges that cover whole address space.
-
-*** •relem :: ?T_ASET ->* ?T_CONST
-     : [|A| A elem] relem
 
 **  T_MACRO_UNIT ???
     - A value representing .debug_macro and .debug_macinfo units.

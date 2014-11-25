@@ -59,6 +59,21 @@ namespace
       return std::make_unique <value_dwarf> (a->get_string (), 0,
 					     doneness::cooked);
     }
+
+    static std::string
+    docstring ()
+    {
+      return
+R"docstring(
+
+Takes a string, which is interpreted as a file name, that file is
+opened, and a Dwarf value representing that file is yielded::
+
+	$ dwgrep '"dwgrep/dwgrep" dwopen unit'
+	CU 0
+
+)docstring";
+    }
   };
 }
 
@@ -155,9 +170,42 @@ namespace
       return std::make_unique <dwarf_unit_producer> (a->get_dwctx (),
 						     a->get_doneness ());
     }
+
+    static std::string
+    docstring ()
+    {
+      return
+R"docstring(
+
+Take a Dwarf on TOS and yield units defined therein.  In raw mode,
+yields all units without exception, in cooked mode it only yields
+actual compile units (i.e. those units whose CU DIE's tag is
+``DW_TAG_compile_unit``.
+
+For example::
+
+	$ dwgrep ./tests/dwz-partial -e 'raw unit root "%s"'
+	[b] partial_unit
+	[34] compile_unit
+	[a4] compile_unit
+	[e1] compile_unit
+	[11e] compile_unit
+
+	$ dwgrep ./tests/dwz-partial -e 'cooked unit root "%s"'
+	[34] compile_unit
+	[a4] compile_unit
+	[e1] compile_unit
+	[11e] compile_unit
+
+This operator is identical in operation to the following expression::
+
+	entry ?root unit
+
+)docstring";
+    }
   };
 
-  std::unique_ptr <value_cu>
+  value_cu
   cu_for_die (std::shared_ptr <dwfl_context> dwctx, Dwarf_Die die, doneness d)
   {
     Dwarf_Die cudie;
@@ -167,31 +215,69 @@ namespace
     Dwarf *dw = dwarf_cu_getdwarf (cudie.cu);
     cu_iterator cuit {dw, cudie};
 
-    return std::make_unique <value_cu> (dwctx, *(*cuit)->cu,
-					cuit.offset (), 0, d);
+    return value_cu (dwctx, *(*cuit)->cu, cuit.offset (), 0, d);
   }
 
   struct op_unit_die
-    : public op_overload <value_cu, value_die>
+    : public op_once_overload <value_cu, value_die>
   {
-    using op_overload::op_overload;
+    using op_once_overload::op_once_overload;
 
-    std::unique_ptr <value_cu>
+    value_cu
     operate (std::unique_ptr <value_die> a) override
     {
       return cu_for_die (a->get_dwctx (), a->get_die (), a->get_doneness ());
     }
+
+    static std::string
+    docstring ()
+    {
+      return
+R"docstring(
+
+Take a DIE on TOS and yield a unit that this DIE belongs to::
+
+	$ dwgrep ./tests/twocus -e 'unit'
+	CU 0
+	CU 0x53
+
+	$ dwgrep ./tests/twocus -e 'entry (offset == 0x4b) unit'
+	CU 0
+
+)docstring";
+    }
   };
 
   struct op_unit_attr
-    : public op_overload <value_cu, value_attr>
+    : public op_once_overload <value_cu, value_attr>
   {
-    using op_overload::op_overload;
+    using op_once_overload::op_once_overload;
 
-    std::unique_ptr <value_cu>
+    value_cu
     operate (std::unique_ptr <value_attr> a) override
     {
       return cu_for_die (a->get_dwctx (), a->get_die (), doneness::cooked);
+    }
+
+    static std::string
+    docstring ()
+    {
+      return
+R"docstring(
+
+Take an attribute on TOS and yield a unit where the attribute
+originated::
+
+	$ dwgrep ./tests/twocus -e 'unit'
+	CU 0
+	CU 0x53
+
+	$ dwgrep ./tests/twocus -e 'entry (offset == 0xb3) attribute unit'
+	CU 0x53
+	CU 0x53
+	CU 0x53
+
+)docstring";
     }
   };
 }
@@ -334,6 +420,44 @@ namespace
       return make_cu_entry_producer (a->get_dwctx (), a->get_cu (),
 				     a->get_doneness ());
     }
+
+    static std::string
+    docstring ()
+    {
+      return
+R"docstring(
+
+Takes a CU on TOS and yield DIE's that it defines::
+
+	$ dwgrep ./tests/twocus -e 'unit (offset == 0x53) entry "%s"'
+	[5e] compile_unit
+	[80] subprogram
+	[a3] subprogram
+	[b0] unspecified_parameters
+	[b3] base_type
+
+This operator is similar in operation to the following::
+
+	root child*
+
+The difference may lie (and as of this writing lies) in the order in
+which the entries are yielded.
+
+In cooked mode, it resolves any ``DW_TAG_imported_unit``'s that it
+finds during exploring the DIE tree.  One entry can thus be explored
+several times, each time in a different context::
+
+	$ dwgrep ./tests/dwz-partial -e 'entry (offset == 0x14) (|A| A A parent* ?root) "%s inside %s"'
+	[14] pointer_type inside [34] compile_unit
+	[14] pointer_type inside [a4] compile_unit
+	[14] pointer_type inside [e1] compile_unit
+	[14] pointer_type inside [11e] compile_unit
+
+	$ dwgrep ./tests/dwz-partial -e 'raw entry (offset == 0x14) (|A| A A parent* ?root) "%s inside %s"'
+	[14] pointer_type inside [b] partial_unit
+
+)docstring";
+    }
   };
 
   template <class A, class B>
@@ -357,7 +481,15 @@ namespace
     static std::string
     docstring ()
     {
-      return "Behaves identically to ``unit entry``.";
+      return
+R"docstring(
+
+Takes a Dwarf on TOS and yields DIE's that it contains.  This operator
+behaves equivalently to tho following::
+
+	unit entry
+
+)docstring";
     }
 
     static builtin_protomap
@@ -415,6 +547,25 @@ namespace
     {
       return std::make_unique <producer> (std::move (a));
     }
+
+    static std::string
+    docstring ()
+    {
+      return
+R"docstring(
+
+Take an abbreviation unit on TOS and yield all abbreviations that it
+contains::
+
+	$ dwgrep ./tests/twocus -e 'abbrev (offset == 0x34) entry "%s"'
+	[1] offset:0x34, children:yes, tag:compile_unit
+	[2] offset:0x47, children:yes, tag:subprogram
+	[3] offset:0x60, children:yes, tag:subprogram
+	[4] offset:0x71, children:no, tag:unspecified_parameters
+	[5] offset:0x76, children:no, tag:base_type
+
+)docstring";
+    }
   };
 }
 
@@ -439,6 +590,36 @@ namespace
     {
       return make_die_child_producer (a->get_dwctx (), a->get_die (),
 				      a->get_doneness ());
+    }
+
+    static std::string
+    docstring ()
+    {
+      return
+R"docstring(
+
+Takes a DIE on TOS and yields all its children.  If the taken DIE is
+cooked, and one of the children is a ``DW_TAG_imported_unit``, the
+operator resolves that reference and recursively yields also all its
+children::
+
+	$ dwgrep ./tests/dwz-partial2-1 -e 'unit root (offset == 0xe7) raw child "%s"'
+	[f9] imported_unit
+	[fe] imported_unit
+	[103] variable
+
+	$ dwgrep ./tests/dwz-partial2-1 -e 'unit root (offset == 0xe7) child "%s"'
+	[76] base_type
+	[7d] base_type
+	[4b] typedef
+	[51] pointer_type
+	[54] pointer_type
+	[57] pointer_type
+	[5a] const_type
+	[5c] volatile_type
+	[103] variable
+
+)docstring";
     }
   };
 }
@@ -479,6 +660,31 @@ namespace
     }
   };
 
+  char const elem_loclist_docstring[] =
+R"docstring(
+
+Takes a location expression on TOS and yields individual operators::
+
+	$ dwgrep ./tests/testfile_const_type -e 'entry (offset == 0x57)'
+	[57]	variable
+		name (string)	w;
+		decl_file (data1)	/home/mark/src/elfutils/tests/const_type.c;
+		decl_line (data1)	6;
+		type (ref4)	[25];
+		location (exprloc)	0..0xffffffffffffffff:[0:fbreg<0>, 2:GNU_deref_type<8>/<37>, [... snip ...]];
+
+	$ dwgrep ./tests/testfile_const_type -e 'entry (offset == 0x57) @AT_location elem'
+	0:fbreg<0>
+	2:GNU_deref_type<8>/<37>
+	5:GNU_const_type<[25] base_type>/<[0, 0, 0x80, 0x67, 0x45, 0x23, 0x1, 0]>
+	16:div
+	17:GNU_convert<44>
+	19:stack_value
+
+``relem`` yields elements backwards.
+
+)docstring";
+
   struct op_elem_loclist_elem
     : public op_yielding_overload <value_loclist_op, value_loclist_elem>
   {
@@ -488,6 +694,12 @@ namespace
     operate (std::unique_ptr <value_loclist_elem> a) override
     {
       return std::make_unique <elem_loclist_producer> (std::move (a), true);
+    }
+
+    static std::string
+    docstring ()
+    {
+      return elem_loclist_docstring;
     }
   };
 
@@ -500,6 +712,12 @@ namespace
     operate (std::unique_ptr <value_loclist_elem> a) override
     {
       return std::make_unique <elem_loclist_producer> (std::move (a), false);
+    }
+
+    static std::string
+    docstring ()
+    {
+      return elem_loclist_docstring;
     }
   };
 
@@ -548,6 +766,28 @@ namespace
     }
   };
 
+  const char elem_aset_docstring[] =
+R"docstring(
+
+Take an address set on TOS and yield all its addresses.  Be warned
+that this may be a very expensive operation.  It is common that
+address sets cover the whole address range, which for a 64-bit
+architecture is a whole lot of addresses.
+
+Example::
+
+	$ dwgrep ./tests/testfile_const_type -e 'entry (name == "main") address'
+	[0x80482f0, 0x80482f3)
+
+	$ dwgrep ./tests/testfile_const_type -e 'entry (name == "main") address elem'
+	0x80482f0
+	0x80482f1
+	0x80482f2
+
+``relem`` behaves similarly, but yields addresses in reverse order.
+
+)docstring";
+
   struct op_elem_aset
     : public op_yielding_overload <value_cst, value_aset>
   {
@@ -558,6 +798,12 @@ namespace
     {
       return std::make_unique <elem_aset_producer>
 	(val->get_coverage (), true);
+    }
+
+    static std::string
+    docstring ()
+    {
+      return elem_aset_docstring;
     }
   };
 
@@ -571,6 +817,12 @@ namespace
     {
       return std::make_unique <elem_aset_producer>
 	(val->get_coverage (), false);
+    }
+
+    static std::string
+    docstring ()
+    {
+      return elem_aset_docstring;
     }
   };
 }
@@ -714,6 +966,50 @@ namespace
     {
       return std::make_unique <attribute_producer> (std::move (a));
     }
+
+    static std::string
+    docstring ()
+    {
+      return
+R"docstring(
+
+Takes a DIE on TOS and yields its individual attributes.  If it is a
+raw DIE, it yields only those attributes that the DIE contains.  For
+cooked DIE's it also inlines attributes at DIE's referenced by
+``DW_AT_abstract_origin`` and ``DW_AT_specification``, except those
+that are already present at the original DIE, or those that it makes
+no sense to import (as of this writing, ``DW_AT_sibling``,
+``DW_AT_declaration``, ``DW_AT_decl_file``, ``DW_AT_decl_line`` and
+``DW_AT_decl_column``).
+
+Example::
+
+	$ dwgrep ./tests/nullptr.o -e 'raw entry (offset == 0x6e) attribute'
+	specification (ref4)	[3f];
+	inline (data1)	DW_INL_declared_inlined;
+	object_pointer (ref4)	[7c];
+	sibling (ref4)	[8b];
+
+	$ dwgrep ./tests/nullptr.o -e 'raw entry (offset == 0x3f)'
+	[3f]	subprogram
+		external (flag_present)	true;			# Will be integrate.
+		name (string)	foo;				# Likewise.
+		decl_file (data1)	tests/nullptr.cc;	# Won't--meaningless.
+		decl_line (data1)	3;			# Likewise.
+		declaration (flag_present)	true;		# Likewise.
+		object_pointer (ref4)	[4a];			# Won't--duplicate.
+
+	$ dwgrep ./tests/nullptr.o -e 'entry (offset == 0x6e) attribute'
+	specification (ref4)	[3f];
+	inline (data1)	DW_INL_declared_inlined;
+	object_pointer (ref4)	[7c];
+	sibling (ref4)	[8b];
+	external (flag_present)	true;
+	name (string)	foo;
+
+
+)docstring";
+    }
   };
 
   struct op_attribute_abbrev
@@ -759,6 +1055,25 @@ namespace
     {
       return std::make_unique <producer> (std::move (a));
     }
+
+    static std::string
+    docstring ()
+    {
+      return
+R"docstring(
+
+Takes an abbreviation on TOS and yields all its attributes::
+
+	$ dwgrep ./tests/nullptr.o -e 'entry (offset == 0x3f) abbrev attribute'
+	0x31 external (flag_present)
+	0x33 name (string)
+	0x35 decl_file (data1)
+	0x37 decl_line (data1)
+	0x39 declaration (flag_present)
+	0x3b object_pointer (ref4)
+
+)docstring";
+    }
   };
 }
 
@@ -782,6 +1097,15 @@ namespace
     {
       return cu_offset (a->get_offset ());
     }
+
+    static std::string
+    docstring ()
+    {
+      return
+R"docstring(
+
+)docstring";
+    }
   };
 
   struct op_offset_die
@@ -794,6 +1118,15 @@ namespace
     {
       constant c {dwarf_dieoffset (&val->get_die ()), &dw_offset_dom ()};
       return std::make_unique <value_cst> (c, 0);
+    }
+
+    static std::string
+    docstring ()
+    {
+      return
+R"docstring(
+
+)docstring";
     }
   };
 
@@ -814,6 +1147,15 @@ namespace
       constant c {abbrev_off, &dw_offset_dom ()};
       return std::make_unique <value_cst> (c, 0);
     }
+
+    static std::string
+    docstring ()
+    {
+      return
+R"docstring(
+
+)docstring";
+    }
   };
 
   struct op_offset_abbrev
@@ -826,6 +1168,15 @@ namespace
     {
       constant c {dwpp_abbrev_offset (a->get_abbrev ()), &dw_offset_dom ()};
       return std::make_unique <value_cst> (c, 0);
+    }
+
+    static std::string
+    docstring ()
+    {
+      return
+R"docstring(
+
+)docstring";
     }
   };
 
@@ -840,6 +1191,15 @@ namespace
       constant c {a->offset, &dw_offset_dom ()};
       return std::make_unique <value_cst> (c, 0);
     }
+
+    static std::string
+    docstring ()
+    {
+      return
+R"docstring(
+
+)docstring";
+    }
   };
 
   struct op_offset_loclist_op
@@ -853,6 +1213,15 @@ namespace
       Dwarf_Op const *dwop = val->get_dwop ();
       constant c {dwop->offset, &dw_offset_dom ()};
       return std::make_unique <value_cst> (c, 0);
+    }
+
+    static std::string
+    docstring ()
+    {
+      return
+R"docstring(
+
+)docstring";
     }
   };
 }
@@ -869,6 +1238,15 @@ namespace
     operate (std::unique_ptr <value_die> a) override
     {
       return die_ranges (a->get_die ());
+    }
+
+    static std::string
+    docstring ()
+    {
+      return
+R"docstring(
+
+)docstring";
     }
   };
 
@@ -911,6 +1289,15 @@ namespace
 
       return nullptr;
     }
+
+    static std::string
+    docstring ()
+    {
+      return
+R"docstring(
+
+)docstring";
+    }
   };
 
   struct op_address_loclist_elem
@@ -927,6 +1314,15 @@ namespace
       coverage cov;
       cov.add (low, len);
       return std::make_unique <value_aset> (cov, 0);
+    }
+
+    static std::string
+    docstring ()
+    {
+      return
+R"docstring(
+
+)docstring";
     }
   };
 }
@@ -947,6 +1343,15 @@ namespace
       constant cst {(unsigned) tag, &dw_tag_dom ()};
       return std::make_unique <value_cst> (cst, 0);
     }
+
+    static std::string
+    docstring ()
+    {
+      return
+R"docstring(
+
+)docstring";
+    }
   };
 
   struct op_label_attr
@@ -959,6 +1364,15 @@ namespace
     {
       constant cst {dwarf_whatattr (&val->get_attr ()), &dw_attr_dom ()};
       return std::make_unique <value_cst> (cst, 0);
+    }
+
+    static std::string
+    docstring ()
+    {
+      return
+R"docstring(
+
+)docstring";
     }
   };
 
@@ -975,6 +1389,15 @@ namespace
       constant cst {(unsigned) tag, &dw_tag_dom ()};
       return std::make_unique <value_cst> (cst, 0);
     }
+
+    static std::string
+    docstring ()
+    {
+      return
+R"docstring(
+
+)docstring";
+    }
   };
 
   struct op_label_abbrev_attr
@@ -987,6 +1410,15 @@ namespace
     {
       constant cst {a->name, &dw_attr_dom ()};
       return std::make_unique <value_cst> (cst, 0);
+    }
+
+    static std::string
+    docstring ()
+    {
+      return
+R"docstring(
+
+)docstring";
     }
   };
 
@@ -1001,6 +1433,15 @@ namespace
       constant cst {val->get_dwop ()->atom, &dw_locexpr_opcode_dom (),
 		    brevity::brief};
       return std::make_unique <value_cst> (cst, 0);
+    }
+
+    static std::string
+    docstring ()
+    {
+      return
+R"docstring(
+
+)docstring";
     }
   };
 }
@@ -1019,6 +1460,15 @@ namespace
       constant cst {dwarf_whatform (&val->get_attr ()), &dw_form_dom ()};
       return std::make_unique <value_cst> (cst, 0);
     }
+
+    static std::string
+    docstring ()
+    {
+      return
+R"docstring(
+
+)docstring";
+    }
   };
 
   struct op_form_abbrev_attr
@@ -1031,6 +1481,15 @@ namespace
     {
       constant cst {a->form, &dw_form_dom ()};
       return std::make_unique <value_cst> (cst, 0);
+    }
+
+    static std::string
+    docstring ()
+    {
+      return
+R"docstring(
+
+)docstring";
     }
   };
 }
@@ -1094,6 +1553,15 @@ namespace
     {
       return do_operate (std::move (a));
     }
+
+    static std::string
+    docstring ()
+    {
+      return
+R"docstring(
+
+)docstring";
+    }
   };
 }
 
@@ -1139,6 +1607,15 @@ namespace
       return std::make_unique <value_die> (a->get_dwctx (), cudie, 0,
 					   a->get_doneness ());
     }
+
+    static std::string
+    docstring ()
+    {
+      return
+R"docstring(
+
+)docstring";
+    }
   };
 
   struct op_root_die
@@ -1163,6 +1640,15 @@ namespace
     {
       return do_operate (std::move (a));
     }
+
+    static std::string
+    docstring ()
+    {
+      return
+R"docstring(
+
+)docstring";
+    }
   };
 }
 
@@ -1179,6 +1665,15 @@ namespace
     {
       return at_value (a->get_dwctx (), a->get_die (), a->get_attr ());
     }
+
+    static std::string
+    docstring ()
+    {
+      return
+R"docstring(
+
+)docstring";
+    }
   };
 
   struct op_value_loclist_op
@@ -1192,6 +1687,15 @@ namespace
       return std::make_unique <value_producer_cat <value>>
 	(dwop_number (a->get_dwctx (), a->get_attr (), a->get_dwop ()),
 	 dwop_number2 (a->get_dwctx (), a->get_attr (), a->get_dwop ()));
+    }
+
+    static std::string
+    docstring ()
+    {
+      return
+R"docstring(
+
+)docstring";
     }
   };
 }
@@ -1214,6 +1718,15 @@ namespace
 	return nullptr;
       return get_die_addr (&a->get_die (), &dwarf_lowpc);
     }
+
+    static std::string
+    docstring ()
+    {
+      return
+R"docstring(
+
+)docstring";
+    }
   };
 
   struct op_low_aset
@@ -1230,6 +1743,15 @@ namespace
 
       return std::make_unique <value_cst>
 	(constant {cov.at (0).start, &dw_address_dom ()}, 0);
+    }
+
+    static std::string
+    docstring ()
+    {
+      return
+R"docstring(
+
+)docstring";
     }
   };
 }
@@ -1252,6 +1774,15 @@ namespace
 	return nullptr;
       return get_die_addr (&a->get_die (), &dwarf_highpc);
     }
+
+    static std::string
+    docstring ()
+    {
+      return
+R"docstring(
+
+)docstring";
+    }
   };
 
   struct op_high_aset
@@ -1270,6 +1801,15 @@ namespace
 
       return std::make_unique <value_cst>
 	(constant {range.start + range.length, &dw_address_dom ()}, 0);
+    }
+
+    static std::string
+    docstring ()
+    {
+      return
+R"docstring(
+
+)docstring";
     }
   };
 }
@@ -1314,6 +1854,15 @@ namespace
       cov.add (av.uval (), (bv - av).uval ());
       return std::make_unique <value_aset> (cov, 0);
     }
+
+    static std::string
+    docstring ()
+    {
+      return
+R"docstring(
+
+)docstring";
+    }
   };
 }
 
@@ -1333,6 +1882,15 @@ namespace
       a->get_coverage ().add (bv.uval (), 1);
       return std::move (a);
     }
+
+    static std::string
+    docstring ()
+    {
+      return
+R"docstring(
+
+)docstring";
+    }
   };
 
   struct op_add_aset_aset
@@ -1346,6 +1904,15 @@ namespace
     {
       a->get_coverage ().add_all (b->get_coverage ());
       return std::move (a);
+    }
+
+    static std::string
+    docstring ()
+    {
+      return
+R"docstring(
+
+)docstring";
     }
   };
 }
@@ -1366,6 +1933,15 @@ namespace
       a->get_coverage ().remove (bv.uval (), 1);
       return std::move (a);
     }
+
+    static std::string
+    docstring ()
+    {
+      return
+R"docstring(
+
+)docstring";
+    }
   };
 
   struct op_sub_aset_aset
@@ -1379,6 +1955,15 @@ namespace
     {
       a->get_coverage ().remove_all (b->get_coverage ());
       return std::move (a);
+    }
+
+    static std::string
+    docstring ()
+    {
+      return
+R"docstring(
+
+)docstring";
     }
   };
 }
@@ -1400,6 +1985,15 @@ namespace
 
       return std::make_unique <value_cst>
 	(constant {length, &dec_constant_dom}, 0);
+    }
+
+    static std::string
+    docstring ()
+    {
+      return
+R"docstring(
+
+)docstring";
     }
   };
 }
@@ -1442,6 +2036,15 @@ namespace
     operate (std::unique_ptr <value_aset> a) override
     {
       return std::make_unique <producer> (std::move (a));
+    }
+
+    static std::string
+    docstring ()
+    {
+      return
+R"docstring(
+
+)docstring";
     }
   };
 }
@@ -1525,6 +2128,15 @@ namespace
 	}
       return std::make_unique <value_aset> (ret, 0);
     }
+
+    static std::string
+    docstring ()
+    {
+      return
+R"docstring(
+
+)docstring";
+    }
   };
 }
 
@@ -1585,6 +2197,15 @@ namespace
     {
       return std::make_unique <abbrev_producer> (a->get_dwctx ());
     }
+
+    static std::string
+    docstring ()
+    {
+      return
+R"docstring(
+
+)docstring";
+    }
   };
 
   struct op_abbrev_cu
@@ -1597,6 +2218,15 @@ namespace
     {
       return std::make_unique <value_abbrev_unit>
 	(a->get_dwctx (), a->get_cu (), 0);
+    }
+
+    static std::string
+    docstring ()
+    {
+      return
+R"docstring(
+
+)docstring";
     }
   };
 
@@ -1616,6 +2246,15 @@ namespace
 
       return std::make_unique <value_abbrev>
 	(a->get_dwctx (), *a->get_die ().abbrev, 0);
+    }
+
+    static std::string
+    docstring ()
+    {
+      return
+R"docstring(
+
+)docstring";
     }
   };
 }
@@ -1663,6 +2302,15 @@ namespace
 		    &dw_abbrevcode_dom ()};
       return std::make_unique <value_cst> (cst, 0);
     }
+
+    static std::string
+    docstring ()
+    {
+      return
+R"docstring(
+
+)docstring";
+    }
   };
 }
 
@@ -1687,6 +2335,15 @@ namespace
       constant c {version, &dec_constant_dom};
       return std::make_unique <value_cst> (c, 0);
     }
+
+    static std::string
+    docstring ()
+    {
+      return
+R"docstring(
+
+)docstring";
+    }
   };
 }
 
@@ -1702,6 +2359,15 @@ namespace
     operate (std::unique_ptr <value_dwarf> a) override
     {
       return std::make_unique <value_str> (std::string {a->get_fn ()}, 0);
+    }
+
+    static std::string
+    docstring ()
+    {
+      return
+R"docstring(
+
+)docstring";
     }
   };
 
@@ -1732,6 +2398,15 @@ namespace
       else
 	return nullptr;
     }
+
+    static std::string
+    docstring ()
+    {
+      return
+R"docstring(
+
+)docstring";
+    }
   };
 }
 
@@ -1749,6 +2424,15 @@ namespace
       return std::make_unique <value_dwarf>
 	(a->get_fn (), a->get_dwctx (), 0, doneness::raw);
     }
+
+    static std::string
+    docstring ()
+    {
+      return
+R"docstring(
+
+)docstring";
+    }
   };
 
   struct op_raw_cu
@@ -1761,6 +2445,15 @@ namespace
     {
       return std::make_unique <value_cu>
 	(a->get_dwctx (), a->get_cu (), a->get_offset (), 0, doneness::raw);
+    }
+
+    static std::string
+    docstring ()
+    {
+      return
+R"docstring(
+
+)docstring";
     }
   };
 
@@ -1775,6 +2468,15 @@ namespace
       return std::make_unique <value_die>
 	(a->get_dwctx (), a->get_die (), 0, doneness::raw);
     }
+
+    static std::string
+    docstring ()
+    {
+      return
+R"docstring(
+
+)docstring";
+    }
   };
 
   struct op_raw_attr
@@ -1787,6 +2489,15 @@ namespace
     {
       return std::make_unique <value_attr>
 	(a->get_dwctx (), a->get_attr (), a->get_die (), 0, doneness::raw);
+    }
+
+    static std::string
+    docstring ()
+    {
+      return
+R"docstring(
+
+)docstring";
     }
   };
 }
@@ -1805,6 +2516,15 @@ namespace
       return std::make_unique <value_dwarf>
 	(a->get_fn (), a->get_dwctx (), 0, doneness::cooked);
     }
+
+    static std::string
+    docstring ()
+    {
+      return
+R"docstring(
+
+)docstring";
+    }
   };
 
   struct op_cooked_cu
@@ -1817,6 +2537,15 @@ namespace
     {
       return std::make_unique <value_cu>
 	(a->get_dwctx (), a->get_cu (), a->get_offset (), 0, doneness::cooked);
+    }
+
+    static std::string
+    docstring ()
+    {
+      return
+R"docstring(
+
+)docstring";
     }
   };
 
@@ -1831,6 +2560,15 @@ namespace
       return std::make_unique <value_die>
 	(a->get_dwctx (), a->get_die (), 0, doneness::cooked);
     }
+
+    static std::string
+    docstring ()
+    {
+      return
+R"docstring(
+
+)docstring";
+    }
   };
 
   struct op_cooked_attr
@@ -1843,6 +2581,15 @@ namespace
     {
       return std::make_unique <value_attr>
 	(a->get_dwctx (), a->get_attr (), a->get_die (), 0, doneness::cooked);
+    }
+
+    static std::string
+    docstring ()
+    {
+      return
+R"docstring(
+
+)docstring";
     }
   };
 }
@@ -1899,6 +2646,15 @@ namespace
 	return nullptr;
 
       return at_value (a->get_dwctx (), a->get_die (), attr);
+    }
+
+    static std::string
+    docstring ()
+    {
+      return
+R"docstring(
+
+)docstring";
     }
   };
 }
