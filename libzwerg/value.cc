@@ -35,10 +35,10 @@
 #include "value.hh"
 
 value_type
-value_type::alloc (char const *name)
+value_type::alloc (char const *name, char const *docstring)
 {
   static uint8_t last = 0;
-  value_type vt {++last, name};
+  value_type vt {++last, name, docstring};
   if (last == 0)
     {
       std::cerr << "Ran out of value type identifiers." << std::endl;
@@ -58,6 +58,13 @@ namespace
     return names;
   }
 
+  std::vector <std::pair <uint8_t, std::string>> &
+  get_vtype_docstrings ()
+  {
+    static std::vector <std::pair <uint8_t, std::string>> docstrings;
+    return docstrings;
+  }
+
   char const *
   find_vtype_name (uint8_t code)
   {
@@ -73,11 +80,13 @@ namespace
 }
 
 void
-value_type::register_name (uint8_t code, char const *name)
+value_type::register_type (uint8_t code,
+			   char const *name, char const *docstring)
 {
   auto &vtn = get_vtype_names ();
   assert (find_vtype_name (code) == nullptr);
   vtn.push_back (std::make_pair (code, name));
+  get_vtype_docstrings ().push_back (std::make_pair (code, docstring));
 }
 
 char const *
@@ -86,6 +95,18 @@ value_type::name () const
   auto ret = find_vtype_name (m_code);
   assert (ret != nullptr);
   return ret;
+}
+
+std::vector <std::pair <uint8_t, std::string>>
+value_type::get_docstrings ()
+{
+  return get_vtype_docstrings ();
+}
+
+std::vector <std::pair <uint8_t, char const *>>
+value_type::get_names ()
+{
+  return get_vtype_names ();
 }
 
 std::ostream &

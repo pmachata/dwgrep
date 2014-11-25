@@ -30,6 +30,7 @@
 #define _VALUE_H_
 
 #include <memory>
+#include <vector>
 
 #include "constant.hh"
 
@@ -59,19 +60,20 @@ class value_type
 {
   uint8_t m_code;
 
-  static void register_name (uint8_t code, char const *name);
+  static void register_type (uint8_t code,
+			     char const *name, char const *docstring);
 
 public:
-  static value_type alloc (char const *name);
+  static value_type alloc (char const *name, char const *docstring = "");
 
   explicit value_type (uint8_t code)
     : m_code {code}
   {}
 
-  value_type (uint8_t code, char const *name)
+  value_type (uint8_t code, char const *name, char const *docstring)
     : m_code {code}
   {
-    register_name (code, name);
+    register_type (code, name, docstring);
   }
 
   value_type (value_type const &that)
@@ -80,6 +82,8 @@ public:
 
   // Either returns non-null or crashes.
   char const *name () const;
+
+  std::string docstring () const;
 
   uint8_t code () const { return m_code; }
 
@@ -100,6 +104,9 @@ public:
   {
     return m_code != that.m_code;
   }
+
+  static std::vector <std::pair <uint8_t, std::string>> get_docstrings ();
+  static std::vector <std::pair <uint8_t, char const *>> get_names ();
 };
 
 std::ostream &operator<< (std::ostream &o, value_type const &v);

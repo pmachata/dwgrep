@@ -38,6 +38,33 @@
 #include "docstring.hh"
 #include "flag_saver.hh"
 
+static void
+doit (std::vector <std::pair <std::string, std::string>> entries,
+      std::string handle)
+{
+  entries.erase
+    (std::remove_if (entries.begin (), entries.end (),
+		     [] (std::pair <std::string, std::string> const &p)
+		     {
+		       return p.second == "@hide";
+		     }),
+     entries.end ());
+
+  auto dentries = doc_deduplicate (entries);
+
+  for (auto &dentry: dentries)
+    std::sort (dentry.first.begin (), dentry.first.end ());
+
+  std::sort (dentries.begin (), dentries.end (),
+	     [] (std::pair <std::vector <std::string>, std::string> const &p1,
+		 std::pair <std::vector <std::string>, std::string> const &p2)
+	     {
+	       return p1.first < p2.first;
+	     });
+
+  std::cout << format_entry_map (dentries, '-', handle);
+}
+
 int
 main (int argc, char const **argv)
 {
@@ -68,6 +95,26 @@ main (int argc, char const **argv)
 
   std::cout << ".. include:: " << handle << "-blurb.txt\n\n";
 
+  std::vector <std::pair <std::string, std::string>> types;
+
+  {
+    std::vector <std::pair <uint8_t, char const *>> tnames
+      = value_type::get_names ();
+    std::vector <std::pair <uint8_t, std::string>> docstrings
+      = value_type::get_docstrings ();
+
+    assert (tnames.size () == docstrings.size ());
+
+    std::transform (tnames.begin (), tnames.end (), docstrings.begin (),
+		    std::back_inserter (types),
+		    [&] (std::pair <uint8_t, char const *> tn,
+			 std::pair <uint8_t, std::string> const &ds)
+		    {
+		      assert (tn.first == ds.first);
+		      return std::make_pair (tn.second, ds.second);
+		    });
+  }
+
   std::vector <std::pair <std::string, std::string>> entries;
 
   auto bis = [&] ()
@@ -89,26 +136,20 @@ main (int argc, char const **argv)
 		    return std::make_pair (bi.first, bi.second->docstring ());
 		  });
 
-  entries.erase
-    (std::remove_if (entries.begin (), entries.end (),
-		     [] (std::pair <std::string, std::string> const &p)
+  // Drop non-local types.
+  types.erase
+    (std::remove_if (types.begin (), types.end (),
+		     [&] (std::pair <std::string, std::string> const &t)
 		     {
-		       return p.second == "@hide";
+		       return std::find_if
+			 (entries.begin (), entries.end (),
+			  [&] (std::pair <std::string, std::string> const &e)
+			  {
+			    return e.first == t.first;
+			  }) == entries.end ();
 		     }),
-     entries.end ());
+     types.end ());
 
-  auto dentries = doc_deduplicate (entries);
-
-  for (auto &dentry: dentries)
-    std::sort (dentry.first.begin (), dentry.first.end ());
-
-  std::sort (dentries.begin (), dentries.end (),
-	     [] (std::pair <std::vector <std::string>, std::string> const &p1,
-		 std::pair <std::vector <std::string>, std::string> const &p2)
-	     {
-	       return p1.first < p2.first;
-	     });
-
-  std::cout << format_entry_map (dentries, '-', handle);
-
+  doit (types, handle + " type");
+  doit (entries, handle);
 }

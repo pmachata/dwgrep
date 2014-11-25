@@ -32,7 +32,8 @@
 #include "value-closure.hh"
 #include "tree.hh"
 
-value_type const value_closure::vtype = value_type::alloc ("T_CLOSURE");
+value_type const value_closure::vtype
+	= value_type::alloc ("T_CLOSURE", "@hide");
 
 value_closure::value_closure (tree const &t,
 			      std::shared_ptr <frame> frame, size_t pos)
