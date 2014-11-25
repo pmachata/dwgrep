@@ -34,7 +34,18 @@
 #include "overload.hh"
 #include "value-cst.hh"
 
-value_type const value_seq::vtype = value_type::alloc ("T_SEQ");
+value_type const value_seq::vtype = value_type::alloc ("T_SEQ",
+R"docstring(
+
+Values of this type hold sequences, ordered heterogeneous collections
+of other values (including other sequences)::
+
+	$ dwgrep '[[], 2, "yes"] elem type'
+	T_SEQ
+	T_CONST
+	T_STR
+
+)docstring");
 
 namespace
 {

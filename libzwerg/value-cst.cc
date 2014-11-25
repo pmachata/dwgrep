@@ -31,7 +31,31 @@
 
 #include "value-cst.hh"
 
-value_type const value_cst::vtype = value_type::alloc ("T_CONST");
+value_type const value_cst::vtype = value_type::alloc ("T_CONST",
+R"docstring(
+
+Values of this type are used to hold integral constants.  Zwerg
+constants allow storing signed or unsigned 64-bit numbers.  Arithmetic
+operators handle transitions between signed and unsigned values
+transparently::
+
+	$ dwgrep '0xffffffffffffff00 0xffffffffffffffff sub'
+	-0xff
+
+Note that division and modulo by zero, as well as overflow, are caught
+at runtime::
+
+	$ dwgrep '5 (2, 0, 3) div'
+	2
+	Error: division by zero occured when computing 5/0
+	1
+
+	$ dwgrep '0xffffffffffffffff (-1, 0, 1) add'
+	0xfffffffffffffffe
+	0xffffffffffffffff
+	Error: overflow occured when computing 18446744073709551615+1
+
+)docstring");
 
 void
 value_cst::show (std::ostream &o, brevity brv) const

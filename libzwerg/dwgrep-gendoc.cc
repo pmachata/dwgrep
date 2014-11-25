@@ -136,7 +136,10 @@ main (int argc, char const **argv)
 		    return std::make_pair (bi.first, bi.second->docstring ());
 		  });
 
-  // Drop non-local types.
+  // Drop non-local types, i.e. drop those that are _not_ present
+  // among ENTRIES.  The reason is that ENTRIES include only those
+  // type words (T_CONST etc.) that are actually defined in this
+  // module.
   types.erase
     (std::remove_if (types.begin (), types.end (),
 		     [&] (std::pair <std::string, std::string> const &t)
@@ -149,6 +152,21 @@ main (int argc, char const **argv)
 			  }) == entries.end ();
 		     }),
      types.end ());
+
+  // Drop entries that are documented as types, i.e. drop those that
+  // _are_ present among TYPES.
+  entries.erase
+    (std::remove_if (entries.begin (), entries.end (),
+		     [&] (std::pair <std::string, std::string> const &t)
+		     {
+		       return std::find_if
+			 (types.begin (), types.end (),
+			  [&] (std::pair <std::string, std::string> const &e)
+			  {
+			    return e.first == t.first;
+			  }) != types.end ();
+		     }),
+     entries.end ());
 
   doit (types, handle + " type");
   doit (entries, handle);

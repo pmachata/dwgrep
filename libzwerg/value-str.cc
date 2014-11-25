@@ -34,7 +34,18 @@
 #include "overload.hh"
 #include "value-cst.hh"
 
-value_type const value_str::vtype = value_type::alloc ("T_STR");
+value_type const value_str::vtype = value_type::alloc ("T_STR",
+R"docstring(
+
+Values of this type hold strings (sequences of characters).  No
+unicode support is provided as such, though UTF-8 should naturally
+work.  Zwerg strings are not NUL-terminated::
+
+	$ dwgrep '"abc \x00 def" (, length)'
+	abc  def
+	9
+
+)docstring");
 
 void
 value_str::show (std::ostream &o, brevity brv) const
