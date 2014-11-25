@@ -139,9 +139,4 @@ std::ostream &operator<< (std::ostream &o, constant cst);
 
 void check_arith (constant const &cst_a, constant const &cst_b);
 
-// For two different domains, complain about comparisons that
-// don't have at least one comparand signed_constant_dom or
-// unsigned_constant_dom.
-void check_constants_comparable (constant const &cst_a, constant const &cst_b);
-
 #endif /* _CONSTANT_H_ */

@@ -112,12 +112,19 @@ ADD_EXECUTABLE (test-parser
 ADD_TEST (TestParser test-parser)
 
 IF (GTEST_FOUND)
+  SET (TESTCASE_DIR "--test-case-directory=${CMAKE_SOURCE_DIR}/tests/")
+
   ADD_LIBRARY (TestStub OBJECT test-stub.cc)
 
   ADD_EXECUTABLE (test-dw test-dw.cc $<TARGET_OBJECTS:TestStub> ${LibzwergAll})
   TARGET_LINK_LIBRARIES (test-dw
     ${GTEST_LIBRARIES} ${LIBELF_LIBRARY} ${DWARF_LIBRARIES})
-  ADD_TEST (TestDw test-dw --test-case-directory=${CMAKE_SOURCE_DIR}/tests/)
+  ADD_TEST (TestDw test-dw ${TESTCASE_DIR})
+
+  ADD_EXECUTABLE (test-value-cst test-value-cst.cc
+    $<TARGET_OBJECTS:TestStub> $<TARGET_OBJECTS:LibzwergCore>)
+  TARGET_LINK_LIBRARIES (test-value-cst ${GTEST_LIBRARIES})
+  ADD_TEST (TestValueCst test-value-cst ${TESTCASE_DIR})
 ENDIF ()
 
 IF (SPHINX_EXECUTABLE)

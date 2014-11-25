@@ -1994,7 +1994,6 @@ namespace
     pred_result
     result (value_cst &a) override
     {
-      check_constants_comparable (m_const, a.get_constant ());
       return pred_result (m_const == a.get_constant ());
     }
   };
@@ -2047,7 +2046,6 @@ namespace
     pred_result
     result (value_cst &a) override
     {
-      check_constants_comparable (m_const, a.get_constant ());
       return pred_result (m_const == a.get_constant ());
     }
   };
@@ -2100,7 +2098,6 @@ namespace
     pred_result
     result (value_cst &a) override
     {
-      check_constants_comparable (m_const, a.get_constant ());
       return pred_result (m_const == a.get_constant ());
     }
   };
@@ -2156,7 +2153,6 @@ namespace
     pred_result
     result (value_cst &a) override
     {
-      check_constants_comparable (m_const, a.get_constant ());
       return pred_result (m_const == a.get_constant ());
     }
   };

@@ -39,10 +39,6 @@ namespace
   pred_result
   comparison_result (stack &stk, cmp_result want)
   {
-    if (auto va = stk.get_as <value_cst> (0))
-      if (auto vb = stk.get_as <value_cst> (1))
-	check_constants_comparable (va->get_constant (), vb->get_constant ());
-
     auto &va = stk.get (0);
     auto &vb = stk.get (1);
     cmp_result r = vb.cmp (va);

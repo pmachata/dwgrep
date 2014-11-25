@@ -225,14 +225,3 @@ check_arith (constant const &cst_a, constant const &cst_b)
     std::cerr << "Warning: doing arithmetic with " << cst_a << " and "
 	      << cst_b << " is probably not meaningful.\n";
 }
-
-void
-check_constants_comparable (constant const &cst_a, constant const &cst_b)
-{
-  auto dom1 = cst_a.dom ();
-  auto dom2 = cst_b.dom ();
-  if (dom1 != dom2 && ! dom1->safe_arith () && ! dom2->safe_arith ())
-    std::cerr << "Warning: comparing " << cst_a << " to " << cst_b
-	      << " is probably not meaningful (domains are "
-	      << dom1->name () << " and " << dom2->name () << ").\n";
-}
