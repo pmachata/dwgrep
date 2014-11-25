@@ -41,6 +41,16 @@ namespace
   {
     auto &va = stk.get (0);
     auto &vb = stk.get (1);
+
+    {
+      auto ta = va.get_type ();
+      auto tb = vb.get_type ();
+      if (ta < tb)
+	return pred_result (want == cmp_result::less);
+      else if (tb < ta)
+	return pred_result (want == cmp_result::greater);
+    }
+
     cmp_result r = vb.cmp (va);
     if (r == cmp_result::fail)
       {

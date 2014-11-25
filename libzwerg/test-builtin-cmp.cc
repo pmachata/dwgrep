@@ -27,31 +27,25 @@
    not, see <http://www.gnu.org/licenses/>.  */
 
 #include <gtest/gtest.h>
+#include "builtin-cmp.hh"
+#include "value-str.hh"
 #include "value-cst.hh"
 
-struct dom
-  : public constant_dom
+TEST (TestBuiltinCmp, comparison_of_different_types)
 {
-  void show (mpz_class const &c, std::ostream &o,
-	     brevity brv) const override
-  {}
+  stack stk;
+  stk.push (std::make_unique <value_cst> (constant {7, &dec_constant_dom}, 0));
+  stk.push (std::make_unique <value_str> ("foo", 0));
 
-  std::string name () const override
-  { return "dom1;"; }
-} dom1, dom2;
+  auto eqr = builtin_eq {true}.build_pred ()->result (stk);
+  auto ltr = builtin_lt {true}.build_pred ()->result (stk);
+  auto gtr = builtin_gt {true}.build_pred ()->result (stk);
 
-TEST (ValueCstTest, comparison_of_different_domains)
-{
-  value_cst cst_a {constant {7, &dom1}, 0};
-  value_cst cst_b {constant {7, &dom2}, 0};
-  value_cst cst_c {constant {8, &dom1}, 0};
-  value_cst cst_d {constant {8, &dom2}, 0};
+  ASSERT_NE (pred_result::fail, eqr);
+  ASSERT_NE (pred_result::fail, ltr);
+  ASSERT_NE (pred_result::fail, gtr);
 
-  EXPECT_TRUE (cst_a.cmp (cst_b) != cmp_result::equal);
-  EXPECT_TRUE (cst_a.cmp (cst_b) != cmp_result::fail);
-  EXPECT_TRUE (cst_b.cmp (cst_a) != cmp_result::equal);
-  EXPECT_TRUE (cst_b.cmp (cst_a) != cmp_result::fail);
-  EXPECT_TRUE (cst_a.cmp (cst_b) != cst_b.cmp (cst_a));
-  EXPECT_EQ (cst_a.cmp (cst_b), cst_c.cmp (cst_d));
-  EXPECT_EQ (cst_b.cmp (cst_a), cst_d.cmp (cst_c));
+  ASSERT_NE (pred_result::yes, eqr);
+  ASSERT_TRUE (ltr == pred_result::yes || gtr == pred_result::yes);
+  ASSERT_FALSE (ltr == pred_result::yes && gtr == pred_result::yes);
 }

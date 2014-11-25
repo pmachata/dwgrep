@@ -125,6 +125,11 @@ IF (GTEST_FOUND)
     $<TARGET_OBJECTS:TestStub> $<TARGET_OBJECTS:LibzwergCore>)
   TARGET_LINK_LIBRARIES (test-value-cst ${GTEST_LIBRARIES})
   ADD_TEST (TestValueCst test-value-cst ${TESTCASE_DIR})
+
+  ADD_EXECUTABLE (test-builtin-cmp test-builtin-cmp.cc
+    $<TARGET_OBJECTS:TestStub> $<TARGET_OBJECTS:LibzwergCore>)
+  TARGET_LINK_LIBRARIES (test-builtin-cmp ${GTEST_LIBRARIES})
+  ADD_TEST (TestBuiltinCmp test-builtin-cmp ${TESTCASE_DIR})
 ENDIF ()
 
 IF (SPHINX_EXECUTABLE)
