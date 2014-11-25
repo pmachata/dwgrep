@@ -66,6 +66,8 @@ main (int argc, char const **argv)
 	      << "\n\n";
   }
 
+  std::cout << ".. include:: " << handle << "-blurb.txt\n\n";
+
   std::vector <std::pair <std::string, std::string>> entries;
 
   auto bis = [&] ()
