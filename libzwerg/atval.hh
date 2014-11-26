@@ -32,8 +32,7 @@
 #include "dwfl_context.hh"
 #include "op.hh"
 
-class value;
-class value_aset;
+#include "value-dw.hh"
 
 // Obtain a value of ATTR at DIE.
 std::unique_ptr <value_producer <value>>
@@ -41,7 +40,7 @@ at_value (std::shared_ptr <dwfl_context> dwctx,
 	  Dwarf_Die die, Dwarf_Attribute attr);
 
 // Obtain DIE's ranges.
-std::unique_ptr <value_aset> die_ranges (Dwarf_Die die);
+value_aset die_ranges (Dwarf_Die die);
 
 std::unique_ptr <value_producer <value>>
 dwop_number (std::shared_ptr <dwfl_context> dwctx,

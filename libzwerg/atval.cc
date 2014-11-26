@@ -277,7 +277,7 @@ namespace
   };
 }
 
-std::unique_ptr <value_aset>
+value_aset
 die_ranges (Dwarf_Die die)
 {
   coverage cov;
@@ -294,7 +294,7 @@ die_ranges (Dwarf_Die die)
       cov.add (start, end - start);
     }
 
-  return std::make_unique <value_aset> (cov, 0);
+  return value_aset {cov, 0};
 }
 
 namespace
@@ -558,7 +558,8 @@ namespace
 	return std::make_unique <locexpr_producer> (dwctx, attr);
 
       case DW_AT_ranges:
-	return pass_single_value (die_ranges (die));
+	return pass_single_value
+		(std::make_unique <value_aset> (die_ranges (die)));
 
       case DW_AT_macro_info:
 	{
