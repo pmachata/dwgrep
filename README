@@ -51,63 +51,17 @@
 
 * Representation of Dwarf graph
 ** Vocabulary
-   - elem, relem, length -- container-like access
-   - child, parent -- vertical tree access
    - next, prev -- horizontal tree access
-   - root -- access to root tree element
-   - high, low -- boundaries
-   - label -- node denotation (attribute code, DIE tag, ...)
-   - abbrev -- access to abbreviation(s)
-   - attribute -- access to attribute(s)
-   - form -- attribute form (a DW_FORM_* constant)
-   - name -- string associated with entity (file name, symbol name)
-   - offset -- constant describing where in the file the object is
-     defined
-   - address -- address(es) of where in user space the object is
-     defined
-   - merge -- re-establish logical view of the whole
-   - entry -- access to entries of a unit
-   - unit -- access to unit
 
 ** ·T_DWARF
-*** •abbrev :: ?T_DWARF ->* ?T_ABBREV_UNIT
-     - Yields all abbreviation units in a .debug_abbrev section.
-
 ***  symbol :: ?T_DWARF ->* ?T_ELFSYM
      - Yields all symbols in .symtab, or minisymtab, or .dynsym.
-
-*** •name :: ?T_DWARF -> ?T_STR
 
 ** ·T_CU
 ***  next :: ?T_CU ->? T_CU
 ***  prev :: ?T_CU ->? T_CU
-*** •abbrev :: ?T_CU -> ?T_ABBREV_UNIT
-     - Produce an abbreviation unit associated with this CU.
-
-*** •version :: ?T_CU -> ?T_CONST
-
-*** •root :: ?T_CU -> ?T_DIE
-     - Produce a CU DIE of a CU.
 
 ** ·T_DIE
-*** •high :: ?T_DIE ->? ?T_CONST
-     : attribute ?AT_highpc address
-
-*** •low :: ?T_DIE ->? ?T_CONST
-     : @AT_lowpc
-
-*** •parent :: ?T_DIE ->? ?T_DIE
-     Yields the parent of the DIE, if there's any.
-
-     XXX DW_TAG_partial_unit
-
-*** •root :: ?T_DIE -> ?T_DIE
-     : root := {parent* !(parent)};
-
-*** •?root :: ?T_DIE
-     ?root holds if the DIE is a root node.  Equivalent to !(parent).
-     : parent* ?root        # finds a root node of node on TOS
-
 ***  next :: ?T_DIE ->? ?T_DIE
      Like dwarf_siblingof, returns next sibling of the DIE.
 
@@ -119,43 +73,6 @@
 ***  prev :: ?T_DIE ->? ?T_DIE
      The opposite of next.
 
-***  merge :: ?T_DIE ->* ?T_DIE
-     : let merge := { ?DW_TAG_imported_unit @AT_import child+ };
-
-     A typical use would then be:
-     : entry merge*		# if you want to see deref'd DIE's
-     : entry merge* !(merge)	# if you care about the actual tree
-
-     XXX But that is fairly impractical, as one would have to use such
-     operation after each DIE traversal (in particular after every
-     (child) traversal).  You actually rarely need the (entry merge*)
-     thing above, because it already is the case that (entry) visits
-     everyone.  If you need anything at all, it is more likely to be:
-     : entry !(merge)
-
-     ... so that you filter out partial unit headers.
-
-     A better approach could be to have two types for DIE-related
-     elements--raw and cooked DIE's, raw and cooked CU's, etc.  Raw
-     values don't do attribute integration, don't inline imported
-     units and present attribute values as offsets instead of the
-     referenced thing.  Words (cooked) and (raw) switch between the
-     two types.  The default types would be "cooked".
-
-     It's not clear yet whether attributes that even raw DIE's yield
-     shouldn't be cooked implicitly, as things like getting string or
-     DIE offset instead of the thing itself seem rarely useful.Dwarf's.
-
-     Cooked DIE's will also have to keep track of the original DIE
-     where the partial unit import took place, so that when you ask
-     for (parent), you travel back to where you came from without
-     trouble, as if the whole thing were one monolithic unit.
-
-     (unit) on cooked Dwarf would skip partial units.  (entry) would
-     descend through CU's and include partial units this way, so that
-     the logical tree is presented in its whole, and parent/child
-     paths are preserved.
-
 *** •@AT_decl_file
      Value of this attribute is represented as actual string including
      path.
@@ -165,12 +82,6 @@
      sort of querying in the first place--do we have any files where
      this is stored?  Or after it gets to be stored in general, where
      this is _not_ stored?)
-
-*** •abbrev :: ?T_DIE -> ?T_ABBREV
-     Yield abbreviation associated with this DIE.
-
-*** •name :: ?T_DIE -> ?T_STR
-     : @AT_name
 
 *** •@AT_* :: ?T_DIE ->* ?()
      Syntactic sugar for (attribute ?(label == AT_*) value).
@@ -187,23 +98,7 @@
 ***  ?ATE_* :: ?T_DIE
      Holds if @AT_encoding == DW_ATE_*.
 
-***  ?haschildren :: ?T_DIE
-     : abbrev ?haschildren
-     Note that to find out whether a DIE actually does have children,
-     one asks simply ?(child).
-
 ** ·T_ATTR
-*** •value :: ?T_ATTR ->* ?()
-     Yields value(s) of attribute on TOS.
-
-     Some attributes refer to a location expression.  These are
-     represented as a number of nodes of type T_LOCLIST_ELEM.
-     Children of these nodes are T_LOCLIST_OP, individual operations
-     of location expression.
-
-*** •die :: ?T_ATTR -> ?T_DIE
-     - Yield a DIE that this attribute is associated with.
-
 *** •?AT_* :: ?T_ATTR
      Holds if it is this attribute.
 
@@ -217,27 +112,13 @@
      Holds if (?AT_encoding value == DW_ATE_*)
 
 ** •T_ABBREV
-*** •offset :: ?T_ABBREV -> ?T_CONST
-
-*** •code :: ?T_ABBREV -> ?T_CONST
-     - Yields abbreviation code.
-
-***  unit :: ?T_ABBREV -> ?T_ABBREV_UNIT
-     - Yield an abbreviation unit that this abbreviation comes from.
-
 *** •?TAG_* :: ?T_ABBREV
      Holds if abbreviation has this tag.
 
 *** •?AT_* :: ?T_ABBREV
      Holds if abbreviation has this attribute.
 
-*** •?haschildren :: ?T_ABBREV
-     - Holds for abbreviations that form child-ful DIE's.
-
 ** •T_ABBREV_ATTR
-*** •offset :: ?T_ABBREV_ATTR -> ?T_CONST
-     Yields offset of attribute within abbreviation.
-
 *** •?AT_* :: ?T_ABBREV_ATTR
      Holds if it is this attribute.
 
@@ -275,62 +156,8 @@
      opcode.
 
 ** •T_LOCLIST_OP
-*** •value :: ?T_LOCLIST_OP ->* ?()
-     Yields operands associated with this location expression
-     operation.  Operands have anywhere between zero and two operands
-     of various types (some are e.g. T_DIE references).
-
-     For example:
-
-     : [4e] variable
-     :      [...]
-     :      location (exprloc) [0x0..0xffffffffffffffff, [0:fbreg<-18>]]
-
-     Here we have only one T_LOCLIST_OP, and that has an offset of 0, a
-     label of DW_OP_fbreg, and yields one value, -18.
-
 *** •?OP_* :: ?T_LOCLIST_OP
      Holds if this is an operation with this opcode.
-
-** •T_ASET
-    - For holding a set of addresses.
-
-*** •add :: ?T_ASET ?T_CONST -> ?T_ASET
-*** •add :: ?T_ASET ?T_ASET -> ?T_ASET
-*** •sub :: ?T_ASET ?T_CONST -> ?T_ASET
-*** •sub :: ?T_ASET ?T_ASET -> ?T_ASET
-*** •aset :: ?T_CONST ?T_CONST -> ?T_ASET
-*** •range :: ?T_ASET ->* ?T_ASET
-     - Extract continuous subranges of this aset and present them as
-       individual asets.
-
-*** •high :: ?T_ASET ->? ?T_CONST
-     Highest address set in this aset.  Doesn't yield at all if an
-     aset is empty.
-
-*** •low :: ?T_ASET ->? ?T_CONST
-     Lowest address set in this aset.  Doesn't yield at all if an aset
-     is empty.
-
-*** •length :: ?T_ASET -> ?T_CONST
-     : [|A| address] length
-
-*** •?empty :: ?T_ASET
-     : !(elem)
-
-*** •?overlaps :: ?T_ASET ?T_ASET
-     - Holds if there is at least one value common to both osets.
-
-*** •?contains :: ?T_ASET ?T_CONST
-     : ?(|A C| A elem (|E| (C >= E low) (C <= E high)))
-
-*** •?contains :: ?T_ASET ?T_ASET
-     - Holds if the lower aset contains all addresses of the TOS aset.
-     : !(address !contains)
-
-*** •overlap :: ?T_ASET ?T_ASET -> ?T_ASET
-     Compute aset that contains addresses common to both asets.
-     Produces an empty aset if there's no overlap.
 
 **  T_MACRO_UNIT ???
     - A value representing .debug_macro and .debug_macinfo units.
