@@ -130,8 +130,7 @@ doc_deduplicate (std::vector <std::pair <std::string, std::string>> &entries)
       auto entry = std::move (entries.back ());
       entries.pop_back ();
 
-      if (entry.second != "@hide")
-	ds[std::move (entry.second)].push_back (std::move (entry.first));
+      ds[std::move (entry.second)].push_back (std::move (entry.first));
     }
   entries.clear ();
 
@@ -154,6 +153,9 @@ format_entry_map (std::vector <std::pair <std::vector <std::string>,
 
   for (auto const &entry: entries)
     {
+      if (entry.second == "@hide")
+	continue;
+
       if (label != "")
 	{
 	  for (auto const &n: entry.first)

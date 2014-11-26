@@ -1755,6 +1755,15 @@ namespace
       // node.
       return pred_result (a.get_dwctx ()->is_root (a.get_die ()));
     }
+
+    static std::string
+    docstring ()
+    {
+      return
+R"docstring(
+
+)docstring";
+    }
   };
 }
 
@@ -2234,6 +2243,15 @@ namespace
       auto av = addressify (b.get_constant ());
       return pred_result (a.get_coverage ().is_covered (av.uval (), 1));
     }
+
+    static std::string
+    docstring ()
+    {
+      return
+R"docstring(
+
+)docstring";
+    }
   };
 
   struct pred_containsp_aset_aset
@@ -2252,6 +2270,15 @@ namespace
 	    return pred_result::no;
 	}
       return pred_result::yes;
+    }
+
+    static std::string
+    docstring ()
+    {
+      return
+R"docstring(
+
+)docstring";
     }
   };
 }
@@ -2274,6 +2301,15 @@ namespace
 	    return pred_result::yes;
 	}
       return pred_result::no;
+    }
+
+    static std::string
+    docstring ()
+    {
+      return
+R"docstring(
+
+)docstring";
     }
   };
 }
@@ -2323,6 +2359,15 @@ namespace
     result (value_aset &a) override
     {
       return pred_result (a.get_coverage ().empty ());
+    }
+
+    static std::string
+    docstring ()
+    {
+      return
+R"docstring(
+
+)docstring";
     }
   };
 }
@@ -2443,6 +2488,15 @@ namespace
     {
       return pred_result (dwarf_haschildren (&a.get_die ()));
     }
+
+    static std::string
+    docstring ()
+    {
+      return
+R"docstring(
+
+)docstring";
+    }
   };
 
   struct pred_haschildrenp_abbrev
@@ -2454,6 +2508,15 @@ namespace
     result (value_abbrev &a) override
     {
       return pred_result (dwarf_abbrevhaschildren (&a.get_abbrev ()));
+    }
+
+    static std::string
+    docstring ()
+    {
+      return
+R"docstring(
+
+)docstring";
     }
   };
 }
@@ -2822,10 +2885,10 @@ namespace
     static std::string
     docstring ()
     {
-      return
-R"docstring(
-
-)docstring";
+      // XXX this really should be documented somewhere.  But
+      // currently it messes up the whole documentation, so we hide
+      // it.
+      return "@hide";
     }
   };
 }
@@ -2849,6 +2912,15 @@ namespace
 			     a.get_doneness (), nullptr)
 	? pred_result::yes : pred_result::no;
     }
+
+    static std::string
+    docstring ()
+    {
+      // XXX this and the others below really should be documented
+      // somewhere.  But currently they mess up the whole
+      // documentation, so we hide them.
+      return "@hide";
+    }
   };
 
   struct pred_atname_attr
@@ -2864,6 +2936,12 @@ namespace
     result (value_attr &a) override
     {
       return pred_result (dwarf_whatattr (&a.get_attr ()) == m_atname);
+    }
+
+    static std::string
+    docstring ()
+    {
+      return "@hide";
     }
   };
 
@@ -2891,6 +2969,12 @@ namespace
 	}
       return pred_result::no;
     }
+
+    static std::string
+    docstring ()
+    {
+      return "@hide";
+    }
   };
 
   struct pred_atname_abbrev_attr
@@ -2907,6 +2991,12 @@ namespace
     {
       return pred_result (a.name == m_atname);
     }
+
+    static std::string
+    docstring ()
+    {
+      return "@hide";
+    }
   };
 
   struct pred_atname_cst
@@ -2922,6 +3012,12 @@ namespace
     result (value_cst &a) override
     {
       return pred_result (m_const == a.get_constant ());
+    }
+
+    static std::string
+    docstring ()
+    {
+      return "@hide";
     }
   };
 }
@@ -2943,6 +3039,15 @@ namespace
     {
       return pred_result (dwarf_tag (&a.get_die ()) == m_tag);
     }
+
+    static std::string
+    docstring ()
+    {
+      // XXX this and the others below really should be documented
+      // somewhere.  But currently they mess up the whole
+      // documentation, so we hide them.
+      return "@hide";
+    }
   };
 
   struct pred_tag_abbrev
@@ -2959,6 +3064,12 @@ namespace
     {
       return pred_result (dwarf_getabbrevtag (&a.get_abbrev ()) == m_tag);
     }
+
+    static std::string
+    docstring ()
+    {
+      return "@hide";
+    }
   };
 
   struct pred_tag_cst
@@ -2974,6 +3085,12 @@ namespace
     result (value_cst &a) override
     {
       return pred_result (m_const == a.get_constant ());
+    }
+
+    static std::string
+    docstring ()
+    {
+      return "@hide";
     }
   };
 }
@@ -2995,6 +3112,15 @@ namespace
     {
       return pred_result (dwarf_whatform (&a.get_attr ()) == m_form);
     }
+
+    static std::string
+    docstring ()
+    {
+      // XXX this and the others below really should be documented
+      // somewhere.  But currently they mess up the whole
+      // documentation, so we hide them.
+      return "@hide";
+    }
   };
 
   struct pred_form_abbrev_attr
@@ -3011,6 +3137,12 @@ namespace
     {
       return pred_result (a.form == m_form);
     }
+
+    static std::string
+    docstring ()
+    {
+      return "@hide";
+    }
   };
 
   struct pred_form_cst
@@ -3026,6 +3158,12 @@ namespace
     result (value_cst &a) override
     {
       return pred_result (m_const == a.get_constant ());
+    }
+
+    static std::string
+    docstring ()
+    {
+      return "@hide";
     }
   };
 }
@@ -3050,6 +3188,15 @@ namespace
 	  return pred_result::yes;
       return pred_result::no;
     }
+
+    static std::string
+    docstring ()
+    {
+      // XXX this and the others below really should be documented
+      // somewhere.  But currently they mess up the whole
+      // documentation, so we hide them.
+      return "@hide";
+    }
   };
 
   struct pred_op_loclist_op
@@ -3066,6 +3213,12 @@ namespace
     {
       return pred_result (a.get_dwop ()->atom == m_op);
     }
+
+    static std::string
+    docstring ()
+    {
+      return "@hide";
+    }
   };
 
   struct pred_op_cst
@@ -3081,6 +3234,12 @@ namespace
     result (value_cst &a) override
     {
       return pred_result (m_const == a.get_constant ());
+    }
+
+    static std::string
+    docstring ()
+    {
+      return "@hide";
     }
   };
 }
@@ -3459,8 +3618,8 @@ dwgrep_vocabulary_dw ()
 #undef ONE_KNOWN_DW_AT
 
   auto add_dw_tag = [&voc] (int code,
-			     char const *qname, char const *bname,
-			     char const *lqname, char const *lbname)
+			    char const *qname, char const *bname,
+			    char const *lqname, char const *lbname)
     {
       auto t = std::make_shared <overload_tab> ();
 
@@ -3482,8 +3641,8 @@ dwgrep_vocabulary_dw ()
 #undef ONE_KNOWN_DW_TAG
 
   auto add_dw_form = [&voc] (unsigned code,
-			      char const *qname, char const *bname,
-			      char const *lqname, char const *lbname)
+			     char const *qname, char const *bname,
+			     char const *lqname, char const *lbname)
     {
       auto t = std::make_shared <overload_tab> ();
 
@@ -3507,8 +3666,8 @@ dwgrep_vocabulary_dw ()
 #undef ONE_KNOWN_DW_FORM_DESC
 
   auto add_dw_op = [&voc] (unsigned code,
-			    char const *qname, char const *bname,
-			    char const *lqname, char const *lbname)
+			   char const *qname, char const *bname,
+			   char const *lqname, char const *lbname)
     {
       auto t = std::make_shared <overload_tab> ();
 

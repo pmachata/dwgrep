@@ -266,6 +266,13 @@ overloaded_builtin::docstring () const
   std::transform (ovls.begin (), ovls.end (), std::back_inserter (entries),
 		  format_overload);
 
+  // If all overloads are @hide, we want to hide the whole operator,
+  // not render an empty one.
+  if (std::all_of (entries.begin (), entries.end (),
+		   [] (std::pair <std::string, std::string> const &e)
+		   { return e.second == "@hide"; }))
+    return "@hide";
+
   return format_entry_map (doc_deduplicate (entries), '.');
 }
 
