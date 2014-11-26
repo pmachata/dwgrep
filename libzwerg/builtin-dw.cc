@@ -1341,13 +1341,25 @@ covered by this DIE.  (This calls dwarf_ranges under the covers.)::
   };
 
   std::unique_ptr <value_cst>
-  get_die_addr (Dwarf_Die *die, int (cb) (Dwarf_Die *, Dwarf_Addr *))
+  get_die_addr (Dwarf_Die &die, int (cb) (Dwarf_Die *, Dwarf_Addr *))
   {
     Dwarf_Addr addr;
-    if (cb (die, &addr) < 0)
+    if (cb (&die, &addr) < 0)
       throw_libdw ();
     return std::make_unique <value_cst>
       (constant {addr, &dw_address_dom ()}, 0);
+  }
+
+  std::unique_ptr <value_cst>
+  maybe_get_die_addr (Dwarf_Die &die, int atname,
+		      int (cb) (Dwarf_Die *, Dwarf_Addr *))
+  {
+    // Attributes that hold addresses shouldn't generally be found
+    // in abstract origins and declarations, so we don't need to
+    // concern ourselves with integrating here.
+    if (! dwarf_hasattr (&die, atname))
+      return nullptr;
+    return get_die_addr (die, cb);
   }
 
   struct op_address_attr
@@ -1359,10 +1371,10 @@ covered by this DIE.  (This calls dwarf_ranges under the covers.)::
     operate (std::unique_ptr <value_attr> a) override
     {
       if (dwarf_whatattr (&a->get_attr ()) == DW_AT_high_pc)
-	return get_die_addr (&a->get_die (), &dwarf_highpc);
+	return get_die_addr (a->get_die (), &dwarf_highpc);
 
       if (dwarf_whatattr (&a->get_attr ()) == DW_AT_entry_pc)
-	return get_die_addr (&a->get_die (), &dwarf_entrypc);
+	return get_die_addr (a->get_die (), &dwarf_entrypc);
 
       if (dwarf_whatform (&a->get_attr ()) == DW_FORM_addr)
 	{
@@ -1891,12 +1903,7 @@ namespace
     std::unique_ptr <value_cst>
     operate (std::unique_ptr <value_die> a) override
     {
-      // Attributes that hold addresses shouldn't generally be found
-      // in abstract origins and declarations, so we don't need to
-      // concern ourselves with integrating here.
-      if (! dwarf_hasattr (&a->get_die (), DW_AT_low_pc))
-	return nullptr;
-      return get_die_addr (&a->get_die (), &dwarf_lowpc);
+      return maybe_get_die_addr (a->get_die (), DW_AT_low_pc, &dwarf_lowpc);
     }
 
     static std::string
@@ -1947,12 +1954,7 @@ namespace
     std::unique_ptr <value_cst>
     operate (std::unique_ptr <value_die> a) override
     {
-      // Attributes that hold addresses shouldn't generally be found
-      // in abstract origins and declarations, so we don't need to
-      // concern ourselves with integrating here.
-      if (! dwarf_hasattr (&a->get_die (), DW_AT_high_pc))
-	return nullptr;
-      return get_die_addr (&a->get_die (), &dwarf_highpc);
+      return maybe_get_die_addr (a->get_die (), DW_AT_high_pc, &dwarf_highpc);
     }
 
     static std::string
