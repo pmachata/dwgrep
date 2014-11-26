@@ -151,7 +151,8 @@
 <li class="toctree-l1"><a class="reference internal" href="vocabulary-dwarf.html">Dwarf vocabulary</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="vocabulary-dwarf.html#t-abbrev-t-abbrev-attr-t-abbrev-unit-t-aset-t-attr-t-cu-t-die-t-dwarf-t-loclist-elem-t-loclist-op">T_ABBREV, T_ABBREV_ATTR, T_ABBREV_UNIT, T_ASET, T_ATTR, T_CU, T_DIE, T_DWARF, T_LOCLIST_ELEM, T_LOCLIST_OP</a></li>
 <li class="toctree-l2"><a class="reference internal" href="vocabulary-dwarf.html#contains-contains">!contains, ?contains</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="vocabulary-dwarf.html#t-aset-t-aset-t-aset-t-const"><tt class="docutils literal"><span class="pre">T_ASET</span></tt> <tt class="docutils literal"><span class="pre">T_ASET</span></tt>, <tt class="docutils literal"><span class="pre">T_ASET</span></tt> <tt class="docutils literal"><span class="pre">T_CONST</span></tt></a></li>
+<li class="toctree-l3"><a class="reference internal" href="vocabulary-dwarf.html#t-aset-t-const"><tt class="docutils literal"><span class="pre">T_ASET</span></tt> <tt class="docutils literal"><span class="pre">T_CONST</span></tt></a></li>
+<li class="toctree-l3"><a class="reference internal" href="vocabulary-dwarf.html#t-aset-t-aset"><tt class="docutils literal"><span class="pre">T_ASET</span></tt> <tt class="docutils literal"><span class="pre">T_ASET</span></tt></a></li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="vocabulary-dwarf.html#empty-empty">!empty, ?empty</a><ul>
@@ -159,15 +160,16 @@
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="vocabulary-dwarf.html#haschildren-haschildren">!haschildren, ?haschildren</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="vocabulary-dwarf.html#t-abbrev-t-die"><tt class="docutils literal"><span class="pre">T_ABBREV</span></tt>, <tt class="docutils literal"><span class="pre">T_DIE</span></tt></a></li>
+<li class="toctree-l3"><a class="reference internal" href="vocabulary-dwarf.html#t-die"><tt class="docutils literal"><span class="pre">T_DIE</span></tt></a></li>
+<li class="toctree-l3"><a class="reference internal" href="vocabulary-dwarf.html#t-abbrev"><tt class="docutils literal"><span class="pre">T_ABBREV</span></tt></a></li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="vocabulary-dwarf.html#overlaps-overlaps">!overlaps, ?overlaps</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="vocabulary-dwarf.html#t-aset-t-aset"><tt class="docutils literal"><span class="pre">T_ASET</span></tt> <tt class="docutils literal"><span class="pre">T_ASET</span></tt></a></li>
+<li class="toctree-l3"><a class="reference internal" href="vocabulary-dwarf.html#id5"><tt class="docutils literal"><span class="pre">T_ASET</span></tt> <tt class="docutils literal"><span class="pre">T_ASET</span></tt></a></li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="vocabulary-dwarf.html#root-root">!root, ?root</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="vocabulary-dwarf.html#t-die"><tt class="docutils literal"><span class="pre">T_DIE</span></tt></a></li>
+<li class="toctree-l3"><a class="reference internal" href="vocabulary-dwarf.html#id7"><tt class="docutils literal"><span class="pre">T_DIE</span></tt></a></li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="vocabulary-dwarf.html#dw-access-private-dw-access-protected-dw-access-public">DW_ACCESS_private, DW_ACCESS_protected, DW_ACCESS_public</a></li>
@@ -190,11 +192,14 @@
 <li class="toctree-l2"><a class="reference internal" href="vocabulary-dwarf.html#dw-virtuality-none-dw-virtuality-pure-virtual-dw-virtuality-virtual">DW_VIRTUALITY_none, DW_VIRTUALITY_pure_virtual, DW_VIRTUALITY_virtual</a></li>
 <li class="toctree-l2"><a class="reference internal" href="vocabulary-dwarf.html#dw-vis-exported-dw-vis-local-dw-vis-qualified">DW_VIS_exported, DW_VIS_local, DW_VIS_qualified</a></li>
 <li class="toctree-l2"><a class="reference internal" href="vocabulary-dwarf.html#abbrev">abbrev</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="vocabulary-dwarf.html#t-die-t-abbrev-t-cu-t-abbrev-unit-t-dwarf-t-abbrev-unit"><tt class="docutils literal"><span class="pre">T_DIE</span></tt> <tt class="docutils literal"><span class="pre">-&gt;?</span></tt> <tt class="docutils literal"><span class="pre">T_ABBREV</span></tt>, <tt class="docutils literal"><span class="pre">T_CU</span></tt> <tt class="docutils literal"><span class="pre">-&gt;?</span></tt> <tt class="docutils literal"><span class="pre">T_ABBREV_UNIT</span></tt>, <tt class="docutils literal"><span class="pre">T_DWARF</span></tt> <tt class="docutils literal"><span class="pre">-&gt;*</span></tt> <tt class="docutils literal"><span class="pre">T_ABBREV_UNIT</span></tt></a></li>
+<li class="toctree-l3"><a class="reference internal" href="vocabulary-dwarf.html#t-cu-t-abbrev-unit"><tt class="docutils literal"><span class="pre">T_CU</span></tt> <tt class="docutils literal"><span class="pre">-&gt;?</span></tt> <tt class="docutils literal"><span class="pre">T_ABBREV_UNIT</span></tt></a></li>
+<li class="toctree-l3"><a class="reference internal" href="vocabulary-dwarf.html#t-die-t-abbrev"><tt class="docutils literal"><span class="pre">T_DIE</span></tt> <tt class="docutils literal"><span class="pre">-&gt;?</span></tt> <tt class="docutils literal"><span class="pre">T_ABBREV</span></tt></a></li>
+<li class="toctree-l3"><a class="reference internal" href="vocabulary-dwarf.html#t-dwarf-t-abbrev-unit"><tt class="docutils literal"><span class="pre">T_DWARF</span></tt> <tt class="docutils literal"><span class="pre">-&gt;*</span></tt> <tt class="docutils literal"><span class="pre">T_ABBREV_UNIT</span></tt></a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="vocabulary-dwarf.html#add-sub">add, sub</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="vocabulary-dwarf.html#t-aset-t-aset-t-aset-t-aset-t-const-t-aset"><tt class="docutils literal"><span class="pre">T_ASET</span></tt> <tt class="docutils literal"><span class="pre">T_ASET</span></tt> <tt class="docutils literal"><span class="pre">-&gt;?</span></tt> <tt class="docutils literal"><span class="pre">T_ASET</span></tt>, <tt class="docutils literal"><span class="pre">T_ASET</span></tt> <tt class="docutils literal"><span class="pre">T_CONST</span></tt> <tt class="docutils literal"><span class="pre">-&gt;?</span></tt> <tt class="docutils literal"><span class="pre">T_ASET</span></tt></a></li>
+<li class="toctree-l2"><a class="reference internal" href="vocabulary-dwarf.html#add">add</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="vocabulary-dwarf.html#t-aset-t-const-t-aset"><tt class="docutils literal"><span class="pre">T_ASET</span></tt> <tt class="docutils literal"><span class="pre">T_CONST</span></tt> <tt class="docutils literal"><span class="pre">-&gt;?</span></tt> <tt class="docutils literal"><span class="pre">T_ASET</span></tt></a></li>
+<li class="toctree-l3"><a class="reference internal" href="vocabulary-dwarf.html#t-aset-t-aset-t-aset"><tt class="docutils literal"><span class="pre">T_ASET</span></tt> <tt class="docutils literal"><span class="pre">T_ASET</span></tt> <tt class="docutils literal"><span class="pre">-&gt;?</span></tt> <tt class="docutils literal"><span class="pre">T_ASET</span></tt></a></li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="vocabulary-dwarf.html#address">address</a><ul>
@@ -220,8 +225,11 @@
 <li class="toctree-l3"><a class="reference internal" href="vocabulary-dwarf.html#t-abbrev-t-const"><tt class="docutils literal"><span class="pre">T_ABBREV</span></tt> <tt class="docutils literal"><span class="pre">-&gt;?</span></tt> <tt class="docutils literal"><span class="pre">T_CONST</span></tt></a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="vocabulary-dwarf.html#cooked-raw">cooked, raw</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="vocabulary-dwarf.html#t-attr-t-attr-t-die-t-die-t-cu-t-cu-t-dwarf-t-dwarf"><tt class="docutils literal"><span class="pre">T_ATTR</span></tt> <tt class="docutils literal"><span class="pre">-&gt;?</span></tt> <tt class="docutils literal"><span class="pre">T_ATTR</span></tt>, <tt class="docutils literal"><span class="pre">T_DIE</span></tt> <tt class="docutils literal"><span class="pre">-&gt;?</span></tt> <tt class="docutils literal"><span class="pre">T_DIE</span></tt>, <tt class="docutils literal"><span class="pre">T_CU</span></tt> <tt class="docutils literal"><span class="pre">-&gt;?</span></tt> <tt class="docutils literal"><span class="pre">T_CU</span></tt>, <tt class="docutils literal"><span class="pre">T_DWARF</span></tt> <tt class="docutils literal"><span class="pre">-&gt;?</span></tt> <tt class="docutils literal"><span class="pre">T_DWARF</span></tt></a></li>
+<li class="toctree-l2"><a class="reference internal" href="vocabulary-dwarf.html#cooked">cooked</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="vocabulary-dwarf.html#t-cu-t-cu"><tt class="docutils literal"><span class="pre">T_CU</span></tt> <tt class="docutils literal"><span class="pre">-&gt;?</span></tt> <tt class="docutils literal"><span class="pre">T_CU</span></tt></a></li>
+<li class="toctree-l3"><a class="reference internal" href="vocabulary-dwarf.html#id8"><tt class="docutils literal"><span class="pre">T_DIE</span></tt> <tt class="docutils literal"><span class="pre">-&gt;?</span></tt> <tt class="docutils literal"><span class="pre">T_DIE</span></tt></a></li>
+<li class="toctree-l3"><a class="reference internal" href="vocabulary-dwarf.html#t-dwarf-t-dwarf"><tt class="docutils literal"><span class="pre">T_DWARF</span></tt> <tt class="docutils literal"><span class="pre">-&gt;?</span></tt> <tt class="docutils literal"><span class="pre">T_DWARF</span></tt></a></li>
+<li class="toctree-l3"><a class="reference internal" href="vocabulary-dwarf.html#t-attr-t-attr"><tt class="docutils literal"><span class="pre">T_ATTR</span></tt> <tt class="docutils literal"><span class="pre">-&gt;?</span></tt> <tt class="docutils literal"><span class="pre">T_ATTR</span></tt></a></li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="vocabulary-dwarf.html#dwopen">dwopen</a><ul>
@@ -229,7 +237,7 @@
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="vocabulary-dwarf.html#elem-relem">elem, relem</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="vocabulary-dwarf.html#t-aset-t-const"><tt class="docutils literal"><span class="pre">T_ASET</span></tt> <tt class="docutils literal"><span class="pre">-&gt;*</span></tt> <tt class="docutils literal"><span class="pre">T_CONST</span></tt></a></li>
+<li class="toctree-l3"><a class="reference internal" href="vocabulary-dwarf.html#id9"><tt class="docutils literal"><span class="pre">T_ASET</span></tt> <tt class="docutils literal"><span class="pre">-&gt;*</span></tt> <tt class="docutils literal"><span class="pre">T_CONST</span></tt></a></li>
 <li class="toctree-l3"><a class="reference internal" href="vocabulary-dwarf.html#t-loclist-elem-t-loclist-op"><tt class="docutils literal"><span class="pre">T_LOCLIST_ELEM</span></tt> <tt class="docutils literal"><span class="pre">-&gt;*</span></tt> <tt class="docutils literal"><span class="pre">T_LOCLIST_OP</span></tt></a></li>
 </ul>
 </li>
@@ -241,50 +249,70 @@
 </li>
 <li class="toctree-l2"><a class="reference internal" href="vocabulary-dwarf.html#form">form</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="vocabulary-dwarf.html#t-abbrev-attr-t-const"><tt class="docutils literal"><span class="pre">T_ABBREV_ATTR</span></tt> <tt class="docutils literal"><span class="pre">-&gt;?</span></tt> <tt class="docutils literal"><span class="pre">T_CONST</span></tt></a></li>
-<li class="toctree-l3"><a class="reference internal" href="vocabulary-dwarf.html#id6"><tt class="docutils literal"><span class="pre">T_ATTR</span></tt> <tt class="docutils literal"><span class="pre">-&gt;?</span></tt> <tt class="docutils literal"><span class="pre">T_CONST</span></tt></a></li>
+<li class="toctree-l3"><a class="reference internal" href="vocabulary-dwarf.html#id10"><tt class="docutils literal"><span class="pre">T_ATTR</span></tt> <tt class="docutils literal"><span class="pre">-&gt;?</span></tt> <tt class="docutils literal"><span class="pre">T_CONST</span></tt></a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="vocabulary-dwarf.html#high-low">high, low</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="vocabulary-dwarf.html#t-aset-t-const-t-die-t-const"><tt class="docutils literal"><span class="pre">T_ASET</span></tt> <tt class="docutils literal"><span class="pre">-&gt;?</span></tt> <tt class="docutils literal"><span class="pre">T_CONST</span></tt>, <tt class="docutils literal"><span class="pre">T_DIE</span></tt> <tt class="docutils literal"><span class="pre">-&gt;?</span></tt> <tt class="docutils literal"><span class="pre">T_CONST</span></tt></a></li>
+<li class="toctree-l2"><a class="reference internal" href="vocabulary-dwarf.html#high">high</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="vocabulary-dwarf.html#t-die-t-const"><tt class="docutils literal"><span class="pre">T_DIE</span></tt> <tt class="docutils literal"><span class="pre">-&gt;?</span></tt> <tt class="docutils literal"><span class="pre">T_CONST</span></tt></a></li>
+<li class="toctree-l3"><a class="reference internal" href="vocabulary-dwarf.html#id11"><tt class="docutils literal"><span class="pre">T_ASET</span></tt> <tt class="docutils literal"><span class="pre">-&gt;?</span></tt> <tt class="docutils literal"><span class="pre">T_CONST</span></tt></a></li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="vocabulary-dwarf.html#label">label</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="vocabulary-dwarf.html#t-die-t-const"><tt class="docutils literal"><span class="pre">T_DIE</span></tt> <tt class="docutils literal"><span class="pre">-&gt;?</span></tt> <tt class="docutils literal"><span class="pre">T_CONST</span></tt></a></li>
+<li class="toctree-l3"><a class="reference internal" href="vocabulary-dwarf.html#id12"><tt class="docutils literal"><span class="pre">T_DIE</span></tt> <tt class="docutils literal"><span class="pre">-&gt;?</span></tt> <tt class="docutils literal"><span class="pre">T_CONST</span></tt></a></li>
 <li class="toctree-l3"><a class="reference internal" href="vocabulary-dwarf.html#t-loclist-op-t-const"><tt class="docutils literal"><span class="pre">T_LOCLIST_OP</span></tt> <tt class="docutils literal"><span class="pre">-&gt;?</span></tt> <tt class="docutils literal"><span class="pre">T_CONST</span></tt></a></li>
-<li class="toctree-l3"><a class="reference internal" href="vocabulary-dwarf.html#id7"><tt class="docutils literal"><span class="pre">T_ABBREV_ATTR</span></tt> <tt class="docutils literal"><span class="pre">-&gt;?</span></tt> <tt class="docutils literal"><span class="pre">T_CONST</span></tt></a></li>
-<li class="toctree-l3"><a class="reference internal" href="vocabulary-dwarf.html#id8"><tt class="docutils literal"><span class="pre">T_ABBREV</span></tt> <tt class="docutils literal"><span class="pre">-&gt;?</span></tt> <tt class="docutils literal"><span class="pre">T_CONST</span></tt></a></li>
-<li class="toctree-l3"><a class="reference internal" href="vocabulary-dwarf.html#id9"><tt class="docutils literal"><span class="pre">T_ATTR</span></tt> <tt class="docutils literal"><span class="pre">-&gt;?</span></tt> <tt class="docutils literal"><span class="pre">T_CONST</span></tt></a></li>
+<li class="toctree-l3"><a class="reference internal" href="vocabulary-dwarf.html#id13"><tt class="docutils literal"><span class="pre">T_ABBREV_ATTR</span></tt> <tt class="docutils literal"><span class="pre">-&gt;?</span></tt> <tt class="docutils literal"><span class="pre">T_CONST</span></tt></a></li>
+<li class="toctree-l3"><a class="reference internal" href="vocabulary-dwarf.html#id14"><tt class="docutils literal"><span class="pre">T_ABBREV</span></tt> <tt class="docutils literal"><span class="pre">-&gt;?</span></tt> <tt class="docutils literal"><span class="pre">T_CONST</span></tt></a></li>
+<li class="toctree-l3"><a class="reference internal" href="vocabulary-dwarf.html#id15"><tt class="docutils literal"><span class="pre">T_ATTR</span></tt> <tt class="docutils literal"><span class="pre">-&gt;?</span></tt> <tt class="docutils literal"><span class="pre">T_CONST</span></tt></a></li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="vocabulary-dwarf.html#length">length</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="vocabulary-dwarf.html#id10"><tt class="docutils literal"><span class="pre">T_ASET</span></tt> <tt class="docutils literal"><span class="pre">-&gt;?</span></tt> <tt class="docutils literal"><span class="pre">T_CONST</span></tt></a></li>
+<li class="toctree-l3"><a class="reference internal" href="vocabulary-dwarf.html#id16"><tt class="docutils literal"><span class="pre">T_ASET</span></tt> <tt class="docutils literal"><span class="pre">-&gt;?</span></tt> <tt class="docutils literal"><span class="pre">T_CONST</span></tt></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="vocabulary-dwarf.html#low">low</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="vocabulary-dwarf.html#id17"><tt class="docutils literal"><span class="pre">T_DIE</span></tt> <tt class="docutils literal"><span class="pre">-&gt;?</span></tt> <tt class="docutils literal"><span class="pre">T_CONST</span></tt></a></li>
+<li class="toctree-l3"><a class="reference internal" href="vocabulary-dwarf.html#id18"><tt class="docutils literal"><span class="pre">T_ASET</span></tt> <tt class="docutils literal"><span class="pre">-&gt;?</span></tt> <tt class="docutils literal"><span class="pre">T_CONST</span></tt></a></li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="vocabulary-dwarf.html#name">name</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="vocabulary-dwarf.html#t-die-t-str-t-dwarf-t-str"><tt class="docutils literal"><span class="pre">T_DIE</span></tt> <tt class="docutils literal"><span class="pre">-&gt;?</span></tt> <tt class="docutils literal"><span class="pre">T_STR</span></tt>, <tt class="docutils literal"><span class="pre">T_DWARF</span></tt> <tt class="docutils literal"><span class="pre">-&gt;?</span></tt> <tt class="docutils literal"><span class="pre">T_STR</span></tt></a></li>
+<li class="toctree-l3"><a class="reference internal" href="vocabulary-dwarf.html#t-die-t-str"><tt class="docutils literal"><span class="pre">T_DIE</span></tt> <tt class="docutils literal"><span class="pre">-&gt;?</span></tt> <tt class="docutils literal"><span class="pre">T_STR</span></tt></a></li>
+<li class="toctree-l3"><a class="reference internal" href="vocabulary-dwarf.html#t-dwarf-t-str"><tt class="docutils literal"><span class="pre">T_DWARF</span></tt> <tt class="docutils literal"><span class="pre">-&gt;?</span></tt> <tt class="docutils literal"><span class="pre">T_STR</span></tt></a></li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="vocabulary-dwarf.html#offset">offset</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="vocabulary-dwarf.html#t-cu-t-const"><tt class="docutils literal"><span class="pre">T_CU</span></tt> <tt class="docutils literal"><span class="pre">-&gt;?</span></tt> <tt class="docutils literal"><span class="pre">T_CONST</span></tt></a></li>
-<li class="toctree-l3"><a class="reference internal" href="vocabulary-dwarf.html#id11"><tt class="docutils literal"><span class="pre">T_DIE</span></tt> <tt class="docutils literal"><span class="pre">-&gt;?</span></tt> <tt class="docutils literal"><span class="pre">T_CONST</span></tt></a></li>
-<li class="toctree-l3"><a class="reference internal" href="vocabulary-dwarf.html#id12"><tt class="docutils literal"><span class="pre">T_LOCLIST_OP</span></tt> <tt class="docutils literal"><span class="pre">-&gt;?</span></tt> <tt class="docutils literal"><span class="pre">T_CONST</span></tt></a></li>
+<li class="toctree-l3"><a class="reference internal" href="vocabulary-dwarf.html#id19"><tt class="docutils literal"><span class="pre">T_DIE</span></tt> <tt class="docutils literal"><span class="pre">-&gt;?</span></tt> <tt class="docutils literal"><span class="pre">T_CONST</span></tt></a></li>
+<li class="toctree-l3"><a class="reference internal" href="vocabulary-dwarf.html#id20"><tt class="docutils literal"><span class="pre">T_LOCLIST_OP</span></tt> <tt class="docutils literal"><span class="pre">-&gt;?</span></tt> <tt class="docutils literal"><span class="pre">T_CONST</span></tt></a></li>
 <li class="toctree-l3"><a class="reference internal" href="vocabulary-dwarf.html#t-abbrev-attr-t-const-t-abbrev-t-const-t-abbrev-unit-t-const"><tt class="docutils literal"><span class="pre">T_ABBREV_ATTR</span></tt> <tt class="docutils literal"><span class="pre">-&gt;?</span></tt> <tt class="docutils literal"><span class="pre">T_CONST</span></tt>, <tt class="docutils literal"><span class="pre">T_ABBREV</span></tt> <tt class="docutils literal"><span class="pre">-&gt;?</span></tt> <tt class="docutils literal"><span class="pre">T_CONST</span></tt>, <tt class="docutils literal"><span class="pre">T_ABBREV_UNIT</span></tt> <tt class="docutils literal"><span class="pre">-&gt;?</span></tt> <tt class="docutils literal"><span class="pre">T_CONST</span></tt></a></li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="vocabulary-dwarf.html#overlap">overlap</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="vocabulary-dwarf.html#t-aset-t-aset-t-aset"><tt class="docutils literal"><span class="pre">T_ASET</span></tt> <tt class="docutils literal"><span class="pre">T_ASET</span></tt> <tt class="docutils literal"><span class="pre">-&gt;?</span></tt> <tt class="docutils literal"><span class="pre">T_ASET</span></tt></a></li>
+<li class="toctree-l3"><a class="reference internal" href="vocabulary-dwarf.html#id21"><tt class="docutils literal"><span class="pre">T_ASET</span></tt> <tt class="docutils literal"><span class="pre">T_ASET</span></tt> <tt class="docutils literal"><span class="pre">-&gt;?</span></tt> <tt class="docutils literal"><span class="pre">T_ASET</span></tt></a></li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="vocabulary-dwarf.html#parent">parent</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="vocabulary-dwarf.html#id13"><tt class="docutils literal"><span class="pre">T_DIE</span></tt> <tt class="docutils literal"><span class="pre">-&gt;?</span></tt> <tt class="docutils literal"><span class="pre">T_DIE</span></tt></a></li>
+<li class="toctree-l3"><a class="reference internal" href="vocabulary-dwarf.html#id22"><tt class="docutils literal"><span class="pre">T_DIE</span></tt> <tt class="docutils literal"><span class="pre">-&gt;?</span></tt> <tt class="docutils literal"><span class="pre">T_DIE</span></tt></a></li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="vocabulary-dwarf.html#range">range</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="vocabulary-dwarf.html#id14"><tt class="docutils literal"><span class="pre">T_ASET</span></tt> <tt class="docutils literal"><span class="pre">-&gt;*</span></tt> <tt class="docutils literal"><span class="pre">T_ASET</span></tt></a></li>
+<li class="toctree-l3"><a class="reference internal" href="vocabulary-dwarf.html#id23"><tt class="docutils literal"><span class="pre">T_ASET</span></tt> <tt class="docutils literal"><span class="pre">-&gt;*</span></tt> <tt class="docutils literal"><span class="pre">T_ASET</span></tt></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="vocabulary-dwarf.html#raw">raw</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="vocabulary-dwarf.html#id24"><tt class="docutils literal"><span class="pre">T_CU</span></tt> <tt class="docutils literal"><span class="pre">-&gt;?</span></tt> <tt class="docutils literal"><span class="pre">T_CU</span></tt></a></li>
+<li class="toctree-l3"><a class="reference internal" href="vocabulary-dwarf.html#id25"><tt class="docutils literal"><span class="pre">T_DIE</span></tt> <tt class="docutils literal"><span class="pre">-&gt;?</span></tt> <tt class="docutils literal"><span class="pre">T_DIE</span></tt></a></li>
+<li class="toctree-l3"><a class="reference internal" href="vocabulary-dwarf.html#id26"><tt class="docutils literal"><span class="pre">T_DWARF</span></tt> <tt class="docutils literal"><span class="pre">-&gt;?</span></tt> <tt class="docutils literal"><span class="pre">T_DWARF</span></tt></a></li>
+<li class="toctree-l3"><a class="reference internal" href="vocabulary-dwarf.html#id27"><tt class="docutils literal"><span class="pre">T_ATTR</span></tt> <tt class="docutils literal"><span class="pre">-&gt;?</span></tt> <tt class="docutils literal"><span class="pre">T_ATTR</span></tt></a></li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="vocabulary-dwarf.html#root">root</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="vocabulary-dwarf.html#t-die-t-die-t-cu-t-die"><tt class="docutils literal"><span class="pre">T_DIE</span></tt> <tt class="docutils literal"><span class="pre">-&gt;?</span></tt> <tt class="docutils literal"><span class="pre">T_DIE</span></tt>, <tt class="docutils literal"><span class="pre">T_CU</span></tt> <tt class="docutils literal"><span class="pre">-&gt;?</span></tt> <tt class="docutils literal"><span class="pre">T_DIE</span></tt></a></li>
+<li class="toctree-l3"><a class="reference internal" href="vocabulary-dwarf.html#id29"><tt class="docutils literal"><span class="pre">T_CU</span></tt> <tt class="docutils literal"><span class="pre">-&gt;?</span></tt> <tt class="docutils literal"><span class="pre">T_DIE</span></tt></a></li>
+<li class="toctree-l3"><a class="reference internal" href="vocabulary-dwarf.html#id30"><tt class="docutils literal"><span class="pre">T_DIE</span></tt> <tt class="docutils literal"><span class="pre">-&gt;?</span></tt> <tt class="docutils literal"><span class="pre">T_DIE</span></tt></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="vocabulary-dwarf.html#sub">sub</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="vocabulary-dwarf.html#id31"><tt class="docutils literal"><span class="pre">T_ASET</span></tt> <tt class="docutils literal"><span class="pre">T_CONST</span></tt> <tt class="docutils literal"><span class="pre">-&gt;?</span></tt> <tt class="docutils literal"><span class="pre">T_ASET</span></tt></a></li>
+<li class="toctree-l3"><a class="reference internal" href="vocabulary-dwarf.html#id32"><tt class="docutils literal"><span class="pre">T_ASET</span></tt> <tt class="docutils literal"><span class="pre">T_ASET</span></tt> <tt class="docutils literal"><span class="pre">-&gt;?</span></tt> <tt class="docutils literal"><span class="pre">T_ASET</span></tt></a></li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="vocabulary-dwarf.html#unit">unit</a><ul>
@@ -294,11 +322,12 @@
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="vocabulary-dwarf.html#value">value</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="vocabulary-dwarf.html#t-loclist-op-t-t-attr-t"><tt class="docutils literal"><span class="pre">T_LOCLIST_OP</span></tt> <tt class="docutils literal"><span class="pre">-&gt;*</span></tt> <tt class="docutils literal"><span class="pre">T_???</span></tt>, <tt class="docutils literal"><span class="pre">T_ATTR</span></tt> <tt class="docutils literal"><span class="pre">-&gt;*</span></tt> <tt class="docutils literal"><span class="pre">T_???</span></tt></a></li>
+<li class="toctree-l3"><a class="reference internal" href="vocabulary-dwarf.html#t-loclist-op-t"><tt class="docutils literal"><span class="pre">T_LOCLIST_OP</span></tt> <tt class="docutils literal"><span class="pre">-&gt;*</span></tt> <tt class="docutils literal"><span class="pre">T_???</span></tt></a></li>
+<li class="toctree-l3"><a class="reference internal" href="vocabulary-dwarf.html#t-attr-t"><tt class="docutils literal"><span class="pre">T_ATTR</span></tt> <tt class="docutils literal"><span class="pre">-&gt;*</span></tt> <tt class="docutils literal"><span class="pre">T_???</span></tt></a></li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="vocabulary-dwarf.html#version">version</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="vocabulary-dwarf.html#id16"><tt class="docutils literal"><span class="pre">T_CU</span></tt> <tt class="docutils literal"><span class="pre">-&gt;?</span></tt> <tt class="docutils literal"><span class="pre">T_CONST</span></tt></a></li>
+<li class="toctree-l3"><a class="reference internal" href="vocabulary-dwarf.html#id33"><tt class="docutils literal"><span class="pre">T_CU</span></tt> <tt class="docutils literal"><span class="pre">-&gt;?</span></tt> <tt class="docutils literal"><span class="pre">T_CONST</span></tt></a></li>
 </ul>
 </li>
 </ul>

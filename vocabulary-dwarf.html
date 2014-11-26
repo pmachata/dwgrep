@@ -49,37 +49,82 @@
             
   <div class="section" id="dwarf-vocabulary">
 <span id="zw-vocabulary-dwarf"></span><h1>Dwarf vocabulary<a class="headerlink" href="#dwarf-vocabulary" title="Permalink to this headline">¶</a></h1>
+<p>Raw Dwarfs, unlike cooked ones, present Dwarf data in raw form, do not
+interpret it (as much).  In particular, when querying a cooked Dwarf,
+you will never see partial unit import DIE&#8217;s
+(<tt class="docutils literal"><span class="pre">DW_TAG_imported_unit</span></tt>).  Instead, the imported unit is merged with
+the importing one into one logical whole.</p>
 <div class="section" id="t-abbrev-t-abbrev-attr-t-abbrev-unit-t-aset-t-attr-t-cu-t-die-t-dwarf-t-loclist-elem-t-loclist-op">
 <span id="zw-vocabulary-dwarf-type-t-loclist-op"></span><span id="zw-vocabulary-dwarf-type-t-loclist-elem"></span><span id="zw-vocabulary-dwarf-type-t-dwarf"></span><span id="zw-vocabulary-dwarf-type-t-die"></span><span id="zw-vocabulary-dwarf-type-t-cu"></span><span id="zw-vocabulary-dwarf-type-t-attr"></span><span id="zw-vocabulary-dwarf-type-t-aset"></span><span id="zw-vocabulary-dwarf-type-t-abbrev-unit"></span><span id="zw-vocabulary-dwarf-type-t-abbrev-attr"></span><span id="zw-vocabulary-dwarf-type-t-abbrev"></span><h2>T_ABBREV, T_ABBREV_ATTR, T_ABBREV_UNIT, T_ASET, T_ATTR, T_CU, T_DIE, T_DWARF, T_LOCLIST_ELEM, T_LOCLIST_OP<a class="headerlink" href="#t-abbrev-t-abbrev-attr-t-abbrev-unit-t-aset-t-attr-t-cu-t-die-t-dwarf-t-loclist-elem-t-loclist-op" title="Permalink to this headline">¶</a></h2>
 </div>
 <div class="section" id="contains-contains">
 <span id="id1"></span><span id="zw-vocabulary-dwarf-contains"></span><h2>!contains, ?contains<a class="headerlink" href="#contains-contains" title="Permalink to this headline">¶</a></h2>
-<div class="section" id="t-aset-t-aset-t-aset-t-const">
-<h3><tt class="docutils literal"><span class="pre">T_ASET</span></tt> <tt class="docutils literal"><span class="pre">T_ASET</span></tt>, <tt class="docutils literal"><span class="pre">T_ASET</span></tt> <tt class="docutils literal"><span class="pre">T_CONST</span></tt><a class="headerlink" href="#t-aset-t-aset-t-aset-t-const" title="Permalink to this headline">¶</a></h3>
+<div class="section" id="t-aset-t-const">
+<h3><tt class="docutils literal"><span class="pre">T_ASET</span></tt> <tt class="docutils literal"><span class="pre">T_CONST</span></tt><a class="headerlink" href="#t-aset-t-const" title="Permalink to this headline">¶</a></h3>
+<p>Inspects an address set and a constant on TOS and holds for those
+where the constant is contained within the address set.  Note that the
+high end of the address set is not actually considered part of the
+address set:</p>
+<div class="highlight-python"><div class="highlight"><pre>$ dwgrep &#39;if (0 10 aset 10 ?contains) then &quot;yes&quot; else &quot;no&quot;&#39;
+no
+$ dwgrep &#39;if (0 10 aset 9 ?contains) then &quot;yes&quot; else &quot;no&quot;&#39;
+yes
+</pre></div>
+</div>
+</div>
+<div class="section" id="t-aset-t-aset">
+<h3><tt class="docutils literal"><span class="pre">T_ASET</span></tt> <tt class="docutils literal"><span class="pre">T_ASET</span></tt><a class="headerlink" href="#t-aset-t-aset" title="Permalink to this headline">¶</a></h3>
+<p>Inspects two address sets on TOS, <em>A</em> and <em>B</em>, and holds for those
+where all of <em>B</em>&#8216;s addresses are covered by <em>A</em>.</p>
 </div>
 </div>
 <div class="section" id="empty-empty">
 <span id="id2"></span><span id="zw-vocabulary-dwarf-empty"></span><h2>!empty, ?empty<a class="headerlink" href="#empty-empty" title="Permalink to this headline">¶</a></h2>
 <div class="section" id="t-aset">
 <h3><tt class="docutils literal"><span class="pre">T_ASET</span></tt><a class="headerlink" href="#t-aset" title="Permalink to this headline">¶</a></h3>
+<p>Inspects an address set on TOS and holds if it is empty (contains no
+addresses).  Could be written as <tt class="docutils literal"><span class="pre">!(elem)</span></tt>.</p>
 </div>
 </div>
 <div class="section" id="haschildren-haschildren">
 <span id="id3"></span><span id="zw-vocabulary-dwarf-haschildren"></span><h2>!haschildren, ?haschildren<a class="headerlink" href="#haschildren-haschildren" title="Permalink to this headline">¶</a></h2>
-<div class="section" id="t-abbrev-t-die">
-<h3><tt class="docutils literal"><span class="pre">T_ABBREV</span></tt>, <tt class="docutils literal"><span class="pre">T_DIE</span></tt><a class="headerlink" href="#t-abbrev-t-die" title="Permalink to this headline">¶</a></h3>
+<div class="section" id="t-die">
+<h3><tt class="docutils literal"><span class="pre">T_DIE</span></tt><a class="headerlink" href="#t-die" title="Permalink to this headline">¶</a></h3>
+<p>Inspects a DIE on TOS and holds if that DIE might have children,
+i.e. it is the same as <tt class="docutils literal"><span class="pre">abbrev</span> <span class="pre">?haschildren</span></tt>.  Note that even DIE&#8217;s
+for which ?haschildren holds may not actually have children, because
+the actual children chain in the Dwarf file is immediately terminated.
+To determine whether there are actually any children, use
+<tt class="docutils literal"><span class="pre">?(child)</span></tt>:</p>
+<div class="highlight-python"><div class="highlight"><pre>$ dwgrep ./tests/haschildren_childless -e &#39;entry (offset == 0x2d) abbrev &quot;%s&quot;&#39;
+[2] offset:0x13, children:yes, tag:subprogram
+
+$ dwgrep ./tests/haschildren_childless -e &#39;
+        entry (offset == 0x2d)
+        if child then &quot;yes&quot; else &quot;no&quot; &quot;%s: %s&quot;&#39;
+[2d] subprogram: no
+</pre></div>
+</div>
+</div>
+<div class="section" id="t-abbrev">
+<h3><tt class="docutils literal"><span class="pre">T_ABBREV</span></tt><a class="headerlink" href="#t-abbrev" title="Permalink to this headline">¶</a></h3>
+<p>Inspects an abbreviation on TOS and holds if DIE&#8217;s described by this
+abbreviation may have children.</p>
 </div>
 </div>
 <div class="section" id="overlaps-overlaps">
 <span id="id4"></span><span id="zw-vocabulary-dwarf-overlaps"></span><h2>!overlaps, ?overlaps<a class="headerlink" href="#overlaps-overlaps" title="Permalink to this headline">¶</a></h2>
-<div class="section" id="t-aset-t-aset">
-<h3><tt class="docutils literal"><span class="pre">T_ASET</span></tt> <tt class="docutils literal"><span class="pre">T_ASET</span></tt><a class="headerlink" href="#t-aset-t-aset" title="Permalink to this headline">¶</a></h3>
+<div class="section" id="id5">
+<h3><tt class="docutils literal"><span class="pre">T_ASET</span></tt> <tt class="docutils literal"><span class="pre">T_ASET</span></tt><a class="headerlink" href="#id5" title="Permalink to this headline">¶</a></h3>
+<p>Inspects two address sets on TOS, and holds if the two address sets
+overlap.</p>
 </div>
 </div>
 <div class="section" id="root-root">
-<span id="id5"></span><span id="zw-vocabulary-dwarf-root"></span><h2>!root, ?root<a class="headerlink" href="#root-root" title="Permalink to this headline">¶</a></h2>
-<div class="section" id="t-die">
-<h3><tt class="docutils literal"><span class="pre">T_DIE</span></tt><a class="headerlink" href="#t-die" title="Permalink to this headline">¶</a></h3>
+<span id="id6"></span><span id="zw-vocabulary-dwarf-root"></span><h2>!root, ?root<a class="headerlink" href="#root-root" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="id7">
+<h3><tt class="docutils literal"><span class="pre">T_DIE</span></tt><a class="headerlink" href="#id7" title="Permalink to this headline">¶</a></h3>
+<p>Holds for root DIE&#8217;s, i.e. DIE&#8217;s that don&#8217;t have a parental DIE.</p>
 </div>
 </div>
 <div class="section" id="dw-access-private-dw-access-protected-dw-access-public">
@@ -160,14 +205,44 @@
 </div>
 <div class="section" id="abbrev">
 <span id="zw-vocabulary-dwarf-abbrev"></span><h2>abbrev<a class="headerlink" href="#abbrev" title="Permalink to this headline">¶</a></h2>
-<div class="section" id="t-die-t-abbrev-t-cu-t-abbrev-unit-t-dwarf-t-abbrev-unit">
-<h3><tt class="docutils literal"><span class="pre">T_DIE</span></tt> <tt class="docutils literal"><span class="pre">-&gt;?</span></tt> <tt class="docutils literal"><span class="pre">T_ABBREV</span></tt>, <tt class="docutils literal"><span class="pre">T_CU</span></tt> <tt class="docutils literal"><span class="pre">-&gt;?</span></tt> <tt class="docutils literal"><span class="pre">T_ABBREV_UNIT</span></tt>, <tt class="docutils literal"><span class="pre">T_DWARF</span></tt> <tt class="docutils literal"><span class="pre">-&gt;*</span></tt> <tt class="docutils literal"><span class="pre">T_ABBREV_UNIT</span></tt><a class="headerlink" href="#t-die-t-abbrev-t-cu-t-abbrev-unit-t-dwarf-t-abbrev-unit" title="Permalink to this headline">¶</a></h3>
+<div class="section" id="t-cu-t-abbrev-unit">
+<h3><tt class="docutils literal"><span class="pre">T_CU</span></tt> <tt class="docutils literal"><span class="pre">-&gt;?</span></tt> <tt class="docutils literal"><span class="pre">T_ABBREV_UNIT</span></tt><a class="headerlink" href="#t-cu-t-abbrev-unit" title="Permalink to this headline">¶</a></h3>
+<p>Takes a CU on TOS and yields the abbreviation unit that contains this
+unit&#8217;s abbreviations.</p>
+</div>
+<div class="section" id="t-die-t-abbrev">
+<h3><tt class="docutils literal"><span class="pre">T_DIE</span></tt> <tt class="docutils literal"><span class="pre">-&gt;?</span></tt> <tt class="docutils literal"><span class="pre">T_ABBREV</span></tt><a class="headerlink" href="#t-die-t-abbrev" title="Permalink to this headline">¶</a></h3>
+<p>Takes a DIE on TOS and yields the abbreviation that describes this
+DIE.</p>
+</div>
+<div class="section" id="t-dwarf-t-abbrev-unit">
+<h3><tt class="docutils literal"><span class="pre">T_DWARF</span></tt> <tt class="docutils literal"><span class="pre">-&gt;*</span></tt> <tt class="docutils literal"><span class="pre">T_ABBREV_UNIT</span></tt><a class="headerlink" href="#t-dwarf-t-abbrev-unit" title="Permalink to this headline">¶</a></h3>
+<p>Takes a Dwarf on TOS and yields each abbreviation unit present
+therein.</p>
 </div>
 </div>
-<div class="section" id="add-sub">
-<span id="zw-vocabulary-dwarf-sub"></span><span id="zw-vocabulary-dwarf-add"></span><h2>add, sub<a class="headerlink" href="#add-sub" title="Permalink to this headline">¶</a></h2>
-<div class="section" id="t-aset-t-aset-t-aset-t-aset-t-const-t-aset">
-<h3><tt class="docutils literal"><span class="pre">T_ASET</span></tt> <tt class="docutils literal"><span class="pre">T_ASET</span></tt> <tt class="docutils literal"><span class="pre">-&gt;?</span></tt> <tt class="docutils literal"><span class="pre">T_ASET</span></tt>, <tt class="docutils literal"><span class="pre">T_ASET</span></tt> <tt class="docutils literal"><span class="pre">T_CONST</span></tt> <tt class="docutils literal"><span class="pre">-&gt;?</span></tt> <tt class="docutils literal"><span class="pre">T_ASET</span></tt><a class="headerlink" href="#t-aset-t-aset-t-aset-t-aset-t-const-t-aset" title="Permalink to this headline">¶</a></h3>
+<div class="section" id="add">
+<span id="zw-vocabulary-dwarf-add"></span><h2>add<a class="headerlink" href="#add" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="t-aset-t-const-t-aset">
+<h3><tt class="docutils literal"><span class="pre">T_ASET</span></tt> <tt class="docutils literal"><span class="pre">T_CONST</span></tt> <tt class="docutils literal"><span class="pre">-&gt;?</span></tt> <tt class="docutils literal"><span class="pre">T_ASET</span></tt><a class="headerlink" href="#t-aset-t-const-t-aset" title="Permalink to this headline">¶</a></h3>
+<p>Takes an address set and a constant on TOS, and adds the constant to
+range covered by given address set:</p>
+<div class="highlight-python"><div class="highlight"><pre>$ dwgrep ./tests/aranges.o -e &#39;entry @AT_location address 1 add&#39;
+[0x1, 0x2), [0x10000, 0x10010)
+[0x1, 0x2), [0x10010, 0x1001a)
+</pre></div>
+</div>
+</div>
+<div class="section" id="t-aset-t-aset-t-aset">
+<h3><tt class="docutils literal"><span class="pre">T_ASET</span></tt> <tt class="docutils literal"><span class="pre">T_ASET</span></tt> <tt class="docutils literal"><span class="pre">-&gt;?</span></tt> <tt class="docutils literal"><span class="pre">T_ASET</span></tt><a class="headerlink" href="#t-aset-t-aset-t-aset" title="Permalink to this headline">¶</a></h3>
+<p>Takes two address sets and yields an address set that covers both
+their ranges:</p>
+<div class="highlight-python"><div class="highlight"><pre>$ dwgrep ./tests/aranges.o -e &#39;
+        [|D| D entry @AT_location address]
+        (|L| L elem (pos == 0) L elem (pos == 1)) add&#39;
+[0x10000, 0x1001a)
+</pre></div>
+</div>
 </div>
 </div>
 <div class="section" id="address">
@@ -224,6 +299,9 @@ $ dwgrep ./tests/bitcount.o -e &#39;entry (offset == 0x91) @AT_location address&
 <span id="zw-vocabulary-dwarf-aset"></span><h2>aset<a class="headerlink" href="#aset" title="Permalink to this headline">¶</a></h2>
 <div class="section" id="t-const-t-const-t-aset">
 <h3><tt class="docutils literal"><span class="pre">T_CONST</span></tt> <tt class="docutils literal"><span class="pre">T_CONST</span></tt> <tt class="docutils literal"><span class="pre">-&gt;?</span></tt> <tt class="docutils literal"><span class="pre">T_ASET</span></tt><a class="headerlink" href="#t-const-t-const-t-aset" title="Permalink to this headline">¶</a></h3>
+<p>Takes two constants on TOS and constructs an address set that spans
+that range.  (The higher address is not considered a part of that
+range though.)</p>
 </div>
 </div>
 <div class="section" id="attribute">
@@ -309,12 +387,26 @@ $ dwgrep ./tests/dwz-partial2-1 -e &#39;unit root (offset == 0xe7) child &quot;%
 <span id="zw-vocabulary-dwarf-code"></span><h2>code<a class="headerlink" href="#code" title="Permalink to this headline">¶</a></h2>
 <div class="section" id="t-abbrev-t-const">
 <h3><tt class="docutils literal"><span class="pre">T_ABBREV</span></tt> <tt class="docutils literal"><span class="pre">-&gt;?</span></tt> <tt class="docutils literal"><span class="pre">T_CONST</span></tt><a class="headerlink" href="#t-abbrev-t-const" title="Permalink to this headline">¶</a></h3>
+<p>Takes abbreviation on TOS and yields its code.</p>
 </div>
 </div>
-<div class="section" id="cooked-raw">
-<span id="zw-vocabulary-dwarf-raw"></span><span id="zw-vocabulary-dwarf-cooked"></span><h2>cooked, raw<a class="headerlink" href="#cooked-raw" title="Permalink to this headline">¶</a></h2>
-<div class="section" id="t-attr-t-attr-t-die-t-die-t-cu-t-cu-t-dwarf-t-dwarf">
-<h3><tt class="docutils literal"><span class="pre">T_ATTR</span></tt> <tt class="docutils literal"><span class="pre">-&gt;?</span></tt> <tt class="docutils literal"><span class="pre">T_ATTR</span></tt>, <tt class="docutils literal"><span class="pre">T_DIE</span></tt> <tt class="docutils literal"><span class="pre">-&gt;?</span></tt> <tt class="docutils literal"><span class="pre">T_DIE</span></tt>, <tt class="docutils literal"><span class="pre">T_CU</span></tt> <tt class="docutils literal"><span class="pre">-&gt;?</span></tt> <tt class="docutils literal"><span class="pre">T_CU</span></tt>, <tt class="docutils literal"><span class="pre">T_DWARF</span></tt> <tt class="docutils literal"><span class="pre">-&gt;?</span></tt> <tt class="docutils literal"><span class="pre">T_DWARF</span></tt><a class="headerlink" href="#t-attr-t-attr-t-die-t-die-t-cu-t-cu-t-dwarf-t-dwarf" title="Permalink to this headline">¶</a></h3>
+<div class="section" id="cooked">
+<span id="zw-vocabulary-dwarf-cooked"></span><h2>cooked<a class="headerlink" href="#cooked" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="t-cu-t-cu">
+<h3><tt class="docutils literal"><span class="pre">T_CU</span></tt> <tt class="docutils literal"><span class="pre">-&gt;?</span></tt> <tt class="docutils literal"><span class="pre">T_CU</span></tt><a class="headerlink" href="#t-cu-t-cu" title="Permalink to this headline">¶</a></h3>
+<p>Takes a CU on TOS and yields a cooked version thereof.</p>
+</div>
+<div class="section" id="id8">
+<h3><tt class="docutils literal"><span class="pre">T_DIE</span></tt> <tt class="docutils literal"><span class="pre">-&gt;?</span></tt> <tt class="docutils literal"><span class="pre">T_DIE</span></tt><a class="headerlink" href="#id8" title="Permalink to this headline">¶</a></h3>
+<p>Takes a DIE on TOS and yields a cooked version thereof.</p>
+</div>
+<div class="section" id="t-dwarf-t-dwarf">
+<h3><tt class="docutils literal"><span class="pre">T_DWARF</span></tt> <tt class="docutils literal"><span class="pre">-&gt;?</span></tt> <tt class="docutils literal"><span class="pre">T_DWARF</span></tt><a class="headerlink" href="#t-dwarf-t-dwarf" title="Permalink to this headline">¶</a></h3>
+<p>Takes a Dwarf on TOS and yields a cooked version thereof.</p>
+</div>
+<div class="section" id="t-attr-t-attr">
+<h3><tt class="docutils literal"><span class="pre">T_ATTR</span></tt> <tt class="docutils literal"><span class="pre">-&gt;?</span></tt> <tt class="docutils literal"><span class="pre">T_ATTR</span></tt><a class="headerlink" href="#t-attr-t-attr" title="Permalink to this headline">¶</a></h3>
+<p>Takes an attribute on TOS and yields a cooked version thereof.</p>
 </div>
 </div>
 <div class="section" id="dwopen">
@@ -331,8 +423,8 @@ CU 0
 </div>
 <div class="section" id="elem-relem">
 <span id="zw-vocabulary-dwarf-relem"></span><span id="zw-vocabulary-dwarf-elem"></span><h2>elem, relem<a class="headerlink" href="#elem-relem" title="Permalink to this headline">¶</a></h2>
-<div class="section" id="t-aset-t-const">
-<h3><tt class="docutils literal"><span class="pre">T_ASET</span></tt> <tt class="docutils literal"><span class="pre">-&gt;*</span></tt> <tt class="docutils literal"><span class="pre">T_CONST</span></tt><a class="headerlink" href="#t-aset-t-const" title="Permalink to this headline">¶</a></h3>
+<div class="section" id="id9">
+<h3><tt class="docutils literal"><span class="pre">T_ASET</span></tt> <tt class="docutils literal"><span class="pre">-&gt;*</span></tt> <tt class="docutils literal"><span class="pre">T_CONST</span></tt><a class="headerlink" href="#id9" title="Permalink to this headline">¶</a></h3>
 <p>Take an address set on TOS and yield all its addresses.  Be warned
 that this may be a very expensive operation.  It is common that
 address sets cover the whole address range, which for a 64-bit
@@ -433,21 +525,28 @@ behaves equivalently to tho following:</p>
 <h3><tt class="docutils literal"><span class="pre">T_ABBREV_ATTR</span></tt> <tt class="docutils literal"><span class="pre">-&gt;?</span></tt> <tt class="docutils literal"><span class="pre">T_CONST</span></tt><a class="headerlink" href="#t-abbrev-attr-t-const" title="Permalink to this headline">¶</a></h3>
 <p>Takes an abbreviation attribute on TOS and yields its form.</p>
 </div>
-<div class="section" id="id6">
-<h3><tt class="docutils literal"><span class="pre">T_ATTR</span></tt> <tt class="docutils literal"><span class="pre">-&gt;?</span></tt> <tt class="docutils literal"><span class="pre">T_CONST</span></tt><a class="headerlink" href="#id6" title="Permalink to this headline">¶</a></h3>
+<div class="section" id="id10">
+<h3><tt class="docutils literal"><span class="pre">T_ATTR</span></tt> <tt class="docutils literal"><span class="pre">-&gt;?</span></tt> <tt class="docutils literal"><span class="pre">T_CONST</span></tt><a class="headerlink" href="#id10" title="Permalink to this headline">¶</a></h3>
 <p>Takes an attribute on TOS and yields its form.</p>
 </div>
 </div>
-<div class="section" id="high-low">
-<span id="zw-vocabulary-dwarf-low"></span><span id="zw-vocabulary-dwarf-high"></span><h2>high, low<a class="headerlink" href="#high-low" title="Permalink to this headline">¶</a></h2>
-<div class="section" id="t-aset-t-const-t-die-t-const">
-<h3><tt class="docutils literal"><span class="pre">T_ASET</span></tt> <tt class="docutils literal"><span class="pre">-&gt;?</span></tt> <tt class="docutils literal"><span class="pre">T_CONST</span></tt>, <tt class="docutils literal"><span class="pre">T_DIE</span></tt> <tt class="docutils literal"><span class="pre">-&gt;?</span></tt> <tt class="docutils literal"><span class="pre">T_CONST</span></tt><a class="headerlink" href="#t-aset-t-const-t-die-t-const" title="Permalink to this headline">¶</a></h3>
+<div class="section" id="high">
+<span id="zw-vocabulary-dwarf-high"></span><h2>high<a class="headerlink" href="#high" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="t-die-t-const">
+<h3><tt class="docutils literal"><span class="pre">T_DIE</span></tt> <tt class="docutils literal"><span class="pre">-&gt;?</span></tt> <tt class="docutils literal"><span class="pre">T_CONST</span></tt><a class="headerlink" href="#t-die-t-const" title="Permalink to this headline">¶</a></h3>
+<p>Equivalent to <tt class="docutils literal"><span class="pre">&#64;AT_high_pc</span></tt>.</p>
+</div>
+<div class="section" id="id11">
+<h3><tt class="docutils literal"><span class="pre">T_ASET</span></tt> <tt class="docutils literal"><span class="pre">-&gt;?</span></tt> <tt class="docutils literal"><span class="pre">T_CONST</span></tt><a class="headerlink" href="#id11" title="Permalink to this headline">¶</a></h3>
+<p>Takes an address set on TOS and yields highest address of this set.
+Note that that address doesn&#8217;t actually belong to the set.  Doesn&#8217;t
+yield at all if the set is empty.</p>
 </div>
 </div>
 <div class="section" id="label">
 <span id="zw-vocabulary-dwarf-label"></span><h2>label<a class="headerlink" href="#label" title="Permalink to this headline">¶</a></h2>
-<div class="section" id="t-die-t-const">
-<h3><tt class="docutils literal"><span class="pre">T_DIE</span></tt> <tt class="docutils literal"><span class="pre">-&gt;?</span></tt> <tt class="docutils literal"><span class="pre">T_CONST</span></tt><a class="headerlink" href="#t-die-t-const" title="Permalink to this headline">¶</a></h3>
+<div class="section" id="id12">
+<h3><tt class="docutils literal"><span class="pre">T_DIE</span></tt> <tt class="docutils literal"><span class="pre">-&gt;?</span></tt> <tt class="docutils literal"><span class="pre">T_CONST</span></tt><a class="headerlink" href="#id12" title="Permalink to this headline">¶</a></h3>
 <p>Takes a DIE on TOS and yields its tag:</p>
 <div class="highlight-python"><div class="highlight"><pre>$ dwgrep ./tests/a1.out -e &#39;raw unit root label&#39;
 DW_TAG_compile_unit
@@ -469,8 +568,8 @@ reg5
 </pre></div>
 </div>
 </div>
-<div class="section" id="id7">
-<h3><tt class="docutils literal"><span class="pre">T_ABBREV_ATTR</span></tt> <tt class="docutils literal"><span class="pre">-&gt;?</span></tt> <tt class="docutils literal"><span class="pre">T_CONST</span></tt><a class="headerlink" href="#id7" title="Permalink to this headline">¶</a></h3>
+<div class="section" id="id13">
+<h3><tt class="docutils literal"><span class="pre">T_ABBREV_ATTR</span></tt> <tt class="docutils literal"><span class="pre">-&gt;?</span></tt> <tt class="docutils literal"><span class="pre">T_CONST</span></tt><a class="headerlink" href="#id13" title="Permalink to this headline">¶</a></h3>
 <p>Takes an abbreviation attribute on TOS and yields its name:</p>
 <div class="highlight-python"><div class="highlight"><pre>$ dwgrep ./tests/a1.out -e &#39;unit root abbrev attribute label&#39;
 DW_AT_producer
@@ -483,8 +582,8 @@ DW_AT_stmt_list
 </pre></div>
 </div>
 </div>
-<div class="section" id="id8">
-<h3><tt class="docutils literal"><span class="pre">T_ABBREV</span></tt> <tt class="docutils literal"><span class="pre">-&gt;?</span></tt> <tt class="docutils literal"><span class="pre">T_CONST</span></tt><a class="headerlink" href="#id8" title="Permalink to this headline">¶</a></h3>
+<div class="section" id="id14">
+<h3><tt class="docutils literal"><span class="pre">T_ABBREV</span></tt> <tt class="docutils literal"><span class="pre">-&gt;?</span></tt> <tt class="docutils literal"><span class="pre">T_CONST</span></tt><a class="headerlink" href="#id14" title="Permalink to this headline">¶</a></h3>
 <p>Takes an abbreviation on TOS and yields its tag:</p>
 <div class="highlight-python"><div class="highlight"><pre>$ dwgrep ./tests/a1.out -e &#39;raw unit root abbrev label&#39;
 DW_TAG_compile_unit
@@ -492,8 +591,8 @@ DW_TAG_partial_unit
 </pre></div>
 </div>
 </div>
-<div class="section" id="id9">
-<h3><tt class="docutils literal"><span class="pre">T_ATTR</span></tt> <tt class="docutils literal"><span class="pre">-&gt;?</span></tt> <tt class="docutils literal"><span class="pre">T_CONST</span></tt><a class="headerlink" href="#id9" title="Permalink to this headline">¶</a></h3>
+<div class="section" id="id15">
+<h3><tt class="docutils literal"><span class="pre">T_ATTR</span></tt> <tt class="docutils literal"><span class="pre">-&gt;?</span></tt> <tt class="docutils literal"><span class="pre">T_CONST</span></tt><a class="headerlink" href="#id15" title="Permalink to this headline">¶</a></h3>
 <p>Takes an attribute on TOS and yields its name:</p>
 <div class="highlight-python"><div class="highlight"><pre>$ dwgrep ./tests/a1.out -e &#39;unit root attribute label&#39;
 DW_AT_producer
@@ -509,14 +608,49 @@ DW_AT_stmt_list
 </div>
 <div class="section" id="length">
 <span id="zw-vocabulary-dwarf-length"></span><h2>length<a class="headerlink" href="#length" title="Permalink to this headline">¶</a></h2>
-<div class="section" id="id10">
-<h3><tt class="docutils literal"><span class="pre">T_ASET</span></tt> <tt class="docutils literal"><span class="pre">-&gt;?</span></tt> <tt class="docutils literal"><span class="pre">T_CONST</span></tt><a class="headerlink" href="#id10" title="Permalink to this headline">¶</a></h3>
+<div class="section" id="id16">
+<h3><tt class="docutils literal"><span class="pre">T_ASET</span></tt> <tt class="docutils literal"><span class="pre">-&gt;?</span></tt> <tt class="docutils literal"><span class="pre">T_CONST</span></tt><a class="headerlink" href="#id16" title="Permalink to this headline">¶</a></h3>
+<p>Takes an address set on TOS and yields number of addresses covered by
+that set:</p>
+<div class="highlight-python"><div class="highlight"><pre>$ dwgrep &#39;0 0x10 aset 0x100 0x110 aset add length&#39;
+32
+</pre></div>
+</div>
+</div>
+</div>
+<div class="section" id="low">
+<span id="zw-vocabulary-dwarf-low"></span><h2>low<a class="headerlink" href="#low" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="id17">
+<h3><tt class="docutils literal"><span class="pre">T_DIE</span></tt> <tt class="docutils literal"><span class="pre">-&gt;?</span></tt> <tt class="docutils literal"><span class="pre">T_CONST</span></tt><a class="headerlink" href="#id17" title="Permalink to this headline">¶</a></h3>
+<p>Equivalent to <tt class="docutils literal"><span class="pre">&#64;AT_low_pc</span></tt>.</p>
+</div>
+<div class="section" id="id18">
+<h3><tt class="docutils literal"><span class="pre">T_ASET</span></tt> <tt class="docutils literal"><span class="pre">-&gt;?</span></tt> <tt class="docutils literal"><span class="pre">T_CONST</span></tt><a class="headerlink" href="#id18" title="Permalink to this headline">¶</a></h3>
+<p>Takes an address set on TOS and yields lowest address set in this set.
+Doesn&#8217;t yield at all if the set is empty:</p>
+<div class="highlight-python"><div class="highlight"><pre>$ dwgrep ./tests/aranges.o -e &#39;entry @AT_location&#39;
+0x10000..0x10010:[0:reg5]
+0x10010..0x1001a:[0:fbreg&lt;-24&gt;]
+
+$ dwgrep ./tests/aranges.o -e &#39;entry @AT_location address low&#39;
+0x10000
+0x10010
+</pre></div>
+</div>
 </div>
 </div>
 <div class="section" id="name">
 <span id="zw-vocabulary-dwarf-name"></span><h2>name<a class="headerlink" href="#name" title="Permalink to this headline">¶</a></h2>
-<div class="section" id="t-die-t-str-t-dwarf-t-str">
-<h3><tt class="docutils literal"><span class="pre">T_DIE</span></tt> <tt class="docutils literal"><span class="pre">-&gt;?</span></tt> <tt class="docutils literal"><span class="pre">T_STR</span></tt>, <tt class="docutils literal"><span class="pre">T_DWARF</span></tt> <tt class="docutils literal"><span class="pre">-&gt;?</span></tt> <tt class="docutils literal"><span class="pre">T_STR</span></tt><a class="headerlink" href="#t-die-t-str-t-dwarf-t-str" title="Permalink to this headline">¶</a></h3>
+<div class="section" id="t-die-t-str">
+<h3><tt class="docutils literal"><span class="pre">T_DIE</span></tt> <tt class="docutils literal"><span class="pre">-&gt;?</span></tt> <tt class="docutils literal"><span class="pre">T_STR</span></tt><a class="headerlink" href="#t-die-t-str" title="Permalink to this headline">¶</a></h3>
+<p>Equivalent to <tt class="docutils literal"><span class="pre">&#64;AT_name</span></tt>.</p>
+</div>
+<div class="section" id="t-dwarf-t-str">
+<h3><tt class="docutils literal"><span class="pre">T_DWARF</span></tt> <tt class="docutils literal"><span class="pre">-&gt;?</span></tt> <tt class="docutils literal"><span class="pre">T_STR</span></tt><a class="headerlink" href="#t-dwarf-t-str" title="Permalink to this headline">¶</a></h3>
+<p>Take a Dwarf on TOS and yield its filename.  Note that it may not be
+possible to use the reported name to reopen the Dwarf.  The Dwarf may
+have been built in place in memory, or the file may have been deleted
+or replaced since the Dwarf was opened.</p>
 </div>
 </div>
 <div class="section" id="offset">
@@ -552,8 +686,8 @@ CU 0
 </pre></div>
 </div>
 </div>
-<div class="section" id="id11">
-<h3><tt class="docutils literal"><span class="pre">T_DIE</span></tt> <tt class="docutils literal"><span class="pre">-&gt;?</span></tt> <tt class="docutils literal"><span class="pre">T_CONST</span></tt><a class="headerlink" href="#id11" title="Permalink to this headline">¶</a></h3>
+<div class="section" id="id19">
+<h3><tt class="docutils literal"><span class="pre">T_DIE</span></tt> <tt class="docutils literal"><span class="pre">-&gt;?</span></tt> <tt class="docutils literal"><span class="pre">T_CONST</span></tt><a class="headerlink" href="#id19" title="Permalink to this headline">¶</a></h3>
 <p>Takes a DIE on TOS and yields its offset inside the Dwarf section that
 it comes from:</p>
 <div class="highlight-python"><div class="highlight"><pre>$ dwgrep tests/twocus -e &#39;unit root offset&#39;
@@ -584,8 +718,8 @@ A B if ?eq then &quot;==&quot; else &quot;!=&quot; swap &quot;%s: %s %s %s&quot;
 </pre></div>
 </div>
 </div>
-<div class="section" id="id12">
-<h3><tt class="docutils literal"><span class="pre">T_LOCLIST_OP</span></tt> <tt class="docutils literal"><span class="pre">-&gt;?</span></tt> <tt class="docutils literal"><span class="pre">T_CONST</span></tt><a class="headerlink" href="#id12" title="Permalink to this headline">¶</a></h3>
+<div class="section" id="id20">
+<h3><tt class="docutils literal"><span class="pre">T_LOCLIST_OP</span></tt> <tt class="docutils literal"><span class="pre">-&gt;?</span></tt> <tt class="docutils literal"><span class="pre">T_CONST</span></tt><a class="headerlink" href="#id20" title="Permalink to this headline">¶</a></h3>
 <p>Takes a location list operation on TOS and yields its offset within
 the containing location expression:</p>
 <div class="highlight-python"><div class="highlight"><pre>$ dwgrep ./tests/testfile_const_type -e &#39;entry (offset == 0x57)&#39;
@@ -613,26 +747,95 @@ $ dwgrep ./tests/testfile_const_type -e &#39;entry (offset == 0x57) @AT_location
 </div>
 <div class="section" id="overlap">
 <span id="zw-vocabulary-dwarf-overlap"></span><h2>overlap<a class="headerlink" href="#overlap" title="Permalink to this headline">¶</a></h2>
-<div class="section" id="t-aset-t-aset-t-aset">
-<h3><tt class="docutils literal"><span class="pre">T_ASET</span></tt> <tt class="docutils literal"><span class="pre">T_ASET</span></tt> <tt class="docutils literal"><span class="pre">-&gt;?</span></tt> <tt class="docutils literal"><span class="pre">T_ASET</span></tt><a class="headerlink" href="#t-aset-t-aset-t-aset" title="Permalink to this headline">¶</a></h3>
+<div class="section" id="id21">
+<h3><tt class="docutils literal"><span class="pre">T_ASET</span></tt> <tt class="docutils literal"><span class="pre">T_ASET</span></tt> <tt class="docutils literal"><span class="pre">-&gt;?</span></tt> <tt class="docutils literal"><span class="pre">T_ASET</span></tt><a class="headerlink" href="#id21" title="Permalink to this headline">¶</a></h3>
+<p>Takes two address sets on TOS, and yields a (possibly empty) address
+set that covers those addresses that both of the address sets cover.</p>
 </div>
 </div>
 <div class="section" id="parent">
 <span id="zw-vocabulary-dwarf-parent"></span><h2>parent<a class="headerlink" href="#parent" title="Permalink to this headline">¶</a></h2>
-<div class="section" id="id13">
-<h3><tt class="docutils literal"><span class="pre">T_DIE</span></tt> <tt class="docutils literal"><span class="pre">-&gt;?</span></tt> <tt class="docutils literal"><span class="pre">T_DIE</span></tt><a class="headerlink" href="#id13" title="Permalink to this headline">¶</a></h3>
+<div class="section" id="id22">
+<h3><tt class="docutils literal"><span class="pre">T_DIE</span></tt> <tt class="docutils literal"><span class="pre">-&gt;?</span></tt> <tt class="docutils literal"><span class="pre">T_DIE</span></tt><a class="headerlink" href="#id22" title="Permalink to this headline">¶</a></h3>
+<p>Takes a DIE on TOS and yields its parental DIE.  For cooked DIE&#8217;s, in
+traverses parents across import points back to from which context the
+particular DIE was explored:</p>
+<div class="highlight-python"><div class="highlight"><pre>$ dwgrep ./tests/a1.out -e &#39;unit raw entry &quot;%s&quot;&#39;
+[b] compile_unit
+[2d] imported_unit
+[32] subprogram
+[51] variable
+
+$ dwgrep ./tests/a1.out -e &#39;entry (offset == 0x14) &quot;%s&quot;&#39;
+[14] typedef
+
+$ dwgrep ./tests/a1.out -e &#39;entry (offset == 0x14) parent &quot;%s&quot;&#39;
+[b] compile_unit
+</pre></div>
+</div>
 </div>
 </div>
 <div class="section" id="range">
 <span id="zw-vocabulary-dwarf-range"></span><h2>range<a class="headerlink" href="#range" title="Permalink to this headline">¶</a></h2>
-<div class="section" id="id14">
-<h3><tt class="docutils literal"><span class="pre">T_ASET</span></tt> <tt class="docutils literal"><span class="pre">-&gt;*</span></tt> <tt class="docutils literal"><span class="pre">T_ASET</span></tt><a class="headerlink" href="#id14" title="Permalink to this headline">¶</a></h3>
+<div class="section" id="id23">
+<h3><tt class="docutils literal"><span class="pre">T_ASET</span></tt> <tt class="docutils literal"><span class="pre">-&gt;*</span></tt> <tt class="docutils literal"><span class="pre">T_ASET</span></tt><a class="headerlink" href="#id23" title="Permalink to this headline">¶</a></h3>
+<p>Takes an address set on TOS and yields all continuous ranges of that
+address set, presented as individual address sets:</p>
+<div class="highlight-python"><div class="highlight"><pre>$ dwgrep &#39;0 0x10 aset 0x100 0x110 aset add range&#39;
+[0, 0x10)
+[0x100, 0x110)
+</pre></div>
+</div>
+</div>
+</div>
+<div class="section" id="raw">
+<span id="zw-vocabulary-dwarf-raw"></span><h2>raw<a class="headerlink" href="#raw" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="id24">
+<h3><tt class="docutils literal"><span class="pre">T_CU</span></tt> <tt class="docutils literal"><span class="pre">-&gt;?</span></tt> <tt class="docutils literal"><span class="pre">T_CU</span></tt><a class="headerlink" href="#id24" title="Permalink to this headline">¶</a></h3>
+<p>Takes a CU on TOS and yields a raw version thereof.</p>
+</div>
+<div class="section" id="id25">
+<h3><tt class="docutils literal"><span class="pre">T_DIE</span></tt> <tt class="docutils literal"><span class="pre">-&gt;?</span></tt> <tt class="docutils literal"><span class="pre">T_DIE</span></tt><a class="headerlink" href="#id25" title="Permalink to this headline">¶</a></h3>
+<p>Takes a DIE on TOS and yields a raw version thereof.</p>
+</div>
+<div class="section" id="id26">
+<h3><tt class="docutils literal"><span class="pre">T_DWARF</span></tt> <tt class="docutils literal"><span class="pre">-&gt;?</span></tt> <tt class="docutils literal"><span class="pre">T_DWARF</span></tt><a class="headerlink" href="#id26" title="Permalink to this headline">¶</a></h3>
+<p>Takes a Dwarf on TOS and yields a raw version thereof.</p>
+</div>
+<div class="section" id="id27">
+<h3><tt class="docutils literal"><span class="pre">T_ATTR</span></tt> <tt class="docutils literal"><span class="pre">-&gt;?</span></tt> <tt class="docutils literal"><span class="pre">T_ATTR</span></tt><a class="headerlink" href="#id27" title="Permalink to this headline">¶</a></h3>
+<p>Takes an attribute on TOS and yields a raw version thereof.</p>
 </div>
 </div>
 <div class="section" id="root">
-<span id="id15"></span><h2>root<a class="headerlink" href="#root" title="Permalink to this headline">¶</a></h2>
-<div class="section" id="t-die-t-die-t-cu-t-die">
-<h3><tt class="docutils literal"><span class="pre">T_DIE</span></tt> <tt class="docutils literal"><span class="pre">-&gt;?</span></tt> <tt class="docutils literal"><span class="pre">T_DIE</span></tt>, <tt class="docutils literal"><span class="pre">T_CU</span></tt> <tt class="docutils literal"><span class="pre">-&gt;?</span></tt> <tt class="docutils literal"><span class="pre">T_DIE</span></tt><a class="headerlink" href="#t-die-t-die-t-cu-t-die" title="Permalink to this headline">¶</a></h3>
+<span id="id28"></span><h2>root<a class="headerlink" href="#root" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="id29">
+<h3><tt class="docutils literal"><span class="pre">T_CU</span></tt> <tt class="docutils literal"><span class="pre">-&gt;?</span></tt> <tt class="docutils literal"><span class="pre">T_DIE</span></tt><a class="headerlink" href="#id29" title="Permalink to this headline">¶</a></h3>
+<p>Takes a CU on TOS and yields its root DIE.</p>
+</div>
+<div class="section" id="id30">
+<h3><tt class="docutils literal"><span class="pre">T_DIE</span></tt> <tt class="docutils literal"><span class="pre">-&gt;?</span></tt> <tt class="docutils literal"><span class="pre">T_DIE</span></tt><a class="headerlink" href="#id30" title="Permalink to this headline">¶</a></h3>
+<p>Takes a DIE on TOS and yields CU DIE of the unit that this DIE comes
+from.  For cooked DIE&#8217;s follows back through import points and yields
+the CU DIE of this DIE&#8217;s context.</p>
+</div>
+</div>
+<div class="section" id="sub">
+<span id="zw-vocabulary-dwarf-sub"></span><h2>sub<a class="headerlink" href="#sub" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="id31">
+<h3><tt class="docutils literal"><span class="pre">T_ASET</span></tt> <tt class="docutils literal"><span class="pre">T_CONST</span></tt> <tt class="docutils literal"><span class="pre">-&gt;?</span></tt> <tt class="docutils literal"><span class="pre">T_ASET</span></tt><a class="headerlink" href="#id31" title="Permalink to this headline">¶</a></h3>
+<p>Takes an address set and a constant on TOS and yields an address set
+with a hole poked at the address given by the constant:</p>
+<div class="highlight-python"><div class="highlight"><pre>$ dwgrep ./tests/aranges.o -e &#39;entry @AT_location address 0x10010 sub&#39;
+[0x10000, 0x10010)
+[0x10011, 0x1001a)
+</pre></div>
+</div>
+</div>
+<div class="section" id="id32">
+<h3><tt class="docutils literal"><span class="pre">T_ASET</span></tt> <tt class="docutils literal"><span class="pre">T_ASET</span></tt> <tt class="docutils literal"><span class="pre">-&gt;?</span></tt> <tt class="docutils literal"><span class="pre">T_ASET</span></tt><a class="headerlink" href="#id32" title="Permalink to this headline">¶</a></h3>
+<p>Takes two address sets <em>A</em> and <em>B</em>, and yields an address set that
+contains all of the <em>A</em>&#8216;s addresses except those covered by <em>B</em>.</p>
 </div>
 </div>
 <div class="section" id="unit">
@@ -693,14 +896,39 @@ CU 0x53
 </div>
 <div class="section" id="value">
 <span id="zw-vocabulary-dwarf-value"></span><h2>value<a class="headerlink" href="#value" title="Permalink to this headline">¶</a></h2>
-<div class="section" id="t-loclist-op-t-t-attr-t">
-<h3><tt class="docutils literal"><span class="pre">T_LOCLIST_OP</span></tt> <tt class="docutils literal"><span class="pre">-&gt;*</span></tt> <tt class="docutils literal"><span class="pre">T_???</span></tt>, <tt class="docutils literal"><span class="pre">T_ATTR</span></tt> <tt class="docutils literal"><span class="pre">-&gt;*</span></tt> <tt class="docutils literal"><span class="pre">T_???</span></tt><a class="headerlink" href="#t-loclist-op-t-t-attr-t" title="Permalink to this headline">¶</a></h3>
+<div class="section" id="t-loclist-op-t">
+<h3><tt class="docutils literal"><span class="pre">T_LOCLIST_OP</span></tt> <tt class="docutils literal"><span class="pre">-&gt;*</span></tt> <tt class="docutils literal"><span class="pre">T_???</span></tt><a class="headerlink" href="#t-loclist-op-t" title="Permalink to this headline">¶</a></h3>
+<p>Takes a location expression instruction on TOS and yields its
+operands:</p>
+<div class="highlight-python"><div class="highlight"><pre>$ dwgrep ./tests/aranges.o -e &#39;entry @AT_location elem&#39;
+0:reg5
+0:fbreg&lt;-24&gt;
+
+$ dwgrep ./tests/aranges.o -e &#39;entry @AT_location elem value&#39;
+-24
+</pre></div>
+</div>
+<p>Operands could be of any Zwerg type, some will be e.g. DIE&#8217;s.</p>
+</div>
+<div class="section" id="t-attr-t">
+<h3><tt class="docutils literal"><span class="pre">T_ATTR</span></tt> <tt class="docutils literal"><span class="pre">-&gt;*</span></tt> <tt class="docutils literal"><span class="pre">T_???</span></tt><a class="headerlink" href="#t-attr-t" title="Permalink to this headline">¶</a></h3>
+<p>Takes an attribute on TOS and yields its value.  The value can be of
+any Zwerg type.  There can even be more than one value.  In particular
+location expression attributes yield all the constituent location
+expressions:</p>
+<div class="highlight-python"><div class="highlight"><pre>$ dwgrep ./tests/aranges.o -e &#39;entry @AT_location&#39;
+0x10000..0x10010:[0:reg5]
+0x10010..0x1001a:[0:fbreg&lt;-24&gt;]
+</pre></div>
+</div>
 </div>
 </div>
 <div class="section" id="version">
 <span id="zw-vocabulary-dwarf-version"></span><h2>version<a class="headerlink" href="#version" title="Permalink to this headline">¶</a></h2>
-<div class="section" id="id16">
-<h3><tt class="docutils literal"><span class="pre">T_CU</span></tt> <tt class="docutils literal"><span class="pre">-&gt;?</span></tt> <tt class="docutils literal"><span class="pre">T_CONST</span></tt><a class="headerlink" href="#id16" title="Permalink to this headline">¶</a></h3>
+<div class="section" id="id33">
+<h3><tt class="docutils literal"><span class="pre">T_CU</span></tt> <tt class="docutils literal"><span class="pre">-&gt;?</span></tt> <tt class="docutils literal"><span class="pre">T_CONST</span></tt><a class="headerlink" href="#id33" title="Permalink to this headline">¶</a></h3>
+<p>Takes a CU on TOS and yields a constant corresponding to version of
+Dwarf standard according to which this CU has been written.</p>
 </div>
 </div>
 </div>
@@ -716,7 +944,8 @@ CU 0x53
 <li><a class="reference internal" href="#">Dwarf vocabulary</a><ul>
 <li><a class="reference internal" href="#t-abbrev-t-abbrev-attr-t-abbrev-unit-t-aset-t-attr-t-cu-t-die-t-dwarf-t-loclist-elem-t-loclist-op">T_ABBREV, T_ABBREV_ATTR, T_ABBREV_UNIT, T_ASET, T_ATTR, T_CU, T_DIE, T_DWARF, T_LOCLIST_ELEM, T_LOCLIST_OP</a></li>
 <li><a class="reference internal" href="#contains-contains">!contains, ?contains</a><ul>
-<li><a class="reference internal" href="#t-aset-t-aset-t-aset-t-const"><tt class="docutils literal"><span class="pre">T_ASET</span></tt> <tt class="docutils literal"><span class="pre">T_ASET</span></tt>, <tt class="docutils literal"><span class="pre">T_ASET</span></tt> <tt class="docutils literal"><span class="pre">T_CONST</span></tt></a></li>
+<li><a class="reference internal" href="#t-aset-t-const"><tt class="docutils literal"><span class="pre">T_ASET</span></tt> <tt class="docutils literal"><span class="pre">T_CONST</span></tt></a></li>
+<li><a class="reference internal" href="#t-aset-t-aset"><tt class="docutils literal"><span class="pre">T_ASET</span></tt> <tt class="docutils literal"><span class="pre">T_ASET</span></tt></a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#empty-empty">!empty, ?empty</a><ul>
@@ -724,15 +953,16 @@ CU 0x53
 </ul>
 </li>
 <li><a class="reference internal" href="#haschildren-haschildren">!haschildren, ?haschildren</a><ul>
-<li><a class="reference internal" href="#t-abbrev-t-die"><tt class="docutils literal"><span class="pre">T_ABBREV</span></tt>, <tt class="docutils literal"><span class="pre">T_DIE</span></tt></a></li>
+<li><a class="reference internal" href="#t-die"><tt class="docutils literal"><span class="pre">T_DIE</span></tt></a></li>
+<li><a class="reference internal" href="#t-abbrev"><tt class="docutils literal"><span class="pre">T_ABBREV</span></tt></a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#overlaps-overlaps">!overlaps, ?overlaps</a><ul>
-<li><a class="reference internal" href="#t-aset-t-aset"><tt class="docutils literal"><span class="pre">T_ASET</span></tt> <tt class="docutils literal"><span class="pre">T_ASET</span></tt></a></li>
+<li><a class="reference internal" href="#id5"><tt class="docutils literal"><span class="pre">T_ASET</span></tt> <tt class="docutils literal"><span class="pre">T_ASET</span></tt></a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#root-root">!root, ?root</a><ul>
-<li><a class="reference internal" href="#t-die"><tt class="docutils literal"><span class="pre">T_DIE</span></tt></a></li>
+<li><a class="reference internal" href="#id7"><tt class="docutils literal"><span class="pre">T_DIE</span></tt></a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#dw-access-private-dw-access-protected-dw-access-public">DW_ACCESS_private, DW_ACCESS_protected, DW_ACCESS_public</a></li>
@@ -755,11 +985,14 @@ CU 0x53
 <li><a class="reference internal" href="#dw-virtuality-none-dw-virtuality-pure-virtual-dw-virtuality-virtual">DW_VIRTUALITY_none, DW_VIRTUALITY_pure_virtual, DW_VIRTUALITY_virtual</a></li>
 <li><a class="reference internal" href="#dw-vis-exported-dw-vis-local-dw-vis-qualified">DW_VIS_exported, DW_VIS_local, DW_VIS_qualified</a></li>
 <li><a class="reference internal" href="#abbrev">abbrev</a><ul>
-<li><a class="reference internal" href="#t-die-t-abbrev-t-cu-t-abbrev-unit-t-dwarf-t-abbrev-unit"><tt class="docutils literal"><span class="pre">T_DIE</span></tt> <tt class="docutils literal"><span class="pre">-&gt;?</span></tt> <tt class="docutils literal"><span class="pre">T_ABBREV</span></tt>, <tt class="docutils literal"><span class="pre">T_CU</span></tt> <tt class="docutils literal"><span class="pre">-&gt;?</span></tt> <tt class="docutils literal"><span class="pre">T_ABBREV_UNIT</span></tt>, <tt class="docutils literal"><span class="pre">T_DWARF</span></tt> <tt class="docutils literal"><span class="pre">-&gt;*</span></tt> <tt class="docutils literal"><span class="pre">T_ABBREV_UNIT</span></tt></a></li>
+<li><a class="reference internal" href="#t-cu-t-abbrev-unit"><tt class="docutils literal"><span class="pre">T_CU</span></tt> <tt class="docutils literal"><span class="pre">-&gt;?</span></tt> <tt class="docutils literal"><span class="pre">T_ABBREV_UNIT</span></tt></a></li>
+<li><a class="reference internal" href="#t-die-t-abbrev"><tt class="docutils literal"><span class="pre">T_DIE</span></tt> <tt class="docutils literal"><span class="pre">-&gt;?</span></tt> <tt class="docutils literal"><span class="pre">T_ABBREV</span></tt></a></li>
+<li><a class="reference internal" href="#t-dwarf-t-abbrev-unit"><tt class="docutils literal"><span class="pre">T_DWARF</span></tt> <tt class="docutils literal"><span class="pre">-&gt;*</span></tt> <tt class="docutils literal"><span class="pre">T_ABBREV_UNIT</span></tt></a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#add-sub">add, sub</a><ul>
-<li><a class="reference internal" href="#t-aset-t-aset-t-aset-t-aset-t-const-t-aset"><tt class="docutils literal"><span class="pre">T_ASET</span></tt> <tt class="docutils literal"><span class="pre">T_ASET</span></tt> <tt class="docutils literal"><span class="pre">-&gt;?</span></tt> <tt class="docutils literal"><span class="pre">T_ASET</span></tt>, <tt class="docutils literal"><span class="pre">T_ASET</span></tt> <tt class="docutils literal"><span class="pre">T_CONST</span></tt> <tt class="docutils literal"><span class="pre">-&gt;?</span></tt> <tt class="docutils literal"><span class="pre">T_ASET</span></tt></a></li>
+<li><a class="reference internal" href="#add">add</a><ul>
+<li><a class="reference internal" href="#t-aset-t-const-t-aset"><tt class="docutils literal"><span class="pre">T_ASET</span></tt> <tt class="docutils literal"><span class="pre">T_CONST</span></tt> <tt class="docutils literal"><span class="pre">-&gt;?</span></tt> <tt class="docutils literal"><span class="pre">T_ASET</span></tt></a></li>
+<li><a class="reference internal" href="#t-aset-t-aset-t-aset"><tt class="docutils literal"><span class="pre">T_ASET</span></tt> <tt class="docutils literal"><span class="pre">T_ASET</span></tt> <tt class="docutils literal"><span class="pre">-&gt;?</span></tt> <tt class="docutils literal"><span class="pre">T_ASET</span></tt></a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#address">address</a><ul>
@@ -785,8 +1018,11 @@ CU 0x53
 <li><a class="reference internal" href="#t-abbrev-t-const"><tt class="docutils literal"><span class="pre">T_ABBREV</span></tt> <tt class="docutils literal"><span class="pre">-&gt;?</span></tt> <tt class="docutils literal"><span class="pre">T_CONST</span></tt></a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#cooked-raw">cooked, raw</a><ul>
-<li><a class="reference internal" href="#t-attr-t-attr-t-die-t-die-t-cu-t-cu-t-dwarf-t-dwarf"><tt class="docutils literal"><span class="pre">T_ATTR</span></tt> <tt class="docutils literal"><span class="pre">-&gt;?</span></tt> <tt class="docutils literal"><span class="pre">T_ATTR</span></tt>, <tt class="docutils literal"><span class="pre">T_DIE</span></tt> <tt class="docutils literal"><span class="pre">-&gt;?</span></tt> <tt class="docutils literal"><span class="pre">T_DIE</span></tt>, <tt class="docutils literal"><span class="pre">T_CU</span></tt> <tt class="docutils literal"><span class="pre">-&gt;?</span></tt> <tt class="docutils literal"><span class="pre">T_CU</span></tt>, <tt class="docutils literal"><span class="pre">T_DWARF</span></tt> <tt class="docutils literal"><span class="pre">-&gt;?</span></tt> <tt class="docutils literal"><span class="pre">T_DWARF</span></tt></a></li>
+<li><a class="reference internal" href="#cooked">cooked</a><ul>
+<li><a class="reference internal" href="#t-cu-t-cu"><tt class="docutils literal"><span class="pre">T_CU</span></tt> <tt class="docutils literal"><span class="pre">-&gt;?</span></tt> <tt class="docutils literal"><span class="pre">T_CU</span></tt></a></li>
+<li><a class="reference internal" href="#id8"><tt class="docutils literal"><span class="pre">T_DIE</span></tt> <tt class="docutils literal"><span class="pre">-&gt;?</span></tt> <tt class="docutils literal"><span class="pre">T_DIE</span></tt></a></li>
+<li><a class="reference internal" href="#t-dwarf-t-dwarf"><tt class="docutils literal"><span class="pre">T_DWARF</span></tt> <tt class="docutils literal"><span class="pre">-&gt;?</span></tt> <tt class="docutils literal"><span class="pre">T_DWARF</span></tt></a></li>
+<li><a class="reference internal" href="#t-attr-t-attr"><tt class="docutils literal"><span class="pre">T_ATTR</span></tt> <tt class="docutils literal"><span class="pre">-&gt;?</span></tt> <tt class="docutils literal"><span class="pre">T_ATTR</span></tt></a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#dwopen">dwopen</a><ul>
@@ -794,7 +1030,7 @@ CU 0x53
 </ul>
 </li>
 <li><a class="reference internal" href="#elem-relem">elem, relem</a><ul>
-<li><a class="reference internal" href="#t-aset-t-const"><tt class="docutils literal"><span class="pre">T_ASET</span></tt> <tt class="docutils literal"><span class="pre">-&gt;*</span></tt> <tt class="docutils literal"><span class="pre">T_CONST</span></tt></a></li>
+<li><a class="reference internal" href="#id9"><tt class="docutils literal"><span class="pre">T_ASET</span></tt> <tt class="docutils literal"><span class="pre">-&gt;*</span></tt> <tt class="docutils literal"><span class="pre">T_CONST</span></tt></a></li>
 <li><a class="reference internal" href="#t-loclist-elem-t-loclist-op"><tt class="docutils literal"><span class="pre">T_LOCLIST_ELEM</span></tt> <tt class="docutils literal"><span class="pre">-&gt;*</span></tt> <tt class="docutils literal"><span class="pre">T_LOCLIST_OP</span></tt></a></li>
 </ul>
 </li>
@@ -806,50 +1042,70 @@ CU 0x53
 </li>
 <li><a class="reference internal" href="#form">form</a><ul>
 <li><a class="reference internal" href="#t-abbrev-attr-t-const"><tt class="docutils literal"><span class="pre">T_ABBREV_ATTR</span></tt> <tt class="docutils literal"><span class="pre">-&gt;?</span></tt> <tt class="docutils literal"><span class="pre">T_CONST</span></tt></a></li>
-<li><a class="reference internal" href="#id6"><tt class="docutils literal"><span class="pre">T_ATTR</span></tt> <tt class="docutils literal"><span class="pre">-&gt;?</span></tt> <tt class="docutils literal"><span class="pre">T_CONST</span></tt></a></li>
+<li><a class="reference internal" href="#id10"><tt class="docutils literal"><span class="pre">T_ATTR</span></tt> <tt class="docutils literal"><span class="pre">-&gt;?</span></tt> <tt class="docutils literal"><span class="pre">T_CONST</span></tt></a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#high-low">high, low</a><ul>
-<li><a class="reference internal" href="#t-aset-t-const-t-die-t-const"><tt class="docutils literal"><span class="pre">T_ASET</span></tt> <tt class="docutils literal"><span class="pre">-&gt;?</span></tt> <tt class="docutils literal"><span class="pre">T_CONST</span></tt>, <tt class="docutils literal"><span class="pre">T_DIE</span></tt> <tt class="docutils literal"><span class="pre">-&gt;?</span></tt> <tt class="docutils literal"><span class="pre">T_CONST</span></tt></a></li>
+<li><a class="reference internal" href="#high">high</a><ul>
+<li><a class="reference internal" href="#t-die-t-const"><tt class="docutils literal"><span class="pre">T_DIE</span></tt> <tt class="docutils literal"><span class="pre">-&gt;?</span></tt> <tt class="docutils literal"><span class="pre">T_CONST</span></tt></a></li>
+<li><a class="reference internal" href="#id11"><tt class="docutils literal"><span class="pre">T_ASET</span></tt> <tt class="docutils literal"><span class="pre">-&gt;?</span></tt> <tt class="docutils literal"><span class="pre">T_CONST</span></tt></a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#label">label</a><ul>
-<li><a class="reference internal" href="#t-die-t-const"><tt class="docutils literal"><span class="pre">T_DIE</span></tt> <tt class="docutils literal"><span class="pre">-&gt;?</span></tt> <tt class="docutils literal"><span class="pre">T_CONST</span></tt></a></li>
+<li><a class="reference internal" href="#id12"><tt class="docutils literal"><span class="pre">T_DIE</span></tt> <tt class="docutils literal"><span class="pre">-&gt;?</span></tt> <tt class="docutils literal"><span class="pre">T_CONST</span></tt></a></li>
 <li><a class="reference internal" href="#t-loclist-op-t-const"><tt class="docutils literal"><span class="pre">T_LOCLIST_OP</span></tt> <tt class="docutils literal"><span class="pre">-&gt;?</span></tt> <tt class="docutils literal"><span class="pre">T_CONST</span></tt></a></li>
-<li><a class="reference internal" href="#id7"><tt class="docutils literal"><span class="pre">T_ABBREV_ATTR</span></tt> <tt class="docutils literal"><span class="pre">-&gt;?</span></tt> <tt class="docutils literal"><span class="pre">T_CONST</span></tt></a></li>
-<li><a class="reference internal" href="#id8"><tt class="docutils literal"><span class="pre">T_ABBREV</span></tt> <tt class="docutils literal"><span class="pre">-&gt;?</span></tt> <tt class="docutils literal"><span class="pre">T_CONST</span></tt></a></li>
-<li><a class="reference internal" href="#id9"><tt class="docutils literal"><span class="pre">T_ATTR</span></tt> <tt class="docutils literal"><span class="pre">-&gt;?</span></tt> <tt class="docutils literal"><span class="pre">T_CONST</span></tt></a></li>
+<li><a class="reference internal" href="#id13"><tt class="docutils literal"><span class="pre">T_ABBREV_ATTR</span></tt> <tt class="docutils literal"><span class="pre">-&gt;?</span></tt> <tt class="docutils literal"><span class="pre">T_CONST</span></tt></a></li>
+<li><a class="reference internal" href="#id14"><tt class="docutils literal"><span class="pre">T_ABBREV</span></tt> <tt class="docutils literal"><span class="pre">-&gt;?</span></tt> <tt class="docutils literal"><span class="pre">T_CONST</span></tt></a></li>
+<li><a class="reference internal" href="#id15"><tt class="docutils literal"><span class="pre">T_ATTR</span></tt> <tt class="docutils literal"><span class="pre">-&gt;?</span></tt> <tt class="docutils literal"><span class="pre">T_CONST</span></tt></a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#length">length</a><ul>
-<li><a class="reference internal" href="#id10"><tt class="docutils literal"><span class="pre">T_ASET</span></tt> <tt class="docutils literal"><span class="pre">-&gt;?</span></tt> <tt class="docutils literal"><span class="pre">T_CONST</span></tt></a></li>
+<li><a class="reference internal" href="#id16"><tt class="docutils literal"><span class="pre">T_ASET</span></tt> <tt class="docutils literal"><span class="pre">-&gt;?</span></tt> <tt class="docutils literal"><span class="pre">T_CONST</span></tt></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#low">low</a><ul>
+<li><a class="reference internal" href="#id17"><tt class="docutils literal"><span class="pre">T_DIE</span></tt> <tt class="docutils literal"><span class="pre">-&gt;?</span></tt> <tt class="docutils literal"><span class="pre">T_CONST</span></tt></a></li>
+<li><a class="reference internal" href="#id18"><tt class="docutils literal"><span class="pre">T_ASET</span></tt> <tt class="docutils literal"><span class="pre">-&gt;?</span></tt> <tt class="docutils literal"><span class="pre">T_CONST</span></tt></a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#name">name</a><ul>
-<li><a class="reference internal" href="#t-die-t-str-t-dwarf-t-str"><tt class="docutils literal"><span class="pre">T_DIE</span></tt> <tt class="docutils literal"><span class="pre">-&gt;?</span></tt> <tt class="docutils literal"><span class="pre">T_STR</span></tt>, <tt class="docutils literal"><span class="pre">T_DWARF</span></tt> <tt class="docutils literal"><span class="pre">-&gt;?</span></tt> <tt class="docutils literal"><span class="pre">T_STR</span></tt></a></li>
+<li><a class="reference internal" href="#t-die-t-str"><tt class="docutils literal"><span class="pre">T_DIE</span></tt> <tt class="docutils literal"><span class="pre">-&gt;?</span></tt> <tt class="docutils literal"><span class="pre">T_STR</span></tt></a></li>
+<li><a class="reference internal" href="#t-dwarf-t-str"><tt class="docutils literal"><span class="pre">T_DWARF</span></tt> <tt class="docutils literal"><span class="pre">-&gt;?</span></tt> <tt class="docutils literal"><span class="pre">T_STR</span></tt></a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#offset">offset</a><ul>
 <li><a class="reference internal" href="#t-cu-t-const"><tt class="docutils literal"><span class="pre">T_CU</span></tt> <tt class="docutils literal"><span class="pre">-&gt;?</span></tt> <tt class="docutils literal"><span class="pre">T_CONST</span></tt></a></li>
-<li><a class="reference internal" href="#id11"><tt class="docutils literal"><span class="pre">T_DIE</span></tt> <tt class="docutils literal"><span class="pre">-&gt;?</span></tt> <tt class="docutils literal"><span class="pre">T_CONST</span></tt></a></li>
-<li><a class="reference internal" href="#id12"><tt class="docutils literal"><span class="pre">T_LOCLIST_OP</span></tt> <tt class="docutils literal"><span class="pre">-&gt;?</span></tt> <tt class="docutils literal"><span class="pre">T_CONST</span></tt></a></li>
+<li><a class="reference internal" href="#id19"><tt class="docutils literal"><span class="pre">T_DIE</span></tt> <tt class="docutils literal"><span class="pre">-&gt;?</span></tt> <tt class="docutils literal"><span class="pre">T_CONST</span></tt></a></li>
+<li><a class="reference internal" href="#id20"><tt class="docutils literal"><span class="pre">T_LOCLIST_OP</span></tt> <tt class="docutils literal"><span class="pre">-&gt;?</span></tt> <tt class="docutils literal"><span class="pre">T_CONST</span></tt></a></li>
 <li><a class="reference internal" href="#t-abbrev-attr-t-const-t-abbrev-t-const-t-abbrev-unit-t-const"><tt class="docutils literal"><span class="pre">T_ABBREV_ATTR</span></tt> <tt class="docutils literal"><span class="pre">-&gt;?</span></tt> <tt class="docutils literal"><span class="pre">T_CONST</span></tt>, <tt class="docutils literal"><span class="pre">T_ABBREV</span></tt> <tt class="docutils literal"><span class="pre">-&gt;?</span></tt> <tt class="docutils literal"><span class="pre">T_CONST</span></tt>, <tt class="docutils literal"><span class="pre">T_ABBREV_UNIT</span></tt> <tt class="docutils literal"><span class="pre">-&gt;?</span></tt> <tt class="docutils literal"><span class="pre">T_CONST</span></tt></a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#overlap">overlap</a><ul>
-<li><a class="reference internal" href="#t-aset-t-aset-t-aset"><tt class="docutils literal"><span class="pre">T_ASET</span></tt> <tt class="docutils literal"><span class="pre">T_ASET</span></tt> <tt class="docutils literal"><span class="pre">-&gt;?</span></tt> <tt class="docutils literal"><span class="pre">T_ASET</span></tt></a></li>
+<li><a class="reference internal" href="#id21"><tt class="docutils literal"><span class="pre">T_ASET</span></tt> <tt class="docutils literal"><span class="pre">T_ASET</span></tt> <tt class="docutils literal"><span class="pre">-&gt;?</span></tt> <tt class="docutils literal"><span class="pre">T_ASET</span></tt></a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#parent">parent</a><ul>
-<li><a class="reference internal" href="#id13"><tt class="docutils literal"><span class="pre">T_DIE</span></tt> <tt class="docutils literal"><span class="pre">-&gt;?</span></tt> <tt class="docutils literal"><span class="pre">T_DIE</span></tt></a></li>
+<li><a class="reference internal" href="#id22"><tt class="docutils literal"><span class="pre">T_DIE</span></tt> <tt class="docutils literal"><span class="pre">-&gt;?</span></tt> <tt class="docutils literal"><span class="pre">T_DIE</span></tt></a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#range">range</a><ul>
-<li><a class="reference internal" href="#id14"><tt class="docutils literal"><span class="pre">T_ASET</span></tt> <tt class="docutils literal"><span class="pre">-&gt;*</span></tt> <tt class="docutils literal"><span class="pre">T_ASET</span></tt></a></li>
+<li><a class="reference internal" href="#id23"><tt class="docutils literal"><span class="pre">T_ASET</span></tt> <tt class="docutils literal"><span class="pre">-&gt;*</span></tt> <tt class="docutils literal"><span class="pre">T_ASET</span></tt></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#raw">raw</a><ul>
+<li><a class="reference internal" href="#id24"><tt class="docutils literal"><span class="pre">T_CU</span></tt> <tt class="docutils literal"><span class="pre">-&gt;?</span></tt> <tt class="docutils literal"><span class="pre">T_CU</span></tt></a></li>
+<li><a class="reference internal" href="#id25"><tt class="docutils literal"><span class="pre">T_DIE</span></tt> <tt class="docutils literal"><span class="pre">-&gt;?</span></tt> <tt class="docutils literal"><span class="pre">T_DIE</span></tt></a></li>
+<li><a class="reference internal" href="#id26"><tt class="docutils literal"><span class="pre">T_DWARF</span></tt> <tt class="docutils literal"><span class="pre">-&gt;?</span></tt> <tt class="docutils literal"><span class="pre">T_DWARF</span></tt></a></li>
+<li><a class="reference internal" href="#id27"><tt class="docutils literal"><span class="pre">T_ATTR</span></tt> <tt class="docutils literal"><span class="pre">-&gt;?</span></tt> <tt class="docutils literal"><span class="pre">T_ATTR</span></tt></a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#root">root</a><ul>
-<li><a class="reference internal" href="#t-die-t-die-t-cu-t-die"><tt class="docutils literal"><span class="pre">T_DIE</span></tt> <tt class="docutils literal"><span class="pre">-&gt;?</span></tt> <tt class="docutils literal"><span class="pre">T_DIE</span></tt>, <tt class="docutils literal"><span class="pre">T_CU</span></tt> <tt class="docutils literal"><span class="pre">-&gt;?</span></tt> <tt class="docutils literal"><span class="pre">T_DIE</span></tt></a></li>
+<li><a class="reference internal" href="#id29"><tt class="docutils literal"><span class="pre">T_CU</span></tt> <tt class="docutils literal"><span class="pre">-&gt;?</span></tt> <tt class="docutils literal"><span class="pre">T_DIE</span></tt></a></li>
+<li><a class="reference internal" href="#id30"><tt class="docutils literal"><span class="pre">T_DIE</span></tt> <tt class="docutils literal"><span class="pre">-&gt;?</span></tt> <tt class="docutils literal"><span class="pre">T_DIE</span></tt></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#sub">sub</a><ul>
+<li><a class="reference internal" href="#id31"><tt class="docutils literal"><span class="pre">T_ASET</span></tt> <tt class="docutils literal"><span class="pre">T_CONST</span></tt> <tt class="docutils literal"><span class="pre">-&gt;?</span></tt> <tt class="docutils literal"><span class="pre">T_ASET</span></tt></a></li>
+<li><a class="reference internal" href="#id32"><tt class="docutils literal"><span class="pre">T_ASET</span></tt> <tt class="docutils literal"><span class="pre">T_ASET</span></tt> <tt class="docutils literal"><span class="pre">-&gt;?</span></tt> <tt class="docutils literal"><span class="pre">T_ASET</span></tt></a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#unit">unit</a><ul>
@@ -859,11 +1115,12 @@ CU 0x53
 </ul>
 </li>
 <li><a class="reference internal" href="#value">value</a><ul>
-<li><a class="reference internal" href="#t-loclist-op-t-t-attr-t"><tt class="docutils literal"><span class="pre">T_LOCLIST_OP</span></tt> <tt class="docutils literal"><span class="pre">-&gt;*</span></tt> <tt class="docutils literal"><span class="pre">T_???</span></tt>, <tt class="docutils literal"><span class="pre">T_ATTR</span></tt> <tt class="docutils literal"><span class="pre">-&gt;*</span></tt> <tt class="docutils literal"><span class="pre">T_???</span></tt></a></li>
+<li><a class="reference internal" href="#t-loclist-op-t"><tt class="docutils literal"><span class="pre">T_LOCLIST_OP</span></tt> <tt class="docutils literal"><span class="pre">-&gt;*</span></tt> <tt class="docutils literal"><span class="pre">T_???</span></tt></a></li>
+<li><a class="reference internal" href="#t-attr-t"><tt class="docutils literal"><span class="pre">T_ATTR</span></tt> <tt class="docutils literal"><span class="pre">-&gt;*</span></tt> <tt class="docutils literal"><span class="pre">T_???</span></tt></a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#version">version</a><ul>
-<li><a class="reference internal" href="#id16"><tt class="docutils literal"><span class="pre">T_CU</span></tt> <tt class="docutils literal"><span class="pre">-&gt;?</span></tt> <tt class="docutils literal"><span class="pre">T_CONST</span></tt></a></li>
+<li><a class="reference internal" href="#id33"><tt class="docutils literal"><span class="pre">T_CU</span></tt> <tt class="docutils literal"><span class="pre">-&gt;?</span></tt> <tt class="docutils literal"><span class="pre">T_CONST</span></tt></a></li>
 </ul>
 </li>
 </ul>

@@ -27,10 +27,24 @@ T_ABBREV, T_ABBREV_ATTR, T_ABBREV_UNIT, T_ASET, T_ATTR, T_CU, T_DIE, T_DWARF, T_
 !contains, ?contains
 --------------------
 
-``T_ASET`` ``T_ASET``, ``T_ASET`` ``T_CONST``
-.............................................
+``T_ASET`` ``T_CONST``
+......................
 
+Inspects an address set and a constant on TOS and holds for those
+where the constant is contained within the address set.  Note that the
+high end of the address set is not actually considered part of the
+address set::
 
+	$ dwgrep 'if (0 10 aset 10 ?contains) then "yes" else "no"'
+	no
+	$ dwgrep 'if (0 10 aset 9 ?contains) then "yes" else "no"'
+	yes
+
+``T_ASET`` ``T_ASET``
+.....................
+
+Inspects two address sets on TOS, *A* and *B*, and holds for those
+where all of *B*'s addresses are covered by *A*.
 
 
 
@@ -43,7 +57,8 @@ T_ABBREV, T_ABBREV_ATTR, T_ABBREV_UNIT, T_ASET, T_ATTR, T_CU, T_DIE, T_DWARF, T_
 ``T_ASET``
 ..........
 
-
+Inspects an address set on TOS and holds if it is empty (contains no
+addresses).  Could be written as ``!(elem)``.
 
 
 
@@ -53,10 +68,29 @@ T_ABBREV, T_ABBREV_ATTR, T_ABBREV_UNIT, T_ASET, T_ATTR, T_CU, T_DIE, T_DWARF, T_
 !haschildren, ?haschildren
 --------------------------
 
-``T_ABBREV``, ``T_DIE``
-.......................
+``T_DIE``
+.........
 
+Inspects a DIE on TOS and holds if that DIE might have children,
+i.e. it is the same as ``abbrev ?haschildren``.  Note that even DIE's
+for which ?haschildren holds may not actually have children, because
+the actual children chain in the Dwarf file is immediately terminated.
+To determine whether there are actually any children, use
+``?(child)``::
 
+	$ dwgrep ./tests/haschildren_childless -e 'entry (offset == 0x2d) abbrev "%s"'
+	[2] offset:0x13, children:yes, tag:subprogram
+
+	$ dwgrep ./tests/haschildren_childless -e '
+		entry (offset == 0x2d)
+		if child then "yes" else "no" "%s: %s"'
+	[2d] subprogram: no
+
+``T_ABBREV``
+............
+
+Inspects an abbreviation on TOS and holds if DIE's described by this
+abbreviation may have children.
 
 
 
@@ -69,7 +103,8 @@ T_ABBREV, T_ABBREV_ATTR, T_ABBREV_UNIT, T_ASET, T_ATTR, T_CU, T_DIE, T_DWARF, T_
 ``T_ASET`` ``T_ASET``
 .....................
 
-
+Inspects two address sets on TOS, and holds if the two address sets
+overlap.
 
 
 
@@ -82,7 +117,7 @@ T_ABBREV, T_ABBREV_ATTR, T_ABBREV_UNIT, T_ASET, T_ATTR, T_CU, T_DIE, T_DWARF, T_
 ``T_DIE``
 .........
 
-
+Holds for root DIE's, i.e. DIE's that don't have a parental DIE.
 
 
 
@@ -690,23 +725,51 @@ DW_VIS_exported, DW_VIS_local, DW_VIS_qualified
 abbrev
 ------
 
-``T_DIE`` ``->?`` ``T_ABBREV``, ``T_CU`` ``->?`` ``T_ABBREV_UNIT``, ``T_DWARF`` ``->*`` ``T_ABBREV_UNIT``
-.........................................................................................................
+``T_CU`` ``->?`` ``T_ABBREV_UNIT``
+..................................
 
+Takes a CU on TOS and yields the abbreviation unit that contains this
+unit's abbreviations.
 
+``T_DIE`` ``->?`` ``T_ABBREV``
+..............................
+
+Takes a DIE on TOS and yields the abbreviation that describes this
+DIE.
+
+``T_DWARF`` ``->*`` ``T_ABBREV_UNIT``
+.....................................
+
+Takes a Dwarf on TOS and yields each abbreviation unit present
+therein.
 
 
 
 .. _zw_vocabulary_dwarf add:
-.. _zw_vocabulary_dwarf sub:
 
-add, sub
---------
+add
+---
 
-``T_ASET`` ``T_ASET`` ``->?`` ``T_ASET``, ``T_ASET`` ``T_CONST`` ``->?`` ``T_ASET``
-...................................................................................
+``T_ASET`` ``T_CONST`` ``->?`` ``T_ASET``
+.........................................
 
+Takes an address set and a constant on TOS, and adds the constant to
+range covered by given address set::
 
+	$ dwgrep ./tests/aranges.o -e 'entry @AT_location address 1 add'
+	[0x1, 0x2), [0x10000, 0x10010)
+	[0x1, 0x2), [0x10010, 0x1001a)
+
+``T_ASET`` ``T_ASET`` ``->?`` ``T_ASET``
+........................................
+
+Takes two address sets and yields an address set that covers both
+their ranges::
+
+	$ dwgrep ./tests/aranges.o -e '
+		[|D| D entry @AT_location address]
+		(|L| L elem (pos == 0) L elem (pos == 1)) add'
+	[0x10000, 0x1001a)
 
 
 
@@ -772,7 +835,9 @@ aset
 ``T_CONST`` ``T_CONST`` ``->?`` ``T_ASET``
 ..........................................
 
-
+Takes two constants on TOS and constructs an address set that spans
+that range.  (The higher address is not considered a part of that
+range though.)
 
 
 
@@ -872,20 +937,34 @@ code
 ``T_ABBREV`` ``->?`` ``T_CONST``
 ................................
 
-
+Takes abbreviation on TOS and yields its code.
 
 
 
 .. _zw_vocabulary_dwarf cooked:
-.. _zw_vocabulary_dwarf raw:
 
-cooked, raw
------------
+cooked
+------
 
-``T_ATTR`` ``->?`` ``T_ATTR``, ``T_DIE`` ``->?`` ``T_DIE``, ``T_CU`` ``->?`` ``T_CU``, ``T_DWARF`` ``->?`` ``T_DWARF``
-......................................................................................................................
+``T_CU`` ``->?`` ``T_CU``
+.........................
 
+Takes a CU on TOS and yields a cooked version thereof.
 
+``T_DIE`` ``->?`` ``T_DIE``
+...........................
+
+Takes a DIE on TOS and yields a cooked version thereof.
+
+``T_DWARF`` ``->?`` ``T_DWARF``
+...............................
+
+Takes a Dwarf on TOS and yields a cooked version thereof.
+
+``T_ATTR`` ``->?`` ``T_ATTR``
+.............................
+
+Takes an attribute on TOS and yields a cooked version thereof.
 
 
 
@@ -1034,15 +1113,21 @@ Takes an attribute on TOS and yields its form.
 
 
 .. _zw_vocabulary_dwarf high:
-.. _zw_vocabulary_dwarf low:
 
-high, low
----------
+high
+----
 
-``T_ASET`` ``->?`` ``T_CONST``, ``T_DIE`` ``->?`` ``T_CONST``
-.............................................................
+``T_DIE`` ``->?`` ``T_CONST``
+.............................
 
+Equivalent to ``@AT_high_pc``.
 
+``T_ASET`` ``->?`` ``T_CONST``
+..............................
+
+Takes an address set on TOS and yields highest address of this set.
+Note that that address doesn't actually belong to the set.  Doesn't
+yield at all if the set is empty.
 
 
 
@@ -1121,7 +1206,37 @@ length
 ``T_ASET`` ``->?`` ``T_CONST``
 ..............................
 
+Takes an address set on TOS and yields number of addresses covered by
+that set::
 
+	$ dwgrep '0 0x10 aset 0x100 0x110 aset add length'
+	32
+
+
+
+.. _zw_vocabulary_dwarf low:
+
+low
+---
+
+``T_DIE`` ``->?`` ``T_CONST``
+.............................
+
+Equivalent to ``@AT_low_pc``.
+
+``T_ASET`` ``->?`` ``T_CONST``
+..............................
+
+Takes an address set on TOS and yields lowest address set in this set.
+Doesn't yield at all if the set is empty::
+
+	$ dwgrep ./tests/aranges.o -e 'entry @AT_location'
+	0x10000..0x10010:[0:reg5]
+	0x10010..0x1001a:[0:fbreg<-24>]
+
+	$ dwgrep ./tests/aranges.o -e 'entry @AT_location address low'
+	0x10000
+	0x10010
 
 
 
@@ -1130,10 +1245,18 @@ length
 name
 ----
 
-``T_DIE`` ``->?`` ``T_STR``, ``T_DWARF`` ``->?`` ``T_STR``
-..........................................................
+``T_DIE`` ``->?`` ``T_STR``
+...........................
 
+Equivalent to ``@AT_name``.
 
+``T_DWARF`` ``->?`` ``T_STR``
+.............................
+
+Take a Dwarf on TOS and yield its filename.  Note that it may not be
+possible to use the reported name to reopen the Dwarf.  The Dwarf may
+have been built in place in memory, or the file may have been deleted
+or replaced since the Dwarf was opened.
 
 
 
@@ -1244,7 +1367,8 @@ overlap
 ``T_ASET`` ``T_ASET`` ``->?`` ``T_ASET``
 ........................................
 
-
+Takes two address sets on TOS, and yields a (possibly empty) address
+set that covers those addresses that both of the address sets cover.
 
 
 
@@ -1256,7 +1380,21 @@ parent
 ``T_DIE`` ``->?`` ``T_DIE``
 ...........................
 
+Takes a DIE on TOS and yields its parental DIE.  For cooked DIE's, in
+traverses parents across import points back to from which context the
+particular DIE was explored::
 
+	$ dwgrep ./tests/a1.out -e 'unit raw entry "%s"'
+	[b] compile_unit
+	[2d] imported_unit
+	[32] subprogram
+	[51] variable
+
+	$ dwgrep ./tests/a1.out -e 'entry (offset == 0x14) "%s"'
+	[14] typedef
+
+	$ dwgrep ./tests/a1.out -e 'entry (offset == 0x14) parent "%s"'
+	[b] compile_unit
 
 
 
@@ -1268,7 +1406,39 @@ range
 ``T_ASET`` ``->*`` ``T_ASET``
 .............................
 
+Takes an address set on TOS and yields all continuous ranges of that
+address set, presented as individual address sets::
 
+	$ dwgrep '0 0x10 aset 0x100 0x110 aset add range'
+	[0, 0x10)
+	[0x100, 0x110)
+
+
+
+.. _zw_vocabulary_dwarf raw:
+
+raw
+---
+
+``T_CU`` ``->?`` ``T_CU``
+.........................
+
+Takes a CU on TOS and yields a raw version thereof.
+
+``T_DIE`` ``->?`` ``T_DIE``
+...........................
+
+Takes a DIE on TOS and yields a raw version thereof.
+
+``T_DWARF`` ``->?`` ``T_DWARF``
+...............................
+
+Takes a Dwarf on TOS and yields a raw version thereof.
+
+``T_ATTR`` ``->?`` ``T_ATTR``
+.............................
+
+Takes an attribute on TOS and yields a raw version thereof.
 
 
 
@@ -1277,10 +1447,40 @@ range
 root
 ----
 
-``T_DIE`` ``->?`` ``T_DIE``, ``T_CU`` ``->?`` ``T_DIE``
-.......................................................
+``T_CU`` ``->?`` ``T_DIE``
+..........................
+
+Takes a CU on TOS and yields its root DIE.
+
+``T_DIE`` ``->?`` ``T_DIE``
+...........................
+
+Takes a DIE on TOS and yields CU DIE of the unit that this DIE comes
+from.  For cooked DIE's follows back through import points and yields
+the CU DIE of this DIE's context.
 
 
+
+.. _zw_vocabulary_dwarf sub:
+
+sub
+---
+
+``T_ASET`` ``T_CONST`` ``->?`` ``T_ASET``
+.........................................
+
+Takes an address set and a constant on TOS and yields an address set
+with a hole poked at the address given by the constant::
+
+	$ dwgrep ./tests/aranges.o -e 'entry @AT_location address 0x10010 sub'
+	[0x10000, 0x10010)
+	[0x10011, 0x1001a)
+
+``T_ASET`` ``T_ASET`` ``->?`` ``T_ASET``
+........................................
+
+Takes two address sets *A* and *B*, and yields an address set that
+contains all of the *A*'s addresses except those covered by *B*.
 
 
 
@@ -1350,10 +1550,32 @@ originated::
 value
 -----
 
-``T_LOCLIST_OP`` ``->*`` ``T_???``, ``T_ATTR`` ``->*`` ``T_???``
-................................................................
+``T_LOCLIST_OP`` ``->*`` ``T_???``
+..................................
 
+Takes a location expression instruction on TOS and yields its
+operands::
 
+	$ dwgrep ./tests/aranges.o -e 'entry @AT_location elem'
+	0:reg5
+	0:fbreg<-24>
+
+	$ dwgrep ./tests/aranges.o -e 'entry @AT_location elem value'
+	-24
+
+Operands could be of any Zwerg type, some will be e.g. DIE's.
+
+``T_ATTR`` ``->*`` ``T_???``
+............................
+
+Takes an attribute on TOS and yields its value.  The value can be of
+any Zwerg type.  There can even be more than one value.  In particular
+location expression attributes yield all the constituent location
+expressions::
+
+	$ dwgrep ./tests/aranges.o -e 'entry @AT_location'
+	0x10000..0x10010:[0:reg5]
+	0x10010..0x1001a:[0:fbreg<-24>]
 
 
 
@@ -1365,7 +1587,8 @@ version
 ``T_CU`` ``->?`` ``T_CONST``
 ............................
 
-
+Takes a CU on TOS and yields a constant corresponding to version of
+Dwarf standard according to which this CU has been written.
 
 
 
