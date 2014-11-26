@@ -79,7 +79,6 @@
 *** •name :: ?T_DWARF -> ?T_STR
 
 ** ·T_CU
-*** •offset :: ?T_CU -> ?T_CONST
 ***  next :: ?T_CU ->? T_CU
 ***  prev :: ?T_CU ->? T_CU
 *** •abbrev :: ?T_CU -> ?T_ABBREV_UNIT
@@ -91,20 +90,11 @@
      - Produce a CU DIE of a CU.
 
 ** ·T_DIE
-*** •label :: ?T_DIE -> ?T_CONST
-     Yields DIE tag.
-
-*** •offset :: ?T_DIE -> ?T_CONST
-     Like dwarf_dieoffset.
-
 *** •high :: ?T_DIE ->? ?T_CONST
      : attribute ?AT_highpc address
 
 *** •low :: ?T_DIE ->? ?T_CONST
      : @AT_lowpc
-
-*** •address :: ?T_DIE ->? ?T_ASET
-     Like dwarf_ranges.
 
 *** •parent :: ?T_DIE ->? ?T_DIE
      Yields the parent of the DIE, if there's any.
@@ -203,9 +193,6 @@
      one asks simply ?(child).
 
 ** ·T_ATTR
-*** •label :: ?T_ATTR -> ?T_CONST
-     Yield an attribute name.
-
 *** •value :: ?T_ATTR ->* ?()
      Yields value(s) of attribute on TOS.
 
@@ -213,17 +200,6 @@
      represented as a number of nodes of type T_LOCLIST_ELEM.
      Children of these nodes are T_LOCLIST_OP, individual operations
      of location expression.
-
-*** •address :: (?T_ATTR (?AT_high_pc||?AT_low_pc||?FORM_addr)) -> ?T_CONST
-     - For DW_AT_high_pc, DW_AT_entry_pc with constant forms, this
-       converts the value to address.
-
-     - For attributes with address form, this is like calling "value".
-
-     - Otherwise it is an error to use this.
-
-*** •form :: ?T_ATTR -> ?T_CONST
-     Yield a form of an attribute.
 
 *** •die :: ?T_ATTR -> ?T_DIE
      - Yield a DIE that this attribute is associated with.
@@ -240,12 +216,7 @@
 ***  ?ATE_* :: ?T_ATTR
      Holds if (?AT_encoding value == DW_ATE_*)
 
-** ·T_ABBREV_UNIT
-*** •offset :: ?T_ABBREV_UNIT -> ?T_CONST
-     - Yield offset of this abbreviation unit.
-
 ** •T_ABBREV
-*** •label :: ?T_ABBREV -> ?T_CONST
 *** •offset :: ?T_ABBREV -> ?T_CONST
 
 *** •code :: ?T_ABBREV -> ?T_CONST
@@ -264,14 +235,8 @@
      - Holds for abbreviations that form child-ful DIE's.
 
 ** •T_ABBREV_ATTR
-*** •label :: ?T_ABBREV_ATTR -> ?T_CONST
-     Yields attribute name.
-
 *** •offset :: ?T_ABBREV_ATTR -> ?T_CONST
      Yields offset of attribute within abbreviation.
-
-*** •form :: ?T_ABBREV_ATTR -> ?T_CONST
-     Yields attribute form.
 
 *** •?AT_* :: ?T_ABBREV_ATTR
      Holds if it is this attribute.
@@ -305,20 +270,11 @@
      fuzzy matching (getting symbol/offset) would be more involved.
 
 ** •T_LOCLIST_ELEM
-*** •address :: ?T_LOCLIST_ELEM -> ?T_ASET
-     Yields where given location expression applies.
-
 *** •?OP_* :: ?T_LOCLIST_ELEM
      Holds if this location expression contains an operation with this
      opcode.
 
 ** •T_LOCLIST_OP
-*** •label :: ?T_LOCLIST_OP -> ?T_CONST
-     Yields operation opcode (a DW_OP_* constant).
-
-*** •offset :: ?T_LOCLIST_OP -> ?T_CONST
-     Yields an offset of this op within the location expression.
-
 *** •value :: ?T_LOCLIST_OP ->* ?()
      Yields operands associated with this location expression
      operation.  Operands have anywhere between zero and two operands

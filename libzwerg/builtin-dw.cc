@@ -1104,6 +1104,38 @@ namespace
       return
 R"docstring(
 
+Takes a CU on TOS and yields its offset inside the Dwarf section that
+it comes from::
+
+	$ dwgrep tests/twocus -e 'unit offset'
+	0
+	0x53
+
+Note that CU offset is different from the offset of its root element::
+
+	$ dwgrep tests/twocus -e 'unit root offset'
+	0xb
+	0x5e
+
+|OffsetsNotUnique|
+
+.. |OffsetsNotUnique| replace::
+    Note that offset does not uniquely identify a Dwarf object, as
+    offsets of objects from .gnu_debugaltlink files are again numbered
+    from 0, and may conflict with those from the main file.  Direct
+    comparison of individual objects will not be fooled though.
+
+Example::
+
+	$ dwgrep tests/a1.out -e 'let A := raw unit (pos == 0);
+	let B := raw unit (pos == 1);
+	A B if (A == B) then "eq" else "ne"'
+	---
+	ne
+	CU 0
+	CU 0
+	<Dwarf "tests/a1.out">
+
 )docstring";
     }
   };
@@ -1125,6 +1157,33 @@ R"docstring(
     {
       return
 R"docstring(
+
+Takes a DIE on TOS and yields its offset inside the Dwarf section that
+it comes from::
+
+	$ dwgrep tests/twocus -e 'unit root offset'
+	0xb
+	0x5e
+
+|OffsetsNotUnique|
+
+Also, DIE's brought in through imports will report the same offset
+even though they came in through different paths.  E.g. if a single
+DIE is selected in the same context in two different expressions, the
+two DIE's compare equal::
+
+	$ dwgrep tests/dwz-partial2-1 -e 'let A := [entry (offset == 0x14)] elem (pos == 0);
+	let B := [entry (offset == 0x14)] elem (pos == 0);
+	A B if ?eq then "==" else "!=" swap "%s: %s %s %s"'
+	<Dwarf "tests/dwz-partial2-1">: [14] typedef == [14] typedef
+
+However if the two DIE's are taken from different contexts, they will
+compare unequal despite them being physically the same DIE::
+
+	$ dwgrep tests/dwz-partial2-1 -e 'let A := [entry (offset == 0x14)] elem (pos == 0);
+	let B := [entry (offset == 0x14)] elem (pos == 1);
+	A B if ?eq then "==" else "!=" swap "%s: %s %s %s"'
+	<Dwarf "tests/dwz-partial2-1">: [14] typedef != [14] typedef
 
 )docstring";
     }
@@ -1154,6 +1213,8 @@ R"docstring(
       return
 R"docstring(
 
+XXX
+
 )docstring";
     }
   };
@@ -1175,6 +1236,8 @@ R"docstring(
     {
       return
 R"docstring(
+
+XXX
 
 )docstring";
     }
@@ -1198,6 +1261,8 @@ R"docstring(
       return
 R"docstring(
 
+XXX
+
 )docstring";
     }
   };
@@ -1220,6 +1285,25 @@ R"docstring(
     {
       return
 R"docstring(
+
+Takes a location list operation on TOS and yields its offset within
+the containing location expression::
+
+	$ dwgrep ./tests/testfile_const_type -e 'entry (offset == 0x57)'
+	[57]	variable
+		name (string)	w;
+		decl_file (data1)	/home/mark/src/elfutils/tests/const_type.c;
+		decl_line (data1)	6;
+		type (ref4)	[25];
+		location (exprloc)	0..0xffffffffffffffff:[0:fbreg<0>, 2:GNU_deref_type<8>/<37>, [... snip ...]];
+
+	$ dwgrep ./tests/testfile_const_type -e 'entry (offset == 0x57) @AT_location elem offset'
+	0
+	0x2
+	0x5
+	0x10
+	0x11
+	0x13
 
 )docstring";
     }
@@ -1245,6 +1329,12 @@ namespace
     {
       return
 R"docstring(
+
+Takes a DIE on TOS and yields an address set describing address ranges
+covered by this DIE.  (This calls dwarf_ranges under the covers.)::
+
+	$ dwgrep ./tests/testfile_const_type -e 'entry (name == "main") address'
+	[0x80482f0, 0x80482f3)
 
 )docstring";
     }
@@ -1296,6 +1386,22 @@ R"docstring(
       return
 R"docstring(
 
+Takes a DIE attribute on TOS and yields an address that it references.
+For attributes with an address form, this simply yields the value of
+the attribute.  For ``DW_AT_high_pc`` and ``DW_AT_entry_pc``
+attributes with a constant form, this converts the relative constant
+value to absolute address::
+
+	$ dwgrep ./tests/bitcount.o -e 'unit root'
+	[b]	compile_unit
+		[... snip ...]
+		low_pc (addr)	0x10000;
+		high_pc (data8)	32;
+		stmt_list (sec_offset)	0;
+
+	$ dwgrep ./tests/bitcount.o -e 'unit root attribute ?AT_high_pc address'
+	0x10020
+
 )docstring";
     }
   };
@@ -1321,6 +1427,22 @@ R"docstring(
     {
       return
 R"docstring(
+
+Takes a location list element on TOS and yields an address set
+describing where it is valid::
+
+	$ dwgrep ./tests/bitcount.o -e 'entry (offset == 0x91)'
+	[91]	formal_parameter
+		name (string)	u;
+		decl_file (data1)	tests/bitcount.c;
+		decl_line (data1)	3;
+		type (ref4)	[5e];
+		location (sec_offset)	0x10000..0x10017:[0:reg5];0x10017..0x1001a:[0:breg5<0>, 2:breg1<0>, 4:and, 5:stack_value];0x1001a..0x10020:[0:reg5];
+
+	$ dwgrep ./tests/bitcount.o -e 'entry (offset == 0x91) @AT_location address'
+	[0x10000, 0x10017)
+	[0x10017, 0x1001a)
+	[0x1001a, 0x10020)
 
 )docstring";
     }
@@ -1350,6 +1472,12 @@ namespace
       return
 R"docstring(
 
+Takes a DIE on TOS and yields its tag::
+
+	$ dwgrep ./tests/a1.out -e 'raw unit root label'
+	DW_TAG_compile_unit
+	DW_TAG_partial_unit
+
 )docstring";
     }
   };
@@ -1371,6 +1499,17 @@ R"docstring(
     {
       return
 R"docstring(
+
+Takes an attribute on TOS and yields its name::
+
+	$ dwgrep ./tests/a1.out -e 'unit root attribute label'
+	DW_AT_producer
+	DW_AT_language
+	DW_AT_name
+	DW_AT_comp_dir
+	DW_AT_low_pc
+	DW_AT_high_pc
+	DW_AT_stmt_list
 
 )docstring";
     }
@@ -1396,6 +1535,12 @@ R"docstring(
       return
 R"docstring(
 
+Takes an abbreviation on TOS and yields its tag::
+
+	$ dwgrep ./tests/a1.out -e 'raw unit root abbrev label'
+	DW_TAG_compile_unit
+	DW_TAG_partial_unit
+
 )docstring";
     }
   };
@@ -1417,6 +1562,17 @@ R"docstring(
     {
       return
 R"docstring(
+
+Takes an abbreviation attribute on TOS and yields its name::
+
+	$ dwgrep ./tests/a1.out -e 'unit root abbrev attribute label'
+	DW_AT_producer
+	DW_AT_language
+	DW_AT_name
+	DW_AT_comp_dir
+	DW_AT_low_pc
+	DW_AT_high_pc
+	DW_AT_stmt_list
 
 )docstring";
     }
@@ -1440,6 +1596,17 @@ R"docstring(
     {
       return
 R"docstring(
+
+Takes a location expression instruction on TOS and yields the
+operator::
+
+	$ dwgrep ./tests/bitcount.o -e 'entry (offset == 0x91) @AT_location elem label'
+	reg5
+	breg5
+	breg1
+	and
+	stack_value
+	reg5
 
 )docstring";
     }
@@ -1467,6 +1634,8 @@ namespace
       return
 R"docstring(
 
+Takes an attribute on TOS and yields its form.
+
 )docstring";
     }
   };
@@ -1488,6 +1657,8 @@ R"docstring(
     {
       return
 R"docstring(
+
+Takes an abbreviation attribute on TOS and yields its form.
 
 )docstring";
     }
