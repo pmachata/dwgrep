@@ -1743,6 +1743,22 @@ namespace
       return
 R"docstring(
 
+Takes a DIE on TOS and yields its parental DIE.  For cooked DIE's, in
+traverses parents across import points back to from which context the
+particular DIE was explored::
+
+	$ dwgrep ./tests/a1.out -e 'unit raw entry "%s"'
+	[b] compile_unit
+	[2d] imported_unit
+	[32] subprogram
+	[51] variable
+
+	$ dwgrep ./tests/a1.out -e 'entry (offset == 0x14) "%s"'
+	[14] typedef
+
+	$ dwgrep ./tests/a1.out -e 'entry (offset == 0x14) parent "%s"'
+	[b] compile_unit
+
 )docstring";
     }
   };
@@ -1773,6 +1789,8 @@ namespace
     {
       return
 R"docstring(
+
+Holds for root DIE's, i.e. DIE's that don't have a parental DIE.
 
 )docstring";
     }
@@ -1805,6 +1823,8 @@ namespace
     {
       return
 R"docstring(
+
+Takes a CU on TOS and yields its root DIE.
 
 )docstring";
     }
@@ -1839,6 +1859,10 @@ R"docstring(
       return
 R"docstring(
 
+Takes a DIE on TOS and yields CU DIE of the unit that this DIE comes
+from.  For cooked DIE's follows back through import points and yields
+the CU DIE of this DIE's context.
+
 )docstring";
     }
   };
@@ -1864,6 +1888,15 @@ namespace
       return
 R"docstring(
 
+Takes an attribute on TOS and yields its value.  The value can be of
+any Zwerg type.  There can even be more than one value.  In particular
+location expression attributes yield all the constituent location
+expressions::
+
+	$ dwgrep ./tests/aranges.o -e 'entry @AT_location'
+	0x10000..0x10010:[0:reg5]
+	0x10010..0x1001a:[0:fbreg<-24>]
+
 )docstring";
     }
   };
@@ -1886,6 +1919,18 @@ R"docstring(
     {
       return
 R"docstring(
+
+Takes a location expression instruction on TOS and yields its
+operands::
+
+	$ dwgrep ./tests/aranges.o -e 'entry @AT_location elem'
+	0:reg5
+	0:fbreg<-24>
+
+	$ dwgrep ./tests/aranges.o -e 'entry @AT_location elem value'
+	-24
+
+Operands could be of any Zwerg type, some will be e.g. DIE's.
 
 )docstring";
     }
@@ -1911,6 +1956,8 @@ namespace
     {
       return
 R"docstring(
+
+Equivalent to ``@AT_low_pc``.
 
 )docstring";
     }
@@ -1938,6 +1985,17 @@ R"docstring(
       return
 R"docstring(
 
+Takes an address set on TOS and yields lowest address set in this set.
+Doesn't yield at all if the set is empty::
+
+	$ dwgrep ./tests/aranges.o -e 'entry @AT_location'
+	0x10000..0x10010:[0:reg5]
+	0x10010..0x1001a:[0:fbreg<-24>]
+
+	$ dwgrep ./tests/aranges.o -e 'entry @AT_location address low'
+	0x10000
+	0x10010
+
 )docstring";
     }
   };
@@ -1962,6 +2020,8 @@ namespace
     {
       return
 R"docstring(
+
+Equivalent to ``@AT_high_pc``.
 
 )docstring";
     }
@@ -1990,6 +2050,10 @@ R"docstring(
     {
       return
 R"docstring(
+
+Takes an address set on TOS and yields highest address of this set.
+Note that that address doesn't actually belong to the set.  Doesn't
+yield at all if the set is empty.
 
 )docstring";
     }
@@ -2043,6 +2107,10 @@ namespace
       return
 R"docstring(
 
+Takes two constants on TOS and constructs an address set that spans
+that range.  (The higher address is not considered a part of that
+range though.)
+
 )docstring";
     }
   };
@@ -2071,6 +2139,13 @@ namespace
       return
 R"docstring(
 
+Takes an address set and a constant on TOS, and adds the constant to
+range covered by given address set::
+
+	$ dwgrep ./tests/aranges.o -e 'entry @AT_location address 1 add'
+	[0x1, 0x2), [0x10000, 0x10010)
+	[0x1, 0x2), [0x10010, 0x1001a)
+
 )docstring";
     }
   };
@@ -2093,6 +2168,14 @@ R"docstring(
     {
       return
 R"docstring(
+
+Takes two address sets and yields an address set that covers both
+their ranges::
+
+	$ dwgrep ./tests/aranges.o -e '
+		[|D| D entry @AT_location address]
+		(|L| L elem (pos == 0) L elem (pos == 1)) add'
+	[0x10000, 0x1001a)
 
 )docstring";
     }
@@ -2122,6 +2205,13 @@ namespace
       return
 R"docstring(
 
+Takes an address set and a constant on TOS and yields an address set
+with a hole poked at the address given by the constant::
+
+	$ dwgrep ./tests/aranges.o -e 'entry @AT_location address 0x10010 sub'
+	[0x10000, 0x10010)
+	[0x10011, 0x1001a)
+
 )docstring";
     }
   };
@@ -2144,6 +2234,9 @@ R"docstring(
     {
       return
 R"docstring(
+
+Takes two address sets *A* and *B*, and yields an address set that
+contains all of the *A*'s addresses except those covered by *B*.
 
 )docstring";
     }
@@ -2174,6 +2267,12 @@ namespace
     {
       return
 R"docstring(
+
+Takes an address set on TOS and yields number of addresses covered by
+that set::
+
+	$ dwgrep '0 0x10 aset 0x100 0x110 aset add length'
+	32
 
 )docstring";
     }
@@ -2226,6 +2325,13 @@ namespace
       return
 R"docstring(
 
+Takes an address set on TOS and yields all continuous ranges of that
+address set, presented as individual address sets::
+
+	$ dwgrep '0 0x10 aset 0x100 0x110 aset add range'
+	[0, 0x10)
+	[0x100, 0x110)
+
 )docstring";
     }
   };
@@ -2251,6 +2357,16 @@ namespace
     {
       return
 R"docstring(
+
+Inspects an address set and a constant on TOS and holds for those
+where the constant is contained within the address set.  Note that the
+high end of the address set is not actually considered part of the
+address set::
+
+	$ dwgrep 'if (0 10 aset 10 ?contains) then "yes" else "no"'
+	no
+	$ dwgrep 'if (0 10 aset 9 ?contains) then "yes" else "no"'
+	yes
 
 )docstring";
     }
@@ -2279,6 +2395,9 @@ R"docstring(
     {
       return
 R"docstring(
+
+Inspects two address sets on TOS, *A* and *B*, and holds for those
+where all of *B*'s addresses are covered by *A*.
 
 )docstring";
     }
@@ -2310,6 +2429,9 @@ namespace
     {
       return
 R"docstring(
+
+Inspects two address sets on TOS, and holds if the two address sets
+overlap.
 
 )docstring";
     }
@@ -2344,6 +2466,9 @@ namespace
       return
 R"docstring(
 
+Takes two address sets on TOS, and yields a (possibly empty) address
+set that covers those addresses that both of the address sets cover.
+
 )docstring";
     }
   };
@@ -2368,6 +2493,9 @@ namespace
     {
       return
 R"docstring(
+
+Inspects an address set on TOS and holds if it is empty (contains no
+addresses).  Could be written as ``!(elem)``.
 
 )docstring";
     }
@@ -2422,6 +2550,9 @@ namespace
       return
 R"docstring(
 
+Takes a Dwarf on TOS and yields each abbreviation unit present
+therein.
+
 )docstring";
     }
   };
@@ -2443,6 +2574,9 @@ R"docstring(
     {
       return
 R"docstring(
+
+Takes a CU on TOS and yields the abbreviation unit that contains this
+unit's abbreviations.
 
 )docstring";
     }
@@ -2472,6 +2606,9 @@ R"docstring(
       return
 R"docstring(
 
+Takes a DIE on TOS and yields the abbreviation that describes this
+DIE.
+
 )docstring";
     }
   };
@@ -2497,6 +2634,21 @@ namespace
       return
 R"docstring(
 
+Inspects a DIE on TOS and holds if that DIE might have children,
+i.e. it is the same as ``abbrev ?haschildren``.  Note that even DIE's
+for which ?haschildren holds may not actually have children, because
+the actual children chain in the Dwarf file is immediately terminated.
+To determine whether there are actually any children, use
+``?(child)``::
+
+	$ dwgrep ./tests/haschildren_childless -e 'entry (offset == 0x2d) abbrev "%s"'
+	[2] offset:0x13, children:yes, tag:subprogram
+
+	$ dwgrep ./tests/haschildren_childless -e '
+		entry (offset == 0x2d)
+		if child then "yes" else "no" "%s: %s"'
+	[2d] subprogram: no
+
 )docstring";
     }
   };
@@ -2517,6 +2669,9 @@ R"docstring(
     {
       return
 R"docstring(
+
+Inspects an abbreviation on TOS and holds if DIE's described by this
+abbreviation may have children.
 
 )docstring";
     }
@@ -2544,6 +2699,8 @@ namespace
     {
       return
 R"docstring(
+
+Takes abbreviation on TOS and yields its code.
 
 )docstring";
     }
@@ -2578,6 +2735,9 @@ namespace
       return
 R"docstring(
 
+Takes a CU on TOS and yields a constant corresponding to version of
+Dwarf standard according to which this CU has been written.
+
 )docstring";
     }
   };
@@ -2602,6 +2762,11 @@ namespace
     {
       return
 R"docstring(
+
+Take a Dwarf on TOS and yield its filename.  Note that it may not be
+possible to use the reported name to reopen the Dwarf.  The Dwarf may
+have been built in place in memory, or the file may have been deleted
+or replaced since the Dwarf was opened.
 
 )docstring";
     }
@@ -2641,6 +2806,8 @@ R"docstring(
       return
 R"docstring(
 
+Equivalent to ``@AT_name``.
+
 )docstring";
     }
   };
@@ -2667,6 +2834,8 @@ namespace
       return
 R"docstring(
 
+Takes a Dwarf on TOS and yields a raw version thereof.
+
 )docstring";
     }
   };
@@ -2688,6 +2857,8 @@ R"docstring(
     {
       return
 R"docstring(
+
+Takes a CU on TOS and yields a raw version thereof.
 
 )docstring";
     }
@@ -2711,6 +2882,8 @@ R"docstring(
       return
 R"docstring(
 
+Takes a DIE on TOS and yields a raw version thereof.
+
 )docstring";
     }
   };
@@ -2732,6 +2905,8 @@ R"docstring(
     {
       return
 R"docstring(
+
+Takes an attribute on TOS and yields a raw version thereof.
 
 )docstring";
     }
@@ -2759,6 +2934,8 @@ namespace
       return
 R"docstring(
 
+Takes a Dwarf on TOS and yields a cooked version thereof.
+
 )docstring";
     }
   };
@@ -2780,6 +2957,8 @@ R"docstring(
     {
       return
 R"docstring(
+
+Takes a CU on TOS and yields a cooked version thereof.
 
 )docstring";
     }
@@ -2803,6 +2982,8 @@ R"docstring(
       return
 R"docstring(
 
+Takes a DIE on TOS and yields a cooked version thereof.
+
 )docstring";
     }
   };
@@ -2824,6 +3005,8 @@ R"docstring(
     {
       return
 R"docstring(
+
+Takes an attribute on TOS and yields a cooked version thereof.
 
 )docstring";
     }

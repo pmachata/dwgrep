@@ -1,0 +1,5 @@
+Raw Dwarfs, unlike cooked ones, present Dwarf data in raw form, do not
+interpret it (as much).  In particular, when querying a cooked Dwarf,
+you will never see partial unit import DIE's
+(``DW_TAG_imported_unit``).  Instead, the imported unit is merged with
+the importing one into one logical whole.
