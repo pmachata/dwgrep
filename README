@@ -83,15 +83,6 @@
      this is stored?  Or after it gets to be stored in general, where
      this is _not_ stored?)
 
-*** •@AT_* :: ?T_DIE ->* ?()
-     Syntactic sugar for (attribute ?(label == AT_*) value).
-
-*** •?AT_* :: ?T_DIE
-     Holds if DIE has this attribute.
-
-*** •?TAG_* :: ?T_DIE
-     Holds if DIE has this tag.
-
 ***  ?LANG_* :: ?T_DIE
      Holds if (@AT_language == DW_LANG_*).
 
@@ -99,31 +90,11 @@
      Holds if @AT_encoding == DW_ATE_*.
 
 ** ·T_ATTR
-*** •?AT_* :: ?T_ATTR
-     Holds if it is this attribute.
-
-*** •?FORM_* :: ?T_ATTR
-     Holds if the attribute has this form.
-
 ***  ?LANG_* :: ?T_ATTR
      Holds if (?AT_language value == DW_LANG_*).
 
 ***  ?ATE_* :: ?T_ATTR
      Holds if (?AT_encoding value == DW_ATE_*)
-
-** •T_ABBREV
-*** •?TAG_* :: ?T_ABBREV
-     Holds if abbreviation has this tag.
-
-*** •?AT_* :: ?T_ABBREV
-     Holds if abbreviation has this attribute.
-
-** •T_ABBREV_ATTR
-*** •?AT_* :: ?T_ABBREV_ATTR
-     Holds if it is this attribute.
-
-*** •?FORM_* :: ?T_ABBREV_ATTR
-     Holds if the attribute has this form.
 
 **  T_ELFSYM
 ***  label :: ?T_ELFSYM -> ?T_CONST
@@ -149,15 +120,6 @@
      this:
      : symtab (address == some addr)
      fuzzy matching (getting symbol/offset) would be more involved.
-
-** •T_LOCLIST_ELEM
-*** •?OP_* :: ?T_LOCLIST_ELEM
-     Holds if this location expression contains an operation with this
-     opcode.
-
-** •T_LOCLIST_OP
-*** •?OP_* :: ?T_LOCLIST_OP
-     Holds if this is an operation with this opcode.
 
 **  T_MACRO_UNIT ???
     - A value representing .debug_macro and .debug_macinfo units.

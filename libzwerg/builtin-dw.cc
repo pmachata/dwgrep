@@ -974,7 +974,7 @@ R"docstring(
 
 Takes a DIE on TOS and yields its individual attributes.  If it is a
 raw DIE, it yields only those attributes that the DIE contains.  For
-cooked DIE's it also inlines attributes at DIE's referenced by
+cooked DIE's it also integrates attributes at DIE's referenced by
 ``DW_AT_abstract_origin`` and ``DW_AT_specification``, except those
 that are already present at the original DIE, or those that it makes
 no sense to import (as of this writing, ``DW_AT_sibling``,
@@ -1005,7 +1005,6 @@ Example::
 	sibling (ref4)	[8b];
 	external (flag_present)	true;
 	name (string)	foo;
-
 
 )docstring";
     }
@@ -3051,6 +3050,14 @@ namespace
       return
 R"docstring(
 
+Takes a DIE on TOS and yields value of attribute indicated by the
+word.  Syntactic sugar for ``(attribute ?(label == AT_*) cooked
+value)``::
+
+	$ dwgrep ./tests/nullptr.o -e '
+		entry let A := @AT_declaration; "%( @AT_name %): %( A %)"'
+	foo: true
+
 )docstring";
     }
   };
@@ -3082,6 +3089,31 @@ namespace
       return
 R"docstring(
 
+Inspects a DIE on TOS and holds if that DIE has the attribute
+indicated by this word.  Note that for cooked DIE's, this word
+integrates attributes from abstract origins and specifications,
+according to the same rules as ``attribute`` uses.
+
+For example, in the following, a DIE 0x6e reports that it has an
+``DW_AT_name`` attribute even if it in fact does not.  This is due to
+``DW_AT_specification`` bringing this in::
+
+	$ dwgrep ./tests/nullptr.o -e 'entry (offset == 0x6e) ?AT_name'
+	[6e]	subprogram
+		specification (ref4)	[3f];
+		inline (data1)	DW_INL_declared_inlined;
+		object_pointer (ref4)	[7c];
+		sibling (ref4)	[8b];
+
+	$ dwgrep ./tests/nullptr.o -e 'entry (offset == 0x3f)'
+	[3f]	subprogram
+		external (flag_present)	true;
+		name (string)	foo;
+		decl_file (data1)	tests/nullptr.cc;
+		decl_line (data1)	3;
+		declaration (flag_present)	true;
+		object_pointer (ref4)	[4a];
+
 )docstring";
     }
   };
@@ -3106,6 +3138,12 @@ R"docstring(
     {
       return
 R"docstring(
+
+Inspects an attribute on TOS and holds if name of that attribute is
+the same as indicated by this word::
+
+	$ dwgrep ./tests/nullptr.o -e 'entry (offset == 0x6e) attribute ?AT_name'
+	name (string)	foo;
 
 )docstring";
     }
@@ -3142,6 +3180,13 @@ R"docstring(
       return
 R"docstring(
 
+Inspects an abbreviation on TOS and holds if that abbreviation has
+this attribute.  Note that unlike with DIE's, no integration takes
+place with abbreviations::
+
+	$ dwgrep -c ./tests/nullptr.o -e 'entry (offset == 0x6d) abbrev ?AT_name'
+	0
+
 )docstring";
     }
   };
@@ -3167,6 +3212,12 @@ R"docstring(
       return
 R"docstring(
 
+Inspects an abbreviation attribute on TOS and holds if its name is the
+same as indicated by this word::
+
+	$ dwgrep ./tests/nullptr.o -e 'entry (offset == 0x3f) abbrev attribute ?AT_name'
+	0x33 name (string)
+
 )docstring";
     }
   };
@@ -3191,6 +3242,18 @@ R"docstring(
     {
       return
 R"docstring(
+
+Inspects a constant on TOS and holds if it's the same constant as
+indicated by this word::
+
+	$ dwgrep ./tests/nullptr.o -e '
+		entry (offset == 0x4a) abbrev attribute label'
+	DW_AT_type
+	DW_AT_artificial
+
+	$ dwgrep ./tests/nullptr.o -e '
+		entry (offset == 0x4a) abbrev attribute label ?AT_type'
+	DW_AT_type
 
 )docstring";
     }
@@ -3221,6 +3284,13 @@ namespace
       return
 R"docstring(
 
+Inspects a DIE on TOS and holds if its tag is the same as this word
+indicates::
+
+	$ dwgrep ./tests/nullptr.o -e 'entry ?TAG_unspecified_type'
+	[69]	unspecified_type
+		name (strp)	decltype(nullptr);
+
 )docstring";
     }
   };
@@ -3246,6 +3316,9 @@ R"docstring(
       return
 R"docstring(
 
+Inspects an abbreviation on TOS and holds if its tag is the same as
+indicated by this word.
+
 )docstring";
     }
   };
@@ -3270,6 +3343,15 @@ R"docstring(
     {
       return
 R"docstring(
+
+Inspects a constant on TOS and holds if it's the same constant as
+indicated by this word::
+
+	$ dwgrep 'DW_TAG_formal_parameter ?TAG_formal_parameter'
+	DW_TAG_formal_parameter
+
+	$ dwgrep -c 'DW_TAG_formal_parameter value ?TAG_formal_parameter'
+	0
 
 )docstring";
     }
@@ -3300,6 +3382,14 @@ namespace
       return
 R"docstring(
 
+Inspects an attribute on TOS and holds if the form of that attribute
+is the same as indicated by this word::
+
+	$ dwgrep ./tests/nullptr.o -e 'entry ?(attribute ?FORM_data2)'
+	[e3]	formal_parameter
+		abstract_origin (ref4)	[a5];
+		const_value (data2)	65535;
+
 )docstring";
     }
   };
@@ -3325,6 +3415,14 @@ R"docstring(
       return
 R"docstring(
 
+Inspects an abbreviation attribute on TOS and holds if its form is the
+same as indicated by this word::
+
+	$ dwgrep ./tests/nullptr.o -e 'entry abbrev ?(attribute ?FORM_data2)'
+	[17] offset:0xc9, children:no, tag:formal_parameter
+		0xc9 abstract_origin (ref4)
+		0xcb const_value (data2)
+
 )docstring";
     }
   };
@@ -3349,6 +3447,9 @@ R"docstring(
     {
       return
 R"docstring(
+
+Inspects a constant on TOS and holds if it's the same as indicated by
+this word.
 
 )docstring";
     }
@@ -3382,6 +3483,12 @@ namespace
       return
 R"docstring(
 
+Inspects a location expression on TOS and holds if it contains an
+instruction with an opcode indicated by this word::
+
+	$ dwgrep ./tests/bitcount.o -e 'entry @AT_location ?OP_and'
+	0x10017..0x1001a:[0:breg5<0>, 2:breg1<0>, 4:and, 5:stack_value]
+
 )docstring";
     }
   };
@@ -3407,6 +3514,12 @@ R"docstring(
       return
 R"docstring(
 
+Inspects a location expression instruction on TOS and holds if its
+opcode is the same as indicated by this word::
+
+	$ dwgrep ./tests/bitcount.o -e 'entry @AT_location elem ?OP_and'
+	4:and
+
 )docstring";
     }
   };
@@ -3431,6 +3544,9 @@ R"docstring(
     {
       return
 R"docstring(
+
+Inspects a constant on TOS and holds if it is the same as indicated by
+this word.
 
 )docstring";
     }
