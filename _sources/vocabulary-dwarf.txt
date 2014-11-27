@@ -5,19 +5,80 @@ Dwarf vocabulary
 
 .. include:: zw_vocabulary_dwarf-blurb.txt
 
-.. _zw_vocabulary_dwarf type T_ABBREV:
-.. _zw_vocabulary_dwarf type T_ABBREV_ATTR:
-.. _zw_vocabulary_dwarf type T_ABBREV_UNIT:
-.. _zw_vocabulary_dwarf type T_ASET:
-.. _zw_vocabulary_dwarf type T_ATTR:
-.. _zw_vocabulary_dwarf type T_CU:
-.. _zw_vocabulary_dwarf type T_DIE:
-.. _zw_vocabulary_dwarf type T_DWARF:
-.. _zw_vocabulary_dwarf type T_LOCLIST_ELEM:
-.. _zw_vocabulary_dwarf type T_LOCLIST_OP:
+.. _zw_vocabulary_dwarf type T_*:
 
-T_ABBREV, T_ABBREV_ATTR, T_ABBREV_UNIT, T_ASET, T_ATTR, T_CU, T_DIE, T_DWARF, T_LOCLIST_ELEM, T_LOCLIST_OP
-----------------------------------------------------------------------------------------------------------
+T_*
+---
+
+This section describes the following words: ``T_LOCLIST_OP``, ``T_ASET``, ``T_LOCLIST_ELEM``, ``T_ABBREV_ATTR``, ``T_ABBREV``, ``T_ABBREV_UNIT``, ``T_ATTR``, ``T_DIE``, ``T_CU``, ``T_DWARF``.
+
+
+
+.. _zw_vocabulary_dwarf !AT_*:
+.. _zw_vocabulary_dwarf !DW_AT_*:
+.. _zw_vocabulary_dwarf ?AT_*:
+.. _zw_vocabulary_dwarf ?DW_AT_*:
+
+!AT_*, !DW_AT_*, ?AT_*, ?DW_AT_*
+--------------------------------
+
+This section describes the following words: ``?DW_AT_vtable_elem_location``, ``?DW_AT_visibility``, ``?DW_AT_virtuality``, ``?DW_AT_variable_parameter``, ``?DW_AT_use_location``, ``?DW_AT_use_UTF8``, ``?DW_AT_upper_bound``, ``?DW_AT_type``, ``?DW_AT_trampoline``, ``?DW_AT_threads_scaled``, ``?DW_AT_subscr_data``, ``?DW_AT_string_length``, ``?DW_AT_stmt_list``, ``?DW_AT_static_link``, ``?DW_AT_start_scope``, ``?DW_AT_src_info``, ``?DW_AT_src_coords``, ``?DW_AT_specification``, ``?DW_AT_small``, ``?DW_AT_signature``, ``?DW_AT_sibling``, ``?DW_AT_sf_names``, ``?DW_AT_segment``, ``?DW_AT_return_addr``, ``?DW_AT_recursive``, ``?DW_AT_ranges``, ``?DW_AT_pure``, ``?DW_AT_prototyped``, ``?DW_AT_producer``, ``?DW_AT_priority``, ``?DW_AT_picture_string``, ``?DW_AT_ordering``, ``?DW_AT_object_pointer``, ``?DW_AT_namelist_item``, ``?DW_AT_name``, ``?DW_AT_mutable``, ``?DW_AT_member``, ``?DW_AT_main_subprogram``, ``?DW_AT_macro_info``, ``?DW_AT_mac_info``, ``?DW_AT_lower_bound``, ``?DW_AT_low_pc``, ``?DW_AT_location``, ``?DW_AT_linkage_name``, ``?DW_AT_language``, ``?DW_AT_is_optional``, ``?DW_AT_inline``, ``?DW_AT_import``, ``?DW_AT_identifier_case``, ``?DW_AT_high_pc``, ``?DW_AT_friend``, ``?DW_AT_frame_base``, ``?DW_AT_external``, ``?DW_AT_extension``, ``?DW_AT_explicit``, ``?DW_AT_enum_class``, ``?DW_AT_entry_pc``, ``?DW_AT_endianity``, ``?DW_AT_encoding``, ``?DW_AT_elemental``, ``?DW_AT_element_list``, ``?DW_AT_discr_value``, ``?DW_AT_discr_list``, ``?DW_AT_discr``, ``?DW_AT_digit_count``, ``?DW_AT_description``, ``?DW_AT_default_value``, ``?DW_AT_declaration``, ``?DW_AT_decl_line``, ``?DW_AT_decl_file``, ``?DW_AT_decl_column``, ``?DW_AT_decimal_sign``, ``?DW_AT_decimal_scale``, ``?DW_AT_data_member_location``, ``?DW_AT_data_location``, ``?DW_AT_data_bit_offset``, ``?DW_AT_count``, ``?DW_AT_containing_type``, ``?DW_AT_const_value``, ``?DW_AT_const_expr``, ``?DW_AT_comp_dir``, ``?DW_AT_common_reference``, ``?DW_AT_calling_convention``, ``?DW_AT_call_line``, ``?DW_AT_call_file``, ``?DW_AT_call_column``, ``?DW_AT_byte_stride``, ``?DW_AT_byte_size``, ``?DW_AT_body_end``, ``?DW_AT_body_begin``, ``?DW_AT_bit_stride``, ``?DW_AT_bit_size``, ``?DW_AT_bit_offset``, ``?DW_AT_binary_scale``, ``?DW_AT_base_types``, ``?DW_AT_associated``, ``?DW_AT_artificial``, ``?DW_AT_allocated``, ``?DW_AT_address_class``, ``?DW_AT_accessibility``, ``?DW_AT_abstract_origin``, ``?DW_AT_MIPS_tail_loop_begin``, ``?DW_AT_MIPS_stride_elem``, ``?DW_AT_MIPS_stride_byte``, ``?DW_AT_MIPS_stride``, ``?DW_AT_MIPS_software_pipeline_depth``, ``?DW_AT_MIPS_ptr_dopetype``, ``?DW_AT_MIPS_loop_unroll_factor``, ``?DW_AT_MIPS_loop_begin``, ``?DW_AT_MIPS_linkage_name``, ``?DW_AT_MIPS_has_inlines``, ``?DW_AT_MIPS_fde``, ``?DW_AT_MIPS_epilog_begin``, ``?DW_AT_MIPS_clone_origin``, ``?DW_AT_MIPS_assumed_size``, ``?DW_AT_MIPS_assumed_shape_dopetype``, ``?DW_AT_MIPS_allocatable_dopetype``, ``?DW_AT_MIPS_abstract_name``, ``?DW_AT_GNU_vector``, ``?DW_AT_GNU_template_name``, ``?DW_AT_GNU_tail_call``, ``?DW_AT_GNU_shared_locks_required``, ``?DW_AT_GNU_pt_guarded_by``, ``?DW_AT_GNU_pt_guarded``, ``?DW_AT_GNU_odr_signature``, ``?DW_AT_GNU_macros``, ``?DW_AT_GNU_locks_excluded``, ``?DW_AT_GNU_guarded_by``, ``?DW_AT_GNU_guarded``, ``?DW_AT_GNU_exclusive_locks_required``, ``?DW_AT_GNU_call_site_value``, ``?DW_AT_GNU_call_site_target_clobbered``, ``?DW_AT_GNU_call_site_target``, ``?DW_AT_GNU_call_site_data_value``, ``?DW_AT_GNU_all_tail_call_sites``, ``?DW_AT_GNU_all_source_call_sites``, ``?DW_AT_GNU_all_call_sites``, ``?AT_vtable_elem_location``, ``?AT_visibility``, ``?AT_virtuality``, ``?AT_variable_parameter``, ``?AT_use_location``, ``?AT_use_UTF8``, ``?AT_upper_bound``, ``?AT_type``, ``?AT_trampoline``, ``?AT_threads_scaled``, ``?AT_subscr_data``, ``?AT_string_length``, ``?AT_stmt_list``, ``?AT_static_link``, ``?AT_start_scope``, ``?AT_src_info``, ``?AT_src_coords``, ``?AT_specification``, ``?AT_small``, ``?AT_signature``, ``?AT_sibling``, ``?AT_sf_names``, ``?AT_segment``, ``?AT_return_addr``, ``?AT_recursive``, ``?AT_ranges``, ``?AT_pure``, ``?AT_prototyped``, ``?AT_producer``, ``?AT_priority``, ``?AT_picture_string``, ``?AT_ordering``, ``?AT_object_pointer``, ``?AT_namelist_item``, ``?AT_name``, ``?AT_mutable``, ``?AT_member``, ``?AT_main_subprogram``, ``?AT_macro_info``, ``?AT_mac_info``, ``?AT_lower_bound``, ``?AT_low_pc``, ``?AT_location``, ``?AT_linkage_name``, ``?AT_language``, ``?AT_is_optional``, ``?AT_inline``, ``?AT_import``, ``?AT_identifier_case``, ``?AT_high_pc``, ``?AT_friend``, ``?AT_frame_base``, ``?AT_external``, ``?AT_extension``, ``?AT_explicit``, ``?AT_enum_class``, ``?AT_entry_pc``, ``?AT_endianity``, ``?AT_encoding``, ``?AT_elemental``, ``?AT_element_list``, ``?AT_discr_value``, ``?AT_discr_list``, ``?AT_discr``, ``?AT_digit_count``, ``?AT_description``, ``?AT_default_value``, ``?AT_declaration``, ``?AT_decl_line``, ``?AT_decl_file``, ``?AT_decl_column``, ``?AT_decimal_sign``, ``?AT_decimal_scale``, ``?AT_data_member_location``, ``?AT_data_location``, ``?AT_data_bit_offset``, ``?AT_count``, ``?AT_containing_type``, ``?AT_const_value``, ``?AT_const_expr``, ``?AT_comp_dir``, ``?AT_common_reference``, ``?AT_calling_convention``, ``?AT_call_line``, ``?AT_call_file``, ``?AT_call_column``, ``?AT_byte_stride``, ``?AT_byte_size``, ``?AT_body_end``, ``?AT_body_begin``, ``?AT_bit_stride``, ``?AT_bit_size``, ``?AT_bit_offset``, ``?AT_binary_scale``, ``?AT_base_types``, ``?AT_associated``, ``?AT_artificial``, ``?AT_allocated``, ``?AT_address_class``, ``?AT_accessibility``, ``?AT_abstract_origin``, ``?AT_MIPS_tail_loop_begin``, ``?AT_MIPS_stride_elem``, ``?AT_MIPS_stride_byte``, ``?AT_MIPS_stride``, ``?AT_MIPS_software_pipeline_depth``, ``?AT_MIPS_ptr_dopetype``, ``?AT_MIPS_loop_unroll_factor``, ``?AT_MIPS_loop_begin``, ``?AT_MIPS_linkage_name``, ``?AT_MIPS_has_inlines``, ``?AT_MIPS_fde``, ``?AT_MIPS_epilog_begin``, ``?AT_MIPS_clone_origin``, ``?AT_MIPS_assumed_size``, ``?AT_MIPS_assumed_shape_dopetype``, ``?AT_MIPS_allocatable_dopetype``, ``?AT_MIPS_abstract_name``, ``?AT_GNU_vector``, ``?AT_GNU_template_name``, ``?AT_GNU_tail_call``, ``?AT_GNU_shared_locks_required``, ``?AT_GNU_pt_guarded_by``, ``?AT_GNU_pt_guarded``, ``?AT_GNU_odr_signature``, ``?AT_GNU_macros``, ``?AT_GNU_locks_excluded``, ``?AT_GNU_guarded_by``, ``?AT_GNU_guarded``, ``?AT_GNU_exclusive_locks_required``, ``?AT_GNU_call_site_value``, ``?AT_GNU_call_site_target_clobbered``, ``?AT_GNU_call_site_target``, ``?AT_GNU_call_site_data_value``, ``?AT_GNU_all_tail_call_sites``, ``?AT_GNU_all_source_call_sites``, ``?AT_GNU_all_call_sites``, ``!DW_AT_vtable_elem_location``, ``!DW_AT_visibility``, ``!DW_AT_virtuality``, ``!DW_AT_variable_parameter``, ``!DW_AT_use_location``, ``!DW_AT_use_UTF8``, ``!DW_AT_upper_bound``, ``!DW_AT_type``, ``!DW_AT_trampoline``, ``!DW_AT_threads_scaled``, ``!DW_AT_subscr_data``, ``!DW_AT_string_length``, ``!DW_AT_stmt_list``, ``!DW_AT_static_link``, ``!DW_AT_start_scope``, ``!DW_AT_src_info``, ``!DW_AT_src_coords``, ``!DW_AT_specification``, ``!DW_AT_small``, ``!DW_AT_signature``, ``!DW_AT_sibling``, ``!DW_AT_sf_names``, ``!DW_AT_segment``, ``!DW_AT_return_addr``, ``!DW_AT_recursive``, ``!DW_AT_ranges``, ``!DW_AT_pure``, ``!DW_AT_prototyped``, ``!DW_AT_producer``, ``!DW_AT_priority``, ``!DW_AT_picture_string``, ``!DW_AT_ordering``, ``!DW_AT_object_pointer``, ``!DW_AT_namelist_item``, ``!DW_AT_name``, ``!DW_AT_mutable``, ``!DW_AT_member``, ``!DW_AT_main_subprogram``, ``!DW_AT_macro_info``, ``!DW_AT_mac_info``, ``!DW_AT_lower_bound``, ``!DW_AT_low_pc``, ``!DW_AT_location``, ``!DW_AT_linkage_name``, ``!DW_AT_language``, ``!DW_AT_is_optional``, ``!DW_AT_inline``, ``!DW_AT_import``, ``!DW_AT_identifier_case``, ``!DW_AT_high_pc``, ``!DW_AT_friend``, ``!DW_AT_frame_base``, ``!DW_AT_external``, ``!DW_AT_extension``, ``!DW_AT_explicit``, ``!DW_AT_enum_class``, ``!DW_AT_entry_pc``, ``!DW_AT_endianity``, ``!DW_AT_encoding``, ``!DW_AT_elemental``, ``!DW_AT_element_list``, ``!DW_AT_discr_value``, ``!DW_AT_discr_list``, ``!DW_AT_discr``, ``!DW_AT_digit_count``, ``!DW_AT_description``, ``!DW_AT_default_value``, ``!DW_AT_declaration``, ``!DW_AT_decl_line``, ``!DW_AT_decl_file``, ``!DW_AT_decl_column``, ``!DW_AT_decimal_sign``, ``!DW_AT_decimal_scale``, ``!DW_AT_data_member_location``, ``!DW_AT_data_location``, ``!DW_AT_data_bit_offset``, ``!DW_AT_count``, ``!DW_AT_containing_type``, ``!DW_AT_const_value``, ``!DW_AT_const_expr``, ``!DW_AT_comp_dir``, ``!DW_AT_common_reference``, ``!DW_AT_calling_convention``, ``!DW_AT_call_line``, ``!DW_AT_call_file``, ``!DW_AT_call_column``, ``!DW_AT_byte_stride``, ``!DW_AT_byte_size``, ``!DW_AT_body_end``, ``!DW_AT_body_begin``, ``!DW_AT_bit_stride``, ``!DW_AT_bit_size``, ``!DW_AT_bit_offset``, ``!DW_AT_binary_scale``, ``!DW_AT_base_types``, ``!DW_AT_associated``, ``!DW_AT_artificial``, ``!DW_AT_allocated``, ``!DW_AT_address_class``, ``!DW_AT_accessibility``, ``!DW_AT_abstract_origin``, ``!DW_AT_MIPS_tail_loop_begin``, ``!DW_AT_MIPS_stride_elem``, ``!DW_AT_MIPS_stride_byte``, ``!DW_AT_MIPS_stride``, ``!DW_AT_MIPS_software_pipeline_depth``, ``!DW_AT_MIPS_ptr_dopetype``, ``!DW_AT_MIPS_loop_unroll_factor``, ``!DW_AT_MIPS_loop_begin``, ``!DW_AT_MIPS_linkage_name``, ``!DW_AT_MIPS_has_inlines``, ``!DW_AT_MIPS_fde``, ``!DW_AT_MIPS_epilog_begin``, ``!DW_AT_MIPS_clone_origin``, ``!DW_AT_MIPS_assumed_size``, ``!DW_AT_MIPS_assumed_shape_dopetype``, ``!DW_AT_MIPS_allocatable_dopetype``, ``!DW_AT_MIPS_abstract_name``, ``!DW_AT_GNU_vector``, ``!DW_AT_GNU_template_name``, ``!DW_AT_GNU_tail_call``, ``!DW_AT_GNU_shared_locks_required``, ``!DW_AT_GNU_pt_guarded_by``, ``!DW_AT_GNU_pt_guarded``, ``!DW_AT_GNU_odr_signature``, ``!DW_AT_GNU_macros``, ``!DW_AT_GNU_locks_excluded``, ``!DW_AT_GNU_guarded_by``, ``!DW_AT_GNU_guarded``, ``!DW_AT_GNU_exclusive_locks_required``, ``!DW_AT_GNU_call_site_value``, ``!DW_AT_GNU_call_site_target_clobbered``, ``!DW_AT_GNU_call_site_target``, ``!DW_AT_GNU_call_site_data_value``, ``!DW_AT_GNU_all_tail_call_sites``, ``!DW_AT_GNU_all_source_call_sites``, ``!DW_AT_GNU_all_call_sites``, ``!AT_vtable_elem_location``, ``!AT_visibility``, ``!AT_virtuality``, ``!AT_variable_parameter``, ``!AT_use_location``, ``!AT_use_UTF8``, ``!AT_upper_bound``, ``!AT_type``, ``!AT_trampoline``, ``!AT_threads_scaled``, ``!AT_subscr_data``, ``!AT_string_length``, ``!AT_stmt_list``, ``!AT_static_link``, ``!AT_start_scope``, ``!AT_src_info``, ``!AT_src_coords``, ``!AT_specification``, ``!AT_small``, ``!AT_signature``, ``!AT_sibling``, ``!AT_sf_names``, ``!AT_segment``, ``!AT_return_addr``, ``!AT_recursive``, ``!AT_ranges``, ``!AT_pure``, ``!AT_prototyped``, ``!AT_producer``, ``!AT_priority``, ``!AT_picture_string``, ``!AT_ordering``, ``!AT_object_pointer``, ``!AT_namelist_item``, ``!AT_name``, ``!AT_mutable``, ``!AT_member``, ``!AT_main_subprogram``, ``!AT_macro_info``, ``!AT_mac_info``, ``!AT_lower_bound``, ``!AT_low_pc``, ``!AT_location``, ``!AT_linkage_name``, ``!AT_language``, ``!AT_is_optional``, ``!AT_inline``, ``!AT_import``, ``!AT_identifier_case``, ``!AT_high_pc``, ``!AT_friend``, ``!AT_frame_base``, ``!AT_external``, ``!AT_extension``, ``!AT_explicit``, ``!AT_enum_class``, ``!AT_entry_pc``, ``!AT_endianity``, ``!AT_encoding``, ``!AT_elemental``, ``!AT_element_list``, ``!AT_discr_value``, ``!AT_discr_list``, ``!AT_discr``, ``!AT_digit_count``, ``!AT_description``, ``!AT_default_value``, ``!AT_declaration``, ``!AT_decl_line``, ``!AT_decl_file``, ``!AT_decl_column``, ``!AT_decimal_sign``, ``!AT_decimal_scale``, ``!AT_data_member_location``, ``!AT_data_location``, ``!AT_data_bit_offset``, ``!AT_count``, ``!AT_containing_type``, ``!AT_const_value``, ``!AT_const_expr``, ``!AT_comp_dir``, ``!AT_common_reference``, ``!AT_calling_convention``, ``!AT_call_line``, ``!AT_call_file``, ``!AT_call_column``, ``!AT_byte_stride``, ``!AT_byte_size``, ``!AT_body_end``, ``!AT_body_begin``, ``!AT_bit_stride``, ``!AT_bit_size``, ``!AT_bit_offset``, ``!AT_binary_scale``, ``!AT_base_types``, ``!AT_associated``, ``!AT_artificial``, ``!AT_allocated``, ``!AT_address_class``, ``!AT_accessibility``, ``!AT_abstract_origin``, ``!AT_MIPS_tail_loop_begin``, ``!AT_MIPS_stride_elem``, ``!AT_MIPS_stride_byte``, ``!AT_MIPS_stride``, ``!AT_MIPS_software_pipeline_depth``, ``!AT_MIPS_ptr_dopetype``, ``!AT_MIPS_loop_unroll_factor``, ``!AT_MIPS_loop_begin``, ``!AT_MIPS_linkage_name``, ``!AT_MIPS_has_inlines``, ``!AT_MIPS_fde``, ``!AT_MIPS_epilog_begin``, ``!AT_MIPS_clone_origin``, ``!AT_MIPS_assumed_size``, ``!AT_MIPS_assumed_shape_dopetype``, ``!AT_MIPS_allocatable_dopetype``, ``!AT_MIPS_abstract_name``, ``!AT_GNU_vector``, ``!AT_GNU_template_name``, ``!AT_GNU_tail_call``, ``!AT_GNU_shared_locks_required``, ``!AT_GNU_pt_guarded_by``, ``!AT_GNU_pt_guarded``, ``!AT_GNU_odr_signature``, ``!AT_GNU_macros``, ``!AT_GNU_locks_excluded``, ``!AT_GNU_guarded_by``, ``!AT_GNU_guarded``, ``!AT_GNU_exclusive_locks_required``, ``!AT_GNU_call_site_value``, ``!AT_GNU_call_site_target_clobbered``, ``!AT_GNU_call_site_target``, ``!AT_GNU_call_site_data_value``, ``!AT_GNU_all_tail_call_sites``, ``!AT_GNU_all_source_call_sites``, ``!AT_GNU_all_call_sites``.
+
+``T_CONST``, ``T_ABBREV_ATTR``, ``T_ABBREV``, ``T_ATTR``, ``T_DIE``
+...................................................................
+
+
+
+
+
+.. _zw_vocabulary_dwarf !DW_FORM_*:
+.. _zw_vocabulary_dwarf !FORM_*:
+.. _zw_vocabulary_dwarf ?DW_FORM_*:
+.. _zw_vocabulary_dwarf ?FORM_*:
+
+!DW_FORM_*, !FORM_*, ?DW_FORM_*, ?FORM_*
+----------------------------------------
+
+This section describes the following words: ``?FORM_udata``, ``?FORM_strp``, ``?FORM_string``, ``?FORM_sec_offset``, ``?FORM_sdata``, ``?FORM_ref_udata``, ``?FORM_ref_sig8``, ``?FORM_ref_addr``, ``?FORM_ref8``, ``?FORM_ref4``, ``?FORM_ref2``, ``?FORM_ref1``, ``?FORM_indirect``, ``?FORM_flag_present``, ``?FORM_flag``, ``?FORM_exprloc``, ``?FORM_data8``, ``?FORM_data4``, ``?FORM_data2``, ``?FORM_data1``, ``?FORM_block4``, ``?FORM_block2``, ``?FORM_block1``, ``?FORM_block``, ``?FORM_addr``, ``?FORM_GNU_strp_alt``, ``?FORM_GNU_ref_alt``, ``?DW_FORM_udata``, ``?DW_FORM_strp``, ``?DW_FORM_string``, ``?DW_FORM_sec_offset``, ``?DW_FORM_sdata``, ``?DW_FORM_ref_udata``, ``?DW_FORM_ref_sig8``, ``?DW_FORM_ref_addr``, ``?DW_FORM_ref8``, ``?DW_FORM_ref4``, ``?DW_FORM_ref2``, ``?DW_FORM_ref1``, ``?DW_FORM_indirect``, ``?DW_FORM_flag_present``, ``?DW_FORM_flag``, ``?DW_FORM_exprloc``, ``?DW_FORM_data8``, ``?DW_FORM_data4``, ``?DW_FORM_data2``, ``?DW_FORM_data1``, ``?DW_FORM_block4``, ``?DW_FORM_block2``, ``?DW_FORM_block1``, ``?DW_FORM_block``, ``?DW_FORM_addr``, ``?DW_FORM_GNU_strp_alt``, ``?DW_FORM_GNU_ref_alt``, ``!FORM_udata``, ``!FORM_strp``, ``!FORM_string``, ``!FORM_sec_offset``, ``!FORM_sdata``, ``!FORM_ref_udata``, ``!FORM_ref_sig8``, ``!FORM_ref_addr``, ``!FORM_ref8``, ``!FORM_ref4``, ``!FORM_ref2``, ``!FORM_ref1``, ``!FORM_indirect``, ``!FORM_flag_present``, ``!FORM_flag``, ``!FORM_exprloc``, ``!FORM_data8``, ``!FORM_data4``, ``!FORM_data2``, ``!FORM_data1``, ``!FORM_block4``, ``!FORM_block2``, ``!FORM_block1``, ``!FORM_block``, ``!FORM_addr``, ``!FORM_GNU_strp_alt``, ``!FORM_GNU_ref_alt``, ``!DW_FORM_udata``, ``!DW_FORM_strp``, ``!DW_FORM_string``, ``!DW_FORM_sec_offset``, ``!DW_FORM_sdata``, ``!DW_FORM_ref_udata``, ``!DW_FORM_ref_sig8``, ``!DW_FORM_ref_addr``, ``!DW_FORM_ref8``, ``!DW_FORM_ref4``, ``!DW_FORM_ref2``, ``!DW_FORM_ref1``, ``!DW_FORM_indirect``, ``!DW_FORM_flag_present``, ``!DW_FORM_flag``, ``!DW_FORM_exprloc``, ``!DW_FORM_data8``, ``!DW_FORM_data4``, ``!DW_FORM_data2``, ``!DW_FORM_data1``, ``!DW_FORM_block4``, ``!DW_FORM_block2``, ``!DW_FORM_block1``, ``!DW_FORM_block``, ``!DW_FORM_addr``, ``!DW_FORM_GNU_strp_alt``, ``!DW_FORM_GNU_ref_alt``.
+
+``T_CONST``, ``T_ABBREV_ATTR``, ``T_ATTR``
+..........................................
+
+
+
+
+
+.. _zw_vocabulary_dwarf !DW_OP_*:
+.. _zw_vocabulary_dwarf !OP_*:
+.. _zw_vocabulary_dwarf ?DW_OP_*:
+.. _zw_vocabulary_dwarf ?OP_*:
+
+!DW_OP_*, !OP_*, ?DW_OP_*, ?OP_*
+--------------------------------
+
+This section describes the following words: ``?OP_xor``, ``?OP_xderef_size``, ``?OP_xderef``, ``?OP_swap``, ``?OP_stack_value``, ``?OP_skip``, ``?OP_shra``, ``?OP_shr``, ``?OP_shl``, ``?OP_rot``, ``?OP_regx``, ``?OP_reg9``, ``?OP_reg8``, ``?OP_reg7``, ``?OP_reg6``, ``?OP_reg5``, ``?OP_reg4``, ``?OP_reg31``, ``?OP_reg30``, ``?OP_reg3``, ``?OP_reg29``, ``?OP_reg28``, ``?OP_reg27``, ``?OP_reg26``, ``?OP_reg25``, ``?OP_reg24``, ``?OP_reg23``, ``?OP_reg22``, ``?OP_reg21``, ``?OP_reg20``, ``?OP_reg2``, ``?OP_reg19``, ``?OP_reg18``, ``?OP_reg17``, ``?OP_reg16``, ``?OP_reg15``, ``?OP_reg14``, ``?OP_reg13``, ``?OP_reg12``, ``?OP_reg11``, ``?OP_reg10``, ``?OP_reg1``, ``?OP_reg0``, ``?OP_push_object_address``, ``?OP_plus_uconst``, ``?OP_plus``, ``?OP_piece``, ``?OP_pick``, ``?OP_over``, ``?OP_or``, ``?OP_not``, ``?OP_nop``, ``?OP_neg``, ``?OP_ne``, ``?OP_mul``, ``?OP_mod``, ``?OP_minus``, ``?OP_lt``, ``?OP_lit9``, ``?OP_lit8``, ``?OP_lit7``, ``?OP_lit6``, ``?OP_lit5``, ``?OP_lit4``, ``?OP_lit31``, ``?OP_lit30``, ``?OP_lit3``, ``?OP_lit29``, ``?OP_lit28``, ``?OP_lit27``, ``?OP_lit26``, ``?OP_lit25``, ``?OP_lit24``, ``?OP_lit23``, ``?OP_lit22``, ``?OP_lit21``, ``?OP_lit20``, ``?OP_lit2``, ``?OP_lit19``, ``?OP_lit18``, ``?OP_lit17``, ``?OP_lit16``, ``?OP_lit15``, ``?OP_lit14``, ``?OP_lit13``, ``?OP_lit12``, ``?OP_lit11``, ``?OP_lit10``, ``?OP_lit1``, ``?OP_lit0``, ``?OP_le``, ``?OP_implicit_value``, ``?OP_gt``, ``?OP_ge``, ``?OP_form_tls_address``, ``?OP_fbreg``, ``?OP_eq``, ``?OP_dup``, ``?OP_drop``, ``?OP_div``, ``?OP_deref_size``, ``?OP_deref``, ``?OP_constu``, ``?OP_consts``, ``?OP_const8u``, ``?OP_const8s``, ``?OP_const4u``, ``?OP_const4s``, ``?OP_const2u``, ``?OP_const2s``, ``?OP_const1u``, ``?OP_const1s``, ``?OP_call_ref``, ``?OP_call_frame_cfa``, ``?OP_call4``, ``?OP_call2``, ``?OP_bregx``, ``?OP_breg9``, ``?OP_breg8``, ``?OP_breg7``, ``?OP_breg6``, ``?OP_breg5``, ``?OP_breg4``, ``?OP_breg31``, ``?OP_breg30``, ``?OP_breg3``, ``?OP_breg29``, ``?OP_breg28``, ``?OP_breg27``, ``?OP_breg26``, ``?OP_breg25``, ``?OP_breg24``, ``?OP_breg23``, ``?OP_breg22``, ``?OP_breg21``, ``?OP_breg20``, ``?OP_breg2``, ``?OP_breg19``, ``?OP_breg18``, ``?OP_breg17``, ``?OP_breg16``, ``?OP_breg15``, ``?OP_breg14``, ``?OP_breg13``, ``?OP_breg12``, ``?OP_breg11``, ``?OP_breg10``, ``?OP_breg1``, ``?OP_breg0``, ``?OP_bra``, ``?OP_bit_piece``, ``?OP_and``, ``?OP_addr``, ``?OP_abs``, ``?OP_GNU_uninit``, ``?OP_GNU_reinterpret``, ``?OP_GNU_regval_type``, ``?OP_GNU_push_tls_address``, ``?OP_GNU_parameter_ref``, ``?OP_GNU_implicit_pointer``, ``?OP_GNU_entry_value``, ``?OP_GNU_encoded_addr``, ``?OP_GNU_deref_type``, ``?OP_GNU_convert``, ``?OP_GNU_const_type``, ``?DW_OP_xor``, ``?DW_OP_xderef_size``, ``?DW_OP_xderef``, ``?DW_OP_swap``, ``?DW_OP_stack_value``, ``?DW_OP_skip``, ``?DW_OP_shra``, ``?DW_OP_shr``, ``?DW_OP_shl``, ``?DW_OP_rot``, ``?DW_OP_regx``, ``?DW_OP_reg9``, ``?DW_OP_reg8``, ``?DW_OP_reg7``, ``?DW_OP_reg6``, ``?DW_OP_reg5``, ``?DW_OP_reg4``, ``?DW_OP_reg31``, ``?DW_OP_reg30``, ``?DW_OP_reg3``, ``?DW_OP_reg29``, ``?DW_OP_reg28``, ``?DW_OP_reg27``, ``?DW_OP_reg26``, ``?DW_OP_reg25``, ``?DW_OP_reg24``, ``?DW_OP_reg23``, ``?DW_OP_reg22``, ``?DW_OP_reg21``, ``?DW_OP_reg20``, ``?DW_OP_reg2``, ``?DW_OP_reg19``, ``?DW_OP_reg18``, ``?DW_OP_reg17``, ``?DW_OP_reg16``, ``?DW_OP_reg15``, ``?DW_OP_reg14``, ``?DW_OP_reg13``, ``?DW_OP_reg12``, ``?DW_OP_reg11``, ``?DW_OP_reg10``, ``?DW_OP_reg1``, ``?DW_OP_reg0``, ``?DW_OP_push_object_address``, ``?DW_OP_plus_uconst``, ``?DW_OP_plus``, ``?DW_OP_piece``, ``?DW_OP_pick``, ``?DW_OP_over``, ``?DW_OP_or``, ``?DW_OP_not``, ``?DW_OP_nop``, ``?DW_OP_neg``, ``?DW_OP_ne``, ``?DW_OP_mul``, ``?DW_OP_mod``, ``?DW_OP_minus``, ``?DW_OP_lt``, ``?DW_OP_lit9``, ``?DW_OP_lit8``, ``?DW_OP_lit7``, ``?DW_OP_lit6``, ``?DW_OP_lit5``, ``?DW_OP_lit4``, ``?DW_OP_lit31``, ``?DW_OP_lit30``, ``?DW_OP_lit3``, ``?DW_OP_lit29``, ``?DW_OP_lit28``, ``?DW_OP_lit27``, ``?DW_OP_lit26``, ``?DW_OP_lit25``, ``?DW_OP_lit24``, ``?DW_OP_lit23``, ``?DW_OP_lit22``, ``?DW_OP_lit21``, ``?DW_OP_lit20``, ``?DW_OP_lit2``, ``?DW_OP_lit19``, ``?DW_OP_lit18``, ``?DW_OP_lit17``, ``?DW_OP_lit16``, ``?DW_OP_lit15``, ``?DW_OP_lit14``, ``?DW_OP_lit13``, ``?DW_OP_lit12``, ``?DW_OP_lit11``, ``?DW_OP_lit10``, ``?DW_OP_lit1``, ``?DW_OP_lit0``, ``?DW_OP_le``, ``?DW_OP_implicit_value``, ``?DW_OP_gt``, ``?DW_OP_ge``, ``?DW_OP_form_tls_address``, ``?DW_OP_fbreg``, ``?DW_OP_eq``, ``?DW_OP_dup``, ``?DW_OP_drop``, ``?DW_OP_div``, ``?DW_OP_deref_size``, ``?DW_OP_deref``, ``?DW_OP_constu``, ``?DW_OP_consts``, ``?DW_OP_const8u``, ``?DW_OP_const8s``, ``?DW_OP_const4u``, ``?DW_OP_const4s``, ``?DW_OP_const2u``, ``?DW_OP_const2s``, ``?DW_OP_const1u``, ``?DW_OP_const1s``, ``?DW_OP_call_ref``, ``?DW_OP_call_frame_cfa``, ``?DW_OP_call4``, ``?DW_OP_call2``, ``?DW_OP_bregx``, ``?DW_OP_breg9``, ``?DW_OP_breg8``, ``?DW_OP_breg7``, ``?DW_OP_breg6``, ``?DW_OP_breg5``, ``?DW_OP_breg4``, ``?DW_OP_breg31``, ``?DW_OP_breg30``, ``?DW_OP_breg3``, ``?DW_OP_breg29``, ``?DW_OP_breg28``, ``?DW_OP_breg27``, ``?DW_OP_breg26``, ``?DW_OP_breg25``, ``?DW_OP_breg24``, ``?DW_OP_breg23``, ``?DW_OP_breg22``, ``?DW_OP_breg21``, ``?DW_OP_breg20``, ``?DW_OP_breg2``, ``?DW_OP_breg19``, ``?DW_OP_breg18``, ``?DW_OP_breg17``, ``?DW_OP_breg16``, ``?DW_OP_breg15``, ``?DW_OP_breg14``, ``?DW_OP_breg13``, ``?DW_OP_breg12``, ``?DW_OP_breg11``, ``?DW_OP_breg10``, ``?DW_OP_breg1``, ``?DW_OP_breg0``, ``?DW_OP_bra``, ``?DW_OP_bit_piece``, ``?DW_OP_and``, ``?DW_OP_addr``, ``?DW_OP_abs``, ``?DW_OP_GNU_uninit``, ``?DW_OP_GNU_reinterpret``, ``?DW_OP_GNU_regval_type``, ``?DW_OP_GNU_push_tls_address``, ``?DW_OP_GNU_parameter_ref``, ``?DW_OP_GNU_implicit_pointer``, ``?DW_OP_GNU_entry_value``, ``?DW_OP_GNU_encoded_addr``, ``?DW_OP_GNU_deref_type``, ``?DW_OP_GNU_convert``, ``?DW_OP_GNU_const_type``, ``!OP_xor``, ``!OP_xderef_size``, ``!OP_xderef``, ``!OP_swap``, ``!OP_stack_value``, ``!OP_skip``, ``!OP_shra``, ``!OP_shr``, ``!OP_shl``, ``!OP_rot``, ``!OP_regx``, ``!OP_reg9``, ``!OP_reg8``, ``!OP_reg7``, ``!OP_reg6``, ``!OP_reg5``, ``!OP_reg4``, ``!OP_reg31``, ``!OP_reg30``, ``!OP_reg3``, ``!OP_reg29``, ``!OP_reg28``, ``!OP_reg27``, ``!OP_reg26``, ``!OP_reg25``, ``!OP_reg24``, ``!OP_reg23``, ``!OP_reg22``, ``!OP_reg21``, ``!OP_reg20``, ``!OP_reg2``, ``!OP_reg19``, ``!OP_reg18``, ``!OP_reg17``, ``!OP_reg16``, ``!OP_reg15``, ``!OP_reg14``, ``!OP_reg13``, ``!OP_reg12``, ``!OP_reg11``, ``!OP_reg10``, ``!OP_reg1``, ``!OP_reg0``, ``!OP_push_object_address``, ``!OP_plus_uconst``, ``!OP_plus``, ``!OP_piece``, ``!OP_pick``, ``!OP_over``, ``!OP_or``, ``!OP_not``, ``!OP_nop``, ``!OP_neg``, ``!OP_ne``, ``!OP_mul``, ``!OP_mod``, ``!OP_minus``, ``!OP_lt``, ``!OP_lit9``, ``!OP_lit8``, ``!OP_lit7``, ``!OP_lit6``, ``!OP_lit5``, ``!OP_lit4``, ``!OP_lit31``, ``!OP_lit30``, ``!OP_lit3``, ``!OP_lit29``, ``!OP_lit28``, ``!OP_lit27``, ``!OP_lit26``, ``!OP_lit25``, ``!OP_lit24``, ``!OP_lit23``, ``!OP_lit22``, ``!OP_lit21``, ``!OP_lit20``, ``!OP_lit2``, ``!OP_lit19``, ``!OP_lit18``, ``!OP_lit17``, ``!OP_lit16``, ``!OP_lit15``, ``!OP_lit14``, ``!OP_lit13``, ``!OP_lit12``, ``!OP_lit11``, ``!OP_lit10``, ``!OP_lit1``, ``!OP_lit0``, ``!OP_le``, ``!OP_implicit_value``, ``!OP_gt``, ``!OP_ge``, ``!OP_form_tls_address``, ``!OP_fbreg``, ``!OP_eq``, ``!OP_dup``, ``!OP_drop``, ``!OP_div``, ``!OP_deref_size``, ``!OP_deref``, ``!OP_constu``, ``!OP_consts``, ``!OP_const8u``, ``!OP_const8s``, ``!OP_const4u``, ``!OP_const4s``, ``!OP_const2u``, ``!OP_const2s``, ``!OP_const1u``, ``!OP_const1s``, ``!OP_call_ref``, ``!OP_call_frame_cfa``, ``!OP_call4``, ``!OP_call2``, ``!OP_bregx``, ``!OP_breg9``, ``!OP_breg8``, ``!OP_breg7``, ``!OP_breg6``, ``!OP_breg5``, ``!OP_breg4``, ``!OP_breg31``, ``!OP_breg30``, ``!OP_breg3``, ``!OP_breg29``, ``!OP_breg28``, ``!OP_breg27``, ``!OP_breg26``, ``!OP_breg25``, ``!OP_breg24``, ``!OP_breg23``, ``!OP_breg22``, ``!OP_breg21``, ``!OP_breg20``, ``!OP_breg2``, ``!OP_breg19``, ``!OP_breg18``, ``!OP_breg17``, ``!OP_breg16``, ``!OP_breg15``, ``!OP_breg14``, ``!OP_breg13``, ``!OP_breg12``, ``!OP_breg11``, ``!OP_breg10``, ``!OP_breg1``, ``!OP_breg0``, ``!OP_bra``, ``!OP_bit_piece``, ``!OP_and``, ``!OP_addr``, ``!OP_abs``, ``!OP_GNU_uninit``, ``!OP_GNU_reinterpret``, ``!OP_GNU_regval_type``, ``!OP_GNU_push_tls_address``, ``!OP_GNU_parameter_ref``, ``!OP_GNU_implicit_pointer``, ``!OP_GNU_entry_value``, ``!OP_GNU_encoded_addr``, ``!OP_GNU_deref_type``, ``!OP_GNU_convert``, ``!OP_GNU_const_type``, ``!DW_OP_xor``, ``!DW_OP_xderef_size``, ``!DW_OP_xderef``, ``!DW_OP_swap``, ``!DW_OP_stack_value``, ``!DW_OP_skip``, ``!DW_OP_shra``, ``!DW_OP_shr``, ``!DW_OP_shl``, ``!DW_OP_rot``, ``!DW_OP_regx``, ``!DW_OP_reg9``, ``!DW_OP_reg8``, ``!DW_OP_reg7``, ``!DW_OP_reg6``, ``!DW_OP_reg5``, ``!DW_OP_reg4``, ``!DW_OP_reg31``, ``!DW_OP_reg30``, ``!DW_OP_reg3``, ``!DW_OP_reg29``, ``!DW_OP_reg28``, ``!DW_OP_reg27``, ``!DW_OP_reg26``, ``!DW_OP_reg25``, ``!DW_OP_reg24``, ``!DW_OP_reg23``, ``!DW_OP_reg22``, ``!DW_OP_reg21``, ``!DW_OP_reg20``, ``!DW_OP_reg2``, ``!DW_OP_reg19``, ``!DW_OP_reg18``, ``!DW_OP_reg17``, ``!DW_OP_reg16``, ``!DW_OP_reg15``, ``!DW_OP_reg14``, ``!DW_OP_reg13``, ``!DW_OP_reg12``, ``!DW_OP_reg11``, ``!DW_OP_reg10``, ``!DW_OP_reg1``, ``!DW_OP_reg0``, ``!DW_OP_push_object_address``, ``!DW_OP_plus_uconst``, ``!DW_OP_plus``, ``!DW_OP_piece``, ``!DW_OP_pick``, ``!DW_OP_over``, ``!DW_OP_or``, ``!DW_OP_not``, ``!DW_OP_nop``, ``!DW_OP_neg``, ``!DW_OP_ne``, ``!DW_OP_mul``, ``!DW_OP_mod``, ``!DW_OP_minus``, ``!DW_OP_lt``, ``!DW_OP_lit9``, ``!DW_OP_lit8``, ``!DW_OP_lit7``, ``!DW_OP_lit6``, ``!DW_OP_lit5``, ``!DW_OP_lit4``, ``!DW_OP_lit31``, ``!DW_OP_lit30``, ``!DW_OP_lit3``, ``!DW_OP_lit29``, ``!DW_OP_lit28``, ``!DW_OP_lit27``, ``!DW_OP_lit26``, ``!DW_OP_lit25``, ``!DW_OP_lit24``, ``!DW_OP_lit23``, ``!DW_OP_lit22``, ``!DW_OP_lit21``, ``!DW_OP_lit20``, ``!DW_OP_lit2``, ``!DW_OP_lit19``, ``!DW_OP_lit18``, ``!DW_OP_lit17``, ``!DW_OP_lit16``, ``!DW_OP_lit15``, ``!DW_OP_lit14``, ``!DW_OP_lit13``, ``!DW_OP_lit12``, ``!DW_OP_lit11``, ``!DW_OP_lit10``, ``!DW_OP_lit1``, ``!DW_OP_lit0``, ``!DW_OP_le``, ``!DW_OP_implicit_value``, ``!DW_OP_gt``, ``!DW_OP_ge``, ``!DW_OP_form_tls_address``, ``!DW_OP_fbreg``, ``!DW_OP_eq``, ``!DW_OP_dup``, ``!DW_OP_drop``, ``!DW_OP_div``, ``!DW_OP_deref_size``, ``!DW_OP_deref``, ``!DW_OP_constu``, ``!DW_OP_consts``, ``!DW_OP_const8u``, ``!DW_OP_const8s``, ``!DW_OP_const4u``, ``!DW_OP_const4s``, ``!DW_OP_const2u``, ``!DW_OP_const2s``, ``!DW_OP_const1u``, ``!DW_OP_const1s``, ``!DW_OP_call_ref``, ``!DW_OP_call_frame_cfa``, ``!DW_OP_call4``, ``!DW_OP_call2``, ``!DW_OP_bregx``, ``!DW_OP_breg9``, ``!DW_OP_breg8``, ``!DW_OP_breg7``, ``!DW_OP_breg6``, ``!DW_OP_breg5``, ``!DW_OP_breg4``, ``!DW_OP_breg31``, ``!DW_OP_breg30``, ``!DW_OP_breg3``, ``!DW_OP_breg29``, ``!DW_OP_breg28``, ``!DW_OP_breg27``, ``!DW_OP_breg26``, ``!DW_OP_breg25``, ``!DW_OP_breg24``, ``!DW_OP_breg23``, ``!DW_OP_breg22``, ``!DW_OP_breg21``, ``!DW_OP_breg20``, ``!DW_OP_breg2``, ``!DW_OP_breg19``, ``!DW_OP_breg18``, ``!DW_OP_breg17``, ``!DW_OP_breg16``, ``!DW_OP_breg15``, ``!DW_OP_breg14``, ``!DW_OP_breg13``, ``!DW_OP_breg12``, ``!DW_OP_breg11``, ``!DW_OP_breg10``, ``!DW_OP_breg1``, ``!DW_OP_breg0``, ``!DW_OP_bra``, ``!DW_OP_bit_piece``, ``!DW_OP_and``, ``!DW_OP_addr``, ``!DW_OP_abs``, ``!DW_OP_GNU_uninit``, ``!DW_OP_GNU_reinterpret``, ``!DW_OP_GNU_regval_type``, ``!DW_OP_GNU_push_tls_address``, ``!DW_OP_GNU_parameter_ref``, ``!DW_OP_GNU_implicit_pointer``, ``!DW_OP_GNU_entry_value``, ``!DW_OP_GNU_encoded_addr``, ``!DW_OP_GNU_deref_type``, ``!DW_OP_GNU_convert``, ``!DW_OP_GNU_const_type``.
+
+``T_CONST``, ``T_LOCLIST_OP``, ``T_LOCLIST_ELEM``
+.................................................
+
+
+
+
+
+.. _zw_vocabulary_dwarf !DW_TAG_*:
+.. _zw_vocabulary_dwarf !TAG_*:
+.. _zw_vocabulary_dwarf ?DW_TAG_*:
+.. _zw_vocabulary_dwarf ?TAG_*:
+
+!DW_TAG_*, !TAG_*, ?DW_TAG_*, ?TAG_*
+------------------------------------
+
+This section describes the following words: ``?TAG_with_stmt``, ``?TAG_volatile_type``, ``?TAG_variant_part``, ``?TAG_variant``, ``?TAG_variable``, ``?TAG_unspecified_type``, ``?TAG_unspecified_parameters``, ``?TAG_union_type``, ``?TAG_typedef``, ``?TAG_type_unit``, ``?TAG_try_block``, ``?TAG_thrown_type``, ``?TAG_template_value_parameter``, ``?TAG_template_type_parameter``, ``?TAG_template_alias``, ``?TAG_subroutine_type``, ``?TAG_subrange_type``, ``?TAG_subprogram``, ``?TAG_structure_type``, ``?TAG_string_type``, ``?TAG_shared_type``, ``?TAG_set_type``, ``?TAG_rvalue_reference_type``, ``?TAG_restrict_type``, ``?TAG_reference_type``, ``?TAG_ptr_to_member_type``, ``?TAG_pointer_type``, ``?TAG_partial_unit``, ``?TAG_packed_type``, ``?TAG_namespace``, ``?TAG_namelist_item``, ``?TAG_namelist``, ``?TAG_mutable_type``, ``?TAG_module``, ``?TAG_member``, ``?TAG_lexical_block``, ``?TAG_label``, ``?TAG_interface_type``, ``?TAG_inlined_subroutine``, ``?TAG_inheritance``, ``?TAG_imported_unit``, ``?TAG_imported_module``, ``?TAG_imported_declaration``, ``?TAG_function_template``, ``?TAG_friend``, ``?TAG_format_label``, ``?TAG_formal_parameter``, ``?TAG_file_type``, ``?TAG_enumerator``, ``?TAG_enumeration_type``, ``?TAG_entry_point``, ``?TAG_dwarf_procedure``, ``?TAG_constant``, ``?TAG_const_type``, ``?TAG_condition``, ``?TAG_compile_unit``, ``?TAG_common_inclusion``, ``?TAG_common_block``, ``?TAG_class_type``, ``?TAG_class_template``, ``?TAG_catch_block``, ``?TAG_base_type``, ``?TAG_array_type``, ``?TAG_access_declaration``, ``?TAG_MIPS_loop``, ``?TAG_GNU_template_template_param``, ``?TAG_GNU_template_parameter_pack``, ``?TAG_GNU_formal_parameter_pack``, ``?TAG_GNU_call_site_parameter``, ``?TAG_GNU_call_site``, ``?TAG_GNU_EINCL``, ``?TAG_GNU_BINCL``, ``?DW_TAG_with_stmt``, ``?DW_TAG_volatile_type``, ``?DW_TAG_variant_part``, ``?DW_TAG_variant``, ``?DW_TAG_variable``, ``?DW_TAG_unspecified_type``, ``?DW_TAG_unspecified_parameters``, ``?DW_TAG_union_type``, ``?DW_TAG_typedef``, ``?DW_TAG_type_unit``, ``?DW_TAG_try_block``, ``?DW_TAG_thrown_type``, ``?DW_TAG_template_value_parameter``, ``?DW_TAG_template_type_parameter``, ``?DW_TAG_template_alias``, ``?DW_TAG_subroutine_type``, ``?DW_TAG_subrange_type``, ``?DW_TAG_subprogram``, ``?DW_TAG_structure_type``, ``?DW_TAG_string_type``, ``?DW_TAG_shared_type``, ``?DW_TAG_set_type``, ``?DW_TAG_rvalue_reference_type``, ``?DW_TAG_restrict_type``, ``?DW_TAG_reference_type``, ``?DW_TAG_ptr_to_member_type``, ``?DW_TAG_pointer_type``, ``?DW_TAG_partial_unit``, ``?DW_TAG_packed_type``, ``?DW_TAG_namespace``, ``?DW_TAG_namelist_item``, ``?DW_TAG_namelist``, ``?DW_TAG_mutable_type``, ``?DW_TAG_module``, ``?DW_TAG_member``, ``?DW_TAG_lexical_block``, ``?DW_TAG_label``, ``?DW_TAG_interface_type``, ``?DW_TAG_inlined_subroutine``, ``?DW_TAG_inheritance``, ``?DW_TAG_imported_unit``, ``?DW_TAG_imported_module``, ``?DW_TAG_imported_declaration``, ``?DW_TAG_function_template``, ``?DW_TAG_friend``, ``?DW_TAG_format_label``, ``?DW_TAG_formal_parameter``, ``?DW_TAG_file_type``, ``?DW_TAG_enumerator``, ``?DW_TAG_enumeration_type``, ``?DW_TAG_entry_point``, ``?DW_TAG_dwarf_procedure``, ``?DW_TAG_constant``, ``?DW_TAG_const_type``, ``?DW_TAG_condition``, ``?DW_TAG_compile_unit``, ``?DW_TAG_common_inclusion``, ``?DW_TAG_common_block``, ``?DW_TAG_class_type``, ``?DW_TAG_class_template``, ``?DW_TAG_catch_block``, ``?DW_TAG_base_type``, ``?DW_TAG_array_type``, ``?DW_TAG_access_declaration``, ``?DW_TAG_MIPS_loop``, ``?DW_TAG_GNU_template_template_param``, ``?DW_TAG_GNU_template_parameter_pack``, ``?DW_TAG_GNU_formal_parameter_pack``, ``?DW_TAG_GNU_call_site_parameter``, ``?DW_TAG_GNU_call_site``, ``?DW_TAG_GNU_EINCL``, ``?DW_TAG_GNU_BINCL``, ``!TAG_with_stmt``, ``!TAG_volatile_type``, ``!TAG_variant_part``, ``!TAG_variant``, ``!TAG_variable``, ``!TAG_unspecified_type``, ``!TAG_unspecified_parameters``, ``!TAG_union_type``, ``!TAG_typedef``, ``!TAG_type_unit``, ``!TAG_try_block``, ``!TAG_thrown_type``, ``!TAG_template_value_parameter``, ``!TAG_template_type_parameter``, ``!TAG_template_alias``, ``!TAG_subroutine_type``, ``!TAG_subrange_type``, ``!TAG_subprogram``, ``!TAG_structure_type``, ``!TAG_string_type``, ``!TAG_shared_type``, ``!TAG_set_type``, ``!TAG_rvalue_reference_type``, ``!TAG_restrict_type``, ``!TAG_reference_type``, ``!TAG_ptr_to_member_type``, ``!TAG_pointer_type``, ``!TAG_partial_unit``, ``!TAG_packed_type``, ``!TAG_namespace``, ``!TAG_namelist_item``, ``!TAG_namelist``, ``!TAG_mutable_type``, ``!TAG_module``, ``!TAG_member``, ``!TAG_lexical_block``, ``!TAG_label``, ``!TAG_interface_type``, ``!TAG_inlined_subroutine``, ``!TAG_inheritance``, ``!TAG_imported_unit``, ``!TAG_imported_module``, ``!TAG_imported_declaration``, ``!TAG_function_template``, ``!TAG_friend``, ``!TAG_format_label``, ``!TAG_formal_parameter``, ``!TAG_file_type``, ``!TAG_enumerator``, ``!TAG_enumeration_type``, ``!TAG_entry_point``, ``!TAG_dwarf_procedure``, ``!TAG_constant``, ``!TAG_const_type``, ``!TAG_condition``, ``!TAG_compile_unit``, ``!TAG_common_inclusion``, ``!TAG_common_block``, ``!TAG_class_type``, ``!TAG_class_template``, ``!TAG_catch_block``, ``!TAG_base_type``, ``!TAG_array_type``, ``!TAG_access_declaration``, ``!TAG_MIPS_loop``, ``!TAG_GNU_template_template_param``, ``!TAG_GNU_template_parameter_pack``, ``!TAG_GNU_formal_parameter_pack``, ``!TAG_GNU_call_site_parameter``, ``!TAG_GNU_call_site``, ``!TAG_GNU_EINCL``, ``!TAG_GNU_BINCL``, ``!DW_TAG_with_stmt``, ``!DW_TAG_volatile_type``, ``!DW_TAG_variant_part``, ``!DW_TAG_variant``, ``!DW_TAG_variable``, ``!DW_TAG_unspecified_type``, ``!DW_TAG_unspecified_parameters``, ``!DW_TAG_union_type``, ``!DW_TAG_typedef``, ``!DW_TAG_type_unit``, ``!DW_TAG_try_block``, ``!DW_TAG_thrown_type``, ``!DW_TAG_template_value_parameter``, ``!DW_TAG_template_type_parameter``, ``!DW_TAG_template_alias``, ``!DW_TAG_subroutine_type``, ``!DW_TAG_subrange_type``, ``!DW_TAG_subprogram``, ``!DW_TAG_structure_type``, ``!DW_TAG_string_type``, ``!DW_TAG_shared_type``, ``!DW_TAG_set_type``, ``!DW_TAG_rvalue_reference_type``, ``!DW_TAG_restrict_type``, ``!DW_TAG_reference_type``, ``!DW_TAG_ptr_to_member_type``, ``!DW_TAG_pointer_type``, ``!DW_TAG_partial_unit``, ``!DW_TAG_packed_type``, ``!DW_TAG_namespace``, ``!DW_TAG_namelist_item``, ``!DW_TAG_namelist``, ``!DW_TAG_mutable_type``, ``!DW_TAG_module``, ``!DW_TAG_member``, ``!DW_TAG_lexical_block``, ``!DW_TAG_label``, ``!DW_TAG_interface_type``, ``!DW_TAG_inlined_subroutine``, ``!DW_TAG_inheritance``, ``!DW_TAG_imported_unit``, ``!DW_TAG_imported_module``, ``!DW_TAG_imported_declaration``, ``!DW_TAG_function_template``, ``!DW_TAG_friend``, ``!DW_TAG_format_label``, ``!DW_TAG_formal_parameter``, ``!DW_TAG_file_type``, ``!DW_TAG_enumerator``, ``!DW_TAG_enumeration_type``, ``!DW_TAG_entry_point``, ``!DW_TAG_dwarf_procedure``, ``!DW_TAG_constant``, ``!DW_TAG_const_type``, ``!DW_TAG_condition``, ``!DW_TAG_compile_unit``, ``!DW_TAG_common_inclusion``, ``!DW_TAG_common_block``, ``!DW_TAG_class_type``, ``!DW_TAG_class_template``, ``!DW_TAG_catch_block``, ``!DW_TAG_base_type``, ``!DW_TAG_array_type``, ``!DW_TAG_access_declaration``, ``!DW_TAG_MIPS_loop``, ``!DW_TAG_GNU_template_template_param``, ``!DW_TAG_GNU_template_parameter_pack``, ``!DW_TAG_GNU_formal_parameter_pack``, ``!DW_TAG_GNU_call_site_parameter``, ``!DW_TAG_GNU_call_site``, ``!DW_TAG_GNU_EINCL``, ``!DW_TAG_GNU_BINCL``.
+
+``T_CONST``, ``T_ABBREV``, ``T_DIE``
+....................................
+
+
 
 
 
@@ -121,6 +182,21 @@ Holds for root DIE's, i.e. DIE's that don't have a parental DIE.
 
 
 
+.. _zw_vocabulary_dwarf @AT_*:
+.. _zw_vocabulary_dwarf @DW_AT_*:
+
+@AT_*, @DW_AT_*
+---------------
+
+This section describes the following words: ``@DW_AT_vtable_elem_location``, ``@DW_AT_visibility``, ``@DW_AT_virtuality``, ``@DW_AT_variable_parameter``, ``@DW_AT_use_location``, ``@DW_AT_use_UTF8``, ``@DW_AT_upper_bound``, ``@DW_AT_type``, ``@DW_AT_trampoline``, ``@DW_AT_threads_scaled``, ``@DW_AT_subscr_data``, ``@DW_AT_string_length``, ``@DW_AT_stmt_list``, ``@DW_AT_static_link``, ``@DW_AT_start_scope``, ``@DW_AT_src_info``, ``@DW_AT_src_coords``, ``@DW_AT_specification``, ``@DW_AT_small``, ``@DW_AT_signature``, ``@DW_AT_sibling``, ``@DW_AT_sf_names``, ``@DW_AT_segment``, ``@DW_AT_return_addr``, ``@DW_AT_recursive``, ``@DW_AT_ranges``, ``@DW_AT_pure``, ``@DW_AT_prototyped``, ``@DW_AT_producer``, ``@DW_AT_priority``, ``@DW_AT_picture_string``, ``@DW_AT_ordering``, ``@DW_AT_object_pointer``, ``@DW_AT_namelist_item``, ``@DW_AT_name``, ``@DW_AT_mutable``, ``@DW_AT_member``, ``@DW_AT_main_subprogram``, ``@DW_AT_macro_info``, ``@DW_AT_mac_info``, ``@DW_AT_lower_bound``, ``@DW_AT_low_pc``, ``@DW_AT_location``, ``@DW_AT_linkage_name``, ``@DW_AT_language``, ``@DW_AT_is_optional``, ``@DW_AT_inline``, ``@DW_AT_import``, ``@DW_AT_identifier_case``, ``@DW_AT_high_pc``, ``@DW_AT_friend``, ``@DW_AT_frame_base``, ``@DW_AT_external``, ``@DW_AT_extension``, ``@DW_AT_explicit``, ``@DW_AT_enum_class``, ``@DW_AT_entry_pc``, ``@DW_AT_endianity``, ``@DW_AT_encoding``, ``@DW_AT_elemental``, ``@DW_AT_element_list``, ``@DW_AT_discr_value``, ``@DW_AT_discr_list``, ``@DW_AT_discr``, ``@DW_AT_digit_count``, ``@DW_AT_description``, ``@DW_AT_default_value``, ``@DW_AT_declaration``, ``@DW_AT_decl_line``, ``@DW_AT_decl_file``, ``@DW_AT_decl_column``, ``@DW_AT_decimal_sign``, ``@DW_AT_decimal_scale``, ``@DW_AT_data_member_location``, ``@DW_AT_data_location``, ``@DW_AT_data_bit_offset``, ``@DW_AT_count``, ``@DW_AT_containing_type``, ``@DW_AT_const_value``, ``@DW_AT_const_expr``, ``@DW_AT_comp_dir``, ``@DW_AT_common_reference``, ``@DW_AT_calling_convention``, ``@DW_AT_call_line``, ``@DW_AT_call_file``, ``@DW_AT_call_column``, ``@DW_AT_byte_stride``, ``@DW_AT_byte_size``, ``@DW_AT_body_end``, ``@DW_AT_body_begin``, ``@DW_AT_bit_stride``, ``@DW_AT_bit_size``, ``@DW_AT_bit_offset``, ``@DW_AT_binary_scale``, ``@DW_AT_base_types``, ``@DW_AT_associated``, ``@DW_AT_artificial``, ``@DW_AT_allocated``, ``@DW_AT_address_class``, ``@DW_AT_accessibility``, ``@DW_AT_abstract_origin``, ``@DW_AT_MIPS_tail_loop_begin``, ``@DW_AT_MIPS_stride_elem``, ``@DW_AT_MIPS_stride_byte``, ``@DW_AT_MIPS_stride``, ``@DW_AT_MIPS_software_pipeline_depth``, ``@DW_AT_MIPS_ptr_dopetype``, ``@DW_AT_MIPS_loop_unroll_factor``, ``@DW_AT_MIPS_loop_begin``, ``@DW_AT_MIPS_linkage_name``, ``@DW_AT_MIPS_has_inlines``, ``@DW_AT_MIPS_fde``, ``@DW_AT_MIPS_epilog_begin``, ``@DW_AT_MIPS_clone_origin``, ``@DW_AT_MIPS_assumed_size``, ``@DW_AT_MIPS_assumed_shape_dopetype``, ``@DW_AT_MIPS_allocatable_dopetype``, ``@DW_AT_MIPS_abstract_name``, ``@DW_AT_GNU_vector``, ``@DW_AT_GNU_template_name``, ``@DW_AT_GNU_tail_call``, ``@DW_AT_GNU_shared_locks_required``, ``@DW_AT_GNU_pt_guarded_by``, ``@DW_AT_GNU_pt_guarded``, ``@DW_AT_GNU_odr_signature``, ``@DW_AT_GNU_macros``, ``@DW_AT_GNU_locks_excluded``, ``@DW_AT_GNU_guarded_by``, ``@DW_AT_GNU_guarded``, ``@DW_AT_GNU_exclusive_locks_required``, ``@DW_AT_GNU_call_site_value``, ``@DW_AT_GNU_call_site_target_clobbered``, ``@DW_AT_GNU_call_site_target``, ``@DW_AT_GNU_call_site_data_value``, ``@DW_AT_GNU_all_tail_call_sites``, ``@DW_AT_GNU_all_source_call_sites``, ``@DW_AT_GNU_all_call_sites``, ``@AT_vtable_elem_location``, ``@AT_visibility``, ``@AT_virtuality``, ``@AT_variable_parameter``, ``@AT_use_location``, ``@AT_use_UTF8``, ``@AT_upper_bound``, ``@AT_type``, ``@AT_trampoline``, ``@AT_threads_scaled``, ``@AT_subscr_data``, ``@AT_string_length``, ``@AT_stmt_list``, ``@AT_static_link``, ``@AT_start_scope``, ``@AT_src_info``, ``@AT_src_coords``, ``@AT_specification``, ``@AT_small``, ``@AT_signature``, ``@AT_sibling``, ``@AT_sf_names``, ``@AT_segment``, ``@AT_return_addr``, ``@AT_recursive``, ``@AT_ranges``, ``@AT_pure``, ``@AT_prototyped``, ``@AT_producer``, ``@AT_priority``, ``@AT_picture_string``, ``@AT_ordering``, ``@AT_object_pointer``, ``@AT_namelist_item``, ``@AT_name``, ``@AT_mutable``, ``@AT_member``, ``@AT_main_subprogram``, ``@AT_macro_info``, ``@AT_mac_info``, ``@AT_lower_bound``, ``@AT_low_pc``, ``@AT_location``, ``@AT_linkage_name``, ``@AT_language``, ``@AT_is_optional``, ``@AT_inline``, ``@AT_import``, ``@AT_identifier_case``, ``@AT_high_pc``, ``@AT_friend``, ``@AT_frame_base``, ``@AT_external``, ``@AT_extension``, ``@AT_explicit``, ``@AT_enum_class``, ``@AT_entry_pc``, ``@AT_endianity``, ``@AT_encoding``, ``@AT_elemental``, ``@AT_element_list``, ``@AT_discr_value``, ``@AT_discr_list``, ``@AT_discr``, ``@AT_digit_count``, ``@AT_description``, ``@AT_default_value``, ``@AT_declaration``, ``@AT_decl_line``, ``@AT_decl_file``, ``@AT_decl_column``, ``@AT_decimal_sign``, ``@AT_decimal_scale``, ``@AT_data_member_location``, ``@AT_data_location``, ``@AT_data_bit_offset``, ``@AT_count``, ``@AT_containing_type``, ``@AT_const_value``, ``@AT_const_expr``, ``@AT_comp_dir``, ``@AT_common_reference``, ``@AT_calling_convention``, ``@AT_call_line``, ``@AT_call_file``, ``@AT_call_column``, ``@AT_byte_stride``, ``@AT_byte_size``, ``@AT_body_end``, ``@AT_body_begin``, ``@AT_bit_stride``, ``@AT_bit_size``, ``@AT_bit_offset``, ``@AT_binary_scale``, ``@AT_base_types``, ``@AT_associated``, ``@AT_artificial``, ``@AT_allocated``, ``@AT_address_class``, ``@AT_accessibility``, ``@AT_abstract_origin``, ``@AT_MIPS_tail_loop_begin``, ``@AT_MIPS_stride_elem``, ``@AT_MIPS_stride_byte``, ``@AT_MIPS_stride``, ``@AT_MIPS_software_pipeline_depth``, ``@AT_MIPS_ptr_dopetype``, ``@AT_MIPS_loop_unroll_factor``, ``@AT_MIPS_loop_begin``, ``@AT_MIPS_linkage_name``, ``@AT_MIPS_has_inlines``, ``@AT_MIPS_fde``, ``@AT_MIPS_epilog_begin``, ``@AT_MIPS_clone_origin``, ``@AT_MIPS_assumed_size``, ``@AT_MIPS_assumed_shape_dopetype``, ``@AT_MIPS_allocatable_dopetype``, ``@AT_MIPS_abstract_name``, ``@AT_GNU_vector``, ``@AT_GNU_template_name``, ``@AT_GNU_tail_call``, ``@AT_GNU_shared_locks_required``, ``@AT_GNU_pt_guarded_by``, ``@AT_GNU_pt_guarded``, ``@AT_GNU_odr_signature``, ``@AT_GNU_macros``, ``@AT_GNU_locks_excluded``, ``@AT_GNU_guarded_by``, ``@AT_GNU_guarded``, ``@AT_GNU_exclusive_locks_required``, ``@AT_GNU_call_site_value``, ``@AT_GNU_call_site_target_clobbered``, ``@AT_GNU_call_site_target``, ``@AT_GNU_call_site_data_value``, ``@AT_GNU_all_tail_call_sites``, ``@AT_GNU_all_source_call_sites``, ``@AT_GNU_all_call_sites``.
+
+``T_DIE`` ``->*`` ``T_???``
+...........................
+
+
+
+
+
 .. _zw_vocabulary_dwarf DW_ACCESS_private:
 .. _zw_vocabulary_dwarf DW_ACCESS_protected:
 .. _zw_vocabulary_dwarf DW_ACCESS_public:
@@ -137,169 +213,21 @@ DW_ADDR_none
 
 @DW_ADDR_
 
-.. _zw_vocabulary_dwarf DW_ATE_UTF:
-.. _zw_vocabulary_dwarf DW_ATE_address:
-.. _zw_vocabulary_dwarf DW_ATE_boolean:
-.. _zw_vocabulary_dwarf DW_ATE_complex_float:
-.. _zw_vocabulary_dwarf DW_ATE_decimal_float:
-.. _zw_vocabulary_dwarf DW_ATE_edited:
-.. _zw_vocabulary_dwarf DW_ATE_float:
-.. _zw_vocabulary_dwarf DW_ATE_imaginary_float:
-.. _zw_vocabulary_dwarf DW_ATE_numeric_string:
-.. _zw_vocabulary_dwarf DW_ATE_packed_decimal:
-.. _zw_vocabulary_dwarf DW_ATE_signed:
-.. _zw_vocabulary_dwarf DW_ATE_signed_char:
-.. _zw_vocabulary_dwarf DW_ATE_signed_fixed:
-.. _zw_vocabulary_dwarf DW_ATE_unsigned:
-.. _zw_vocabulary_dwarf DW_ATE_unsigned_char:
-.. _zw_vocabulary_dwarf DW_ATE_unsigned_fixed:
-.. _zw_vocabulary_dwarf DW_ATE_void:
+.. _zw_vocabulary_dwarf DW_ATE_*:
 
-DW_ATE_UTF, DW_ATE_address, DW_ATE_boolean, DW_ATE_complex_float, DW_ATE_decimal_float, DW_ATE_edited, DW_ATE_float, DW_ATE_imaginary_float, DW_ATE_numeric_string, DW_ATE_packed_decimal, DW_ATE_signed, DW_ATE_signed_char, DW_ATE_signed_fixed, DW_ATE_unsigned, DW_ATE_unsigned_char, DW_ATE_unsigned_fixed, DW_ATE_void
-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+DW_ATE_*
+--------
+
+This section describes the following words: ``DW_ATE_void``, ``DW_ATE_unsigned_fixed``, ``DW_ATE_unsigned_char``, ``DW_ATE_unsigned``, ``DW_ATE_signed_fixed``, ``DW_ATE_signed_char``, ``DW_ATE_signed``, ``DW_ATE_packed_decimal``, ``DW_ATE_numeric_string``, ``DW_ATE_imaginary_float``, ``DW_ATE_float``, ``DW_ATE_edited``, ``DW_ATE_decimal_float``, ``DW_ATE_complex_float``, ``DW_ATE_boolean``, ``DW_ATE_address``, ``DW_ATE_UTF``.
 
 @DW_ATE_
 
-.. _zw_vocabulary_dwarf DW_AT_GNU_all_call_sites:
-.. _zw_vocabulary_dwarf DW_AT_GNU_all_source_call_sites:
-.. _zw_vocabulary_dwarf DW_AT_GNU_all_tail_call_sites:
-.. _zw_vocabulary_dwarf DW_AT_GNU_call_site_data_value:
-.. _zw_vocabulary_dwarf DW_AT_GNU_call_site_target:
-.. _zw_vocabulary_dwarf DW_AT_GNU_call_site_target_clobbered:
-.. _zw_vocabulary_dwarf DW_AT_GNU_call_site_value:
-.. _zw_vocabulary_dwarf DW_AT_GNU_exclusive_locks_required:
-.. _zw_vocabulary_dwarf DW_AT_GNU_guarded:
-.. _zw_vocabulary_dwarf DW_AT_GNU_guarded_by:
-.. _zw_vocabulary_dwarf DW_AT_GNU_locks_excluded:
-.. _zw_vocabulary_dwarf DW_AT_GNU_macros:
-.. _zw_vocabulary_dwarf DW_AT_GNU_odr_signature:
-.. _zw_vocabulary_dwarf DW_AT_GNU_pt_guarded:
-.. _zw_vocabulary_dwarf DW_AT_GNU_pt_guarded_by:
-.. _zw_vocabulary_dwarf DW_AT_GNU_shared_locks_required:
-.. _zw_vocabulary_dwarf DW_AT_GNU_tail_call:
-.. _zw_vocabulary_dwarf DW_AT_GNU_template_name:
-.. _zw_vocabulary_dwarf DW_AT_GNU_vector:
-.. _zw_vocabulary_dwarf DW_AT_MIPS_abstract_name:
-.. _zw_vocabulary_dwarf DW_AT_MIPS_allocatable_dopetype:
-.. _zw_vocabulary_dwarf DW_AT_MIPS_assumed_shape_dopetype:
-.. _zw_vocabulary_dwarf DW_AT_MIPS_assumed_size:
-.. _zw_vocabulary_dwarf DW_AT_MIPS_clone_origin:
-.. _zw_vocabulary_dwarf DW_AT_MIPS_epilog_begin:
-.. _zw_vocabulary_dwarf DW_AT_MIPS_fde:
-.. _zw_vocabulary_dwarf DW_AT_MIPS_has_inlines:
-.. _zw_vocabulary_dwarf DW_AT_MIPS_linkage_name:
-.. _zw_vocabulary_dwarf DW_AT_MIPS_loop_begin:
-.. _zw_vocabulary_dwarf DW_AT_MIPS_loop_unroll_factor:
-.. _zw_vocabulary_dwarf DW_AT_MIPS_ptr_dopetype:
-.. _zw_vocabulary_dwarf DW_AT_MIPS_software_pipeline_depth:
-.. _zw_vocabulary_dwarf DW_AT_MIPS_stride:
-.. _zw_vocabulary_dwarf DW_AT_MIPS_stride_byte:
-.. _zw_vocabulary_dwarf DW_AT_MIPS_stride_elem:
-.. _zw_vocabulary_dwarf DW_AT_MIPS_tail_loop_begin:
-.. _zw_vocabulary_dwarf DW_AT_abstract_origin:
-.. _zw_vocabulary_dwarf DW_AT_accessibility:
-.. _zw_vocabulary_dwarf DW_AT_address_class:
-.. _zw_vocabulary_dwarf DW_AT_allocated:
-.. _zw_vocabulary_dwarf DW_AT_artificial:
-.. _zw_vocabulary_dwarf DW_AT_associated:
-.. _zw_vocabulary_dwarf DW_AT_base_types:
-.. _zw_vocabulary_dwarf DW_AT_binary_scale:
-.. _zw_vocabulary_dwarf DW_AT_bit_offset:
-.. _zw_vocabulary_dwarf DW_AT_bit_size:
-.. _zw_vocabulary_dwarf DW_AT_bit_stride:
-.. _zw_vocabulary_dwarf DW_AT_body_begin:
-.. _zw_vocabulary_dwarf DW_AT_body_end:
-.. _zw_vocabulary_dwarf DW_AT_byte_size:
-.. _zw_vocabulary_dwarf DW_AT_byte_stride:
-.. _zw_vocabulary_dwarf DW_AT_call_column:
-.. _zw_vocabulary_dwarf DW_AT_call_file:
-.. _zw_vocabulary_dwarf DW_AT_call_line:
-.. _zw_vocabulary_dwarf DW_AT_calling_convention:
-.. _zw_vocabulary_dwarf DW_AT_common_reference:
-.. _zw_vocabulary_dwarf DW_AT_comp_dir:
-.. _zw_vocabulary_dwarf DW_AT_const_expr:
-.. _zw_vocabulary_dwarf DW_AT_const_value:
-.. _zw_vocabulary_dwarf DW_AT_containing_type:
-.. _zw_vocabulary_dwarf DW_AT_count:
-.. _zw_vocabulary_dwarf DW_AT_data_bit_offset:
-.. _zw_vocabulary_dwarf DW_AT_data_location:
-.. _zw_vocabulary_dwarf DW_AT_data_member_location:
-.. _zw_vocabulary_dwarf DW_AT_decimal_scale:
-.. _zw_vocabulary_dwarf DW_AT_decimal_sign:
-.. _zw_vocabulary_dwarf DW_AT_decl_column:
-.. _zw_vocabulary_dwarf DW_AT_decl_file:
-.. _zw_vocabulary_dwarf DW_AT_decl_line:
-.. _zw_vocabulary_dwarf DW_AT_declaration:
-.. _zw_vocabulary_dwarf DW_AT_default_value:
-.. _zw_vocabulary_dwarf DW_AT_description:
-.. _zw_vocabulary_dwarf DW_AT_digit_count:
-.. _zw_vocabulary_dwarf DW_AT_discr:
-.. _zw_vocabulary_dwarf DW_AT_discr_list:
-.. _zw_vocabulary_dwarf DW_AT_discr_value:
-.. _zw_vocabulary_dwarf DW_AT_element_list:
-.. _zw_vocabulary_dwarf DW_AT_elemental:
-.. _zw_vocabulary_dwarf DW_AT_encoding:
-.. _zw_vocabulary_dwarf DW_AT_endianity:
-.. _zw_vocabulary_dwarf DW_AT_entry_pc:
-.. _zw_vocabulary_dwarf DW_AT_enum_class:
-.. _zw_vocabulary_dwarf DW_AT_explicit:
-.. _zw_vocabulary_dwarf DW_AT_extension:
-.. _zw_vocabulary_dwarf DW_AT_external:
-.. _zw_vocabulary_dwarf DW_AT_frame_base:
-.. _zw_vocabulary_dwarf DW_AT_friend:
-.. _zw_vocabulary_dwarf DW_AT_high_pc:
-.. _zw_vocabulary_dwarf DW_AT_identifier_case:
-.. _zw_vocabulary_dwarf DW_AT_import:
-.. _zw_vocabulary_dwarf DW_AT_inline:
-.. _zw_vocabulary_dwarf DW_AT_is_optional:
-.. _zw_vocabulary_dwarf DW_AT_language:
-.. _zw_vocabulary_dwarf DW_AT_linkage_name:
-.. _zw_vocabulary_dwarf DW_AT_location:
-.. _zw_vocabulary_dwarf DW_AT_low_pc:
-.. _zw_vocabulary_dwarf DW_AT_lower_bound:
-.. _zw_vocabulary_dwarf DW_AT_mac_info:
-.. _zw_vocabulary_dwarf DW_AT_macro_info:
-.. _zw_vocabulary_dwarf DW_AT_main_subprogram:
-.. _zw_vocabulary_dwarf DW_AT_member:
-.. _zw_vocabulary_dwarf DW_AT_mutable:
-.. _zw_vocabulary_dwarf DW_AT_name:
-.. _zw_vocabulary_dwarf DW_AT_namelist_item:
-.. _zw_vocabulary_dwarf DW_AT_object_pointer:
-.. _zw_vocabulary_dwarf DW_AT_ordering:
-.. _zw_vocabulary_dwarf DW_AT_picture_string:
-.. _zw_vocabulary_dwarf DW_AT_priority:
-.. _zw_vocabulary_dwarf DW_AT_producer:
-.. _zw_vocabulary_dwarf DW_AT_prototyped:
-.. _zw_vocabulary_dwarf DW_AT_pure:
-.. _zw_vocabulary_dwarf DW_AT_ranges:
-.. _zw_vocabulary_dwarf DW_AT_recursive:
-.. _zw_vocabulary_dwarf DW_AT_return_addr:
-.. _zw_vocabulary_dwarf DW_AT_segment:
-.. _zw_vocabulary_dwarf DW_AT_sf_names:
-.. _zw_vocabulary_dwarf DW_AT_sibling:
-.. _zw_vocabulary_dwarf DW_AT_signature:
-.. _zw_vocabulary_dwarf DW_AT_small:
-.. _zw_vocabulary_dwarf DW_AT_specification:
-.. _zw_vocabulary_dwarf DW_AT_src_coords:
-.. _zw_vocabulary_dwarf DW_AT_src_info:
-.. _zw_vocabulary_dwarf DW_AT_start_scope:
-.. _zw_vocabulary_dwarf DW_AT_static_link:
-.. _zw_vocabulary_dwarf DW_AT_stmt_list:
-.. _zw_vocabulary_dwarf DW_AT_string_length:
-.. _zw_vocabulary_dwarf DW_AT_subscr_data:
-.. _zw_vocabulary_dwarf DW_AT_threads_scaled:
-.. _zw_vocabulary_dwarf DW_AT_trampoline:
-.. _zw_vocabulary_dwarf DW_AT_type:
-.. _zw_vocabulary_dwarf DW_AT_upper_bound:
-.. _zw_vocabulary_dwarf DW_AT_use_UTF8:
-.. _zw_vocabulary_dwarf DW_AT_use_location:
-.. _zw_vocabulary_dwarf DW_AT_variable_parameter:
-.. _zw_vocabulary_dwarf DW_AT_virtuality:
-.. _zw_vocabulary_dwarf DW_AT_visibility:
-.. _zw_vocabulary_dwarf DW_AT_vtable_elem_location:
+.. _zw_vocabulary_dwarf DW_AT_*:
 
-DW_AT_GNU_all_call_sites, DW_AT_GNU_all_source_call_sites, DW_AT_GNU_all_tail_call_sites, DW_AT_GNU_call_site_data_value, DW_AT_GNU_call_site_target, DW_AT_GNU_call_site_target_clobbered, DW_AT_GNU_call_site_value, DW_AT_GNU_exclusive_locks_required, DW_AT_GNU_guarded, DW_AT_GNU_guarded_by, DW_AT_GNU_locks_excluded, DW_AT_GNU_macros, DW_AT_GNU_odr_signature, DW_AT_GNU_pt_guarded, DW_AT_GNU_pt_guarded_by, DW_AT_GNU_shared_locks_required, DW_AT_GNU_tail_call, DW_AT_GNU_template_name, DW_AT_GNU_vector, DW_AT_MIPS_abstract_name, DW_AT_MIPS_allocatable_dopetype, DW_AT_MIPS_assumed_shape_dopetype, DW_AT_MIPS_assumed_size, DW_AT_MIPS_clone_origin, DW_AT_MIPS_epilog_begin, DW_AT_MIPS_fde, DW_AT_MIPS_has_inlines, DW_AT_MIPS_linkage_name, DW_AT_MIPS_loop_begin, DW_AT_MIPS_loop_unroll_factor, DW_AT_MIPS_ptr_dopetype, DW_AT_MIPS_software_pipeline_depth, DW_AT_MIPS_stride, DW_AT_MIPS_stride_byte, DW_AT_MIPS_stride_elem, DW_AT_MIPS_tail_loop_begin, DW_AT_abstract_origin, DW_AT_accessibility, DW_AT_address_class, DW_AT_allocated, DW_AT_artificial, DW_AT_associated, DW_AT_base_types, DW_AT_binary_scale, DW_AT_bit_offset, DW_AT_bit_size, DW_AT_bit_stride, DW_AT_body_begin, DW_AT_body_end, DW_AT_byte_size, DW_AT_byte_stride, DW_AT_call_column, DW_AT_call_file, DW_AT_call_line, DW_AT_calling_convention, DW_AT_common_reference, DW_AT_comp_dir, DW_AT_const_expr, DW_AT_const_value, DW_AT_containing_type, DW_AT_count, DW_AT_data_bit_offset, DW_AT_data_location, DW_AT_data_member_location, DW_AT_decimal_scale, DW_AT_decimal_sign, DW_AT_decl_column, DW_AT_decl_file, DW_AT_decl_line, DW_AT_declaration, DW_AT_default_value, DW_AT_description, DW_AT_digit_count, DW_AT_discr, DW_AT_discr_list, DW_AT_discr_value, DW_AT_element_list, DW_AT_elemental, DW_AT_encoding, DW_AT_endianity, DW_AT_entry_pc, DW_AT_enum_class, DW_AT_explicit, DW_AT_extension, DW_AT_external, DW_AT_frame_base, DW_AT_friend, DW_AT_high_pc, DW_AT_identifier_case, DW_AT_import, DW_AT_inline, DW_AT_is_optional, DW_AT_language, DW_AT_linkage_name, DW_AT_location, DW_AT_low_pc, DW_AT_lower_bound, DW_AT_mac_info, DW_AT_macro_info, DW_AT_main_subprogram, DW_AT_member, DW_AT_mutable, DW_AT_name, DW_AT_namelist_item, DW_AT_object_pointer, DW_AT_ordering, DW_AT_picture_string, DW_AT_priority, DW_AT_producer, DW_AT_prototyped, DW_AT_pure, DW_AT_ranges, DW_AT_recursive, DW_AT_return_addr, DW_AT_segment, DW_AT_sf_names, DW_AT_sibling, DW_AT_signature, DW_AT_small, DW_AT_specification, DW_AT_src_coords, DW_AT_src_info, DW_AT_start_scope, DW_AT_static_link, DW_AT_stmt_list, DW_AT_string_length, DW_AT_subscr_data, DW_AT_threads_scaled, DW_AT_trampoline, DW_AT_type, DW_AT_upper_bound, DW_AT_use_UTF8, DW_AT_use_location, DW_AT_variable_parameter, DW_AT_virtuality, DW_AT_visibility, DW_AT_vtable_elem_location
---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+DW_AT_*
+-------
+
+This section describes the following words: ``DW_AT_vtable_elem_location``, ``DW_AT_visibility``, ``DW_AT_virtuality``, ``DW_AT_variable_parameter``, ``DW_AT_use_location``, ``DW_AT_use_UTF8``, ``DW_AT_upper_bound``, ``DW_AT_type``, ``DW_AT_trampoline``, ``DW_AT_threads_scaled``, ``DW_AT_subscr_data``, ``DW_AT_string_length``, ``DW_AT_stmt_list``, ``DW_AT_static_link``, ``DW_AT_start_scope``, ``DW_AT_src_info``, ``DW_AT_src_coords``, ``DW_AT_specification``, ``DW_AT_small``, ``DW_AT_signature``, ``DW_AT_sibling``, ``DW_AT_sf_names``, ``DW_AT_segment``, ``DW_AT_return_addr``, ``DW_AT_recursive``, ``DW_AT_ranges``, ``DW_AT_pure``, ``DW_AT_prototyped``, ``DW_AT_producer``, ``DW_AT_priority``, ``DW_AT_picture_string``, ``DW_AT_ordering``, ``DW_AT_object_pointer``, ``DW_AT_namelist_item``, ``DW_AT_name``, ``DW_AT_mutable``, ``DW_AT_member``, ``DW_AT_main_subprogram``, ``DW_AT_macro_info``, ``DW_AT_mac_info``, ``DW_AT_lower_bound``, ``DW_AT_low_pc``, ``DW_AT_location``, ``DW_AT_linkage_name``, ``DW_AT_language``, ``DW_AT_is_optional``, ``DW_AT_inline``, ``DW_AT_import``, ``DW_AT_identifier_case``, ``DW_AT_high_pc``, ``DW_AT_friend``, ``DW_AT_frame_base``, ``DW_AT_external``, ``DW_AT_extension``, ``DW_AT_explicit``, ``DW_AT_enum_class``, ``DW_AT_entry_pc``, ``DW_AT_endianity``, ``DW_AT_encoding``, ``DW_AT_elemental``, ``DW_AT_element_list``, ``DW_AT_discr_value``, ``DW_AT_discr_list``, ``DW_AT_discr``, ``DW_AT_digit_count``, ``DW_AT_description``, ``DW_AT_default_value``, ``DW_AT_declaration``, ``DW_AT_decl_line``, ``DW_AT_decl_file``, ``DW_AT_decl_column``, ``DW_AT_decimal_sign``, ``DW_AT_decimal_scale``, ``DW_AT_data_member_location``, ``DW_AT_data_location``, ``DW_AT_data_bit_offset``, ``DW_AT_count``, ``DW_AT_containing_type``, ``DW_AT_const_value``, ``DW_AT_const_expr``, ``DW_AT_comp_dir``, ``DW_AT_common_reference``, ``DW_AT_calling_convention``, ``DW_AT_call_line``, ``DW_AT_call_file``, ``DW_AT_call_column``, ``DW_AT_byte_stride``, ``DW_AT_byte_size``, ``DW_AT_body_end``, ``DW_AT_body_begin``, ``DW_AT_bit_stride``, ``DW_AT_bit_size``, ``DW_AT_bit_offset``, ``DW_AT_binary_scale``, ``DW_AT_base_types``, ``DW_AT_associated``, ``DW_AT_artificial``, ``DW_AT_allocated``, ``DW_AT_address_class``, ``DW_AT_accessibility``, ``DW_AT_abstract_origin``, ``DW_AT_MIPS_tail_loop_begin``, ``DW_AT_MIPS_stride_elem``, ``DW_AT_MIPS_stride_byte``, ``DW_AT_MIPS_stride``, ``DW_AT_MIPS_software_pipeline_depth``, ``DW_AT_MIPS_ptr_dopetype``, ``DW_AT_MIPS_loop_unroll_factor``, ``DW_AT_MIPS_loop_begin``, ``DW_AT_MIPS_linkage_name``, ``DW_AT_MIPS_has_inlines``, ``DW_AT_MIPS_fde``, ``DW_AT_MIPS_epilog_begin``, ``DW_AT_MIPS_clone_origin``, ``DW_AT_MIPS_assumed_size``, ``DW_AT_MIPS_assumed_shape_dopetype``, ``DW_AT_MIPS_allocatable_dopetype``, ``DW_AT_MIPS_abstract_name``, ``DW_AT_GNU_vector``, ``DW_AT_GNU_template_name``, ``DW_AT_GNU_tail_call``, ``DW_AT_GNU_shared_locks_required``, ``DW_AT_GNU_pt_guarded_by``, ``DW_AT_GNU_pt_guarded``, ``DW_AT_GNU_odr_signature``, ``DW_AT_GNU_macros``, ``DW_AT_GNU_locks_excluded``, ``DW_AT_GNU_guarded_by``, ``DW_AT_GNU_guarded``, ``DW_AT_GNU_exclusive_locks_required``, ``DW_AT_GNU_call_site_value``, ``DW_AT_GNU_call_site_target_clobbered``, ``DW_AT_GNU_call_site_target``, ``DW_AT_GNU_call_site_data_value``, ``DW_AT_GNU_all_tail_call_sites``, ``DW_AT_GNU_all_source_call_sites``, ``DW_AT_GNU_all_call_sites``.
 
 @DW_AT_
 
@@ -320,14 +248,12 @@ DW_DSC_label, DW_DSC_range
 
 @DW_DSC_
 
-.. _zw_vocabulary_dwarf DW_DS_leading_overpunch:
-.. _zw_vocabulary_dwarf DW_DS_leading_separate:
-.. _zw_vocabulary_dwarf DW_DS_trailing_overpunch:
-.. _zw_vocabulary_dwarf DW_DS_trailing_separate:
-.. _zw_vocabulary_dwarf DW_DS_unsigned:
+.. _zw_vocabulary_dwarf DW_DS_*:
 
-DW_DS_leading_overpunch, DW_DS_leading_separate, DW_DS_trailing_overpunch, DW_DS_trailing_separate, DW_DS_unsigned
-------------------------------------------------------------------------------------------------------------------
+DW_DS_*
+-------
+
+This section describes the following words: ``DW_DS_unsigned``, ``DW_DS_trailing_separate``, ``DW_DS_trailing_overpunch``, ``DW_DS_leading_separate``, ``DW_DS_leading_overpunch``.
 
 @DW_DS_
 
@@ -340,279 +266,66 @@ DW_END_big, DW_END_default, DW_END_little
 
 @DW_END_
 
-.. _zw_vocabulary_dwarf DW_FORM_GNU_ref_alt:
-.. _zw_vocabulary_dwarf DW_FORM_GNU_strp_alt:
-.. _zw_vocabulary_dwarf DW_FORM_addr:
-.. _zw_vocabulary_dwarf DW_FORM_block:
-.. _zw_vocabulary_dwarf DW_FORM_block1:
-.. _zw_vocabulary_dwarf DW_FORM_block2:
-.. _zw_vocabulary_dwarf DW_FORM_block4:
-.. _zw_vocabulary_dwarf DW_FORM_data1:
-.. _zw_vocabulary_dwarf DW_FORM_data2:
-.. _zw_vocabulary_dwarf DW_FORM_data4:
-.. _zw_vocabulary_dwarf DW_FORM_data8:
-.. _zw_vocabulary_dwarf DW_FORM_exprloc:
-.. _zw_vocabulary_dwarf DW_FORM_flag:
-.. _zw_vocabulary_dwarf DW_FORM_flag_present:
-.. _zw_vocabulary_dwarf DW_FORM_indirect:
-.. _zw_vocabulary_dwarf DW_FORM_ref1:
-.. _zw_vocabulary_dwarf DW_FORM_ref2:
-.. _zw_vocabulary_dwarf DW_FORM_ref4:
-.. _zw_vocabulary_dwarf DW_FORM_ref8:
-.. _zw_vocabulary_dwarf DW_FORM_ref_addr:
-.. _zw_vocabulary_dwarf DW_FORM_ref_sig8:
-.. _zw_vocabulary_dwarf DW_FORM_ref_udata:
-.. _zw_vocabulary_dwarf DW_FORM_sdata:
-.. _zw_vocabulary_dwarf DW_FORM_sec_offset:
-.. _zw_vocabulary_dwarf DW_FORM_string:
-.. _zw_vocabulary_dwarf DW_FORM_strp:
-.. _zw_vocabulary_dwarf DW_FORM_udata:
+.. _zw_vocabulary_dwarf DW_FORM_*:
 
-DW_FORM_GNU_ref_alt, DW_FORM_GNU_strp_alt, DW_FORM_addr, DW_FORM_block, DW_FORM_block1, DW_FORM_block2, DW_FORM_block4, DW_FORM_data1, DW_FORM_data2, DW_FORM_data4, DW_FORM_data8, DW_FORM_exprloc, DW_FORM_flag, DW_FORM_flag_present, DW_FORM_indirect, DW_FORM_ref1, DW_FORM_ref2, DW_FORM_ref4, DW_FORM_ref8, DW_FORM_ref_addr, DW_FORM_ref_sig8, DW_FORM_ref_udata, DW_FORM_sdata, DW_FORM_sec_offset, DW_FORM_string, DW_FORM_strp, DW_FORM_udata
---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+DW_FORM_*
+---------
+
+This section describes the following words: ``DW_FORM_udata``, ``DW_FORM_strp``, ``DW_FORM_string``, ``DW_FORM_sec_offset``, ``DW_FORM_sdata``, ``DW_FORM_ref_udata``, ``DW_FORM_ref_sig8``, ``DW_FORM_ref_addr``, ``DW_FORM_ref8``, ``DW_FORM_ref4``, ``DW_FORM_ref2``, ``DW_FORM_ref1``, ``DW_FORM_indirect``, ``DW_FORM_flag_present``, ``DW_FORM_flag``, ``DW_FORM_exprloc``, ``DW_FORM_data8``, ``DW_FORM_data4``, ``DW_FORM_data2``, ``DW_FORM_data1``, ``DW_FORM_block4``, ``DW_FORM_block2``, ``DW_FORM_block1``, ``DW_FORM_block``, ``DW_FORM_addr``, ``DW_FORM_GNU_strp_alt``, ``DW_FORM_GNU_ref_alt``.
 
 @DW_FORM_
 
-.. _zw_vocabulary_dwarf DW_ID_case_insensitive:
-.. _zw_vocabulary_dwarf DW_ID_case_sensitive:
-.. _zw_vocabulary_dwarf DW_ID_down_case:
-.. _zw_vocabulary_dwarf DW_ID_up_case:
+.. _zw_vocabulary_dwarf DW_ID_*:
 
-DW_ID_case_insensitive, DW_ID_case_sensitive, DW_ID_down_case, DW_ID_up_case
-----------------------------------------------------------------------------
+DW_ID_*
+-------
+
+This section describes the following words: ``DW_ID_up_case``, ``DW_ID_down_case``, ``DW_ID_case_sensitive``, ``DW_ID_case_insensitive``.
 
 @DW_ID_
 
-.. _zw_vocabulary_dwarf DW_INL_declared_inlined:
-.. _zw_vocabulary_dwarf DW_INL_declared_not_inlined:
-.. _zw_vocabulary_dwarf DW_INL_inlined:
-.. _zw_vocabulary_dwarf DW_INL_not_inlined:
+.. _zw_vocabulary_dwarf DW_INL_*:
 
-DW_INL_declared_inlined, DW_INL_declared_not_inlined, DW_INL_inlined, DW_INL_not_inlined
-----------------------------------------------------------------------------------------
+DW_INL_*
+--------
+
+This section describes the following words: ``DW_INL_not_inlined``, ``DW_INL_inlined``, ``DW_INL_declared_not_inlined``, ``DW_INL_declared_inlined``.
 
 @DW_INL_
 
-.. _zw_vocabulary_dwarf DW_LANG_Ada83:
-.. _zw_vocabulary_dwarf DW_LANG_Ada95:
-.. _zw_vocabulary_dwarf DW_LANG_C:
-.. _zw_vocabulary_dwarf DW_LANG_C89:
-.. _zw_vocabulary_dwarf DW_LANG_C99:
-.. _zw_vocabulary_dwarf DW_LANG_C_plus_plus:
-.. _zw_vocabulary_dwarf DW_LANG_Cobol74:
-.. _zw_vocabulary_dwarf DW_LANG_Cobol85:
-.. _zw_vocabulary_dwarf DW_LANG_D:
-.. _zw_vocabulary_dwarf DW_LANG_Fortran77:
-.. _zw_vocabulary_dwarf DW_LANG_Fortran90:
-.. _zw_vocabulary_dwarf DW_LANG_Fortran95:
-.. _zw_vocabulary_dwarf DW_LANG_Go:
-.. _zw_vocabulary_dwarf DW_LANG_Java:
-.. _zw_vocabulary_dwarf DW_LANG_Mips_Assembler:
-.. _zw_vocabulary_dwarf DW_LANG_Modula2:
-.. _zw_vocabulary_dwarf DW_LANG_ObjC:
-.. _zw_vocabulary_dwarf DW_LANG_ObjC_plus_plus:
-.. _zw_vocabulary_dwarf DW_LANG_PL1:
-.. _zw_vocabulary_dwarf DW_LANG_Pascal83:
-.. _zw_vocabulary_dwarf DW_LANG_Python:
-.. _zw_vocabulary_dwarf DW_LANG_UPC:
+.. _zw_vocabulary_dwarf DW_LANG_*:
 
-DW_LANG_Ada83, DW_LANG_Ada95, DW_LANG_C, DW_LANG_C89, DW_LANG_C99, DW_LANG_C_plus_plus, DW_LANG_Cobol74, DW_LANG_Cobol85, DW_LANG_D, DW_LANG_Fortran77, DW_LANG_Fortran90, DW_LANG_Fortran95, DW_LANG_Go, DW_LANG_Java, DW_LANG_Mips_Assembler, DW_LANG_Modula2, DW_LANG_ObjC, DW_LANG_ObjC_plus_plus, DW_LANG_PL1, DW_LANG_Pascal83, DW_LANG_Python, DW_LANG_UPC
------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+DW_LANG_*
+---------
+
+This section describes the following words: ``DW_LANG_UPC``, ``DW_LANG_Python``, ``DW_LANG_Pascal83``, ``DW_LANG_PL1``, ``DW_LANG_ObjC_plus_plus``, ``DW_LANG_ObjC``, ``DW_LANG_Modula2``, ``DW_LANG_Mips_Assembler``, ``DW_LANG_Java``, ``DW_LANG_Go``, ``DW_LANG_Fortran95``, ``DW_LANG_Fortran90``, ``DW_LANG_Fortran77``, ``DW_LANG_D``, ``DW_LANG_Cobol85``, ``DW_LANG_Cobol74``, ``DW_LANG_C_plus_plus``, ``DW_LANG_C99``, ``DW_LANG_C89``, ``DW_LANG_C``, ``DW_LANG_Ada95``, ``DW_LANG_Ada83``.
 
 @DW_LANG_
 
-.. _zw_vocabulary_dwarf DW_MACINFO_define:
-.. _zw_vocabulary_dwarf DW_MACINFO_end_file:
-.. _zw_vocabulary_dwarf DW_MACINFO_start_file:
-.. _zw_vocabulary_dwarf DW_MACINFO_undef:
-.. _zw_vocabulary_dwarf DW_MACINFO_vendor_ext:
+.. _zw_vocabulary_dwarf DW_MACINFO_*:
 
-DW_MACINFO_define, DW_MACINFO_end_file, DW_MACINFO_start_file, DW_MACINFO_undef, DW_MACINFO_vendor_ext
-------------------------------------------------------------------------------------------------------
+DW_MACINFO_*
+------------
+
+This section describes the following words: ``DW_MACINFO_vendor_ext``, ``DW_MACINFO_undef``, ``DW_MACINFO_start_file``, ``DW_MACINFO_end_file``, ``DW_MACINFO_define``.
 
 @DW_MACINFO_
 
-.. _zw_vocabulary_dwarf DW_MACRO_GNU_define:
-.. _zw_vocabulary_dwarf DW_MACRO_GNU_define_indirect:
-.. _zw_vocabulary_dwarf DW_MACRO_GNU_end_file:
-.. _zw_vocabulary_dwarf DW_MACRO_GNU_start_file:
-.. _zw_vocabulary_dwarf DW_MACRO_GNU_transparent_include:
-.. _zw_vocabulary_dwarf DW_MACRO_GNU_undef:
-.. _zw_vocabulary_dwarf DW_MACRO_GNU_undef_indirect:
+.. _zw_vocabulary_dwarf DW_MACRO_GNU_*:
 
-DW_MACRO_GNU_define, DW_MACRO_GNU_define_indirect, DW_MACRO_GNU_end_file, DW_MACRO_GNU_start_file, DW_MACRO_GNU_transparent_include, DW_MACRO_GNU_undef, DW_MACRO_GNU_undef_indirect
-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+DW_MACRO_GNU_*
+--------------
+
+This section describes the following words: ``DW_MACRO_GNU_undef_indirect``, ``DW_MACRO_GNU_undef``, ``DW_MACRO_GNU_transparent_include``, ``DW_MACRO_GNU_start_file``, ``DW_MACRO_GNU_end_file``, ``DW_MACRO_GNU_define_indirect``, ``DW_MACRO_GNU_define``.
 
 @DW_MACRO_
 
-.. _zw_vocabulary_dwarf DW_OP_GNU_const_type:
-.. _zw_vocabulary_dwarf DW_OP_GNU_convert:
-.. _zw_vocabulary_dwarf DW_OP_GNU_deref_type:
-.. _zw_vocabulary_dwarf DW_OP_GNU_encoded_addr:
-.. _zw_vocabulary_dwarf DW_OP_GNU_entry_value:
-.. _zw_vocabulary_dwarf DW_OP_GNU_implicit_pointer:
-.. _zw_vocabulary_dwarf DW_OP_GNU_parameter_ref:
-.. _zw_vocabulary_dwarf DW_OP_GNU_push_tls_address:
-.. _zw_vocabulary_dwarf DW_OP_GNU_regval_type:
-.. _zw_vocabulary_dwarf DW_OP_GNU_reinterpret:
-.. _zw_vocabulary_dwarf DW_OP_GNU_uninit:
-.. _zw_vocabulary_dwarf DW_OP_abs:
-.. _zw_vocabulary_dwarf DW_OP_addr:
-.. _zw_vocabulary_dwarf DW_OP_and:
-.. _zw_vocabulary_dwarf DW_OP_bit_piece:
-.. _zw_vocabulary_dwarf DW_OP_bra:
-.. _zw_vocabulary_dwarf DW_OP_breg0:
-.. _zw_vocabulary_dwarf DW_OP_breg1:
-.. _zw_vocabulary_dwarf DW_OP_breg10:
-.. _zw_vocabulary_dwarf DW_OP_breg11:
-.. _zw_vocabulary_dwarf DW_OP_breg12:
-.. _zw_vocabulary_dwarf DW_OP_breg13:
-.. _zw_vocabulary_dwarf DW_OP_breg14:
-.. _zw_vocabulary_dwarf DW_OP_breg15:
-.. _zw_vocabulary_dwarf DW_OP_breg16:
-.. _zw_vocabulary_dwarf DW_OP_breg17:
-.. _zw_vocabulary_dwarf DW_OP_breg18:
-.. _zw_vocabulary_dwarf DW_OP_breg19:
-.. _zw_vocabulary_dwarf DW_OP_breg2:
-.. _zw_vocabulary_dwarf DW_OP_breg20:
-.. _zw_vocabulary_dwarf DW_OP_breg21:
-.. _zw_vocabulary_dwarf DW_OP_breg22:
-.. _zw_vocabulary_dwarf DW_OP_breg23:
-.. _zw_vocabulary_dwarf DW_OP_breg24:
-.. _zw_vocabulary_dwarf DW_OP_breg25:
-.. _zw_vocabulary_dwarf DW_OP_breg26:
-.. _zw_vocabulary_dwarf DW_OP_breg27:
-.. _zw_vocabulary_dwarf DW_OP_breg28:
-.. _zw_vocabulary_dwarf DW_OP_breg29:
-.. _zw_vocabulary_dwarf DW_OP_breg3:
-.. _zw_vocabulary_dwarf DW_OP_breg30:
-.. _zw_vocabulary_dwarf DW_OP_breg31:
-.. _zw_vocabulary_dwarf DW_OP_breg4:
-.. _zw_vocabulary_dwarf DW_OP_breg5:
-.. _zw_vocabulary_dwarf DW_OP_breg6:
-.. _zw_vocabulary_dwarf DW_OP_breg7:
-.. _zw_vocabulary_dwarf DW_OP_breg8:
-.. _zw_vocabulary_dwarf DW_OP_breg9:
-.. _zw_vocabulary_dwarf DW_OP_bregx:
-.. _zw_vocabulary_dwarf DW_OP_call2:
-.. _zw_vocabulary_dwarf DW_OP_call4:
-.. _zw_vocabulary_dwarf DW_OP_call_frame_cfa:
-.. _zw_vocabulary_dwarf DW_OP_call_ref:
-.. _zw_vocabulary_dwarf DW_OP_const1s:
-.. _zw_vocabulary_dwarf DW_OP_const1u:
-.. _zw_vocabulary_dwarf DW_OP_const2s:
-.. _zw_vocabulary_dwarf DW_OP_const2u:
-.. _zw_vocabulary_dwarf DW_OP_const4s:
-.. _zw_vocabulary_dwarf DW_OP_const4u:
-.. _zw_vocabulary_dwarf DW_OP_const8s:
-.. _zw_vocabulary_dwarf DW_OP_const8u:
-.. _zw_vocabulary_dwarf DW_OP_consts:
-.. _zw_vocabulary_dwarf DW_OP_constu:
-.. _zw_vocabulary_dwarf DW_OP_deref:
-.. _zw_vocabulary_dwarf DW_OP_deref_size:
-.. _zw_vocabulary_dwarf DW_OP_div:
-.. _zw_vocabulary_dwarf DW_OP_drop:
-.. _zw_vocabulary_dwarf DW_OP_dup:
-.. _zw_vocabulary_dwarf DW_OP_eq:
-.. _zw_vocabulary_dwarf DW_OP_fbreg:
-.. _zw_vocabulary_dwarf DW_OP_form_tls_address:
-.. _zw_vocabulary_dwarf DW_OP_ge:
-.. _zw_vocabulary_dwarf DW_OP_gt:
-.. _zw_vocabulary_dwarf DW_OP_implicit_value:
-.. _zw_vocabulary_dwarf DW_OP_le:
-.. _zw_vocabulary_dwarf DW_OP_lit0:
-.. _zw_vocabulary_dwarf DW_OP_lit1:
-.. _zw_vocabulary_dwarf DW_OP_lit10:
-.. _zw_vocabulary_dwarf DW_OP_lit11:
-.. _zw_vocabulary_dwarf DW_OP_lit12:
-.. _zw_vocabulary_dwarf DW_OP_lit13:
-.. _zw_vocabulary_dwarf DW_OP_lit14:
-.. _zw_vocabulary_dwarf DW_OP_lit15:
-.. _zw_vocabulary_dwarf DW_OP_lit16:
-.. _zw_vocabulary_dwarf DW_OP_lit17:
-.. _zw_vocabulary_dwarf DW_OP_lit18:
-.. _zw_vocabulary_dwarf DW_OP_lit19:
-.. _zw_vocabulary_dwarf DW_OP_lit2:
-.. _zw_vocabulary_dwarf DW_OP_lit20:
-.. _zw_vocabulary_dwarf DW_OP_lit21:
-.. _zw_vocabulary_dwarf DW_OP_lit22:
-.. _zw_vocabulary_dwarf DW_OP_lit23:
-.. _zw_vocabulary_dwarf DW_OP_lit24:
-.. _zw_vocabulary_dwarf DW_OP_lit25:
-.. _zw_vocabulary_dwarf DW_OP_lit26:
-.. _zw_vocabulary_dwarf DW_OP_lit27:
-.. _zw_vocabulary_dwarf DW_OP_lit28:
-.. _zw_vocabulary_dwarf DW_OP_lit29:
-.. _zw_vocabulary_dwarf DW_OP_lit3:
-.. _zw_vocabulary_dwarf DW_OP_lit30:
-.. _zw_vocabulary_dwarf DW_OP_lit31:
-.. _zw_vocabulary_dwarf DW_OP_lit4:
-.. _zw_vocabulary_dwarf DW_OP_lit5:
-.. _zw_vocabulary_dwarf DW_OP_lit6:
-.. _zw_vocabulary_dwarf DW_OP_lit7:
-.. _zw_vocabulary_dwarf DW_OP_lit8:
-.. _zw_vocabulary_dwarf DW_OP_lit9:
-.. _zw_vocabulary_dwarf DW_OP_lt:
-.. _zw_vocabulary_dwarf DW_OP_minus:
-.. _zw_vocabulary_dwarf DW_OP_mod:
-.. _zw_vocabulary_dwarf DW_OP_mul:
-.. _zw_vocabulary_dwarf DW_OP_ne:
-.. _zw_vocabulary_dwarf DW_OP_neg:
-.. _zw_vocabulary_dwarf DW_OP_nop:
-.. _zw_vocabulary_dwarf DW_OP_not:
-.. _zw_vocabulary_dwarf DW_OP_or:
-.. _zw_vocabulary_dwarf DW_OP_over:
-.. _zw_vocabulary_dwarf DW_OP_pick:
-.. _zw_vocabulary_dwarf DW_OP_piece:
-.. _zw_vocabulary_dwarf DW_OP_plus:
-.. _zw_vocabulary_dwarf DW_OP_plus_uconst:
-.. _zw_vocabulary_dwarf DW_OP_push_object_address:
-.. _zw_vocabulary_dwarf DW_OP_reg0:
-.. _zw_vocabulary_dwarf DW_OP_reg1:
-.. _zw_vocabulary_dwarf DW_OP_reg10:
-.. _zw_vocabulary_dwarf DW_OP_reg11:
-.. _zw_vocabulary_dwarf DW_OP_reg12:
-.. _zw_vocabulary_dwarf DW_OP_reg13:
-.. _zw_vocabulary_dwarf DW_OP_reg14:
-.. _zw_vocabulary_dwarf DW_OP_reg15:
-.. _zw_vocabulary_dwarf DW_OP_reg16:
-.. _zw_vocabulary_dwarf DW_OP_reg17:
-.. _zw_vocabulary_dwarf DW_OP_reg18:
-.. _zw_vocabulary_dwarf DW_OP_reg19:
-.. _zw_vocabulary_dwarf DW_OP_reg2:
-.. _zw_vocabulary_dwarf DW_OP_reg20:
-.. _zw_vocabulary_dwarf DW_OP_reg21:
-.. _zw_vocabulary_dwarf DW_OP_reg22:
-.. _zw_vocabulary_dwarf DW_OP_reg23:
-.. _zw_vocabulary_dwarf DW_OP_reg24:
-.. _zw_vocabulary_dwarf DW_OP_reg25:
-.. _zw_vocabulary_dwarf DW_OP_reg26:
-.. _zw_vocabulary_dwarf DW_OP_reg27:
-.. _zw_vocabulary_dwarf DW_OP_reg28:
-.. _zw_vocabulary_dwarf DW_OP_reg29:
-.. _zw_vocabulary_dwarf DW_OP_reg3:
-.. _zw_vocabulary_dwarf DW_OP_reg30:
-.. _zw_vocabulary_dwarf DW_OP_reg31:
-.. _zw_vocabulary_dwarf DW_OP_reg4:
-.. _zw_vocabulary_dwarf DW_OP_reg5:
-.. _zw_vocabulary_dwarf DW_OP_reg6:
-.. _zw_vocabulary_dwarf DW_OP_reg7:
-.. _zw_vocabulary_dwarf DW_OP_reg8:
-.. _zw_vocabulary_dwarf DW_OP_reg9:
-.. _zw_vocabulary_dwarf DW_OP_regx:
-.. _zw_vocabulary_dwarf DW_OP_rot:
-.. _zw_vocabulary_dwarf DW_OP_shl:
-.. _zw_vocabulary_dwarf DW_OP_shr:
-.. _zw_vocabulary_dwarf DW_OP_shra:
-.. _zw_vocabulary_dwarf DW_OP_skip:
-.. _zw_vocabulary_dwarf DW_OP_stack_value:
-.. _zw_vocabulary_dwarf DW_OP_swap:
-.. _zw_vocabulary_dwarf DW_OP_xderef:
-.. _zw_vocabulary_dwarf DW_OP_xderef_size:
-.. _zw_vocabulary_dwarf DW_OP_xor:
+.. _zw_vocabulary_dwarf DW_OP_*:
 
-DW_OP_GNU_const_type, DW_OP_GNU_convert, DW_OP_GNU_deref_type, DW_OP_GNU_encoded_addr, DW_OP_GNU_entry_value, DW_OP_GNU_implicit_pointer, DW_OP_GNU_parameter_ref, DW_OP_GNU_push_tls_address, DW_OP_GNU_regval_type, DW_OP_GNU_reinterpret, DW_OP_GNU_uninit, DW_OP_abs, DW_OP_addr, DW_OP_and, DW_OP_bit_piece, DW_OP_bra, DW_OP_breg0, DW_OP_breg1, DW_OP_breg10, DW_OP_breg11, DW_OP_breg12, DW_OP_breg13, DW_OP_breg14, DW_OP_breg15, DW_OP_breg16, DW_OP_breg17, DW_OP_breg18, DW_OP_breg19, DW_OP_breg2, DW_OP_breg20, DW_OP_breg21, DW_OP_breg22, DW_OP_breg23, DW_OP_breg24, DW_OP_breg25, DW_OP_breg26, DW_OP_breg27, DW_OP_breg28, DW_OP_breg29, DW_OP_breg3, DW_OP_breg30, DW_OP_breg31, DW_OP_breg4, DW_OP_breg5, DW_OP_breg6, DW_OP_breg7, DW_OP_breg8, DW_OP_breg9, DW_OP_bregx, DW_OP_call2, DW_OP_call4, DW_OP_call_frame_cfa, DW_OP_call_ref, DW_OP_const1s, DW_OP_const1u, DW_OP_const2s, DW_OP_const2u, DW_OP_const4s, DW_OP_const4u, DW_OP_const8s, DW_OP_const8u, DW_OP_consts, DW_OP_constu, DW_OP_deref, DW_OP_deref_size, DW_OP_div, DW_OP_drop, DW_OP_dup, DW_OP_eq, DW_OP_fbreg, DW_OP_form_tls_address, DW_OP_ge, DW_OP_gt, DW_OP_implicit_value, DW_OP_le, DW_OP_lit0, DW_OP_lit1, DW_OP_lit10, DW_OP_lit11, DW_OP_lit12, DW_OP_lit13, DW_OP_lit14, DW_OP_lit15, DW_OP_lit16, DW_OP_lit17, DW_OP_lit18, DW_OP_lit19, DW_OP_lit2, DW_OP_lit20, DW_OP_lit21, DW_OP_lit22, DW_OP_lit23, DW_OP_lit24, DW_OP_lit25, DW_OP_lit26, DW_OP_lit27, DW_OP_lit28, DW_OP_lit29, DW_OP_lit3, DW_OP_lit30, DW_OP_lit31, DW_OP_lit4, DW_OP_lit5, DW_OP_lit6, DW_OP_lit7, DW_OP_lit8, DW_OP_lit9, DW_OP_lt, DW_OP_minus, DW_OP_mod, DW_OP_mul, DW_OP_ne, DW_OP_neg, DW_OP_nop, DW_OP_not, DW_OP_or, DW_OP_over, DW_OP_pick, DW_OP_piece, DW_OP_plus, DW_OP_plus_uconst, DW_OP_push_object_address, DW_OP_reg0, DW_OP_reg1, DW_OP_reg10, DW_OP_reg11, DW_OP_reg12, DW_OP_reg13, DW_OP_reg14, DW_OP_reg15, DW_OP_reg16, DW_OP_reg17, DW_OP_reg18, DW_OP_reg19, DW_OP_reg2, DW_OP_reg20, DW_OP_reg21, DW_OP_reg22, DW_OP_reg23, DW_OP_reg24, DW_OP_reg25, DW_OP_reg26, DW_OP_reg27, DW_OP_reg28, DW_OP_reg29, DW_OP_reg3, DW_OP_reg30, DW_OP_reg31, DW_OP_reg4, DW_OP_reg5, DW_OP_reg6, DW_OP_reg7, DW_OP_reg8, DW_OP_reg9, DW_OP_regx, DW_OP_rot, DW_OP_shl, DW_OP_shr, DW_OP_shra, DW_OP_skip, DW_OP_stack_value, DW_OP_swap, DW_OP_xderef, DW_OP_xderef_size, DW_OP_xor
------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+DW_OP_*
+-------
+
+This section describes the following words: ``DW_OP_xor``, ``DW_OP_xderef_size``, ``DW_OP_xderef``, ``DW_OP_swap``, ``DW_OP_stack_value``, ``DW_OP_skip``, ``DW_OP_shra``, ``DW_OP_shr``, ``DW_OP_shl``, ``DW_OP_rot``, ``DW_OP_regx``, ``DW_OP_reg9``, ``DW_OP_reg8``, ``DW_OP_reg7``, ``DW_OP_reg6``, ``DW_OP_reg5``, ``DW_OP_reg4``, ``DW_OP_reg31``, ``DW_OP_reg30``, ``DW_OP_reg3``, ``DW_OP_reg29``, ``DW_OP_reg28``, ``DW_OP_reg27``, ``DW_OP_reg26``, ``DW_OP_reg25``, ``DW_OP_reg24``, ``DW_OP_reg23``, ``DW_OP_reg22``, ``DW_OP_reg21``, ``DW_OP_reg20``, ``DW_OP_reg2``, ``DW_OP_reg19``, ``DW_OP_reg18``, ``DW_OP_reg17``, ``DW_OP_reg16``, ``DW_OP_reg15``, ``DW_OP_reg14``, ``DW_OP_reg13``, ``DW_OP_reg12``, ``DW_OP_reg11``, ``DW_OP_reg10``, ``DW_OP_reg1``, ``DW_OP_reg0``, ``DW_OP_push_object_address``, ``DW_OP_plus_uconst``, ``DW_OP_plus``, ``DW_OP_piece``, ``DW_OP_pick``, ``DW_OP_over``, ``DW_OP_or``, ``DW_OP_not``, ``DW_OP_nop``, ``DW_OP_neg``, ``DW_OP_ne``, ``DW_OP_mul``, ``DW_OP_mod``, ``DW_OP_minus``, ``DW_OP_lt``, ``DW_OP_lit9``, ``DW_OP_lit8``, ``DW_OP_lit7``, ``DW_OP_lit6``, ``DW_OP_lit5``, ``DW_OP_lit4``, ``DW_OP_lit31``, ``DW_OP_lit30``, ``DW_OP_lit3``, ``DW_OP_lit29``, ``DW_OP_lit28``, ``DW_OP_lit27``, ``DW_OP_lit26``, ``DW_OP_lit25``, ``DW_OP_lit24``, ``DW_OP_lit23``, ``DW_OP_lit22``, ``DW_OP_lit21``, ``DW_OP_lit20``, ``DW_OP_lit2``, ``DW_OP_lit19``, ``DW_OP_lit18``, ``DW_OP_lit17``, ``DW_OP_lit16``, ``DW_OP_lit15``, ``DW_OP_lit14``, ``DW_OP_lit13``, ``DW_OP_lit12``, ``DW_OP_lit11``, ``DW_OP_lit10``, ``DW_OP_lit1``, ``DW_OP_lit0``, ``DW_OP_le``, ``DW_OP_implicit_value``, ``DW_OP_gt``, ``DW_OP_ge``, ``DW_OP_form_tls_address``, ``DW_OP_fbreg``, ``DW_OP_eq``, ``DW_OP_dup``, ``DW_OP_drop``, ``DW_OP_div``, ``DW_OP_deref_size``, ``DW_OP_deref``, ``DW_OP_constu``, ``DW_OP_consts``, ``DW_OP_const8u``, ``DW_OP_const8s``, ``DW_OP_const4u``, ``DW_OP_const4s``, ``DW_OP_const2u``, ``DW_OP_const2s``, ``DW_OP_const1u``, ``DW_OP_const1s``, ``DW_OP_call_ref``, ``DW_OP_call_frame_cfa``, ``DW_OP_call4``, ``DW_OP_call2``, ``DW_OP_bregx``, ``DW_OP_breg9``, ``DW_OP_breg8``, ``DW_OP_breg7``, ``DW_OP_breg6``, ``DW_OP_breg5``, ``DW_OP_breg4``, ``DW_OP_breg31``, ``DW_OP_breg30``, ``DW_OP_breg3``, ``DW_OP_breg29``, ``DW_OP_breg28``, ``DW_OP_breg27``, ``DW_OP_breg26``, ``DW_OP_breg25``, ``DW_OP_breg24``, ``DW_OP_breg23``, ``DW_OP_breg22``, ``DW_OP_breg21``, ``DW_OP_breg20``, ``DW_OP_breg2``, ``DW_OP_breg19``, ``DW_OP_breg18``, ``DW_OP_breg17``, ``DW_OP_breg16``, ``DW_OP_breg15``, ``DW_OP_breg14``, ``DW_OP_breg13``, ``DW_OP_breg12``, ``DW_OP_breg11``, ``DW_OP_breg10``, ``DW_OP_breg1``, ``DW_OP_breg0``, ``DW_OP_bra``, ``DW_OP_bit_piece``, ``DW_OP_and``, ``DW_OP_addr``, ``DW_OP_abs``, ``DW_OP_GNU_uninit``, ``DW_OP_GNU_reinterpret``, ``DW_OP_GNU_regval_type``, ``DW_OP_GNU_push_tls_address``, ``DW_OP_GNU_parameter_ref``, ``DW_OP_GNU_implicit_pointer``, ``DW_OP_GNU_entry_value``, ``DW_OP_GNU_encoded_addr``, ``DW_OP_GNU_deref_type``, ``DW_OP_GNU_convert``, ``DW_OP_GNU_const_type``.
 
 @DW_OP_
 
@@ -624,81 +337,12 @@ DW_ORD_col_major, DW_ORD_row_major
 
 @DW_ORD_
 
-.. _zw_vocabulary_dwarf DW_TAG_GNU_BINCL:
-.. _zw_vocabulary_dwarf DW_TAG_GNU_EINCL:
-.. _zw_vocabulary_dwarf DW_TAG_GNU_call_site:
-.. _zw_vocabulary_dwarf DW_TAG_GNU_call_site_parameter:
-.. _zw_vocabulary_dwarf DW_TAG_GNU_formal_parameter_pack:
-.. _zw_vocabulary_dwarf DW_TAG_GNU_template_parameter_pack:
-.. _zw_vocabulary_dwarf DW_TAG_GNU_template_template_param:
-.. _zw_vocabulary_dwarf DW_TAG_MIPS_loop:
-.. _zw_vocabulary_dwarf DW_TAG_access_declaration:
-.. _zw_vocabulary_dwarf DW_TAG_array_type:
-.. _zw_vocabulary_dwarf DW_TAG_base_type:
-.. _zw_vocabulary_dwarf DW_TAG_catch_block:
-.. _zw_vocabulary_dwarf DW_TAG_class_template:
-.. _zw_vocabulary_dwarf DW_TAG_class_type:
-.. _zw_vocabulary_dwarf DW_TAG_common_block:
-.. _zw_vocabulary_dwarf DW_TAG_common_inclusion:
-.. _zw_vocabulary_dwarf DW_TAG_compile_unit:
-.. _zw_vocabulary_dwarf DW_TAG_condition:
-.. _zw_vocabulary_dwarf DW_TAG_const_type:
-.. _zw_vocabulary_dwarf DW_TAG_constant:
-.. _zw_vocabulary_dwarf DW_TAG_dwarf_procedure:
-.. _zw_vocabulary_dwarf DW_TAG_entry_point:
-.. _zw_vocabulary_dwarf DW_TAG_enumeration_type:
-.. _zw_vocabulary_dwarf DW_TAG_enumerator:
-.. _zw_vocabulary_dwarf DW_TAG_file_type:
-.. _zw_vocabulary_dwarf DW_TAG_formal_parameter:
-.. _zw_vocabulary_dwarf DW_TAG_format_label:
-.. _zw_vocabulary_dwarf DW_TAG_friend:
-.. _zw_vocabulary_dwarf DW_TAG_function_template:
-.. _zw_vocabulary_dwarf DW_TAG_imported_declaration:
-.. _zw_vocabulary_dwarf DW_TAG_imported_module:
-.. _zw_vocabulary_dwarf DW_TAG_imported_unit:
-.. _zw_vocabulary_dwarf DW_TAG_inheritance:
-.. _zw_vocabulary_dwarf DW_TAG_inlined_subroutine:
-.. _zw_vocabulary_dwarf DW_TAG_interface_type:
-.. _zw_vocabulary_dwarf DW_TAG_label:
-.. _zw_vocabulary_dwarf DW_TAG_lexical_block:
-.. _zw_vocabulary_dwarf DW_TAG_member:
-.. _zw_vocabulary_dwarf DW_TAG_module:
-.. _zw_vocabulary_dwarf DW_TAG_mutable_type:
-.. _zw_vocabulary_dwarf DW_TAG_namelist:
-.. _zw_vocabulary_dwarf DW_TAG_namelist_item:
-.. _zw_vocabulary_dwarf DW_TAG_namespace:
-.. _zw_vocabulary_dwarf DW_TAG_packed_type:
-.. _zw_vocabulary_dwarf DW_TAG_partial_unit:
-.. _zw_vocabulary_dwarf DW_TAG_pointer_type:
-.. _zw_vocabulary_dwarf DW_TAG_ptr_to_member_type:
-.. _zw_vocabulary_dwarf DW_TAG_reference_type:
-.. _zw_vocabulary_dwarf DW_TAG_restrict_type:
-.. _zw_vocabulary_dwarf DW_TAG_rvalue_reference_type:
-.. _zw_vocabulary_dwarf DW_TAG_set_type:
-.. _zw_vocabulary_dwarf DW_TAG_shared_type:
-.. _zw_vocabulary_dwarf DW_TAG_string_type:
-.. _zw_vocabulary_dwarf DW_TAG_structure_type:
-.. _zw_vocabulary_dwarf DW_TAG_subprogram:
-.. _zw_vocabulary_dwarf DW_TAG_subrange_type:
-.. _zw_vocabulary_dwarf DW_TAG_subroutine_type:
-.. _zw_vocabulary_dwarf DW_TAG_template_alias:
-.. _zw_vocabulary_dwarf DW_TAG_template_type_parameter:
-.. _zw_vocabulary_dwarf DW_TAG_template_value_parameter:
-.. _zw_vocabulary_dwarf DW_TAG_thrown_type:
-.. _zw_vocabulary_dwarf DW_TAG_try_block:
-.. _zw_vocabulary_dwarf DW_TAG_type_unit:
-.. _zw_vocabulary_dwarf DW_TAG_typedef:
-.. _zw_vocabulary_dwarf DW_TAG_union_type:
-.. _zw_vocabulary_dwarf DW_TAG_unspecified_parameters:
-.. _zw_vocabulary_dwarf DW_TAG_unspecified_type:
-.. _zw_vocabulary_dwarf DW_TAG_variable:
-.. _zw_vocabulary_dwarf DW_TAG_variant:
-.. _zw_vocabulary_dwarf DW_TAG_variant_part:
-.. _zw_vocabulary_dwarf DW_TAG_volatile_type:
-.. _zw_vocabulary_dwarf DW_TAG_with_stmt:
+.. _zw_vocabulary_dwarf DW_TAG_*:
 
-DW_TAG_GNU_BINCL, DW_TAG_GNU_EINCL, DW_TAG_GNU_call_site, DW_TAG_GNU_call_site_parameter, DW_TAG_GNU_formal_parameter_pack, DW_TAG_GNU_template_parameter_pack, DW_TAG_GNU_template_template_param, DW_TAG_MIPS_loop, DW_TAG_access_declaration, DW_TAG_array_type, DW_TAG_base_type, DW_TAG_catch_block, DW_TAG_class_template, DW_TAG_class_type, DW_TAG_common_block, DW_TAG_common_inclusion, DW_TAG_compile_unit, DW_TAG_condition, DW_TAG_const_type, DW_TAG_constant, DW_TAG_dwarf_procedure, DW_TAG_entry_point, DW_TAG_enumeration_type, DW_TAG_enumerator, DW_TAG_file_type, DW_TAG_formal_parameter, DW_TAG_format_label, DW_TAG_friend, DW_TAG_function_template, DW_TAG_imported_declaration, DW_TAG_imported_module, DW_TAG_imported_unit, DW_TAG_inheritance, DW_TAG_inlined_subroutine, DW_TAG_interface_type, DW_TAG_label, DW_TAG_lexical_block, DW_TAG_member, DW_TAG_module, DW_TAG_mutable_type, DW_TAG_namelist, DW_TAG_namelist_item, DW_TAG_namespace, DW_TAG_packed_type, DW_TAG_partial_unit, DW_TAG_pointer_type, DW_TAG_ptr_to_member_type, DW_TAG_reference_type, DW_TAG_restrict_type, DW_TAG_rvalue_reference_type, DW_TAG_set_type, DW_TAG_shared_type, DW_TAG_string_type, DW_TAG_structure_type, DW_TAG_subprogram, DW_TAG_subrange_type, DW_TAG_subroutine_type, DW_TAG_template_alias, DW_TAG_template_type_parameter, DW_TAG_template_value_parameter, DW_TAG_thrown_type, DW_TAG_try_block, DW_TAG_type_unit, DW_TAG_typedef, DW_TAG_union_type, DW_TAG_unspecified_parameters, DW_TAG_unspecified_type, DW_TAG_variable, DW_TAG_variant, DW_TAG_variant_part, DW_TAG_volatile_type, DW_TAG_with_stmt
--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+DW_TAG_*
+--------
+
+This section describes the following words: ``DW_TAG_with_stmt``, ``DW_TAG_volatile_type``, ``DW_TAG_variant_part``, ``DW_TAG_variant``, ``DW_TAG_variable``, ``DW_TAG_unspecified_type``, ``DW_TAG_unspecified_parameters``, ``DW_TAG_union_type``, ``DW_TAG_typedef``, ``DW_TAG_type_unit``, ``DW_TAG_try_block``, ``DW_TAG_thrown_type``, ``DW_TAG_template_value_parameter``, ``DW_TAG_template_type_parameter``, ``DW_TAG_template_alias``, ``DW_TAG_subroutine_type``, ``DW_TAG_subrange_type``, ``DW_TAG_subprogram``, ``DW_TAG_structure_type``, ``DW_TAG_string_type``, ``DW_TAG_shared_type``, ``DW_TAG_set_type``, ``DW_TAG_rvalue_reference_type``, ``DW_TAG_restrict_type``, ``DW_TAG_reference_type``, ``DW_TAG_ptr_to_member_type``, ``DW_TAG_pointer_type``, ``DW_TAG_partial_unit``, ``DW_TAG_packed_type``, ``DW_TAG_namespace``, ``DW_TAG_namelist_item``, ``DW_TAG_namelist``, ``DW_TAG_mutable_type``, ``DW_TAG_module``, ``DW_TAG_member``, ``DW_TAG_lexical_block``, ``DW_TAG_label``, ``DW_TAG_interface_type``, ``DW_TAG_inlined_subroutine``, ``DW_TAG_inheritance``, ``DW_TAG_imported_unit``, ``DW_TAG_imported_module``, ``DW_TAG_imported_declaration``, ``DW_TAG_function_template``, ``DW_TAG_friend``, ``DW_TAG_format_label``, ``DW_TAG_formal_parameter``, ``DW_TAG_file_type``, ``DW_TAG_enumerator``, ``DW_TAG_enumeration_type``, ``DW_TAG_entry_point``, ``DW_TAG_dwarf_procedure``, ``DW_TAG_constant``, ``DW_TAG_const_type``, ``DW_TAG_condition``, ``DW_TAG_compile_unit``, ``DW_TAG_common_inclusion``, ``DW_TAG_common_block``, ``DW_TAG_class_type``, ``DW_TAG_class_template``, ``DW_TAG_catch_block``, ``DW_TAG_base_type``, ``DW_TAG_array_type``, ``DW_TAG_access_declaration``, ``DW_TAG_MIPS_loop``, ``DW_TAG_GNU_template_template_param``, ``DW_TAG_GNU_template_parameter_pack``, ``DW_TAG_GNU_formal_parameter_pack``, ``DW_TAG_GNU_call_site_parameter``, ``DW_TAG_GNU_call_site``, ``DW_TAG_GNU_EINCL``, ``DW_TAG_GNU_BINCL``.
 
 @DW_TAG_
 
@@ -725,14 +369,14 @@ DW_VIS_exported, DW_VIS_local, DW_VIS_qualified
 abbrev
 ------
 
-``T_CU`` ``->?`` ``T_ABBREV_UNIT``
-..................................
+``T_CU`` ``->`` ``T_ABBREV_UNIT``
+.................................
 
 Takes a CU on TOS and yields the abbreviation unit that contains this
 unit's abbreviations.
 
-``T_DIE`` ``->?`` ``T_ABBREV``
-..............................
+``T_DIE`` ``->`` ``T_ABBREV``
+.............................
 
 Takes a DIE on TOS and yields the abbreviation that describes this
 DIE.
@@ -750,8 +394,8 @@ therein.
 add
 ---
 
-``T_ASET`` ``T_CONST`` ``->?`` ``T_ASET``
-.........................................
+``T_ASET`` ``T_CONST`` ``->`` ``T_ASET``
+........................................
 
 Takes an address set and a constant on TOS, and adds the constant to
 range covered by given address set::
@@ -760,8 +404,8 @@ range covered by given address set::
 	[0x1, 0x2), [0x10000, 0x10010)
 	[0x1, 0x2), [0x10010, 0x1001a)
 
-``T_ASET`` ``T_ASET`` ``->?`` ``T_ASET``
-........................................
+``T_ASET`` ``T_ASET`` ``->`` ``T_ASET``
+.......................................
 
 Takes two address sets and yields an address set that covers both
 their ranges::
@@ -797,8 +441,8 @@ value to absolute address::
 	$ dwgrep ./tests/bitcount.o -e 'unit root attribute ?AT_high_pc address'
 	0x10020
 
-``T_DIE`` ``->?`` ``T_ASET``
-............................
+``T_DIE`` ``->`` ``T_ASET``
+...........................
 
 Takes a DIE on TOS and yields an address set describing address ranges
 covered by this DIE.  (This calls dwarf_ranges under the covers.)::
@@ -806,8 +450,8 @@ covered by this DIE.  (This calls dwarf_ranges under the covers.)::
 	$ dwgrep ./tests/testfile_const_type -e 'entry (name == "main") address'
 	[0x80482f0, 0x80482f3)
 
-``T_LOCLIST_ELEM`` ``->?`` ``T_ASET``
-.....................................
+``T_LOCLIST_ELEM`` ``->`` ``T_ASET``
+....................................
 
 Takes a location list element on TOS and yields an address set
 describing where it is valid::
@@ -832,8 +476,8 @@ describing where it is valid::
 aset
 ----
 
-``T_CONST`` ``T_CONST`` ``->?`` ``T_ASET``
-..........................................
+``T_CONST`` ``T_CONST`` ``->`` ``T_ASET``
+.........................................
 
 Takes two constants on TOS and constructs an address set that spans
 that range.  (The higher address is not considered a part of that
@@ -934,8 +578,8 @@ children::
 code
 ----
 
-``T_ABBREV`` ``->?`` ``T_CONST``
-................................
+``T_ABBREV`` ``->`` ``T_CONST``
+...............................
 
 Takes abbreviation on TOS and yields its code.
 
@@ -946,23 +590,23 @@ Takes abbreviation on TOS and yields its code.
 cooked
 ------
 
-``T_CU`` ``->?`` ``T_CU``
-.........................
+``T_CU`` ``->`` ``T_CU``
+........................
 
 Takes a CU on TOS and yields a cooked version thereof.
 
-``T_DIE`` ``->?`` ``T_DIE``
-...........................
+``T_DIE`` ``->`` ``T_DIE``
+..........................
 
 Takes a DIE on TOS and yields a cooked version thereof.
 
-``T_DWARF`` ``->?`` ``T_DWARF``
-...............................
+``T_DWARF`` ``->`` ``T_DWARF``
+..............................
 
 Takes a Dwarf on TOS and yields a cooked version thereof.
 
-``T_ATTR`` ``->?`` ``T_ATTR``
-.............................
+``T_ATTR`` ``->`` ``T_ATTR``
+............................
 
 Takes an attribute on TOS and yields a cooked version thereof.
 
@@ -973,8 +617,8 @@ Takes an attribute on TOS and yields a cooked version thereof.
 dwopen
 ------
 
-``T_STR`` ``->?`` ``T_DWARF``
-.............................
+``T_STR`` ``->`` ``T_DWARF``
+............................
 
 Takes a string, which is interpreted as a file name, that file is
 opened, and a Dwarf value representing that file is yielded::
@@ -1100,13 +744,13 @@ behaves equivalently to tho following::
 form
 ----
 
-``T_ABBREV_ATTR`` ``->?`` ``T_CONST``
-.....................................
+``T_ABBREV_ATTR`` ``->`` ``T_CONST``
+....................................
 
 Takes an abbreviation attribute on TOS and yields its form.
 
-``T_ATTR`` ``->?`` ``T_CONST``
-..............................
+``T_ATTR`` ``->`` ``T_CONST``
+.............................
 
 Takes an attribute on TOS and yields its form.
 
@@ -1136,8 +780,8 @@ yield at all if the set is empty.
 label
 -----
 
-``T_DIE`` ``->?`` ``T_CONST``
-.............................
+``T_DIE`` ``->`` ``T_CONST``
+............................
 
 Takes a DIE on TOS and yields its tag::
 
@@ -1145,8 +789,8 @@ Takes a DIE on TOS and yields its tag::
 	DW_TAG_compile_unit
 	DW_TAG_partial_unit
 
-``T_LOCLIST_OP`` ``->?`` ``T_CONST``
-....................................
+``T_LOCLIST_OP`` ``->`` ``T_CONST``
+...................................
 
 Takes a location expression instruction on TOS and yields the
 operator::
@@ -1159,8 +803,8 @@ operator::
 	stack_value
 	reg5
 
-``T_ABBREV_ATTR`` ``->?`` ``T_CONST``
-.....................................
+``T_ABBREV_ATTR`` ``->`` ``T_CONST``
+....................................
 
 Takes an abbreviation attribute on TOS and yields its name::
 
@@ -1173,8 +817,8 @@ Takes an abbreviation attribute on TOS and yields its name::
 	DW_AT_high_pc
 	DW_AT_stmt_list
 
-``T_ABBREV`` ``->?`` ``T_CONST``
-................................
+``T_ABBREV`` ``->`` ``T_CONST``
+...............................
 
 Takes an abbreviation on TOS and yields its tag::
 
@@ -1182,8 +826,8 @@ Takes an abbreviation on TOS and yields its tag::
 	DW_TAG_compile_unit
 	DW_TAG_partial_unit
 
-``T_ATTR`` ``->?`` ``T_CONST``
-..............................
+``T_ATTR`` ``->`` ``T_CONST``
+.............................
 
 Takes an attribute on TOS and yields its name::
 
@@ -1203,8 +847,8 @@ Takes an attribute on TOS and yields its name::
 length
 ------
 
-``T_ASET`` ``->?`` ``T_CONST``
-..............................
+``T_ASET`` ``->`` ``T_CONST``
+.............................
 
 Takes an address set on TOS and yields number of addresses covered by
 that set::
@@ -1250,8 +894,8 @@ name
 
 Equivalent to ``@AT_name``.
 
-``T_DWARF`` ``->?`` ``T_STR``
-.............................
+``T_DWARF`` ``->`` ``T_STR``
+............................
 
 Take a Dwarf on TOS and yield its filename.  Note that it may not be
 possible to use the reported name to reopen the Dwarf.  The Dwarf may
@@ -1265,8 +909,8 @@ or replaced since the Dwarf was opened.
 offset
 ------
 
-``T_CU`` ``->?`` ``T_CONST``
-............................
+``T_CU`` ``->`` ``T_CONST``
+...........................
 
 Takes a CU on TOS and yields its offset inside the Dwarf section that
 it comes from::
@@ -1300,8 +944,8 @@ Example::
 	CU 0
 	<Dwarf "tests/a1.out">
 
-``T_DIE`` ``->?`` ``T_CONST``
-.............................
+``T_DIE`` ``->`` ``T_CONST``
+............................
 
 Takes a DIE on TOS and yields its offset inside the Dwarf section that
 it comes from::
@@ -1330,8 +974,8 @@ compare unequal despite them being physically the same DIE::
 	A B if ?eq then "==" else "!=" swap "%s: %s %s %s"'
 	<Dwarf "tests/dwz-partial2-1">: [14] typedef != [14] typedef
 
-``T_LOCLIST_OP`` ``->?`` ``T_CONST``
-....................................
+``T_LOCLIST_OP`` ``->`` ``T_CONST``
+...................................
 
 Takes a location list operation on TOS and yields its offset within
 the containing location expression::
@@ -1352,8 +996,8 @@ the containing location expression::
 	0x11
 	0x13
 
-``T_ABBREV_ATTR`` ``->?`` ``T_CONST``, ``T_ABBREV`` ``->?`` ``T_CONST``, ``T_ABBREV_UNIT`` ``->?`` ``T_CONST``
-..............................................................................................................
+``T_ABBREV_ATTR`` ``->`` ``T_CONST``, ``T_ABBREV`` ``->`` ``T_CONST``, ``T_ABBREV_UNIT`` ``->`` ``T_CONST``
+...........................................................................................................
 
 XXX
 
@@ -1364,8 +1008,8 @@ XXX
 overlap
 -------
 
-``T_ASET`` ``T_ASET`` ``->?`` ``T_ASET``
-........................................
+``T_ASET`` ``T_ASET`` ``->`` ``T_ASET``
+.......................................
 
 Takes two address sets on TOS, and yields a (possibly empty) address
 set that covers those addresses that both of the address sets cover.
@@ -1420,23 +1064,23 @@ address set, presented as individual address sets::
 raw
 ---
 
-``T_CU`` ``->?`` ``T_CU``
-.........................
+``T_CU`` ``->`` ``T_CU``
+........................
 
 Takes a CU on TOS and yields a raw version thereof.
 
-``T_DIE`` ``->?`` ``T_DIE``
-...........................
+``T_DIE`` ``->`` ``T_DIE``
+..........................
 
 Takes a DIE on TOS and yields a raw version thereof.
 
-``T_DWARF`` ``->?`` ``T_DWARF``
-...............................
+``T_DWARF`` ``->`` ``T_DWARF``
+..............................
 
 Takes a Dwarf on TOS and yields a raw version thereof.
 
-``T_ATTR`` ``->?`` ``T_ATTR``
-.............................
+``T_ATTR`` ``->`` ``T_ATTR``
+............................
 
 Takes an attribute on TOS and yields a raw version thereof.
 
@@ -1447,13 +1091,13 @@ Takes an attribute on TOS and yields a raw version thereof.
 root
 ----
 
-``T_CU`` ``->?`` ``T_DIE``
-..........................
+``T_CU`` ``->`` ``T_DIE``
+.........................
 
 Takes a CU on TOS and yields its root DIE.
 
-``T_DIE`` ``->?`` ``T_DIE``
-...........................
+``T_DIE`` ``->`` ``T_DIE``
+..........................
 
 Takes a DIE on TOS and yields CU DIE of the unit that this DIE comes
 from.  For cooked DIE's follows back through import points and yields
@@ -1466,8 +1110,8 @@ the CU DIE of this DIE's context.
 sub
 ---
 
-``T_ASET`` ``T_CONST`` ``->?`` ``T_ASET``
-.........................................
+``T_ASET`` ``T_CONST`` ``->`` ``T_ASET``
+........................................
 
 Takes an address set and a constant on TOS and yields an address set
 with a hole poked at the address given by the constant::
@@ -1476,8 +1120,8 @@ with a hole poked at the address given by the constant::
 	[0x10000, 0x10010)
 	[0x10011, 0x1001a)
 
-``T_ASET`` ``T_ASET`` ``->?`` ``T_ASET``
-........................................
+``T_ASET`` ``T_ASET`` ``->`` ``T_ASET``
+.......................................
 
 Takes two address sets *A* and *B*, and yields an address set that
 contains all of the *A*'s addresses except those covered by *B*.
@@ -1584,8 +1228,8 @@ expressions::
 version
 -------
 
-``T_CU`` ``->?`` ``T_CONST``
-............................
+``T_CU`` ``->`` ``T_CONST``
+...........................
 
 Takes a CU on TOS and yields a constant corresponding to version of
 Dwarf standard according to which this CU has been written.
