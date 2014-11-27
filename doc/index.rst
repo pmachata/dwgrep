@@ -76,10 +76,10 @@ and in fact operate on stacks of these values.
 
 Each function in pipeline thus takes on input a stack of values, and
 produces zero or more stacks on the output.  Note that producing
-several stacks is different from producing an element that holds a
-single value of type sequence.  You can think of it as if any function
-could in theory fork (if it returns more than one stack), or terminate
-(if it doesn't return anything).
+several stacks is different from producing a stack that holds a
+sequence.  You can think of it as if any function could in theory fork
+(if it returns more than one stack), or terminate (if it doesn't
+return anything).
 
 This may be best illustrated with an example.  Among the most trivial
 Zwerg functions are literals, such as ``5`` or ``"Blah"``.  For a
@@ -94,6 +94,37 @@ stack with top value replaced with its length::
 
 	$ dwgrep '"Hello, world!" length'
 	13
+
+Both the literal and ``length`` yield a single stack of output for
+every stack of input.  There are words that yield more than once
+however.  An example is ``elem``, which inspects elements of a
+sequence or a string::
+
+	$ dwgrep '"Hi!" elem'
+	H
+	i
+	!
+
+``dwgrep`` returned three results, and shows each of them on a single
+line.  That's because they are one-slot stacks, and this way of
+formatting allows the output to be further processed by shell.  This
+is how it looks for deeper stacks::
+
+	$ dwgrep '"Hi!" elem 5'
+	---
+	5
+	H
+	---
+	5
+	i
+	---
+	5
+	!
+
+When using ``dwgrep`` on command line, it is typically most useful to
+aim for single-slot stacks.  Producing deeper stacks may be useful if
+you use ``libzwerg`` programmatically.  That way the query can return
+not only the primary result, but also some context.
 
 
 Further reading
