@@ -2816,6 +2816,27 @@ R"docstring(
 
 Takes a Dwarf on TOS and yields a raw version thereof.
 
+|RawCookeImmutable|
+
+.. |RawCookeImmutable| replace::
+
+   The words ``raw`` and ``cooked`` create a new value, they do not
+   change a state of an existing one.  The underlying bits that
+   constitute the Dwarf data themselves are shared, but those, too,
+   are immutable.
+
+In particular, take a look at the following example::
+
+	$ dwgrep ./tests/a1.out -e '
+		(|D| D raw D (|R C| [C entry] length [R entry] length))'
+	---
+	13
+	11
+
+Had ``raw`` changed the value that it's applied to, the next reference
+to *D* would yield a raw Dwarf.  But raw yields a new value and *D* is
+kept intact (despite the sharing of underlying bits, as mentioned).
+
 )docstring";
     }
   };
@@ -2840,6 +2861,8 @@ R"docstring(
 
 Takes a CU on TOS and yields a raw version thereof.
 
+|RawCookeImmutable|
+
 )docstring";
     }
   };
@@ -2862,6 +2885,8 @@ Takes a CU on TOS and yields a raw version thereof.
 R"docstring(
 
 Takes a DIE on TOS and yields a raw version thereof.
+
+|RawCookeImmutable|
 
 )docstring";
     }
@@ -2886,6 +2911,8 @@ Takes a DIE on TOS and yields a raw version thereof.
 R"docstring(
 
 Takes an attribute on TOS and yields a raw version thereof.
+
+|RawCookeImmutable|
 
 )docstring";
     }
@@ -2914,6 +2941,8 @@ R"docstring(
 
 Takes a Dwarf on TOS and yields a cooked version thereof.
 
+|RawCookeImmutable|
+
 )docstring";
     }
   };
@@ -2938,6 +2967,8 @@ R"docstring(
 
 Takes a CU on TOS and yields a cooked version thereof.
 
+|RawCookeImmutable|
+
 )docstring";
     }
   };
@@ -2960,6 +2991,8 @@ Takes a CU on TOS and yields a cooked version thereof.
 R"docstring(
 
 Takes a DIE on TOS and yields a cooked version thereof.
+
+|RawCookeImmutable|
 
 )docstring";
     }
@@ -2984,6 +3017,8 @@ Takes a DIE on TOS and yields a cooked version thereof.
 R"docstring(
 
 Takes an attribute on TOS and yields a cooked version thereof.
+
+|RawCookeImmutable|
 
 )docstring";
     }

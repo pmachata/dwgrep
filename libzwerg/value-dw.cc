@@ -43,7 +43,34 @@
 #include "op.hh"
 #include "value-dw.hh"
 
-value_type const value_dwarf::vtype = value_type::alloc ("T_DWARF");
+value_type const value_dwarf::vtype = value_type::alloc ("T_DWARF",
+R"docstring(
+
+Values of this type represent opened Dwarf files.  If a given file
+contains .gnu_debugaltlink, it is subsumed by the Dwarf handle as
+well.
+
+Dwarf values (as well as many other Dwarf-related Zwerg values) come
+in two flavors: cooked and raw.  Raw values generally present the
+underlying bits faithfully, cooked ones do some amount of
+interpretation.  For example, cooked DIE's merge
+``DW_TAG_imported_unit`` nodes, and thus a given node may be presented
+as having more children than the underlying bits suggest.  The actual
+ways in which the interpretation differs between raw and cooked are
+described at each word that makes the distinction.
+
+Two words are used for switching Dwarf back and forth: ``raw`` and
+``cooked``.
+
+Example::
+
+	$ dwgrep ./tests/a1.out -e ''
+	<Dwarf "./tests/a1.out">
+
+	$ dwgrep '"tests/a1.out" dwopen'
+	<Dwarf "tests/a1.out">
+
+)docstring");
 
 namespace
 {
@@ -132,7 +159,18 @@ value_dwarf::cmp (value const &that) const
 }
 
 
-value_type const value_cu::vtype = value_type::alloc ("T_CU");
+value_type const value_cu::vtype = value_type::alloc ("T_CU",
+R"docstring(
+
+Values of this type represent compile units, partial units and type
+units found in Dwarf files::
+
+	$ dwgrep tests/dwz-partial2-1 -e 'unit'
+	CU 0x1f
+	CU 0x8a
+	CU 0xdc
+
+)docstring");
 
 void
 value_cu::show (std::ostream &o, brevity brv) const
@@ -167,7 +205,23 @@ namespace
   }
 }
 
-value_type const value_die::vtype = value_type::alloc ("T_DIE");
+value_type const value_die::vtype = value_type::alloc ("T_DIE",
+R"docstring(
+
+Values of this type represent debug info entries, or DIE's, found in
+CU's::
+
+	$ dwgrep ./tests/a1.out -e 'unit root'
+	[b]	compile_unit
+		producer (GNU_strp_alt)	GNU C 4.6.3 20120306 (Red Hat 4.6.3-2);
+		language (data1)	DW_LANG_C89;
+		name (GNU_strp_alt)	foo.c;
+		comp_dir (GNU_strp_alt)	/home/petr/proj/dwgrep;
+		low_pc (addr)	0x4004b2;
+		high_pc (addr)	0x4004b8;
+		stmt_list (data4)	0;
+
+)docstring");
 
 void
 value_die::show (std::ostream &o, brevity brv) const
@@ -230,7 +284,22 @@ value_die::cmp (value const &that) const
 }
 
 
-value_type const value_attr::vtype = value_type::alloc ("T_ATTR");
+value_type const value_attr::vtype = value_type::alloc ("T_ATTR",
+R"docstring(
+
+Values of this type represent attributes attached to DIE's::
+
+	$ dwgrep ./tests/a1.out -e 'unit root attribute'
+	producer (GNU_strp_alt)	GNU C 4.6.3 20120306 (Red Hat 4.6.3-2);
+	language (data1)	DW_LANG_C89;
+	name (GNU_strp_alt)	foo.c;
+	comp_dir (GNU_strp_alt)	/home/petr/proj/dwgrep;
+	low_pc (addr)	0x4004b2;
+	high_pc (addr)	0x4004b8;
+	stmt_list (data4)	0;
+
+
+)docstring");
 
 void
 value_attr::show (std::ostream &o, brevity brv) const
@@ -283,8 +352,23 @@ value_attr::cmp (value const &that) const
 }
 
 
-value_type const value_abbrev_unit::vtype
-	= value_type::alloc ("T_ABBREV_UNIT");
+value_type const value_abbrev_unit::vtype = value_type::alloc ("T_ABBREV_UNIT",
+R"docstring(
+
+Values of this type represent abbreviation units found in Dwarf files::
+
+	$ dwgrep tests/dwz-partial2-1 -e 'abbrev'
+	abbrev unit 0
+	abbrev unit 0
+	abbrev unit 0
+	abbrev unit 0
+	abbrev unit 0
+	abbrev unit 0
+	abbrev unit 0
+
+XXX fix the above when abbrev units can report offset correctly.
+
+)docstring");
 
 void
 value_abbrev_unit::show (std::ostream &o, brevity brv) const
@@ -315,8 +399,23 @@ value_abbrev_unit::cmp (value const &that) const
 }
 
 
-value_type const value_abbrev::vtype
-	= value_type::alloc ("T_ABBREV");
+value_type const value_abbrev::vtype = value_type::alloc ("T_ABBREV",
+R"docstring(
+
+Values of this type represent individual abbreviations found in
+abbreviation units::
+
+	$ dwgrep ./tests/a1.out -e 'unit root abbrev'
+	[1] offset:0, children:yes, tag:compile_unit
+		0 producer (GNU_strp_alt)
+		0x3 language (data1)
+		0x5 name (GNU_strp_alt)
+		0x8 comp_dir (GNU_strp_alt)
+		0xb low_pc (addr)
+		0xd high_pc (addr)
+		0xf stmt_list (data4)
+
+)docstring");
 
 void
 value_abbrev::show (std::ostream &o, brevity brv) const
@@ -362,8 +461,21 @@ value_abbrev::cmp (value const &that) const
 }
 
 
-value_type const value_abbrev_attr::vtype
-	= value_type::alloc ("T_ABBREV_ATTR");
+value_type const value_abbrev_attr::vtype = value_type::alloc ("T_ABBREV_ATTR",
+R"docstring(
+
+Values of this type represent attributes attached to abbreviations::
+
+	$ dwgrep ./tests/a1.out -e 'unit root abbrev attribute'
+	0 producer (GNU_strp_alt)
+	0x3 language (data1)
+	0x5 name (GNU_strp_alt)
+	0x8 comp_dir (GNU_strp_alt)
+	0xb low_pc (addr)
+	0xd high_pc (addr)
+	0xf stmt_list (data4)
+
+)docstring");
 
 void
 value_abbrev_attr::show (std::ostream &o, brevity brv) const
@@ -428,7 +540,23 @@ namespace
 }
 
 value_type const value_loclist_elem::vtype
-	= value_type::alloc ("T_LOCLIST_ELEM");
+	= value_type::alloc ("T_LOCLIST_ELEM",
+R"docstring(
+
+Values of this type represent location expressions.  A location
+expression behaves a bit like a sequence with address range attached
+to it.  It contains location expression instructions, values of type
+``T_LOCLIST_OP``::
+
+	$ dwgrep ./tests/bitcount.o -e 'entry @AT_location'
+	0x10000..0x10017:[0:reg5]
+	0x10017..0x1001a:[0:breg5<0>, 2:breg1<0>, 4:and, 5:stack_value]
+	0x1001a..0x10020:[0:reg5]
+	0x10000..0x10007:[0:lit0, 1:stack_value]
+	0x10007..0x1001e:[0:reg0]
+	0x1001e..0x10020:[0:lit0, 1:stack_value]
+
+)docstring");
 
 void
 value_loclist_elem::show (std::ostream &o, brevity brv) const
@@ -487,7 +615,25 @@ value_loclist_elem::cmp (value const &that) const
 }
 
 
-value_type const value_aset::vtype = value_type::alloc ("T_ASET");
+value_type const value_aset::vtype = value_type::alloc ("T_ASET",
+R"docstring(
+
+Values of this type contain sets of addresses.  They are used for
+representing address ranges of all sorts.  They behave a bit like
+sequences of constants, but calling ``elem`` is not advised unless you
+can be sure that the address range is not excessively large::
+
+	$ dwgrep ./tests/bitcount.o -e 'entry @AT_location address'
+	[0x10000, 0x10017)
+	[0x10017, 0x1001a)
+	[0x1001a, 0x10020)
+	[0x10000, 0x10007)
+	[0x10007, 0x1001e)
+	[0x1001e, 0x10020)
+
+Address sets don't have to be continuous.
+
+)docstring");
 
 void
 value_aset::show (std::ostream &o, brevity brv) const
@@ -527,7 +673,21 @@ value_aset::cmp (value const &that) const
 }
 
 
-value_type const value_loclist_op::vtype = value_type::alloc ("T_LOCLIST_OP");
+value_type const value_loclist_op::vtype = value_type::alloc ("T_LOCLIST_OP",
+R"docstring(
+
+Values of this type hold location expression instructions::
+
+	$ dwgrep ./tests/testfile_const_type -e 'entry @AT_location elem'
+	0:fbreg<0>
+	0:fbreg<0>
+	2:GNU_deref_type<8>/<37>
+	5:GNU_const_type<[25] base_type>/<[0, 0, 0x80, 0x67, 0x45, 0x23, 0x1, 0]>
+	16:div
+	17:GNU_convert<44>
+	19:stack_value
+
+)docstring");
 
 void
 value_loclist_op::show (std::ostream &o, brevity brv) const
