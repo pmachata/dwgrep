@@ -30,6 +30,8 @@
 #include <algorithm>
 #include <dlfcn.h>
 #include <iomanip>
+#include <iterator>
+#include <sstream>
 
 #include "libzwergP.hh"
 #include "builtin.hh"
@@ -38,9 +40,93 @@
 #include "docstring.hh"
 #include "flag_saver.hh"
 
+static std::map <std::string, std::vector <std::string>>
+split_pfx_recursively (std::map <std::string, std::vector <std::string>> d,
+		       size_t sz)
+{
+  std::map <std::string, std::vector <std::string>> keep;
+  std::map <std::string, std::vector <std::string>> nd;
+
+  while (! d.empty ())
+    {
+      auto emt = std::move (*d.begin ());
+      d.erase (d.begin ());
+
+      std::map <std::string, std::vector <std::string>> sd;
+      size_t nn = emt.first.length () + 1;
+      for (auto &w: emt.second)
+	sd[w.substr (0, nn)].push_back (std::move (w));
+
+      // The division is pointless unless it makes sense for all
+      // resulting groups.  Otherwise we'd end up producing splits
+      // like DW_OP_* and DW_OP_GNU_*, where the former covers the
+      // latter.  Reject such divisions.
+      if (! std::all_of (sd.begin (), sd.end (),
+			 [sz] (std::pair <std::string,
+					  std::vector <std::string>> const &p)
+			 {
+			   return p.second.size () > sz / 10
+			     && p.second.size () > 3;
+			 }))
+	{
+	  std::vector <std::string> rest;
+	  while (! sd.empty ())
+	    {
+	      auto semt = std::move (*sd.begin ());
+	      sd.erase (sd.begin ());
+	      rest.insert (rest.end (),
+			   std::make_move_iterator (semt.second.begin ()),
+			   std::make_move_iterator (semt.second.end ()));
+	    }
+
+	  assert (! rest.empty ());
+	  assert (keep.find (emt.first) == keep.end ());
+	  keep[std::move (emt.first)] = std::move (rest);
+	}
+
+      else
+	while (! sd.empty ())
+	  {
+	    auto semt = std::move (*sd.begin ());
+	    sd.erase (sd.begin ());
+
+	    assert (nd.find (semt.first) == nd.end ());
+	    nd[std::move (semt.first)] = std::move (semt.second);
+	  }
+    }
+
+#if 0
+  for (auto const &e: nd)
+    std::cout << "rc " << e.first << " " << e.second.size () << std::endl;
+#endif
+
+  if (nd.size () > 0)
+    nd = split_pfx_recursively (std::move (nd), sz);
+
+  nd.insert (std::make_move_iterator (keep.begin ()),
+	     std::make_move_iterator (keep.end ()));
+
+  return std::move (nd);
+}
+
+static std::vector <std::string>
+split_pfx (std::vector <std::string> list)
+{
+  size_t sz = list.size ();
+  auto split = split_pfx_recursively ({{"", std::move (list)}}, sz);
+  std::vector <std::string> ret;
+  for (auto &emt: split)
+    {
+      std::string h = std::move (emt.first);
+      h += "*";
+      ret.push_back (std::move (h));
+    }
+  return std::move (ret);
+}
+
 static void
 doit (std::vector <std::pair <std::string, std::string>> entries,
-      std::string handle)
+      std::string label)
 {
   entries.erase
     (std::remove_if (entries.begin (), entries.end (),
@@ -52,6 +138,30 @@ doit (std::vector <std::pair <std::string, std::string>> entries,
 
   auto dentries = doc_deduplicate (entries);
 
+  // If the de-duplication found too many duplicates and there are
+  // overlong headings, try extract commonalities and describe the
+  // full list in body.
+  for (auto &dentry: dentries)
+    if (dentry.first.size () > 3)
+      {
+	std::vector <std::string> nh = split_pfx (dentry.first);
+	assert (nh.size () > 0);
+	if (nh[0] == "*")
+	  continue;
+
+	std::stringstream ss;
+	ss << "This section describes the following words: ";
+	bool seen = false;
+	for (auto &e: dentry.first)
+	  {
+	    ss << (seen ? ", ``" : "``") << std::move (e) << "``";
+	    seen = true;
+	  }
+	ss << ".\n\n" << std::move (dentry.second);
+	dentry.first = std::move (nh);
+	dentry.second = ss.str ();
+      }
+
   for (auto &dentry: dentries)
     std::sort (dentry.first.begin (), dentry.first.end ());
 
@@ -62,7 +172,7 @@ doit (std::vector <std::pair <std::string, std::string>> entries,
 	       return p1.first < p2.first;
 	     });
 
-  std::cout << format_entry_map (dentries, '-', handle);
+  std::cout << format_entry_map (dentries, '-', label);
 }
 
 int
