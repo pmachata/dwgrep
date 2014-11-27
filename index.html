@@ -107,10 +107,10 @@ such as Dwarf file, DIE, attribute, abbreviation, number, or string,
 and in fact operate on stacks of these values.</p>
 <p>Each function in pipeline thus takes on input a stack of values, and
 produces zero or more stacks on the output.  Note that producing
-several stacks is different from producing an element that holds a
-single value of type sequence.  You can think of it as if any function
-could in theory fork (if it returns more than one stack), or terminate
-(if it doesn&#8217;t return anything).</p>
+several stacks is different from producing a stack that holds a
+sequence.  You can think of it as if any function could in theory fork
+(if it returns more than one stack), or terminate (if it doesn&#8217;t
+return anything).</p>
 <p>This may be best illustrated with an example.  Among the most trivial
 Zwerg functions are literals, such as <tt class="docutils literal"><span class="pre">5</span></tt> or <tt class="docutils literal"><span class="pre">&quot;Blah&quot;</span></tt>.  For a
 stack given on input, they produce one stack on output, with the
@@ -125,6 +125,36 @@ stack with top value replaced with its length:</p>
 13
 </pre></div>
 </div>
+<p>Both the literal and <tt class="docutils literal"><span class="pre">length</span></tt> yield a single stack of output for
+every stack of input.  There are words that yield more than once
+however.  An example is <tt class="docutils literal"><span class="pre">elem</span></tt>, which inspects elements of a
+sequence or a string:</p>
+<div class="highlight-python"><div class="highlight"><pre>$ dwgrep &#39;&quot;Hi!&quot; elem&#39;
+H
+i
+!
+</pre></div>
+</div>
+<p><tt class="docutils literal"><span class="pre">dwgrep</span></tt> returned three results, and shows each of them on a single
+line.  That&#8217;s because they are one-slot stacks, and this way of
+formatting allows the output to be further processed by shell.  This
+is how it looks for deeper stacks:</p>
+<div class="highlight-python"><div class="highlight"><pre>$ dwgrep &#39;&quot;Hi!&quot; elem 5&#39;
+---
+5
+H
+---
+5
+i
+---
+5
+!
+</pre></div>
+</div>
+<p>When using <tt class="docutils literal"><span class="pre">dwgrep</span></tt> on command line, it is typically most useful to
+aim for single-slot stacks.  Producing deeper stacks may be useful if
+you use <tt class="docutils literal"><span class="pre">libzwerg</span></tt> programmatically.  That way the query can return
+not only the primary result, but also some context.</p>
 </div>
 <div class="section" id="further-reading">
 <h1>Further reading<a class="headerlink" href="#further-reading" title="Permalink to this headline">¶</a></h1>
