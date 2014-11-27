@@ -3048,10 +3048,10 @@ namespace
     static std::string
     docstring ()
     {
-      // XXX this really should be documented somewhere.  But
-      // currently it messes up the whole documentation, so we hide
-      // it.
-      return "@hide";
+      return
+R"docstring(
+
+)docstring";
     }
   };
 }
@@ -3079,10 +3079,10 @@ namespace
     static std::string
     docstring ()
     {
-      // XXX this and the others below really should be documented
-      // somewhere.  But currently they mess up the whole
-      // documentation, so we hide them.
-      return "@hide";
+      return
+R"docstring(
+
+)docstring";
     }
   };
 
@@ -3104,7 +3104,10 @@ namespace
     static std::string
     docstring ()
     {
-      return "@hide";
+      return
+R"docstring(
+
+)docstring";
     }
   };
 
@@ -3136,7 +3139,10 @@ namespace
     static std::string
     docstring ()
     {
-      return "@hide";
+      return
+R"docstring(
+
+)docstring";
     }
   };
 
@@ -3158,7 +3164,10 @@ namespace
     static std::string
     docstring ()
     {
-      return "@hide";
+      return
+R"docstring(
+
+)docstring";
     }
   };
 
@@ -3180,7 +3189,10 @@ namespace
     static std::string
     docstring ()
     {
-      return "@hide";
+      return
+R"docstring(
+
+)docstring";
     }
   };
 }
@@ -3206,10 +3218,10 @@ namespace
     static std::string
     docstring ()
     {
-      // XXX this and the others below really should be documented
-      // somewhere.  But currently they mess up the whole
-      // documentation, so we hide them.
-      return "@hide";
+      return
+R"docstring(
+
+)docstring";
     }
   };
 
@@ -3231,7 +3243,10 @@ namespace
     static std::string
     docstring ()
     {
-      return "@hide";
+      return
+R"docstring(
+
+)docstring";
     }
   };
 
@@ -3253,7 +3268,10 @@ namespace
     static std::string
     docstring ()
     {
-      return "@hide";
+      return
+R"docstring(
+
+)docstring";
     }
   };
 }
@@ -3279,10 +3297,10 @@ namespace
     static std::string
     docstring ()
     {
-      // XXX this and the others below really should be documented
-      // somewhere.  But currently they mess up the whole
-      // documentation, so we hide them.
-      return "@hide";
+      return
+R"docstring(
+
+)docstring";
     }
   };
 
@@ -3304,7 +3322,10 @@ namespace
     static std::string
     docstring ()
     {
-      return "@hide";
+      return
+R"docstring(
+
+)docstring";
     }
   };
 
@@ -3326,7 +3347,10 @@ namespace
     static std::string
     docstring ()
     {
-      return "@hide";
+      return
+R"docstring(
+
+)docstring";
     }
   };
 }
@@ -3355,10 +3379,10 @@ namespace
     static std::string
     docstring ()
     {
-      // XXX this and the others below really should be documented
-      // somewhere.  But currently they mess up the whole
-      // documentation, so we hide them.
-      return "@hide";
+      return
+R"docstring(
+
+)docstring";
     }
   };
 
@@ -3380,7 +3404,10 @@ namespace
     static std::string
     docstring ()
     {
-      return "@hide";
+      return
+R"docstring(
+
+)docstring";
     }
   };
 
@@ -3402,7 +3429,10 @@ namespace
     static std::string
     docstring ()
     {
-      return "@hide";
+      return
+R"docstring(
+
+)docstring";
     }
   };
 }
