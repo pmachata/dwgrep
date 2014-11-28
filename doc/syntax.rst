@@ -650,7 +650,8 @@ right.  E.g.::
 	4
 	3
 
-The following constructs comprise a scope:
+The new bindings are introduced into the most enclosing scope.  The
+following constructs comprise a scope:
 
 - Any sub-expression context has a scope of its own::
 
@@ -689,7 +690,7 @@ It is not allowed to rebind an once-bound name within the same scope::
 	Error: Name `A' rebound.
 
 It is also not possible to access names from outer scopes if they are
-covered by the same name in an inner scope.  In the following, the
+shadowed by the same name in an inner scope.  In the following, the
 inner reference to ``A`` will always resolve to ``2``, and there is no
 way to access the outer ``A`` of ``1``::
 

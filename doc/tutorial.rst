@@ -66,7 +66,7 @@ one is likely ``entry``.  This takes [#takes]_ a Dwarf, and yields
 .. [#takes] The word "takes" is generally used to mean that the
    function expects a stack, whose top value(s) fits the given
    description.  E.g. ``length`` takes a string or a sequence, ``add``
-   takes two integers, strings or integers, etc.
+   takes two integers, strings or sequences, etc.
    
    Taken values are discarded from the stack, though typically the
    function in question pushes some other value(s) in their stead.
@@ -91,8 +91,8 @@ use the following notation::
 The dollar at the beginning represents the command line prompt, and
 then the query itself is given in single quotes.
 
-If we don't care about query output (e.g. if it is trivial or
-uninteresting), we will just list the query itself::
+If we don't care about query output (e.g. if it is trivial,
+predictable or uninteresting), we will just list the query itself::
 
 	entry
 
@@ -186,8 +186,8 @@ parameters::
 This word is used for accessing values of attributes.  It always takes
 a DIE, but what it yields varies by the attribute type.  It could be
 another DIE, a string or a number, a sequence of other values, or
-whatever contrived value type is deemed best for representing a given
-piece of Dwarf.
+whatever value type is deemed best for representing a given piece of
+Dwarf.
 
 We could for example obtain names of the formal parameters selected
 above::
@@ -203,7 +203,7 @@ later how to do this.
 In is not an error to request value of attribute that a DIE doesn't
 have.  In such case, ``@AT_*`` would simply not yield at all::
 
-	$ dwgrep ./tests/aranges.o -c -e 'entry ?AT_data_member_location'
+	$ dwgrep ./tests/aranges.o -c -e 'entry @AT_data_member_location'
 	0
 
 ``@AT_*`` forms could actually also yield more than once.  For example
@@ -287,8 +287,8 @@ query, we would say::
 
 	some other query !(child)
 
-``EXPR == EXPR``, ``EXPR != EXPR`` --- comparisons
---------------------------------------------------
+``EXPR == EXPR``, ``EXPR != EXPR`` --- infix assertions
+-------------------------------------------------------
 
 As you might well know, mere presence of ``DW_AT_declaration``
 attribute doesn't tell use whether a DIE is a pure declaration.  We
@@ -304,19 +304,19 @@ should be writing this::
 	(@AT_declaration == true)
 
 This intuitively-looking construct actually deserves a closer
-attention.  Comparison operators are always evaluated in
-sub-expression context.  The mode of operation is that each side is
-evaluated separately with the same incoming stack.  Then if the
-comparison holds for any pair of produced values, the overall
-assertion holds.  Zwerg has a full suite of these operators--``!=``,
-``<``, ``<=``, etc.  There's also ``=~`` and ``!~`` for matching
-regular expressions.
+attention.  Infix assertions are always evaluated in sub-expression
+context.  The mode of operation is that each side is evaluated
+separately with the same incoming stack.  Then if the assertion holds
+for any pair of produced values, the overall assertion holds.  Zwerg
+has a full suite of these operators--``!=``, ``<``, ``<=``, etc.
+There's also ``=~`` and ``!~`` for matching regular expressions.
 
-Importantly, comparisons are assertions.  If they hold, they produce
-unchanged incoming stack, otherwise they produce nothing at all.  Thus
-expressions such as ``((A > B) == (C > D))`` don't mean what they seem
-to.  This one for example is just ``((A > B) (C > D))``--i.e. two
-independent conditions.  But consider for example this snippet::
+Importantly, infix assertions really are assertions.  If they hold,
+they produce unchanged incoming stack, otherwise they produce nothing
+at all.  Thus expressions such as ``((A > B) == (C > D))`` don't mean
+what they seem to.  This one for example is just ``((A > B) (C >
+D))``--i.e. two independent conditions.  But consider for example this
+snippet::
 
   	((A > B) != (C > D))	# WRONG!
 
@@ -332,7 +332,7 @@ concatenation, so you can write a couple words on each side of the
 operator.  For example, to look for DIE's where one of the location
 expression opcodes is ``DW_OP_addr``, you could say::
 
-	entry (@AT_location child label == DW_OP_addr)
+	entry (@AT_location elem label == DW_OP_addr)
 
 Due to this precedence setting, comparisons are typically enclosed in
 parens (as in the example), so that they don't force too much of your
@@ -362,8 +362,8 @@ about ``DW_TAG_class_type`` as well!  We can express "and" easily
 simply by juxtaposing the assertions, but we would like a way of
 expressing "or" as well.
 
-``EXPR, EXPR`` --- alternation
-------------------------------
+``EXPR, EXPR`` --- ALT-lists
+----------------------------
 
 An expression like ``EXPR₁, EXPR₂, ...`` evaluates all constituent
 *EXPRₙ*'s with the same input, and then yields all values that each
@@ -385,8 +385,8 @@ attribute has one of a number of values::
 		name (strp)	argv;
   		[... more attributes ...]
 
-``EXPR || EXPR`` --- C-style fallback
--------------------------------------
+``EXPR || EXPR`` --- OR-lists
+-----------------------------
 
 An expression like ``EXPR₁ || EXPR₂ || ...`` works differently.  The
 input stack is passed to *EXPR₁* first, and anything that this yields,
@@ -416,7 +416,7 @@ we get to the interesting DIE's.  Enter iterators:
   result of one application of *EXPR*, then of another, etc.  It works
   similarly to ``*`` in regular expressions.
 - ``EXPR+`` is exactly like ``EXPR EXPR*``.
-- ``EXPR?`` is exactly like ``(, EXPR)`` --- it /may/ apply once
+- ``EXPR?`` is exactly like ``(, EXPR)`` --- it *may* apply once
 
 We can use this tool to remove ``DW_TAG_const_type``,
 ``DW_TAG_volatile_type`` and ``DW_TAG_typedef`` layers from our
@@ -432,7 +432,7 @@ Next on, we would like to write a message:
 Literals, Strings, Formatting
 -----------------------------
 
-Zwerg has roughly C-like string literals, using \ as an escape
+Zwerg has roughly C-like string literals, using \\ as an escape
 character.  Hello world program looks like this in Zwerg::
 
 	"Hello, world!"
@@ -478,14 +478,14 @@ E.g.::
 	[6c] subprogram
 
 When there are more formatting directives, each of them takes one
-value from the stack, in order from left to right::
+value from the stack, in order from right to left::
 
 	$ dwgrep '1 2 "%s %s"'
-	2 1
+	1 2
 
-We could already get the desired format string improvements with these
-tools in our hands already.  But there's a bit of syntax that will
-make our job easier still.
+We could get the desired format string improvements with these tools
+in our hands already.  But there's a bit of syntax that will make our
+job easier still.
 
 ``let X := EXPR;`` --- name binding
 -----------------------------------
@@ -520,7 +520,7 @@ about: the subprogram (S) and its naked structure parameter (P)::
 	         ?(@AT_type ((?TAG_const_type,
 	                      ?TAG_volatile_type, ?TAG_typedef) @AT_type)*
 	           (?TAG_structure_type, ?TAG_class_type));
-	P S "%s: %s has non-trivial type."
+	S P "%s: %s has non-trivial type."
 	EOF
 
 	---
