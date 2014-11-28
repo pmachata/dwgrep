@@ -116,7 +116,7 @@ one is likely <tt class="docutils literal"><span class="pre">entry</span></tt>. 
 <tr><td class="label"><a class="fn-backref" href="#id2">[1]</a></td><td><p class="first">The word &#8220;takes&#8221; is generally used to mean that the
 function expects a stack, whose top value(s) fits the given
 description.  E.g. <tt class="docutils literal"><span class="pre">length</span></tt> takes a string or a sequence, <tt class="docutils literal"><span class="pre">add</span></tt>
-takes two integers, strings or integers, etc.</p>
+takes two integers, strings or sequences, etc.</p>
 <p class="last">Taken values are discarded from the stack, though typically the
 function in question pushes some other value(s) in their stead.</p>
 </td></tr>
@@ -144,8 +144,8 @@ CU 0
 </div>
 <p>The dollar at the beginning represents the command line prompt, and
 then the query itself is given in single quotes.</p>
-<p>If we don&#8217;t care about query output (e.g. if it is trivial or
-uninteresting), we will just list the query itself:</p>
+<p>If we don&#8217;t care about query output (e.g. if it is trivial,
+predictable or uninteresting), we will just list the query itself:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="n">entry</span>
 </pre></div>
 </div>
@@ -234,8 +234,8 @@ parameters:</p>
 <p>This word is used for accessing values of attributes.  It always takes
 a DIE, but what it yields varies by the attribute type.  It could be
 another DIE, a string or a number, a sequence of other values, or
-whatever contrived value type is deemed best for representing a given
-piece of Dwarf.</p>
+whatever value type is deemed best for representing a given piece of
+Dwarf.</p>
 <p>We could for example obtain names of the formal parameters selected
 above:</p>
 <div class="highlight-python"><div class="highlight"><pre>$ &#39;entry ?TAG_subprogram !AT_declaration child ?TAG_formal_parameter @AT_name&#39;
@@ -248,7 +248,7 @@ argv
 later how to do this.</p>
 <p>In is not an error to request value of attribute that a DIE doesn&#8217;t
 have.  In such case, <tt class="docutils literal"><span class="pre">&#64;AT_*</span></tt> would simply not yield at all:</p>
-<div class="highlight-python"><div class="highlight"><pre>$ dwgrep ./tests/aranges.o -c -e &#39;entry ?AT_data_member_location&#39;
+<div class="highlight-python"><div class="highlight"><pre>$ dwgrep ./tests/aranges.o -c -e &#39;entry @AT_data_member_location&#39;
 0
 </pre></div>
 </div>
@@ -332,8 +332,8 @@ query, we would say:</p>
 </pre></div>
 </div>
 </div>
-<div class="section" id="expr-expr-expr-expr-comparisons">
-<h2><tt class="docutils literal"><span class="pre">EXPR</span> <span class="pre">==</span> <span class="pre">EXPR</span></tt>, <tt class="docutils literal"><span class="pre">EXPR</span> <span class="pre">!=</span> <span class="pre">EXPR</span></tt> &#8212; comparisons<a class="headerlink" href="#expr-expr-expr-expr-comparisons" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="expr-expr-expr-expr-infix-assertions">
+<h2><tt class="docutils literal"><span class="pre">EXPR</span> <span class="pre">==</span> <span class="pre">EXPR</span></tt>, <tt class="docutils literal"><span class="pre">EXPR</span> <span class="pre">!=</span> <span class="pre">EXPR</span></tt> &#8212; infix assertions<a class="headerlink" href="#expr-expr-expr-expr-infix-assertions" title="Permalink to this headline">¶</a></h2>
 <p>As you might well know, mere presence of <tt class="docutils literal"><span class="pre">DW_AT_declaration</span></tt>
 attribute doesn&#8217;t tell use whether a DIE is a pure declaration.  We
 can probably safely assume that when a compiler produces that
@@ -348,18 +348,18 @@ should be writing this:</p>
 </pre></div>
 </div>
 <p>This intuitively-looking construct actually deserves a closer
-attention.  Comparison operators are always evaluated in
-sub-expression context.  The mode of operation is that each side is
-evaluated separately with the same incoming stack.  Then if the
-comparison holds for any pair of produced values, the overall
-assertion holds.  Zwerg has a full suite of these operators&#8211;<tt class="docutils literal"><span class="pre">!=</span></tt>,
-<tt class="docutils literal"><span class="pre">&lt;</span></tt>, <tt class="docutils literal"><span class="pre">&lt;=</span></tt>, etc.  There&#8217;s also <tt class="docutils literal"><span class="pre">=~</span></tt> and <tt class="docutils literal"><span class="pre">!~</span></tt> for matching
-regular expressions.</p>
-<p>Importantly, comparisons are assertions.  If they hold, they produce
-unchanged incoming stack, otherwise they produce nothing at all.  Thus
-expressions such as <tt class="docutils literal"><span class="pre">((A</span> <span class="pre">&gt;</span> <span class="pre">B)</span> <span class="pre">==</span> <span class="pre">(C</span> <span class="pre">&gt;</span> <span class="pre">D))</span></tt> don&#8217;t mean what they seem
-to.  This one for example is just <tt class="docutils literal"><span class="pre">((A</span> <span class="pre">&gt;</span> <span class="pre">B)</span> <span class="pre">(C</span> <span class="pre">&gt;</span> <span class="pre">D))</span></tt>&#8211;i.e. two
-independent conditions.  But consider for example this snippet:</p>
+attention.  Infix assertions are always evaluated in sub-expression
+context.  The mode of operation is that each side is evaluated
+separately with the same incoming stack.  Then if the assertion holds
+for any pair of produced values, the overall assertion holds.  Zwerg
+has a full suite of these operators&#8211;<tt class="docutils literal"><span class="pre">!=</span></tt>, <tt class="docutils literal"><span class="pre">&lt;</span></tt>, <tt class="docutils literal"><span class="pre">&lt;=</span></tt>, etc.
+There&#8217;s also <tt class="docutils literal"><span class="pre">=~</span></tt> and <tt class="docutils literal"><span class="pre">!~</span></tt> for matching regular expressions.</p>
+<p>Importantly, infix assertions really are assertions.  If they hold,
+they produce unchanged incoming stack, otherwise they produce nothing
+at all.  Thus expressions such as <tt class="docutils literal"><span class="pre">((A</span> <span class="pre">&gt;</span> <span class="pre">B)</span> <span class="pre">==</span> <span class="pre">(C</span> <span class="pre">&gt;</span> <span class="pre">D))</span></tt> don&#8217;t mean
+what they seem to.  This one for example is just <tt class="docutils literal"><span class="pre">((A</span> <span class="pre">&gt;</span> <span class="pre">B)</span> <span class="pre">(C</span> <span class="pre">&gt;</span>
+<span class="pre">D))</span></tt>&#8211;i.e. two independent conditions.  But consider for example this
+snippet:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="p">((</span><span class="n">A</span> <span class="o">&gt;</span> <span class="n">B</span><span class="p">)</span> <span class="o">!=</span> <span class="p">(</span><span class="n">C</span> <span class="o">&gt;</span> <span class="n">D</span><span class="p">))</span>    <span class="c"># WRONG!</span>
 </pre></div>
 </div>
@@ -377,7 +377,7 @@ assertion that never holds, a simple one is <tt class="docutils literal"><span c
 concatenation, so you can write a couple words on each side of the
 operator.  For example, to look for DIE&#8217;s where one of the location
 expression opcodes is <tt class="docutils literal"><span class="pre">DW_OP_addr</span></tt>, you could say:</p>
-<div class="highlight-python"><div class="highlight"><pre>entry (@AT_location child label == DW_OP_addr)
+<div class="highlight-python"><div class="highlight"><pre>entry (@AT_location elem label == DW_OP_addr)
 </pre></div>
 </div>
 <p>Due to this precedence setting, comparisons are typically enclosed in
@@ -406,8 +406,8 @@ about <tt class="docutils literal"><span class="pre">DW_TAG_class_type</span></t
 simply by juxtaposing the assertions, but we would like a way of
 expressing &#8220;or&#8221; as well.</p>
 </div>
-<div class="section" id="expr-expr-alternation">
-<h2><tt class="docutils literal"><span class="pre">EXPR,</span> <span class="pre">EXPR</span></tt> &#8212; alternation<a class="headerlink" href="#expr-expr-alternation" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="expr-expr-alt-lists">
+<h2><tt class="docutils literal"><span class="pre">EXPR,</span> <span class="pre">EXPR</span></tt> &#8212; ALT-lists<a class="headerlink" href="#expr-expr-alt-lists" title="Permalink to this headline">¶</a></h2>
 <p>An expression like <tt class="docutils literal"><span class="pre">EXPR₁,</span> <span class="pre">EXPR₂,</span> <span class="pre">...</span></tt> evaluates all constituent
 <em>EXPRₙ</em>&#8216;s with the same input, and then yields all values that each
 <em>EXPRₙ</em> yields.  If the expressions are assertions, this happens to
@@ -429,8 +429,8 @@ attribute has one of a number of values:</p>
 </pre></div>
 </div>
 </div>
-<div class="section" id="expr-expr-c-style-fallback">
-<h2><tt class="docutils literal"><span class="pre">EXPR</span> <span class="pre">||</span> <span class="pre">EXPR</span></tt> &#8212; C-style fallback<a class="headerlink" href="#expr-expr-c-style-fallback" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="expr-expr-or-lists">
+<h2><tt class="docutils literal"><span class="pre">EXPR</span> <span class="pre">||</span> <span class="pre">EXPR</span></tt> &#8212; OR-lists<a class="headerlink" href="#expr-expr-or-lists" title="Permalink to this headline">¶</a></h2>
 <p>An expression like <tt class="docutils literal"><span class="pre">EXPR₁</span> <span class="pre">||</span> <span class="pre">EXPR₂</span> <span class="pre">||</span> <span class="pre">...</span></tt> works differently.  The
 input stack is passed to <em>EXPR₁</em> first, and anything that this yields,
 is sent to output.  But if nothing is yielded, the same input stack is
@@ -458,7 +458,7 @@ we get to the interesting DIE&#8217;s.  Enter iterators:</p>
 result of one application of <em>EXPR</em>, then of another, etc.  It works
 similarly to <tt class="docutils literal"><span class="pre">*</span></tt> in regular expressions.</li>
 <li><tt class="docutils literal"><span class="pre">EXPR+</span></tt> is exactly like <tt class="docutils literal"><span class="pre">EXPR</span> <span class="pre">EXPR*</span></tt>.</li>
-<li><tt class="docutils literal"><span class="pre">EXPR?</span></tt> is exactly like <tt class="docutils literal"><span class="pre">(,</span> <span class="pre">EXPR)</span></tt> &#8212; it /may/ apply once</li>
+<li><tt class="docutils literal"><span class="pre">EXPR?</span></tt> is exactly like <tt class="docutils literal"><span class="pre">(,</span> <span class="pre">EXPR)</span></tt> &#8212; it <em>may</em> apply once</li>
 </ul>
 <p>We can use this tool to remove <tt class="docutils literal"><span class="pre">DW_TAG_const_type</span></tt>,
 <tt class="docutils literal"><span class="pre">DW_TAG_volatile_type</span></tt> and <tt class="docutils literal"><span class="pre">DW_TAG_typedef</span></tt> layers from our
@@ -473,7 +473,7 @@ potential structure:</p>
 </div>
 <div class="section" id="literals-strings-formatting">
 <h2>Literals, Strings, Formatting<a class="headerlink" href="#literals-strings-formatting" title="Permalink to this headline">¶</a></h2>
-<p>Zwerg has roughly C-like string literals, using as an escape
+<p>Zwerg has roughly C-like string literals, using \ as an escape
 character.  Hello world program looks like this in Zwerg:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="s">&quot;Hello, world!&quot;</span>
 </pre></div>
@@ -521,14 +521,14 @@ a string in dwgrep, you would just say:</p>
 </pre></div>
 </div>
 <p>When there are more formatting directives, each of them takes one
-value from the stack, in order from left to right:</p>
+value from the stack, in order from right to left:</p>
 <div class="highlight-python"><div class="highlight"><pre>$ dwgrep &#39;1 2 &quot;%s %s&quot;&#39;
-2 1
+1 2
 </pre></div>
 </div>
-<p>We could already get the desired format string improvements with these
-tools in our hands already.  But there&#8217;s a bit of syntax that will
-make our job easier still.</p>
+<p>We could get the desired format string improvements with these tools
+in our hands already.  But there&#8217;s a bit of syntax that will make our
+job easier still.</p>
 </div>
 <div class="section" id="let-x-expr-name-binding">
 <h2><tt class="docutils literal"><span class="pre">let</span> <span class="pre">X</span> <span class="pre">:=</span> <span class="pre">EXPR;</span></tt> &#8212; name binding<a class="headerlink" href="#let-x-expr-name-binding" title="Permalink to this headline">¶</a></h2>
@@ -560,7 +560,7 @@ let P := S child ?TAG_formal_parameter
          ?(@AT_type ((?TAG_const_type,
                       ?TAG_volatile_type, ?TAG_typedef) @AT_type)*
            (?TAG_structure_type, ?TAG_class_type));
-P S &quot;%s: %s has non-trivial type.&quot;
+S P &quot;%s: %s has non-trivial type.&quot;
 EOF
 
 ---
@@ -715,9 +715,9 @@ the actual function words that you can use.</p>
 <li><a class="reference internal" href="#child-child-traversal"><tt class="docutils literal"><span class="pre">child</span></tt> &#8212; child traversal</a></li>
 <li><a class="reference internal" href="#dw-at-foo-value-of-attribute-dw-at-foo"><tt class="docutils literal"><span class="pre">&#64;DW_AT_foo</span></tt> &#8212; value of attribute <tt class="docutils literal"><span class="pre">DW_AT_foo</span></tt></a></li>
 <li><a class="reference internal" href="#expr-expr-sub-expressions-assertions"><tt class="docutils literal"><span class="pre">?(EXPR)</span></tt>, <tt class="docutils literal"><span class="pre">!(EXPR)</span></tt> &#8212; Sub-expressions assertions</a></li>
-<li><a class="reference internal" href="#expr-expr-expr-expr-comparisons"><tt class="docutils literal"><span class="pre">EXPR</span> <span class="pre">==</span> <span class="pre">EXPR</span></tt>, <tt class="docutils literal"><span class="pre">EXPR</span> <span class="pre">!=</span> <span class="pre">EXPR</span></tt> &#8212; comparisons</a></li>
-<li><a class="reference internal" href="#expr-expr-alternation"><tt class="docutils literal"><span class="pre">EXPR,</span> <span class="pre">EXPR</span></tt> &#8212; alternation</a></li>
-<li><a class="reference internal" href="#expr-expr-c-style-fallback"><tt class="docutils literal"><span class="pre">EXPR</span> <span class="pre">||</span> <span class="pre">EXPR</span></tt> &#8212; C-style fallback</a></li>
+<li><a class="reference internal" href="#expr-expr-expr-expr-infix-assertions"><tt class="docutils literal"><span class="pre">EXPR</span> <span class="pre">==</span> <span class="pre">EXPR</span></tt>, <tt class="docutils literal"><span class="pre">EXPR</span> <span class="pre">!=</span> <span class="pre">EXPR</span></tt> &#8212; infix assertions</a></li>
+<li><a class="reference internal" href="#expr-expr-alt-lists"><tt class="docutils literal"><span class="pre">EXPR,</span> <span class="pre">EXPR</span></tt> &#8212; ALT-lists</a></li>
+<li><a class="reference internal" href="#expr-expr-or-lists"><tt class="docutils literal"><span class="pre">EXPR</span> <span class="pre">||</span> <span class="pre">EXPR</span></tt> &#8212; OR-lists</a></li>
 <li><a class="reference internal" href="#expr-expr-expr-expression-iteration"><tt class="docutils literal"><span class="pre">EXPR*</span></tt>, <tt class="docutils literal"><span class="pre">EXPR+</span></tt>, <tt class="docutils literal"><span class="pre">EXPR?</span></tt> &#8212; expression iteration</a></li>
 <li><a class="reference internal" href="#literals-strings-formatting">Literals, Strings, Formatting</a></li>
 <li><a class="reference internal" href="#let-x-expr-name-binding"><tt class="docutils literal"><span class="pre">let</span> <span class="pre">X</span> <span class="pre">:=</span> <span class="pre">EXPR;</span></tt> &#8212; name binding</a></li>

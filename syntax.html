@@ -672,7 +672,8 @@ right.  E.g.:</p>
 3
 </pre></div>
 </div>
-<p>The following constructs comprise a scope:</p>
+<p>The new bindings are introduced into the most enclosing scope.  The
+following constructs comprise a scope:</p>
 <ul>
 <li><p class="first">Any sub-expression context has a scope of its own:</p>
 <div class="highlight-python"><div class="highlight"><pre>$ dwgrep &#39;?(let A := 1;) A&#39;
@@ -716,7 +717,7 @@ Error: Name `A&#39; rebound.
 </pre></div>
 </div>
 <p>It is also not possible to access names from outer scopes if they are
-covered by the same name in an inner scope.  In the following, the
+shadowed by the same name in an inner scope.  In the following, the
 inner reference to <tt class="docutils literal"><span class="pre">A</span></tt> will always resolve to <tt class="docutils literal"><span class="pre">2</span></tt>, and there is no
 way to access the outer <tt class="docutils literal"><span class="pre">A</span></tt> of <tt class="docutils literal"><span class="pre">1</span></tt>:</p>
 <div class="highlight-python"><div class="highlight"><pre>$ dwgrep &#39;let A := 1; 2 [|A| A]&#39;
