@@ -171,93 +171,60 @@ namespace
   {
     std::shared_ptr <dwfl_context> m_dwctx;
     Dwarf_Die m_cudie;
-    Dwarf_Addr m_base;
-    ptrdiff_t m_offset;
+    constant_dom const &m_dom;
+    ptrdiff_t m_token;
     size_t m_i;
 
     macinfo_producer (std::shared_ptr <dwfl_context> dwctx,
-		      Dwarf_Die cudie)
+		      Dwarf_Die cudie, constant_dom const &dom)
       : m_dwctx {dwctx}
       , m_cudie (cudie)
-      , m_offset {0}
+      , m_dom {dom}
+      , m_token {0}
       , m_i {0}
     {}
 
-    using result_t = std::pair <macinfo_producer &, std::unique_ptr <value>>;
+    struct cb_data
+    {
+      macinfo_producer &self;
+      std::unique_ptr <value> result;
+    };
 
     static int
-    callback (Dwarf_Macro *macro, void *data)
+    callback (Dwarf_Macro *macro, void *u)
     {
-      auto retp = static_cast <result_t *> (data);
-      size_t &m_i = retp->first.m_i;
+      auto &data = *static_cast <cb_data *> (u);
 
       value_seq::seq_t seq;
 
       unsigned int opcode;
-      if (dwarf_macro_opcode (macro, &opcode) < 0)
+      if (dwarf_macro_opcode (macro, &opcode) != 0)
 	throw_libdw ();
 
-      {
-	constant c {opcode, &dw_macinfo_dom ()};
-	seq.push_back (std::make_unique <value_cst> (c, 0));
-      }
+      constant c {opcode, &data.self.m_dom};
+      seq.push_back (std::make_unique <value_cst> (c, 0));
 
-      constant_dom const *param1dom;
-      switch (opcode)
+      size_t cnt;
+      if (dwarf_macro_getparamcnt (macro, &cnt) != 0)
+	throw_libdw ();
+
+      for (size_t i = 0; i < cnt; ++i)
 	{
-	case DW_MACINFO_define:
-	case DW_MACINFO_undef:
-	case DW_MACINFO_start_file:
-	  param1dom = &line_number_dom;
-	  break;
-
-	case DW_MACINFO_vendor_ext:
-	  param1dom = &dec_constant_dom;
-	  break;
-
-	default:
-	  param1dom = nullptr;
-	};
-
-      if (param1dom != nullptr)
-	{
-	  Dwarf_Word param1;
-	  if (dwarf_macro_param1 (macro, &param1) < 0)
+	  Dwarf_Attribute param;
+	  if (dwarf_macro_param (macro, i, &param) != 0)
 	    throw_libdw ();
-	  constant c {param1, param1dom};
-	  seq.push_back (std::make_unique <value_cst> (c, 0));
+
+	  /* If this is a section offset, handle it here, so that we
+	     don't end up in an endless loop.  */
+	  auto prod = dwarf_whatform (&param) == DW_FORM_sec_offset
+	    ? atval_unsigned_with_domain (param, dw_address_dom ())
+	    : at_value (data.self.m_dwctx, data.self.m_cudie, param);
+
+	  while (auto val = prod->next ())
+	    seq.push_back (std::move (val));
 	}
 
-      switch (opcode)
-	{
-	case DW_MACINFO_define:
-	case DW_MACINFO_undef:
-	case DW_MACINFO_vendor_ext:
-	  {
-	    const char *str;
-	    if (dwarf_macro_param2 (macro, nullptr, &str) < 0)
-	      throw_libdw ();
-	    seq.push_back
-	      (std::make_unique <value_str> (std::string {str}, 0));
-	    break;
-	  }
-
-	case DW_MACINFO_start_file:
-	  // XXX file index that should be translated to a string.
-	  {
-	    Dwarf_Word param2;
-	    if (dwarf_macro_param2 (macro, &param2, nullptr) < 0)
-	      throw_libdw ();
-	    constant c {param2, &dec_constant_dom};
-	    seq.push_back (std::make_unique <value_cst> (c, 0));
-	    break;
-	  }
-
-	default:;
-	}
-
-      retp->second = std::make_unique <value_seq> (std::move (seq), m_i);
-      m_i++;
+      data.result = std::make_unique <value_seq> (std::move (seq), data.self.m_i++);
 
       return DWARF_CB_ABORT;
     }
@@ -265,14 +232,14 @@ namespace
     std::unique_ptr <value>
     next () override
     {
-      result_t result {*this, nullptr};
-      m_offset = dwarf_getmacros (&m_cudie, callback, &result, m_offset);
-      if (m_offset < 0)
+      cb_data data = {*this, nullptr};
+      m_token = dwarf_getmacros (&m_cudie, callback, &data, m_token);
+      if (m_token == -1)
 	throw_libdw ();
-      if (m_offset == 0)
+      if (m_token == 0)
 	return nullptr;
 
-      return std::move (result.second);
+      return std::move (data.result);
     }
   };
 }
@@ -562,14 +529,22 @@ namespace
 		(std::make_unique <value_aset> (die_ranges (die)));
 
       case DW_AT_macro_info:
+      case DW_AT_GNU_macros:
 	{
 	  Dwarf_Die cudie;
 	  if (dwarf_diecu (&die, &cudie, nullptr, nullptr) == nullptr)
 	    throw_libdw ();
-	  return std::make_unique <macinfo_producer> (dwctx, cudie);
+
+	  if (dwarf_hasattr (&cudie, DW_AT_macro_info))
+	    return std::make_unique <macinfo_producer>
+	      (dwctx, cudie, dw_macinfo_dom ());
+	  else if (dwarf_hasattr (&cudie, DW_AT_GNU_macros))
+	    return std::make_unique <macinfo_producer>
+	      (dwctx, cudie, dw_macro_dom ());
+	  else
+	    return std::make_unique <null_producer> ();
 	}
 
-      case DW_AT_GNU_macros:
 	std::cerr << "DW_AT_GNU_macros NIY\n";
 	return atval_unsigned_with_domain (attr, hex_constant_dom);
 
