@@ -50,7 +50,6 @@ Searches for PATTERN in FILEs.\n\
 \n\
 -s, --no-messages	suppress error messages\n\
 -q, --quiet, --silent	suppress all normal output\n\
-    --verbose		show query parse in addition to normal output\n\
 -H, --with-filename	print the filename for each match\n\
 -h, --no-filename	suppress printing filename on output\n\
 -c, --count		print only a count of query results\n\
@@ -67,13 +66,11 @@ main(int argc, char *argv[])
 
   enum
   {
-    verbose_flag = 257,
-    help_flag,
+    help_flag = 257,
   };
 
   static option long_options[] = {
     {"quiet", no_argument, nullptr, 'q'},
-    {"verbose", no_argument, nullptr, verbose_flag},
     {"silent", no_argument, nullptr, 'q'},
     {"no-messages", no_argument, nullptr, 's'},
     {"expr", required_argument, nullptr, 'e'},
@@ -143,10 +140,6 @@ main(int argc, char *argv[])
 
 	case 'q':
 	  verbosity = -1;
-	  break;
-
-	case verbose_flag:
-	  verbosity = 1;
 	  break;
 
 	case help_flag:
