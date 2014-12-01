@@ -34,28 +34,193 @@
 #include <libintl.h>
 #include <vector>
 #include <cassert>
+#include <getopt.h>
+#include <map>
 
 #include "libzwerg.h"
+#include "libzwerg-dw.h"
+#include "../libzwerg/std-memory.hh"
 
-
-static void
-show_help ()
+struct ext_argument
 {
-  std::cout << "\
-Typical usage: dwgrep FILE... -e PATTERN\n\
-Searches for PATTERN in FILEs.\n\
-\n\
--e, --expr=EXPR		EXPR is a query to run\n\
--f, --file=FILE		load query from FILE\n\
-\n\
--s, --no-messages	suppress error messages\n\
--q, --quiet, --silent	suppress all normal output\n\
--H, --with-filename	print the filename for each match\n\
--h, --no-filename	suppress printing filename on output\n\
--c, --count		print only a count of query results\n\
-\n\
-    --help		this message\n\
-";
+  char const *name;
+  int type;
+
+  static ext_argument required (char const *name)
+  { return {required_argument, name}; }
+
+  static ext_argument optional (char const *name)
+  { return {optional_argument, name}; }
+
+  static ext_argument no;
+
+  static std::string
+  shopt (int has_arg)
+  {
+    switch (has_arg)
+      {
+      case optional_argument:
+	return "::";
+      case required_argument:
+	return ":";
+      case no_argument:
+	return "";
+      };
+    assert (has_arg != has_arg);
+    abort ();
+  }
+
+  static std::string
+  help (int has_arg, char const *name)
+  {
+    switch (has_arg)
+      {
+      case optional_argument:
+	return std::string ("[=") + name + "]";
+      case required_argument:
+	return std::string ("=") + name;
+      case no_argument:
+	return "";
+      };
+    assert (has_arg != has_arg);
+    abort ();
+  }
+
+private:
+  ext_argument (int type, char const *name)
+    : name {name}
+    , type {type}
+  {}
+};
+
+ext_argument ext_argument::no {no_argument, nullptr};
+
+struct ext_shopt
+{
+  int const code;
+
+  ext_shopt (char code)
+    : code {code}
+  {}
+
+  ext_shopt ()
+    : code {gencode ()}
+  {}
+
+  static std::string
+  shopt (int c, int has_arg)
+  {
+    if (c < 256)
+      {
+	char cc = c;
+	return std::string (&cc, 1) + ext_argument::shopt (has_arg);
+      }
+    else
+      return "";
+  }
+
+  static std::string
+  help (int c)
+  {
+    if (c < 256)
+      return std::string ("-") + ((char) c);
+    else
+      return "";
+  }
+
+private:
+  int
+  gencode ()
+  {
+    static int last = 256;
+    return last++;
+  }
+};
+
+bool
+operator== (int c, ext_shopt const &shopt)
+{
+  return c == shopt.code;
+}
+
+struct ext_option
+  : public option
+{
+  char const *docstring;
+  char const *arg_name;
+
+  ext_option (ext_shopt shopt, const char *lopt, ext_argument arg,
+	      char const *docstring)
+    : option {lopt, arg.type, nullptr, shopt.code}
+    , docstring {docstring}
+    , arg_name {arg.name}
+  {}
+
+  std::string
+  shopt () const
+  {
+    return ext_shopt::shopt (val, has_arg);
+  }
+};
+
+std::unique_ptr <option[]>
+gen_options (std::vector <ext_option> const &ext_opts)
+{
+  size_t sz = ext_opts.size ();
+  auto ret = std::make_unique <option[]> (sz + 1);
+
+  for (size_t i = 0; i < sz; ++i)
+    // Slice off the extra stuff.
+    ret[i] = ext_opts[i];
+
+  ret[sz] = (struct option) {0, 0, 0, 0};
+  return ret;
+}
+
+std::string
+gen_shopts (std::vector <ext_option> const &ext_opts)
+{
+  std::string ret;
+  for (auto const &ext_opt: ext_opts)
+    ret += ext_opt.shopt ();
+  return ret;
+}
+
+void
+show_help (std::vector <ext_option> const &ext_opts)
+{
+  std::cout << "Usage:\n  dwgrep FILE... -e PATTERN\n\n"
+	    << "Options:\n";
+
+  std::map <int, std::pair <std::vector <std::string>, std::string>> opts;
+
+  for (auto const &opt: ext_opts)
+    {
+      auto &entry = opts[opt.val];
+      if (entry.first.empty ())
+	{
+	  std::string sh = ext_shopt::help (opt.val);
+	  if (sh != "")
+	    entry.first.push_back (sh);
+	}
+
+      auto arg = ext_argument::help (opt.has_arg, opt.arg_name);
+      entry.first.push_back (std::string ("--") + opt.name + arg);
+      entry.second += opt.docstring;
+    }
+
+
+  for (auto const &opt: opts)
+    {
+      std::cout << "  ";
+      bool seen = false;
+      for (auto const &l: opt.second.first)
+	{
+	  std::cout << (seen ? ", " : "") << l;
+	  seen = true;
+	}
+      std::cout << "\n\t" << opt.second.second << "\n";
+    }
 }
 
 int
@@ -64,24 +229,36 @@ main(int argc, char *argv[])
   setlocale (LC_ALL, "");
   textdomain ("dwgrep");
 
-  enum
-  {
-    help_flag = 257,
+  ext_shopt help;
+  std::vector <ext_option> ext_options = {
+    {'q', "quiet", ext_argument::no,
+     "Suppress all normal output."},
+    {'q', "silent", ext_argument::no, ""},
+
+    {'s', "no-messages", ext_argument::no,
+     "Suppress error messages."},
+
+    {'e', "expr", ext_argument::required ("EXPR"),
+     "*EXPR* is a query to run."},
+
+    {'c', "count", ext_argument::no,
+     "Print only a count of query results, not the results themselves."},
+
+    {'H', "with-filename", ext_argument::no,
+     "Print the filename for each match."},
+
+    {'h', "no-filename", ext_argument::no,
+     "Suppress printing filename on output."},
+
+    {'f', "file", ext_argument::required ("FILE"),
+     "Load query from *FILE*."},
+
+    {help, "help", ext_argument::no,
+     "Show help and exit."},
   };
 
-  static option long_options[] = {
-    {"quiet", no_argument, nullptr, 'q'},
-    {"silent", no_argument, nullptr, 'q'},
-    {"no-messages", no_argument, nullptr, 's'},
-    {"expr", required_argument, nullptr, 'e'},
-    {"count", no_argument, nullptr, 'c'},
-    {"with-filename", no_argument, nullptr, 'H'},
-    {"no-filename", no_argument, nullptr, 'h'},
-    {"file", required_argument, nullptr, 'f'},
-    {"help", no_argument, nullptr, help_flag},
-    {nullptr, no_argument, nullptr, 0},
-  };
-  static char const *options = "ce:Hhqsf:O:";
+  std::unique_ptr <option[]> long_options = gen_options (ext_options);
+  std::string options = gen_shopts (ext_options);
 
   int verbosity = 0;
   bool no_messages = false;
@@ -115,7 +292,7 @@ main(int argc, char *argv[])
 
   while (true)
     {
-      int c = getopt_long (argc, argv, options, long_options, nullptr);
+      int c = getopt_long (argc, argv, options.c_str (), long_options.get (), nullptr);
       if (c == -1)
 	break;
 
@@ -142,10 +319,6 @@ main(int argc, char *argv[])
 	  verbosity = -1;
 	  break;
 
-	case help_flag:
-	  show_help ();
-	  return 0;
-
 	case 's':
 	  no_messages = true;
 	  break;
@@ -162,7 +335,13 @@ main(int argc, char *argv[])
 	  }
 
 	default:
-	  std::exit (2);
+	  if (c == help)
+	    {
+	      show_help (ext_options);
+	      return 0;
+	    }
+
+	  return 2;
 	}
     }
 
