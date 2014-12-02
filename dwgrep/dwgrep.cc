@@ -34,6 +34,7 @@
 #include <cassert>
 #include <getopt.h>
 #include <map>
+#include <cstring>
 
 #include "libzwerg.h"
 #include "libzwerg-dw.h"
@@ -165,9 +166,15 @@ main(int argc, char *argv[])
 
 	case 'f':
 	  {
-	    std::ifstream ifs {optarg};
-	    query_str += std::string {std::istreambuf_iterator <char> {ifs},
-		std::istreambuf_iterator <char> {}}
+	    if (strcmp (optarg, "-") != 0)
+	      {
+		std::ifstream ifs {optarg};
+		query_str += std::string {std::istreambuf_iterator <char> {ifs},
+		    std::istreambuf_iterator <char> {}};
+	      }
+	    else
+	      query_str += std::string {std::istreambuf_iterator <char> {std::cin},
+		  std::istreambuf_iterator <char> {}};
 	    query_specified = true;
 	    break;
 	  }
