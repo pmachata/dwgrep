@@ -127,7 +127,8 @@ main(int argc, char *argv[])
       || ! zw_vocabulary_add (&*voc, voc_dw, &err))
     return die (err);
 
-  std::shared_ptr <zw_query> query;
+  bool query_specified = false;
+  std::string query_str;
 
   while (true)
     {
@@ -138,10 +139,8 @@ main(int argc, char *argv[])
       switch (c)
 	{
 	case 'e':
-	  if (zw_query *q = zw_query_parse (&*voc, optarg, &err))
-	    query.reset (q, &zw_query_destroy);
-	  else
-	    return die (err);
+	  query_str += optarg;
+	  query_specified = true;
 	  break;
 
 	case 'c':
@@ -167,13 +166,9 @@ main(int argc, char *argv[])
 	case 'f':
 	  {
 	    std::ifstream ifs {optarg};
-	    std::string str {std::istreambuf_iterator <char> {ifs},
-			     std::istreambuf_iterator <char> {}};
-	    if (zw_query *q = zw_query_parse_len (&*voc, str.c_str (),
-						  str.length (), &err))
-	      query.reset (q, &zw_query_destroy);
-	    else
-	      return die (err);
+	    query_str += std::string {std::istreambuf_iterator <char> {ifs},
+		std::istreambuf_iterator <char> {}}
+	    query_specified = true;
 	    break;
 	  }
 
@@ -191,7 +186,16 @@ main(int argc, char *argv[])
   argc -= optind;
   argv += optind;
 
-  if (query == nullptr)
+  std::shared_ptr <zw_query> query;
+  if (query_specified)
+    {
+      if (zw_query *q = zw_query_parse_len
+	  (&*voc, query_str.c_str (), query_str.length (), &err))
+	query.reset (q, &zw_query_destroy);
+      else
+	return die (err);
+    }
+  else
     {
       if (argc == 0)
 	{
