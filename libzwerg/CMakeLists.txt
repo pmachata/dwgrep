@@ -130,6 +130,11 @@ IF (GTEST_FOUND)
     $<TARGET_OBJECTS:TestStub> $<TARGET_OBJECTS:LibzwergCore>)
   TARGET_LINK_LIBRARIES (test-builtin-cmp ${GTEST_LIBRARIES})
   ADD_TEST (TestBuiltinCmp test-builtin-cmp ${TESTCASE_DIR})
+
+  ADD_EXECUTABLE (test-coverage test-coverage.cc coverage.cc
+    $<TARGET_OBJECTS:TestStub>)
+  TARGET_LINK_LIBRARIES (test-coverage ${GTEST_LIBRARIES})
+  ADD_TEST (TestBuiltinCovegare test-coverage ${TESTCASE_DIR})
 ENDIF ()
 
 IF (SPHINX_EXECUTABLE)
