@@ -26,8 +26,6 @@
    the GNU Lesser General Public License along with this program.  If
    not, see <http://www.gnu.org/licenses/>.  */
 
-#include <getopt.h>
-
 #include <iostream>
 #include <fstream>
 #include <memory>
@@ -39,129 +37,9 @@
 
 #include "libzwerg.h"
 #include "libzwerg-dw.h"
-#include "../libzwerg/std-memory.hh"
-
-struct ext_argument
-{
-  char const *name;
-  int type;
-
-  static ext_argument required (char const *name)
-  { return {required_argument, name}; }
-
-  static ext_argument optional (char const *name)
-  { return {optional_argument, name}; }
-
-  static ext_argument no;
-
-  static std::string
-  shopt (int has_arg)
-  {
-    switch (has_arg)
-      {
-      case optional_argument:
-	return "::";
-      case required_argument:
-	return ":";
-      case no_argument:
-	return "";
-      };
-    assert (has_arg != has_arg);
-    abort ();
-  }
-
-  static std::string
-  help (int has_arg, char const *name)
-  {
-    switch (has_arg)
-      {
-      case optional_argument:
-	return std::string ("[=") + name + "]";
-      case required_argument:
-	return std::string ("=") + name;
-      case no_argument:
-	return "";
-      };
-    assert (has_arg != has_arg);
-    abort ();
-  }
-
-private:
-  ext_argument (int type, char const *name)
-    : name {name}
-    , type {type}
-  {}
-};
-
-ext_argument ext_argument::no {no_argument, nullptr};
-
-struct ext_shopt
-{
-  int const code;
-
-  ext_shopt (char code)
-    : code {code}
-  {}
-
-  ext_shopt ()
-    : code {gencode ()}
-  {}
-
-  static std::string
-  shopt (int c, int has_arg)
-  {
-    if (c < 256)
-      {
-	char cc = c;
-	return std::string (&cc, 1) + ext_argument::shopt (has_arg);
-      }
-    else
-      return "";
-  }
-
-  static std::string
-  help (int c)
-  {
-    if (c < 256)
-      return std::string ("-") + ((char) c);
-    else
-      return "";
-  }
-
-private:
-  int
-  gencode ()
-  {
-    static int last = 256;
-    return last++;
-  }
-};
-
-bool
-operator== (int c, ext_shopt const &shopt)
-{
-  return c == shopt.code;
-}
-
-struct ext_option
-  : public option
-{
-  char const *docstring;
-  char const *arg_name;
-
-  ext_option (ext_shopt shopt, const char *lopt, ext_argument arg,
-	      char const *docstring)
-    : option {lopt, arg.type, nullptr, shopt.code}
-    , docstring {docstring}
-    , arg_name {arg.name}
-  {}
-
-  std::string
-  shopt () const
-  {
-    return ext_shopt::shopt (val, has_arg);
-  }
-};
+#include "options.hh"
+#include "libzwerg/std-memory.hh"
+#include "libzwerg/strip.hh"
 
 std::unique_ptr <option[]>
 gen_options (std::vector <ext_option> const &ext_opts)
@@ -192,23 +70,8 @@ show_help (std::vector <ext_option> const &ext_opts)
   std::cout << "Usage:\n  dwgrep FILE... -e PATTERN\n\n"
 	    << "Options:\n";
 
-  std::map <int, std::pair <std::vector <std::string>, std::string>> opts;
-
-  for (auto const &opt: ext_opts)
-    {
-      auto &entry = opts[opt.val];
-      if (entry.first.empty ())
-	{
-	  std::string sh = ext_shopt::help (opt.val);
-	  if (sh != "")
-	    entry.first.push_back (sh);
-	}
-
-      auto arg = ext_argument::help (opt.has_arg, opt.arg_name);
-      entry.first.push_back (std::string ("--") + opt.name + arg);
-      entry.second += opt.docstring;
-    }
-
+  std::map <int, std::pair <std::vector <std::string>, std::string>> opts
+    = merge_options (ext_opts);
 
   for (auto const &opt: opts)
     {
@@ -219,7 +82,10 @@ show_help (std::vector <ext_option> const &ext_opts)
 	  std::cout << (seen ? ", " : "") << l;
 	  seen = true;
 	}
-      std::cout << "\n\t" << opt.second.second << "\n";
+
+      std::string ds = strip (opt.second.second, " \t\n");
+      auto period = ds.find_first_of (".");
+      std::cout << "\n\t" << ds.substr (0, period) << "\n";
     }
 }
 
@@ -228,34 +94,6 @@ main(int argc, char *argv[])
 {
   setlocale (LC_ALL, "");
   textdomain ("dwgrep");
-
-  ext_shopt help;
-  std::vector <ext_option> ext_options = {
-    {'q', "quiet", ext_argument::no,
-     "Suppress all normal output."},
-    {'q', "silent", ext_argument::no, ""},
-
-    {'s', "no-messages", ext_argument::no,
-     "Suppress error messages."},
-
-    {'e', "expr", ext_argument::required ("EXPR"),
-     "*EXPR* is a query to run."},
-
-    {'c', "count", ext_argument::no,
-     "Print only a count of query results, not the results themselves."},
-
-    {'H', "with-filename", ext_argument::no,
-     "Print the filename for each match."},
-
-    {'h', "no-filename", ext_argument::no,
-     "Suppress printing filename on output."},
-
-    {'f', "file", ext_argument::required ("FILE"),
-     "Load query from *FILE*."},
-
-    {help, "help", ext_argument::no,
-     "Show help and exit."},
-  };
 
   std::unique_ptr <option[]> long_options = gen_options (ext_options);
   std::string options = gen_shopts (ext_options);
@@ -391,7 +229,7 @@ main(int argc, char *argv[])
 
       if (fn != "")
 	{
-	  zw_value *dwv = zw_value_init_dwarf (fn.c_str (), &err);
+	  zw_value *dwv = zw_value_init_dwarf (fn.c_str (), 0, &err);
 	  if (dwv == nullptr
 	      || ! zw_stack_push_take (stack, dwv, &err))
 	    goto fail;
