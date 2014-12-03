@@ -26,6 +26,7 @@
   not, see <http://www.gnu.org/licenses/>.  */
 
 #include "libzwerg.h"
+#include "libzwerg-dw.h"
 
 #include <string>
 #include <memory>

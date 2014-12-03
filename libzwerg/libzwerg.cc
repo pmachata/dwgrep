@@ -244,24 +244,24 @@ zw_query_destroy (zw_query *query)
 namespace
 {
   zw_value *
-  init_dwarf (char const *filename, doneness d, zw_error **out_err)
+  init_dwarf (char const *filename, doneness d, size_t pos, zw_error **out_err)
   {
     return capture_errors ([&] () {
-	return new zw_value { std::make_unique <value_dwarf> (filename, 0, d) };
+	return new zw_value {std::make_unique <value_dwarf> (filename, pos, d)};
       }, nullptr, out_err);
   }
 }
 
 zw_value *
-zw_value_init_dwarf (char const *filename, zw_error **out_err)
+zw_value_init_dwarf (char const *filename, size_t pos, zw_error **out_err)
 {
-  return init_dwarf (filename, doneness::cooked, out_err);
+  return init_dwarf (filename, doneness::cooked, pos, out_err);
 }
 
 zw_value *
-zw_value_init_dwarf_raw (char const *filename, zw_error **out_err)
+zw_value_init_dwarf_raw (char const *filename, size_t pos, zw_error **out_err)
 {
-  return init_dwarf (filename, doneness::raw, out_err);
+  return init_dwarf (filename, doneness::raw, pos, out_err);
 }
 
 void
