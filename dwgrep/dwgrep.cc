@@ -107,7 +107,8 @@ main(int argc, char *argv[])
   std::vector <std::string> to_process;
 
   zw_error *err;
-  zw_vocabulary *voc = zw_vocabulary_init (&err);
+  std::shared_ptr <zw_vocabulary> voc (zw_vocabulary_init (&err),
+				       &zw_vocabulary_destroy);
   assert (voc != nullptr); // XXX
 
   zw_vocabulary const *voc_core = zw_vocabulary_core (&err);
@@ -116,17 +117,17 @@ main(int argc, char *argv[])
   zw_vocabulary const *voc_dw = zw_vocabulary_dwarf (&err);
   assert (voc_dw != nullptr); // XXX
 
-  auto error_throw = [] (zw_error *err)
+  auto die = [] (zw_error *err)
     {
       std::cerr << "Error: " << zw_error_message (err) << std::endl;
-      std::exit (1);
+      return 2;
     };
 
-  if (! zw_vocabulary_add (voc, voc_core, &err)
-      || ! zw_vocabulary_add (voc, voc_dw, &err))
-    error_throw (err);
+  if (! zw_vocabulary_add (&*voc, voc_core, &err)
+      || ! zw_vocabulary_add (&*voc, voc_dw, &err))
+    return die (err);
 
-  zw_query *query = nullptr;
+  std::shared_ptr <zw_query> query;
 
   while (true)
     {
@@ -137,8 +138,10 @@ main(int argc, char *argv[])
       switch (c)
 	{
 	case 'e':
-	  if ((query = zw_query_parse (voc, optarg, &err)) == nullptr)
-	    error_throw (err);
+	  if (zw_query *q = zw_query_parse (&*voc, optarg, &err))
+	    query.reset (q, &zw_query_destroy);
+	  else
+	    return die (err);
 	  break;
 
 	case 'c':
@@ -166,9 +169,11 @@ main(int argc, char *argv[])
 	    std::ifstream ifs {optarg};
 	    std::string str {std::istreambuf_iterator <char> {ifs},
 			     std::istreambuf_iterator <char> {}};
-	    if ((query = zw_query_parse_len
-		 (voc, str.c_str (), str.length (), &err)) == nullptr)
-	      error_throw (err);
+	    if (zw_query *q = zw_query_parse_len (&*voc, str.c_str (),
+						  str.length (), &err))
+	      query.reset (q, &zw_query_destroy);
+	    else
+	      return die (err);
 	    break;
 	  }
 
@@ -193,8 +198,10 @@ main(int argc, char *argv[])
 	  std::cerr << "No query specified.\n";
 	  return 2;
 	}
-      if ((query = zw_query_parse (voc, *argv++, &err)) == nullptr)
-	error_throw (err);
+      if (zw_query *q = zw_query_parse (&*voc, *argv++, &err))
+	query.reset (q, &zw_query_destroy);
+      else
+	return die (err);
       argc--;
     }
 
@@ -214,7 +221,8 @@ main(int argc, char *argv[])
   bool match = false;
   for (auto const &fn: to_process)
     {
-      zw_stack *stack = zw_stack_init (&err);
+      std::shared_ptr <zw_stack> stack (zw_stack_init (&err),
+					&zw_stack_destroy);
       if (stack == nullptr)
 	{
 	fail:
@@ -231,11 +239,16 @@ main(int argc, char *argv[])
 	{
 	  zw_value *dwv = zw_value_init_dwarf (fn.c_str (), 0, &err);
 	  if (dwv == nullptr
-	      || ! zw_stack_push_take (stack, dwv, &err))
-	    goto fail;
+	      || ! zw_stack_push_take (&*stack, dwv, &err))
+	    {
+	      zw_value_destroy (dwv);
+	      goto fail;
+	    }
 	}
 
-      zw_result *result = zw_query_execute (query, stack, &err);
+      std::shared_ptr <zw_result> result
+	(zw_query_execute (&*query, &*stack, &err),
+	 &zw_result_destroy);
       if (result == nullptr)
 	goto fail;
 
@@ -243,7 +256,7 @@ main(int argc, char *argv[])
       while (true)
 	{
 	  zw_stack *out;
-	  if (! zw_result_next (result, &out, &err))
+	  if (! zw_result_next (&*result, &out, &err))
 	    {
 	      if (! no_messages)
 		std::cerr << "dwgrep: " << fn << ": "
@@ -257,7 +270,7 @@ main(int argc, char *argv[])
 	  // grep: Exit immediately with zero status if any match
 	  // is found, even if an error was detected.
 	  if (verbosity < 0)
-	    std::exit (0);
+	    return 0;
 
 	  match = true;
 	  if (! show_count)
@@ -267,10 +280,12 @@ main(int argc, char *argv[])
 	      if (zw_stack_depth (out) > 1)
 		std::cout << "---\n";
 	      if (! zw_stack_dump_xxx (out, &err))
-		error_throw (err);
+		return die (err);
 	    }
 	  else
 	    ++count;
+
+	  zw_stack_destroy (out);
 	}
 
       if (show_count)
@@ -282,10 +297,7 @@ main(int argc, char *argv[])
     }
 
   if (errors)
-    std::exit (2);
+    return 2;
 
-  if (match)
-    std::exit (0);
-  else
-    std::exit (1);
+  return match ? 0 : 1;
 }
