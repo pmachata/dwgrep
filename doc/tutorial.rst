@@ -662,5 +662,3 @@ So, that's it.  This was a quick tour through the interesting parts of
 ``dwgrep``.  You may now want to check out :ref:`syntax`, and
 :ref:`zw_vocabulary_core` or :ref:`zw_vocabulary_dwarf` to learn about
 the actual function words that you can use.
-
-

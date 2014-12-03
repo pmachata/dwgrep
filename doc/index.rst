@@ -8,6 +8,7 @@ Welcome to dwgrep's documentation!
 
    cli
    tutorial
+   examples
    syntax
    vocabulary-core
    vocabulary-dwarf

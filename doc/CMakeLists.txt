@@ -5,6 +5,7 @@ SET (DocSources
   index.rst
   syntax.rst
   tutorial.rst
+  examples.rst
   zw_vocabulary_core-blurb.txt
   zw_vocabulary_dwarf-blurb.txt
 )

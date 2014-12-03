@@ -8,6 +8,7 @@ Table of contents
 
    cli
    tutorial
+   examples
    syntax
    vocabulary-core
    vocabulary-dwarf

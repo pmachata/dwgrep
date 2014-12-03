@@ -165,22 +165,6 @@
 
 * Examples
 
-** Josh Stone's nontrivial-parameters script
-
-   : let A := entry ?TAG_subprogram !AT_declaration
-   :          ?(@AT_decl_file (=~ "^/usr/") (!~ "^/usr/src/debug"));
-   :
-   : let B := A child ?TAG_formal_parameter
-   :          ?(@AT_type ((?TAG_const_type, ?TAG_volatile_type, ?TAG_typedef)
-   :            @AT_type)* (?TAG_structure_type, ?TAG_class_type));
-   :
-   : "%( A @AT_decl_file %): %( A @AT_decl_line %): note: in function "\
-   : "`%( A @AT_name %)', parameter `%( B @AT_name %)' type is not trivial"
-
-** check_die_decl_call:
-   : (entry ?AT_decl_column !AT_decl_line "%s has decl_column, but NOT decl_line"
-   : , etc.)
-
 ** check_die_line_info:
    : let A := entry (?TAG_subprogram, ?TAG_inlined_subroutine, ?TAG_entry_point,
    :                ?TAG_lexical_block, ?TAG_label, ?TAG_with_stmt,
@@ -190,92 +174,6 @@
    : ?(B C !overlaps || B C overlap != B)
    : "Address range %( B %) referenced from %( A %)"\
    : " not fully covered by line table."
-
-** contains DW_OP_fbreg && ! @frame_base
-   : entry !AT_frame_base (@AT_location elem label == DW_OP_fbreg)
-
-** uses register based operators
-
-   : entry ?(@AT_location elem label
-   :         (== DW_OP_bregx || (>= DW_OP_reg0) (<= DW_OP_regx)))
-
-   : entry ?(@AT_location elem label "%s" "_b?reg" ?find)
-
-** whether it uses a deref operator
-
-   : entry ?(@AT_location elem label (?OP_deref, ?OP_xderef, ?OP_deref_size,
-   :                                  ?OP_xderef_size, ?OP_GNU_deref_type))
-
-   : entry ?(@AT_location elem label "%s" "deref" ?find)
-
-** contains DW_OP_call_frame_cfa && $@low_pc == 0
-
-   : entry (@AT_low_pc == 0) ?(@AT_frame_base ?OP_call_frame_cfa)
-
-** is an empty location expression
-
-   : entry ?(@AT_location !(elem))
-
-** location expression ends with implicit_value or stack_value
-
-   : entry ?([@AT_location] relem (pos == 0) label
-   :         (?DW_OP_implicit_value, ?DW_OP_stack_value))
-
-** types inconsistent between instance and specification
-   - http://gcc.gnu.org/bugzilla/show_bug.cgi?id=43053
-
-     : let A := entry ?TAG_subprogram;
-     : let B := A child ?TAG_formal_parameter;
-     : let C := A @AT_specification child ?TAG_formal_parameter;
-     : (B pos == C pos) (B @AT_type != C @AT_type) A
-
-** duplicat DW_TAG_const_type
-   - http://gcc.gnu.org/bugzilla/show_bug.cgi?id=56740
-
-     : # Leaves on stack two DIE's that describe the same type.
-     : let A := entry (?TAG_const_type||?TAG_volatile_type||?TAG_restrict_type);
-     : A root child* (> A) (label == A label) (@AT_type == A @AT_type) A
-
-** find any attribute with value "blah"
-   : attribute (value == "blah")
-
-** check_duplicate_DW_tag_variable.cc
-   Check for two full DW_TAG_variable DIEs with the same DW_AT_name
-   value.
-
-   : entry ?TAG_variable (@AT_name == next+ ?TAG_variable @AT_name)
-
-** check_linkage_external_die.cc
-
-     : (|Dw|
-     :  let GetSym := {|X| Dw symtab (?STT_OBJECT, ?STT_FUNC)
-     :                     (@name == X @AT_linkage_name)};
-     :  Dw entry ?AT_linkage_name
-     :  if !(GetSym) then (
-     :      !AT_declaration !AT_const_value
-     :      (!structure_type !enumeration_type !union_type, ?AT_name)
-     :      "%s has linkage_name attribute that's not in symtab, "\
-     :      "but is not marked as declaration"
-     :  ) else if (GetSym ?STB_LOCAL) then (
-     :      !AT_declaration ?AT_external
-     :      "%s has linkage_name attribute, "\
-     :      "but the corresponding symbol is local"
-     :  ) else (
-     :      !AT_external
-     :      "%s has linkage_name attribute, but no external attribute"
-     :  ))
-
-   This is still 1:10 vs. dwarflint C++ (i.e., say 1:20 if we had to
-   explore the DIE tree by hand), but fairly involved.
-
-   The interpreter would need to notice the ?symbol nodes are used as
-   a sort of global variable for cross-referencing, otherwise this
-   would lead to an ugly combinatorial explosion of states.  Noticing
-   that we look at the bottom slot and cross-reference @AT_name with
-   @AT_linkage_name should be possible.
-
-   An alternative start would be something like:
-   : let Dw := $1 dwopen;
 
 ** CU A imports two PU's B and C, and both import the same third PU
 
@@ -287,31 +185,3 @@
    : A imports B imports (== swap)
    : "PU %(offset%) is imported by PU's %(A offset%) and %(B offset%), "\
    : "which are both imported by %(U offset%)."
-
-** typedef resolution
-   - dsmith asked for a way to get typedef "resolution" from DWARF
-     (for use with the syscall types in the kernel). Which was timely
-     since I was just thinking about having some "roundtripping" tests
-     for GCC/elfutils DWARF types. So hacked up a dwfltypedef that
-     prints all (C) typedefs found:
-
-     $ ./dwfltypedef -e ./dwfltypedef
-     [2d] typedef size_t long unsigned int (unsigned, 8 bytes);
-     [70] typedef __off_t long int (signed, 8 bytes);
-     [7b] typedef __off64_t long int (signed, 8 bytes);
-     [...]
-
-     : let T := entry ?TAG_typedef ;
-     : let U := T @AT_type (?TAG_typedef @AT_type)* !TAG_typedef ;
-     : "[%(T offset%)] typedef %(T @AT_name%) %(U @AT_name%) "\
-     : "(%( U @AT_encoding || "???" %), %( U @AT_byte_size || "???" %) bytes)"
-
-     [0x57] typedef __int32_t int (DW_ATE_signed, 4 bytes)
-     [0x70] typedef __off_t long int (DW_ATE_signed, 8 bytes)
-     [0x7b] typedef __off64_t long int (DW_ATE_signed, 8 bytes)
-     [0x9c] typedef __intptr_t long int (DW_ATE_signed, 8 bytes)
-     [0xa7] typedef size_t long unsigned int (DW_ATE_unsigned, 8 bytes)
-     [...]
-
-** nested identifier names
-   : (@AT_name == "a") child (@AT_name == "b") child (@AT_name == "c")

@@ -721,6 +721,13 @@ expect_count 1 ./empty -e 'raw name == "./empty"'
 expect_count 1 ./empty -e 'entry name == "empty.c"'
 expect_count 1 ./empty -e 'raw entry name == "empty.c"'
 
+# Test for inconsistent types.
+expect_count 1 ./inconsistent-types -e '
+	let A := entry ?TAG_subprogram;
+	let B := A child ?TAG_formal_parameter;
+	let C := A @AT_specification child ?TAG_formal_parameter;
+	(B pos == C pos) (B @AT_type != C @AT_type)'
+
 # Test that zero bytes don't terminate the query too soon.
 TMP=$(mktemp)
 echo -e '7 == "foo\x00bar" length' > $TMP
