@@ -1,11 +1,13 @@
 SET (DocSources
 
+  cli.rst
   fulltoc.rst
   index.rst
   syntax.rst
   tutorial.rst
   zw_vocabulary_core-blurb.txt
-  zw_vocabulary_dwarf-blurb.txt)
+  zw_vocabulary_dwarf-blurb.txt
+)
 
 IF (NOT DEFINED SPHINX_THEME)
   SET (SPHINX_THEME default)
@@ -40,6 +42,13 @@ ADD_CUSTOM_TARGET (GenerateDocs
   DEPENDS ../libzwerg/dwgrep-gendoc
   COMMENT "Building vocabulary reference")
 
+ADD_CUSTOM_TARGET (GenerateOptions
+  COMMAND ../dwgrep/dwgrep-genman
+	> "${AUX_SOURCE_DIR}/options.txt"
+
+  DEPENDS ../dwgrep/dwgrep-genman
+  COMMENT "Building CLI option reference")
+
 ADD_CUSTOM_TARGET (doc-html
     ${SPHINX_EXECUTABLE} -q -b html -c "${BINARY_BUILD_DIR}"
 	-d "${SPHINX_CACHE_DIR}" "${AUX_SOURCE_DIR}" "${SPHINX_HTML_DIR}"
@@ -47,4 +56,4 @@ ADD_CUSTOM_TARGET (doc-html
 
 ADD_CUSTOM_TARGET (doc)
 ADD_DEPENDENCIES (doc doc-html)
-ADD_DEPENDENCIES (doc-html GenerateDocs)
+ADD_DEPENDENCIES (doc-html GenerateDocs GenerateOptions)

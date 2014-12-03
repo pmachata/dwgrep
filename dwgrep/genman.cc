@@ -38,11 +38,10 @@ main(int argc, char *argv[])
 
   for (auto const &opt: opts)
     {
-      std::cout << "  ";
       bool seen = false;
       for (auto const &l: opt.second.first)
 	{
-	  std::cout << (seen ? ", " : "") << l;
+	  std::cout << (seen ? ", ``" : "``") << l << "``";
 	  seen = true;
 	}
 

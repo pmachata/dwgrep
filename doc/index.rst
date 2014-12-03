@@ -6,6 +6,7 @@ Welcome to dwgrep's documentation!
 .. toctree::
    :maxdepth: 1
 
+   cli
    tutorial
    syntax
    vocabulary-core
@@ -18,10 +19,11 @@ Introduction
 
 Dwgrep is a tool, an associated language (called Zwerg) and a library
 (libzwerg) for querying Dwarf (debuginfo) graphs.  If you want to find
-out more about Dwarf, check out a `short introductory text`__ or
-download a `Dwarf standard`__.  But you can also pretend that Dwarf is
-like XML, except nodes are called DIE's.  That, and perusing the
-output of ``eu-readelf -winfo``, should be enough to get you started.
+out more about Dwarf, check out an `introduction to the DWARF
+Debugging Format`__ or download the `Dwarf standard`__.  But you can
+also pretend that Dwarf is like XML, except nodes are called DIE's.
+That, and perusing the output of ``eu-readelf -winfo``, should be
+enough to get you started.
 
 .. __: http://www.dwarfstd.org/doc/Debugging%20using%20DWARF.pdf
 .. __: http://dwarfstd.org/Download.php
@@ -42,11 +44,9 @@ In particular, a simple expression in dwgrep might look like this::
 
 	entry ?DW_TAG_subprogram child ?DW_TAG_formal_parameter @DW_AT_name
 
-On a `command line`__, you would issue it like this::
+On a :ref:`command line <cli>`, you would issue it like this::
 
 	$ dwgrep /some/file/somewhere -e 'entry ?DW_TAG_subprogram ...etc....'
-
-.. __: XXX link to command line options.
 
 The query itself says: show me values of attribute ``DW_AT_name`` of
 ``DW_TAG_formal_parameter`` nodes that are children of
@@ -131,7 +131,7 @@ Further reading
 ===============
 
 Now would be a good time to read through the :ref:`tutorial`, which
-gives a step-by-step account on fundamental tools of Zwerg language.
+gives a step-by-step account of fundamental tools of Zwerg language.
 You might also want to look at :ref:`syntax`, where individual Zwerg
 forms are introduced and described.
 

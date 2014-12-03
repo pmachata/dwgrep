@@ -27,9 +27,9 @@
 
 #include "libzwergP.hh"
 
-#include <string>
-#include <iostream>
 #include <cstring>
+#include <iostream>
+#include <string>
 
 #include "builtin-dw.hh"
 #include "builtin.hh"
