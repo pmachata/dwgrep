@@ -29,6 +29,7 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <fcntl.h>
+#include <unistd.h>
 
 #include <iostream>
 #include <memory>
@@ -89,10 +90,32 @@ namespace
     return DWARF_CB_OK;
   }
 
+  struct fd_handle
+  {
+    int fd;
+    operator int () { return fd; }
+
+    fd_handle () : fd {-1} {}
+    fd_handle (int fd) : fd {fd} {}
+
+    int release ()
+    {
+      int ret = fd;
+      fd = -1;
+      return ret;
+    }
+
+    ~fd_handle ()
+    {
+      if (fd != -1)
+	close (fd);
+    }
+  };
+
   std::shared_ptr <Dwfl>
   open_dwfl (std::string const &fn)
   {
-    int fd = open (fn.c_str (), O_RDONLY);
+    fd_handle fd = open (fn.c_str (), O_RDONLY);
     if (fd == -1)
       throw std::runtime_error
 	(std::error_code (errno, std::system_category ()).message ());
@@ -112,6 +135,10 @@ namespace
 
     if (dwfl_report_offline (&*dwfl, fn.c_str (), fn.c_str (), fd) == nullptr)
       throw_libdwfl ();
+
+    // At this point the handle was consumed by dwfl_report_offline.
+    fd.release ();
+
     if (dwfl_report_end (&*dwfl, nullptr, nullptr) != 0)
       throw_libdwfl ();
 

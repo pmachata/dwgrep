@@ -27,6 +27,8 @@
    not, see <http://www.gnu.org/licenses/>.  */
 
 #include <gtest/gtest.h>
+#include <sys/time.h>
+#include <sys/resource.h>
 
 #include "builtin.hh"
 #include "builtin-dw.hh"
@@ -432,4 +434,34 @@ TEST_F (ZwTest, no_duplicate_abbrev_units)
 
   ASSERT_EQ (2, count (op_abbrev_dwarf {nullptr}
 			.operate (rdw ("dwz-partial2-1"))));
+}
+
+TEST_F (ZwTest, value_dwarf_doesnt_leak_fd)
+{
+  rlimit orig;
+  int rc = getrlimit (RLIMIT_NOFILE, &orig);
+  assert (rc == 0);
+
+  rlimit rl = orig;
+  assert (rl.rlim_cur >= 10);
+  rl.rlim_cur = 10;
+  rc = setrlimit (RLIMIT_NOFILE, &rl);
+  assert (rc == 0);
+
+  // Attempt to open a legitimate file several times.  If descriptors
+  // are leaked, this will eventually start failing.
+  for (int i = 0; i < 10; ++i)
+    ASSERT_NO_THROW (rdw ("dwz-partial2-1"));
+
+  // Attempt to create a value_dwarf from a file that's not a Dwarf.
+  // Do it many, many times.
+  for (int i = 0; i < 10; ++i)
+    ASSERT_THROW (rdw ("char_16_32.cc"), std::runtime_error);
+
+  // Now attempt to open a legitimate file.  If the file descriptor
+  // leaks, this will fail.
+  ASSERT_NO_THROW (rdw ("dwz-partial2-1"));
+
+  rc = setrlimit (RLIMIT_NOFILE, &orig);
+  assert (rc == 0);
 }
