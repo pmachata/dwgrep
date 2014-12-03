@@ -59,8 +59,10 @@ ADD_LIBRARY (LibzwergDw OBJECT
   dwcst.cc
   dwfl_context.cc
   dwit.cc
+  dwmods.cc
   libzwerg.cc
   value-dw.cc
+  builtin-dw-abbrev.cc
 )
 
 SET_TARGET_PROPERTIES (LibzwergDw PROPERTIES
