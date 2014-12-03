@@ -35,6 +35,7 @@ ADD_LIBRARY (LibzwergCore OBJECT
   overload.cc
   selector.cc
   stack.cc
+  strip.cc
   tree.cc
   tree_cr.cc
   value-closure.cc

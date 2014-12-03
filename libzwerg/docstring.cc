@@ -31,6 +31,7 @@
 
 #include "docstring.hh"
 #include "builtin.hh"
+#include "strip.hh"
 
 namespace
 {
@@ -92,18 +93,6 @@ namespace
       ss << " ``-> ???``";
 
     return ss.str ();
-  }
-
-  std::string
-  strip (std::string const &str, char const *whitespace)
-  {
-    std::string::size_type fst = str.find_first_not_of (whitespace, 0);
-    if (fst == std::string::npos)
-      return "";
-
-    auto lst = str.find_last_not_of (whitespace);
-    assert (lst != std::string::npos);
-    return str.substr (fst, lst - fst + 1);
   }
 }
 

@@ -26,29 +26,7 @@
    the GNU Lesser General Public License along with this program.  If
    not, see <http://www.gnu.org/licenses/>.  */
 
-#include <tuple>
-#include <memory>
-#include <vector>
 #include <string>
 
-#include "selector.hh"
-
-struct builtin;
-
-// For a given overload, this returns a pair whose first elements is a
-// string representation of its prototype, and the second is a
-// docstring associated with this overload.  These pairs are suitable
-// for the following deduplication step (see below).
-std::pair <std::string, std::string>
-format_overload (std::tuple <selector, std::shared_ptr <builtin>> const &ovl);
-
-// Entries are a mapping heading->content.  This finds content
-// duplicates and merges the corresponding headers.  It returns a
-// mapping list of heads->content.
-std::vector <std::pair <std::vector <std::string>, std::string>>
-doc_deduplicate (std::vector <std::pair <std::string, std::string>> &entries);
-
-// Formats the map that the above deduplication step returned.
-std::string format_entry_map (std::vector <std::pair <std::vector <std::string>,
-						      std::string>> entries,
-			      char udc, std::string label = "");
+// Strip whitespace from both ends of STR and return a new one.
+std::string strip (std::string const &str, char const *whitespace);
