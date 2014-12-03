@@ -333,6 +333,7 @@ namespace
     std::shared_ptr <dwfl_context> m_dwctx;
     std::vector <Dwarf *> m_dwarfs;
     std::vector <Dwarf *>::iterator m_it;
+    std::vector <Dwarf_Off> m_seen;
     cu_iterator m_cuit;
     size_t m_i;
 
@@ -347,8 +348,25 @@ namespace
     std::unique_ptr <value_abbrev_unit>
     next () override
     {
-      if (! maybe_next_dwarf (m_cuit, m_it, m_dwarfs.end ()))
-	return nullptr;
+      do
+	{
+	  auto orig_it = m_it;
+	  if (! maybe_next_dwarf (m_cuit, m_it, m_dwarfs.end ()))
+	    return nullptr;
+	  if (m_it != orig_it)
+	    m_seen.clear ();
+	}
+      while ([this] ()
+	     {
+	       Dwarf_Off off = dwpp_cu_abbrev_unit_offset (*(*m_cuit)->cu);
+	       bool isnew = std::find (m_seen.begin (), m_seen.end (),
+				       off) == m_seen.end ();
+	       if (isnew)
+		 m_seen.push_back (off);
+	       else
+		 ++m_cuit;
+	       return ! isnew;
+	     } ());
 
       return std::make_unique <value_abbrev_unit>
 	(m_dwctx, *(*m_cuit++)->cu, m_i++);

@@ -50,9 +50,9 @@ Values of this type represent opened Dwarf files.  If a given file
 contains .gnu_debugaltlink, it is subsumed by the Dwarf handle as
 well.
 
-Dwarf values (as well as many other Dwarf-related Zwerg values) come
-in two flavors: cooked and raw.  Raw values generally present the
-underlying bits faithfully, cooked ones do some amount of
+Values of type Dwarf (as well as many other Dwarf-related Zwerg
+values) come in two flavors: cooked and raw.  Raw values generally
+present the underlying bits faithfully, cooked ones do some amount of
 interpretation.  For example, cooked DIE's merge
 ``DW_TAG_imported_unit`` nodes, and thus a given node may be presented
 as having more children than the underlying bits suggest.  The actual
@@ -360,27 +360,15 @@ Values of this type represent abbreviation units found in Dwarf files::
 	$ dwgrep tests/dwz-partial2-1 -e 'abbrev'
 	abbrev unit 0
 	abbrev unit 0
-	abbrev unit 0
-	abbrev unit 0
-	abbrev unit 0
-	abbrev unit 0
-	abbrev unit 0
-
-XXX fix the above when abbrev units can report offset correctly.
 
 )docstring");
 
 void
 value_abbrev_unit::show (std::ostream &o, brevity brv) const
 {
-  Dwarf_Die cudie;
-  Dwarf_Off abbrev_off;
-  if (dwarf_cu_die (&m_cu, &cudie, nullptr, &abbrev_off,
-		    nullptr, nullptr, nullptr, nullptr) == nullptr)
-    throw_libdw ();
-
   ios_flag_saver s {o};
-  o << "abbrev unit " << std::hex << std::showbase << abbrev_off;
+  o << "abbrev unit " << std::hex << std::showbase
+    << dwpp_cu_abbrev_unit_offset (m_cu);
 }
 
 std::unique_ptr <value>

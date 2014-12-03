@@ -155,4 +155,16 @@ dwpp_formstring (Dwarf_Attribute &at)
   throw_libdw ();
 }
 
+inline Dwarf_Off
+dwpp_cu_abbrev_unit_offset (Dwarf_CU &cu)
+{
+  Dwarf_Die cudie;
+  Dwarf_Off abbrev_off;
+  if (dwarf_cu_die (&cu, &cudie, nullptr, &abbrev_off,
+		    nullptr, nullptr, nullptr, nullptr) == nullptr)
+    throw_libdw ();
+
+  return abbrev_off;
+}
+
 #endif /* _DWPP_H_ */

@@ -30,6 +30,7 @@
 
 #include "builtin.hh"
 #include "builtin-dw.hh"
+#include "builtin-dw-abbrev.hh"
 #include "init.hh"
 #include "value-dw.hh"
 #include "stack.hh"
@@ -62,6 +63,12 @@ namespace
   dw (std::string fn, doneness d)
   {
     return std::make_unique <value_dwarf> (test_file (fn), 0, d);
+  }
+
+  std::unique_ptr <value_dwarf>
+  rdw (std::string fn)
+  {
+    return dw (fn, doneness::raw);
   }
 }
 
@@ -401,4 +408,28 @@ TEST_F (ZwTest, dies_from_two_files_neq)
   ASSERT_EQ (0, run_dwquery
 	     (*builtins, "a1.out",
 	      "[raw unit root] (elem (pos == 0) == elem (pos == 1))").size ());
+}
+
+namespace
+{
+  template <class T>
+  size_t
+  count (std::unique_ptr <value_producer <T>> prod)
+  {
+    size_t ret = 0;
+    while (prod->next () != nullptr)
+      ++ret;
+    return ret;
+  }
+}
+
+TEST_F (ZwTest, no_duplicate_abbrev_units)
+{
+  // dwz merges all abbreviations into a single unit that's reused
+  // across all CU's.  Because .debug_abbrev has no header
+  // information, we rely on CU iteration to discover the abbreviation
+  // units, and thus were seeing duplicates in dwz files.
+
+  ASSERT_EQ (2, count (op_abbrev_dwarf {nullptr}
+			.operate (rdw ("dwz-partial2-1"))));
 }
