@@ -86,7 +86,7 @@ SET (LibzwergAll
 # libzwerg DSO
 ADD_LIBRARY (libzwerg SHARED ${LibzwergAll})
 
-SET (libzwerg_HEADERS libzwerg.h)
+SET (libzwerg_HEADERS libzwerg.h libzwerg-dw.h)
 
 TARGET_LINK_LIBRARIES (libzwerg ${LIBELF_LIBRARY} ${DWARF_LIBRARIES})
 
