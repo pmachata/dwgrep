@@ -728,6 +728,9 @@ expect_count 1 ./inconsistent-types -e '
 	let C := A @AT_specification child ?TAG_formal_parameter;
 	(B pos == C pos) (B @AT_type != C @AT_type)'
 
+# Test merging of -e's.
+expect_count 2 -e 1 -e , -e 2
+
 # Test that zero bytes don't terminate the query too soon.
 TMP=$(mktemp)
 echo -e '7 == "foo\x00bar" length' > $TMP
