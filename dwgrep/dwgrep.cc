@@ -170,11 +170,12 @@ main(int argc, char *argv[])
 	      {
 		std::ifstream ifs {optarg};
 		query_str += std::string {std::istreambuf_iterator <char> {ifs},
-		    std::istreambuf_iterator <char> {}};
+					  std::istreambuf_iterator <char> {}};
 	      }
 	    else
-	      query_str += std::string {std::istreambuf_iterator <char> {std::cin},
-		  std::istreambuf_iterator <char> {}};
+	      query_str
+		+= std::string {std::istreambuf_iterator <char> {std::cin},
+				std::istreambuf_iterator <char> {}};
 	    query_specified = true;
 	    break;
 	  }
