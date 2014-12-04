@@ -24,7 +24,7 @@
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
     <link rel="top" title="dwgrep 0.1 documentation" href="#" />
-    <link rel="next" title="Tutorial" href="tutorial.html" /> 
+    <link rel="next" title="Command line reference" href="cli.html" /> 
   </head>
   <body>
     <div class="related">
@@ -34,7 +34,7 @@
           <a href="genindex.html" title="General Index"
              accesskey="I">index</a></li>
         <li class="right" >
-          <a href="tutorial.html" title="Tutorial"
+          <a href="cli.html" title="Command line reference"
              accesskey="N">next</a> |</li>
         <li><a href="#">dwgrep 0.1 documentation</a> &raquo;</li> 
       </ul>
@@ -49,7 +49,9 @@
 <span id="index"></span><h1>Welcome to dwgrep&#8217;s documentation!<a class="headerlink" href="#welcome-to-dwgrep-s-documentation" title="Permalink to this headline">¶</a></h1>
 <div class="toctree-wrapper compound">
 <ul>
+<li class="toctree-l1"><a class="reference internal" href="cli.html">Command line reference</a></li>
 <li class="toctree-l1"><a class="reference internal" href="tutorial.html">Tutorial</a></li>
+<li class="toctree-l1"><a class="reference internal" href="examples.html">Assorted examples</a></li>
 <li class="toctree-l1"><a class="reference internal" href="syntax.html">Syntax</a></li>
 <li class="toctree-l1"><a class="reference internal" href="vocabulary-core.html">Core vocabulary</a></li>
 <li class="toctree-l1"><a class="reference internal" href="vocabulary-dwarf.html">Dwarf vocabulary</a></li>
@@ -61,10 +63,11 @@
 <h1>Introduction<a class="headerlink" href="#introduction" title="Permalink to this headline">¶</a></h1>
 <p>Dwgrep is a tool, an associated language (called Zwerg) and a library
 (libzwerg) for querying Dwarf (debuginfo) graphs.  If you want to find
-out more about Dwarf, check out a <a class="reference external" href="http://www.dwarfstd.org/doc/Debugging%20using%20DWARF.pdf">short introductory text</a> or
-download a <a class="reference external" href="http://dwarfstd.org/Download.php">Dwarf standard</a>.  But you can also pretend that Dwarf is
-like XML, except nodes are called DIE&#8217;s.  That, and perusing the
-output of <tt class="docutils literal"><span class="pre">eu-readelf</span> <span class="pre">-winfo</span></tt>, should be enough to get you started.</p>
+out more about Dwarf, check out an <a class="reference external" href="http://www.dwarfstd.org/doc/Debugging%20using%20DWARF.pdf">introduction to the DWARF
+Debugging Format</a> or download the <a class="reference external" href="http://dwarfstd.org/Download.php">Dwarf standard</a>.  But you can
+also pretend that Dwarf is like XML, except nodes are called DIE&#8217;s.
+That, and perusing the output of <tt class="docutils literal"><span class="pre">eu-readelf</span> <span class="pre">-winfo</span></tt>, should be
+enough to get you started.</p>
 <p>You can think of dwgrep expressions as instructions describing a
 path through a graph, with assertions about the type of nodes along
 the way: that a node is of given type, that it has a given
@@ -79,7 +82,7 @@ objects.</p>
 <div class="highlight-python"><div class="highlight"><pre>entry ?DW_TAG_subprogram child ?DW_TAG_formal_parameter @DW_AT_name
 </pre></div>
 </div>
-<p>On a <a class="reference external" href="XXXlinktocommandlineoptions.">command line</a>, you would issue it like this:</p>
+<p>On a <a class="reference internal" href="cli.html#cli"><em>command line</em></a>, you would issue it like this:</p>
 <div class="highlight-python"><div class="highlight"><pre>$ dwgrep /some/file/somewhere -e &#39;entry ?DW_TAG_subprogram ...etc....&#39;
 </pre></div>
 </div>
@@ -155,13 +158,55 @@ i
 aim for single-slot stacks.  Producing deeper stacks may be useful if
 you use <tt class="docutils literal"><span class="pre">libzwerg</span></tt> programmatically.  That way the query can return
 not only the primary result, but also some context.</p>
-</div>
-<div class="section" id="further-reading">
-<h1>Further reading<a class="headerlink" href="#further-reading" title="Permalink to this headline">¶</a></h1>
 <p>Now would be a good time to read through the <a class="reference internal" href="tutorial.html#tutorial"><em>Tutorial</em></a>, which
-gives a step-by-step account on fundamental tools of Zwerg language.
+gives a step-by-step account of fundamental tools of Zwerg language.
 You might also want to look at <a class="reference internal" href="syntax.html#syntax"><em>Syntax</em></a>, where individual Zwerg
 forms are introduced and described.</p>
+</div>
+<div class="section" id="installation">
+<h1>Installation<a class="headerlink" href="#installation" title="Permalink to this headline">¶</a></h1>
+<p>dwgrep depends on the following software:</p>
+<ul class="simple">
+<li>a C++11-capable compiler (tested with GCC 4.8)</li>
+<li>cmake 2.8.8 or newer &lt;<a class="reference external" href="http://www.cmake.org/">http://www.cmake.org/</a>&gt;</li>
+<li>elfutils &lt;<a class="reference external" href="https://fedorahosted.org/elfutils/">https://fedorahosted.org/elfutils/</a>&gt;</li>
+</ul>
+<p>In addition, dwgrep can make use of the following software, if
+available:</p>
+<ul>
+<li><p class="first">Google test &lt;<a class="reference external" href="https://code.google.com/p/googletest/">https://code.google.com/p/googletest/</a>&gt;</p>
+<p>Some tests are available even without GTest, but many tests use it.</p>
+</li>
+<li><p class="first">sphinx &lt;<a class="reference external" href="http://sphinx-doc.org/">http://sphinx-doc.org/</a>&gt;</p>
+<p>If you want to build the HTML documentation and/or man pages.</p>
+</li>
+</ul>
+<p>To build dwgrep:</p>
+<div class="highlight-python"><div class="highlight"><pre>$ cmake .
+$ make
+$ make test     # optional, if you want to run the test suite
+$ make doc      # optional, if you want to build the documentation
+$ make install
+</pre></div>
+</div>
+</div>
+<div class="section" id="contributing">
+<h1>Contributing<a class="headerlink" href="#contributing" title="Permalink to this headline">¶</a></h1>
+<p>The project homepage is at &lt;<a class="reference external" href="https://github.com/pmachata/dwgrep">https://github.com/pmachata/dwgrep</a>&gt;.
+GitHub also hosts a ticketing system.  Other than that, if you wish to
+contact the author, send an e-mail to &lt;<a class="reference external" href="mailto:pmachata&#37;&#52;&#48;gmail&#46;com">pmachata<span>&#64;</span>gmail<span>&#46;</span>com</a>&gt;.</p>
+<p>The source code is tracked in a GIT repository.  Check it out with:</p>
+<div class="highlight-python"><div class="highlight"><pre>git clone https://github.com/pmachata/dwgrep.git
+</pre></div>
+</div>
+<p>The best way to get the patches across is to create a GitHub merge
+request.  Patches prepared with git-format-patch and sent by e-mail
+are also acceptable though.</p>
+</div>
+<div class="section" id="licence">
+<h1>Licence<a class="headerlink" href="#licence" title="Permalink to this headline">¶</a></h1>
+<p>dwgrep and libzwerg are dual-licensed as either GPL3+ or LGPL3+, at
+your option.</p>
 </div>
 
 
@@ -175,12 +220,14 @@ forms are introduced and described.</p>
 <li><a class="reference internal" href="#">Welcome to dwgrep&#8217;s documentation!</a></li>
 <li><a class="reference internal" href="#introduction">Introduction</a></li>
 <li><a class="reference internal" href="#computation">Computation</a></li>
-<li><a class="reference internal" href="#further-reading">Further reading</a></li>
+<li><a class="reference internal" href="#installation">Installation</a></li>
+<li><a class="reference internal" href="#contributing">Contributing</a></li>
+<li><a class="reference internal" href="#licence">Licence</a></li>
 </ul>
 
   <h4>Next topic</h4>
-  <p class="topless"><a href="tutorial.html"
-                        title="next chapter">Tutorial</a></p>
+  <p class="topless"><a href="cli.html"
+                        title="next chapter">Command line reference</a></p>
   <h3>This Page</h3>
   <ul class="this-page-menu">
     <li><a href="_sources/index.txt"
@@ -210,7 +257,7 @@ forms are introduced and described.</p>
           <a href="genindex.html" title="General Index"
              >index</a></li>
         <li class="right" >
-          <a href="tutorial.html" title="Tutorial"
+          <a href="cli.html" title="Command line reference"
              >next</a> |</li>
         <li><a href="#">dwgrep 0.1 documentation</a> &raquo;</li> 
       </ul>

@@ -23,10 +23,10 @@ we are using::
 	  return blah ((struct foo) {});
 	}
 
-First and foremost, a quick word about the command line interface.
-(XXX link to full reference) ``dwgrep`` is to some extent modeled
-after ``grep`` utility.  The following invokes ``dwgrep`` with an
-empty query on aforementioned file::
+First and foremost, a quick word about the :ref:`command line
+interface <cli>`.  ``dwgrep`` is to some extent modeled after ``grep``
+utility.  The following invokes ``dwgrep`` with an empty query on
+aforementioned file::
 
 	$ dwgrep '' ./tests/nontrivial-types.o
 	<Dwarf "./tests/nontrivial-types.o">
@@ -67,7 +67,7 @@ one is likely ``entry``.  This takes [#takes]_ a Dwarf, and yields
    function expects a stack, whose top value(s) fits the given
    description.  E.g. ``length`` takes a string or a sequence, ``add``
    takes two integers, strings or sequences, etc.
-   
+
    Taken values are discarded from the stack, though typically the
    function in question pushes some other value(s) in their stead.
 
@@ -662,5 +662,3 @@ So, that's it.  This was a quick tour through the interesting parts of
 ``dwgrep``.  You may now want to check out :ref:`syntax`, and
 :ref:`zw_vocabulary_core` or :ref:`zw_vocabulary_dwarf` to learn about
 the actual function words that you can use.
-
-

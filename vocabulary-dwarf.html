@@ -85,14 +85,8 @@ abbreviation units:</p>
 <div class="highlight-python"><div class="highlight"><pre>$ dwgrep tests/dwz-partial2-1 -e &#39;abbrev&#39;
 abbrev unit 0
 abbrev unit 0
-abbrev unit 0
-abbrev unit 0
-abbrev unit 0
-abbrev unit 0
-abbrev unit 0
 </pre></div>
 </div>
-<p>XXX fix the above when abbrev units can report offset correctly.</p>
 </div>
 <div class="section" id="t-aset">
 <span id="zw-vocabulary-dwarf-type-t-aset"></span><h2>T_ASET<a class="headerlink" href="#t-aset" title="Permalink to this headline">¶</a></h2>
@@ -157,9 +151,9 @@ CU&#8217;s:</p>
 <p>Values of this type represent opened Dwarf files.  If a given file
 contains .gnu_debugaltlink, it is subsumed by the Dwarf handle as
 well.</p>
-<p>Dwarf values (as well as many other Dwarf-related Zwerg values) come
-in two flavors: cooked and raw.  Raw values generally present the
-underlying bits faithfully, cooked ones do some amount of
+<p>Values of type Dwarf (as well as many other Dwarf-related Zwerg
+values) come in two flavors: cooked and raw.  Raw values generally
+present the underlying bits faithfully, cooked ones do some amount of
 interpretation.  For example, cooked DIE&#8217;s merge
 <tt class="docutils literal"><span class="pre">DW_TAG_imported_unit</span></tt> nodes, and thus a given node may be presented
 as having more children than the underlying bits suggest.  The actual

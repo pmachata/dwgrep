@@ -1,0 +1,145 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Assorted examples &mdash; dwgrep 0.1 documentation</title>
+    
+    <link rel="stylesheet" href="_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '0.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="dwgrep 0.1 documentation" href="index.html" />
+    <link rel="up" title="Table of contents" href="fulltoc.html" />
+    <link rel="next" title="Syntax" href="syntax.html" />
+    <link rel="prev" title="Tutorial" href="tutorial.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="syntax.html" title="Syntax"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="tutorial.html" title="Tutorial"
+             accesskey="P">previous</a> |</li>
+        <li><a href="index.html">dwgrep 0.1 documentation</a> &raquo;</li>
+          <li><a href="fulltoc.html" accesskey="U">Table of contents</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="assorted-examples">
+<h1>Assorted examples<a class="headerlink" href="#assorted-examples" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="type-mismatch-in-dw-at-specification">
+<h2>Type mismatch in <tt class="docutils literal"><span class="pre">DW_AT_specification</span></tt><a class="headerlink" href="#type-mismatch-in-dw-at-specification" title="Permalink to this headline">¶</a></h2>
+<p>Find type DIE&#8217;s that are inconsistent between instance and
+specification.  This is <a class="reference external" href="http://gcc.gnu.org/bugzilla/show_bug.cgi?id=43053">GCC bug 43053</a>:</p>
+<div class="highlight-python"><div class="highlight"><pre>let A := entry ?TAG_subprogram;
+let B := A child ?TAG_formal_parameter;
+let C := A @AT_specification child ?TAG_formal_parameter;
+(B pos == C pos) (B @AT_type != C @AT_type)
+</pre></div>
+</div>
+<p><em>A</em> holds the offending subprogram, and <em>B</em> and <em>C</em> are the two
+mismatched types.</p>
+</div>
+<div class="section" id="duplicate-dw-at-const-type">
+<h2>Duplicate <tt class="docutils literal"><span class="pre">DW_AT_const_type</span></tt><a class="headerlink" href="#duplicate-dw-at-const-type" title="Permalink to this headline">¶</a></h2>
+<p>Find two distinct cv-modifier DIE&#8217;s that both qualify the same
+underlying type the same way.  This is <a class="reference external" href="http://gcc.gnu.org/bugzilla/show_bug.cgi?id=56740">GCC bug 56740</a>:</p>
+<div class="highlight-python"><div class="highlight"><pre>let A := entry (?TAG_const_type || ?TAG_volatile_type || ?TAG_restrict_type);
+let B := A root child* (&gt; A) (label == A label) (@AT_type == A @AT_type);
+</pre></div>
+</div>
+<p><em>A</em> and <em>B</em> are the two duplicate DIE&#8217;s.</p>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Assorted examples</a><ul>
+<li><a class="reference internal" href="#type-mismatch-in-dw-at-specification">Type mismatch in <tt class="docutils literal"><span class="pre">DW_AT_specification</span></tt></a></li>
+<li><a class="reference internal" href="#duplicate-dw-at-const-type">Duplicate <tt class="docutils literal"><span class="pre">DW_AT_const_type</span></tt></a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="tutorial.html"
+                        title="previous chapter">Tutorial</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="syntax.html"
+                        title="next chapter">Syntax</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/examples.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="syntax.html" title="Syntax"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="tutorial.html" title="Tutorial"
+             >previous</a> |</li>
+        <li><a href="index.html">dwgrep 0.1 documentation</a> &raquo;</li>
+          <li><a href="fulltoc.html" >Table of contents</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2014, Petr Machata.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.2.
+    </div>
+  </body>
+</html>
