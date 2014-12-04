@@ -16,7 +16,7 @@ Description
 
 Dwgrep is a tool for querying Dwarf (debuginfo) graphs.  Queries are
 written in a language called Zwerg, the syntax of which is described
-in :ref:`syntax`.  The engine itself is available in a shared library
+in :ref:`syntax`.  The engine itself is available as a shared library
 which can be used from C.
 
 Options

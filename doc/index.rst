@@ -127,12 +127,59 @@ aim for single-slot stacks.  Producing deeper stacks may be useful if
 you use ``libzwerg`` programmatically.  That way the query can return
 not only the primary result, but also some context.
 
-
-Further reading
-===============
-
 Now would be a good time to read through the :ref:`tutorial`, which
 gives a step-by-step account of fundamental tools of Zwerg language.
 You might also want to look at :ref:`syntax`, where individual Zwerg
 forms are introduced and described.
 
+
+Installation
+============
+
+dwgrep depends on the following software:
+
+- a C++11-capable compiler (tested with GCC 4.8)
+- cmake 2.8.8 or newer <http://www.cmake.org/>
+- elfutils <https://fedorahosted.org/elfutils/>
+
+In addition, dwgrep can make use of the following software, if
+available:
+
+- Google test <https://code.google.com/p/googletest/>
+
+  Some tests are available even without GTest, but many tests use it.
+
+- sphinx <http://sphinx-doc.org/>
+
+  If you want to build the HTML documentation and/or man pages.
+
+To build dwgrep::
+
+	$ cmake .
+	$ make
+	$ make test	# optional, if you want to run the test suite
+	$ make doc	# optional, if you want to build the documentation
+	$ make install
+
+
+Contributing
+============
+
+The project homepage is at <https://github.com/pmachata/dwgrep>.
+GitHub also hosts a ticketing system.  Other than that, if you wish to
+contact the author, send an e-mail to <pmachata@gmail.com>.
+
+The source code is tracked in a GIT repository.  Check it out with::
+
+	git clone https://github.com/pmachata/dwgrep.git
+
+The best way to get the patches across is to create a GitHub merge
+request.  Patches prepared with git-format-patch and sent by e-mail
+are also acceptable though.
+
+
+Licence
+=======
+
+dwgrep and libzwerg are dual-licensed as either GPL3+ or LGPL3+, at
+your option.
