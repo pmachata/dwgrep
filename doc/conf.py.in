@@ -226,7 +226,7 @@ latex_documents = [
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    ('index', 'dwgrep', u'dwgrep Documentation',
+    ('cli', 'dwgrep', u'grep for Dwarf',
      [u'Petr Machata'], 1)
 ]
 

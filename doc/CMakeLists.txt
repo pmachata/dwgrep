@@ -22,6 +22,7 @@ SET (AUX_SOURCE_DIR "${CMAKE_CURRENT_BINARY_DIR}/_source")
 SET (BINARY_BUILD_DIR "${CMAKE_CURRENT_BINARY_DIR}/_build")
 SET (SPHINX_CACHE_DIR "${CMAKE_CURRENT_BINARY_DIR}/_doctrees")
 SET (SPHINX_HTML_DIR "${CMAKE_CURRENT_BINARY_DIR}/html")
+SET (SPHINX_MAN_DIR "${CMAKE_CURRENT_BINARY_DIR}/man")
 
 FOREACH (SOURCE ${DocSources})
   CONFIGURE_FILE ("${SOURCE}" "${AUX_SOURCE_DIR}/${SOURCE}" COPYONLY)
@@ -55,6 +56,16 @@ ADD_CUSTOM_TARGET (doc-html
 	-d "${SPHINX_CACHE_DIR}" "${AUX_SOURCE_DIR}" "${SPHINX_HTML_DIR}"
     COMMENT "Building HTML documentation")
 
+ADD_CUSTOM_TARGET (doc-man
+    ${SPHINX_EXECUTABLE} -q -b man -c "${BINARY_BUILD_DIR}"
+	-d "${SPHINX_CACHE_DIR}" "${AUX_SOURCE_DIR}" "${SPHINX_MAN_DIR}"
+    COMMENT "Building manual pages")
+
 ADD_CUSTOM_TARGET (doc)
-ADD_DEPENDENCIES (doc doc-html)
-ADD_DEPENDENCIES (doc-html GenerateDocs GenerateOptions)
+ADD_DEPENDENCIES (doc doc-html doc-man)
+
+ADD_CUSTOM_TARGET (doc-gen)
+ADD_DEPENDENCIES (doc-gen GenerateDocs GenerateOptions)
+
+ADD_DEPENDENCIES (doc-html doc-gen)
+ADD_DEPENDENCIES (doc-man doc-gen)

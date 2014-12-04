@@ -16,8 +16,8 @@ Description
 
 Dwgrep is a tool for querying Dwarf (debuginfo) graphs.  Queries are
 written in a language called Zwerg, the syntax of which is described
-in :ref:`syntax`.  The engine itself is available as a shared library
-which can be used from C.
+on project web pages (see below).  The engine itself is available as a
+shared library which can be used from C.
 
 Options
 -------
@@ -108,10 +108,7 @@ See also
 
 To learn more about Dwarf, check out:
 
-- `Introduction to the DWARF Debugging Format`__
-- `Dwarf standard`__
-- `dwgrep`__ project homepage
-
-.. __: http://www.dwarfstd.org/doc/Debugging%20using%20DWARF.pdf
-.. __: http://dwarfstd.org/Download.php
-.. __: https://github.com/pmachata/dwgrep
+- Introduction to the DWARF Debugging Format
+  <http://www.dwarfstd.org/doc/Debugging%20using%20DWARF.pdf>
+- Dwarf standard <http://dwarfstd.org/Download.php>
+- Project homepage <https://github.com/pmachata/dwgrep>
