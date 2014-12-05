@@ -20,6 +20,20 @@ expect_count ()
     fi
 }
 
+expect_error ()
+{
+    export total=$((total + 1))
+    ERR=$1
+    shift
+    GOT=$(timeout 10 $DWGREP "$@" 2>&1 >/dev/null)
+    if [ "${GOT/${ERR}//}" == "$GOT" ]; then
+	echo "FAIL: $DWGREP" "$@"
+	echo "expected error: $ERR"
+	echo "           got: $GOT"
+	export failures=$((failures + 1))
+    fi
+}
+
 expect_count 1 -e '1   10 ?lt'
 expect_count 1 -e '10  10 !lt'
 expect_count 1 -e '100 10 !lt'
@@ -730,6 +744,9 @@ expect_count 1 ./inconsistent-types -e '
 
 # Test merging of -e's.
 expect_count 2 -e 1 -e , -e 2
+
+# Test unreadable file.
+expect_error "can't open script file" -f soauehoeutaoeutaoe
 
 # Test that zero bytes don't terminate the query too soon.
 TMP=$(mktemp)

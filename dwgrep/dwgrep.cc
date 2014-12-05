@@ -169,6 +169,12 @@ main(int argc, char *argv[])
 	    if (strcmp (optarg, "-") != 0)
 	      {
 		std::ifstream ifs {optarg};
+		if (ifs.fail ())
+		  {
+		    std::cerr << "Error: can't open script file `"
+			      << optarg << "'.\n";
+		    return 2;
+		  }
 		query_str += std::string {std::istreambuf_iterator <char> {ifs},
 					  std::istreambuf_iterator <char> {}};
 	      }
