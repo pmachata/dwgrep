@@ -174,7 +174,7 @@
 
     tree *
     tree_for_id_block (vocabulary const &builtins,
-		       std::vector <std::string> *ids)
+		       std::unique_ptr <std::vector <std::string>> ids)
     {
       tree *ret = nullptr;
       for (auto const &s: *ids)
@@ -354,9 +354,11 @@ IdBlockOpt:
 Statement:
   TOK_LPAREN IdBlockOpt Program TOK_RPAREN
   {
+    std::unique_ptr <std::vector <std::string>> ids {$2};
+    size_t sz = ids->size ();
     $$ = tree::create_cat <tree_type::CAT>
-	  (tree_for_id_block (builtins, $2), $3);
-    if ($2->size () > 0)
+	  (tree_for_id_block (builtins, std::move (ids)), $3);
+    if (sz > 0)
       $$ = tree::create_scope ($$);
   }
 
@@ -382,18 +384,18 @@ Statement:
 
   | TOK_LBRACKET IdBlockOpt Program TOK_RBRACKET
   {
+    std::unique_ptr <std::vector <std::string>> ids {$2};
     $$ = tree::create_cat <tree_type::CAT>
-	  (tree_for_id_block (builtins, $2),
+	  (tree_for_id_block (builtins, std::move (ids)),
 	   tree::create_unary <tree_type::CAPTURE> (tree::create_scope ($3)));
     $$ = tree::create_scope ($$);
-
-    delete $2;
   }
 
   | TOK_LBRACE IdBlockOpt Program TOK_RBRACE
   {
+    std::unique_ptr <std::vector <std::string>> ids {$2};
     $$ = tree::create_cat <tree_type::CAT>
-	  (tree_for_id_block (builtins, $2), $3);
+	  (tree_for_id_block (builtins, std::move (ids)), $3);
     $$ = tree::create_unary <tree_type::BLOCK> (tree::create_scope ($$));
   }
 
@@ -414,23 +416,28 @@ Statement:
 
   | TOK_LET IdList TOK_ASSIGN Program TOK_SEMICOLON
   {
+    std::unique_ptr <std::vector <std::string>> ids {$2};
+    size_t sz = ids->size ();
+
     $$ = tree::create_const <tree_type::SUBX_EVAL>
-	  (constant {$2->size (), &dec_constant_dom});
+	  (constant {sz, &dec_constant_dom});
     $$->take_child (tree::create_scope ($4));
 
     $$ = tree::create_cat <tree_type::CAT>
-	  ($$, tree_for_id_block (builtins, $2));
-
-    delete $2;
+	  ($$, tree_for_id_block (builtins, std::move (ids)));
   }
 
   | Statement TOK_ASTERISK
-  { $$ = tree::create_unary <tree_type::CLOSE_STAR> (tree::create_scope ($1)); }
+  {
+    $$ = tree::create_unary <tree_type::CLOSE_STAR>
+      (tree::create_scope ($1));
+  }
 
   | Statement TOK_PLUS
   {
     auto t = new tree (*$1);
-    auto u = tree::create_unary <tree_type::CLOSE_STAR> ($1);
+    auto u = tree::create_unary <tree_type::CLOSE_STAR>
+      (tree::create_scope ($1));
     $$ = tree::create_cat <tree_type::CAT> (t, u);
   }
 
