@@ -112,6 +112,7 @@ public:
   virtual pred_result result (stack &stk) = 0;
   virtual std::string name () const = 0;
   virtual void reset () = 0;
+  virtual ~pred () {}
 };
 
 // Origin is upstream-less node that is placed at the beginning of the
