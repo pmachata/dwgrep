@@ -723,7 +723,8 @@ expect_count 1 ./nullptr.o -e '
 expect_count 1 ./nullptr.o -e '
 	[|A| A entry (offset == 0x6e) attribute label]
 	== [DW_AT_specification, DW_AT_inline, DW_AT_object_pointer,
-	    DW_AT_sibling, DW_AT_external, DW_AT_name]'
+	    DW_AT_sibling, DW_AT_external, DW_AT_name,
+	    DW_AT_decl_file, DW_AT_decl_line]'
 
 # Test version.
 expect_count 4 ./dwz-partial -e 'unit (version == 3)'

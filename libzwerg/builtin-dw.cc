@@ -744,20 +744,16 @@ namespace
     // Some attributes only make sense at the non-defining DIE and
     // shouldn't be brought down through DW_AT_specification or
     // DW_AT_abstract_origin.
-    //
-    // DW_AT_decl_* suite in particular is meaningful here as well as
-    // the non-defining declaration.  But then we would see local or
-    // remote set of attributes depending on whether there is any
-    // local set.  It would be impossible to distinguish in a script,
-    // which set is seen.
+
+    // Note: DW_AT_decl_* suite should normally be integrated.  GCC
+    // will only emit the unique attributes at concrete instance,
+    // leading to DIE's that e.g. only have DW_AT_decl_line, because
+    // DW_AT_decl_file is inherited.
 
     switch (code)
       {
       case DW_AT_sibling:
       case DW_AT_declaration:
-      case DW_AT_decl_line:
-      case DW_AT_decl_column:
-      case DW_AT_decl_file:
 	return false;
 
       default:
@@ -887,8 +883,7 @@ cooked DIE's it also integrates attributes at DIE's referenced by
 ``DW_AT_abstract_origin`` and ``DW_AT_specification``, except those
 that are already present at the original DIE, or those that it makes
 no sense to import (as of this writing, ``DW_AT_sibling``,
-``DW_AT_declaration``, ``DW_AT_decl_file``, ``DW_AT_decl_line`` and
-``DW_AT_decl_column``).
+``DW_AT_declaration``).
 
 Example::
 
