@@ -207,7 +207,7 @@ have.  In such case, ``@AT_*`` would simply not yield at all::
 	0
 
 ``@AT_*`` forms could actually also yield more than once.  For example
-attributes of locating expression types yield once for every covered
+attributes of location expression types yield once for every covered
 address range::
 
 	$ dwgrep ./tests/aranges.o -c -e 'entry ?AT_location'
@@ -235,7 +235,7 @@ parameters::
 		type (ref4)	[b2];
 
 That's quite a bit more useful--we could find out whether the formal
-parameters have a structure types::
+parameters have structure types::
 
 	$ 'entry ?TAG_subprogram !AT_declaration child ?TAG_formal_parameter
 	   @AT_type ?TAG_structure_type'
@@ -248,8 +248,8 @@ That's closer to being interesting, but not quite what we need either.
 We would like to know about the subprograms themselves, that have this
 property!
 
-``?(EXPR)``, ``!(EXPR)`` --- Sub-expressions assertions
--------------------------------------------------------
+``?(EXPR)``, ``!(EXPR)`` --- Sub-expression assertions
+------------------------------------------------------
 
 Some Zwerg expressions are evaluated in what we call a sub-expression
 context.  What happens in sub-expression context, stays there--the
@@ -287,7 +287,7 @@ query, we would say::
 
 	some other query !(child)
 
-``EXPR == EXPR``, ``EXPR != EXPR`` --- infix assertions
+``EXPR == EXPR``, ``EXPR != EXPR`` --- Infix assertions
 -------------------------------------------------------
 
 As you might well know, mere presence of ``DW_AT_declaration``
@@ -307,9 +307,10 @@ This intuitively-looking construct actually deserves a closer
 attention.  Infix assertions are always evaluated in sub-expression
 context.  The mode of operation is that each side is evaluated
 separately with the same incoming stack.  Then if the assertion holds
-for any pair of produced values, the overall assertion holds.  Zwerg
-has a full suite of these operators--``!=``, ``<``, ``<=``, etc.
-There's also ``=~`` and ``!~`` for matching regular expressions.
+for any pair of stacks that the two sides yield, the overall assertion
+holds.  Zwerg has a full suite of these operators--``!=``, ``<``,
+``<=``, etc.  There's also ``=~`` and ``!~`` for matching regular
+expressions.
 
 Importantly, infix assertions really are assertions.  If they hold,
 they produce unchanged incoming stack, otherwise they produce nothing
@@ -412,9 +413,10 @@ we get to the interesting DIE's.  Enter iterators:
 ``EXPR*``, ``EXPR+``, ``EXPR?`` --- expression iteration
 --------------------------------------------------------
 
-- ``EXPR*`` leaves the working set unchanged, then adds to that the
-  result of one application of *EXPR*, then of another, etc.  It works
-  similarly to ``*`` in regular expressions.
+- ``EXPR*`` yields the incoming stack unchanged, and also passes it to
+  *EXPR*.  It then collects whatever *EXPR* yields, yields it, and
+  sends again to *EXPR*.  It works similarly to ``*`` in regular
+  expressions.
 - ``EXPR+`` is exactly like ``EXPR EXPR*``.
 - ``EXPR?`` is exactly like ``(, EXPR)`` --- it *may* apply once
 
@@ -465,7 +467,7 @@ But first, a bit of background.
 
 When dwgrep sees a string with formatting directives, it converts it
 into a function.  That function takes one value for each ``%s``,
-substitutes the ``%s`` with values of corresponding parameters, and
+substitutes the ``%s`` with values of corresponding stack values, and
 then pushes the result to stack.  Consequently, to convert anything to
 a string in dwgrep, you would just say::
 

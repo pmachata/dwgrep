@@ -843,8 +843,7 @@ cooked DIE's it also integrates attributes at DIE's referenced by
 ``DW_AT_abstract_origin`` and ``DW_AT_specification``, except those
 that are already present at the original DIE, or those that it makes
 no sense to import (as of this writing, ``DW_AT_sibling``,
-``DW_AT_declaration``, ``DW_AT_decl_file``, ``DW_AT_decl_line`` and
-``DW_AT_decl_column``).
+``DW_AT_declaration``).
 
 Example::
 

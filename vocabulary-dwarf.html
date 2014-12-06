@@ -646,8 +646,7 @@ cooked DIE&#8217;s it also integrates attributes at DIE&#8217;s referenced by
 <tt class="docutils literal"><span class="pre">DW_AT_abstract_origin</span></tt> and <tt class="docutils literal"><span class="pre">DW_AT_specification</span></tt>, except those
 that are already present at the original DIE, or those that it makes
 no sense to import (as of this writing, <tt class="docutils literal"><span class="pre">DW_AT_sibling</span></tt>,
-<tt class="docutils literal"><span class="pre">DW_AT_declaration</span></tt>, <tt class="docutils literal"><span class="pre">DW_AT_decl_file</span></tt>, <tt class="docutils literal"><span class="pre">DW_AT_decl_line</span></tt> and
-<tt class="docutils literal"><span class="pre">DW_AT_decl_column</span></tt>).</p>
+<tt class="docutils literal"><span class="pre">DW_AT_declaration</span></tt>).</p>
 <p>Example:</p>
 <div class="highlight-python"><div class="highlight"><pre>$ dwgrep ./tests/nullptr.o -e &#39;raw entry (offset == 0x6e) attribute&#39;
 specification (ref4)    [3f];
