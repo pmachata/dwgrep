@@ -76,6 +76,7 @@ tree::take_cat (tree *t)
 {
   m_children.insert (m_children.end (),
 		     t->m_children.begin (), t->m_children.end ());
+  delete t;
 }
 
 namespace
