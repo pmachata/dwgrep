@@ -33,68 +33,69 @@
 #include "tree.hh"
 
 template <tree_type TT>
-tree *
+std::unique_ptr <tree>
 tree::create_nullary ()
 {
   static_assert (tree_arity <TT>::value == tree_arity_v::NULLARY,
 		 "Wrong tree arity.");
-  return new tree {TT};
+  return std::make_unique <tree> (TT);
 }
 
 template <tree_type TT>
-tree *
-tree::create_unary (tree *op)
+std::unique_ptr <tree>
+tree::create_unary (std::unique_ptr <tree> op)
 {
   static_assert (tree_arity <TT>::value == tree_arity_v::UNARY,
 		 "Wrong tree arity.");
-  auto t = new tree {TT};
-  t->take_child (op);
+  auto t = std::make_unique <tree> (TT);
+  t->take_child (std::move (op));
   return t;
 }
 
 template <tree_type TT>
-tree *
-tree::create_binary (tree *lhs, tree *rhs)
+std::unique_ptr <tree>
+tree::create_binary (std::unique_ptr <tree> lhs, std::unique_ptr <tree> rhs)
 {
   static_assert (tree_arity <TT>::value == tree_arity_v::BINARY,
 		 "Wrong tree arity.");
-  auto t = new tree {TT};
-  t->take_child (lhs);
-  t->take_child (rhs);
+  auto t = std::make_unique <tree> (TT);
+  t->take_child (std::move (lhs));
+  t->take_child (std::move (rhs));
   return t;
 }
 
 template <tree_type TT>
-tree *
-tree::create_ternary (tree *op1, tree *op2, tree *op3)
+std::unique_ptr <tree>
+tree::create_ternary (std::unique_ptr <tree> op1, std::unique_ptr <tree> op2,
+		      std::unique_ptr <tree> op3)
 {
   static_assert (tree_arity <TT>::value == tree_arity_v::TERNARY,
 		 "Wrong tree arity.");
-  auto t = new tree {TT};
-  t->take_child (op1);
-  t->take_child (op2);
-  t->take_child (op3);
+  auto t = std::make_unique <tree> (TT);
+  t->take_child (std::move (op1));
+  t->take_child (std::move (op2));
+  t->take_child (std::move (op3));
   return t;
 }
 
 template <tree_type TT>
-tree *
+std::unique_ptr <tree>
 tree::create_str (std::string s)
 {
   static_assert (tree_arity <TT>::value == tree_arity_v::STR,
 		 "Wrong tree arity.");
-  auto t = new tree {TT};
+  auto t = std::make_unique <tree> (TT);
   t->m_str = std::make_unique <std::string> (std::move (s));
   return t;
 }
 
 template <tree_type TT>
-tree *
+std::unique_ptr <tree>
 tree::create_const (constant c)
 {
   static_assert (tree_arity <TT>::value == tree_arity_v::CST,
 		 "Wrong tree arity.");
-  auto t = new tree {TT};
+  auto t = std::make_unique <tree> (TT);
   t->m_cst = std::make_unique <constant> (std::move (c));
   return t;
 }
@@ -106,25 +107,25 @@ tree::create_const (constant c)
 // existing CAT if possible.  It also knows to ignore a nullptr
 // tree.
 template <tree_type TT>
-tree *
-tree::create_cat (tree *t1, tree *t2)
+std::unique_ptr <tree>
+tree::create_cat (std::unique_ptr <tree> t1, std::unique_ptr <tree> t2)
 {
   bool cat1 = t1 != nullptr && t1->m_tt == TT;
   bool cat2 = t2 != nullptr && t2->m_tt == TT;
 
   if (cat1 && cat2)
     {
-      t1->take_cat (t2);
+      t1->take_cat (std::move (t2));
       return t1;
     }
   else if (cat1 && t2 != nullptr)
     {
-      t1->take_child (t2);
+      t1->take_child (std::move (t2));
       return t1;
     }
   else if (cat2 && t1 != nullptr)
     {
-      t2->take_child_front (t1);
+      t2->take_child_front (std::move (t1));
       return t2;
     }
 
@@ -136,7 +137,7 @@ tree::create_cat (tree *t1, tree *t2)
   else if (t2 == nullptr)
     return t1;
   else
-    return tree::create_binary <TT> (t1, t2);
+    return tree::create_binary <TT> (std::move (t1), std::move (t2));
 }
 
 #endif /* _TREE_CR_H_ */

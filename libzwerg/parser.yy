@@ -86,21 +86,6 @@
       fprintf (stderr, "%s\n", s);
     }
 
-    template <tree_type TT>
-    tree *
-    positive_assert ()
-    {
-      return tree::create_assert (tree::create_nullary <TT> ());
-    }
-
-    template <tree_type TT>
-    tree *
-    negative_assert ()
-    {
-      auto u = tree::create_neg (tree::create_nullary <TT> ());
-      return tree::create_assert (u);
-    }
-
     constant
     parse_int (strlit str)
     {
@@ -163,7 +148,7 @@
       return constant {ret, dom};
     }
 
-    tree *
+    std::unique_ptr <tree>
     parse_word (vocabulary const &builtins, std::string str)
     {
       if (auto bi = builtins.find (str))
@@ -172,16 +157,17 @@
 	return tree::create_str <tree_type::READ> (str);
     }
 
-    tree *
+    std::unique_ptr <tree>
     tree_for_id_block (vocabulary const &builtins,
 		       std::unique_ptr <std::vector <std::string>> ids)
     {
-      tree *ret = nullptr;
+      std::unique_ptr <tree> ret;
       for (auto const &s: *ids)
 	if (builtins.find (s) == nullptr)
 	  {
-	    auto t = tree::create_str <tree_type::BIND> (s);
-	    ret = tree::create_cat <tree_type::CAT> (ret, t);
+	    std::unique_ptr <tree> t {tree::create_str <tree_type::BIND> (s)};
+	    ret = tree::create_cat <tree_type::CAT>
+	      (std::move (ret), std::move (t));
 	  }
 	else
 	  throw std::runtime_error
@@ -190,35 +176,38 @@
       return ret;
     }
 
-    tree *
+    std::unique_ptr <tree>
     nop ()
     {
       return tree::create_nullary <tree_type::NOP> ();
     }
 
-    tree *
-    maybe_nop (tree *t)
+    std::unique_ptr <tree>
+    maybe_nop (std::unique_ptr <tree> t)
     {
-      return t != nullptr ? t : nop ();
+      return t != nullptr ? std::move (t) : nop ();
     }
 
-    tree *
-    wrap_in_scope_unless (tree_type tt, tree *t)
+    std::unique_ptr <tree>
+    wrap_in_scope_unless (tree_type tt, std::unique_ptr <tree> t)
     {
-      auto ret = maybe_nop (t);
+      auto ret = maybe_nop (std::move (t));
       if (ret->tt () != tt)
-	ret = tree::create_scope (ret);
+	ret = tree::create_scope (std::move (ret));
       return ret;
     }
 
-    tree *
-    parse_op (vocabulary const &builtins, tree *a, tree *b,
+    std::unique_ptr <tree>
+    parse_op (vocabulary const &builtins,
+	      std::unique_ptr <tree> a,
+	      std::unique_ptr <tree> b,
 	      std::string const &word)
     {
-      auto t = tree::create_ternary <tree_type::PRED_SUBX_CMP>
-	(maybe_nop (a), maybe_nop (b),
-	 tree::create_builtin (builtins.find (word)));
-      return tree::create_assert (t);
+      return tree::create_assert
+	(tree::create_ternary <tree_type::PRED_SUBX_CMP>
+	 (maybe_nop (std::move (a)),
+	  maybe_nop (std::move (b)),
+	  tree::create_builtin (builtins.find (word))));
     }
   }
 
@@ -289,7 +278,11 @@ Query: Program TOK_EOF
 
 Program: AltList
   {
-    $$ = maybe_nop ($1);
+    std::unique_ptr <tree> t1 {$1};
+
+    auto ret = maybe_nop (std::move (t1));
+
+    $$ = ret.release ();
   }
 
 AltList:
@@ -297,9 +290,15 @@ AltList:
 
   | OrList TOK_COMMA AltList
   {
-    auto t1 = wrap_in_scope_unless (tree_type::ALT, maybe_nop ($1));
-    auto t2 = wrap_in_scope_unless (tree_type::ALT, maybe_nop ($3));
-    $$ = tree::create_cat <tree_type::ALT> (t1, t2);
+    std::unique_ptr <tree> t1 {$1};
+    std::unique_ptr <tree> t3 {$3};
+
+    auto u1 = wrap_in_scope_unless (tree_type::ALT, maybe_nop (std::move (t1)));
+    auto u3 = wrap_in_scope_unless (tree_type::ALT, maybe_nop (std::move (t3)));
+    auto ret = tree::create_cat <tree_type::ALT>
+		(std::move (u1), std::move (u3));
+
+    $$ = ret.release ();
   }
 
 OrList:
@@ -307,16 +306,30 @@ OrList:
 
   | OpList TOK_DOUBLE_VBAR OrList
   {
-    auto t1 = wrap_in_scope_unless (tree_type::OR, maybe_nop ($1));
-    auto t2 = wrap_in_scope_unless (tree_type::OR, maybe_nop ($3));
-    $$ = tree::create_cat <tree_type::OR> (t1, t2);
+    std::unique_ptr <tree> t1 {$1};
+    std::unique_ptr <tree> t3 {$3};
+
+    auto u1 = wrap_in_scope_unless (tree_type::OR, maybe_nop (std::move (t1)));
+    auto u3 = wrap_in_scope_unless (tree_type::OR, maybe_nop (std::move (t3)));
+    auto ret = tree::create_cat <tree_type::OR> (std::move (u1),
+						 std::move (u3));
+
+    $$ = ret.release ();
   }
 
 OpList:
   StatementList
 
   | StatementList TOK_OP StatementList
-  { $$ = parse_op (builtins, $1, $3, std::string {$2.buf, $2.len}); }
+  {
+    std::unique_ptr <tree> t1 {$1};
+    std::unique_ptr <tree> t3 {$3};
+    std::string str {$2.buf, $2.len};
+
+    auto ret = parse_op (builtins, std::move (t1), std::move (t3), str);
+
+    $$ = ret.release ();
+  }
 
 StatementList:
   /* eps. */
@@ -324,7 +337,13 @@ StatementList:
 
   | Statement StatementList
   {
-    $$ = tree::create_cat <tree_type::CAT> ($1, $2);
+    std::unique_ptr <tree> t1 {$1};
+    std::unique_ptr <tree> t2 {$2};
+
+    auto ret = tree::create_cat <tree_type::CAT> (std::move (t1),
+						  std::move (t2));
+
+    $$ = ret.release ();
   }
 
 IdListOpt:
@@ -356,113 +375,171 @@ Statement:
   {
     std::unique_ptr <std::vector <std::string>> ids {$2};
     size_t sz = ids->size ();
-    $$ = tree::create_cat <tree_type::CAT>
-	  (tree_for_id_block (builtins, std::move (ids)), $3);
+    std::unique_ptr <tree> t3 {$3};
+
+    auto ret = tree::create_cat <tree_type::CAT>
+      (tree_for_id_block (builtins, std::move (ids)),
+       std::move (t3));
+
     if (sz > 0)
-      $$ = tree::create_scope ($$);
+      ret = tree::create_scope (std::move (ret));
+
+    $$ = ret.release ();
   }
 
   | TOK_QMARK_LPAREN Program TOK_RPAREN
   {
-    auto t = tree::create_unary <tree_type::PRED_SUBX_ANY>
-      (tree::create_scope ($2));
-    $$ = tree::create_assert (t);
+    std::unique_ptr <tree> t2 {$2};
+
+    auto ret = tree::create_assert
+      (tree::create_unary <tree_type::PRED_SUBX_ANY>
+       (tree::create_scope (std::move (t2))));
+
+    $$ = ret.release ();
   }
 
   | TOK_BANG_LPAREN Program TOK_RPAREN
   {
-    auto t = tree::create_unary <tree_type::PRED_SUBX_ANY>
-      (tree::create_scope ($2));
-    auto u = tree::create_neg (t);
-    $$ = tree::create_assert (u);
+    std::unique_ptr <tree> t2 {$2};
+
+    auto ret = tree::create_assert
+      (tree::create_neg
+       (tree::create_unary <tree_type::PRED_SUBX_ANY>
+	(tree::create_scope (std::move (t2)))));
+
+    $$ = ret.release ();
   }
 
   | TOK_LBRACKET TOK_RBRACKET
   {
-    $$ = tree::create_nullary <tree_type::EMPTY_LIST> ();
+    auto ret = tree::create_nullary <tree_type::EMPTY_LIST> ();
+
+    $$ = ret.release ();
   }
 
   | TOK_LBRACKET IdBlockOpt Program TOK_RBRACKET
   {
     std::unique_ptr <std::vector <std::string>> ids {$2};
-    $$ = tree::create_cat <tree_type::CAT>
-	  (tree_for_id_block (builtins, std::move (ids)),
-	   tree::create_unary <tree_type::CAPTURE> (tree::create_scope ($3)));
-    $$ = tree::create_scope ($$);
+    std::unique_ptr <tree> t3 {$3};
+
+    auto ret = tree::create_scope
+      (tree::create_cat <tree_type::CAT>
+       (tree_for_id_block (builtins, std::move (ids)),
+
+	tree::create_unary <tree_type::CAPTURE>
+	(tree::create_scope (std::move (t3)))));
+
+    $$ = ret.release ();
   }
 
   | TOK_LBRACE IdBlockOpt Program TOK_RBRACE
   {
     std::unique_ptr <std::vector <std::string>> ids {$2};
-    $$ = tree::create_cat <tree_type::CAT>
-	  (tree_for_id_block (builtins, std::move (ids)), $3);
-    $$ = tree::create_unary <tree_type::BLOCK> (tree::create_scope ($$));
+    std::unique_ptr <tree> t3 {$3};
+
+    auto ret = tree::create_unary <tree_type::BLOCK>
+      (tree::create_scope
+       (tree::create_cat <tree_type::CAT>
+	(tree_for_id_block (builtins, std::move (ids)),
+	 std::move (t3))));
+
+    $$ = ret.release ();
   }
 
   | TOK_ARROW IdList TOK_SEMICOLON
   {
-    assert ($2->size () > 0);
-    $$ = nullptr;
-    for (auto const &s: *$2)
+    std::unique_ptr <std::vector <std::string>> ids {$2};
+    assert (ids->size () > 0);
+
+    std::unique_ptr <tree> ret;
+    for (auto const &s: *ids)
       if (builtins.find (s) == nullptr)
 	{
-	  auto t = tree::create_str <tree_type::BIND> (s);
-	  $$ = tree::create_cat <tree_type::CAT> ($$, t);
+	  std::unique_ptr <tree> t {tree::create_str <tree_type::BIND> (s)};
+	  ret = tree::create_cat <tree_type::CAT>
+		(std::move (ret), std::move (t));
 	}
       else
 	throw std::runtime_error
 	    (std::string ("Can't rebind a builtin: `") + s + "'");
+
+    $$ = ret.release ();
   }
 
   | TOK_LET IdList TOK_ASSIGN Program TOK_SEMICOLON
   {
     std::unique_ptr <std::vector <std::string>> ids {$2};
-    size_t sz = ids->size ();
+    std::unique_ptr <tree> t4 {$4};
 
-    $$ = tree::create_const <tree_type::SUBX_EVAL>
-	  (constant {sz, &dec_constant_dom});
-    $$->take_child (tree::create_scope ($4));
+    auto tt = tree::create_const <tree_type::SUBX_EVAL>
+      (constant {ids->size (), &dec_constant_dom});
+    tt->take_child (tree::create_scope (std::move (t4)));
 
-    $$ = tree::create_cat <tree_type::CAT>
-	  ($$, tree_for_id_block (builtins, std::move (ids)));
+    auto ret = tree::create_cat <tree_type::CAT>
+      (std::move (tt),
+       tree_for_id_block (builtins, std::move (ids)));
+
+    $$ = ret.release ();
   }
 
   | Statement TOK_ASTERISK
   {
-    $$ = tree::create_unary <tree_type::CLOSE_STAR>
-      (tree::create_scope ($1));
+    std::unique_ptr <tree> t1 {$1};
+
+    auto ret = tree::create_unary <tree_type::CLOSE_STAR>
+      (tree::create_scope (std::move (t1)));
+
+    $$ = ret.release ();
   }
 
   | Statement TOK_PLUS
   {
-    auto t = new tree (*$1);
-    auto u = tree::create_unary <tree_type::CLOSE_STAR>
-      (tree::create_scope ($1));
-    $$ = tree::create_cat <tree_type::CAT> (t, u);
+    std::unique_ptr <tree> t1 {$1};
+
+    auto t = std::make_unique <tree> (*t1);
+    auto scp = tree::create_scope (std::move (t1));
+
+    auto ret = tree::create_cat <tree_type::CAT>
+      (std::move (t),
+       tree::create_unary <tree_type::CLOSE_STAR> (std::move (scp)));
+
+    $$ = ret.release ();
   }
 
   | Statement TOK_QMARK
   {
-    $$ = tree::create_cat <tree_type::ALT> ($1, nop ());
+    std::unique_ptr <tree> t1 {$1};
+    std::unique_ptr <tree> n {nop ()};
+    $$ = tree::create_cat <tree_type::ALT>
+	(std::move (t1), std::move (n)).release ();
   }
 
   | TOK_IF Statement TOK_THEN Statement TOK_ELSE Statement
   {
-    $$ = tree::create_ternary <tree_type::IFELSE>
-	  (tree::create_scope ($2), tree::create_scope ($4),
-	   tree::create_scope ($6));
+    std::unique_ptr <tree> t2 {$2};
+    std::unique_ptr <tree> t4 {$4};
+    std::unique_ptr <tree> t6 {$6};
+
+    auto ret = tree::create_ternary <tree_type::IFELSE>
+      (tree::create_scope (std::move (t2)),
+       tree::create_scope (std::move (t4)),
+       tree::create_scope (std::move (t6)));
+
+    $$ = ret.release ();
   }
 
   | TOK_LIT_INT
-  { $$ = tree::create_const <tree_type::CONST> (parse_int ($1)); }
+  { $$ = tree::create_const <tree_type::CONST> (parse_int ($1)).release (); }
 
   | TOK_WORD
-  { $$ = parse_word (builtins, {$1.buf, $1.len}); }
+  { $$ = parse_word (builtins, {$1.buf, $1.len}).release (); }
 
   | TOK_WORD TOK_COLON Statement
   {
+    std::unique_ptr <tree> t1 {parse_word (builtins, {$1.buf, $1.len})};
+    std::unique_ptr <tree> t3 {$3};
     $$ = tree::create_cat <tree_type::CAT>
-	($3, parse_word (builtins, {$1.buf, $1.len}));
+	(std::move (t3), std::move (t1)).release ();
   }
 
   | TOK_LIT_STR
@@ -476,7 +553,11 @@ Statement:
 
 
   | TOK_DEBUG
-  { $$ = tree::create_nullary <tree_type::F_DEBUG> (); }
+  {
+    auto ret = tree::create_nullary <tree_type::F_DEBUG> ();
+
+    $$ = ret.release ();
+  }
 
 %%
 

@@ -29,54 +29,52 @@
 #include "scope.hh"
 #include "tree_cr.hh"
 
-tree *
+std::unique_ptr <tree>
 tree::create_builtin (std::shared_ptr <builtin const> b)
 {
-  auto t = new tree {tree_type::F_BUILTIN};
+  auto t = std::make_unique <tree> (tree_type::F_BUILTIN);
   t->m_builtin = b;
   return t;
 }
 
-tree *
-tree::create_neg (tree *t)
+std::unique_ptr <tree>
+tree::create_neg (std::unique_ptr <tree> t)
 {
-  return tree::create_unary <tree_type::PRED_NOT> (t);
+  return tree::create_unary <tree_type::PRED_NOT> (std::move (t));
 }
 
-tree *
-tree::create_assert (tree *t)
+std::unique_ptr <tree>
+tree::create_assert (std::unique_ptr <tree> t)
 {
-  return tree::create_unary <tree_type::ASSERT> (t);
+  return tree::create_unary <tree_type::ASSERT> (std::move (t));
 }
 
-tree *
-tree::create_scope (tree *t1)
+std::unique_ptr <tree>
+tree::create_scope (std::unique_ptr <tree> t1)
 {
-  auto t = new tree {tree_type::SCOPE, std::make_shared <scope> (nullptr)};
-  t->take_child (t1);
+  auto t = std::make_unique <tree> (tree_type::SCOPE,
+				    std::make_shared <scope> (nullptr));
+  t->take_child (std::move (t1));
   return t;
 }
 
 void
-tree::take_child (tree *t)
+tree::take_child (std::unique_ptr <tree> t)
 {
   m_children.push_back (*t);
-  delete t;
 }
 
 void
-tree::take_child_front (tree *t)
+tree::take_child_front (std::unique_ptr <tree> t)
 {
   m_children.insert (m_children.begin (), *t);
-  delete t;
 }
 
 void
-tree::take_cat (tree *t)
+tree::take_cat (std::unique_ptr <tree> t)
 {
   m_children.insert (m_children.end (),
 		     t->m_children.begin (), t->m_children.end ());
-  delete t;
 }
 
 namespace

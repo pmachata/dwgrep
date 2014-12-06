@@ -204,32 +204,51 @@ public:
   // tree_cr.cc.  They are meant as parser interface, otherwise value
   // semantics should be preferred.
 
-  template <tree_type TT> static tree *create_nullary ();
-  template <tree_type TT> static tree *create_unary (tree *op);
-  template <tree_type TT> static tree *create_binary (tree *lhs, tree *rhs);
-  template <tree_type TT> static tree *create_ternary (tree *op1, tree *op2,
-						       tree *op3);
+  template <tree_type TT> static std::unique_ptr <tree>
+  create_nullary ();
 
-  template <tree_type TT> static tree *create_str (std::string s);
-  template <tree_type TT> static tree *create_const (constant c);
-  template <tree_type TT> static tree *create_cat (tree *t1, tree *t2);
+  template <tree_type TT> static std::unique_ptr <tree>
+  create_unary (std::unique_ptr <tree> op);
 
-  static tree *create_builtin (std::shared_ptr <builtin const> b);
-  static tree *create_neg (tree *t1);
-  static tree *create_assert (tree *t1);
-  static tree *create_scope (tree *t1);
+  template <tree_type TT> static std::unique_ptr <tree>
+  create_binary (std::unique_ptr <tree> lhs, std::unique_ptr <tree> rhs);
+
+  template <tree_type TT> static std::unique_ptr <tree>
+  create_ternary (std::unique_ptr <tree> op1, std::unique_ptr <tree> op2,
+		  std::unique_ptr <tree> op3);
+
+  template <tree_type TT> static std::unique_ptr <tree>
+  create_str (std::string s);
+
+  template <tree_type TT> static std::unique_ptr <tree>
+  create_const (constant c);
+
+  template <tree_type TT> static std::unique_ptr <tree>
+  create_cat (std::unique_ptr <tree> t1, std::unique_ptr <tree> t2);
+
+  static std::unique_ptr <tree>
+  create_builtin (std::shared_ptr <builtin const> b);
+
+  static std::unique_ptr <tree>
+  create_neg (std::unique_ptr <tree> t1);
+
+  static std::unique_ptr <tree>
+  create_assert (std::unique_ptr <tree> t1);
+
+  static std::unique_ptr <tree>
+  create_scope (std::unique_ptr <tree> t1);
 
   static tree resolve_scopes (tree t);
 
   // push_back (*T) and delete T.
-  void take_child (tree *t);
+  void take_child (std::unique_ptr <tree> t);
 
   // push_front (*T) and delete T.
-  void take_child_front (tree *t);
+  void take_child_front (std::unique_ptr <tree> t);
 
   // Takes a tree T, which is a CAT or an ALT, and appends all
   // children therein.  It then deletes T.
-  void take_cat (tree *t);
+  void take_cat (std::unique_ptr <tree> t);
 
   friend std::ostream &operator<< (std::ostream &o, tree const &t);
 };
