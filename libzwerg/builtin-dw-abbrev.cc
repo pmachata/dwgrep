@@ -182,7 +182,14 @@ op_offset_abbrev_unit::docstring ()
   return
 R"docstring(
 
-XXX
+Takes an abbreviation unit on TOS and yields its offset inside the
+Dwarf section that it comes from::
+
+	$ dwgrep ./tests/twocus -e 'abbrev offset'
+	0
+	0x34
+
+|OffsetsNotUnique|
 
 )docstring";
 }
@@ -203,7 +210,20 @@ op_offset_abbrev::docstring ()
   return
 R"docstring(
 
-XXX
+Takes an abbreviation on TOS and yields its offset inside the Dwarf
+section that it comes from::
+
+	$ dwgrep ./tests/twocus -e 'abbrev entry "%(code%): %(dup offset%)"'
+	1: 0
+	2: 0x13
+	3: 0x28
+	1: 0x34
+	2: 0x47
+	3: 0x60
+	4: 0x71
+	5: 0x76
+
+|OffsetsNotUnique|
 
 )docstring";
 }
@@ -223,7 +243,18 @@ op_offset_abbrev_attr::docstring ()
   return
 R"docstring(
 
-XXX
+Takes an abbreviation attribute on TOS and yields its offset inside
+the Dwarf section that it comes from::
+
+	$ dwgrep ./tests/twocus -e '
+		abbrev entry attribute (pos == 0) "%(offset%)\t%(dup label%)"'
+	0	DW_AT_producer
+	0x13	DW_AT_external
+	0x28	DW_AT_byte_size
+	0x34	DW_AT_producer
+	0x47	DW_AT_external
+	0x60	DW_AT_external
+	0x76	DW_AT_byte_size
 
 )docstring";
 }

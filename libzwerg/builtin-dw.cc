@@ -897,9 +897,9 @@ Example::
 	[3f]	subprogram
 		external (flag_present)	true;			# Will be integrate.
 		name (string)	foo;				# Likewise.
-		decl_file (data1)	tests/nullptr.cc;	# Won't--meaningless.
+		decl_file (data1)	tests/nullptr.cc;	# Likewise.
 		decl_line (data1)	3;			# Likewise.
-		declaration (flag_present)	true;		# Likewise.
+		declaration (flag_present)	true;		# Won't--meaningless.
 		object_pointer (ref4)	[4a];			# Won't--duplicate.
 
 	$ dwgrep ./tests/nullptr.o -e 'entry (offset == 0x6e) attribute'
@@ -909,6 +909,8 @@ Example::
 	sibling (ref4)	[8b];
 	external (flag_present)	true;
 	name (string)	foo;
+	decl_file (data1)	tests/nullptr.cc;
+	decl_line (data1)	3;
 
 )docstring";
     }
@@ -958,9 +960,10 @@ Note that CU offset is different from the offset of its root element::
 
 Example::
 
-	$ dwgrep tests/a1.out -e 'let A := raw unit (pos == 0);
-	let B := raw unit (pos == 1);
-	A B if (A == B) then "eq" else "ne"'
+	$ dwgrep tests/a1.out -e '
+		let A := raw unit (pos == 0);
+		let B := raw unit (pos == 1);
+		A B if (A == B) then "eq" else "ne"'
 	---
 	ne
 	CU 0
@@ -1003,17 +1006,19 @@ even though they came in through different paths.  E.g. if a single
 DIE is selected in the same context in two different expressions, the
 two DIE's compare equal::
 
-	$ dwgrep tests/dwz-partial2-1 -e 'let A := [entry (offset == 0x14)] elem (pos == 0);
-	let B := [entry (offset == 0x14)] elem (pos == 0);
-	A B if ?eq then "==" else "!=" swap "%s: %s %s %s"'
+	$ dwgrep tests/dwz-partial2-1 -e '
+		let A := [entry (offset == 0x14)] elem (pos == 0);
+		let B := [entry (offset == 0x14)] elem (pos == 0);
+		A B if ?eq then "==" else "!=" swap "%s: %s %s %s"'
 	<Dwarf "tests/dwz-partial2-1">: [14] typedef == [14] typedef
 
 However if the two DIE's are taken from different contexts, they will
 compare unequal despite them being physically the same DIE::
 
-	$ dwgrep tests/dwz-partial2-1 -e 'let A := [entry (offset == 0x14)] elem (pos == 0);
-	let B := [entry (offset == 0x14)] elem (pos == 1);
-	A B if ?eq then "==" else "!=" swap "%s: %s %s %s"'
+	$ dwgrep tests/dwz-partial2-1 -e '
+		let A := [entry (offset == 0x14)] elem (pos == 0);
+		let B := [entry (offset == 0x14)] elem (pos == 1);
+		A B if ?eq then "==" else "!=" swap "%s: %s %s %s"'
 	<Dwarf "tests/dwz-partial2-1">: [14] typedef != [14] typedef
 
 )docstring";
@@ -2610,7 +2615,7 @@ word.  Syntactic sugar for ``(attribute ?(label == AT_*) cooked
 value)``::
 
 	$ dwgrep ./tests/nullptr.o -e '
-		entry let A := @AT_declaration; "%( @AT_name %): %( A %)"'
+		entry (|A| "%( A @AT_name %): %( A @AT_declaration %)")'
 	foo: true
 
 )docstring";

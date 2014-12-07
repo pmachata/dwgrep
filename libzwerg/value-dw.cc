@@ -47,9 +47,16 @@
 value_type const value_dwarf::vtype = value_type::alloc ("T_DWARF",
 R"docstring(
 
-Values of this type represent opened Dwarf files.  If a given file
-contains .gnu_debugaltlink, it is subsumed by the Dwarf handle as
-well.
+Values of this type represent opened Dwarf files::
+
+	$ dwgrep ./tests/a1.out -e ''
+	<Dwarf "./tests/a1.out">
+
+	$ dwgrep '"tests/a1.out" dwopen'
+	<Dwarf "tests/a1.out">
+
+If a given file contains .gnu_debugaltlink, it is subsumed by the
+Dwarf handle as well.
 
 Values of type Dwarf (as well as many other Dwarf-related Zwerg
 values) come in two flavors: cooked and raw.  Raw values generally
@@ -62,14 +69,6 @@ described at each word that makes the distinction.
 
 Two words are used for switching Dwarf back and forth: ``raw`` and
 ``cooked``.
-
-Example::
-
-	$ dwgrep ./tests/a1.out -e ''
-	<Dwarf "./tests/a1.out">
-
-	$ dwgrep '"tests/a1.out" dwopen'
-	<Dwarf "tests/a1.out">
 
 )docstring");
 

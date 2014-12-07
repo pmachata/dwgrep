@@ -185,7 +185,7 @@ R"docstring(
 Yield number of elements of sequence on TOS.
 
 E.g. the following tests whether the DIE's whose all attributes report
-the same form as their abbreviations suggest, comprises all DIE's.
+the same form as their abbreviations suggest, comprise all DIE's.
 This test comes from dwgrep's test suite::
 
 	[entry ([abbrev attribute label] == [attribute label])] length

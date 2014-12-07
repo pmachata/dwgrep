@@ -766,7 +766,7 @@ As an example, consider the following snippet from a script::
 	  ?DW_TAG_variable
 	)
 
-In particular, note that following surprising example::
+In particular, note the following surprising example::
 
 	$ dwgrep 'if false then "yes" else "no"'	# WARNING!
 	yes

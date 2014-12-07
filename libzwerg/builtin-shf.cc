@@ -51,9 +51,9 @@ schemes:
 +------+---------+-----------+
 
 Realistically, most of what end users should write will be an
-occasional dup, possibly a swap.  Drop shouldn't be needed (that's
-what sub-expressions are for), and the deep stack manipulation should
-be unnecessary as well.  But they are present for completeness' sake.
+occasional dup or drop.  Most of the stack reorganization effects can
+be described more clearly using bindings and sub-expressions.  But the
+operators are present for completeness' sake.
 
 )docstring";
 }

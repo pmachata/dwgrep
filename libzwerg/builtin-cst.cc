@@ -289,5 +289,17 @@ them by hand::
 At this point, ``pos`` and ``Len`` can be used to figure out both
 absolute and relative position of a given element.
 
+Note that *every* function counts its elements anew::
+
+	$ dwgrep '"foo" elem pos'
+	0
+	1
+	2
+
+	$ dwgrep '"foo" elem type pos'
+	0
+	0
+	0
+
 )docstring";
 }
