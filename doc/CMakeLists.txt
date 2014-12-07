@@ -61,6 +61,9 @@ ADD_CUSTOM_TARGET (doc-man
 	-d "${SPHINX_CACHE_DIR}" "${AUX_SOURCE_DIR}" "${SPHINX_MAN_DIR}"
     COMMENT "Building manual pages")
 
+INSTALL (FILES ${SPHINX_MAN_DIR}/dwgrep.1
+  DESTINATION share/man/man1)
+
 ADD_CUSTOM_TARGET (doc)
 ADD_DEPENDENCIES (doc doc-html doc-man)
 
