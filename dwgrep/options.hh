@@ -156,5 +156,5 @@ struct ext_option
 std::map <int, std::pair <std::vector <std::string>, std::string>>
 merge_options (std::vector <ext_option> const &ext_opts);
 
-extern ext_shopt help;
+extern ext_shopt help, version;
 extern std::vector <ext_option> ext_options;

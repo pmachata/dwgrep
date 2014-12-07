@@ -41,6 +41,7 @@
 #include "options.hh"
 #include "libzwerg/std-memory.hh"
 #include "libzwerg/strip.hh"
+#include "version.h"
 
 std::unique_ptr <option[]>
 gen_options (std::vector <ext_option> const &ext_opts)
@@ -190,6 +191,13 @@ main(int argc, char *argv[])
 	  if (c == help)
 	    {
 	      show_help (ext_options);
+	      return 0;
+	    }
+	  else if (c == version)
+	    {
+	      std::cout << "dwgrep "
+			<< DWGREP_VERSION_MAJOR << "." << DWGREP_VERSION_MINOR
+			<< std::endl;
 	      return 0;
 	    }
 

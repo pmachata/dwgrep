@@ -53,7 +53,7 @@ merge_options (std::vector <ext_option> const &ext_opts)
   return opts;
 }
 
-ext_shopt help;
+ext_shopt help, version;
 
 std::vector <ext_option> ext_options = {
   {'q', "silent", ext_argument::no, ""},
@@ -115,6 +115,12 @@ std::vector <ext_option> ext_options = {
   {help, "help", ext_argument::no, R"docstring(
 
 	Show help and exit.
+
+)docstring"},
+
+  {version, "version", ext_argument::no, R"docstring(
+
+	Show version in the format MAJOR.MINOR and exit.
 
 )docstring"},
 };
