@@ -214,6 +214,7 @@ class stringer
 public:
   virtual std::pair <stack::uptr, std::string> next () = 0;
   virtual void reset () = 0;
+  virtual ~stringer () {}
 };
 
 // The formatting starts here.  This uses a pattern similar to

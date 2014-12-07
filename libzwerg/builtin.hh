@@ -68,6 +68,8 @@ using builtin_protomap = std::vector <builtin_prototype>;
 class builtin
 {
 public:
+  virtual ~builtin () {}
+
   virtual std::unique_ptr <pred>
   build_pred () const;
 
