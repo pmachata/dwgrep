@@ -153,9 +153,16 @@ T_DWARF
 
 
 
-Values of this type represent opened Dwarf files.  If a given file
-contains .gnu_debugaltlink, it is subsumed by the Dwarf handle as
-well.
+Values of this type represent opened Dwarf files::
+
+	$ dwgrep ./tests/a1.out -e ''
+	<Dwarf "./tests/a1.out">
+
+	$ dwgrep '"tests/a1.out" dwopen'
+	<Dwarf "tests/a1.out">
+
+If a given file contains .gnu_debugaltlink, it is subsumed by the
+Dwarf handle as well.
 
 Values of type Dwarf (as well as many other Dwarf-related Zwerg
 values) come in two flavors: cooked and raw.  Raw values generally
@@ -168,14 +175,6 @@ described at each word that makes the distinction.
 
 Two words are used for switching Dwarf back and forth: ``raw`` and
 ``cooked``.
-
-Example::
-
-	$ dwgrep ./tests/a1.out -e ''
-	<Dwarf "./tests/a1.out">
-
-	$ dwgrep '"tests/a1.out" dwopen'
-	<Dwarf "tests/a1.out">
 
 
 
@@ -536,7 +535,7 @@ word.  Syntactic sugar for ``(attribute ?(label == AT_*) cooked
 value)``::
 
 	$ dwgrep ./tests/nullptr.o -e '
-		entry let A := @AT_declaration; "%( @AT_name %): %( A %)"'
+		entry (|A| "%( A @AT_name %): %( A @AT_declaration %)")'
 	foo: true
 
 
@@ -857,9 +856,9 @@ Example::
 	[3f]	subprogram
 		external (flag_present)	true;			# Will be integrate.
 		name (string)	foo;				# Likewise.
-		decl_file (data1)	tests/nullptr.cc;	# Won't--meaningless.
+		decl_file (data1)	tests/nullptr.cc;	# Likewise.
 		decl_line (data1)	3;			# Likewise.
-		declaration (flag_present)	true;		# Likewise.
+		declaration (flag_present)	true;		# Won't--meaningless.
 		object_pointer (ref4)	[4a];			# Won't--duplicate.
 
 	$ dwgrep ./tests/nullptr.o -e 'entry (offset == 0x6e) attribute'
@@ -869,6 +868,8 @@ Example::
 	sibling (ref4)	[8b];
 	external (flag_present)	true;
 	name (string)	foo;
+	decl_file (data1)	tests/nullptr.cc;
+	decl_line (data1)	3;
 
 ``T_ABBREV`` ``->*`` ``T_ABBREV_ATTR``
 ......................................
@@ -1286,9 +1287,10 @@ Note that CU offset is different from the offset of its root element::
 
 Example::
 
-	$ dwgrep tests/a1.out -e 'let A := raw unit (pos == 0);
-	let B := raw unit (pos == 1);
-	A B if (A == B) then "eq" else "ne"'
+	$ dwgrep tests/a1.out -e '
+		let A := raw unit (pos == 0);
+		let B := raw unit (pos == 1);
+		A B if (A == B) then "eq" else "ne"'
 	---
 	ne
 	CU 0
@@ -1312,17 +1314,19 @@ even though they came in through different paths.  E.g. if a single
 DIE is selected in the same context in two different expressions, the
 two DIE's compare equal::
 
-	$ dwgrep tests/dwz-partial2-1 -e 'let A := [entry (offset == 0x14)] elem (pos == 0);
-	let B := [entry (offset == 0x14)] elem (pos == 0);
-	A B if ?eq then "==" else "!=" swap "%s: %s %s %s"'
+	$ dwgrep tests/dwz-partial2-1 -e '
+		let A := [entry (offset == 0x14)] elem (pos == 0);
+		let B := [entry (offset == 0x14)] elem (pos == 0);
+		A B if ?eq then "==" else "!=" swap "%s: %s %s %s"'
 	<Dwarf "tests/dwz-partial2-1">: [14] typedef == [14] typedef
 
 However if the two DIE's are taken from different contexts, they will
 compare unequal despite them being physically the same DIE::
 
-	$ dwgrep tests/dwz-partial2-1 -e 'let A := [entry (offset == 0x14)] elem (pos == 0);
-	let B := [entry (offset == 0x14)] elem (pos == 1);
-	A B if ?eq then "==" else "!=" swap "%s: %s %s %s"'
+	$ dwgrep tests/dwz-partial2-1 -e '
+		let A := [entry (offset == 0x14)] elem (pos == 0);
+		let B := [entry (offset == 0x14)] elem (pos == 1);
+		A B if ?eq then "==" else "!=" swap "%s: %s %s %s"'
 	<Dwarf "tests/dwz-partial2-1">: [14] typedef != [14] typedef
 
 ``T_LOCLIST_OP`` ``->`` ``T_CONST``
@@ -1347,10 +1351,51 @@ the containing location expression::
 	0x11
 	0x13
 
-``T_ABBREV_ATTR`` ``->`` ``T_CONST``, ``T_ABBREV`` ``->`` ``T_CONST``, ``T_ABBREV_UNIT`` ``->`` ``T_CONST``
-...........................................................................................................
+``T_ABBREV_ATTR`` ``->`` ``T_CONST``
+....................................
 
-XXX
+Takes an abbreviation attribute on TOS and yields its offset inside
+the Dwarf section that it comes from::
+
+	$ dwgrep ./tests/twocus -e '
+		abbrev entry attribute (pos == 0) "%(offset%)\t%(dup label%)"'
+	0	DW_AT_producer
+	0x13	DW_AT_external
+	0x28	DW_AT_byte_size
+	0x34	DW_AT_producer
+	0x47	DW_AT_external
+	0x60	DW_AT_external
+	0x76	DW_AT_byte_size
+
+``T_ABBREV`` ``->`` ``T_CONST``
+...............................
+
+Takes an abbreviation on TOS and yields its offset inside the Dwarf
+section that it comes from::
+
+	$ dwgrep ./tests/twocus -e 'abbrev entry "%(code%): %(dup offset%)"'
+	1: 0
+	2: 0x13
+	3: 0x28
+	1: 0x34
+	2: 0x47
+	3: 0x60
+	4: 0x71
+	5: 0x76
+
+|OffsetsNotUnique|
+
+``T_ABBREV_UNIT`` ``->`` ``T_CONST``
+....................................
+
+Takes an abbreviation unit on TOS and yields its offset inside the
+Dwarf section that it comes from::
+
+	$ dwgrep ./tests/twocus -e 'abbrev offset'
+	0
+	0x34
+
+|OffsetsNotUnique|
 
 
 

@@ -399,9 +399,9 @@ schemes:</p>
 </tbody>
 </table>
 <p>Realistically, most of what end users should write will be an
-occasional dup, possibly a swap.  Drop shouldn&#8217;t be needed (that&#8217;s
-what sub-expressions are for), and the deep stack manipulation should
-be unnecessary as well.  But they are present for completeness&#8217; sake.</p>
+occasional dup or drop.  Most of the stack reorganization effects can
+be described more clearly using bindings and sub-expressions.  But the
+operators are present for completeness&#8217; sake.</p>
 </div>
 <div class="section" id="elem-relem">
 <span id="zw-vocabulary-core-relem"></span><span id="zw-vocabulary-core-elem"></span><h2>elem, relem<a class="headerlink" href="#elem-relem" title="Permalink to this headline">¶</a></h2>
@@ -451,7 +451,7 @@ strings:</p>
 <h3><tt class="docutils literal"><span class="pre">T_SEQ</span></tt> <tt class="docutils literal"><span class="pre">-&gt;</span></tt> <tt class="docutils literal"><span class="pre">T_CONST</span></tt><a class="headerlink" href="#t-seq-t-const" title="Permalink to this headline">¶</a></h3>
 <p>Yield number of elements of sequence on TOS.</p>
 <p>E.g. the following tests whether the DIE&#8217;s whose all attributes report
-the same form as their abbreviations suggest, comprises all DIE&#8217;s.
+the same form as their abbreviations suggest, comprise all DIE&#8217;s.
 This test comes from dwgrep&#8217;s test suite:</p>
 <div class="highlight-python"><div class="highlight"><pre>[entry ([abbrev attribute label] == [attribute label])] length
 == [entry] length
@@ -500,6 +500,18 @@ let Len := length;
 </div>
 <p>At this point, <tt class="docutils literal"><span class="pre">pos</span></tt> and <tt class="docutils literal"><span class="pre">Len</span></tt> can be used to figure out both
 absolute and relative position of a given element.</p>
+<p>Note that <em>every</em> function counts its elements anew:</p>
+<div class="highlight-python"><div class="highlight"><pre>$ dwgrep &#39;&quot;foo&quot; elem pos&#39;
+0
+1
+2
+
+$ dwgrep &#39;&quot;foo&quot; elem type pos&#39;
+0
+0
+0
+</pre></div>
+</div>
 </div>
 <div class="section" id="type">
 <span id="zw-vocabulary-core-type"></span><h2>type<a class="headerlink" href="#type" title="Permalink to this headline">¶</a></h2>
