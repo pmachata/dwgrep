@@ -1561,7 +1561,7 @@ any Zwerg type.  There can even be more than one value.  In particular
 location expression attributes yield all the constituent location
 expressions::
 
-	$ dwgrep ./tests/aranges.o -e 'entry @AT_location'
+	$ dwgrep ./tests/aranges.o -e 'entry attribute ?AT_location value'
 	0x10000..0x10010:[0:reg5]
 	0x10010..0x1001a:[0:fbreg<-24>]
 
