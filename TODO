@@ -68,24 +68,46 @@
       could be doable in runtime as well, and might still very much
       pay off.
 
+*** removal of cloning for subexpression evaluation
+    - If we can prove that the expression in a ?(), let, or [] doesn't
+      touch existing stack slots at all, we can avoid cloning
+      altogether.  E.g. the following rewrite:
+      : let B := A child ?TAG_formal_parameter;
+      : A child ?TAG_formal_parameter ->B;
+
+    - In some other cases, it might be advantageous to just duplicate
+      top element and drop in later.  E.g.:
+      : let A := entry ?TAG_subprogram;
+      : dup entry ?TAG_subprogram ->A;
+
+      This would be likely especially advantageous if the "dup" just
+      copies a shared pointer reference instead of cloning.
+
+    - Or this:
+      : entry ?([@AT_location] relem (pos == 0) label
+      :         (?DW_OP_implicit_value, ?DW_OP_stack_value))
+      ... which can be rewritten as:
+      : entry [@AT_location] relem (pos == 0) label
+      :       (?DW_OP_implicit_value, ?DW_OP_stack_value) drop
+
 ** command-line arguments -- $1, $2, ...
    - These would have to be passed in not only from command line, but
-     also from the C/C++ wrapper.  Thus it is desirable that they can
-     somehow become of various types.  E.g. we'd like to be able to
-     pass in 17 without making it "17".
+     also from the C and C++ wrappers.  While C and C++ wrappers could
+     pass in arbitrary value subclasses, only strings would come from
+     the command line.
 
    - Systemtap has @1, @2, etc. for literals.  $1, $2, etc. are pasted
      verbatim (macro-expanded so to speak) and lexed and parsed.  This
      would allow the "17" be passed in as 17, but that's still
-     awkward.
+     awkward.  But @1 et. al. is a good fit for access to location
+     expression values, macro arguments or possibly other things like
+     that, so we'll probably just use $1 et. al.
 
-   - The wrapper (or command-line interface) should probably provide a
-     map of values (as in, instances of a class value subclass).  Thus
-     $1 could be spliced as 17 or "17" depending on what comes in.  $1
-     could be similar to binding--maybe this could be modelled as an
-     outermost scope (provided we solve the stack cloning performance
-     issues).  Type inference would have to be done after these
-     arguments are provided.
+   - These could act like variables defined in outermost scope.  Type
+     inference would have to be done after these arguments are
+     provided.
+
+   - There could also be ($ARGS ->* ?()).
 
 ** Dictionaries
    - Maybe have a key-value value type?  And a => operator for
@@ -338,7 +360,6 @@
 ***  rfold1 :: ?T_SEQ ?T_CLOSURE ->* ?()
      - Like fold1, but in reverse order.
 
-
 ** ·T_CONST
 ***  int32_t, uint32_t, int64_t, uint64_t :: ?T_CONST -> ?T_CONST
      The idea behind uint32_t et.al. is that a two-complement
@@ -362,8 +383,6 @@
      on address size of CU.  XXX how to get to that size?  What
      should, say, "17 uintptr_t" do?  There's no CU in sight...
 
-
-
 ** ·T_STR
 ***  match :: ?T_STR ?T_STR ->* ?T_STR
      - This should work like ?match, but would produce match objects
@@ -377,4 +396,134 @@
        : ... match (pos==0) elem value	# "a" and "b"
 
 ***  demangle :: ?T_STR -> ?T_STR
+** ·T_DWARF
+***  symbol :: ?T_DWARF ->* ?T_ELFSYM
+     - Yields all symbols in .symtab, or minisymtab, or .dynsym.
 
+** ·T_CU
+***  next :: ?T_CU ->? T_CU
+***  prev :: ?T_CU ->? T_CU
+
+** ·T_DIE
+***  next :: ?T_DIE ->? ?T_DIE
+     Like dwarf_siblingof, returns next sibling of the DIE.
+
+     : def next {|D| D parent child (pos == D parent child (== D) pos 1 add)}
+
+     The first line is necessary to make sure that pos later refers
+     to order in children array, not to e.g. a result of ([XYZ] each).
+
+***  prev :: ?T_DIE ->? ?T_DIE
+     The opposite of next.
+
+*** •@AT_decl_file
+     Value of this attribute is represented as actual string including
+     path.
+
+     (XXX we ignore mtime and size.  Those aren't stored anyway, but
+     maybe it would be useful to have them so that one can do this
+     sort of querying in the first place--do we have any files where
+     this is stored?  Or after it gets to be stored in general, where
+     this is _not_ stored?)
+
+***  ?LANG_* :: ?T_DIE
+     Holds if (@AT_language == DW_LANG_*).
+
+***  ?ATE_* :: ?T_DIE
+     Holds if @AT_encoding == DW_ATE_*.
+
+** ·T_ATTR
+***  ?LANG_* :: ?T_ATTR
+     Holds if (?AT_language value == DW_LANG_*).
+
+***  ?ATE_* :: ?T_ATTR
+     Holds if (?AT_encoding value == DW_ATE_*)
+
+**  T_ELFSYM
+***  label :: ?T_ELFSYM -> ?T_CONST
+     Yields symbol type, such as STT_FUNC.
+
+***  address :: ?T_ELFSYM -> ?T_ASET
+     Yield symbol value.
+
+***  name :: ?T_ELFSYM -> ?T_STR
+***  size :: ?T_ELFSYM -> ?T_CONST
+***  bind :: ?T_ELFSYM -> ?T_CONST
+***  vis :: ?T_ELFSYM -> ?T_CONST
+***  index :: ?T_ELFSYM ->? ?T_CONST
+     XXX or maybe @section?
+
+***  symbol :: ?T_CONST ->? T_ELFSYM
+     This find a symbol associated with an address on TOS.  The match
+     doesn't have to be exact, offset would then be:
+     : let A := some addr; A symbol dup address A sub
+     :  # now TOS has offset and below TOS is symbol
+
+     XXX some of this is fairly easy to get by cross-matching like
+     this:
+     : symtab (address == some addr)
+     fuzzy matching (getting symbol/offset) would be more involved.
+
+**  T_MACRO_UNIT ???
+    - A value representing .debug_macro and .debug_macinfo units.
+      Might be useful for DW_MACRO_GNU_transparent_include opcode, and
+      for DW_AT_macro_info and DW_AT_GNU_macros attributes, which
+      would hold this as a value.
+
+***  entry :: ?T_MACRO_UNIT ->* ?T_MACRO_ENTRY
+***  offset :: ?T_MACRO_UNIT ->* ?T_CONST
+***  XXX :: something to get the prototype table???
+
+**  T_MACRO_ENTRY
+    - A value used for representing both .debug_macro and
+      .debug_macinfo entries.  Domain of entry label disambiguates
+      which is which.
+
+***  label :: ?T_MACRO_ENTRY -> ?T_CONST
+     - Opcode of this macro entry.
+
+***  attribute :: ?T_MACRO_ENTRY ->* ?T_MACRO_ATTRIBUTE
+     - Yields value(s) associated with this opcode.
+     - XXX could we somehow query a form?
+
+***  merge :: ?T_MACRO_ENTRY ->* ?T_MACRO_ENTRY
+     : let merge := { ?DW_MACRO_GNU_transparent_include value };
+
+     Should be used as with DIE's, depending on what exactly is needed
+     either (merge*) or (merge* !(merge)).
+
+***  @0, @1, ... or something???
+     - Should this resemble DIE's or T_LOCLIST_OP's?  Shouldn't
+       T_LOCLIST_OP's actually resemble DIE's as well?  @X as a
+       shorthand for (value (pos == X)) seems fairly natural.
+
+       If X is a name instead of a number, it means:
+       : (attribute (label == X))
+
+**  T_MACRO_ATTRIBUTE ???
+    - Note that label is explicitly not applicable
+***  value
+***  form
+
+
+* Examples
+** check_die_line_info:
+   : let A := entry (?TAG_subprogram, ?TAG_inlined_subroutine, ?TAG_entry_point,
+   :                ?TAG_lexical_block, ?TAG_label, ?TAG_with_stmt,
+   :                ?TAG_try_block, ?TAG_catch_block);
+   : let B := A (@AT_entry_pc, address);
+   : let C := A root address;
+   : ?(B C !overlaps || B C overlap != B)
+   : "Address range %( B %) referenced from %( A %)"\
+   : " not fully covered by line table."
+
+** CU A imports two PU's B and C, and both import the same third PU
+
+   : let imports := {root child ?TAG_imported_unit @AT_import};
+   :
+   : let U := entry ?root ;
+   : let A := U child ?TAG_imported_unit @AT_import ;
+   : let B := U child ?TAG_imported_unit @AT_import (> A) ;
+   : A imports B imports (== swap)
+   : "PU %(offset%) is imported by PU's %(A offset%) and %(B offset%), "\
+   : "which are both imported by %(U offset%)."
