@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2014 Red Hat, Inc.
+   Copyright (C) 2014, 2015 Red Hat, Inc.
    This file is part of dwgrep.
 
    This file is free software; you can redistribute it and/or modify
@@ -60,19 +60,27 @@ struct mpz_class
 
   mpz_class (mpz_class const &that) = default;
 
-  mpz_class (uint64_t value)
-    : mpz_class {value, signedness::unsign}
-  {}
-
-  mpz_class (uint32_t value)
+  mpz_class (unsigned long long int value)
     : mpz_class {static_cast <uint64_t> (value), signedness::unsign}
   {}
 
-  mpz_class (int64_t value)
+  mpz_class (unsigned long int value)
+    : mpz_class {static_cast <uint64_t> (value), signedness::unsign}
+  {}
+
+  mpz_class (unsigned int value)
+    : mpz_class {static_cast <uint64_t> (value), signedness::unsign}
+  {}
+
+  mpz_class (long long int value)
     : mpz_class {static_cast <uint64_t> (value), signedness::sign}
   {}
 
-  mpz_class (int32_t value)
+  mpz_class (long int value)
+    : mpz_class {static_cast <uint64_t> (value), signedness::sign}
+  {}
+
+  mpz_class (int value)
     : mpz_class {static_cast <uint64_t> (value), signedness::sign}
   {}
 
