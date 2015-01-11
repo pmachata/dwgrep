@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2014 Red Hat, Inc.
+   Copyright (C) 2014, 2015 Red Hat, Inc.
    This file is part of dwgrep.
 
    This file is free software; you can redistribute it and/or modify
@@ -374,14 +374,20 @@ private:
   opvec_t::iterator m_it;
   std::shared_ptr <bool> m_done;
 
+  std::shared_ptr <bool>
+  set_false (std::shared_ptr <bool> flagp)
+  {
+    assert (flagp != nullptr);
+    *flagp = false;
+    return flagp;
+  }
+
 public:
   op_merge (opvec_t ops, std::shared_ptr <bool> done)
     : m_ops (ops)
     , m_it (m_ops.begin ())
-    , m_done (done)
-  {
-    *m_done = false;
-  }
+    , m_done (set_false (done))
+  {}
 
   stack::uptr next () override;
   std::string name () const override;

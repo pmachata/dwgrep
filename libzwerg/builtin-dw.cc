@@ -126,7 +126,7 @@ namespace
 
       Dwarf_CU &cu = *(*m_cuit)->cu;
       Dwarf_Off off = m_cuit.offset ();
-      m_cuit++;
+      ++m_cuit;
 
       return std::make_unique <value_cu> (m_dwctx, cu, off, m_i++, m_doneness);
     }

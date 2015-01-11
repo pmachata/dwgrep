@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2014 Red Hat, Inc.
+   Copyright (C) 2014, 2015 Red Hat, Inc.
    This file is part of dwgrep.
 
    This file is free software; you can redistribute it and/or modify
@@ -100,7 +100,7 @@ split_pfx_recursively (std::map <std::string, std::vector <std::string>> d,
     std::cout << "rc " << e.first << " " << e.second.size () << std::endl;
 #endif
 
-  if (nd.size () > 0)
+  if (! nd.empty ())
     nd = split_pfx_recursively (std::move (nd), sz);
 
   nd.insert (std::make_move_iterator (keep.begin ()),
