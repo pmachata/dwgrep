@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2014 Red Hat, Inc.
+   Copyright (C) 2014, 2015 Red Hat, Inc.
    This file is part of dwgrep.
 
    This file is free software; you can redistribute it and/or modify
@@ -43,23 +43,22 @@
 namespace
 {
   void
-  debug_stack (stack *stk)
+  debug_stack (stack const &stk)
   {
     {
-      std::vector <std::unique_ptr <value>> stack;
-      while (stk->size () > 0)
-	stack.push_back (stk->pop ());
+      std::vector <std::reference_wrapper <value const>> stack;
+      for (size_t i = 0, n = stk.size (); i < n; ++i)
+	stack.push_back (stk.get (i));
 
       std::cerr << "<";
       std::for_each (stack.rbegin (), stack.rend (),
-		     [&stk] (std::unique_ptr <value> &v) {
-		       v->show ((std::cerr << ' '), brevity::brief);
-		       stk->push (std::move (v));
+		     [&stk] (std::reference_wrapper <value const> v) {
+		       v.get ().show ((std::cerr << ' '), brevity::brief);
 		     });
       std::cerr << " > (";
     }
 
-    std::shared_ptr <frame> frame = stk->nth_frame (0);
+    std::shared_ptr <frame> frame = stk.nth_frame (0);
     while (frame != nullptr)
       {
 	std::cerr << frame;
@@ -696,7 +695,7 @@ op_f_debug::next ()
 {
   while (auto stk = m_upstream->next ())
     {
-      debug_stack (&*stk);
+      debug_stack (*stk);
       return stk;
     }
   return nullptr;
