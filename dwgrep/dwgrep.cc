@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2014 Red Hat, Inc.
+   Copyright (C) 2014, 2015 Red Hat, Inc.
    This file is part of dwgrep.
 
    This file is free software; you can redistribute it and/or modify
@@ -35,6 +35,7 @@
 #include <getopt.h>
 #include <map>
 #include <cstring>
+#include <algorithm>
 
 #include "libzwerg.h"
 #include "libzwerg-dw.h"
@@ -62,7 +63,11 @@ gen_shopts (std::vector <ext_option> const &ext_opts)
 {
   std::string ret;
   for (auto const &ext_opt: ext_opts)
-    ret += ext_opt.shopt ();
+    {
+      auto shopt = ext_opt.shopt ();
+      if (std::find (ret.begin (), ret.end (), shopt[0]) == ret.end ())
+	ret += shopt;
+    }
   return ret;
 }
 
