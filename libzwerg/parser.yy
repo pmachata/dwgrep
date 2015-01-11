@@ -1,6 +1,6 @@
 %code top { // -*-c++-*-
 /*
-   Copyright (C) 2014 Red Hat, Inc.
+   Copyright (C) 2014, 2015 Red Hat, Inc.
    This file is part of dwgrep.
 
    This file is free software; you can redistribute it and/or modify
@@ -454,11 +454,8 @@ Statement:
     std::unique_ptr <tree> ret;
     for (auto const &s: *ids)
       if (builtins.find (s) == nullptr)
-	{
-	  std::unique_ptr <tree> t {tree::create_str <tree_type::BIND> (s)};
-	  ret = tree::create_cat <tree_type::CAT>
-		(std::move (ret), std::move (t));
-	}
+	ret = tree::create_cat <tree_type::CAT>
+		(std::move (ret), tree::create_str <tree_type::BIND> (s));
       else
 	throw std::runtime_error
 	    (std::string ("Can't rebind a builtin: `") + s + "'");
