@@ -374,14 +374,20 @@ private:
   opvec_t::iterator m_it;
   std::shared_ptr <bool> m_done;
 
+  std::shared_ptr <bool>
+  set_true (std::shared_ptr <bool> flagp)
+  {
+    assert (flagp != nullptr);
+    *flagp = true;
+    return flagp;
+  }
+
 public:
   op_merge (opvec_t ops, std::shared_ptr <bool> done)
     : m_ops (ops)
     , m_it (m_ops.begin ())
-    , m_done (done)
-  {
-    *m_done = false;
-  }
+    , m_done (set_true (done))
+  {}
 
   stack::uptr next () override;
   std::string name () const override;
