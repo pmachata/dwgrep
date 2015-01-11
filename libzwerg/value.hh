@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2014 Red Hat, Inc.
+   Copyright (C) 2014, 2015 Red Hat, Inc.
    This file is part of dwgrep.
 
    This file is free software; you can redistribute it and/or modify
@@ -135,7 +135,6 @@ public:
 
   virtual ~value () {}
   virtual void show (std::ostream &o, brevity brv) const = 0;
-  virtual std::unique_ptr <value> clone () const = 0;
   virtual cmp_result cmp (value const &that) const = 0;
 
   void

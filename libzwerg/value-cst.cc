@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2014 Red Hat, Inc.
+   Copyright (C) 2014, 2015 Red Hat, Inc.
    This file is part of dwgrep.
 
    This file is free software; you can redistribute it and/or modify
@@ -63,12 +63,6 @@ value_cst::show (std::ostream &o, brevity brv) const
   o << m_cst;
 }
 
-std::unique_ptr <value>
-value_cst::clone () const
-{
-  return std::make_unique <value_cst> (*this);
-}
-
 cmp_result
 value_cst::cmp (value const &that) const
 {
@@ -97,7 +91,7 @@ value_cst::cmp (value const &that) const
 // value
 
 value_cst
-op_value_cst::operate (std::unique_ptr <value_cst> a)
+op_value_cst::operate (std::shared_ptr <value_cst> a)
 {
   return {constant {a->get_constant ().value (), &dec_constant_dom}, 0};
 }
@@ -124,7 +118,7 @@ example::
 namespace
 {
   template <class F>
-  std::unique_ptr <value_cst>
+  std::shared_ptr <value_cst>
   simple_arith_op (value_cst const &a, value_cst const &b, F f)
   {
     constant const &cst_a = a.get_constant ();
@@ -171,9 +165,9 @@ denoted with ``->?`` relation::
 )docstring";
 }
 
-std::unique_ptr <value_cst>
-op_add_cst::operate (std::unique_ptr <value_cst> a,
-		     std::unique_ptr <value_cst> b)
+std::shared_ptr <value_cst>
+op_add_cst::operate (std::shared_ptr <value_cst> a,
+		     std::shared_ptr <value_cst> b)
 {
   return simple_arith_op
     (*a, *b,
@@ -192,9 +186,9 @@ op_add_cst::docstring ()
 }
 
 
-std::unique_ptr <value_cst>
-op_sub_cst::operate (std::unique_ptr <value_cst> a,
-		     std::unique_ptr <value_cst> b)
+std::shared_ptr <value_cst>
+op_sub_cst::operate (std::shared_ptr <value_cst> a,
+		     std::shared_ptr <value_cst> b)
 {
   return simple_arith_op
     (*a, *b,
@@ -213,17 +207,17 @@ op_sub_cst::docstring ()
 }
 
 
-std::unique_ptr <value_cst>
-op_mul_cst::operate (std::unique_ptr <value_cst> a,
-		     std::unique_ptr <value_cst> b)
+std::shared_ptr <value_cst>
+op_mul_cst::operate (std::shared_ptr <value_cst> a,
+		     std::shared_ptr <value_cst> b)
 {
   return simple_arith_op
     (*a, *b,
      [] (constant const &cst_a, constant const &cst_b,
-	 constant_dom const *d) -> std::unique_ptr <value_cst>
+	 constant_dom const *d) -> std::shared_ptr <value_cst>
      {
        constant r {cst_a.value () * cst_b.value (), d};
-       return std::make_unique <value_cst> (r, 0);
+       return std::make_shared <value_cst> (r, 0);
      });
 }
 
@@ -234,17 +228,17 @@ op_mul_cst::docstring ()
 }
 
 
-std::unique_ptr <value_cst>
-op_div_cst::operate (std::unique_ptr <value_cst> a,
-		     std::unique_ptr <value_cst> b)
+std::shared_ptr <value_cst>
+op_div_cst::operate (std::shared_ptr <value_cst> a,
+		     std::shared_ptr <value_cst> b)
 {
   return simple_arith_op
     (*a, *b,
      [] (constant const &cst_a, constant const &cst_b,
-	 constant_dom const *d) -> std::unique_ptr <value_cst>
+	 constant_dom const *d) -> std::shared_ptr <value_cst>
      {
        constant r {cst_a.value () / cst_b.value (), d};
-       return std::make_unique <value_cst> (r, 0);
+       return std::make_shared <value_cst> (r, 0);
      });
 }
 
@@ -255,17 +249,17 @@ op_div_cst::docstring ()
 }
 
 
-std::unique_ptr <value_cst>
-op_mod_cst::operate (std::unique_ptr <value_cst> a,
-		     std::unique_ptr <value_cst> b)
+std::shared_ptr <value_cst>
+op_mod_cst::operate (std::shared_ptr <value_cst> a,
+		     std::shared_ptr <value_cst> b)
 {
   return simple_arith_op
     (*a, *b,
      [] (constant const &cst_a, constant const &cst_b,
-	 constant_dom const *d) -> std::unique_ptr <value_cst>
+	 constant_dom const *d) -> std::shared_ptr <value_cst>
      {
        constant r {cst_a.value () % cst_b.value (), d};
-       return std::make_unique <value_cst> (r, 0);
+       return std::make_shared <value_cst> (r, 0);
      });
 }
 

@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2014 Red Hat, Inc.
+   Copyright (C) 2014, 2015 Red Hat, Inc.
    This file is part of dwgrep.
 
    This file is free software; you can redistribute it and/or modify
@@ -47,21 +47,9 @@ of other values (including other sequences)::
 
 )docstring");
 
-namespace
-{
-  value_seq::seq_t
-  clone_seq (value_seq::seq_t const &seq)
-  {
-    value_seq::seq_t seq2;
-    for (auto const &v: seq)
-      seq2.emplace_back (std::move (v->clone ()));
-    return seq2;
-  }
-}
-
 value_seq::value_seq (value_seq const &that)
   : value {that}
-  , m_seq {std::make_shared <seq_t> (clone_seq (*that.m_seq))}
+  , m_seq {that.m_seq}
 {}
 
 void
@@ -79,12 +67,6 @@ value_seq::show (std::ostream &o, brevity brv) const
   o << "]";
 }
 
-std::unique_ptr <value>
-value_seq::clone () const
-{
-  return std::make_unique <value_seq> (*this);
-}
-
 namespace
 {
   template <class Callable>
@@ -94,8 +76,8 @@ namespace
   {
     cmp_result ret = cmp_result::fail;
     auto mm = std::mismatch (sa.begin (), sa.end (), sb.begin (),
-			     [&ret, cmp] (std::unique_ptr <value> const &a,
-					  std::unique_ptr <value> const &b)
+			     [&ret, cmp] (std::shared_ptr <value> const &a,
+					  std::shared_ptr <value> const &b)
 			     {
 			       ret = cmp (a, b);
 			       assert (ret != cmp_result::fail);
@@ -123,8 +105,8 @@ value_seq::cmp (value const &that) const
 	return ret;
 
       ret = compare_sequences (*m_seq, *v->m_seq,
-			       [] (std::unique_ptr <value> const &a,
-				   std::unique_ptr <value> const &b)
+			       [] (std::shared_ptr <value> const &a,
+				   std::shared_ptr <value> const &b)
 			       {
 				 return compare (a->get_type (),
 						 b->get_type ());
@@ -133,8 +115,8 @@ value_seq::cmp (value const &that) const
 	return ret;
 
       return compare_sequences (*m_seq, *v->m_seq,
-				[] (std::unique_ptr <value> const &a,
-				    std::unique_ptr <value> const &b)
+				[] (std::shared_ptr <value> const &a,
+				    std::shared_ptr <value> const &b)
 				{ return a->cmp (*b); });
     }
   else
@@ -142,8 +124,8 @@ value_seq::cmp (value const &that) const
 }
 
 value_seq
-op_add_seq::operate (std::unique_ptr <value_seq> a,
-		     std::unique_ptr <value_seq> b)
+op_add_seq::operate (std::shared_ptr <value_seq> a,
+		     std::shared_ptr <value_seq> b)
 {
   auto seq = a->get_seq ();
   for (auto &v: *b->get_seq ())
@@ -171,7 +153,7 @@ using ``add``::
 }
 
 value_cst
-op_length_seq::operate (std::unique_ptr <value_seq> a)
+op_length_seq::operate (std::shared_ptr <value_seq> a)
 {
   return {constant {a->get_seq ()->size (), &dec_constant_dom}, 0};
 }
@@ -219,12 +201,13 @@ namespace
   {
     using seq_elem_producer_base::seq_elem_producer_base;
 
-    std::unique_ptr <value>
+    std::shared_ptr <value>
     next () override
     {
       if (m_idx < m_seq->size ())
 	{
-	  std::unique_ptr <value> v = (*m_seq)[m_idx]->clone ();
+	  std::cerr << "XXX set_pos on shared value\n";
+	  std::shared_ptr <value> v = (*m_seq)[m_idx];
 	  v->set_pos (m_idx++);
 	  return v;
 	}
@@ -239,13 +222,13 @@ namespace
   {
     using seq_elem_producer_base::seq_elem_producer_base;
 
-    std::unique_ptr <value>
+    std::shared_ptr <value>
     next () override
     {
       if (m_idx < m_seq->size ())
 	{
-	  std::unique_ptr <value> v
-	    = (*m_seq)[m_seq->size () - 1 - m_idx]->clone ();
+	  std::cerr << "XXX set_pos on shared value\n";
+	  std::shared_ptr <value> v = (*m_seq)[m_seq->size () - 1 - m_idx];
 	  v->set_pos (m_idx++);
 	  return v;
 	}
@@ -256,7 +239,7 @@ namespace
 }
 
 std::unique_ptr <value_producer <value>>
-op_elem_seq::operate (std::unique_ptr <value_seq> a)
+op_elem_seq::operate (std::shared_ptr <value_seq> a)
 {
   return std::make_unique <seq_elem_producer> (a->get_seq ());
 }
@@ -301,7 +284,7 @@ op_elem_seq::docstring ()
 }
 
 std::unique_ptr <value_producer <value>>
-op_relem_seq::operate (std::unique_ptr <value_seq> a)
+op_relem_seq::operate (std::shared_ptr <value_seq> a)
 {
   return std::make_unique <seq_relem_producer> (a->get_seq ());
 }
@@ -388,8 +371,8 @@ pred_find_seq::result (value_seq &haystack, value_seq &needle)
   return pred_result
     (std::search (hay.begin (), hay.end (),
 		  need.begin (), need.end (),
-		  [] (std::unique_ptr <value> const &a,
-		      std::unique_ptr <value> const &b)
+		  [] (std::shared_ptr <value> const &a,
+		      std::shared_ptr <value> const &b)
 		  {
 		    return a->cmp (*b) == cmp_result::equal;
 		  }) != haystack.get_seq ()->end ());
@@ -434,8 +417,8 @@ pred_starts_seq::result (value_seq &haystack, value_seq &needle)
     (hay.size () >= need.size ()
      && std::equal (hay.begin (), std::next (hay.begin (), need.size ()),
 		    need.begin (),
-		    [] (std::unique_ptr <value> const &a,
-			std::unique_ptr <value> const &b)
+		    [] (std::shared_ptr <value> const &a,
+			std::shared_ptr <value> const &b)
 		    {
 		      return a->cmp (*b) == cmp_result::equal;
 		    }));
@@ -480,8 +463,8 @@ pred_ends_seq::result (value_seq &haystack, value_seq &needle)
     (hay.size () >= need.size ()
      && std::equal (std::prev (hay.end (), need.size ()), hay.end (),
 		    need.begin (),
-		    [] (std::unique_ptr <value> const &a,
-			std::unique_ptr <value> const &b)
+		    [] (std::shared_ptr <value> const &a,
+			std::shared_ptr <value> const &b)
 		    {
 		      return a->cmp (*b) == cmp_result::equal;
 		    }));

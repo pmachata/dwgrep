@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2014 Red Hat, Inc.
+   Copyright (C) 2014, 2015 Red Hat, Inc.
    This file is part of dwgrep.
 
    This file is free software; you can redistribute it and/or modify
@@ -53,12 +53,6 @@ value_str::show (std::ostream &o, brevity brv) const
   o << m_str;
 }
 
-std::unique_ptr <value>
-value_str::clone () const
-{
-  return std::make_unique <value_str> (*this);
-}
-
 cmp_result
 value_str::cmp (value const &that) const
 {
@@ -70,8 +64,8 @@ value_str::cmp (value const &that) const
 
 
 value_str
-op_add_str::operate (std::unique_ptr <value_str> a,
-		     std::unique_ptr <value_str> b)
+op_add_str::operate (std::shared_ptr <value_str> a,
+		     std::shared_ptr <value_str> b)
 {
   return value_str {a->get_string () + b->get_string (), 0};
 }
@@ -97,7 +91,7 @@ Using formatting strings may be a better way to concatenate strings::
 
 
 value_cst
-op_length_str::operate (std::unique_ptr <value_str> a)
+op_length_str::operate (std::shared_ptr <value_str> a)
 {
   constant t {a->get_string ().length (), &dec_constant_dom};
   return value_cst {t, 0};
@@ -123,12 +117,12 @@ namespace
 {
   struct str_elem_producer_base
   {
-    std::unique_ptr <value_str> m_v;
+    std::shared_ptr <value_str> m_v;
     size_t m_sz;
     char const *m_buf;
     size_t m_idx;
 
-    str_elem_producer_base (std::unique_ptr <value_str> v)
+    str_elem_producer_base (std::shared_ptr <value_str> v)
       : m_v {std::move (v)}
       , m_sz {m_v->get_string ().size ()}
       , m_buf {m_v->get_string ().c_str ()}
@@ -142,13 +136,13 @@ namespace
   {
     using str_elem_producer_base::str_elem_producer_base;
 
-    std::unique_ptr <value_str>
+    std::shared_ptr <value_str>
     next () override
     {
       if (m_idx < m_sz)
 	{
 	  char c = m_buf[m_idx];
-	  return std::make_unique <value_str> (std::string {c}, m_idx++);
+	  return std::make_shared <value_str> (std::string {c}, m_idx++);
 	}
 
       return nullptr;
@@ -161,13 +155,13 @@ namespace
   {
     using str_elem_producer_base::str_elem_producer_base;
 
-    std::unique_ptr <value_str>
+    std::shared_ptr <value_str>
     next () override
     {
       if (m_idx < m_sz)
 	{
 	  char c = m_buf[m_sz - 1 - m_idx];
-	  return std::make_unique <value_str> (std::string {c}, m_idx++);
+	  return std::make_shared <value_str> (std::string {c}, m_idx++);
 	}
 
       return nullptr;
@@ -192,9 +186,9 @@ strings::
 
 // elem
 std::unique_ptr <value_producer <value_str>>
-op_elem_str::operate (std::unique_ptr <value_str> a)
+op_elem_str::operate (std::shared_ptr <value_str> a)
 {
-  return std::make_unique <str_elem_producer> (std::move (a));
+  return std::make_unique <str_elem_producer> (a);
 }
 
 std::string
@@ -206,9 +200,9 @@ op_elem_str::docstring ()
 
 // relem
 std::unique_ptr <value_producer <value_str>>
-op_relem_str::operate (std::unique_ptr <value_str> a)
+op_relem_str::operate (std::shared_ptr <value_str> a)
 {
-  return std::make_unique <str_relem_producer> (std::move (a));
+  return std::make_unique <str_relem_producer> (a);
 }
 
 std::string

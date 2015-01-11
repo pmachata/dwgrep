@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2014 Red Hat, Inc.
+   Copyright (C) 2014, 2015 Red Hat, Inc.
    This file is part of dwgrep.
 
    This file is free software; you can redistribute it and/or modify
@@ -56,7 +56,7 @@ namespace
     using op_once_overload::op_once_overload;
 
     value_dwarf
-    operate (std::unique_ptr <value_str> a) override
+    operate (std::shared_ptr <value_str> a) override
     {
       return value_dwarf (a->get_string (), 0, doneness::cooked);
     }
@@ -116,7 +116,7 @@ namespace
       , m_doneness {d}
     {}
 
-    std::unique_ptr <value_cu>
+    std::shared_ptr <value_cu>
     next () override
     {
       do
@@ -128,7 +128,7 @@ namespace
       Dwarf_Off off = m_cuit.offset ();
       ++m_cuit;
 
-      return std::make_unique <value_cu> (m_dwctx, cu, off, m_i++, m_doneness);
+      return std::make_shared <value_cu> (m_dwctx, cu, off, m_i++, m_doneness);
     }
   };
 
@@ -138,7 +138,7 @@ namespace
     using op_yielding_overload::op_yielding_overload;
 
     std::unique_ptr <value_producer <value_cu>>
-    operate (std::unique_ptr <value_dwarf> a) override
+    operate (std::shared_ptr <value_dwarf> a) override
     {
       return std::make_unique <dwarf_unit_producer> (a->get_dwctx (),
 						     a->get_doneness ());
@@ -197,7 +197,7 @@ This operator is identical in operation to the following expression::
     using op_once_overload::op_once_overload;
 
     value_cu
-    operate (std::unique_ptr <value_die> a) override
+    operate (std::shared_ptr <value_die> a) override
     {
       return cu_for_die (a->get_dwctx (), a->get_die (), a->get_doneness ());
     }
@@ -227,7 +227,7 @@ Take a DIE on TOS and yield a unit that this DIE belongs to::
     using op_once_overload::op_once_overload;
 
     value_cu
-    operate (std::unique_ptr <value_attr> a) override
+    operate (std::shared_ptr <value_attr> a) override
     {
       return cu_for_die (a->get_dwctx (), a->get_die (), doneness::cooked);
     }
@@ -359,7 +359,7 @@ namespace
       m_stack.push_back (get_it_range <It> (die, false));
     }
 
-    std::unique_ptr <value_die>
+    std::shared_ptr <value_die>
     next () override
     {
       do
@@ -369,7 +369,7 @@ namespace
 	     || (m_doneness == doneness::cooked
 		 && import_partial_units (m_stack, m_dwctx, m_import)));
 
-      return std::make_unique <value_die>
+      return std::make_shared <value_die>
 	(m_dwctx, m_import, **m_stack.back ().first++, m_i++, m_doneness);
     }
   };
@@ -388,7 +388,7 @@ namespace
     using op_yielding_overload::op_yielding_overload;
 
     std::unique_ptr <value_producer <value_die>>
-    operate (std::unique_ptr <value_cu> a) override
+    operate (std::shared_ptr <value_cu> a) override
     {
       return make_cu_entry_producer (a->get_dwctx (), a->get_cu (),
 				     a->get_doneness ());
@@ -494,7 +494,7 @@ namespace
     using op_yielding_overload::op_yielding_overload;
 
     std::unique_ptr <value_producer <value_die>>
-    operate (std::unique_ptr <value_die> a) override
+    operate (std::shared_ptr <value_die> a) override
     {
       return make_die_child_producer (a->get_dwctx (), a->get_die (),
 				      a->get_doneness ());
@@ -538,12 +538,12 @@ namespace
   struct elem_loclist_producer
     : public value_producer <value_loclist_op>
   {
-    std::unique_ptr <value_loclist_elem> m_value;
+    std::shared_ptr <value_loclist_elem> m_value;
     size_t m_i;
     size_t m_n;
     bool m_forward;
 
-    elem_loclist_producer (std::unique_ptr <value_loclist_elem> value,
+    elem_loclist_producer (std::shared_ptr <value_loclist_elem> value,
 			   bool forward)
       : m_value {std::move (value)}
       , m_i {0}
@@ -551,7 +551,7 @@ namespace
       , m_forward {forward}
     {}
 
-    std::unique_ptr <value_loclist_op>
+    std::shared_ptr <value_loclist_op>
     next () override
     {
       size_t idx = m_i++;
@@ -559,7 +559,7 @@ namespace
 	{
 	  if (! m_forward)
 	    idx = m_n - 1 - idx;
-	  return std::make_unique <value_loclist_op>
+	  return std::make_shared <value_loclist_op>
 	    (m_value->get_dwctx (), m_value->get_attr (),
 	     m_value->get_expr () + idx, idx);
 	}
@@ -599,7 +599,7 @@ Takes a location expression on TOS and yields individual operators::
     using op_yielding_overload::op_yielding_overload;
 
     std::unique_ptr <value_producer <value_loclist_op>>
-    operate (std::unique_ptr <value_loclist_elem> a) override
+    operate (std::shared_ptr <value_loclist_elem> a) override
     {
       return std::make_unique <elem_loclist_producer> (std::move (a), true);
     }
@@ -617,7 +617,7 @@ Takes a location expression on TOS and yields individual operators::
     using op_yielding_overload::op_yielding_overload;
 
     std::unique_ptr <value_producer <value_loclist_op>>
-    operate (std::unique_ptr <value_loclist_elem> a) override
+    operate (std::shared_ptr <value_loclist_elem> a) override
     {
       return std::make_unique <elem_loclist_producer> (std::move (a), false);
     }
@@ -646,7 +646,7 @@ Takes a location expression on TOS and yields individual operators::
       , m_forward {forward}
     {}
 
-    std::unique_ptr <value_cst>
+    std::shared_ptr <value_cst>
     next () override
     {
       if (m_idx >= cov.size ())
@@ -669,7 +669,7 @@ Takes a location expression on TOS and yields individual operators::
       uint64_t addr = cov.at (idx ()).start + ai;
       m_ai++;
 
-      return std::make_unique <value_cst>
+      return std::make_shared <value_cst>
 	(constant {addr, &dw_address_dom ()}, m_i++);
     }
   };
@@ -702,7 +702,7 @@ Example::
     using op_yielding_overload::op_yielding_overload;
 
     std::unique_ptr <value_producer <value_cst>>
-    operate (std::unique_ptr <value_aset> val) override
+    operate (std::shared_ptr <value_aset> val) override
     {
       return std::make_unique <elem_aset_producer>
 	(val->get_coverage (), true);
@@ -721,7 +721,7 @@ Example::
     using op_yielding_overload::op_yielding_overload;
 
     std::unique_ptr <value_producer <value_cst>>
-    operate (std::unique_ptr <value_aset> val) override
+    operate (std::shared_ptr <value_aset> val) override
     {
       return std::make_unique <elem_aset_producer>
 	(val->get_coverage (), false);
@@ -810,7 +810,7 @@ namespace
 			atname) != std::end (m_seen);
     }
 
-    attribute_producer (std::unique_ptr <value_die> value)
+    attribute_producer (std::shared_ptr <value_die> value)
       : m_dwctx {value->get_dwctx ()}
       , m_it {attr_iterator::end ()}
       , m_i {0}
@@ -821,7 +821,7 @@ namespace
       next_die ();
     }
 
-    std::unique_ptr <value_attr>
+    std::shared_ptr <value_attr>
     next () override
     {
       Dwarf_Attribute at;
@@ -855,7 +855,7 @@ namespace
       while (integrate && seen (at.code));
 
       m_seen.push_back (at.code);
-      return std::make_unique <value_attr>
+      return std::make_shared <value_attr>
 		(m_dwctx, at, m_die, m_i++, m_doneness);
     }
   };
@@ -866,7 +866,7 @@ namespace
     using op_yielding_overload::op_yielding_overload;
 
     std::unique_ptr <value_producer <value_attr>>
-    operate (std::unique_ptr <value_die> a) override
+    operate (std::shared_ptr <value_die> a) override
     {
       return std::make_unique <attribute_producer> (std::move (a));
     }
@@ -926,7 +926,7 @@ namespace
     using op_once_overload::op_once_overload;
 
     value_cst
-    operate (std::unique_ptr <value_cu> a) override
+    operate (std::shared_ptr <value_cu> a) override
     {
       return value_cst {constant {a->get_offset (), &dw_offset_dom ()}, 0};
     }
@@ -980,7 +980,7 @@ Example::
     using op_once_overload::op_once_overload;
 
     value_cst
-    operate (std::unique_ptr <value_die> val) override
+    operate (std::shared_ptr <value_die> val) override
     {
       constant c {dwarf_dieoffset (&val->get_die ()), &dw_offset_dom ()};
       return value_cst {c, 0};
@@ -1031,7 +1031,7 @@ compare unequal despite them being physically the same DIE::
     using op_once_overload::op_once_overload;
 
     value_cst
-    operate (std::unique_ptr <value_loclist_op> val) override
+    operate (std::shared_ptr <value_loclist_op> val) override
     {
       Dwarf_Op const *dwop = val->get_dwop ();
       return value_cst {constant {dwop->offset, &dw_offset_dom ()}, 0};
@@ -1076,7 +1076,7 @@ namespace
     using op_once_overload::op_once_overload;
 
     value_aset
-    operate (std::unique_ptr <value_die> a) override
+    operate (std::shared_ptr <value_die> a) override
     {
       return die_ranges (a->get_die ());
     }
@@ -1097,17 +1097,17 @@ covered by this DIE.  (This calls dwarf_ranges under the covers.)::
     }
   };
 
-  std::unique_ptr <value_cst>
+  std::shared_ptr <value_cst>
   get_die_addr (Dwarf_Die &die, int (cb) (Dwarf_Die *, Dwarf_Addr *))
   {
     Dwarf_Addr addr;
     if (cb (&die, &addr) < 0)
       throw_libdw ();
-    return std::make_unique <value_cst>
+    return std::make_shared <value_cst>
       (constant {addr, &dw_address_dom ()}, 0);
   }
 
-  std::unique_ptr <value_cst>
+  std::shared_ptr <value_cst>
   maybe_get_die_addr (Dwarf_Die &die, int atname,
 		      int (cb) (Dwarf_Die *, Dwarf_Addr *))
   {
@@ -1124,8 +1124,8 @@ covered by this DIE.  (This calls dwarf_ranges under the covers.)::
   {
     using op_overload::op_overload;
 
-    std::unique_ptr <value_cst>
-    operate (std::unique_ptr <value_attr> a) override
+    std::shared_ptr <value_cst>
+    operate (std::shared_ptr <value_attr> a) override
     {
       if (dwarf_whatattr (&a->get_attr ()) == DW_AT_high_pc)
 	return get_die_addr (a->get_die (), &dwarf_highpc);
@@ -1138,7 +1138,7 @@ covered by this DIE.  (This calls dwarf_ranges under the covers.)::
 	  Dwarf_Addr addr;
 	  if (dwarf_formaddr (&a->get_attr (), &addr) < 0)
 	    throw_libdw ();
-	  return std::make_unique <value_cst>
+	  return std::make_shared <value_cst>
 	    (constant {addr, &dw_address_dom ()}, 0);
 	}
 
@@ -1181,7 +1181,7 @@ value to absolute address::
     using op_once_overload::op_once_overload;
 
     value_aset
-    operate (std::unique_ptr <value_loclist_elem> val) override
+    operate (std::shared_ptr <value_loclist_elem> val) override
     {
       uint64_t low = val->get_low ();
       uint64_t len = val->get_high () - low;
@@ -1227,7 +1227,7 @@ namespace
     using op_once_overload::op_once_overload;
 
     value_cst
-    operate (std::unique_ptr <value_die> val) override
+    operate (std::shared_ptr <value_die> val) override
     {
       int tag = dwarf_tag (&val->get_die ());
       return value_cst {constant {tag, &dw_tag_dom ()}, 0};
@@ -1255,7 +1255,7 @@ Takes a DIE on TOS and yields its tag::
     using op_once_overload::op_once_overload;
 
     value_cst
-    operate (std::unique_ptr <value_attr> val) override
+    operate (std::shared_ptr <value_attr> val) override
     {
       constant cst {dwarf_whatattr (&val->get_attr ()), &dw_attr_dom ()};
       return value_cst {cst, 0};
@@ -1288,7 +1288,7 @@ Takes an attribute on TOS and yields its name::
     using op_once_overload::op_once_overload;
 
     value_cst
-    operate (std::unique_ptr <value_loclist_op> val) override
+    operate (std::shared_ptr <value_loclist_op> val) override
     {
       constant cst {val->get_dwop ()->atom, &dw_locexpr_opcode_dom (),
 		    brevity::brief};
@@ -1326,7 +1326,7 @@ namespace
     using op_once_overload::op_once_overload;
 
     value_cst
-    operate (std::unique_ptr <value_attr> val) override
+    operate (std::shared_ptr <value_attr> val) override
     {
       constant cst {dwarf_whatform (&val->get_attr ()), &dw_form_dom ()};
       return value_cst {cst, 0};
@@ -1379,8 +1379,8 @@ namespace
       return false;
     }
 
-    std::unique_ptr <value_die>
-    do_operate (std::shared_ptr <value_die> a)
+    std::shared_ptr <value_die>
+    operate (std::shared_ptr <value_die> a) override
     {
       doneness d = a->get_doneness ();
 
@@ -1396,13 +1396,7 @@ namespace
 	     && dwarf_tag (&par_die) == DW_TAG_partial_unit
 	     && pop_import (a));
 
-      return std::make_unique <value_die> (a->get_dwctx (), par_die, 0, d);
-    }
-
-    std::unique_ptr <value_die>
-    operate (std::unique_ptr <value_die> a) override
-    {
-      return do_operate (std::move (a));
+      return std::make_shared <value_die> (a->get_dwctx (), par_die, 0, d);
     }
 
     static std::string
@@ -1474,7 +1468,7 @@ namespace
     using op_once_overload::op_once_overload;
 
     value_die
-    operate (std::unique_ptr <value_cu> a) override
+    operate (std::shared_ptr <value_cu> a) override
     {
       Dwarf_CU &cu = a->get_cu ();
       Dwarf_Die cudie;
@@ -1516,7 +1510,7 @@ Takes a CU on TOS and yields its root DIE.
     }
 
     value_die
-    operate (std::unique_ptr <value_die> a) override
+    operate (std::shared_ptr <value_die> a) override
     {
       return do_operate (std::move (a));
     }
@@ -1545,7 +1539,7 @@ namespace
     using op_yielding_overload::op_yielding_overload;
 
     std::unique_ptr <value_producer <value>>
-    operate (std::unique_ptr <value_attr> a) override
+    operate (std::shared_ptr <value_attr> a) override
     {
       return at_value (a->get_dwctx (), a->get_die (), a->get_attr ());
     }
@@ -1575,7 +1569,7 @@ expressions::
     using op_yielding_overload::op_yielding_overload;
 
     std::unique_ptr <value_producer <value>>
-    operate (std::unique_ptr <value_loclist_op> a) override
+    operate (std::shared_ptr <value_loclist_op> a) override
     {
       return std::make_unique <value_producer_cat <value>>
 	(dwop_number (a->get_dwctx (), a->get_attr (), a->get_dwop ()),
@@ -1613,8 +1607,8 @@ namespace
   {
     using op_overload::op_overload;
 
-    std::unique_ptr <value_cst>
-    operate (std::unique_ptr <value_die> a) override
+    std::shared_ptr <value_cst>
+    operate (std::shared_ptr <value_die> a) override
     {
       return maybe_get_die_addr (a->get_die (), DW_AT_low_pc, &dwarf_lowpc);
     }
@@ -1636,14 +1630,14 @@ Equivalent to ``@AT_low_pc``.
   {
     using op_overload::op_overload;
 
-    std::unique_ptr <value_cst>
-    operate (std::unique_ptr <value_aset> a) override
+    std::shared_ptr <value_cst>
+    operate (std::shared_ptr <value_aset> a) override
     {
       auto &cov = a->get_coverage ();
       if (cov.empty ())
 	return nullptr;
 
-      return std::make_unique <value_cst>
+      return std::make_shared <value_cst>
 	(constant {cov.at (0).start, &dw_address_dom ()}, 0);
     }
 
@@ -1677,8 +1671,8 @@ namespace
   {
     using op_overload::op_overload;
 
-    std::unique_ptr <value_cst>
-    operate (std::unique_ptr <value_die> a) override
+    std::shared_ptr <value_cst>
+    operate (std::shared_ptr <value_die> a) override
     {
       return maybe_get_die_addr (a->get_die (), DW_AT_high_pc, &dwarf_highpc);
     }
@@ -1700,8 +1694,8 @@ Equivalent to ``@AT_high_pc``.
   {
     using op_overload::op_overload;
 
-    std::unique_ptr <value_cst>
-    operate (std::unique_ptr <value_aset> a) override
+    std::shared_ptr <value_cst>
+    operate (std::shared_ptr <value_aset> a) override
     {
       auto &cov = a->get_coverage ();
       if (cov.empty ())
@@ -1709,7 +1703,7 @@ Equivalent to ``@AT_high_pc``.
 
       auto range = cov.at (cov.size () - 1);
 
-      return std::make_unique <value_cst>
+      return std::make_shared <value_cst>
 	(constant {range.start + range.length, &dw_address_dom ()}, 0);
     }
 
@@ -1756,8 +1750,8 @@ namespace
     using op_once_overload::op_once_overload;
 
     value_aset
-    operate (std::unique_ptr <value_cst> a,
-	     std::unique_ptr <value_cst> b) override
+    operate (std::shared_ptr <value_cst> a,
+	     std::shared_ptr <value_cst> b) override
     {
       auto av = addressify (a->get_constant ());
       auto bv = addressify (b->get_constant ());
@@ -1793,8 +1787,8 @@ namespace
     using op_once_overload::op_once_overload;
 
     value_aset
-    operate (std::unique_ptr <value_aset> a,
-	     std::unique_ptr <value_cst> b) override
+    operate (std::shared_ptr <value_aset> a,
+	     std::shared_ptr <value_cst> b) override
     {
       auto bv = addressify (b->get_constant ());
       auto ret = a->get_coverage ();
@@ -1825,8 +1819,8 @@ range covered by given address set::
     using op_once_overload::op_once_overload;
 
     value_aset
-    operate (std::unique_ptr <value_aset> a,
-	     std::unique_ptr <value_aset> b) override
+    operate (std::shared_ptr <value_aset> a,
+	     std::shared_ptr <value_aset> b) override
     {
       auto ret = a->get_coverage ();
       ret.add_all (b->get_coverage ());
@@ -1861,8 +1855,8 @@ namespace
     using op_once_overload::op_once_overload;
 
     value_aset
-    operate (std::unique_ptr <value_aset> a,
-	     std::unique_ptr <value_cst> b) override
+    operate (std::shared_ptr <value_aset> a,
+	     std::shared_ptr <value_cst> b) override
     {
       auto bv = addressify (b->get_constant ());
       auto ret = a->get_coverage ();
@@ -1893,8 +1887,8 @@ with a hole poked at the address given by the constant::
     using op_once_overload::op_once_overload;
 
     value_aset
-    operate (std::unique_ptr <value_aset> a,
-	     std::unique_ptr <value_aset> b) override
+    operate (std::shared_ptr <value_aset> a,
+	     std::shared_ptr <value_aset> b) override
     {
       auto ret = a->get_coverage ();
       ret.remove_all (b->get_coverage ());
@@ -1924,7 +1918,7 @@ namespace
     using op_once_overload::op_once_overload;
 
     value_cst
-    operate (std::unique_ptr <value_aset> a) override
+    operate (std::shared_ptr <value_aset> a) override
     {
       uint64_t length = 0;
       for (size_t i = 0; i < a->get_coverage ().size (); ++i)
@@ -1961,15 +1955,15 @@ namespace
     struct producer
       : public value_producer <value_aset>
     {
-      std::unique_ptr <value_aset> m_a;
+      std::shared_ptr <value_aset> m_a;
       size_t m_i;
 
-      producer (std::unique_ptr <value_aset> a)
+      producer (std::shared_ptr <value_aset> a)
 	: m_a {std::move (a)}
 	, m_i {0}
       {}
 
-      std::unique_ptr <value_aset>
+      std::shared_ptr <value_aset>
       next () override
       {
 	size_t sz = m_a->get_coverage ().size ();
@@ -1980,12 +1974,12 @@ namespace
 	auto range = m_a->get_coverage ().at (m_i);
 	ret.add (range.start, range.length);
 
-	return std::make_unique <value_aset> (ret, m_i++);
+	return std::make_shared <value_aset> (ret, m_i++);
       }
     };
 
     std::unique_ptr <value_producer <value_aset>>
-    operate (std::unique_ptr <value_aset> a) override
+    operate (std::shared_ptr <value_aset> a) override
     {
       return std::make_unique <producer> (std::move (a));
     }
@@ -2118,8 +2112,8 @@ namespace
     using op_once_overload::op_once_overload;
 
     value_aset
-    operate (std::unique_ptr <value_aset> a,
-	     std::unique_ptr <value_aset> b) override
+    operate (std::shared_ptr <value_aset> a,
+	     std::shared_ptr <value_aset> b) override
     {
       coverage ret;
       for (size_t i = 0; i < b->get_coverage ().size (); ++i)
@@ -2223,7 +2217,7 @@ namespace
     using op_once_overload::op_once_overload;
 
     value_cst
-    operate (std::unique_ptr <value_cu> a) override
+    operate (std::shared_ptr <value_cu> a) override
     {
       Dwarf_CU &cu = a->get_cu ();
       Dwarf_Die cudie;
@@ -2258,7 +2252,7 @@ namespace
     using op_once_overload::op_once_overload;
 
     value_str
-    operate (std::unique_ptr <value_dwarf> a) override
+    operate (std::shared_ptr <value_dwarf> a) override
     {
       return value_str {std::string {a->get_fn ()}, 0};
     }
@@ -2283,15 +2277,15 @@ or replaced since the Dwarf was opened.
   {
     using op_overload::op_overload;
 
-    std::unique_ptr <value_str>
-    operate (std::unique_ptr <value_die> a) override
+    std::shared_ptr <value_str>
+    operate (std::shared_ptr <value_die> a) override
     {
       if (a->is_cooked ())
 	{
 	  // On cooked DIE's, `name` integrates.
 	  const char *name = dwarf_diename (&a->get_die ());
 	  if (name != nullptr)
-	    return std::make_unique <value_str> (name, 0);
+	    return std::make_shared <value_str> (name, 0);
 	  else
 	    return nullptr;
 	}
@@ -2300,7 +2294,7 @@ or replaced since the Dwarf was opened.
       else if (dwarf_hasattr (&a->get_die (), DW_AT_name))
 	{
 	  Dwarf_Attribute attr = dwpp_attr (a->get_die (), DW_AT_name);
-	  return std::make_unique <value_str> (dwpp_formstring (attr), 0);
+	  return std::make_shared <value_str> (dwpp_formstring (attr), 0);
 	}
       else
 	return nullptr;
@@ -2328,7 +2322,7 @@ namespace
     using op_once_overload::op_once_overload;
 
     value_dwarf
-    operate (std::unique_ptr <value_dwarf> a) override
+    operate (std::shared_ptr <value_dwarf> a) override
     {
       return value_dwarf {a->get_fn (), a->get_dwctx (), 0, doneness::raw};
     }
@@ -2372,7 +2366,7 @@ kept intact (despite the sharing of underlying bits, as mentioned).
     using op_once_overload::op_once_overload;
 
     value_cu
-    operate (std::unique_ptr <value_cu> a) override
+    operate (std::shared_ptr <value_cu> a) override
     {
       return value_cu {a->get_dwctx (), a->get_cu (), a->get_offset (),
 		       0, doneness::raw};
@@ -2398,7 +2392,7 @@ Takes a CU on TOS and yields a raw version thereof.
     using op_once_overload::op_once_overload;
 
     value_die
-    operate (std::unique_ptr <value_die> a) override
+    operate (std::shared_ptr <value_die> a) override
     {
       return value_die {a->get_dwctx (), a->get_die (), 0, doneness::raw};
     }
@@ -2423,7 +2417,7 @@ Takes a DIE on TOS and yields a raw version thereof.
     using op_once_overload::op_once_overload;
 
     value_attr
-    operate (std::unique_ptr <value_attr> a) override
+    operate (std::shared_ptr <value_attr> a) override
     {
       return value_attr {a->get_dwctx (), a->get_attr (), a->get_die (),
 			 0, doneness::raw};
@@ -2453,7 +2447,7 @@ namespace
     using op_once_overload::op_once_overload;
 
     value_dwarf
-    operate (std::unique_ptr <value_dwarf> a) override
+    operate (std::shared_ptr <value_dwarf> a) override
     {
       return value_dwarf {a->get_fn (), a->get_dwctx (), 0, doneness::cooked};
     }
@@ -2478,7 +2472,7 @@ Takes a Dwarf on TOS and yields a cooked version thereof.
     using op_once_overload::op_once_overload;
 
     value_cu
-    operate (std::unique_ptr <value_cu> a) override
+    operate (std::shared_ptr <value_cu> a) override
     {
       return value_cu {a->get_dwctx (), a->get_cu (), a->get_offset (),
 		       0, doneness::cooked};
@@ -2504,7 +2498,7 @@ Takes a CU on TOS and yields a cooked version thereof.
     using op_once_overload::op_once_overload;
 
     value_die
-    operate (std::unique_ptr <value_die> a) override
+    operate (std::shared_ptr <value_die> a) override
     {
       return value_die {a->get_dwctx (), a->get_die (), 0, doneness::cooked};
     }
@@ -2529,7 +2523,7 @@ Takes a DIE on TOS and yields a cooked version thereof.
     using op_once_overload::op_once_overload;
 
     value_attr
-    operate (std::unique_ptr <value_attr> a) override
+    operate (std::shared_ptr <value_attr> a) override
     {
       return value_attr {a->get_dwctx (), a->get_attr (), a->get_die (),
 			 0, doneness::cooked};
@@ -2594,7 +2588,7 @@ namespace
     {}
 
     std::unique_ptr <value_producer <value>>
-    operate (std::unique_ptr <value_die> a)
+    operate (std::shared_ptr <value_die> a)
     {
       Dwarf_Attribute attr;
       if (! find_attribute (a->get_die (), m_atname,

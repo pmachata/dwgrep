@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2014 Red Hat, Inc.
+   Copyright (C) 2014, 2015 Red Hat, Inc.
    This file is part of dwgrep.
 
    This file is free software; you can redistribute it and/or modify
@@ -38,7 +38,7 @@ class value_seq
   : public value
 {
 public:
-  typedef std::vector <std::unique_ptr <value> > seq_t;
+  typedef std::vector <std::shared_ptr <value> > seq_t;
 
 private:
   std::shared_ptr <seq_t> m_seq;
@@ -65,7 +65,6 @@ public:
   }
 
   void show (std::ostream &o, brevity brv) const override;
-  std::unique_ptr <value> clone () const override;
   cmp_result cmp (value const &that) const override;
 };
 
@@ -74,8 +73,8 @@ struct op_add_seq
 {
   using op_once_overload::op_once_overload;
 
-  value_seq operate (std::unique_ptr <value_seq> a,
-		     std::unique_ptr <value_seq> b) override;
+  value_seq operate (std::shared_ptr <value_seq> a,
+		     std::shared_ptr <value_seq> b) override;
 
   static std::string docstring ();
 };
@@ -85,7 +84,7 @@ struct op_length_seq
 {
   using op_once_overload::op_once_overload;
 
-  value_cst operate (std::unique_ptr <value_seq> a) override;
+  value_cst operate (std::shared_ptr <value_seq> a) override;
 
   static std::string docstring ();
 };
@@ -96,7 +95,7 @@ struct op_elem_seq
   using op_yielding_overload::op_yielding_overload;
 
   std::unique_ptr <value_producer <value>>
-  operate (std::unique_ptr <value_seq> a) override;
+  operate (std::shared_ptr <value_seq> a) override;
 
   static std::string docstring ();
 };
@@ -107,7 +106,7 @@ struct op_relem_seq
   using op_yielding_overload::op_yielding_overload;
 
   std::unique_ptr <value_producer <value>>
-  operate (std::unique_ptr <value_seq> a) override;
+  operate (std::shared_ptr <value_seq> a) override;
 
   static std::string docstring ();
 };

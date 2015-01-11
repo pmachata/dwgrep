@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2014 Red Hat, Inc.
+   Copyright (C) 2014, 2015 Red Hat, Inc.
    This file is part of dwgrep.
 
    This file is free software; you can redistribute it and/or modify
@@ -353,11 +353,11 @@ struct op_overload_impl
 {
 protected:
   template <class T>
-  static std::tuple <std::unique_ptr <T>> collect1 (stack &stk)
+  static std::tuple <std::shared_ptr <T>> collect1 (stack &stk)
   {
     auto dv = stk.pop_as <T> ();
     assert (dv != nullptr);
-    return std::make_tuple (std::move (dv));
+    return std::make_tuple (dv);
   }
 
   template <size_t Fake>
@@ -367,11 +367,11 @@ protected:
   }
 
   template <size_t Fake, class T, class... Ts>
-  static std::tuple <std::unique_ptr <T>,
-		     std::unique_ptr <Ts>...> collect (stack &stk)
+  static std::tuple <std::shared_ptr <T>,
+		     std::shared_ptr <Ts>...> collect (stack &stk)
   {
     auto rest = collect <Fake, Ts...> (stk);
-    return std::tuple_cat (collect1 <T> (stk), std::move (rest));
+    return std::tuple_cat (collect1 <T> (stk), rest);
   }
 
 public:
@@ -390,11 +390,11 @@ struct op_overload
   , public stub_op
 {
   template <size_t... I>
-  std::unique_ptr <RT>
+  std::shared_ptr <RT>
   call_operate (std::index_sequence <I...>,
-		std::tuple <std::unique_ptr <VT>...> args)
+		std::tuple <std::shared_ptr <VT>...> args)
   {
-    return operate (std::move (std::get <I> (args))...);
+    return operate (std::get <I> (args)...);
   }
 
 public:
@@ -417,7 +417,7 @@ public:
     return nullptr;
   }
 
-  virtual std::unique_ptr <RT> operate (std::unique_ptr <VT>... vals) = 0;
+  virtual std::shared_ptr <RT> operate (std::shared_ptr <VT>... vals) = 0;
 
   static builtin_protomap
   protomap ()
@@ -436,9 +436,9 @@ struct op_once_overload
   template <size_t... I>
   RT
   call_operate (std::index_sequence <I...>,
-		std::tuple <std::unique_ptr <VT>...> args)
+		std::tuple <std::shared_ptr <VT>...> args)
   {
-    return operate (std::move (std::get <I> (args))...);
+    return operate (std::get <I> (args)...);
   }
 
 public:
@@ -454,14 +454,14 @@ public:
 	auto ret = call_operate
 		(std::index_sequence_for <VT...> {},
 		 op_overload_impl <VT...>::template collect <0, VT...> (*stk));
-	stk->push (std::make_unique <RT> (std::move (ret)));
+	stk->push (std::make_shared <RT> (std::move (ret)));
 	return stk;
       }
 
     return nullptr;
   }
 
-  virtual RT operate (std::unique_ptr <VT>... vals) = 0;
+  virtual RT operate (std::shared_ptr <VT>... vals) = 0;
 
   static builtin_protomap
   protomap ()
@@ -480,9 +480,9 @@ class op_yielding_overload
   template <size_t... I>
   std::unique_ptr <value_producer <RT>>
   call_operate (std::index_sequence <I...>,
-		std::tuple <std::unique_ptr <VT>...> args)
+		std::tuple <std::shared_ptr <VT>...> args)
   {
-    return operate (std::move (std::get <I> (args))...);
+    return operate (std::get <I> (args)...);
   }
 
   stack::uptr m_stk;
@@ -535,7 +535,7 @@ public:
   }
 
   virtual std::unique_ptr <value_producer <RT>>
-	operate (std::unique_ptr <VT>... vals) = 0;
+	operate (std::shared_ptr <VT>... vals) = 0;
 
   static builtin_protomap
   protomap ()

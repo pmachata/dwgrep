@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2014 Red Hat, Inc.
+   Copyright (C) 2014, 2015 Red Hat, Inc.
    This file is part of dwgrep.
 
    This file is free software; you can redistribute it and/or modify
@@ -53,12 +53,6 @@ void
 value_closure::show (std::ostream &o, brevity brv) const
 {
   o << "closure(" << *m_t << ")";
-}
-
-std::unique_ptr <value>
-value_closure::clone () const
-{
-  return std::make_unique <value_closure> (*this);
 }
 
 cmp_result

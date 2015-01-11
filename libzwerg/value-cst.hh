@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2014 Red Hat, Inc.
+   Copyright (C) 2014, 2015 Red Hat, Inc.
    This file is part of dwgrep.
 
    This file is free software; you can redistribute it and/or modify
@@ -52,7 +52,6 @@ public:
   { return m_cst; }
 
   void show (std::ostream &o, brevity brv) const override;
-  std::unique_ptr <value> clone () const override;
   cmp_result cmp (value const &that) const override;
 };
 
@@ -61,7 +60,7 @@ struct op_value_cst
 {
   using op_once_overload::op_once_overload;
 
-  value_cst operate (std::unique_ptr <value_cst> a) override;
+  value_cst operate (std::shared_ptr <value_cst> a) override;
 
   static std::string docstring ();
 };
@@ -74,8 +73,8 @@ struct op_add_cst
 {
   using op_overload::op_overload;
 
-  std::unique_ptr <value_cst> operate (std::unique_ptr <value_cst> a,
-				       std::unique_ptr <value_cst> b) override;
+  std::shared_ptr <value_cst> operate (std::shared_ptr <value_cst> a,
+				       std::shared_ptr <value_cst> b) override;
   static std::string docstring ();
 };
 
@@ -84,8 +83,8 @@ struct op_sub_cst
 {
   using op_overload::op_overload;
 
-  std::unique_ptr <value_cst> operate (std::unique_ptr <value_cst> a,
-				       std::unique_ptr <value_cst> b) override;
+  std::shared_ptr <value_cst> operate (std::shared_ptr <value_cst> a,
+				       std::shared_ptr <value_cst> b) override;
   static std::string docstring ();
 };
 
@@ -94,8 +93,8 @@ struct op_mul_cst
 {
   using op_overload::op_overload;
 
-  std::unique_ptr <value_cst> operate (std::unique_ptr <value_cst> a,
-				       std::unique_ptr <value_cst> b) override;
+  std::shared_ptr <value_cst> operate (std::shared_ptr <value_cst> a,
+				       std::shared_ptr <value_cst> b) override;
   static std::string docstring ();
 };
 
@@ -104,8 +103,8 @@ struct op_div_cst
 {
   using op_overload::op_overload;
 
-  std::unique_ptr <value_cst> operate (std::unique_ptr <value_cst> a,
-				       std::unique_ptr <value_cst> b) override;
+  std::shared_ptr <value_cst> operate (std::shared_ptr <value_cst> a,
+				       std::shared_ptr <value_cst> b) override;
   static std::string docstring ();
 };
 
@@ -114,8 +113,8 @@ struct op_mod_cst
 {
   using op_overload::op_overload;
 
-  std::unique_ptr <value_cst> operate (std::unique_ptr <value_cst> a,
-				       std::unique_ptr <value_cst> b) override;
+  std::shared_ptr <value_cst> operate (std::shared_ptr <value_cst> a,
+				       std::shared_ptr <value_cst> b) override;
   static std::string docstring ();
 };
 

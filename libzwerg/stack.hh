@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2014 Red Hat, Inc.
+   Copyright (C) 2014, 2015 Red Hat, Inc.
    This file is part of dwgrep.
 
    This file is free software; you can redistribute it and/or modify
@@ -42,15 +42,15 @@ enum var_id: unsigned {};
 struct frame
 {
   std::shared_ptr <frame> m_parent;
-  std::vector <std::unique_ptr <value>> m_values;
+  std::vector <std::shared_ptr <value>> m_values;
 
   frame (std::shared_ptr <frame> parent, size_t vars)
     : m_parent {parent}
     , m_values {vars}
   {}
 
-  void bind_value (var_id index, std::unique_ptr <value> val);
-  value &read_value (var_id index);
+  void bind_value (var_id index, std::shared_ptr <value> val);
+  std::shared_ptr <value> read_value (var_id index);
 
   std::shared_ptr <frame> clone () const;
 };
@@ -59,7 +59,7 @@ struct frame
 // of dwgrep values.
 class stack
 {
-  std::vector <std::unique_ptr <value>> m_values;
+  std::vector <std::shared_ptr <value>> m_values;
   std::shared_ptr <frame> m_frame;
   selector::sel_t m_profile;
 
@@ -102,7 +102,7 @@ public:
   }
 
   void
-  push (std::unique_ptr <value> vp)
+  push (std::shared_ptr <value> vp)
   {
     m_profile <<= 8;
     m_profile |= vp->get_type ().code ();
@@ -116,7 +116,7 @@ public:
       throw std::runtime_error ("stack overflow");
   }
 
-  std::unique_ptr <value>
+  std::shared_ptr <value>
   pop ()
   {
     need (1);
@@ -132,12 +132,12 @@ public:
   }
 
   template <class T>
-  std::unique_ptr <T>
+  std::shared_ptr <T>
   pop_as ()
   {
     auto vp = pop ();
     assert (vp->is <T> ());
-    return std::unique_ptr <T> (static_cast <T *> (vp.release ()));
+    return std::static_pointer_cast <T> (vp);
   }
 
   value &
@@ -159,6 +159,13 @@ public:
   {
     need (depth + 1);
     return *(m_values.rbegin () + depth)->get ();
+  }
+
+  std::shared_ptr <value>
+  getref (unsigned depth)
+  {
+    need (depth + 1);
+    return *(m_values.rbegin () + depth);
   }
 
   template <class T>

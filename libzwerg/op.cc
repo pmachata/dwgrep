@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2014 Red Hat, Inc.
+   Copyright (C) 2014, 2015 Red Hat, Inc.
    This file is part of dwgrep.
 
    This file is free software; you can redistribute it and/or modify
@@ -43,23 +43,22 @@
 namespace
 {
   void
-  debug_stack (stack *stk)
+  debug_stack (stack &stk)
   {
     {
-      std::vector <std::unique_ptr <value>> stack;
-      while (stk->size () > 0)
-	stack.push_back (stk->pop ());
+      std::vector <std::reference_wrapper <value>> stack;
+      for (unsigned i = 0; i < stk.size (); ++i)
+	stack.push_back (stk.get (i));
 
       std::cerr << "<";
       std::for_each (stack.rbegin (), stack.rend (),
-		     [&stk] (std::unique_ptr <value> &v) {
-		       v->show ((std::cerr << ' '), brevity::brief);
-		       stk->push (std::move (v));
+		     [] (std::reference_wrapper <value> v) {
+		       v.get ().show ((std::cerr << ' '), brevity::brief);
 		     });
       std::cerr << " > (";
     }
 
-    std::shared_ptr <frame> frame = stk->nth_frame (0);
+    std::shared_ptr <frame> frame = stk.nth_frame (0);
     while (frame != nullptr)
       {
 	std::cerr << frame;
@@ -305,7 +304,7 @@ op_const::next ()
 {
   if (auto stk = m_upstream->next ())
     {
-      stk->push (m_value->clone ());
+      stk->push (m_value);
       return stk;
     }
   return nullptr;
@@ -640,7 +639,7 @@ struct op_subx::pimpl
 	if (auto stk = m_op->next ())
 	  {
 	    auto ret = std::make_unique <stack> (*m_stk);
-	    std::vector <std::unique_ptr <value>> kept;
+	    std::vector <std::shared_ptr <value>> kept;
 	    for (size_t i = 0; i < m_keep; ++i)
 	      kept.push_back (stk->pop ());
 	    for (size_t i = 0; i < m_keep; ++i)
@@ -696,7 +695,7 @@ op_f_debug::next ()
 {
   while (auto stk = m_upstream->next ())
     {
-      debug_stack (&*stk);
+      debug_stack (*stk);
       return stk;
     }
   return nullptr;
@@ -862,9 +861,9 @@ struct op_read::pimpl
 	    if (auto stk = m_upstream->next ())
 	      {
 		auto frame = stk->nth_frame (m_depth);
-		value &val = frame->read_value (m_index);
-		bool is_closure = val.is <value_closure> ();
-		stk->push (val.clone ());
+		std::shared_ptr <value> val = frame->read_value (m_index);
+		bool is_closure = val->is <value_closure> ();
+		stk->push (val);
 
 		// If a referenced value is not a closure, then the
 		// result is just that one value.

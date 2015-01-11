@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2014 Red Hat, Inc.
+   Copyright (C) 2014, 2015 Red Hat, Inc.
    This file is part of dwgrep.
 
    This file is free software; you can redistribute it and/or modify
@@ -44,15 +44,15 @@ namespace
   struct single_value
     : public value_producer <value>
   {
-    std::unique_ptr <value> m_value;
+    std::shared_ptr <value> m_value;
 
-    single_value (std::unique_ptr <value> value)
-      : m_value {std::move (value)}
+    single_value (std::shared_ptr <value> value)
+      : m_value {value}
     {
       assert (m_value != nullptr);
     }
 
-    std::unique_ptr <value>
+    std::shared_ptr <value>
     next () override
     {
       return std::move (m_value);
@@ -62,7 +62,7 @@ namespace
   struct null_producer
     : public value_producer <value>
   {
-    std::unique_ptr <value>
+    std::shared_ptr <value>
     next () override
     {
       return nullptr;
@@ -142,7 +142,7 @@ namespace
       , m_i {0}
     {}
 
-    std::unique_ptr <value>
+    std::shared_ptr <value>
     next () override
     {
       Dwarf_Addr start, end;
@@ -157,7 +157,7 @@ namespace
 	case 0:
 	  return nullptr;
 	default:
-	  return std::make_unique <value_loclist_elem>
+	  return std::make_shared <value_loclist_elem>
 	    (m_dwctx, m_attr, start, end, expr, exprlen, m_i++);
 	}
     }
@@ -183,7 +183,7 @@ namespace
       , m_i {0}
     {}
 
-    using result_t = std::pair <macinfo_producer &, std::unique_ptr <value>>;
+    using result_t = std::pair <macinfo_producer &, std::shared_ptr <value>>;
 
     static int
     callback (Dwarf_Macro *macro, void *data)
@@ -256,13 +256,13 @@ namespace
 	default:;
 	}
 
-      retp->second = std::make_unique <value_seq> (std::move (seq), m_i);
+      retp->second = std::make_shared <value_seq> (std::move (seq), m_i);
       m_i++;
 
       return DWARF_CB_ABORT;
     }
 
-    std::unique_ptr <value>
+    std::shared_ptr <value>
     next () override
     {
       result_t result {*this, nullptr};

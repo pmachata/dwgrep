@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2014 Red Hat, Inc.
+   Copyright (C) 2014, 2015 Red Hat, Inc.
    This file is part of dwgrep.
 
    This file is free software; you can redistribute it and/or modify
@@ -29,7 +29,7 @@
 #include "stack.hh"
 
 void
-frame::bind_value (var_id index, std::unique_ptr <value> val)
+frame::bind_value (var_id index, std::shared_ptr <value> val)
 {
   assert (index < m_values.size ());
   // XXX this might actually be an assertion.  Cases of this should be
@@ -40,7 +40,7 @@ frame::bind_value (var_id index, std::unique_ptr <value> val)
   m_values[index] = std::move (val);
 }
 
-value &
+std::shared_ptr <value>
 frame::read_value (var_id index)
 {
   assert (index < m_values.size ());
@@ -49,7 +49,7 @@ frame::read_value (var_id index)
   if (m_values[index] == nullptr)
     throw std::runtime_error ("attempt to read an unbound variable");
 
-  return *m_values[index];
+  return m_values[index];
 }
 
 std::shared_ptr <frame>
@@ -57,23 +57,21 @@ frame::clone () const
 {
   auto ret = std::make_shared <frame> (m_parent, 0);
   for (auto const &val: m_values)
-    ret->m_values.push_back (val != nullptr ? val->clone () : nullptr);
+    ret->m_values.push_back (val);
   return ret;
 }
 
 stack::stack (stack const &that)
-  : m_frame {that.m_frame != nullptr ? that.m_frame->clone () : nullptr}
+  : m_values {that.m_values}
+  , m_frame {that.m_frame != nullptr ? that.m_frame->clone () : nullptr}
   , m_profile {that.m_profile}
-{
-  for (auto const &v: that.m_values)
-    m_values.push_back (v->clone ());
-}
+{}
 
 namespace
 {
   int
-  compare_stack (std::vector <std::unique_ptr <value> > const &a,
-	       std::vector <std::unique_ptr <value> > const &b)
+  compare_stack (std::vector <std::shared_ptr <value> > const &a,
+		 std::vector <std::shared_ptr <value> > const &b)
   {
     if (a.size () < b.size ())
       return -1;

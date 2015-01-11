@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2014 Red Hat, Inc.
+   Copyright (C) 2014, 2015 Red Hat, Inc.
    This file is part of dwgrep.
 
    This file is free software; you can redistribute it and/or modify
@@ -56,7 +56,7 @@ struct value_producer
   virtual ~value_producer () {}
 
   // Produce next value.
-  virtual std::unique_ptr <RT> next () = 0;
+  virtual std::shared_ptr <RT> next () = 0;
 };
 
 template <class RT>
@@ -78,7 +78,7 @@ struct value_producer_cat
     m_vprs.insert (m_vprs.begin (), std::move (vpr1));
   }
 
-  std::unique_ptr <RT>
+  std::shared_ptr <RT>
   next () override
   {
     for (; m_i < m_vprs.size (); ++m_i)
@@ -303,10 +303,10 @@ class op_const
   : public op
 {
   std::shared_ptr <op> m_upstream;
-  std::unique_ptr <value> m_value;
+  std::shared_ptr <value> m_value;
 
 public:
-  op_const (std::shared_ptr <op> upstream, std::unique_ptr <value> &&value)
+  op_const (std::shared_ptr <op> upstream, std::shared_ptr <value> value)
     : m_upstream {upstream}
     , m_value {std::move (value)}
   {}

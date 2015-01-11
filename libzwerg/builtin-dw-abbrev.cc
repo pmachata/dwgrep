@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2014 Red Hat, Inc.
+   Copyright (C) 2014, 2015 Red Hat, Inc.
    This file is part of dwgrep.
 
    This file is free software; you can redistribute it and/or modify
@@ -46,17 +46,17 @@ namespace
     Dwarf_Off m_offset;
     size_t m_i;
 
-    producer_entry_abbrev_unit (std::unique_ptr <value_abbrev_unit> a)
-      : m_dwctx {a->get_dwctx ()}
+    producer_entry_abbrev_unit (value_abbrev_unit &a)
+      : m_dwctx {a.get_dwctx ()}
       , m_offset {0}
       , m_i {0}
     {
-      if (dwarf_cu_die (&a->get_cu (), &m_cudie, nullptr, nullptr,
+      if (dwarf_cu_die (&a.get_cu (), &m_cudie, nullptr, nullptr,
 			nullptr, nullptr, nullptr, nullptr) == nullptr)
 	throw_libdw ();
     }
 
-    std::unique_ptr <value_abbrev>
+    std::shared_ptr <value_abbrev>
     next () override
     {
       size_t length;
@@ -73,9 +73,9 @@ namespace
 }
 
 std::unique_ptr <value_producer <value_abbrev>>
-op_entry_abbrev_unit::operate (std::unique_ptr <value_abbrev_unit> a)
+op_entry_abbrev_unit::operate (std::shared_ptr <value_abbrev_unit> a)
 {
-  return std::make_unique <producer_entry_abbrev_unit> (std::move (a));
+  return std::make_unique <producer_entry_abbrev_unit> (*a);
 }
 
 std::string
@@ -105,17 +105,17 @@ namespace
   struct producer_attribute_abbrev
     : public value_producer <value_abbrev_attr>
   {
-    std::unique_ptr <value_abbrev> m_value;
+    std::shared_ptr <value_abbrev> m_value;
     size_t m_n;
     size_t m_i;
 
-    producer_attribute_abbrev (std::unique_ptr <value_abbrev> value)
+    producer_attribute_abbrev (std::shared_ptr <value_abbrev> value)
       : m_value {std::move (value)}
       , m_n {dwpp_abbrev_attrcnt (m_value->get_abbrev ())}
       , m_i {0}
     {}
 
-    std::unique_ptr <value_abbrev_attr>
+    std::shared_ptr <value_abbrev_attr>
     next () override
     {
       if (m_i < m_n)
@@ -137,7 +137,7 @@ namespace
 }
 
 std::unique_ptr <value_producer <value_abbrev_attr>>
-op_attribute_abbrev::operate (std::unique_ptr <value_abbrev> a)
+op_attribute_abbrev::operate (std::shared_ptr <value_abbrev> a)
 {
   return std::make_unique <producer_attribute_abbrev> (std::move (a));
 }
@@ -165,7 +165,7 @@ Takes an abbreviation on TOS and yields all its attributes::
 // offset :: T_ABBREV_UNIT -> T_CONST
 
 value_cst
-op_offset_abbrev_unit::operate (std::unique_ptr <value_abbrev_unit> a)
+op_offset_abbrev_unit::operate (std::shared_ptr <value_abbrev_unit> a)
 {
   Dwarf_Die cudie;
   Dwarf_Off abbrev_off;
@@ -198,7 +198,7 @@ Dwarf section that it comes from::
 // offset :: T_ABBREV -> T_CONST
 
 value_cst
-op_offset_abbrev::operate (std::unique_ptr <value_abbrev> a)
+op_offset_abbrev::operate (std::shared_ptr <value_abbrev> a)
 {
   constant c {dwpp_abbrev_offset (a->get_abbrev ()), &dw_offset_dom ()};
   return value_cst {c, 0};
@@ -232,7 +232,7 @@ section that it comes from::
 // offset :: T_ABBREV_ATTR -> T_CONST
 
 value_cst
-op_offset_abbrev_attr::operate (std::unique_ptr <value_abbrev_attr> a)
+op_offset_abbrev_attr::operate (std::shared_ptr <value_abbrev_attr> a)
 {
   return value_cst {constant {a->offset, &dw_offset_dom ()}, 0};
 }
@@ -263,7 +263,7 @@ the Dwarf section that it comes from::
 // label :: T_ABBREV -> T_CONST
 
 value_cst
-op_label_abbrev::operate (std::unique_ptr <value_abbrev> a)
+op_label_abbrev::operate (std::shared_ptr <value_abbrev> a)
 {
   unsigned int tag = dwarf_getabbrevtag (&a->get_abbrev ());
   return value_cst {constant {tag, &dw_tag_dom ()}, 0};
@@ -288,7 +288,7 @@ Takes an abbreviation on TOS and yields its tag::
 // label :: T_ABBREV_ATTR -> T_CONST
 
 value_cst
-op_label_abbrev_attr::operate (std::unique_ptr <value_abbrev_attr> a)
+op_label_abbrev_attr::operate (std::shared_ptr <value_abbrev_attr> a)
 {
   return value_cst {constant {a->name, &dw_attr_dom ()}, 0};
 }
@@ -317,7 +317,7 @@ Takes an abbreviation attribute on TOS and yields its name::
 // form :: T_ABBREV_ATTR -> T_CONST
 
 value_cst
-op_form_abbrev_attr::operate (std::unique_ptr <value_abbrev_attr> a)
+op_form_abbrev_attr::operate (std::shared_ptr <value_abbrev_attr> a)
 {
   return value_cst (constant {a->form, &dw_form_dom ()}, 0);
 }
@@ -376,7 +376,7 @@ namespace
       , m_i {0}
     {}
 
-    std::unique_ptr <value_abbrev_unit>
+    std::shared_ptr <value_abbrev_unit>
     next () override
     {
       do
@@ -399,14 +399,14 @@ namespace
 	       return ! isnew;
 	     } ());
 
-      return std::make_unique <value_abbrev_unit>
+      return std::make_shared <value_abbrev_unit>
 	(m_dwctx, *(*m_cuit++)->cu, m_i++);
     }
   };
 }
 
 std::unique_ptr <value_producer <value_abbrev_unit>>
-op_abbrev_dwarf::operate (std::unique_ptr <value_dwarf> a)
+op_abbrev_dwarf::operate (std::shared_ptr <value_dwarf> a)
 {
   return std::make_unique <producer_abbrev_dwarf> (a->get_dwctx ());
 }
@@ -427,7 +427,7 @@ therein.
 // abbrev :: T_CU -> T_ABBREV_UNIT
 
 value_abbrev_unit
-op_abbrev_cu::operate (std::unique_ptr <value_cu> a)
+op_abbrev_cu::operate (std::shared_ptr <value_cu> a)
 {
   return value_abbrev_unit {a->get_dwctx (), a->get_cu (), 0};
 }
@@ -448,7 +448,7 @@ unit's abbreviations.
 // abbrev :: T_DIE -> T_ABBREV
 
 value_abbrev
-op_abbrev_die::operate (std::unique_ptr <value_die> a)
+op_abbrev_die::operate (std::shared_ptr <value_die> a)
 {
   // If the DIE doesn't have an abbreviation yet, force its
   // look-up.
@@ -475,7 +475,7 @@ DIE.
 // code :: T_ABBREV -> T_CONST
 
 value_cst
-op_code_abbrev::operate (std::unique_ptr <value_abbrev> a)
+op_code_abbrev::operate (std::shared_ptr <value_abbrev> a)
 {
   return value_cst {constant {dwarf_getabbrevcode (&a->get_abbrev ()),
 	&dw_abbrevcode_dom ()}, 0};

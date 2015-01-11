@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2014 Red Hat, Inc.
+   Copyright (C) 2014, 2015 Red Hat, Inc.
    This file is part of dwgrep.
 
    This file is free software; you can redistribute it and/or modify
@@ -102,7 +102,7 @@ op_dup::next ()
 {
   if (auto stk = m_upstream->next ())
     {
-      stk->push (stk->top ().clone ());
+      stk->push (stk->getref (0));
       return stk;
     }
   return nullptr;
@@ -120,7 +120,7 @@ op_over::next ()
 {
   if (auto stk = m_upstream->next ())
     {
-      stk->push (stk->get (1).clone ());
+      stk->push (stk->getref (1));
       return stk;
     }
   return nullptr;

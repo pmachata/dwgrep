@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2014 Red Hat, Inc.
+   Copyright (C) 2014, 2015 Red Hat, Inc.
    This file is part of dwgrep.
 
    This file is free software; you can redistribute it and/or modify
@@ -86,7 +86,7 @@ namespace
 std::shared_ptr <op>
 builtin_constant::build_exec (std::shared_ptr <op> upstream) const
 {
-  return std::make_shared <op_const> (upstream, m_value->clone ());
+  return std::make_shared <op_const> (upstream, m_value);
 }
 
 char const *

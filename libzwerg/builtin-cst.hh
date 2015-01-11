@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2014 Red Hat, Inc.
+   Copyright (C) 2014, 2015 Red Hat, Inc.
    This file is part of dwgrep.
 
    This file is free software; you can redistribute it and/or modify
@@ -38,7 +38,7 @@
 class builtin_constant
   : public builtin
 {
-  std::unique_ptr <value> m_value;
+  std::shared_ptr <value> m_value;
 
 public:
   explicit builtin_constant (std::unique_ptr <value> &&value)

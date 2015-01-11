@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2014 Red Hat, Inc.
+   Copyright (C) 2014, 2015 Red Hat, Inc.
    This file is part of dwgrep.
 
    This file is free software; you can redistribute it and/or modify
@@ -52,8 +52,10 @@ public:
   std::string &get_string ()
   { return m_str; }
 
+  std::string const &get_string () const
+  { return m_str; }
+
   void show (std::ostream &o, brevity brv) const override;
-  std::unique_ptr <value> clone () const override;
   cmp_result cmp (value const &that) const override;
 };
 
@@ -62,8 +64,8 @@ struct op_add_str
 {
   using op_once_overload::op_once_overload;
 
-  value_str operate (std::unique_ptr <value_str> a,
-		     std::unique_ptr <value_str> b) override;
+  value_str operate (std::shared_ptr <value_str> a,
+		     std::shared_ptr <value_str> b) override;
 
   static std::string docstring ();
 };
@@ -73,7 +75,7 @@ struct op_length_str
 {
   using op_once_overload::op_once_overload;
 
-  value_cst operate (std::unique_ptr <value_str> a) override;
+  value_cst operate (std::shared_ptr <value_str> a) override;
 
   static std::string docstring ();
 };
@@ -84,7 +86,7 @@ struct op_elem_str
   using op_yielding_overload::op_yielding_overload;
 
   std::unique_ptr <value_producer <value_str>>
-  operate (std::unique_ptr <value_str> a) override;
+  operate (std::shared_ptr <value_str> a) override;
 
   static std::string docstring ();
 };
@@ -95,7 +97,7 @@ struct op_relem_str
   using op_yielding_overload::op_yielding_overload;
 
   std::unique_ptr <value_producer <value_str>>
-  operate (std::unique_ptr <value_str> a) override;
+  operate (std::shared_ptr <value_str> a) override;
 
   static std::string docstring ();
 };
