@@ -137,7 +137,7 @@ IF (GTEST_FOUND)
   ADD_EXECUTABLE (test-coverage test-coverage.cc coverage.cc
     $<TARGET_OBJECTS:TestStub>)
   TARGET_LINK_LIBRARIES (test-coverage ${GTEST_LIBRARIES})
-  ADD_TEST (TestBuiltinCovegare test-coverage ${TESTCASE_DIR})
+  ADD_TEST (TestBuiltinCoverage test-coverage ${TESTCASE_DIR})
 ENDIF ()
 
 IF (SPHINX_EXECUTABLE)
