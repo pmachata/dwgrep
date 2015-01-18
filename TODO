@@ -1,14 +1,9 @@
 -*-org-*-
 * BUGS
-** missing DW_LNE_*, DW_LNS_*
-  - these can't quite have distinct domains, as they need to be
-    comparable.  Better wait with implementing these until we get to
-    line tables, so that it's better understood how these will need to
-    be used.
 
 ** domain comparability
    - whether domain is arithmetic is currently used for deciding
-     whether it's meaningful to compare a constant this domain to
+     whether it's meaningful to compare a constant of this domain to
      constants of other domains.  But e.g. address and offset aren't
      comparable, but they are safe for arithmetic.  Similarly line and
      column--shouldn't be compared with one another, but are safe for
@@ -16,6 +11,7 @@
      for arithmetic.
 
 * TODO
+** libzwerg C API
 ** static analysis tools
 *** overload pegging
     - We could use overload prototype declarations to mention return
@@ -90,24 +86,13 @@
       : entry [@AT_location] relem (pos == 0) label
       :       (?DW_OP_implicit_value, ?DW_OP_stack_value) drop
 
-** command-line arguments -- $1, $2, ...
-   - These would have to be passed in not only from command line, but
-     also from the C and C++ wrappers.  While C and C++ wrappers could
-     pass in arbitrary value subclasses, only strings would come from
-     the command line.
-
-   - Systemtap has @1, @2, etc. for literals.  $1, $2, etc. are pasted
-     verbatim (macro-expanded so to speak) and lexed and parsed.  This
-     would allow the "17" be passed in as 17, but that's still
-     awkward.  But @1 et. al. is a good fit for access to location
-     expression values, macro arguments or possibly other things like
-     that, so we'll probably just use $1 et. al.
-
-   - These could act like variables defined in outermost scope.  Type
-     inference would have to be done after these arguments are
-     provided.
-
-   - There could also be ($ARGS ->* ?()).
+    - Simply converting unique_ptr's in stacks to shared_ptr's is not
+      advantageous.  Even if we remove all the cloning (which is
+      problematic, because of occasional set_pos calls), it's still
+      slower than the original due to having to deal with all the
+      reference counts.
+      - thread unsafe shared_ptr might be better
+      - can we avoid the reference counting altogether?
 
 ** Dictionaries
    - Maybe have a key-value value type?  And a => operator for
@@ -175,6 +160,22 @@
      locks end up serializing, we might actually open the Dwarf in
      each thread anew, and see if that helps.
 
+** expose exception frames
+** expose macros
+    - one example query: who includes a given file?
+** expose .debug_line
+   - note missing DW_LNE_*, DW_LNS_*.  These can't quite have distinct
+     domains, as they need to be comparable.  Better wait with
+     implementing these until we get to line tables, so that it's
+     better understood how these will need to be used.
+
+** raw attributes
+   - @AT_* should keep its current meaning of
+     : attribute ?AT_* cooked value
+     That seems more useful.
+   - Raw access would have to be requested explicitly:
+     : attribute ?AT_* raw value
+
 ** floats
    - These are currently represented as blocks.  libdw doesn't give us
      any support decoding these, and it seems to be not entirely
@@ -204,6 +205,115 @@
    - address::T_DIE yields T_ASET, but address::T_ATTR yields T_CONST.
      Both should probably yield T_ASET, and T_ASET should be
      comparable to T_CONST.
+
+** if/while condition in plain context
+   - One can always force sub-expression evaluation by explicitly
+     placing the condition into a ?() block.  This would however need
+     a complementary word "until" so that it's possible to express a
+     negative recurrent condition.
+
+   - Hmm, actually while X do Y makes no sense in plain context.  When
+     while finally stops iterating, it produces... nothing!  until is
+     the only iteration tool that makes sense.
+
+   - until ... do ... makes no sense either, from the linguistic
+     perspective, as it would imply that the result of until feeds
+     into the do block.
+
+   - how about:
+
+     : (!(address) parent)* address
+     : until address do parent
+
+     : entry merge* !(merge)
+     : entry while merge do ()
+
+     : (!AT_xyz integrate)* ?AT_xyz	# find closest DIE with DW_AT_xyz
+     : while !AT_xyz do integrate
+
+     : (!AT_xyz integrate)* attribute ?AT_xyz	# dwarf_attr_integrate
+     : until (attribute ?AT_xyz) do integrate
+
+     : (!AT_xyz integrate)* @AT_xyz	# value of integrated DW_AT_xyz
+     : until @AT_xyz do integrate
+
+     : let seq := {|B| (1 add (< B))* };
+     : let seq := {|B| while (< B) do (1 add) };
+
+     : ... ?(@AT_type ((?TAG_const_type, ?TAG_...) @AT_type)* ...
+     : ... do @AT_type while (?TAG_const_type, ?TAG_...) ...
+
+     : child*
+     : while child take ()
+
+   - Should while/until be plain context, which is useful, then
+     if/unless should be as well.  Then perhaps let should be as well.
+     Looking through let uses, that would be no expressivity loss.
+
+   - Possibly allow other keywords besides "do".  "max" and "sum" come
+     to mind.  "take" would produce every visited node (like what *
+     does).  Could these somehow just be ordinary words?  Note that we
+     don't need "collect", one can instead use "take" inside a
+     capture.
+
+     : [take ... while ...] 0 {@AT_* add} fold	# sum of selected nodes
+     : [until ... take ...] {@AT_* max} fold1	# max of selected nodes
+
+     : take B while C
+     : loop:
+     :   B yield
+     :   (C || break)
+
+     : do B while C
+     : loop:
+     :   B
+     :   (C || (yield, break))
+
+     : while C take B
+     : loop:
+     :   (C || break)
+     :   B yield
+
+     : while C do B
+     : loop:
+     :   (C || (yield, break))
+     :   B
+
+     : take B until C
+     : loop:
+     :   B yield
+     :   (C break || )
+
+     : do B until C
+     : loop:
+     :   B
+     :   (C (yield, break) || )
+
+     : until C take B
+     : loop:
+     :   (C break || )
+     :   B yield
+
+     : until C do B
+     : loop:
+     :   (C (yield, break) || )
+     :   B
+
+* weird ideas
+** more general iteration
+   - X* would be syntactic sugar for (X ^).  The ^ would reapply the
+     whole expression that it's part of.  One could use it pretty much
+     arbitrarily, e.g. (X ^ Y), (^ X), possibly even (X ^ Y ^ Z).
+     It's unclear whether this is really useful, though achieving this
+     by other means would be tedious to write.  But really, are there
+     other uses apart from checking that, say, DW_MACRO_GNU_start_file
+     and DW_MACRO_GNU_end_file are balanced?
+
+     Details of operation are unclear as well.
+
+   - We could also use a greedy star (or greedy variant of the above
+     thing).  X& would be like X* !(X).
+
 * undocumented functionality
 
 ** •“{” (“|” ID₁ ID₂ … “|”)? EXPR₁ “}” — blocks
@@ -396,26 +506,11 @@
        : ... match (pos==0) elem value	# "a" and "b"
 
 ***  demangle :: ?T_STR -> ?T_STR
-** ·T_DWARF
-***  symbol :: ?T_DWARF ->* ?T_ELFSYM
-     - Yields all symbols in .symtab, or minisymtab, or .dynsym.
-
 ** ·T_CU
 ***  next :: ?T_CU ->? T_CU
 ***  prev :: ?T_CU ->? T_CU
 
 ** ·T_DIE
-***  next :: ?T_DIE ->? ?T_DIE
-     Like dwarf_siblingof, returns next sibling of the DIE.
-
-     : def next {|D| D parent child (pos == D parent child (== D) pos 1 add)}
-
-     The first line is necessary to make sure that pos later refers
-     to order in children array, not to e.g. a result of ([XYZ] each).
-
-***  prev :: ?T_DIE ->? ?T_DIE
-     The opposite of next.
-
 *** •@AT_decl_file
      Value of this attribute is represented as actual string including
      path.
@@ -438,31 +533,6 @@
 
 ***  ?ATE_* :: ?T_ATTR
      Holds if (?AT_encoding value == DW_ATE_*)
-
-**  T_ELFSYM
-***  label :: ?T_ELFSYM -> ?T_CONST
-     Yields symbol type, such as STT_FUNC.
-
-***  address :: ?T_ELFSYM -> ?T_ASET
-     Yield symbol value.
-
-***  name :: ?T_ELFSYM -> ?T_STR
-***  size :: ?T_ELFSYM -> ?T_CONST
-***  bind :: ?T_ELFSYM -> ?T_CONST
-***  vis :: ?T_ELFSYM -> ?T_CONST
-***  index :: ?T_ELFSYM ->? ?T_CONST
-     XXX or maybe @section?
-
-***  symbol :: ?T_CONST ->? T_ELFSYM
-     This find a symbol associated with an address on TOS.  The match
-     doesn't have to be exact, offset would then be:
-     : let A := some addr; A symbol dup address A sub
-     :  # now TOS has offset and below TOS is symbol
-
-     XXX some of this is fairly easy to get by cross-matching like
-     this:
-     : symtab (address == some addr)
-     fuzzy matching (getting symbol/offset) would be more involved.
 
 **  T_MACRO_UNIT ???
     - A value representing .debug_macro and .debug_macinfo units.
