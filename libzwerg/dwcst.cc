@@ -1,5 +1,5 @@
 /* Parts of this file were adapted from eu-readelf.
-   Copyright (C) 1999-2014 Red Hat, Inc.
+   Copyright (C) 1999-2015 Red Hat, Inc.
 
    This file is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -386,7 +386,7 @@ namespace
 			      m_low_user, m_high_user, m_print_unknown);
     }
 
-    std::string name () const override
+    char const *name () const override
     {
       return m_name;
     }

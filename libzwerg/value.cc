@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2014 Red Hat, Inc.
+   Copyright (C) 2014, 2015 Red Hat, Inc.
    This file is part of dwgrep.
 
    This file is free software; you can redistribute it and/or modify
@@ -139,7 +139,7 @@ static struct
     abort ();
   }
 
-  std::string name () const override
+  char const *name () const override
   {
     return "T_*";
   }

@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2014 Red Hat, Inc.
+   Copyright (C) 2014, 2015 Red Hat, Inc.
    This file is part of dwgrep.
 
    This file is free software; you can redistribute it and/or modify
@@ -49,7 +49,7 @@ public:
   virtual ~constant_dom () {}
   virtual void show (mpz_class const &c, std::ostream &o,
 		     brevity brv) const = 0;
-  virtual std::string name () const = 0;
+  virtual char const *name () const = 0;
 
   // Whether this domain is considered safe for integer arithmetic.
   // (E.g. named constants aren't.)
@@ -64,10 +64,10 @@ public:
 struct numeric_constant_dom_t
   : public constant_dom
 {
-  std::string m_name;
+  char const *m_name;
 
 public:
-  explicit numeric_constant_dom_t (std::string const &name)
+  explicit numeric_constant_dom_t (char const *name)
     : m_name {name}
   {}
 
@@ -75,7 +75,7 @@ public:
   bool safe_arith () const override { return true; }
   bool plain () const override { return true; }
 
-  std::string
+  char const *
   name () const override
   {
     return m_name;

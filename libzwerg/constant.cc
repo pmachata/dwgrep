@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2014 Red Hat, Inc.
+   Copyright (C) 2014, 2015 Red Hat, Inc.
    This file is part of dwgrep.
 
    This file is free software; you can redistribute it and/or modify
@@ -69,7 +69,7 @@ static struct
     return true;
   }
 
-  std::string name () const override
+  char const *name () const override
   {
     return "hex";
   }
@@ -96,7 +96,7 @@ static struct
     return true;
   }
 
-  std::string name () const override
+  char const *name () const override
   {
     return "oct";
   }
@@ -137,7 +137,7 @@ static struct
     return true;
   }
 
-  std::string name () const override
+  char const *name () const override
   {
     return "bin";
   }
@@ -156,7 +156,7 @@ static struct
     o << std::boolalpha << (v != 0);
   }
 
-  std::string name () const override
+  char const *name () const override
   {
     return "bool";
   }
