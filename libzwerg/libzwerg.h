@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2014 Red Hat, Inc.
+  Copyright (C) 2014, 2015 Red Hat, Inc.
 
   This file is free software; you can redistribute it and/or modify
   it under the terms of either
@@ -100,39 +100,6 @@ extern "C" {
 
 
   /**
-   * Constant domains.
-   */
-
-  char const *zw_cdom_name (zw_cdom const *cdom);
-
-  zw_cdom const *zw_cdom_dec (void);
-  zw_cdom const *zw_cdom_hex (void);
-  zw_cdom const *zw_cdom_oct (void);
-  zw_cdom const *zw_cdom_bin (void);
-  zw_cdom const *zw_cdom_bool (void);
-
-  zw_cdom const *zw_cdom_tag (void);
-  zw_cdom const *zw_cdom_attr (void);
-  zw_cdom const *zw_cdom_form (void);
-  zw_cdom const *zw_cdom_lang (void);
-  zw_cdom const *zw_cdom_macinfo (void);
-  zw_cdom const *zw_cdom_macro (void);
-  zw_cdom const *zw_cdom_inline (void);
-  zw_cdom const *zw_cdom_encoding (void);
-  zw_cdom const *zw_cdom_access (void);
-  zw_cdom const *zw_cdom_visibility (void);
-  zw_cdom const *zw_cdom_virtuality (void);
-  zw_cdom const *zw_cdom_identifier_case (void);
-  zw_cdom const *zw_cdom_calling_convention (void);
-  zw_cdom const *zw_cdom_ordering (void);
-  zw_cdom const *zw_cdom_discr_list (void);
-  zw_cdom const *zw_cdom_decimal_sign (void);
-  zw_cdom const *zw_cdom_locexpr_opcode (void);
-  zw_cdom const *zw_cdom_address_class (void);
-  zw_cdom const *zw_cdom_endianity (void);
-
-
-  /**
    * Values.
    */
 
@@ -168,8 +135,25 @@ extern "C" {
 
   int64_t zw_value_const_i64 (zw_value const *cst);
 
+  zw_value *zw_value_const_format (zw_value const *cst,
+				   zw_error **out_err);
+
   zw_cdom const *zw_value_const_dom (zw_value const *cst);
 
+
+  /**
+   * Constant domains.
+   */
+
+  char const *zw_cdom_name (zw_cdom const *cdom);
+
+  bool zw_cdom_is_arith (zw_cdom const *cdom);
+
+  zw_cdom const *zw_cdom_dec (void);
+  zw_cdom const *zw_cdom_hex (void);
+  zw_cdom const *zw_cdom_oct (void);
+  zw_cdom const *zw_cdom_bin (void);
+  zw_cdom const *zw_cdom_bool (void);
 
   /**
    * Strings.
@@ -197,9 +181,9 @@ extern "C" {
 
   bool zw_value_seq_append (zw_value *seq, zw_value *val, zw_error **out_err);
 
-  size_t zw_value_seq_length (zw_value *seq);
+  size_t zw_value_seq_length (zw_value const *seq);
 
-  zw_value const *zw_value_seq_at (zw_value *seq);
+  zw_value const *zw_value_seq_at (zw_value const *seq, size_t idx);
 
 
 #ifdef __cplusplus

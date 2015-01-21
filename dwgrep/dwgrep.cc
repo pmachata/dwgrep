@@ -37,7 +37,7 @@
 #include <cstring>
 #include <algorithm>
 
-#include "libzwerg.h"
+#include "libzwerg.hh"
 #include "libzwerg-dw.h"
 #include "options.hh"
 #include "libzwerg/std-memory.hh"
@@ -96,6 +96,62 @@ show_help (std::vector <ext_option> const &ext_opts)
     }
 }
 
+void dump_value (std::ostream &os, zw_value const &val);
+
+void
+dump_err (zw_error *err)
+{
+  assert (err != nullptr);
+  std::cerr << "Error: " << zw_error_message (err) << std::endl;
+}
+
+void
+dump_const (std::ostream &os, zw_value const &val)
+{
+  zw_error *err;
+  if (std::unique_ptr <zw_value, zw_deleter> str
+	{zw_value_const_format (&val, &err)})
+    dump_value (os, *str.get ());
+  else
+    dump_err (err);
+}
+
+void
+dump_string (std::ostream &os, zw_value const &val)
+{
+  size_t len;
+  char const *buf = zw_value_str_str (&val, &len);
+  os << std::string {buf, len};
+}
+
+void
+dump_seq (std::ostream &os, zw_value const &val)
+{
+  os << "[";
+  for (size_t n = zw_value_seq_length (&val), i = 0; i < n; ++i)
+    {
+      if (i > 0)
+	os << ", ";
+      zw_value const *emt = zw_value_seq_at (&val, i);
+      assert (emt != nullptr);
+      dump_value (os, *emt);
+    }
+  os << "]";
+}
+
+void
+dump_value (std::ostream &os, zw_value const &val)
+{
+  if (zw_value_is_const (&val))
+    dump_const (os, val);
+  else if (zw_value_is_str (&val))
+    dump_string (os, val);
+  else if (zw_value_is_seq (&val))
+    dump_seq (os, val);
+  else
+    os << "<unknown value type>";
+}
+
 int
 main(int argc, char *argv[])
 {
@@ -111,28 +167,13 @@ main(int argc, char *argv[])
   bool with_filename = false;
   bool no_filename = false;
 
-  std::vector <std::string> to_process;
+  std::unique_ptr <zw_vocabulary, zw_deleter> voc
+	{zw_vocabulary_init (zw_throw_on_error {})};
+  zw_vocabulary const *voc_core = zw_vocabulary_core (zw_throw_on_error {});
+  zw_vocabulary const *voc_dw = zw_vocabulary_dwarf (zw_throw_on_error {});
 
-  zw_error *err;
-  std::shared_ptr <zw_vocabulary> voc (zw_vocabulary_init (&err),
-				       &zw_vocabulary_destroy);
-  assert (voc != nullptr); // XXX
-
-  zw_vocabulary const *voc_core = zw_vocabulary_core (&err);
-  assert (voc_core != nullptr); // XXX
-
-  zw_vocabulary const *voc_dw = zw_vocabulary_dwarf (&err);
-  assert (voc_dw != nullptr); // XXX
-
-  auto die = [] (zw_error *err)
-    {
-      std::cerr << "Error: " << zw_error_message (err) << std::endl;
-      return 2;
-    };
-
-  if (! zw_vocabulary_add (&*voc, voc_core, &err)
-      || ! zw_vocabulary_add (&*voc, voc_dw, &err))
-    return die (err);
+  zw_vocabulary_add (voc.get (), voc_core, zw_throw_on_error {});
+  zw_vocabulary_add (voc.get (), voc_dw, zw_throw_on_error {});
 
   bool query_specified = false;
   std::string query_str;
@@ -213,29 +254,24 @@ main(int argc, char *argv[])
   argc -= optind;
   argv += optind;
 
-  std::shared_ptr <zw_query> query;
-  if (query_specified)
-    {
-      if (zw_query *q = zw_query_parse_len
-	  (&*voc, query_str.c_str (), query_str.length (), &err))
-	query.reset (q, &zw_query_destroy);
-      else
-	return die (err);
-    }
-  else
-    {
-      if (argc == 0)
-	{
-	  std::cerr << "No query specified.\n";
-	  return 2;
-	}
-      if (zw_query *q = zw_query_parse (&*voc, *argv++, &err))
-	query.reset (q, &zw_query_destroy);
-      else
-	return die (err);
-      argc--;
-    }
+  std::unique_ptr <zw_query, zw_deleter> query {
+    [&] ()
+      {
+	if (query_specified)
+	  return zw_query_parse_len (voc.get (), query_str.c_str (),
+				     query_str.length (),
+				     zw_throw_on_error {});
+	else
+	  {
+	    if (argc == 0)
+	      throw std::runtime_error ("No query specified.");
 
+	    argc--;
+	    return zw_query_parse (&*voc, *argv++, zw_throw_on_error {});
+	  }
+      } ()};
+
+  std::vector <std::string> to_process;
   if (argc == 0)
     // No input files.
     to_process.push_back ("");
@@ -252,8 +288,8 @@ main(int argc, char *argv[])
   bool match = false;
   for (auto const &fn: to_process)
     {
-      std::shared_ptr <zw_stack> stack (zw_stack_init (&err),
-					&zw_stack_destroy);
+      zw_error *err;
+      std::unique_ptr <zw_stack, zw_deleter> stack {zw_stack_init (&err)};
       if (stack == nullptr)
 	{
 	fail:
@@ -268,33 +304,36 @@ main(int argc, char *argv[])
 
       if (fn != "")
 	{
-	  zw_value *dwv = zw_value_init_dwarf (fn.c_str (), 0, &err);
-	  if (dwv == nullptr
-	      || ! zw_stack_push_take (&*stack, dwv, &err))
-	    {
-	      zw_value_destroy (dwv);
-	      goto fail;
-	    }
+	  std::unique_ptr <zw_value, zw_deleter> dwv
+		{zw_value_init_dwarf (fn.c_str (), 0, &err)};
+	  if (dwv == nullptr)
+	    goto fail;
+
+	  if (zw_stack_push_take (&*stack, dwv.get (), &err))
+	    dwv.release ();
+	  else
+	    goto fail;
 	}
 
-      std::shared_ptr <zw_result> result
-	(zw_query_execute (&*query, &*stack, &err),
-	 &zw_result_destroy);
+      std::unique_ptr <zw_result, zw_deleter> result
+		{zw_query_execute (&*query, &*stack, &err)};
       if (result == nullptr)
 	goto fail;
 
       uint64_t count = 0;
       while (true)
 	{
-	  zw_stack *out;
-	  if (! zw_result_next (&*result, &out, &err))
-	    {
-	      if (! no_messages)
-		std::cerr << "dwgrep: " << fn << ": "
-			  << zw_error_message (err) << std::endl;
-	      zw_error_destroy (err);
-	      break;
-	    }
+	  std::unique_ptr <zw_stack, zw_deleter> out {[&] () -> zw_stack *
+	      {
+		zw_stack *ret;
+		if (zw_result_next (result.get (), &ret, &err))
+		  return ret;
+		if (! no_messages)
+		  std::cerr << "dwgrep: " << fn << ": "
+			    << zw_error_message (err) << std::endl;
+
+		return nullptr;
+	      } ()};
 	  if (out == nullptr)
 	    break;
 
@@ -308,15 +347,18 @@ main(int argc, char *argv[])
 	    {
 	      if (with_filename)
 		std::cout << fn << ":\n";
-	      if (zw_stack_depth (out) > 1)
+	      if (zw_stack_depth (out.get ()) > 1)
 		std::cout << "---\n";
-	      if (! zw_stack_dump_xxx (out, &err))
-		return die (err);
+	      for (size_t n = zw_stack_depth (out.get ()), i = 0; i < n; ++i)
+		{
+		  auto const *val = zw_stack_at (out.get (), i);
+		  assert (val != nullptr);
+		  dump_value (std::cout, *val);
+		  std::cout << std::endl;
+		}
 	    }
 	  else
 	    ++count;
-
-	  zw_stack_destroy (out);
 	}
 
       if (show_count)

@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2014 Red Hat, Inc.
+  Copyright (C) 2014, 2015 Red Hat, Inc.
 
   This file is free software; you can redistribute it and/or modify
   it under the terms of either
@@ -29,72 +29,19 @@
 
 #include <cstring>
 #include <iostream>
+#include <sstream>
 #include <string>
 
-#include "builtin-dw.hh"
 #include "builtin.hh"
 #include "init.hh"
 #include "op.hh"
 #include "parser.hh"
 #include "stack.hh"
 #include "tree.hh"
-#include "value-dw.hh"
 
-namespace
-{
-  zw_error *
-  zw_error_new (char const *message)
-  {
-    return new zw_error {message};
-  }
-
-  template <class U>
-  U
-  allocate_error (char const *message, U fail_return, zw_error **out_err)
-  {
-    assert (out_err != nullptr);
-    try
-      {
-	*out_err = zw_error_new (message);
-	return fail_return;
-      }
-    catch (std::exception const &exc)
-      {
-	std::cerr << "Error: " << message << "\n"
-		  << "There was an error while handling that error: "
-		  << exc.what () << "\n"
-		  << "Aborting.\n";
-	std::abort ();
-      }
-    catch (...)
-      {
-	std::cerr << "Error: " << message << "\n"
-		  << "There was an unknown error while handling that error.\n"
-		  << "Aborting.\n";
-	std::abort ();
-      }
-  }
-
-  template <class T>
-  auto
-  capture_errors (T &&callback, decltype (callback ()) fail_return,
-		  zw_error **out_err) -> decltype (callback ())
-  {
-    try
-      {
-	return callback ();
-      }
-    catch (std::exception const &exc)
-      {
-	return allocate_error (exc.what (), fail_return, out_err);
-      }
-    catch (...)
-      {
-	return allocate_error ("unknown error", fail_return, out_err);
-      }
-  }
-}
-
+#include "value-cst.hh"
+#include "value-str.hh"
+#include "value-seq.hh"
 
 extern "C" void
 zw_error_destroy (zw_error *err)
@@ -127,15 +74,6 @@ zw_vocabulary_core (zw_error **out_err)
 {
   return capture_errors ([&] () {
       static zw_vocabulary v {dwgrep_vocabulary_core ()};
-      return &v;
-    }, nullptr, out_err);
-}
-
-extern "C" zw_vocabulary const *
-zw_vocabulary_dwarf (zw_error **out_err)
-{
-  return capture_errors ([&] () {
-      static zw_vocabulary v {dwgrep_vocabulary_dw ()};
       return &v;
     }, nullptr, out_err);
 }
@@ -204,17 +142,6 @@ zw_stack_at (zw_stack const *stack, size_t depth)
   return stack->m_values[stack->m_values.size () - 1 - depth].get ();
 }
 
-bool
-zw_stack_dump_xxx (zw_stack const *stack, zw_error **out_err)
-{
-  return capture_errors ([&] () {
-      auto const &values = stack->m_values;
-      for (auto it = values.rbegin (); it != values.rend (); ++it)
-	std::cout << *((*it)->m_value) << std::endl;
-      return true;
-    }, false, out_err);
-}
-
 
 zw_query *
 zw_query_parse (zw_vocabulary const *voc, char const *query,
@@ -239,29 +166,6 @@ void
 zw_query_destroy (zw_query *query)
 {
   delete query;
-}
-
-namespace
-{
-  zw_value *
-  init_dwarf (char const *filename, doneness d, size_t pos, zw_error **out_err)
-  {
-    return capture_errors ([&] () {
-	return new zw_value {std::make_unique <value_dwarf> (filename, pos, d)};
-      }, nullptr, out_err);
-  }
-}
-
-zw_value *
-zw_value_init_dwarf (char const *filename, size_t pos, zw_error **out_err)
-{
-  return init_dwarf (filename, doneness::cooked, pos, out_err);
-}
-
-zw_value *
-zw_value_init_dwarf_raw (char const *filename, size_t pos, zw_error **out_err)
-{
-  return init_dwarf (filename, doneness::raw, pos, out_err);
 }
 
 void
@@ -313,4 +217,185 @@ void
 zw_result_destroy (zw_result *result)
 {
   delete result;
+}
+
+namespace
+{
+  template <class T>
+  bool
+  zw_value_is (zw_value const *val)
+  {
+    assert (val != nullptr);
+    return val->m_value->is <T> ();
+  }
+}
+
+bool
+zw_value_is_const (zw_value const *val)
+{
+  return zw_value_is <value_cst> (val);
+}
+
+bool
+zw_value_is_str (zw_value const *val)
+{
+  return zw_value_is <value_str> (val);
+}
+
+bool
+zw_value_is_seq (zw_value const *val)
+{
+  return zw_value_is <value_seq> (val);
+}
+
+namespace
+{
+  constant
+  extract_constant (zw_value const *val)
+  {
+    assert (val != nullptr);
+    value_cst const *cst = value::as <value_cst> (val->m_value.get ());
+    assert (cst != nullptr);
+    return cst->get_constant ();
+  }
+}
+
+bool
+zw_value_const_is_signed (zw_value const *val)
+{
+  return extract_constant (val).value ().m_sign == signedness::sign;
+}
+
+uint64_t
+zw_value_const_u64 (zw_value const *val)
+{
+  auto v = extract_constant (val).value ();
+  assert (v.m_sign == signedness::unsign);
+  return v.uval ();
+}
+
+int64_t
+zw_value_const_i64 (zw_value const *val)
+{
+  auto v = extract_constant (val).value ();
+  assert (v.m_sign == signedness::sign);
+  return v.sval ();
+}
+
+zw_value *
+zw_value_const_format (zw_value const *val, zw_error **out_err)
+{
+  std::stringstream ss;
+  ss << extract_constant (val);
+  std::string const &s = ss.str ();
+  return zw_value_init_str_len (s.c_str (), s.size (), 0, out_err);
+}
+
+char const *
+zw_cdom_name (zw_cdom const *cdom)
+{
+  assert (cdom != nullptr);
+  return cdom->m_cdom.name ();
+}
+
+bool
+zw_cdom_is_arith (zw_cdom const *cdom)
+{
+  assert (cdom != nullptr);
+  return cdom->m_cdom.safe_arith ();
+}
+
+zw_cdom const *
+zw_cdom_dec (void)
+{
+  static zw_cdom cdom {dec_constant_dom};
+  return &cdom;
+}
+
+zw_cdom const *
+zw_cdom_hex (void)
+{
+  static zw_cdom cdom {hex_constant_dom};
+  return &cdom;
+}
+
+zw_cdom const *
+zw_cdom_oct (void)
+{
+  static zw_cdom cdom {oct_constant_dom};
+  return &cdom;
+}
+
+zw_cdom const *
+zw_cdom_bin (void)
+{
+  static zw_cdom cdom {bin_constant_dom};
+  return &cdom;
+}
+
+zw_cdom const *
+zw_cdom_bool (void)
+{
+  static zw_cdom cdom {bool_constant_dom};
+  return &cdom;
+}
+
+zw_value *
+zw_value_init_str (char const *str, size_t pos,
+		   zw_error **out_err)
+{
+  return zw_value_init_str_len (str, strlen (str), pos, out_err);
+}
+
+zw_value *
+zw_value_init_str_len (char const *cstr, size_t len, size_t pos,
+		       zw_error **out_err)
+{
+  return capture_errors ([&] () {
+      std::string str {cstr, len};
+      return new zw_value {std::make_unique <value_str> (str, pos)};
+    }, nullptr, out_err);
+}
+
+char const *
+zw_value_str_str (zw_value const *val, size_t *lenp)
+{
+  assert (val != nullptr);
+  assert (lenp != nullptr);
+
+  value_str const *str = value::as <value_str> (val->m_value.get ());
+  assert (str != nullptr);
+  *lenp = str->get_string ().length ();
+  return str->get_string ().c_str ();
+}
+
+size_t
+zw_value_seq_length (zw_value const *val)
+{
+  assert (val != nullptr);
+
+  value_seq const *seq = value::as <value_seq> (val->m_value.get ());
+  assert (seq != nullptr);
+  return seq->get_seq ()->size ();
+}
+
+zw_value const *
+zw_value_seq_at (zw_value const *val, size_t idx)
+{
+  assert (val != nullptr);
+
+  value_seq const *seq = value::as <value_seq> (val->m_value.get ());
+  assert (seq != nullptr);
+
+  size_t sz = seq->get_seq ()->size ();
+  assert (idx < sz);
+  if (val->m_seq == nullptr)
+    val->m_seq = std::make_unique
+			<std::vector <std::unique_ptr <zw_value>>> (sz);
+
+  auto &ref = (*val->m_seq)[idx];
+  if (ref == nullptr)
+    ref = std::make_unique <zw_value> ((*seq->get_seq ())[idx]->clone ());
+
+  return ref.get ();
 }

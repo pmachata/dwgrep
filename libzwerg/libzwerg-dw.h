@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2014 Red Hat, Inc.
+  Copyright (C) 2014, 2015 Red Hat, Inc.
 
   This file is free software; you can redistribute it and/or modify
   it under the terms of either
@@ -44,6 +44,30 @@ extern "C" {
    * be converted to lists and obtained that way.  There probably are
    * value types that are legitimately useful but not exported.
    */
+
+  /**
+   * Constant domains.
+   */
+
+  zw_cdom const *zw_cdom_dw_tag (void);
+  zw_cdom const *zw_cdom_dw_attr (void);
+  zw_cdom const *zw_cdom_dw_form (void);
+  zw_cdom const *zw_cdom_dw_lang (void);
+  zw_cdom const *zw_cdom_dw_macinfo (void);
+  zw_cdom const *zw_cdom_dw_macro (void);
+  zw_cdom const *zw_cdom_dw_inline (void);
+  zw_cdom const *zw_cdom_dw_encoding (void);
+  zw_cdom const *zw_cdom_dw_access (void);
+  zw_cdom const *zw_cdom_dw_visibility (void);
+  zw_cdom const *zw_cdom_dw_virtuality (void);
+  zw_cdom const *zw_cdom_dw_identifier_case (void);
+  zw_cdom const *zw_cdom_dw_calling_convention (void);
+  zw_cdom const *zw_cdom_dw_ordering (void);
+  zw_cdom const *zw_cdom_dw_discr_list (void);
+  zw_cdom const *zw_cdom_dw_decimal_sign (void);
+  zw_cdom const *zw_cdom_dw_locexpr_opcode (void);
+  zw_cdom const *zw_cdom_dw_address_class (void);
+  zw_cdom const *zw_cdom_dw_endianity (void);
 
   /**
    * Dwarf.

@@ -44,12 +44,15 @@ class value_str
 public:
   static value_type const vtype;
 
-  value_str (std::string &&str, size_t pos)
+  value_str (std::string str, size_t pos)
     : value {vtype, pos}
     , m_str {std::move (str)}
   {}
 
   std::string &get_string ()
+  { return m_str; }
+
+  std::string const &get_string () const
   { return m_str; }
 
   void show (std::ostream &o, brevity brv) const override;

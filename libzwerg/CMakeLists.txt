@@ -31,6 +31,7 @@ ADD_LIBRARY (LibzwergCore OBJECT
   docstring.cc
   init.cc
   int.cc
+  libzwerg.cc
   op.cc
   overload.cc
   selector.cc
@@ -60,7 +61,7 @@ ADD_LIBRARY (LibzwergDw OBJECT
   dwfl_context.cc
   dwit.cc
   dwmods.cc
-  libzwerg.cc
+  libzwerg-dw.cc
   value-dw.cc
   builtin-dw-abbrev.cc
 )

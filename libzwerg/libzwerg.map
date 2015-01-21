@@ -16,7 +16,6 @@ LIBZWERG_0.1 {
 	zw_stack_push_take;
 	zw_stack_depth;
 	zw_stack_at;
-	zw_stack_dump_xxx;
 
 	zw_query_parse;
 	zw_query_parse_len;
@@ -28,8 +27,23 @@ LIBZWERG_0.1 {
 
 	zw_value_init_const_i64;
 	zw_value_init_const_u64;
+	zw_value_is_const;
+	zw_value_const_is_signed;
+	zw_value_const_u64;
+	zw_value_const_i64;
+	zw_value_const_format;
+
 	zw_value_init_str;
 	zw_value_init_str_len;
+	zw_value_is_str;
+	zw_value_str_str;
+
+	zw_value_init_seq;
+	zw_value_is_seq;
+	zw_value_seq_append;
+	zw_value_seq_length;
+	zw_value_seq_at;
+
 	zw_value_init_named;
 	zw_value_init_dwarf;
 	zw_value_init_dwarf_raw;
