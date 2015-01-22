@@ -154,223 +154,234 @@ dump_value (std::ostream &os, zw_value const &val)
 
 int
 main(int argc, char *argv[])
-{
-  setlocale (LC_ALL, "");
-  textdomain ("dwgrep");
+try
+  {
+    setlocale (LC_ALL, "");
+    textdomain ("dwgrep");
 
-  std::unique_ptr <option[]> long_options = gen_options (ext_options);
-  std::string options = gen_shopts (ext_options);
+    std::unique_ptr <option[]> long_options = gen_options (ext_options);
+    std::string options = gen_shopts (ext_options);
 
-  int verbosity = 0;
-  bool no_messages = false;
-  bool show_count = false;
-  bool with_filename = false;
-  bool no_filename = false;
+    int verbosity = 0;
+    bool no_messages = false;
+    bool show_count = false;
+    bool with_filename = false;
+    bool no_filename = false;
 
-  std::unique_ptr <zw_vocabulary, zw_deleter> voc
-	{zw_vocabulary_init (zw_throw_on_error {})};
-  zw_vocabulary const *voc_core = zw_vocabulary_core (zw_throw_on_error {});
-  zw_vocabulary const *voc_dw = zw_vocabulary_dwarf (zw_throw_on_error {});
+    std::unique_ptr <zw_vocabulary, zw_deleter> voc
+    {zw_vocabulary_init (zw_throw_on_error {})};
+    zw_vocabulary const *voc_core = zw_vocabulary_core (zw_throw_on_error {});
+    zw_vocabulary const *voc_dw = zw_vocabulary_dwarf (zw_throw_on_error {});
 
-  zw_vocabulary_add (voc.get (), voc_core, zw_throw_on_error {});
-  zw_vocabulary_add (voc.get (), voc_dw, zw_throw_on_error {});
+    zw_vocabulary_add (voc.get (), voc_core, zw_throw_on_error {});
+    zw_vocabulary_add (voc.get (), voc_dw, zw_throw_on_error {});
 
-  bool query_specified = false;
-  std::string query_str;
+    bool query_specified = false;
+    std::string query_str;
 
-  while (true)
-    {
-      int c = getopt_long (argc, argv, options.c_str (), long_options.get (), nullptr);
-      if (c == -1)
-	break;
-
-      switch (c)
-	{
-	case 'e':
-	  query_str += optarg;
-	  query_specified = true;
+    while (true)
+      {
+	int c = getopt_long (argc, argv, options.c_str (),
+			     long_options.get (), nullptr);
+	if (c == -1)
 	  break;
 
-	case 'c':
-	  show_count = true;
-	  break;
-
-	case 'H':
-	  with_filename = true;
-	  break;
-
-	case 'h':
-	  no_filename = true;
-	  break;
-
-	case 'q':
-	  verbosity = -1;
-	  break;
-
-	case 's':
-	  no_messages = true;
-	  break;
-
-	case 'f':
+	switch (c)
 	  {
-	    if (strcmp (optarg, "-") != 0)
-	      {
-		std::ifstream ifs {optarg};
-		if (ifs.fail ())
-		  {
-		    std::cerr << "Error: can't open script file `"
-			      << optarg << "'.\n";
-		    return 2;
-		  }
-		query_str += std::string {std::istreambuf_iterator <char> {ifs},
-					  std::istreambuf_iterator <char> {}};
-	      }
-	    else
-	      query_str
-		+= std::string {std::istreambuf_iterator <char> {std::cin},
-				std::istreambuf_iterator <char> {}};
+	  case 'e':
+	    query_str += optarg;
 	    query_specified = true;
 	    break;
-	  }
 
-	default:
-	  if (c == help)
-	    {
-	      show_help (ext_options);
-	      return 0;
-	    }
-	  else if (c == version)
-	    {
-	      std::cout << "dwgrep "
-			<< DWGREP_VERSION_MAJOR << "." << DWGREP_VERSION_MINOR
-			<< std::endl;
-	      return 0;
-	    }
-
-	  return 2;
-	}
-    }
-
-  argc -= optind;
-  argv += optind;
-
-  std::unique_ptr <zw_query, zw_deleter> query {
-    [&] ()
-      {
-	if (query_specified)
-	  return zw_query_parse_len (voc.get (), query_str.c_str (),
-				     query_str.length (),
-				     zw_throw_on_error {});
-	else
-	  {
-	    if (argc == 0)
-	      throw std::runtime_error ("No query specified.");
-
-	    argc--;
-	    return zw_query_parse (&*voc, *argv++, zw_throw_on_error {});
-	  }
-      } ()};
-
-  std::vector <std::string> to_process;
-  if (argc == 0)
-    // No input files.
-    to_process.push_back ("");
-  else
-    for (int i = 0; i < argc; ++i)
-      to_process.push_back (argv[i]);
-
-  if (to_process.size () > 1)
-    with_filename = true;
-  if (no_filename)
-    with_filename = false;
-
-  bool errors = false;
-  bool match = false;
-  for (auto const &fn: to_process)
-    {
-      zw_error *err;
-      std::unique_ptr <zw_stack, zw_deleter> stack {zw_stack_init (&err)};
-      if (stack == nullptr)
-	{
-	fail:
-	  if (! no_messages)
-	    std::cout << "dwgrep: " << fn << ": "
-		      << zw_error_message (err) << std::endl;
-	  zw_error_destroy (err);
-	  if (verbosity >= 0)
-	    errors = true;
-	  continue;
-	}
-
-      if (fn != "")
-	{
-	  std::unique_ptr <zw_value, zw_deleter> dwv
-		{zw_value_init_dwarf (fn.c_str (), 0, &err)};
-	  if (dwv == nullptr)
-	    goto fail;
-
-	  if (zw_stack_push_take (&*stack, dwv.get (), &err))
-	    dwv.release ();
-	  else
-	    goto fail;
-	}
-
-      std::unique_ptr <zw_result, zw_deleter> result
-		{zw_query_execute (&*query, &*stack, &err)};
-      if (result == nullptr)
-	goto fail;
-
-      uint64_t count = 0;
-      while (true)
-	{
-	  std::unique_ptr <zw_stack, zw_deleter> out {[&] () -> zw_stack *
-	      {
-		zw_stack *ret;
-		if (zw_result_next (result.get (), &ret, &err))
-		  return ret;
-		if (! no_messages)
-		  std::cerr << "dwgrep: " << fn << ": "
-			    << zw_error_message (err) << std::endl;
-
-		return nullptr;
-	      } ()};
-	  if (out == nullptr)
+	  case 'c':
+	    show_count = true;
 	    break;
 
-	  // grep: Exit immediately with zero status if any match
-	  // is found, even if an error was detected.
-	  if (verbosity < 0)
-	    return 0;
+	  case 'H':
+	    with_filename = true;
+	    break;
 
-	  match = true;
-	  if (! show_count)
+	  case 'h':
+	    no_filename = true;
+	    break;
+
+	  case 'q':
+	    verbosity = -1;
+	    break;
+
+	  case 's':
+	    no_messages = true;
+	    break;
+
+	  case 'f':
 	    {
-	      if (with_filename)
-		std::cout << fn << ":\n";
-	      if (zw_stack_depth (out.get ()) > 1)
-		std::cout << "---\n";
-	      for (size_t n = zw_stack_depth (out.get ()), i = 0; i < n; ++i)
+	      auto buf_to_string = [] (std::istream &is)
 		{
-		  auto const *val = zw_stack_at (out.get (), i);
-		  assert (val != nullptr);
-		  dump_value (std::cout, *val);
-		  std::cout << std::endl;
+		  return std::string {std::istreambuf_iterator <char> {is},
+				      std::istreambuf_iterator <char> {}};
+		};
+
+	      if (strcmp (optarg, "-") != 0)
+		{
+		  std::ifstream ifs {optarg};
+		  if (ifs.fail ())
+		    {
+		      std::cerr << "Error: can't open script file `"
+				<< optarg << "'.\n";
+		      return 2;
+		    }
+		  query_str += buf_to_string (ifs);
 		}
+	      else
+		query_str += buf_to_string (std::cin);
+	      query_specified = true;
+	      break;
 	    }
-	  else
-	    ++count;
-	}
 
-      if (show_count)
+	  default:
+	    if (c == help)
+	      {
+		show_help (ext_options);
+		return 0;
+	      }
+	    else if (c == version)
+	      {
+		std::cout << "dwgrep "
+			  << DWGREP_VERSION_MAJOR << "."
+			  << DWGREP_VERSION_MINOR << std::endl;
+		return 0;
+	      }
+
+	    return 2;
+	  }
+      }
+
+    argc -= optind;
+    argv += optind;
+
+    std::unique_ptr <zw_query, zw_deleter> query {
+	[&] ()
+	  {
+	    if (query_specified)
+	      return zw_query_parse_len (voc.get (), query_str.c_str (),
+					 query_str.length (),
+					 zw_throw_on_error {});
+	    else
+	      {
+		if (argc == 0)
+		  throw std::runtime_error ("No query specified.");
+
+		argc--;
+		return zw_query_parse (&*voc, *argv++, zw_throw_on_error {});
+	      }
+	  } ()};
+
+    std::vector <char const *> to_process;
+    if (argc == 0)
+	// No input files.
+	to_process.push_back ("");
+    else
+	for (int i = 0; i < argc; ++i)
+	  to_process.push_back (argv[i]);
+
+    if (to_process.size () > 1)
+	with_filename = true;
+    if (no_filename)
+	with_filename = false;
+
+    bool errors = false;
+    bool match = false;
+    for (auto const &fn: to_process)
+      try
 	{
-	  if (with_filename)
-	    std::cout << fn << ":";
-	  std::cout << std::dec << count << std::endl;
-	}
-    }
+	  std::unique_ptr <zw_stack, zw_deleter> stack
+		{zw_stack_init (zw_throw_on_error {})};
 
-  if (errors)
+	  if (fn[0] != '\0')
+	    {
+	      std::unique_ptr <zw_value, zw_deleter> dwv
+			{zw_value_init_dwarf (fn, 0, zw_throw_on_error {})};
+
+	      zw_stack_push_take (stack.get (), dwv.get (),
+				  zw_throw_on_error {});
+	      dwv.release ();
+	    }
+
+	  std::unique_ptr <zw_result, zw_deleter> result
+		{zw_query_execute (query.get (), stack.get (),
+				   zw_throw_on_error {})};
+
+	  uint64_t count = 0;
+	  while (true)
+	    {
+	      std::unique_ptr <zw_stack, zw_deleter> out {[&] ()
+		  {
+		    zw_stack *stk;
+		    zw_result_next (result.get (), &stk,
+				    zw_throw_on_error {});
+		    return stk;
+		  } ()};
+
+	      if (out == nullptr)
+		// No more results.
+		  break;
+
+		// grep: Exit immediately with zero status if any match
+		// is found, even if an error was detected.
+		if (verbosity < 0)
+		  return 0;
+
+		match = true;
+		if (! show_count)
+		  {
+		    if (with_filename)
+		      std::cout << fn << ":\n";
+		    if (zw_stack_depth (out.get ()) > 1)
+		      std::cout << "---\n";
+		    for (size_t i = 0, n = zw_stack_depth (out.get ());
+			 i < n; ++i)
+		      {
+			auto const *val = zw_stack_at (out.get (), i);
+			assert (val != nullptr);
+			dump_value (std::cout, *val);
+			std::cout << std::endl;
+		      }
+		  }
+		else
+		  ++count;
+	      }
+
+	    if (show_count)
+	      {
+		if (with_filename)
+		  std::cout << fn << ":";
+		std::cout << std::dec << count << std::endl;
+	      }
+	  }
+	catch (std::runtime_error const &e)
+	  {
+	    if (! no_messages)
+	      std::cout << "dwgrep: " << (fn[0] != '\0' ? fn : "<no-file>")
+			<< ": " << e.what () << std::endl;
+
+	    if (verbosity >= 0)
+	      errors = true;
+
+	    continue;
+	  }
+	catch (...)
+	  {
+	    std::cout << "blah\n";
+	    continue;
+	  }
+
+    if (errors)
+	return 2;
+
+    return match ? 0 : 1;
+  }
+catch (std::runtime_error const& e)
+  {
+    std::cout << "dwgrep: " << e.what () << std::endl;
     return 2;
-
-  return match ? 0 : 1;
-}
+  }
