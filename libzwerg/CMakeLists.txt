@@ -84,6 +84,23 @@ SET (LibzwergAll
   $<TARGET_OBJECTS:BuiltinDw>
 )
 
+# libzwerg version script
+
+# The dependency between libzwerg.so and LibZwergVersionScript is
+# captured in generated Makefiles, so this rule runs before
+# libzwerg.so one.  But there's no direct dependency between the DSO
+# and its map file and the DSO thus doesn't get rebuilt.  Adding the
+# map file as direct dependence to ADD_LIBRARY doesn't help either.
+# Not even if we make this ADD_CUSTOM_COMMAND.
+#
+# So we have a little script that copies libzwerg.map to the build
+# directory if the one there is older, and if it is, it also deletes
+# libzwerg.so.  When building in-tree, this automatism doesn't work,
+# but the build itself doesn't break.
+
+ADD_CUSTOM_TARGET (LibZwergVersionScript
+  sh ${CMAKE_CURRENT_LIST_DIR}/build-version-script.sh ${CMAKE_CURRENT_LIST_DIR})
+
 # libzwerg DSO
 ADD_LIBRARY (libzwerg SHARED ${LibzwergAll})
 
@@ -93,9 +110,10 @@ TARGET_LINK_LIBRARIES (libzwerg ${LIBELF_LIBRARY} ${DWARF_LIBRARIES})
 
 SET_TARGET_PROPERTIES (libzwerg PROPERTIES OUTPUT_NAME "zwerg")
 SET_TARGET_PROPERTIES (libzwerg PROPERTIES SOVERSION 0.1)
-SET_TARGET_PROPERTIES (libzwerg PROPERTIES LINK_FLAGS
-  "-Wl,--version-script=${CMAKE_CURRENT_LIST_DIR}/libzwerg.map,--no-undefined")
 
+ADD_DEPENDENCIES (libzwerg LibZwergVersionScript)
+SET_TARGET_PROPERTIES (libzwerg PROPERTIES LINK_FLAGS
+  "-Wl,--version-script=libzwerg.map,--no-undefined")
 
 IF (CMAKE_SIZEOF_VOID_P MATCHES "8")
   SET (LIB_SUFFIX "64")
