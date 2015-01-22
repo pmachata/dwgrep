@@ -77,7 +77,7 @@ struct zw_throw_on_error
     return &m_err;
   }
 
-  ~zw_throw_on_error ()
+  ~zw_throw_on_error () noexcept (false)
   {
     if (m_err != nullptr)
       {
