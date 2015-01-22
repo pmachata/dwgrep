@@ -183,6 +183,29 @@ dump_seq (std::ostream &os, zw_value const &val, bool)
 }
 
 void
+dump_dwarf (std::ostream &os, zw_value const &val, bool)
+{
+  os << "<Dwarf ";
+  char const *name = zw_value_dwarf_name (&val);
+  dump_charp (os, name, strlen (name), false);
+  os << '>';
+}
+
+void
+dump_cu (std::ostream &os, zw_value const &val, bool)
+{
+  ios_flag_saver ifs {os};
+  os << "<CU " << std::hex << std::showbase << zw_value_cu_offset (&val) << ">";
+}
+
+void
+dump_die (std::ostream &os, zw_value const &val, bool outer)
+{
+  Dwarf_Die die = zw_value_die_die (&val);
+  os << "DIE";
+}
+
+void
 dump_value (std::ostream &os, zw_value const &val, bool outer)
 {
   if (zw_value_is_const (&val))
@@ -191,6 +214,12 @@ dump_value (std::ostream &os, zw_value const &val, bool outer)
     dump_string (os, val, outer);
   else if (zw_value_is_seq (&val))
     dump_seq (os, val, outer);
+  else if (zw_value_is_dwarf (&val))
+    dump_dwarf (os, val, outer);
+  else if (zw_value_is_cu (&val))
+    dump_cu (os, val, outer);
+  else if (zw_value_is_die (&val))
+    dump_die (os, val, outer);
   else
     os << "<unknown value type>";
 }

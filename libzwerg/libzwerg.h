@@ -47,6 +47,7 @@ extern "C" {
   void zw_error_destroy (zw_error *err);
 
   char const *zw_error_message (zw_error const *err);
+  int zw_error_code (zw_error const *err);
 
 
   zw_vocabulary *zw_vocabulary_init (zw_error **out_err);
@@ -75,8 +76,6 @@ extern "C" {
   size_t zw_stack_depth (zw_stack const *stack);
 
   zw_value const *zw_stack_at (zw_stack const *stack, size_t depth);
-
-  bool zw_stack_dump_xxx (zw_stack const *stack, zw_error **out_err);
 
 
   zw_query *zw_query_parse (zw_vocabulary const *voc, char const *query,
@@ -112,7 +111,8 @@ extern "C" {
   zw_value *zw_value_init_named (zw_vocabulary const *voc, char const *name,
 				 zw_error **out_err);
 
-  char *zw_value_show (zw_value const *val, zw_error **out_err);
+  // Return the result of "%s" applied to VAL.
+  zw_value *zw_value_format (zw_value const *val, zw_error **out_err);
 
   void zw_value_destroy (zw_value *val);
 

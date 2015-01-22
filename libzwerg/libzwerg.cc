@@ -219,17 +219,6 @@ zw_result_destroy (zw_result *result)
   delete result;
 }
 
-namespace
-{
-  template <class T>
-  bool
-  zw_value_is (zw_value const *val)
-  {
-    assert (val != nullptr);
-    return val->m_value->is <T> ();
-  }
-}
-
 bool
 zw_value_is_const (zw_value const *val)
 {

@@ -136,4 +136,12 @@ namespace
 	return allocate_error ("unknown error", fail_return, out_err);
       }
   }
+
+  template <class T>
+  bool
+  zw_value_is (zw_value const *val)
+  {
+    assert (val != nullptr);
+    return val->m_value->is <T> ();
+  }
 }

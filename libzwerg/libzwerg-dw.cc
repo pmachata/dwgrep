@@ -31,13 +31,31 @@
 #include "builtin-dw.hh"
 #include "value-dw.hh"
 
-extern "C" zw_vocabulary const *
+zw_vocabulary const *
 zw_vocabulary_dwarf (zw_error **out_err)
 {
   return capture_errors ([&] () {
       static zw_vocabulary v {dwgrep_vocabulary_dw ()};
       return &v;
     }, nullptr, out_err);
+}
+
+bool
+zw_value_is_dwarf (zw_value const *val)
+{
+  return zw_value_is <value_dwarf> (val);
+}
+
+bool
+zw_value_is_cu (zw_value const *val)
+{
+  return zw_value_is <value_cu> (val);
+}
+
+bool
+zw_value_is_die (zw_value const *val)
+{
+  return zw_value_is <value_die> (val);
 }
 
 namespace
@@ -61,4 +79,63 @@ zw_value *
 zw_value_init_dwarf_raw (char const *filename, size_t pos, zw_error **out_err)
 {
   return init_dwarf (filename, doneness::raw, pos, out_err);
+}
+
+char const *
+zw_value_dwarf_name (zw_value const *val)
+{
+  assert (val != nullptr);
+
+  value_dwarf const *dw = value::as <value_dwarf> (val->m_value.get ());
+  assert (dw != nullptr);
+
+  return dw->get_fn ().c_str ();
+}
+
+namespace
+{
+  template <class T>
+  T const &
+  unpack (zw_value const *val)
+  {
+    assert (val != nullptr);
+
+    T const *hlv = value::as <T> (val->m_value.get ());
+    assert (hlv != nullptr);
+
+    return *hlv;
+  }
+
+  value_cu const &
+  cu (zw_value const *val)
+  {
+    return unpack <value_cu> (val);
+  }
+}
+
+Dwarf_CU *
+zw_value_cu_cu (zw_value const *val)
+{
+  return &cu (val).get_cu ();
+}
+
+Dwarf_Off
+zw_value_cu_offset (zw_value const *val)
+{
+  return cu (val).get_offset ();
+}
+
+namespace
+{
+  value_die const &
+  die (zw_value const *val)
+  {
+    return unpack <value_die> (val);
+  }
+}
+
+Dwarf_Die
+zw_value_die_die (zw_value const *val)
+{
+  return die (val).get_die ();
 }

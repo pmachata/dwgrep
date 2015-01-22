@@ -89,7 +89,18 @@ extern "C" {
 
   Dwfl *zw_value_dwarf_dwfl (zw_value const *dw);
 
-  char const *zw_value_dwarf_name (zw_value const *dw, size_t *out_length);
+  char const *zw_value_dwarf_name (zw_value const *dw);
+
+
+  /**
+   * CU.
+   */
+
+  bool zw_value_is_cu (zw_value const *val);
+
+  Dwarf_CU *zw_value_cu_cu (zw_value const *val);
+
+  Dwarf_Off zw_value_cu_offset (zw_value const *val);
 
 
   /**
