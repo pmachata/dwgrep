@@ -26,16 +26,18 @@
    the GNU Lesser General Public License along with this program.  If
    not, see <http://www.gnu.org/licenses/>.  */
 
-#include <iostream>
-#include <fstream>
-#include <memory>
-#include <libintl.h>
-#include <vector>
-#include <cassert>
-#include <getopt.h>
-#include <map>
-#include <cstring>
 #include <algorithm>
+#include <cassert>
+#include <cctype>
+#include <cstring>
+#include <fstream>
+#include <getopt.h>
+#include <iomanip>
+#include <iostream>
+#include <libintl.h>
+#include <map>
+#include <memory>
+#include <vector>
 
 #include "libzwerg.hh"
 #include "libzwerg-dw.h"
@@ -43,6 +45,7 @@
 #include "libzwerg/std-memory.hh"
 #include "libzwerg/strip.hh"
 #include "version.h"
+#include "libzwerg/flag_saver.hh"
 
 std::unique_ptr <option[]>
 gen_options (std::vector <ext_option> const &ext_opts)
@@ -96,7 +99,7 @@ show_help (std::vector <ext_option> const &ext_opts)
     }
 }
 
-void dump_value (std::ostream &os, zw_value const &val);
+void dump_value (std::ostream &os, zw_value const &val, bool outer);
 
 void
 dump_err (zw_error *err)
@@ -106,26 +109,66 @@ dump_err (zw_error *err)
 }
 
 void
-dump_const (std::ostream &os, zw_value const &val)
+dump_const (std::ostream &os, zw_value const &val, bool)
 {
   zw_error *err;
   if (std::unique_ptr <zw_value, zw_deleter> str
 	{zw_value_const_format (&val, &err)})
-    dump_value (os, *str.get ());
+    dump_value (os, *str.get (), true);
   else
     dump_err (err);
 }
 
 void
-dump_string (std::ostream &os, zw_value const &val)
+dump_charp (std::ostream &os, char const *buf, size_t len, bool outer)
 {
-  size_t len;
-  char const *buf = zw_value_str_str (&val, &len);
-  os << std::string {buf, len};
+  if (outer)
+    os << std::string {buf, len};
+  else
+    {
+      os << '"';
+      for (size_t i = 0; i < len; ++i)
+	switch (buf[i])
+	  {
+#define ESCAPE(L, E) case L: os << E; break
+
+	    ESCAPE (0, "\\0");
+	    ESCAPE ('"', "\\");
+	    ESCAPE ('\\', "\\\\");
+	    ESCAPE ('\a', "\\a");
+	    ESCAPE ('\b', "\\b");
+	    ESCAPE ('\t', "\\t");
+	    ESCAPE ('\n', "\\n");
+	    ESCAPE ('\v', "\\v");
+	    ESCAPE ('\f', "\\f");
+	    ESCAPE ('\r', "\\r");
+
+#undef ESCAPE
+
+	  default:
+	    if (isprint (buf[i]))
+	      os << buf[i];
+	    else
+	      {
+		ios_flag_saver ifs {os};
+		os << "\\x" << std::hex << std::setw (2)
+		   << (unsigned) (unsigned char) buf[i];
+	      }
+	  }
+      os << '"';
+    }
 }
 
 void
-dump_seq (std::ostream &os, zw_value const &val)
+dump_string (std::ostream &os, zw_value const &val, bool outer)
+{
+  size_t len;
+  char const *buf = zw_value_str_str (&val, &len);
+  dump_charp (os, buf, len, outer);
+}
+
+void
+dump_seq (std::ostream &os, zw_value const &val, bool)
 {
   os << "[";
   for (size_t n = zw_value_seq_length (&val), i = 0; i < n; ++i)
@@ -134,20 +177,20 @@ dump_seq (std::ostream &os, zw_value const &val)
 	os << ", ";
       zw_value const *emt = zw_value_seq_at (&val, i);
       assert (emt != nullptr);
-      dump_value (os, *emt);
+      dump_value (os, *emt, false);
     }
   os << "]";
 }
 
 void
-dump_value (std::ostream &os, zw_value const &val)
+dump_value (std::ostream &os, zw_value const &val, bool outer)
 {
   if (zw_value_is_const (&val))
-    dump_const (os, val);
+    dump_const (os, val, outer);
   else if (zw_value_is_str (&val))
-    dump_string (os, val);
+    dump_string (os, val, outer);
   else if (zw_value_is_seq (&val))
-    dump_seq (os, val);
+    dump_seq (os, val, outer);
   else
     os << "<unknown value type>";
 }
@@ -343,7 +386,7 @@ try
 		      {
 			auto const *val = zw_stack_at (out.get (), i);
 			assert (val != nullptr);
-			dump_value (std::cout, *val);
+			dump_value (std::cout, *val, true);
 			std::cout << std::endl;
 		      }
 		  }
