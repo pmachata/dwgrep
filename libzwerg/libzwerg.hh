@@ -80,7 +80,11 @@ struct zw_throw_on_error
   ~zw_throw_on_error ()
   {
     if (m_err != nullptr)
-      throw std::runtime_error (zw_error_message (m_err));
+      {
+	std::string msg = zw_error_message (m_err);
+	zw_error_destroy (m_err);
+	throw std::runtime_error (msg);
+      }
   }
 };
 
