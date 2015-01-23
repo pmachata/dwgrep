@@ -329,6 +329,33 @@ zw_cdom_bool (void)
   return &cdom;
 }
 
+namespace
+{
+  template <class T>
+  zw_value *
+  init_const (T i, zw_cdom const *dom, size_t pos, zw_error **out_err)
+  {
+    return capture_errors ([&] () {
+	constant cst {i, &dom->m_cdom};
+	return new zw_value {std::make_unique <value_cst> (cst, pos)};
+      }, nullptr, out_err);
+  }
+}
+
+zw_value *
+zw_value_init_const_i64 (int64_t i, zw_cdom const *dom,
+			 size_t pos, zw_error **out_err)
+{
+  return init_const (i, dom, pos, out_err);
+}
+
+zw_value *
+zw_value_init_const_u64 (uint64_t i, zw_cdom const *dom,
+			 size_t pos, zw_error **out_err)
+{
+  return init_const (i, dom, pos, out_err);
+}
+
 zw_value *
 zw_value_init_str (char const *str, size_t pos,
 		   zw_error **out_err)
