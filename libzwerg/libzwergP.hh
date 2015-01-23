@@ -29,7 +29,7 @@
 #include "libzwerg-dw.h"
 
 #include <string>
-#include <memory>
+#include "std-memory.hh"
 #include <iostream>
 
 #include "tree.hh"
@@ -60,8 +60,9 @@ struct zw_value
 {
   std::unique_ptr <value> m_value;
 
-  // This is where we store zw_values generated for a sequence access.
-  mutable std::unique_ptr <std::vector <std::unique_ptr <zw_value>>> m_seq;
+  // This is where we store zw_values generated for a sequence access
+  // or other reasons.
+  mutable std::unique_ptr <std::vector <std::unique_ptr <zw_value>>> m_cache;
 
   explicit zw_value (std::unique_ptr <value> value)
     : m_value {std::move (value)}
@@ -143,5 +144,15 @@ namespace
   {
     assert (val != nullptr);
     return val->m_value->is <T> ();
+  }
+
+  __attribute__ ((unused))
+  std::vector <std::unique_ptr <zw_value>> &
+  libzw_cache (zw_value const &val)
+  {
+    if (val.m_cache == nullptr)
+      val.m_cache = std::make_unique
+			<std::vector <std::unique_ptr <zw_value>>> ();
+    return *val.m_cache;
   }
 }

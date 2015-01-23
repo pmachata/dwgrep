@@ -405,11 +405,12 @@ zw_value_seq_at (zw_value const *val, size_t idx)
 
   size_t sz = seq->get_seq ()->size ();
   assert (idx < sz);
-  if (val->m_seq == nullptr)
-    val->m_seq = std::make_unique
-			<std::vector <std::unique_ptr <zw_value>>> (sz);
 
-  auto &ref = (*val->m_seq)[idx];
+  auto &cache = libzw_cache (*val);
+  if (cache.empty ())
+    cache.resize (sz);
+
+  auto &ref = cache[idx];
   if (ref == nullptr)
     ref = std::make_unique <zw_value> ((*seq->get_seq ())[idx]->clone ());
 
