@@ -138,6 +138,9 @@ extern "C" {
   zw_value *zw_value_const_format (zw_value const *cst,
 				   zw_error **out_err);
 
+  zw_value *zw_value_const_format_brief (zw_value const *cst,
+					 zw_error **out_err);
+
   zw_cdom const *zw_value_const_dom (zw_value const *cst);
 
 

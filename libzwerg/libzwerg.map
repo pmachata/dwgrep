@@ -39,6 +39,7 @@ LIBZWERG_0.1 {
 	zw_value_const_u64;
 	zw_value_const_i64;
 	zw_value_const_format;
+	zw_value_const_format_brief;
 
 	zw_value_init_str;
 	zw_value_init_str_len;

@@ -271,13 +271,29 @@ zw_value_const_i64 (zw_value const *val)
   return v.sval ();
 }
 
+namespace
+{
+  zw_value *
+  format_constant (zw_value const *val, brevity brv, zw_error **out_err)
+  {
+    auto cst = extract_constant (val);
+    std::stringstream ss;
+    ss << constant {cst.value (), cst.dom (), brv};
+    std::string const &s = ss.str ();
+    return zw_value_init_str_len (s.c_str (), s.size (), 0, out_err);
+  }
+}
+
 zw_value *
 zw_value_const_format (zw_value const *val, zw_error **out_err)
 {
-  std::stringstream ss;
-  ss << extract_constant (val);
-  std::string const &s = ss.str ();
-  return zw_value_init_str_len (s.c_str (), s.size (), 0, out_err);
+  return format_constant (val, brevity::full, out_err);
+}
+
+zw_value *
+zw_value_const_format_brief (zw_value const *val, zw_error **out_err)
+{
+  return format_constant (val, brevity::brief, out_err);
 }
 
 char const *
