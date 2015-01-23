@@ -118,6 +118,18 @@ extern "C" {
 
   Dwarf_Die zw_value_die_die (zw_value const *die);
 
+  zw_value const *zw_value_die_dwarf (zw_value const *die, zw_error **out_err);
+
+
+  /**
+   * DIE attribute.
+   */
+
+  bool zw_value_is_attr (zw_value const *val);
+
+  Dwarf_Attribute zw_value_attr_attr (zw_value const *attr);
+
+  zw_value const *zw_value_attr_dwarf (zw_value const *attr);
 
   /**
    * Location list element.

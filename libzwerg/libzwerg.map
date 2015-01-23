@@ -83,6 +83,11 @@ LIBZWERG_0.1 {
 
 	zw_value_is_die;
 	zw_value_die_die;
+	zw_value_die_dwarf;
+
+	zw_value_is_attr;
+	zw_value_attr_attr;
+	zw_value_attr_dwarf;
 
   local:
 	*;

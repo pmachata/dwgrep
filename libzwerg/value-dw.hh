@@ -230,6 +230,9 @@ public:
   Dwarf_Attribute &get_attr ()
   { return m_attr; }
 
+  Dwarf_Attribute const &get_attr () const
+  { return m_attr; }
+
   void show (std::ostream &o, brevity brv) const override;
   std::unique_ptr <value> clone () const override;
   cmp_result cmp (value const &that) const override;

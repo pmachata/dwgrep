@@ -27,6 +27,7 @@
 
 #include "libzwergP.hh"
 #include "libzwerg-dw.h"
+#include "libzwerg.hh"
 
 #include "builtin-dw.hh"
 #include "value-dw.hh"
@@ -192,6 +193,12 @@ zw_value_is_die (zw_value const *val)
   return libzw_value_is <value_die> (val);
 }
 
+bool
+zw_value_is_attr (zw_value const *val)
+{
+  return libzw_value_is <value_attr> (val);
+}
+
 namespace
 {
   zw_value *
@@ -266,10 +273,51 @@ namespace
   {
     return unpack <value_die> (val);
   }
+
+  zw_value const *
+  extract_dwarf (zw_value const *val, std::shared_ptr <dwfl_context> dwctx,
+		 zw_error **out_err)
+  {
+    return capture_errors ([&] () {
+	auto zwdw = std::make_unique <zw_value>
+	  (std::make_unique <value_dwarf> ("???", std::move (dwctx),
+					   0, doneness::raw));
+	auto ret = zwdw.get ();
+	libzw_cache (*val).push_back (std::move (zwdw));
+	return ret;
+      }, nullptr, out_err);
+  }
 }
 
 Dwarf_Die
 zw_value_die_die (zw_value const *val)
 {
   return die (val).get_die ();
+}
+
+zw_value const *
+zw_value_die_dwarf (zw_value const *val, zw_error **out_err)
+{
+  return extract_dwarf (val, die (val).get_dwctx (), out_err);
+}
+
+namespace
+{
+  value_attr const &
+  attr (zw_value const *val)
+  {
+    return unpack <value_attr> (val);
+  }
+}
+
+Dwarf_Attribute
+zw_value_attr_attr (zw_value const *val)
+{
+  return attr (val).get_attr ();
+}
+
+zw_value const *
+zw_value_attr_dwarf (zw_value const *val, zw_error **out_err)
+{
+  return extract_dwarf (val, attr (val).get_dwctx (), out_err);
 }
