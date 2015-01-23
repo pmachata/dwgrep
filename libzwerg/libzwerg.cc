@@ -222,19 +222,19 @@ zw_result_destroy (zw_result *result)
 bool
 zw_value_is_const (zw_value const *val)
 {
-  return zw_value_is <value_cst> (val);
+  return libzw_value_is <value_cst> (val);
 }
 
 bool
 zw_value_is_str (zw_value const *val)
 {
-  return zw_value_is <value_str> (val);
+  return libzw_value_is <value_str> (val);
 }
 
 bool
 zw_value_is_seq (zw_value const *val)
 {
-  return zw_value_is <value_seq> (val);
+  return libzw_value_is <value_seq> (val);
 }
 
 namespace

@@ -139,7 +139,7 @@ namespace
 
   template <class T>
   bool
-  zw_value_is (zw_value const *val)
+  libzw_value_is (zw_value const *val)
   {
     assert (val != nullptr);
     return val->m_value->is <T> ();

@@ -177,19 +177,19 @@ zw_vocabulary_dwarf (zw_error **out_err)
 bool
 zw_value_is_dwarf (zw_value const *val)
 {
-  return zw_value_is <value_dwarf> (val);
+  return libzw_value_is <value_dwarf> (val);
 }
 
 bool
 zw_value_is_cu (zw_value const *val)
 {
-  return zw_value_is <value_cu> (val);
+  return libzw_value_is <value_cu> (val);
 }
 
 bool
 zw_value_is_die (zw_value const *val)
 {
-  return zw_value_is <value_die> (val);
+  return libzw_value_is <value_die> (val);
 }
 
 namespace
