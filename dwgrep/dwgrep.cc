@@ -386,54 +386,54 @@ try
 	  uint64_t count = 0;
 	  while (auto out = zw_result_next (*result))
 	    {
-		// grep: Exit immediately with zero status if any match
-		// is found, even if an error was detected.
-		if (verbosity < 0)
-		  return 0;
+	      // grep: Exit immediately with zero status if any match
+	      // is found, even if an error was detected.
+	      if (verbosity < 0)
+		return 0;
 
-		match = true;
-		if (! show_count)
-		  {
-		    if (with_filename)
-		      std::cout << fn << ":\n";
-		    if (zw_stack_depth (out.get ()) > 1)
-		      std::cout << "---\n";
-		    for (size_t i = 0, n = zw_stack_depth (out.get ());
-			 i < n; ++i)
-		      {
-			auto const *val = zw_stack_at (out.get (), i);
-			assert (val != nullptr);
-			dump_value (std::cout, *val, true);
-			std::cout << std::endl;
-		      }
-		  }
-		else
-		  ++count;
-	      }
+	      match = true;
+	      if (! show_count)
+		{
+		  if (with_filename)
+		    std::cout << fn << ":\n";
+		  if (zw_stack_depth (out.get ()) > 1)
+		    std::cout << "---\n";
+		  for (size_t i = 0, n = zw_stack_depth (out.get ());
+		       i < n; ++i)
+		    {
+		      auto const *val = zw_stack_at (out.get (), i);
+		      assert (val != nullptr);
+		      dump_value (std::cout, *val, true);
+		      std::cout << std::endl;
+		    }
+		}
+	      else
+		++count;
+	    }
 
-	    if (show_count)
-	      {
-		if (with_filename)
-		  std::cout << fn << ":";
-		std::cout << std::dec << count << std::endl;
-	      }
-	  }
-	catch (std::runtime_error const &e)
-	  {
-	    if (! no_messages)
-	      std::cout << "dwgrep: " << (fn[0] != '\0' ? fn : "<no-file>")
-			<< ": " << e.what () << std::endl;
+	  if (show_count)
+	    {
+	      if (with_filename)
+		std::cout << fn << ":";
+	      std::cout << std::dec << count << std::endl;
+	    }
+	}
+      catch (std::runtime_error const &e)
+	{
+	  if (! no_messages)
+	    std::cout << "dwgrep: " << (fn[0] != '\0' ? fn : "<no-file>")
+		      << ": " << e.what () << std::endl;
 
-	    if (verbosity >= 0)
-	      errors = true;
+	  if (verbosity >= 0)
+	    errors = true;
 
-	    continue;
-	  }
-	catch (...)
-	  {
-	    std::cout << "blah\n";
-	    continue;
-	  }
+	  continue;
+	}
+      catch (...)
+	{
+	  std::cout << "blah\n";
+	  continue;
+	}
 
     if (errors)
 	return 2;
