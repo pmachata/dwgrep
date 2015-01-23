@@ -384,20 +384,8 @@ try
 				   zw_throw_on_error {})};
 
 	  uint64_t count = 0;
-	  while (true)
+	  while (auto out = zw_result_next (*result))
 	    {
-	      std::unique_ptr <zw_stack, zw_deleter> out {[&] ()
-		  {
-		    zw_stack *stk;
-		    zw_result_next (result.get (), &stk,
-				    zw_throw_on_error {});
-		    return stk;
-		  } ()};
-
-	      if (out == nullptr)
-		// No more results.
-		  break;
-
 		// grep: Exit immediately with zero status if any match
 		// is found, even if an error was detected.
 		if (verbosity < 0)

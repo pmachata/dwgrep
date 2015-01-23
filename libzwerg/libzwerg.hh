@@ -88,4 +88,12 @@ struct zw_throw_on_error
   }
 };
 
+inline std::unique_ptr <zw_stack, zw_deleter>
+zw_result_next (zw_result &result)
+{
+  zw_stack *stk;
+  zw_result_next (&result, &stk, zw_throw_on_error {});
+  return std::unique_ptr <zw_stack, zw_deleter> {stk};
+}
+
 #endif
