@@ -51,6 +51,26 @@ LIBZWERG_0.1 {
 	zw_value_seq_length;
 	zw_value_seq_at;
 
+	zw_cdom_dw_tag;
+	zw_cdom_dw_attr;
+	zw_cdom_dw_form;
+	zw_cdom_dw_lang;
+	zw_cdom_dw_macinfo;
+	zw_cdom_dw_macro;
+	zw_cdom_dw_inline;
+	zw_cdom_dw_encoding;
+	zw_cdom_dw_access;
+	zw_cdom_dw_visibility;
+	zw_cdom_dw_virtuality;
+	zw_cdom_dw_identifier_case;
+	zw_cdom_dw_calling_convention;
+	zw_cdom_dw_ordering;
+	zw_cdom_dw_discr_list;
+	zw_cdom_dw_decimal_sign;
+	zw_cdom_dw_locexpr_opcode;
+	zw_cdom_dw_address_class;
+	zw_cdom_dw_endianity;
+
 	zw_value_init_dwarf;
 	zw_value_init_dwarf_raw;
 	zw_value_is_dwarf;

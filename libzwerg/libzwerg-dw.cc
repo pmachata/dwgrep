@@ -30,6 +30,140 @@
 
 #include "builtin-dw.hh"
 #include "value-dw.hh"
+#include "dwcst.hh"
+
+zw_cdom const *
+zw_cdom_dw_tag (void)
+{
+  static zw_cdom cdom {dw_tag_dom ()};
+  return &cdom;
+}
+
+zw_cdom const *
+zw_cdom_dw_attr (void)
+{
+  static zw_cdom cdom {dw_attr_dom ()};
+  return &cdom;
+}
+
+zw_cdom const *
+zw_cdom_dw_form (void)
+{
+  static zw_cdom cdom {dw_form_dom ()};
+  return &cdom;
+}
+
+zw_cdom const *
+zw_cdom_dw_lang (void)
+{
+  static zw_cdom cdom {dw_lang_dom ()};
+  return &cdom;
+}
+
+zw_cdom const *
+zw_cdom_dw_macinfo (void)
+{
+  static zw_cdom cdom {dw_macinfo_dom ()};
+  return &cdom;
+}
+
+zw_cdom const *
+zw_cdom_dw_macro (void)
+{
+  static zw_cdom cdom {dw_macro_dom ()};
+  return &cdom;
+}
+
+zw_cdom const *
+zw_cdom_dw_inline (void)
+{
+  static zw_cdom cdom {dw_inline_dom ()};
+  return &cdom;
+}
+
+zw_cdom const *
+zw_cdom_dw_encoding (void)
+{
+  static zw_cdom cdom {dw_encoding_dom ()};
+  return &cdom;
+}
+
+zw_cdom const *
+zw_cdom_dw_access (void)
+{
+  static zw_cdom cdom {dw_access_dom ()};
+  return &cdom;
+}
+
+zw_cdom const *
+zw_cdom_dw_visibility (void)
+{
+  static zw_cdom cdom {dw_visibility_dom ()};
+  return &cdom;
+}
+
+zw_cdom const *
+zw_cdom_dw_virtuality (void)
+{
+  static zw_cdom cdom {dw_virtuality_dom ()};
+  return &cdom;
+}
+
+zw_cdom const *
+zw_cdom_dw_identifier_case (void)
+{
+  static zw_cdom cdom {dw_identifier_case_dom ()};
+  return &cdom;
+}
+
+zw_cdom const *
+zw_cdom_dw_calling_convention (void)
+{
+  static zw_cdom cdom {dw_calling_convention_dom ()};
+  return &cdom;
+}
+
+zw_cdom const *
+zw_cdom_dw_ordering (void)
+{
+  static zw_cdom cdom {dw_ordering_dom ()};
+  return &cdom;
+}
+
+zw_cdom const *
+zw_cdom_dw_discr_list (void)
+{
+  static zw_cdom cdom {dw_discr_list_dom ()};
+  return &cdom;
+}
+
+zw_cdom const *
+zw_cdom_dw_decimal_sign (void)
+{
+  static zw_cdom cdom {dw_decimal_sign_dom ()};
+  return &cdom;
+}
+
+zw_cdom const *
+zw_cdom_dw_locexpr_opcode (void)
+{
+  static zw_cdom cdom {dw_locexpr_opcode_dom ()};
+  return &cdom;
+}
+
+zw_cdom const *
+zw_cdom_dw_address_class (void)
+{
+  static zw_cdom cdom {dw_address_class_dom ()};
+  return &cdom;
+}
+
+zw_cdom const *
+zw_cdom_dw_endianity (void)
+{
+  static zw_cdom cdom {dw_endianity_dom ()};
+  return &cdom;
+}
 
 zw_vocabulary const *
 zw_vocabulary_dwarf (zw_error **out_err)
