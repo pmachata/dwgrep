@@ -1,0 +1,7 @@
+set hex "0\[xX\]\[0-9a-fA-F\]+"
+set decimal "\[0-9\]+"
+set path $::env(GDB_SRCPATH)
+set tspath [file join $path gdb testsuite]
+set srcdir $tspath
+
+source [file join $tspath lib dwarf.exp]
