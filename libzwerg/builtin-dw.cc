@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2014 Red Hat, Inc.
+   Copyright (C) 2014, 2015 Red Hat, Inc.
    This file is part of dwgrep.
 
    This file is free software; you can redistribute it and/or modify
@@ -48,23 +48,16 @@
 #include "cache.hh"
 
 // dwopen
-namespace
+value_dwarf
+op_dwopen_str::operate (std::unique_ptr <value_str> a)
 {
-  struct op_dwopen_str
-    : public op_once_overload <value_dwarf, value_str>
-  {
-    using op_once_overload::op_once_overload;
+  return value_dwarf (a->get_string (), 0, doneness::cooked);
+}
 
-    value_dwarf
-    operate (std::unique_ptr <value_str> a) override
-    {
-      return value_dwarf (a->get_string (), 0, doneness::cooked);
-    }
-
-    static std::string
-    docstring ()
-    {
-      return
+std::string
+op_dwopen_str::docstring ()
+{
+  return
 R"docstring(
 
 Takes a string, which is interpreted as a file name, that file is
@@ -74,8 +67,6 @@ opened, and a Dwarf value representing that file is yielded::
 	CU 0
 
 )docstring";
-    }
-  };
 }
 
 
@@ -131,23 +122,19 @@ namespace
       return std::make_unique <value_cu> (m_dwctx, cu, off, m_i++, m_doneness);
     }
   };
+}
 
-  struct op_unit_dwarf
-    : public op_yielding_overload <value_cu, value_dwarf>
-  {
-    using op_yielding_overload::op_yielding_overload;
+std::unique_ptr <value_producer <value_cu>>
+op_unit_dwarf::operate (std::unique_ptr <value_dwarf> a)
+{
+  return std::make_unique <dwarf_unit_producer> (a->get_dwctx (),
+						 a->get_doneness ());
+}
 
-    std::unique_ptr <value_producer <value_cu>>
-    operate (std::unique_ptr <value_dwarf> a) override
-    {
-      return std::make_unique <dwarf_unit_producer> (a->get_dwctx (),
-						     a->get_doneness ());
-    }
-
-    static std::string
-    docstring ()
-    {
-      return
+std::string
+op_unit_dwarf::docstring ()
+{
+  return
 R"docstring(
 
 Take a Dwarf on TOS and yield units defined therein.  In raw mode,
@@ -175,9 +162,11 @@ This operator is identical in operation to the following expression::
 	entry ?root unit
 
 )docstring";
-    }
-  };
+}
 
+
+namespace
+{
   value_cu
   cu_for_die (std::shared_ptr <dwfl_context> dwctx, Dwarf_Die die, doneness d)
   {
@@ -190,22 +179,19 @@ This operator is identical in operation to the following expression::
 
     return value_cu (dwctx, *(*cuit)->cu, cuit.offset (), 0, d);
   }
+}
 
-  struct op_unit_die
-    : public op_once_overload <value_cu, value_die>
-  {
-    using op_once_overload::op_once_overload;
 
-    value_cu
-    operate (std::unique_ptr <value_die> a) override
-    {
-      return cu_for_die (a->get_dwctx (), a->get_die (), a->get_doneness ());
-    }
+value_cu
+op_unit_die::operate (std::unique_ptr <value_die> a)
+{
+  return cu_for_die (a->get_dwctx (), a->get_die (), a->get_doneness ());
+}
 
-    static std::string
-    docstring ()
-    {
-      return
+std::string
+op_unit_die::docstring ()
+{
+  return
 R"docstring(
 
 Take a DIE on TOS and yield a unit that this DIE belongs to::
@@ -218,24 +204,18 @@ Take a DIE on TOS and yield a unit that this DIE belongs to::
 	CU 0
 
 )docstring";
-    }
-  };
+}
 
-  struct op_unit_attr
-    : public op_once_overload <value_cu, value_attr>
-  {
-    using op_once_overload::op_once_overload;
+value_cu
+op_unit_attr::operate (std::unique_ptr <value_attr> a)
+{
+  return cu_for_die (a->get_dwctx (), a->get_die (), doneness::cooked);
+}
 
-    value_cu
-    operate (std::unique_ptr <value_attr> a) override
-    {
-      return cu_for_die (a->get_dwctx (), a->get_die (), doneness::cooked);
-    }
-
-    static std::string
-    docstring ()
-    {
-      return
+std::string
+op_unit_attr::docstring ()
+{
+  return
 R"docstring(
 
 Take an attribute on TOS and yield a unit where the attribute
@@ -251,8 +231,6 @@ originated::
 	CU 0x53
 
 )docstring";
-    }
-  };
 }
 
 // entry
@@ -381,23 +359,20 @@ namespace
     return std::make_unique <die_it_producer <all_dies_iterator>>
       (dwctx, dwpp_cudie (cu), d);
   }
+}
 
-  struct op_entry_cu
-    : public op_yielding_overload <value_die, value_cu>
-  {
-    using op_yielding_overload::op_yielding_overload;
 
-    std::unique_ptr <value_producer <value_die>>
-    operate (std::unique_ptr <value_cu> a) override
-    {
-      return make_cu_entry_producer (a->get_dwctx (), a->get_cu (),
-				     a->get_doneness ());
-    }
+std::unique_ptr <value_producer <value_die>>
+op_entry_cu::operate (std::unique_ptr <value_cu> a)
+{
+  return make_cu_entry_producer (a->get_dwctx (), a->get_cu (),
+				 a->get_doneness ());
+}
 
-    static std::string
-    docstring ()
-    {
-      return
+std::string
+op_entry_cu::docstring ()
+{
+  return
 R"docstring(
 
 Takes a CU on TOS and yield DIE's that it defines::
@@ -430,9 +405,10 @@ several times, each time in a different context::
 	[14] pointer_type inside [b] partial_unit
 
 )docstring";
-    }
-  };
+}
 
+namespace
+{
   template <class A, class B>
   struct op_entry_dwarf_base
     : public stub_op
@@ -458,7 +434,7 @@ several times, each time in a different context::
 R"docstring(
 
 Takes a Dwarf on TOS and yields DIE's that it contains.  This operator
-behaves equivalently to tho following::
+behaves equivalently to the following::
 
 	unit entry
 
@@ -477,6 +453,7 @@ behaves equivalently to tho following::
   };
 }
 
+
 // child
 namespace
 {
@@ -487,23 +464,20 @@ namespace
     return std::make_unique <die_it_producer <child_iterator>>
       (dwctx, parent, d);
   }
+}
 
-  struct op_child_die
-    : public op_yielding_overload <value_die, value_die>
-  {
-    using op_yielding_overload::op_yielding_overload;
 
-    std::unique_ptr <value_producer <value_die>>
-    operate (std::unique_ptr <value_die> a) override
-    {
-      return make_die_child_producer (a->get_dwctx (), a->get_die (),
-				      a->get_doneness ());
-    }
+std::unique_ptr <value_producer <value_die>>
+op_child_die::operate (std::unique_ptr <value_die> a)
+{
+  return make_die_child_producer (a->get_dwctx (), a->get_die (),
+				  a->get_doneness ());
+}
 
-    static std::string
-    docstring ()
-    {
-      return
+std::string
+op_child_die::docstring ()
+{
+  return
 R"docstring(
 
 Takes a DIE on TOS and yields all its children.  If the taken DIE is
@@ -528,9 +502,8 @@ children::
 	[103] variable
 
 )docstring";
-    }
-  };
 }
+
 
 // elem, relem
 namespace
@@ -592,43 +565,34 @@ Takes a location expression on TOS and yields individual operators::
 ``relem`` yields elements backwards.
 
 )docstring";
+}
 
-  struct op_elem_loclist_elem
-    : public op_yielding_overload <value_loclist_op, value_loclist_elem>
-  {
-    using op_yielding_overload::op_yielding_overload;
+std::unique_ptr <value_producer <value_loclist_op>>
+op_elem_loclist_elem::operate (std::unique_ptr <value_loclist_elem> a)
+{
+  return std::make_unique <elem_loclist_producer> (std::move (a), true);
+}
 
-    std::unique_ptr <value_producer <value_loclist_op>>
-    operate (std::unique_ptr <value_loclist_elem> a) override
-    {
-      return std::make_unique <elem_loclist_producer> (std::move (a), true);
-    }
+std::string
+op_elem_loclist_elem::docstring ()
+{
+  return elem_loclist_docstring;
+}
 
-    static std::string
-    docstring ()
-    {
-      return elem_loclist_docstring;
-    }
-  };
+std::unique_ptr <value_producer <value_loclist_op>>
+op_relem_loclist_elem::operate (std::unique_ptr <value_loclist_elem> a)
+{
+  return std::make_unique <elem_loclist_producer> (std::move (a), false);
+}
 
-  struct op_relem_loclist_elem
-    : public op_yielding_overload <value_loclist_op, value_loclist_elem>
-  {
-    using op_yielding_overload::op_yielding_overload;
+std::string
+op_relem_loclist_elem::docstring ()
+{
+  return elem_loclist_docstring;
+}
 
-    std::unique_ptr <value_producer <value_loclist_op>>
-    operate (std::unique_ptr <value_loclist_elem> a) override
-    {
-      return std::make_unique <elem_loclist_producer> (std::move (a), false);
-    }
-
-    static std::string
-    docstring ()
-    {
-      return elem_loclist_docstring;
-    }
-  };
-
+namespace
+{
   struct elem_aset_producer
     : public value_producer <value_cst>
   {
@@ -695,45 +659,34 @@ Example::
 ``relem`` behaves similarly, but yields addresses in reverse order.
 
 )docstring";
-
-  struct op_elem_aset
-    : public op_yielding_overload <value_cst, value_aset>
-  {
-    using op_yielding_overload::op_yielding_overload;
-
-    std::unique_ptr <value_producer <value_cst>>
-    operate (std::unique_ptr <value_aset> val) override
-    {
-      return std::make_unique <elem_aset_producer>
-	(val->get_coverage (), true);
-    }
-
-    static std::string
-    docstring ()
-    {
-      return elem_aset_docstring;
-    }
-  };
-
-  struct op_relem_aset
-    : public op_yielding_overload <value_cst, value_aset>
-  {
-    using op_yielding_overload::op_yielding_overload;
-
-    std::unique_ptr <value_producer <value_cst>>
-    operate (std::unique_ptr <value_aset> val) override
-    {
-      return std::make_unique <elem_aset_producer>
-	(val->get_coverage (), false);
-    }
-
-    static std::string
-    docstring ()
-    {
-      return elem_aset_docstring;
-    }
-  };
 }
+
+std::unique_ptr <value_producer <value_cst>>
+op_elem_aset::operate (std::unique_ptr <value_aset> val)
+{
+  return std::make_unique <elem_aset_producer>
+    (val->get_coverage (), true);
+}
+
+std::string
+op_elem_aset::docstring ()
+{
+  return elem_aset_docstring;
+}
+
+std::unique_ptr <value_producer <value_cst>>
+op_relem_aset::operate (std::unique_ptr <value_aset> val)
+{
+  return std::make_unique <elem_aset_producer>
+    (val->get_coverage (), false);
+}
+
+std::string
+op_relem_aset::docstring ()
+{
+  return elem_aset_docstring;
+}
+
 
 // attribute
 namespace
@@ -859,22 +812,18 @@ namespace
 		(m_dwctx, at, m_die, m_i++, m_doneness);
     }
   };
+}
 
-  struct op_attribute_die
-    : public op_yielding_overload <value_attr, value_die>
-  {
-    using op_yielding_overload::op_yielding_overload;
+std::unique_ptr <value_producer <value_attr>>
+op_attribute_die::operate (std::unique_ptr <value_die> a)
+{
+  return std::make_unique <attribute_producer> (std::move (a));
+}
 
-    std::unique_ptr <value_producer <value_attr>>
-    operate (std::unique_ptr <value_die> a) override
-    {
-      return std::make_unique <attribute_producer> (std::move (a));
-    }
-
-    static std::string
-    docstring ()
-    {
-      return
+std::string
+op_attribute_die::docstring ()
+{
+  return
 R"docstring(
 
 Takes a DIE on TOS and yields its individual attributes.  If it is a
@@ -913,28 +862,20 @@ Example::
 	decl_line (data1)	3;
 
 )docstring";
-    }
-  };
 }
 
-// offset
-namespace
-{
-  struct op_offset_cu
-    : public op_once_overload <value_cst, value_cu>
-  {
-    using op_once_overload::op_once_overload;
 
-    value_cst
-    operate (std::unique_ptr <value_cu> a) override
+// offset
+value_cst
+op_offset_cu::operate (std::unique_ptr <value_cu> a)
     {
       return value_cst {constant {a->get_offset (), &dw_offset_dom ()}, 0};
     }
 
-    static std::string
-    docstring ()
-    {
-      return
+std::string
+op_offset_cu::docstring ()
+{
+  return
 R"docstring(
 
 Takes a CU on TOS and yields its offset inside the Dwarf section that
@@ -971,25 +912,20 @@ Example::
 	<Dwarf "tests/a1.out">
 
 )docstring";
-    }
-  };
+}
 
-  struct op_offset_die
-    : public op_once_overload <value_cst, value_die>
-  {
-    using op_once_overload::op_once_overload;
 
-    value_cst
-    operate (std::unique_ptr <value_die> val) override
-    {
-      constant c {dwarf_dieoffset (&val->get_die ()), &dw_offset_dom ()};
-      return value_cst {c, 0};
-    }
+value_cst
+op_offset_die::operate (std::unique_ptr <value_die> val)
+{
+  constant c {dwarf_dieoffset (&val->get_die ()), &dw_offset_dom ()};
+  return value_cst {c, 0};
+}
 
-    static std::string
-    docstring ()
-    {
-      return
+std::string
+op_offset_die::docstring ()
+{
+  return
 R"docstring(
 
 Takes a DIE on TOS and yields its offset inside the Dwarf section that
@@ -1022,25 +958,20 @@ compare unequal despite them being physically the same DIE::
 	<Dwarf "tests/dwz-partial2-1">: [14] typedef != [14] typedef
 
 )docstring";
-    }
-  };
+}
 
-  struct op_offset_loclist_op
-    : public op_once_overload <value_cst, value_loclist_op>
-  {
-    using op_once_overload::op_once_overload;
 
-    value_cst
-    operate (std::unique_ptr <value_loclist_op> val) override
-    {
-      Dwarf_Op const *dwop = val->get_dwop ();
-      return value_cst {constant {dwop->offset, &dw_offset_dom ()}, 0};
-    }
+value_cst
+op_offset_loclist_op::operate (std::unique_ptr <value_loclist_op> val)
+{
+  Dwarf_Op const *dwop = val->get_dwop ();
+  return value_cst {constant {dwop->offset, &dw_offset_dom ()}, 0};
+}
 
-    static std::string
-    docstring ()
-    {
-      return
+std::string
+op_offset_loclist_op::docstring ()
+{
+  return
 R"docstring(
 
 Takes a location list operation on TOS and yields its offset within
@@ -1063,28 +994,21 @@ the containing location expression::
 	0x13
 
 )docstring";
-    }
-  };
 }
 
+
 // address
-namespace
+
+value_aset
+op_address_die::operate (std::unique_ptr <value_die> a)
 {
-  struct op_address_die
-    : public op_once_overload <value_aset, value_die>
-  {
-    using op_once_overload::op_once_overload;
+  return die_ranges (a->get_die ());
+}
 
-    value_aset
-    operate (std::unique_ptr <value_die> a) override
-    {
-      return die_ranges (a->get_die ());
-    }
-
-    static std::string
-    docstring ()
-    {
-      return
+std::string
+op_address_die::docstring ()
+{
+  return
 R"docstring(
 
 Takes a DIE on TOS and yields an address set describing address ranges
@@ -1094,9 +1018,10 @@ covered by this DIE.  (This calls dwarf_ranges under the covers.)::
 	[0x80482f0, 0x80482f3)
 
 )docstring";
-    }
-  };
+}
 
+namespace
+{
   std::unique_ptr <value_cst>
   get_die_addr (Dwarf_Die &die, int (cb) (Dwarf_Die *, Dwarf_Addr *))
   {
@@ -1118,41 +1043,38 @@ covered by this DIE.  (This calls dwarf_ranges under the covers.)::
       return nullptr;
     return get_die_addr (die, cb);
   }
+}
 
-  struct op_address_attr
-    : public op_overload <value_cst, value_attr>
-  {
-    using op_overload::op_overload;
 
-    std::unique_ptr <value_cst>
-    operate (std::unique_ptr <value_attr> a) override
+std::unique_ptr <value_cst>
+op_address_attr::operate (std::unique_ptr <value_attr> a)
+{
+  if (dwarf_whatattr (&a->get_attr ()) == DW_AT_high_pc)
+    return get_die_addr (a->get_die (), &dwarf_highpc);
+
+  if (dwarf_whatattr (&a->get_attr ()) == DW_AT_entry_pc)
+    return get_die_addr (a->get_die (), &dwarf_entrypc);
+
+  if (dwarf_whatform (&a->get_attr ()) == DW_FORM_addr)
     {
-      if (dwarf_whatattr (&a->get_attr ()) == DW_AT_high_pc)
-	return get_die_addr (a->get_die (), &dwarf_highpc);
-
-      if (dwarf_whatattr (&a->get_attr ()) == DW_AT_entry_pc)
-	return get_die_addr (a->get_die (), &dwarf_entrypc);
-
-      if (dwarf_whatform (&a->get_attr ()) == DW_FORM_addr)
-	{
-	  Dwarf_Addr addr;
-	  if (dwarf_formaddr (&a->get_attr (), &addr) < 0)
-	    throw_libdw ();
-	  return std::make_unique <value_cst>
-	    (constant {addr, &dw_address_dom ()}, 0);
-	}
-
-      std::cerr << "`address' applied to non-address attribute:\n    ";
-      a->show (std::cerr, brevity::brief);
-      std::cerr << std::endl;
-
-      return nullptr;
+      Dwarf_Addr addr;
+      if (dwarf_formaddr (&a->get_attr (), &addr) < 0)
+	throw_libdw ();
+      return std::make_unique <value_cst>
+	(constant {addr, &dw_address_dom ()}, 0);
     }
 
-    static std::string
-    docstring ()
-    {
-      return
+  std::cerr << "`address' applied to non-address attribute:\n    ";
+  a->show (std::cerr, brevity::brief);
+  std::cerr << std::endl;
+
+  return nullptr;
+}
+
+std::string
+op_address_attr::docstring ()
+{
+  return
 R"docstring(
 
 Takes a DIE attribute on TOS and yields an address that it references.
@@ -1172,29 +1094,24 @@ value to absolute address::
 	0x10020
 
 )docstring";
-    }
-  };
+}
 
-  struct op_address_loclist_elem
-    : public op_once_overload <value_aset, value_loclist_elem>
-  {
-    using op_once_overload::op_once_overload;
 
-    value_aset
-    operate (std::unique_ptr <value_loclist_elem> val) override
-    {
-      uint64_t low = val->get_low ();
-      uint64_t len = val->get_high () - low;
+value_aset
+op_address_loclist_elem::operate (std::unique_ptr <value_loclist_elem> val)
+{
+  uint64_t low = val->get_low ();
+  uint64_t len = val->get_high () - low;
 
-      coverage cov;
-      cov.add (low, len);
-      return value_aset {cov, 0};
-    }
+  coverage cov;
+  cov.add (low, len);
+  return value_aset {cov, 0};
+}
 
-    static std::string
-    docstring ()
-    {
-      return
+std::string
+op_address_loclist_elem::docstring ()
+{
+  return
 R"docstring(
 
 Takes a location list element on TOS and yields an address set
@@ -1214,29 +1131,22 @@ describing where it is valid::
 	[0x1001a, 0x10020)
 
 )docstring";
-    }
-  };
 }
 
+
 // label
-namespace
+
+value_cst
+op_label_die::operate (std::unique_ptr <value_die> val)
 {
-  struct op_label_die
-    : public op_once_overload <value_cst, value_die>
-  {
-    using op_once_overload::op_once_overload;
+  int tag = dwarf_tag (&val->get_die ());
+  return value_cst {constant {tag, &dw_tag_dom ()}, 0};
+}
 
-    value_cst
-    operate (std::unique_ptr <value_die> val) override
-    {
-      int tag = dwarf_tag (&val->get_die ());
-      return value_cst {constant {tag, &dw_tag_dom ()}, 0};
-    }
-
-    static std::string
-    docstring ()
-    {
-      return
+std::string
+op_label_die::docstring ()
+{
+  return
 R"docstring(
 
 Takes a DIE on TOS and yields its tag::
@@ -1246,25 +1156,20 @@ Takes a DIE on TOS and yields its tag::
 	DW_TAG_partial_unit
 
 )docstring";
-    }
-  };
+}
 
-  struct op_label_attr
-    : public op_once_overload <value_cst, value_attr>
-  {
-    using op_once_overload::op_once_overload;
 
-    value_cst
-    operate (std::unique_ptr <value_attr> val) override
-    {
-      constant cst {dwarf_whatattr (&val->get_attr ()), &dw_attr_dom ()};
-      return value_cst {cst, 0};
-    }
+value_cst
+op_label_attr::operate (std::unique_ptr <value_attr> val)
+{
+  constant cst {dwarf_whatattr (&val->get_attr ()), &dw_attr_dom ()};
+  return value_cst {cst, 0};
+}
 
-    static std::string
-    docstring ()
-    {
-      return
+std::string
+op_label_attr::docstring ()
+{
+  return
 R"docstring(
 
 Takes an attribute on TOS and yields its name::
@@ -1279,26 +1184,21 @@ Takes an attribute on TOS and yields its name::
 	DW_AT_stmt_list
 
 )docstring";
-    }
-  };
+}
 
-  struct op_label_loclist_op
-    : public op_once_overload <value_cst, value_loclist_op>
-  {
-    using op_once_overload::op_once_overload;
 
-    value_cst
-    operate (std::unique_ptr <value_loclist_op> val) override
-    {
-      constant cst {val->get_dwop ()->atom, &dw_locexpr_opcode_dom (),
-		    brevity::brief};
-      return value_cst {cst, 0};
-    }
+value_cst
+op_label_loclist_op::operate (std::unique_ptr <value_loclist_op> val)
+{
+  constant cst {val->get_dwop ()->atom, &dw_locexpr_opcode_dom (),
+      brevity::brief};
+  return value_cst {cst, 0};
+}
 
-    static std::string
-    docstring ()
-    {
-      return
+std::string
+op_label_loclist_op::docstring ()
+{
+  return
 R"docstring(
 
 Takes a location expression instruction on TOS and yields the
@@ -1313,39 +1213,32 @@ operator::
 	reg5
 
 )docstring";
-    }
-  };
 }
 
+
 // form
-namespace
+
+value_cst
+op_form_attr::operate (std::unique_ptr <value_attr> val)
 {
-  struct op_form_attr
-    : public op_once_overload <value_cst, value_attr>
-  {
-    using op_once_overload::op_once_overload;
+  constant cst {dwarf_whatform (&val->get_attr ()), &dw_form_dom ()};
+  return value_cst {cst, 0};
+}
 
-    value_cst
-    operate (std::unique_ptr <value_attr> val) override
-    {
-      constant cst {dwarf_whatform (&val->get_attr ()), &dw_form_dom ()};
-      return value_cst {cst, 0};
-    }
-
-    static std::string
-    docstring ()
-    {
-      return
+std::string
+op_form_attr::docstring ()
+{
+  return
 R"docstring(
 
 Takes an attribute on TOS and yields its form.
 
 )docstring";
-    }
-  };
 }
 
+
 // parent
+
 namespace
 {
   template <class T>
@@ -1363,52 +1256,48 @@ namespace
     return true;
   }
 
-  struct op_parent_die
-    : public op_overload <value_die, value_die>
+  static bool
+  parent_die_handle_import (std::shared_ptr <value_die> &a)
   {
-    using op_overload::op_overload;
+    if (auto b = a->get_import ())
+      {
+	a = b;
+	return true;
+      }
+    return false;
+  }
 
-    bool
-    pop_import (std::shared_ptr <value_die> &a)
-    {
-      if (auto b = a->get_import ())
-	{
-	  a = b;
-	  return true;
-	}
-      return false;
-    }
+  static std::unique_ptr <value_die>
+  parent_die_operate (std::shared_ptr <value_die> a)
+  {
+    doneness d = a->get_doneness ();
 
-    std::unique_ptr <value_die>
-    do_operate (std::shared_ptr <value_die> a)
-    {
-      doneness d = a->get_doneness ();
+    // Both cooked and raw DIE's have parents (unless they don't, in
+    // which case we are already at root).  But for cooked DIE's,
+    // when the parent is partial unit root, we need to traverse
+    // further along the import chain.
+    Dwarf_Die par_die;
+    do
+      if (! get_parent (*a, par_die))
+	return nullptr;
+    while (d == doneness::cooked
+	   && dwarf_tag (&par_die) == DW_TAG_partial_unit
+	   && parent_die_handle_import (a));
 
-      // Both cooked and raw DIE's have parents (unless they don't, in
-      // which case we are already at root).  But for cooked DIE's,
-      // when the parent is partial unit root, we need to traverse
-      // further along the import chain.
-      Dwarf_Die par_die;
-      do
-	if (! get_parent (*a, par_die))
-	  return nullptr;
-      while (d == doneness::cooked
-	     && dwarf_tag (&par_die) == DW_TAG_partial_unit
-	     && pop_import (a));
+    return std::make_unique <value_die> (a->get_dwctx (), par_die, 0, d);
+  }
+}
 
-      return std::make_unique <value_die> (a->get_dwctx (), par_die, 0, d);
-    }
+std::unique_ptr <value_die>
+op_parent_die::operate (std::unique_ptr <value_die> a)
+{
+  return parent_die_operate (std::move (a));
+}
 
-    std::unique_ptr <value_die>
-    operate (std::unique_ptr <value_die> a) override
-    {
-      return do_operate (std::move (a));
-    }
-
-    static std::string
-    docstring ()
-    {
-      return
+std::string
+op_parent_die::docstring ()
+{
+  return
 R"docstring(
 
 Takes a DIE on TOS and yields its parental DIE.  For cooked DIE's, in
@@ -1428,103 +1317,87 @@ particular DIE was explored::
 	[b] compile_unit
 
 )docstring";
-    }
-  };
 }
 
+
 // ?root
-namespace
+
+pred_result
+pred_rootp_die::result (value_die &a)
 {
-  struct pred_rootp_die
-    : public pred_overload <value_die>
-  {
-    using pred_overload <value_die>::pred_overload;
+  // N.B. the following works the same for raw as well as cooked
+  // DIE's.  The difference in behavior is in 'parent', which for
+  // cooked DIE's should never get to DW_TAG_partial_unit DIE
+  // unless we've actually started traversal in that partial unit.
+  // In that case it's fully legitimate that ?root holds on such
+  // node.
+  return pred_result (a.get_dwctx ()->is_root (a.get_die ()));
+}
 
-    pred_result
-    result (value_die &a) override
-    {
-      // N.B. the following works the same for raw as well as cooked
-      // DIE's.  The difference in behavior is in 'parent', which for
-      // cooked DIE's should never get to DW_TAG_partial_unit DIE
-      // unless we've actually started traversal in that partial unit.
-      // In that case it's fully legitimate that ?root holds on such
-      // node.
-      return pred_result (a.get_dwctx ()->is_root (a.get_die ()));
-    }
-
-    static std::string
-    docstring ()
-    {
-      return
+std::string
+pred_rootp_die::docstring ()
+{
+  return
 R"docstring(
 
 Holds for root DIE's, i.e. DIE's that don't have a parental DIE.
 
 )docstring";
-    }
-  };
 }
 
+
 // root
-namespace
+
+value_die
+op_root_cu::operate (std::unique_ptr <value_cu> a)
 {
-  struct op_root_cu
-    : public op_once_overload <value_die, value_cu>
-  {
-    using op_once_overload::op_once_overload;
+  Dwarf_CU &cu = a->get_cu ();
+  Dwarf_Die cudie;
+  if (dwarf_cu_die (&cu, &cudie, nullptr, nullptr,
+		    nullptr, nullptr, nullptr, nullptr) == nullptr)
+    throw_libdw ();
 
-    value_die
-    operate (std::unique_ptr <value_cu> a) override
-    {
-      Dwarf_CU &cu = a->get_cu ();
-      Dwarf_Die cudie;
-      if (dwarf_cu_die (&cu, &cudie, nullptr, nullptr,
-			nullptr, nullptr, nullptr, nullptr) == nullptr)
-	throw_libdw ();
+  return value_die {a->get_dwctx (), cudie, 0,
+      a->get_doneness ()};
+}
 
-      return value_die {a->get_dwctx (), cudie, 0,
-			a->get_doneness ()};
-    }
-
-    static std::string
-    docstring ()
-    {
-      return
+std::string
+op_root_cu::docstring ()
+{
+  return
 R"docstring(
 
 Takes a CU on TOS and yields its root DIE.
 
 )docstring";
-    }
-  };
+}
 
-  struct op_root_die
-    : public op_once_overload <value_die, value_die>
+
+namespace
+{
+  value_die
+  op_root_die_operate (std::shared_ptr <value_die> a)
   {
-    using op_once_overload::op_once_overload;
+    auto d = a->get_doneness ();
+    if (d == doneness::cooked)
+      while (a->get_import () != nullptr)
+	a = a->get_import ();
 
-    static value_die
-    do_operate (std::shared_ptr <value_die> a)
-    {
-      auto d = a->get_doneness ();
-      if (d == doneness::cooked)
-	while (a->get_import () != nullptr)
-	  a = a->get_import ();
+    return value_die {a->get_dwctx (),
+		      dwpp_cudie (a->get_die ()), 0, d};
+  }
+}
 
-      return value_die {a->get_dwctx (),
-			dwpp_cudie (a->get_die ()), 0, d};
-    }
+value_die
+op_root_die::operate (std::unique_ptr <value_die> a)
+{
+  return op_root_die_operate (std::move (a));
+}
 
-    value_die
-    operate (std::unique_ptr <value_die> a) override
-    {
-      return do_operate (std::move (a));
-    }
-
-    static std::string
-    docstring ()
-    {
-      return
+std::string
+op_root_die::docstring ()
+{
+  return
 R"docstring(
 
 Takes a DIE on TOS and yields CU DIE of the unit that this DIE comes
@@ -1532,28 +1405,21 @@ from.  For cooked DIE's follows back through import points and yields
 the CU DIE of this DIE's context.
 
 )docstring";
-    }
-  };
 }
 
+
 // value
-namespace
+
+std::unique_ptr <value_producer <value>>
+op_value_attr::operate (std::unique_ptr <value_attr> a)
 {
-  struct op_value_attr
-    : public op_yielding_overload <value, value_attr>
-  {
-    using op_yielding_overload::op_yielding_overload;
+  return at_value (a->get_dwctx (), a->get_die (), a->get_attr ());
+}
 
-    std::unique_ptr <value_producer <value>>
-    operate (std::unique_ptr <value_attr> a) override
-    {
-      return at_value (a->get_dwctx (), a->get_die (), a->get_attr ());
-    }
-
-    static std::string
-    docstring ()
-    {
-      return
+std::string
+op_value_attr::docstring ()
+{
+  return
 R"docstring(
 
 Takes an attribute on TOS and yields its value.  The value can be of
@@ -1566,26 +1432,21 @@ expressions::
 	0x10010..0x1001a:[0:fbreg<-24>]
 
 )docstring";
-    }
-  };
+}
 
-  struct op_value_loclist_op
-    : public op_yielding_overload <value, value_loclist_op>
-  {
-    using op_yielding_overload::op_yielding_overload;
 
-    std::unique_ptr <value_producer <value>>
-    operate (std::unique_ptr <value_loclist_op> a) override
-    {
-      return std::make_unique <value_producer_cat <value>>
-	(dwop_number (a->get_dwctx (), a->get_attr (), a->get_dwop ()),
-	 dwop_number2 (a->get_dwctx (), a->get_attr (), a->get_dwop ()));
-    }
+std::unique_ptr <value_producer <value>>
+op_value_loclist_op::operate (std::unique_ptr <value_loclist_op> a)
+{
+  return std::make_unique <value_producer_cat <value>>
+    (dwop_number (a->get_dwctx (), a->get_attr (), a->get_dwop ()),
+     dwop_number2 (a->get_dwctx (), a->get_attr (), a->get_dwop ()));
+}
 
-    static std::string
-    docstring ()
-    {
-      return
+std::string
+op_value_loclist_op::docstring ()
+{
+  return
 R"docstring(
 
 Takes a location expression instruction on TOS and yields its
@@ -1601,56 +1462,44 @@ operands::
 Operands could be of any Zwerg type, some will be e.g. DIE's.
 
 )docstring";
-    }
-  };
 }
 
+
 // low
-namespace
+
+std::unique_ptr <value_cst>
+op_low_die::operate (std::unique_ptr <value_die> a)
 {
-  struct op_low_die
-    : public op_overload <value_cst, value_die>
-  {
-    using op_overload::op_overload;
+  return maybe_get_die_addr (a->get_die (), DW_AT_low_pc, &dwarf_lowpc);
+}
 
-    std::unique_ptr <value_cst>
-    operate (std::unique_ptr <value_die> a) override
-    {
-      return maybe_get_die_addr (a->get_die (), DW_AT_low_pc, &dwarf_lowpc);
-    }
-
-    static std::string
-    docstring ()
-    {
-      return
+std::string
+op_low_die::docstring ()
+{
+  return
 R"docstring(
 
 Equivalent to ``@AT_low_pc``.
 
 )docstring";
-    }
-  };
+}
 
-  struct op_low_aset
-    : public op_overload <value_cst, value_aset>
-  {
-    using op_overload::op_overload;
 
-    std::unique_ptr <value_cst>
-    operate (std::unique_ptr <value_aset> a) override
-    {
-      auto &cov = a->get_coverage ();
-      if (cov.empty ())
-	return nullptr;
+std::unique_ptr <value_cst>
+op_low_aset::operate (std::unique_ptr <value_aset> a)
+{
+  auto &cov = a->get_coverage ();
+  if (cov.empty ())
+    return nullptr;
 
-      return std::make_unique <value_cst>
-	(constant {cov.at (0).start, &dw_address_dom ()}, 0);
-    }
+  return std::make_unique <value_cst>
+    (constant {cov.at (0).start, &dw_address_dom ()}, 0);
+}
 
-    static std::string
-    docstring ()
-    {
-      return
+std::string
+op_low_aset::docstring ()
+{
+  return
 R"docstring(
 
 Takes an address set on TOS and yields lowest address set in this set.
@@ -1665,58 +1514,46 @@ Doesn't yield at all if the set is empty::
 	0x10010
 
 )docstring";
-    }
-  };
 }
 
+
 // high
-namespace
+
+std::unique_ptr <value_cst>
+op_high_die::operate (std::unique_ptr <value_die> a)
 {
-  struct op_high_die
-    : public op_overload <value_cst, value_die>
-  {
-    using op_overload::op_overload;
+  return maybe_get_die_addr (a->get_die (), DW_AT_high_pc, &dwarf_highpc);
+}
 
-    std::unique_ptr <value_cst>
-    operate (std::unique_ptr <value_die> a) override
-    {
-      return maybe_get_die_addr (a->get_die (), DW_AT_high_pc, &dwarf_highpc);
-    }
-
-    static std::string
-    docstring ()
-    {
-      return
+std::string
+op_high_die::docstring ()
+{
+  return
 R"docstring(
 
 Equivalent to ``@AT_high_pc``.
 
 )docstring";
-    }
-  };
+}
 
-  struct op_high_aset
-    : public op_overload <value_cst, value_aset>
-  {
-    using op_overload::op_overload;
 
-    std::unique_ptr <value_cst>
-    operate (std::unique_ptr <value_aset> a) override
-    {
-      auto &cov = a->get_coverage ();
-      if (cov.empty ())
-	return nullptr;
+std::unique_ptr <value_cst>
+op_high_aset::operate (std::unique_ptr <value_aset> a)
+{
+  auto &cov = a->get_coverage ();
+  if (cov.empty ())
+    return nullptr;
 
-      auto range = cov.at (cov.size () - 1);
+  auto range = cov.at (cov.size () - 1);
 
-      return std::make_unique <value_cst>
-	(constant {range.start + range.length, &dw_address_dom ()}, 0);
-    }
+  return std::make_unique <value_cst>
+    (constant {range.start + range.length, &dw_address_dom ()}, 0);
+}
 
-    static std::string
-    docstring ()
-    {
-      return
+std::string
+op_high_aset::docstring ()
+{
+  return
 R"docstring(
 
 Takes an address set on TOS and yields highest address of this set.
@@ -1724,11 +1561,11 @@ Note that that address doesn't actually belong to the set.  Doesn't
 yield at all if the set is empty.
 
 )docstring";
-    }
-  };
 }
 
+
 // aset
+
 namespace
 {
   mpz_class
@@ -1749,30 +1586,26 @@ namespace
 
     return v;
   }
+}
 
-  struct op_aset_cst_cst
-    : public op_once_overload <value_aset, value_cst, value_cst>
-  {
-    using op_once_overload::op_once_overload;
+value_aset
+op_aset_cst_cst::operate (std::unique_ptr <value_cst> a,
+			  std::unique_ptr <value_cst> b)
+{
+  auto av = addressify (a->get_constant ());
+  auto bv = addressify (b->get_constant ());
+  if (av > bv)
+    std::swap (av, bv);
 
-    value_aset
-    operate (std::unique_ptr <value_cst> a,
-	     std::unique_ptr <value_cst> b) override
-    {
-      auto av = addressify (a->get_constant ());
-      auto bv = addressify (b->get_constant ());
-      if (av > bv)
-	std::swap (av, bv);
+  coverage cov;
+  cov.add (av.uval (), (bv - av).uval ());
+  return value_aset (cov, 0);
+}
 
-      coverage cov;
-      cov.add (av.uval (), (bv - av).uval ());
-      return value_aset (cov, 0);
-    }
-
-    static std::string
-    docstring ()
-    {
-      return
+std::string
+op_aset_cst_cst::docstring ()
+{
+  return
 R"docstring(
 
 Takes two constants on TOS and constructs an address set that spans
@@ -1780,32 +1613,25 @@ that range.  (The higher address is not considered a part of that
 range though.)
 
 )docstring";
-    }
-  };
 }
 
+
 // add
-namespace
+
+value_aset
+op_add_aset_cst::operate (std::unique_ptr <value_aset> a,
+			  std::unique_ptr <value_cst> b)
 {
-  struct op_add_aset_cst
-    : public op_once_overload <value_aset, value_aset, value_cst>
-  {
-    using op_once_overload::op_once_overload;
+  auto bv = addressify (b->get_constant ());
+  auto ret = a->get_coverage ();
+  ret.add (bv.uval (), 1);
+  return value_aset {std::move (ret), 0};
+}
 
-    value_aset
-    operate (std::unique_ptr <value_aset> a,
-	     std::unique_ptr <value_cst> b) override
-    {
-      auto bv = addressify (b->get_constant ());
-      auto ret = a->get_coverage ();
-      ret.add (bv.uval (), 1);
-      return value_aset {std::move (ret), 0};
-    }
-
-    static std::string
-    docstring ()
-    {
-      return
+std::string
+op_add_aset_cst::docstring ()
+{
+  return
 R"docstring(
 
 Takes an address set and a constant on TOS, and adds the constant to
@@ -1816,27 +1642,22 @@ range covered by given address set::
 	[0x1, 0x2), [0x10010, 0x1001a)
 
 )docstring";
-    }
-  };
+}
 
-  struct op_add_aset_aset
-    : public op_once_overload <value_aset, value_aset, value_aset>
-  {
-    using op_once_overload::op_once_overload;
 
-    value_aset
-    operate (std::unique_ptr <value_aset> a,
-	     std::unique_ptr <value_aset> b) override
-    {
-      auto ret = a->get_coverage ();
-      ret.add_all (b->get_coverage ());
-      return value_aset {std::move (ret), 0};
-    }
+value_aset
+op_add_aset_aset::operate (std::unique_ptr <value_aset> a,
+			   std::unique_ptr <value_aset> b)
+{
+  auto ret = a->get_coverage ();
+  ret.add_all (b->get_coverage ());
+  return value_aset {std::move (ret), 0};
+}
 
-    static std::string
-    docstring ()
-    {
-      return
+std::string
+op_add_aset_aset::docstring ()
+{
+  return
 R"docstring(
 
 Takes two address sets and yields an address set that covers both
@@ -1848,32 +1669,25 @@ their ranges::
 	[0x10000, 0x1001a)
 
 )docstring";
-    }
-  };
 }
 
+
 // sub
-namespace
+
+value_aset
+op_sub_aset_cst::operate (std::unique_ptr <value_aset> a,
+			  std::unique_ptr <value_cst> b)
 {
-  struct op_sub_aset_cst
-    : public op_once_overload <value_aset, value_aset, value_cst>
-  {
-    using op_once_overload::op_once_overload;
+  auto bv = addressify (b->get_constant ());
+  auto ret = a->get_coverage ();
+  ret.remove (bv.uval (), 1);
+  return value_aset {std::move (ret), 0};
+}
 
-    value_aset
-    operate (std::unique_ptr <value_aset> a,
-	     std::unique_ptr <value_cst> b) override
-    {
-      auto bv = addressify (b->get_constant ());
-      auto ret = a->get_coverage ();
-      ret.remove (bv.uval (), 1);
-      return value_aset {std::move (ret), 0};
-    }
-
-    static std::string
-    docstring ()
-    {
-      return
+std::string
+op_sub_aset_cst::docstring ()
+{
+  return
 R"docstring(
 
 Takes an address set and a constant on TOS and yields an address set
@@ -1884,59 +1698,47 @@ with a hole poked at the address given by the constant::
 	[0x10011, 0x1001a)
 
 )docstring";
-    }
-  };
+}
 
-  struct op_sub_aset_aset
-    : public op_once_overload <value_aset, value_aset, value_aset>
-  {
-    using op_once_overload::op_once_overload;
 
-    value_aset
-    operate (std::unique_ptr <value_aset> a,
-	     std::unique_ptr <value_aset> b) override
-    {
-      auto ret = a->get_coverage ();
-      ret.remove_all (b->get_coverage ());
-      return value_aset {std::move (ret), 0};
-    }
+value_aset
+op_sub_aset_aset::operate (std::unique_ptr <value_aset> a,
+			   std::unique_ptr <value_aset> b)
+{
+  auto ret = a->get_coverage ();
+  ret.remove_all (b->get_coverage ());
+  return value_aset {std::move (ret), 0};
+}
 
-    static std::string
-    docstring ()
-    {
-      return
+std::string
+op_sub_aset_aset::docstring ()
+{
+  return
 R"docstring(
 
 Takes two address sets *A* and *B*, and yields an address set that
 contains all of the *A*'s addresses except those covered by *B*.
 
 )docstring";
-    }
-  };
 }
 
+
 // length
-namespace
+
+value_cst
+op_length_aset::operate (std::unique_ptr <value_aset> a)
 {
-  struct op_length_aset
-    : public op_once_overload <value_cst, value_aset>
-  {
-    using op_once_overload::op_once_overload;
+  uint64_t length = 0;
+  for (size_t i = 0; i < a->get_coverage ().size (); ++i)
+    length += a->get_coverage ().at (i).length;
 
-    value_cst
-    operate (std::unique_ptr <value_aset> a) override
-    {
-      uint64_t length = 0;
-      for (size_t i = 0; i < a->get_coverage ().size (); ++i)
-	length += a->get_coverage ().at (i).length;
+  return value_cst {constant {length, &dec_constant_dom}, 0};
+}
 
-      return value_cst {constant {length, &dec_constant_dom}, 0};
-    }
-
-    static std::string
-    docstring ()
-    {
-      return
+std::string
+op_length_aset::docstring ()
+{
+  return
 R"docstring(
 
 Takes an address set on TOS and yields number of addresses covered by
@@ -1946,54 +1748,50 @@ that set::
 	32
 
 )docstring";
+}
+
+
+// range
+
+namespace
+{
+  struct aset_range_producer
+    : public value_producer <value_aset>
+  {
+    std::unique_ptr <value_aset> m_a;
+    size_t m_i;
+
+    aset_range_producer (std::unique_ptr <value_aset> a)
+      : m_a {std::move (a)}
+      , m_i {0}
+    {}
+
+    std::unique_ptr <value_aset>
+    next () override
+    {
+      size_t sz = m_a->get_coverage ().size ();
+      if (m_i >= sz)
+	return nullptr;
+
+      coverage ret;
+      auto range = m_a->get_coverage ().at (m_i);
+      ret.add (range.start, range.length);
+
+      return std::make_unique <value_aset> (ret, m_i++);
     }
   };
 }
 
-// range
-namespace
+std::unique_ptr <value_producer <value_aset>>
+op_range_aset::operate (std::unique_ptr <value_aset> a)
 {
-  struct op_range_aset
-    : public op_yielding_overload <value_aset, value_aset>
-  {
-    using op_yielding_overload::op_yielding_overload;
+  return std::make_unique <aset_range_producer> (std::move (a));
+}
 
-    struct producer
-      : public value_producer <value_aset>
-    {
-      std::unique_ptr <value_aset> m_a;
-      size_t m_i;
-
-      producer (std::unique_ptr <value_aset> a)
-	: m_a {std::move (a)}
-	, m_i {0}
-      {}
-
-      std::unique_ptr <value_aset>
-      next () override
-      {
-	size_t sz = m_a->get_coverage ().size ();
-	if (m_i >= sz)
-	  return nullptr;
-
-	coverage ret;
-	auto range = m_a->get_coverage ().at (m_i);
-	ret.add (range.start, range.length);
-
-	return std::make_unique <value_aset> (ret, m_i++);
-      }
-    };
-
-    std::unique_ptr <value_producer <value_aset>>
-    operate (std::unique_ptr <value_aset> a) override
-    {
-      return std::make_unique <producer> (std::move (a));
-    }
-
-    static std::string
-    docstring ()
-    {
-      return
+std::string
+op_range_aset::docstring ()
+{
+  return
 R"docstring(
 
 Takes an address set on TOS and yields all continuous ranges of that
@@ -2004,29 +1802,22 @@ address set, presented as individual address sets::
 	[0x100, 0x110)
 
 )docstring";
-    }
-  };
 }
 
+
 // ?contains
-namespace
+
+pred_result
+pred_containsp_aset_cst::result (value_aset &a, value_cst &b)
 {
-  struct pred_containsp_aset_cst
-    : public pred_overload <value_aset, value_cst>
-  {
-    using pred_overload::pred_overload;
+  auto av = addressify (b.get_constant ());
+  return pred_result (a.get_coverage ().is_covered (av.uval (), 1));
+}
 
-    pred_result
-    result (value_aset &a, value_cst &b) override
-    {
-      auto av = addressify (b.get_constant ());
-      return pred_result (a.get_coverage ().is_covered (av.uval (), 1));
-    }
-
-    static std::string
-    docstring ()
-    {
-      return
+std::string
+pred_containsp_aset_cst::docstring ()
+{
+  return
 R"docstring(
 
 Inspects an address set and a constant on TOS and holds for those
@@ -2040,158 +1831,124 @@ address set::
 	yes
 
 )docstring";
-    }
-  };
+}
 
-  struct pred_containsp_aset_aset
-    : public pred_overload <value_aset, value_aset>
-  {
-    using pred_overload::pred_overload;
 
-    pred_result
-    result (value_aset &a, value_aset &b) override
+pred_result
+pred_containsp_aset_aset::result (value_aset &a, value_aset &b)
+{
+  // ?contains holds if A contains all of B.
+  for (size_t i = 0; i < b.get_coverage ().size (); ++i)
     {
-      // ?contains holds if A contains all of B.
-      for (size_t i = 0; i < b.get_coverage ().size (); ++i)
-	{
-	  auto range = b.get_coverage ().at (i);
-	  if (! a.get_coverage ().is_covered (range.start, range.length))
-	    return pred_result::no;
-	}
-      return pred_result::yes;
+      auto range = b.get_coverage ().at (i);
+      if (! a.get_coverage ().is_covered (range.start, range.length))
+	return pred_result::no;
     }
+  return pred_result::yes;
+}
 
-    static std::string
-    docstring ()
-    {
-      return
+std::string
+pred_containsp_aset_aset::docstring ()
+{
+  return
 R"docstring(
 
 Inspects two address sets on TOS, *A* and *B*, and holds for those
 where all of *B*'s addresses are covered by *A*.
 
 )docstring";
-    }
-  };
 }
 
+
 // ?overlaps
-namespace
+
+pred_result
+pred_overlapsp_aset_aset::result (value_aset &a, value_aset &b)
 {
-  struct pred_overlapsp_aset_aset
-    : public pred_overload <value_aset, value_aset>
-  {
-    using pred_overload::pred_overload;
-
-    pred_result
-    result (value_aset &a, value_aset &b) override
+  for (size_t i = 0; i < b.get_coverage ().size (); ++i)
     {
-      for (size_t i = 0; i < b.get_coverage ().size (); ++i)
-	{
-	  auto range = b.get_coverage ().at (i);
-	  if (a.get_coverage ().is_overlap (range.start, range.length))
-	    return pred_result::yes;
-	}
-      return pred_result::no;
+      auto range = b.get_coverage ().at (i);
+      if (a.get_coverage ().is_overlap (range.start, range.length))
+	return pred_result::yes;
     }
+  return pred_result::no;
+}
 
-    static std::string
-    docstring ()
-    {
-      return
+std::string
+pred_overlapsp_aset_aset::docstring ()
+{
+  return
 R"docstring(
 
 Inspects two address sets on TOS, and holds if the two address sets
 overlap.
 
 )docstring";
-    }
-  };
 }
 
+
 // overlap
-namespace
+
+value_aset
+op_overlap_aset_aset::operate (std::unique_ptr <value_aset> a,
+			       std::unique_ptr <value_aset> b)
 {
-  struct op_overlap_aset_aset
-    : public op_once_overload <value_aset, value_aset, value_aset>
-  {
-    using op_once_overload::op_once_overload;
-
-    value_aset
-    operate (std::unique_ptr <value_aset> a,
-	     std::unique_ptr <value_aset> b) override
+  coverage ret;
+  for (size_t i = 0; i < b->get_coverage ().size (); ++i)
     {
-      coverage ret;
-      for (size_t i = 0; i < b->get_coverage ().size (); ++i)
-	{
-	  auto range = b->get_coverage ().at (i);
-	  auto cov = a->get_coverage ().intersect (range.start, range.length);
-	  ret.add_all (cov);
-	}
-      return value_aset {std::move (ret), 0};
+      auto range = b->get_coverage ().at (i);
+      auto cov = a->get_coverage ().intersect (range.start, range.length);
+      ret.add_all (cov);
     }
+  return value_aset {std::move (ret), 0};
+}
 
-    static std::string
-    docstring ()
-    {
-      return
+std::string
+op_overlap_aset_aset::docstring ()
+{
+  return
 R"docstring(
 
 Takes two address sets on TOS, and yields a (possibly empty) address
 set that covers those addresses that both of the address sets cover.
 
 )docstring";
-    }
-  };
 }
 
+
 // ?empty
-namespace
+
+pred_result
+pred_emptyp_aset::result (value_aset &a)
 {
-  struct pred_emptyp_aset
-    : public pred_overload <value_aset>
-  {
-    using pred_overload::pred_overload;
+  return pred_result (a.get_coverage ().empty ());
+}
 
-    pred_result
-    result (value_aset &a) override
-    {
-      return pred_result (a.get_coverage ().empty ());
-    }
-
-    static std::string
-    docstring ()
-    {
-      return
+std::string
+pred_emptyp_aset::docstring ()
+{
+  return
 R"docstring(
 
 Inspects an address set on TOS and holds if it is empty (contains no
 addresses).  Could be written as ``!(elem)``.
 
 )docstring";
-    }
-  };
 }
 
 
 // ?haschildren
-namespace
+
+pred_result
+pred_haschildrenp_die::result (value_die &a)
 {
-  struct pred_haschildrenp_die
-    : public pred_overload <value_die>
-  {
-    using pred_overload::pred_overload;
+  return pred_result (dwarf_haschildren (&a.get_die ()));
+}
 
-    pred_result
-    result (value_die &a) override
-    {
-      return pred_result (dwarf_haschildren (&a.get_die ()));
-    }
-
-    static std::string
-    docstring ()
-    {
-      return
+std::string
+pred_haschildrenp_die::docstring ()
+{
+  return
 R"docstring(
 
 Inspects a DIE on TOS and holds if that DIE might have children,
@@ -2210,63 +1967,49 @@ To determine whether there are actually any children, use
 	[2d] subprogram: no
 
 )docstring";
-    }
-  };
 }
 
+
 // version
-namespace
+
+value_cst
+op_version_cu::operate (std::unique_ptr <value_cu> a)
 {
-  struct op_version_cu
-    : public op_once_overload <value_cst, value_cu>
-  {
-    using op_once_overload::op_once_overload;
+  Dwarf_CU &cu = a->get_cu ();
+  Dwarf_Die cudie;
+  Dwarf_Half version;
+  if (dwarf_cu_die (&cu, &cudie, &version, nullptr,
+		    nullptr, nullptr, nullptr, nullptr) == nullptr)
+    throw_libdw ();
 
-    value_cst
-    operate (std::unique_ptr <value_cu> a) override
-    {
-      Dwarf_CU &cu = a->get_cu ();
-      Dwarf_Die cudie;
-      Dwarf_Half version;
-      if (dwarf_cu_die (&cu, &cudie, &version, nullptr,
-			nullptr, nullptr, nullptr, nullptr) == nullptr)
-	throw_libdw ();
+  return value_cst {constant {version, &dec_constant_dom}, 0};
+}
 
-      return value_cst {constant {version, &dec_constant_dom}, 0};
-    }
-
-    static std::string
-    docstring ()
-    {
-      return
+std::string
+op_version_cu::docstring ()
+{
+  return
 R"docstring(
 
 Takes a CU on TOS and yields a constant corresponding to version of
 Dwarf standard according to which this CU has been written.
 
 )docstring";
-    }
-  };
 }
 
+
 // name
-namespace
+
+value_str
+op_name_dwarf::operate (std::unique_ptr <value_dwarf> a)
 {
-  struct op_name_dwarf
-    : public op_once_overload <value_str, value_dwarf>
-  {
-    using op_once_overload::op_once_overload;
+  return value_str {std::string {a->get_fn ()}, 0};
+}
 
-    value_str
-    operate (std::unique_ptr <value_dwarf> a) override
-    {
-      return value_str {std::string {a->get_fn ()}, 0};
-    }
-
-    static std::string
-    docstring ()
-    {
-      return
+std::string
+op_name_dwarf::docstring ()
+{
+  return
 R"docstring(
 
 Take a Dwarf on TOS and yield its filename.  Note that it may not be
@@ -2275,68 +2018,56 @@ have been built in place in memory, or the file may have been deleted
 or replaced since the Dwarf was opened.
 
 )docstring";
-    }
-  };
+}
 
-  struct op_name_die
-    : public op_overload <value_str, value_die>
-  {
-    using op_overload::op_overload;
 
-    std::unique_ptr <value_str>
-    operate (std::unique_ptr <value_die> a) override
+std::unique_ptr <value_str>
+op_name_die::operate (std::unique_ptr <value_die> a)
+{
+  if (a->is_cooked ())
     {
-      if (a->is_cooked ())
-	{
-	  // On cooked DIE's, `name` integrates.
-	  const char *name = dwarf_diename (&a->get_die ());
-	  if (name != nullptr)
-	    return std::make_unique <value_str> (name, 0);
-	  else
-	    return nullptr;
-	}
-      // Unfortunately there's no non-integrating dwarf_diename
-      // counterpart.
-      else if (dwarf_hasattr (&a->get_die (), DW_AT_name))
-	{
-	  Dwarf_Attribute attr = dwpp_attr (a->get_die (), DW_AT_name);
-	  return std::make_unique <value_str> (dwpp_formstring (attr), 0);
-	}
+      // On cooked DIE's, `name` integrates.
+      const char *name = dwarf_diename (&a->get_die ());
+      if (name != nullptr)
+	return std::make_unique <value_str> (name, 0);
       else
 	return nullptr;
     }
-
-    static std::string
-    docstring ()
+  // Unfortunately there's no non-integrating dwarf_diename
+  // counterpart.
+  else if (dwarf_hasattr (&a->get_die (), DW_AT_name))
     {
-      return
+      Dwarf_Attribute attr = dwpp_attr (a->get_die (), DW_AT_name);
+      return std::make_unique <value_str> (dwpp_formstring (attr), 0);
+    }
+  else
+    return nullptr;
+}
+
+std::string
+op_name_die::docstring ()
+{
+  return
 R"docstring(
 
 Equivalent to ``@AT_name``.
 
 )docstring";
-    }
-  };
 }
 
+
 // raw
-namespace
+
+value_dwarf
+op_raw_dwarf::operate (std::unique_ptr <value_dwarf> a)
 {
-  struct op_raw_dwarf
-    : public op_once_overload <value_dwarf, value_dwarf>
-  {
-    using op_once_overload::op_once_overload;
+  return value_dwarf {a->get_fn (), a->get_dwctx (), 0, doneness::raw};
+}
 
-    value_dwarf
-    operate (std::unique_ptr <value_dwarf> a) override
-    {
-      return value_dwarf {a->get_fn (), a->get_dwctx (), 0, doneness::raw};
-    }
-
-    static std::string
-    docstring ()
-    {
-      return
+std::string
+op_raw_dwarf::docstring ()
+{
+  return
 R"docstring(
 
 Takes a Dwarf on TOS and yields a raw version thereof.
@@ -2363,25 +2094,20 @@ to *D* would yield a raw Dwarf.  But raw yields a new value and *D* is
 kept intact (despite the sharing of underlying bits, as mentioned).
 
 )docstring";
-    }
-  };
+}
 
-  struct op_raw_cu
-    : public op_once_overload <value_cu, value_cu>
-  {
-    using op_once_overload::op_once_overload;
 
-    value_cu
-    operate (std::unique_ptr <value_cu> a) override
-    {
-      return value_cu {a->get_dwctx (), a->get_cu (), a->get_offset (),
-		       0, doneness::raw};
-    }
+value_cu
+op_raw_cu::operate (std::unique_ptr <value_cu> a)
+{
+  return value_cu {a->get_dwctx (), a->get_cu (), a->get_offset (),
+		   0, doneness::raw};
+}
 
-    static std::string
-    docstring ()
-    {
-      return
+std::string
+op_raw_cu::docstring ()
+{
+  return
 R"docstring(
 
 Takes a CU on TOS and yields a raw version thereof.
@@ -2389,24 +2115,19 @@ Takes a CU on TOS and yields a raw version thereof.
 |RawCookeImmutable|
 
 )docstring";
-    }
-  };
+}
 
-  struct op_raw_die
-    : public op_once_overload <value_die, value_die>
-  {
-    using op_once_overload::op_once_overload;
 
-    value_die
-    operate (std::unique_ptr <value_die> a) override
-    {
-      return value_die {a->get_dwctx (), a->get_die (), 0, doneness::raw};
-    }
+value_die
+op_raw_die::operate (std::unique_ptr <value_die> a)
+{
+  return value_die {a->get_dwctx (), a->get_die (), 0, doneness::raw};
+}
 
-    static std::string
-    docstring ()
-    {
-      return
+std::string
+op_raw_die::docstring ()
+{
+  return
 R"docstring(
 
 Takes a DIE on TOS and yields a raw version thereof.
@@ -2414,25 +2135,20 @@ Takes a DIE on TOS and yields a raw version thereof.
 |RawCookeImmutable|
 
 )docstring";
-    }
-  };
+}
 
-  struct op_raw_attr
-    : public op_once_overload <value_attr, value_attr>
-  {
-    using op_once_overload::op_once_overload;
 
-    value_attr
-    operate (std::unique_ptr <value_attr> a) override
-    {
-      return value_attr {a->get_dwctx (), a->get_attr (), a->get_die (),
-			 0, doneness::raw};
-    }
+value_attr
+op_raw_attr::operate (std::unique_ptr <value_attr> a)
+{
+  return value_attr {a->get_dwctx (), a->get_attr (), a->get_die (),
+		     0, doneness::raw};
+}
 
-    static std::string
-    docstring ()
-    {
-      return
+std::string
+op_raw_attr::docstring ()
+{
+  return
 R"docstring(
 
 Takes an attribute on TOS and yields a raw version thereof.
@@ -2440,28 +2156,21 @@ Takes an attribute on TOS and yields a raw version thereof.
 |RawCookeImmutable|
 
 )docstring";
-    }
-  };
 }
 
+
 // cooked
-namespace
+
+value_dwarf
+op_cooked_dwarf::operate (std::unique_ptr <value_dwarf> a)
 {
-  struct op_cooked_dwarf
-    : public op_once_overload <value_dwarf, value_dwarf>
-  {
-    using op_once_overload::op_once_overload;
+  return value_dwarf {a->get_fn (), a->get_dwctx (), 0, doneness::cooked};
+}
 
-    value_dwarf
-    operate (std::unique_ptr <value_dwarf> a) override
-    {
-      return value_dwarf {a->get_fn (), a->get_dwctx (), 0, doneness::cooked};
-    }
-
-    static std::string
-    docstring ()
-    {
-      return
+std::string
+op_cooked_dwarf::docstring ()
+{
+  return
 R"docstring(
 
 Takes a Dwarf on TOS and yields a cooked version thereof.
@@ -2469,25 +2178,20 @@ Takes a Dwarf on TOS and yields a cooked version thereof.
 |RawCookeImmutable|
 
 )docstring";
-    }
-  };
+}
 
-  struct op_cooked_cu
-    : public op_once_overload <value_cu, value_cu>
-  {
-    using op_once_overload::op_once_overload;
 
-    value_cu
-    operate (std::unique_ptr <value_cu> a) override
-    {
-      return value_cu {a->get_dwctx (), a->get_cu (), a->get_offset (),
-		       0, doneness::cooked};
-    }
+value_cu
+op_cooked_cu::operate (std::unique_ptr <value_cu> a)
+{
+  return value_cu {a->get_dwctx (), a->get_cu (), a->get_offset (),
+		   0, doneness::cooked};
+}
 
-    static std::string
-    docstring ()
-    {
-      return
+std::string
+op_cooked_cu::docstring ()
+{
+  return
 R"docstring(
 
 Takes a CU on TOS and yields a cooked version thereof.
@@ -2495,24 +2199,19 @@ Takes a CU on TOS and yields a cooked version thereof.
 |RawCookeImmutable|
 
 )docstring";
-    }
-  };
+}
 
-  struct op_cooked_die
-    : public op_once_overload <value_die, value_die>
-  {
-    using op_once_overload::op_once_overload;
 
-    value_die
-    operate (std::unique_ptr <value_die> a) override
-    {
-      return value_die {a->get_dwctx (), a->get_die (), 0, doneness::cooked};
-    }
+value_die
+op_cooked_die::operate (std::unique_ptr <value_die> a)
+{
+  return value_die {a->get_dwctx (), a->get_die (), 0, doneness::cooked};
+}
 
-    static std::string
-    docstring ()
-    {
-      return
+std::string
+op_cooked_die::docstring ()
+{
+  return
 R"docstring(
 
 Takes a DIE on TOS and yields a cooked version thereof.
@@ -2520,25 +2219,20 @@ Takes a DIE on TOS and yields a cooked version thereof.
 |RawCookeImmutable|
 
 )docstring";
-    }
-  };
+}
 
-  struct op_cooked_attr
-    : public op_once_overload <value_attr, value_attr>
-  {
-    using op_once_overload::op_once_overload;
 
-    value_attr
-    operate (std::unique_ptr <value_attr> a) override
-    {
-      return value_attr {a->get_dwctx (), a->get_attr (), a->get_die (),
-			 0, doneness::cooked};
-    }
+value_attr
+op_cooked_attr::operate (std::unique_ptr <value_attr> a)
+{
+  return value_attr {a->get_dwctx (), a->get_attr (), a->get_die (),
+		     0, doneness::cooked};
+}
 
-    static std::string
-    docstring ()
-    {
-      return
+std::string
+op_cooked_attr::docstring ()
+{
+  return
 R"docstring(
 
 Takes an attribute on TOS and yields a cooked version thereof.
@@ -2546,11 +2240,11 @@ Takes an attribute on TOS and yields a cooked version thereof.
 |RawCookeImmutable|
 
 )docstring";
-    }
-  };
 }
 
+
 // @AT_*
+
 namespace
 {
   bool
@@ -2581,33 +2275,23 @@ namespace
     else
       return false;
   }
+}
 
-  class op_atval_die
-    : public op_yielding_overload <value, value_die>
-  {
-    int m_atname;
+std::unique_ptr <value_producer <value>>
+op_atval_die::operate (std::unique_ptr <value_die> a)
+{
+  Dwarf_Attribute attr;
+  if (! find_attribute (a->get_die (), m_atname,
+			a->get_doneness (), &attr))
+    return nullptr;
 
-  public:
-    op_atval_die (std::shared_ptr <op> upstream, int atname)
-      : op_yielding_overload {upstream}
-      , m_atname {atname}
-    {}
+  return at_value (a->get_dwctx (), a->get_die (), attr);
+}
 
-    std::unique_ptr <value_producer <value>>
-    operate (std::unique_ptr <value_die> a)
-    {
-      Dwarf_Attribute attr;
-      if (! find_attribute (a->get_die (), m_atname,
-			    a->get_doneness (), &attr))
-	return nullptr;
-
-      return at_value (a->get_dwctx (), a->get_die (), attr);
-    }
-
-    static std::string
-    docstring ()
-    {
-      return
+std::string
+op_atval_die::docstring ()
+{
+  return
 R"docstring(
 
 Takes a DIE on TOS and yields value of attribute indicated by the
@@ -2619,34 +2303,27 @@ value)``::
 	foo: true
 
 )docstring";
-    }
-  };
 }
 
+
 // ?AT_*
-namespace
+
+pred_atname_die::pred_atname_die (unsigned atname)
+  : m_atname {atname}
+{}
+
+pred_result
+pred_atname_die::result (value_die &a)
 {
-  struct pred_atname_die
-    : public pred_overload <value_die>
-  {
-    unsigned m_atname;
+  return find_attribute (a.get_die (), m_atname,
+			 a.get_doneness (), nullptr)
+    ? pred_result::yes : pred_result::no;
+}
 
-    pred_atname_die (unsigned atname)
-      : m_atname {atname}
-    {}
-
-    pred_result
-    result (value_die &a) override
-    {
-      return find_attribute (a.get_die (), m_atname,
-			     a.get_doneness (), nullptr)
-	? pred_result::yes : pred_result::no;
-    }
-
-    static std::string
-    docstring ()
-    {
-      return
+std::string
+pred_atname_die::docstring ()
+{
+  return
 R"docstring(
 
 Inspects a DIE on TOS and holds if that DIE has the attribute
@@ -2675,28 +2352,23 @@ For example, in the following, a DIE 0x6e reports that it has an
 		object_pointer (ref4)	[4a];
 
 )docstring";
-    }
-  };
+}
 
-  struct pred_atname_attr
-    : public pred_overload <value_attr>
-  {
-    unsigned m_atname;
 
-    pred_atname_attr (unsigned atname)
-      : m_atname {atname}
-    {}
+pred_atname_attr::pred_atname_attr (unsigned atname)
+  : m_atname {atname}
+{}
 
-    pred_result
-    result (value_attr &a) override
-    {
-      return pred_result (dwarf_whatattr (&a.get_attr ()) == m_atname);
-    }
+pred_result
+pred_atname_attr::result (value_attr &a)
+{
+  return pred_result (dwarf_whatattr (&a.get_attr ()) == m_atname);
+}
 
-    static std::string
-    docstring ()
-    {
-      return
+std::string
+pred_atname_attr::docstring ()
+{
+  return
 R"docstring(
 
 Inspects an attribute on TOS and holds if name of that attribute is
@@ -2706,28 +2378,23 @@ the same as indicated by this word::
 	name (string)	foo;
 
 )docstring";
-    }
-  };
+}
 
-  struct pred_atname_cst
-    : public pred_overload <value_cst>
-  {
-    constant m_const;
 
-    pred_atname_cst (unsigned atname)
-      : m_const {atname, &dw_attr_dom ()}
-    {}
+pred_atname_cst::pred_atname_cst (unsigned atname)
+  : m_const {atname, &dw_attr_dom ()}
+{}
 
-    pred_result
-    result (value_cst &a) override
-    {
-      return pred_result (m_const == a.get_constant ());
-    }
+pred_result
+pred_atname_cst::result (value_cst &a)
+{
+  return pred_result (m_const == a.get_constant ());
+}
 
-    static std::string
-    docstring ()
-    {
-      return
+std::string
+pred_atname_cst::docstring ()
+{
+  return
 R"docstring(
 
 Inspects a constant on TOS and holds if it's the same constant as
@@ -2743,32 +2410,25 @@ indicated by this word::
 	DW_AT_type
 
 )docstring";
-    }
-  };
 }
 
+
 // ?TAG_*
-namespace
+
+pred_tag_die::pred_tag_die (int tag)
+  : m_tag {tag}
+{}
+
+pred_result
+pred_tag_die::result (value_die &a)
 {
-  struct pred_tag_die
-    : public pred_overload <value_die>
-  {
-    int m_tag;
+  return pred_result (dwarf_tag (&a.get_die ()) == m_tag);
+}
 
-    pred_tag_die (int tag)
-      : m_tag {tag}
-    {}
-
-    pred_result
-    result (value_die &a) override
-    {
-      return pred_result (dwarf_tag (&a.get_die ()) == m_tag);
-    }
-
-    static std::string
-    docstring ()
-    {
-      return
+std::string
+pred_tag_die::docstring ()
+{
+  return
 R"docstring(
 
 Inspects a DIE on TOS and holds if its tag is the same as this word
@@ -2779,28 +2439,23 @@ indicates::
 		name (strp)	decltype(nullptr);
 
 )docstring";
-    }
-  };
+}
 
-  struct pred_tag_cst
-    : public pred_overload <value_cst>
-  {
-    constant m_const;
 
-    pred_tag_cst (int tag)
-      : m_const {(unsigned) tag, &dw_tag_dom ()}
-    {}
+pred_tag_cst::pred_tag_cst (int tag)
+  : m_const {(unsigned) tag, &dw_tag_dom ()}
+{}
 
-    pred_result
-    result (value_cst &a) override
-    {
-      return pred_result (m_const == a.get_constant ());
-    }
+pred_result
+pred_tag_cst::result (value_cst &a)
+{
+  return pred_result (m_const == a.get_constant ());
+}
 
-    static std::string
-    docstring ()
-    {
-      return
+std::string
+pred_tag_cst::docstring ()
+{
+  return
 R"docstring(
 
 Inspects a constant on TOS and holds if it's the same constant as
@@ -2813,32 +2468,25 @@ indicated by this word::
 	0
 
 )docstring";
-    }
-  };
 }
 
+
 // ?FORM_*
-namespace
+
+pred_form_attr::pred_form_attr (unsigned form)
+  : m_form {form}
+{}
+
+pred_result
+pred_form_attr::result (value_attr &a)
 {
-  struct pred_form_attr
-    : public pred_overload <value_attr>
-  {
-    unsigned m_form;
+  return pred_result (dwarf_whatform (&a.get_attr ()) == m_form);
+}
 
-    pred_form_attr (unsigned form)
-      : m_form {form}
-    {}
-
-    pred_result
-    result (value_attr &a) override
-    {
-      return pred_result (dwarf_whatform (&a.get_attr ()) == m_form);
-    }
-
-    static std::string
-    docstring ()
-    {
-      return
+std::string
+pred_form_attr::docstring ()
+{
+  return
 R"docstring(
 
 Inspects an attribute on TOS and holds if the form of that attribute
@@ -2850,63 +2498,51 @@ is the same as indicated by this word::
 		const_value (data2)	65535;
 
 )docstring";
-    }
-  };
+}
 
-  struct pred_form_cst
-    : public pred_overload <value_cst>
-  {
-    constant m_const;
 
-    pred_form_cst (unsigned form)
-      : m_const {form, &dw_form_dom ()}
-    {}
+pred_form_cst::pred_form_cst (unsigned form)
+  : m_const {form, &dw_form_dom ()}
+{}
 
-    pred_result
-    result (value_cst &a) override
-    {
-      return pred_result (m_const == a.get_constant ());
-    }
+pred_result
+pred_form_cst::result (value_cst &a)
+{
+  return pred_result (m_const == a.get_constant ());
+}
 
-    static std::string
-    docstring ()
-    {
-      return
+std::string
+pred_form_cst::docstring ()
+{
+  return
 R"docstring(
 
 Inspects a constant on TOS and holds if it's the same as indicated by
 this word.
 
 )docstring";
-    }
-  };
 }
 
+
 // ?OP_*
-namespace
+
+pred_op_loclist_elem::pred_op_loclist_elem (unsigned op)
+  : m_op {op}
+{}
+
+pred_result
+pred_op_loclist_elem::result (value_loclist_elem &a)
 {
-  struct pred_op_loclist_elem
-    : public pred_overload <value_loclist_elem>
-  {
-    unsigned m_op;
+  for (size_t i = 0; i < a.get_exprlen (); ++i)
+    if (a.get_expr ()[i].atom == m_op)
+      return pred_result::yes;
+  return pred_result::no;
+}
 
-    pred_op_loclist_elem (unsigned op)
-      : m_op {op}
-    {}
-
-    pred_result
-    result (value_loclist_elem &a) override
-    {
-      for (size_t i = 0; i < a.get_exprlen (); ++i)
-	if (a.get_expr ()[i].atom == m_op)
-	  return pred_result::yes;
-      return pred_result::no;
-    }
-
-    static std::string
-    docstring ()
-    {
-      return
+std::string
+pred_op_loclist_elem::docstring ()
+{
+  return
 R"docstring(
 
 Inspects a location expression on TOS and holds if it contains an
@@ -2916,28 +2552,23 @@ instruction with an opcode indicated by this word::
 	0x10017..0x1001a:[0:breg5<0>, 2:breg1<0>, 4:and, 5:stack_value]
 
 )docstring";
-    }
-  };
+}
 
-  struct pred_op_loclist_op
-    : public pred_overload <value_loclist_op>
-  {
-    unsigned m_op;
 
-    pred_op_loclist_op (unsigned op)
-      : m_op {op}
-    {}
+pred_op_loclist_op::pred_op_loclist_op (unsigned op)
+  : m_op {op}
+{}
 
-    pred_result
-    result (value_loclist_op &a) override
-    {
-      return pred_result (a.get_dwop ()->atom == m_op);
-    }
+pred_result
+pred_op_loclist_op::result (value_loclist_op &a)
+{
+  return pred_result (a.get_dwop ()->atom == m_op);
+}
 
-    static std::string
-    docstring ()
-    {
-      return
+std::string
+pred_op_loclist_op::docstring ()
+{
+  return
 R"docstring(
 
 Inspects a location expression instruction on TOS and holds if its
@@ -2947,37 +2578,31 @@ opcode is the same as indicated by this word::
 	4:and
 
 )docstring";
-    }
-  };
+}
 
-  struct pred_op_cst
-    : public pred_overload <value_cst>
-  {
-    constant m_const;
 
-    pred_op_cst (unsigned form)
-      : m_const {form, &dw_locexpr_opcode_dom ()}
-    {}
+pred_op_cst::pred_op_cst (unsigned form)
+  : m_const {form, &dw_locexpr_opcode_dom ()}
+{}
 
-    pred_result
-    result (value_cst &a) override
-    {
-      return pred_result (m_const == a.get_constant ());
-    }
+pred_result
+pred_op_cst::result (value_cst &a)
+{
+  return pred_result (m_const == a.get_constant ());
+}
 
-    static std::string
-    docstring ()
-    {
-      return
+std::string
+pred_op_cst::docstring ()
+{
+  return
 R"docstring(
 
 Inspects a constant on TOS and holds if it is the same as indicated by
 this word.
 
 )docstring";
-    }
-  };
 }
+
 
 std::unique_ptr <vocabulary>
 dwgrep_vocabulary_dw ()
