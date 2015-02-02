@@ -792,15 +792,7 @@ namespace
 	  if (integrate
 	      && (at.code == DW_AT_specification
 		  || at.code == DW_AT_abstract_origin))
-	    {
-	      // Schedule this for future traversal, but still show
-	      // the attribute in the output (i.e. skip the seen-check
-	      // to possibly also present this several times if we
-	      // went through several rounds of integration).  There's
-	      // no gain in hiding this from the user.
-	      schedule (at);
-	      break;
-	    }
+	    schedule (at);
 
 	  if (m_secondary && ! attr_should_be_integrated (at.code))
 	    goto again;

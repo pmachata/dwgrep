@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2014 Red Hat, Inc.
+   Copyright (C) 2014, 2015 Red Hat, Inc.
    This file is part of dwgrep.
 
    This file is free software; you can redistribute it and/or modify
@@ -30,14 +30,15 @@
 #include <sys/time.h>
 #include <sys/resource.h>
 
-#include "builtin.hh"
-#include "builtin-dw.hh"
 #include "builtin-dw-abbrev.hh"
+#include "builtin-dw.hh"
+#include "builtin.hh"
+#include "dwit.hh"
 #include "init.hh"
-#include "value-dw.hh"
-#include "stack.hh"
-#include "parser.hh"
 #include "op.hh"
+#include "parser.hh"
+#include "stack.hh"
+#include "value-dw.hh"
 
 std::string
 test_file (std::string name)
@@ -464,4 +465,41 @@ TEST_F (ZwTest, value_dwarf_doesnt_leak_fd)
 
   rc = setrlimit (RLIMIT_NOFILE, &orig);
   assert (rc == 0);
+}
+
+TEST_F (ZwTest, attribute_die_cooked_no_dup)
+{
+  auto vdw = rdw ("attribute-die-cooked-no-dup.o");
+  auto ctx = vdw->get_dwctx ();
+
+  std::vector <std::pair <Dwarf *, Dwarf_Addr>> modules
+    {dwfl_module_iterator {ctx->get_dwfl ()}, dwfl_module_iterator::end ()};
+  ASSERT_EQ (1, modules.size ());
+  Dwarf *dw = modules[0].first;
+
+  bool seen_specification = false;
+  bool seen_abstract_origin = false;
+
+  value_die vd (vdw->get_dwctx (), dwpp_offdie (dw, 0x1c), 0, doneness::cooked);
+  for (auto prod = op_attribute_die {nullptr}
+			.operate (std::make_unique <value_die> (vd));
+       auto va = prod->next (); )
+    switch (int c = va->get_attr ().code)
+      {
+      case DW_AT_specification:
+	EXPECT_FALSE (seen_specification);
+	seen_specification = true;
+	break;
+
+      case DW_AT_abstract_origin:
+	EXPECT_FALSE (seen_abstract_origin);
+	seen_abstract_origin = true;
+	break;
+
+      default:
+	FAIL() << "Unexpected attribute " << c << ".";
+      }
+
+  EXPECT_TRUE (seen_specification);
+  EXPECT_TRUE (seen_abstract_origin);
 }
