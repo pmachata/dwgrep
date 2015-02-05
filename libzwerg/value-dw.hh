@@ -369,6 +369,9 @@ public:
   Dwarf_Attribute &get_attr ()
   { return m_attr; }
 
+  Dwarf_Attribute const &get_attr () const
+  { return m_attr; }
+
   Dwarf_Addr get_low () const
   { return m_low; }
 
@@ -419,11 +422,12 @@ struct value_aset
 class value_loclist_op
   : public value
 {
+  std::shared_ptr <dwfl_context> m_dwctx;
+  Dwarf_Attribute m_attr;
+
   // This apparently wild pointer points into libdw-private data.  We
   // actually need to carry a pointer, as some functions require that
   // they be called with the original pointer, not our own copy.
-  std::shared_ptr <dwfl_context> m_dwctx;
-  Dwarf_Attribute m_attr;
   Dwarf_Op *m_dwop;
 
 public:
@@ -445,7 +449,10 @@ public:
   Dwarf_Attribute &get_attr ()
   { return m_attr; }
 
-  Dwarf_Op *get_dwop ()
+  Dwarf_Attribute const &get_attr () const
+  { return m_attr; }
+
+  Dwarf_Op *get_dwop () const
   { return m_dwop; }
 
   void show (std::ostream &o, brevity brv) const override;

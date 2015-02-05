@@ -131,14 +131,10 @@ extern "C" {
 
   zw_value const *zw_value_attr_dwarf (zw_value const *attr);
 
+
   /**
    * Location list element.
    */
-
-  zw_value *zw_value_init_llelem (zw_value const *dw, Dwarf_Attribute attr,
-				  Dwarf_Addr low, Dwarf_Addr high,
-				  Dwarf_Op *expr, size_t exprlen,
-				  size_t pos, zw_error **out_err);
 
   bool zw_value_is_llelem (zw_value const *val);
 
@@ -150,6 +146,16 @@ extern "C" {
 
   Dwarf_Op *zw_value_llelem_expr (zw_value const *llelem, size_t *out_length);
 
+
+  /**
+   * Location list operation.
+   */
+
+  bool zw_value_is_llop (zw_value const *val);
+
+  Dwarf_Attribute zw_value_llop_attribute (zw_value const *llop);
+
+  Dwarf_Op *zw_value_llop_op (zw_value const *llop);
 
 #ifdef __cplusplus
 }

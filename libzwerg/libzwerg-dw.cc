@@ -199,6 +199,18 @@ zw_value_is_attr (zw_value const *val)
   return libzw_value_is <value_attr> (val);
 }
 
+bool
+zw_value_is_llelem (zw_value const *val)
+{
+  return libzw_value_is <value_loclist_elem> (val);
+}
+
+bool
+zw_value_is_llop (zw_value const *val)
+{
+  return libzw_value_is <value_loclist_op> (val);
+}
+
 namespace
 {
   zw_value *
@@ -320,4 +332,62 @@ zw_value const *
 zw_value_attr_dwarf (zw_value const *val, zw_error **out_err)
 {
   return extract_dwarf (val, attr (val).get_dwctx (), out_err);
+}
+
+
+namespace
+{
+  value_loclist_elem const &
+  llelem (zw_value const *val)
+  {
+    return unpack <value_loclist_elem> (val);
+  }
+}
+
+Dwarf_Attribute
+zw_value_llelem_attribute (zw_value const *val)
+{
+  return llelem (val).get_attr ();
+}
+
+Dwarf_Addr
+zw_value_llelem_low (zw_value const *val)
+{
+  return llelem (val).get_low ();
+}
+
+Dwarf_Addr
+zw_value_llelem_high (zw_value const *val)
+{
+  return llelem (val).get_high ();
+}
+
+Dwarf_Op *
+zw_value_llelem_expr (zw_value const *val, size_t *out_length)
+{
+  auto const &e = llelem (val);
+  *out_length = e.get_exprlen ();
+  return e.get_expr ();
+}
+
+
+namespace
+{
+  value_loclist_op const &
+  llop (zw_value const *val)
+  {
+    return unpack <value_loclist_op> (val);
+  }
+}
+
+Dwarf_Attribute
+zw_value_llop_attribute (zw_value const *val)
+{
+  return llop (val).get_attr ();
+}
+
+Dwarf_Op *
+zw_value_llop_op (zw_value const *val)
+{
+  return llop (val).get_dwop ();
 }

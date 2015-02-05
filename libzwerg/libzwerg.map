@@ -89,6 +89,16 @@ LIBZWERG_0.1 {
 	zw_value_attr_attr;
 	zw_value_attr_dwarf;
 
+	zw_value_is_llelem;
+	zw_value_llelem_low;
+	zw_value_llelem_high;
+	zw_value_llelem_attribute;
+	zw_value_llelem_expr;
+
+	zw_value_is_llop;
+	zw_value_llop_attribute;
+	zw_value_llop_op;
+
   local:
 	*;
 };

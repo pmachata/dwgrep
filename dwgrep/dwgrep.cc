@@ -119,7 +119,7 @@ public:
     {
       full,
       brief,
-      brief_attr,
+      inner_brief,
     };
 
   void dump_value (std::ostream &os, zw_value const &val, format fmt);
@@ -133,6 +133,7 @@ private:
   void dump_cu (std::ostream &os, zw_value const &val, format fmt);
   void dump_die (std::ostream &os, zw_value const &val, format fmt);
   void dump_attr (std::ostream &os, zw_value const &val, format fmt);
+  void dump_llelem (std::ostream &os, zw_value const &val, format fmt);
 };
 
 void
@@ -308,8 +309,65 @@ dumper::dump_attr (std::ostream &os, zw_value const &val, format fmt)
 }
 
 void
+dumper::dump_llelem (std::ostream &os, zw_value const &val, format fmt)
+{
+  {
+    ios_flag_saver ifs {os};
+    os << std::hex << std::showbase
+       << zw_value_llelem_low (&val) << ".."
+       << zw_value_llelem_high (&val) << ":";
+  }
+
+  exec_query_on (val, m_voc, "[elem [offset, label, value]]",
+		 [&] (zw_stack const &stk) -> void
+		 {
+		   assert (zw_stack_depth (&stk) == 2);
+		   zw_value const *ops = zw_stack_at (&stk, 0);
+		   assert (zw_value_is_seq (ops));
+
+		   if (size_t n = zw_value_seq_length (ops))
+		     for (size_t i = 0; i < n; ++i)
+		       {
+			 if (i > 0)
+			   os << ", ";
+			 zw_value const *ppts = zw_value_seq_at (ops, i);
+			 assert (zw_value_is_seq (ppts));
+
+			 zw_value const *off = zw_value_seq_at (ppts, 0);
+			 dump_value (os, *off, format::brief);
+			 os << ' ';
+
+			 zw_value const *lbl = zw_value_seq_at (ppts, 1);
+			 dump_value (os, *lbl, format::brief);
+
+			 size_t nppts = zw_value_seq_length (ppts);
+			 for (size_t j = 2; j < nppts; ++j)
+			   {
+			     os << ' ';
+			     dump_value (os, *zw_value_seq_at (ppts, j),
+					 format::inner_brief);
+			   }
+		       }
+		   else
+		     os << "<empty location expression>";
+		 });
+}
+
+void
 dumper::dump_value (std::ostream &os, zw_value const &val, format fmt)
 {
+  bool brackets;
+  if (fmt == format::inner_brief)
+    {
+      brackets = true;
+      fmt = format::brief;
+    }
+  else
+    brackets = false;
+
+  if (brackets)
+    os << "<";
+
   if (zw_value_is_const (&val))
     dump_const (os, val, fmt);
   else if (zw_value_is_str (&val))
@@ -324,8 +382,13 @@ dumper::dump_value (std::ostream &os, zw_value const &val, format fmt)
     dump_die (os, val, fmt);
   else if (zw_value_is_attr (&val))
     dump_attr (os, val, fmt);
+  else if (zw_value_is_llelem (&val))
+    dump_llelem (os, val, fmt);
   else
     os << "<unknown value type>";
+
+  if (brackets)
+    os << ">";
 }
 
 int

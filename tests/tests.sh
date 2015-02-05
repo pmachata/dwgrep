@@ -820,6 +820,10 @@ expect_out '[23]	const_type
 expect_out 'byte_size	8
 type	[23] const_type' a1.out -e 'entry (offset == 0x20) attribute'
 
+# T_LOCLIST_ELEM
+expect_out '0..0xffffffffffffffff:0 call_frame_cfa' \
+	   a1.out -e 'entry (offset == 0x32) @AT_frame_base'
+
 echo "$total tests total, $failures failures."
 
 trap - ERR
