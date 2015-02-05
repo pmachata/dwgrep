@@ -12,6 +12,8 @@ fail ()
     export failures=$((failures + 1))
 }
 
+trap 'fail "ERR trap triggered"' ERR
+
 expect_count ()
 {
     export total=$((total + 1))
