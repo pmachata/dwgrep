@@ -808,4 +808,6 @@ expect_out 'byte_size (data1)	8;
 type (ref_udata)	[23];' a1.out -e 'entry (offset == 0x20) attribute'
 
 echo "$total tests total, $failures failures."
+
+trap - ERR
 [ $failures -eq 0 ]
