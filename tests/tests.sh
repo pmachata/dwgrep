@@ -822,7 +822,12 @@ type	[23] const_type' a1.out -e 'entry (offset == 0x20) attribute'
 
 # T_LOCLIST_ELEM
 expect_out '0..0xffffffffffffffff:0 call_frame_cfa' \
-	   a1.out -e 'entry (offset == 0x32) @AT_frame_base'
+	a1.out -e 'entry (offset == 0x32) @AT_frame_base'
+
+# T_ASET
+expect_out '0x10004..0x10009, 0x1000e..0x10015' \
+	aranges.o -e 'entry @AT_ranges'
+
 
 echo "$total tests total, $failures failures."
 

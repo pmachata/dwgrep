@@ -157,6 +157,24 @@ extern "C" {
 
   Dwarf_Op *zw_value_llop_op (zw_value const *llop);
 
+
+  /**
+   * Address sets.
+   */
+
+  bool zw_value_is_aset (zw_value const *val);
+
+  size_t zw_value_aset_length (zw_value const *aset);
+
+  struct zw_aset_pair
+  {
+    Dwarf_Addr start;
+    Dwarf_Word length;
+  };
+
+  struct zw_aset_pair zw_value_aset_at (zw_value const *aset, size_t idx);
+
+
 #ifdef __cplusplus
 }
 #endif

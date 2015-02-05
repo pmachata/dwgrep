@@ -211,6 +211,12 @@ zw_value_is_llop (zw_value const *val)
   return libzw_value_is <value_loclist_op> (val);
 }
 
+bool
+zw_value_is_aset (zw_value const *val)
+{
+  return libzw_value_is <value_aset> (val);
+}
+
 namespace
 {
   zw_value *
@@ -390,4 +396,63 @@ Dwarf_Op *
 zw_value_llop_op (zw_value const *val)
 {
   return llop (val).get_dwop ();
+}
+
+
+namespace
+{
+  value_aset const &
+  aset (zw_value const *val)
+  {
+    return unpack <value_aset> (val);
+  }
+}
+
+// XXX note this is very inefficient.  It's the simplest thing that
+// works right now.  We need some sort of cache for this, but the only
+// cache that we have right now is the one for zw_values.  But I don't
+// think we even need zw_value as a type separate from value, that
+// value is opaque should be enough.  And then caching can be done as
+// needed in the particular value subclass.
+size_t
+zw_value_aset_length (zw_value const *val)
+{
+  size_t ret = 0;
+  aset (val).get_coverage ()
+    .find_ranges ([] (uint64_t start, uint64_t length, void *data)
+		  {
+		    ++*static_cast <size_t *> (data);
+		    return true;
+		  }, &ret);
+  return ret;
+}
+
+struct zw_aset_pair
+zw_value_aset_at (zw_value const *val, size_t idx)
+{
+  struct data
+  {
+    size_t idx;
+    size_t i;
+    zw_aset_pair ret;
+  } d = {idx};
+
+  bool through = aset (val).get_coverage ()
+    .find_ranges ([] (uint64_t start, uint64_t length, void *data)
+		  {
+		    struct data &d = *static_cast <struct data *> (data);
+		    if (d.i == d.idx)
+		      {
+			d.ret = zw_aset_pair {start, length};
+			return false;
+		      }
+		    d.i++;
+		    return true;
+		  }, &d);
+
+  // We want the iteration to have aborted, that means we found the
+  // element.
+  assert (! through);
+
+  return d.ret;
 }

@@ -134,6 +134,7 @@ private:
   void dump_die (std::ostream &os, zw_value const &val, format fmt);
   void dump_attr (std::ostream &os, zw_value const &val, format fmt);
   void dump_llelem (std::ostream &os, zw_value const &val, format fmt);
+  void dump_aset (std::ostream &os, zw_value const &val, format fmt);
 };
 
 void
@@ -354,6 +355,23 @@ dumper::dump_llelem (std::ostream &os, zw_value const &val, format fmt)
 }
 
 void
+dumper::dump_aset (std::ostream &os, zw_value const &val, format fmt)
+{
+  ios_flag_saver ifs {os};
+  os << std::hex << std::showbase;
+  if (size_t n = zw_value_aset_length (&val))
+    for (size_t i = 0; i < n; ++i)
+      {
+	if (i > 0)
+	  os << ", ";
+	zw_aset_pair p = zw_value_aset_at (&val, i);
+	os << p.start << ".." << (p.start + p.length);
+      }
+  else
+    os << "<empty range>";
+}
+
+void
 dumper::dump_value (std::ostream &os, zw_value const &val, format fmt)
 {
   bool brackets;
@@ -384,6 +402,8 @@ dumper::dump_value (std::ostream &os, zw_value const &val, format fmt)
     dump_attr (os, val, fmt);
   else if (zw_value_is_llelem (&val))
     dump_llelem (os, val, fmt);
+  else if (zw_value_is_aset (&val))
+    dump_aset (os, val, fmt);
   else
     os << "<unknown value type>";
 

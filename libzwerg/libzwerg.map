@@ -99,6 +99,10 @@ LIBZWERG_0.1 {
 	zw_value_llop_attribute;
 	zw_value_llop_op;
 
+	zw_value_is_aset;
+	zw_value_aset_length;
+	zw_value_aset_at;
+
   local:
 	*;
 };
