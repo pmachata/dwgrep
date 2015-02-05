@@ -40,6 +40,27 @@ expect_error ()
     fi
 }
 
+expect_out ()
+{
+    export total=$((total + 1))
+    OUT=$1
+    shift
+    TMP=$(mktemp)
+    GOT=$(timeout 10 $DWGREP "$@" 2>$TMP)
+    if [ -s $TMP ]; then
+	fail "$DWGREP" "$@"
+	echo "expected no error" >&2
+	echo -n "    got:" >&2
+	cat $TMP
+    fi
+    if [ "$OUT" != "$GOT" ]; then
+	fail "$DWGREP" "$@"
+	echo "expected output: $OUT" >&2
+	echo "            got: $GOT" >&2
+    fi
+    rm -f $TMP
+}
+
 expect_count 1 -e '1   10 ?lt'
 expect_count 1 -e '10  10 !lt'
 expect_count 1 -e '100 10 !lt'
@@ -760,6 +781,31 @@ TMP=$(mktemp)
 echo -e '7 == "foo\x00bar" length' > $TMP
 expect_count 1 -f $TMP
 rm $TMP
+
+### Test actual output of individual types by dwgrep driver.  ###
+
+# T_CONST
+expect_out '1' -e '1'
+
+# T_STR
+expect_out 'blah' -e '"blah"'
+
+# T_SEQ and inner form of T_STR
+expect_out '[1, blah, []]' -e '[1, "blah", []]'
+
+# T_DWARF
+expect_out '<Dwarf "a1.out">' a1.out -e ''
+
+# T_CU
+expect_out 'CU 0' a1.out -e 'unit'
+
+# T_DIE (both naked form and inner form)
+expect_out '[23]	const_type
+	type (ref_udata)	[25];' a1.out -e 'entry (offset == 0x23)'
+
+# T_ATTR
+expect_out 'byte_size (data1)	8;
+type (ref_udata)	[23];' a1.out -e 'entry (offset == 0x20) attribute'
 
 echo "$total tests total, $failures failures."
 [ $failures -eq 0 ]
