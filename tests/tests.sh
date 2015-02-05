@@ -6,17 +6,22 @@ cd $(dirname $0)
 failures=0
 total=0
 
+fail ()
+{
+    echo "FAIL: $@" >&2
+    export failures=$((failures + 1))
+}
+
 expect_count ()
 {
     export total=$((total + 1))
     COUNT=$1
     shift
-    GOT=$(timeout 10 $DWGREP -c "$@" 2>/dev/null)
+    GOT=$(timeout 10 $DWGREP -c "$@" 2>&1)
     if [ "$GOT" != "$COUNT" ]; then
-	echo "FAIL: $DWGREP -c" "$@"
-	echo "expected: $COUNT"
-	echo "     got: $GOT"
-	export failures=$((failures + 1))
+	fail "$DWGREP -c" "$@"
+	echo "expected: $COUNT" >&2
+	echo "     got: $GOT" >&2
     fi
 }
 
@@ -27,10 +32,9 @@ expect_error ()
     shift
     GOT=$(timeout 10 $DWGREP "$@" 2>&1 >/dev/null)
     if [ "${GOT/${ERR}//}" == "$GOT" ]; then
-	echo "FAIL: $DWGREP" "$@"
-	echo "expected error: $ERR"
-	echo "           got: $GOT"
-	export failures=$((failures + 1))
+	fail "$DWGREP" "$@"
+	echo "expected error: $ERR" >&2
+	echo "           got: $GOT" >&2
     fi
 }
 
