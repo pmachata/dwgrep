@@ -226,20 +226,16 @@ dumper::dump_cu (std::ostream &os, zw_value const &val, format)
 }
 
 void
-exec_query_on (zw_value const &val, zw_vocabulary const &voc,
-	       char const *q, std::function <void (zw_stack const &)> cb)
+exec_query_on (zw_value const &val, zw_query const &q,
+	       std::function <void (zw_stack const &)> cb)
 {
-  std::unique_ptr <zw_query, zw_deleter> query
-	{zw_query_parse (&voc, q, zw_throw_on_error {})};
-
   std::unique_ptr <zw_stack, zw_deleter> stack
 	{zw_stack_init (zw_throw_on_error {})};
   zw_stack_push (stack.get (), &val, zw_throw_on_error {});
 
-  std::unique_ptr <zw_result, zw_deleter> result
-	{zw_query_execute (query.get (), stack.get (), zw_throw_on_error {})};
-
-  while (auto out = zw_result_next (*result))
+  for (std::unique_ptr <zw_result, zw_deleter> result
+	{zw_query_execute (&q, stack.get (), zw_throw_on_error {})};
+       auto out = zw_result_next (*result); )
     cb (*out);
 }
 
@@ -267,18 +263,24 @@ dumper::dump_die (std::ostream &os, zw_value const &val, format fmt)
   }
 
   if (fmt == format::full)
-    exec_query_on (val, m_voc, "raw attribute",
-		   [&] (zw_stack const &stk) -> void {
-		     assert (zw_stack_depth (&stk) == 1);
-		     dump_attr (os << "\n\t", *zw_stack_at (&stk, 0),
-				format::brief);
-		   });
+    {
+      static std::unique_ptr <zw_query, zw_deleter> query
+	{zw_query_parse (&m_voc, "raw attribute", zw_throw_on_error {})};
+      exec_query_on (val, *query,
+		     [&] (zw_stack const &stk) -> void {
+		       assert (zw_stack_depth (&stk) == 1);
+		       dump_attr (os << "\n\t", *zw_stack_at (&stk, 0),
+				  format::brief);
+		     });
+    }
 }
 
 void
 dumper::dump_attr (std::ostream &os, zw_value const &val, format fmt)
 {
-  exec_query_on (val, m_voc, "[value] swap label",
+  static std::unique_ptr <zw_query, zw_deleter> query
+	{zw_query_parse (&m_voc, "[value] swap label", zw_throw_on_error {})};
+  exec_query_on (val, *query,
 		 [&] (zw_stack const &stk) -> void
 		 {
 		   assert (zw_stack_depth (&stk) == 2);
@@ -319,7 +321,10 @@ dumper::dump_llelem (std::ostream &os, zw_value const &val, format fmt)
        << zw_value_llelem_high (&val) << ":";
   }
 
-  exec_query_on (val, m_voc, "[elem [offset, label, value]]",
+  static std::unique_ptr <zw_query, zw_deleter> query
+	{zw_query_parse (&m_voc, "[elem [offset, label, value]]",
+			 zw_throw_on_error {})};
+  exec_query_on (val, *query,
 		 [&] (zw_stack const &stk) -> void
 		 {
 		   assert (zw_stack_depth (&stk) == 2);
