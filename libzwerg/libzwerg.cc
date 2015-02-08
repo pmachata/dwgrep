@@ -111,8 +111,7 @@ bool
 zw_stack_push (zw_stack *stack, zw_value const *value, zw_error **out_err)
 {
   return capture_errors ([&] () {
-      stack->m_values.push_back
-	(std::make_unique <zw_value> (value->m_value->clone ()));
+      stack->m_values.push_back (value->clone ());
       return true;
     }, false, out_err);
 }
@@ -121,9 +120,7 @@ bool
 zw_stack_push_take (zw_stack *stack, zw_value *value, zw_error **out_err)
 {
   return capture_errors ([&] () {
-      stack->m_values.push_back
-	(std::make_unique <zw_value> (std::move (value->m_value)));
-      zw_value_destroy (value);
+      stack->m_values.push_back (std::unique_ptr <zw_value> (value));
       return true;
     }, false, out_err);
 }
@@ -182,7 +179,7 @@ zw_query_execute (zw_query const *query, zw_stack const *input_stack,
   return capture_errors ([&] () {
       auto stk = std::make_unique <stack> ();
       for (auto const &emt: input_stack->m_values)
-	stk->push (emt->m_value->clone ());
+	stk->push (emt->clone ());
       auto upstream = std::make_shared <op_origin> (std::move (stk));
       return new zw_result { query->m_query.build_exec (upstream) };
     }, nullptr, out_err);
@@ -206,7 +203,7 @@ zw_result_next (zw_result *result, zw_stack **out_stack, zw_error **out_err)
 
       auto it = values.rbegin ();
       for (size_t i = 0; i < sz; ++i)
-	*it++ = std::make_unique <zw_value> (ret->pop ());
+	*it++ = ret->pop ();
 
       *out_stack = new zw_stack { std::move (values) };
       return true;
@@ -222,19 +219,19 @@ zw_result_destroy (zw_result *result)
 bool
 zw_value_is_const (zw_value const *val)
 {
-  return libzw_value_is <value_cst> (val);
+  return val->is <value_cst> ();
 }
 
 bool
 zw_value_is_str (zw_value const *val)
 {
-  return libzw_value_is <value_str> (val);
+  return val->is <value_str> ();
 }
 
 bool
 zw_value_is_seq (zw_value const *val)
 {
-  return libzw_value_is <value_seq> (val);
+  return val->is <value_seq> ();
 }
 
 namespace
@@ -243,7 +240,7 @@ namespace
   extract_constant (zw_value const *val)
   {
     assert (val != nullptr);
-    value_cst const *cst = value::as <value_cst> (val->m_value.get ());
+    value_cst const *cst = value::as <value_cst> (val);
     assert (cst != nullptr);
     return cst->get_constant ();
   }
@@ -353,7 +350,7 @@ namespace
   {
     return capture_errors ([&] () {
 	constant cst {i, &dom->m_cdom};
-	return new zw_value {std::make_unique <value_cst> (cst, pos)};
+	return new value_cst {cst, pos};
       }, nullptr, out_err);
   }
 }
@@ -385,7 +382,7 @@ zw_value_init_str_len (char const *cstr, size_t len, size_t pos,
 {
   return capture_errors ([&] () {
       std::string str {cstr, len};
-      return new zw_value {std::make_unique <value_str> (str, pos)};
+      return new value_str {str, pos};
     }, nullptr, out_err);
 }
 
@@ -395,20 +392,16 @@ zw_value_str_str (zw_value const *val, size_t *lenp)
   assert (val != nullptr);
   assert (lenp != nullptr);
 
-  value_str const *str = value::as <value_str> (val->m_value.get ());
-  assert (str != nullptr);
-  *lenp = str->get_string ().length ();
-  return str->get_string ().c_str ();
+  value_str const &str = value::require_as <value_str> (val);
+  *lenp = str.get_string ().length ();
+  return str.get_string ().c_str ();
 }
 
 size_t
 zw_value_seq_length (zw_value const *val)
 {
   assert (val != nullptr);
-
-  value_seq const *seq = value::as <value_seq> (val->m_value.get ());
-  assert (seq != nullptr);
-  return seq->get_seq ()->size ();
+  return value::require_as <value_seq> (val).get_seq ()->size ();
 }
 
 zw_value const *
@@ -416,19 +409,8 @@ zw_value_seq_at (zw_value const *val, size_t idx)
 {
   assert (val != nullptr);
 
-  value_seq const *seq = value::as <value_seq> (val->m_value.get ());
-  assert (seq != nullptr);
-
-  size_t sz = seq->get_seq ()->size ();
+  value_seq const &seq = value::require_as <value_seq> (val);
+  size_t sz = seq.get_seq ()->size ();
   assert (idx < sz);
-
-  auto &cache = libzw_cache (*val);
-  if (cache.empty ())
-    cache.resize (sz);
-
-  auto &ref = cache[idx];
-  if (ref == nullptr)
-    ref = std::make_unique <zw_value> ((*seq->get_seq ())[idx]->clone ());
-
-  return ref.get ();
+  return (*seq.get_seq ())[idx].get ();
 }

@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2014 Red Hat, Inc.
+   Copyright (C) 2014, 2015 Red Hat, Inc.
    This file is part of dwgrep.
 
    This file is free software; you can redistribute it and/or modify
@@ -114,18 +114,18 @@ std::ostream &operator<< (std::ostream &o, value_type const &v);
 // A domain for slot type constants.
 extern constant_dom const &slot_type_dom;
 
-class value
+class zw_value
 {
   value_type const m_type;
   size_t m_pos;
 
 protected:
-  value (value_type t, size_t pos)
+  zw_value (value_type t, size_t pos)
     : m_type {t}
     , m_pos {pos}
   {}
 
-  value (value const &that) = default;
+  zw_value (zw_value const &that) = default;
 
 public:
   static value_type const vtype;
@@ -133,10 +133,10 @@ public:
   value_type get_type () const { return m_type; }
   constant get_type_const () const;
 
-  virtual ~value () {}
+  virtual ~zw_value () {}
   virtual void show (std::ostream &o, brevity brv) const = 0;
-  virtual std::unique_ptr <value> clone () const = 0;
-  virtual cmp_result cmp (value const &that) const = 0;
+  virtual std::unique_ptr <zw_value> clone () const = 0;
+  virtual cmp_result cmp (zw_value const &that) const = 0;
 
   void
   set_pos (size_t pos)
@@ -159,7 +159,7 @@ public:
 
   template <class T>
   static T *
-  as (value *val)
+  as (zw_value *val)
   {
     assert (val != nullptr);
     if (! val->is <T> ())
@@ -169,12 +169,30 @@ public:
 
   template <class T>
   static T const *
-  as (value const *val)
+  as (zw_value const *val)
   {
     assert (val != nullptr);
     if (! val->is <T> ())
       return nullptr;
     return static_cast <T const *> (val);
+  }
+
+  template <class T>
+  static T &
+  require_as (zw_value *val)
+  {
+    auto ret = as <T> (val);
+    assert (ret != nullptr);
+    return *ret;
+  }
+
+  template <class T>
+  static T const &
+  require_as (zw_value const *val)
+  {
+    auto ret = as <T> (val);
+    assert (ret != nullptr);
+    return *ret;
   }
 
   template <class T>
@@ -184,6 +202,8 @@ public:
     return {T::vtype.code (), &slot_type_dom};
   }
 };
+
+typedef zw_value value;
 
 std::ostream &operator<< (std::ostream &o, value const &v);
 

@@ -178,43 +178,43 @@ zw_vocabulary_dwarf (zw_error **out_err)
 bool
 zw_value_is_dwarf (zw_value const *val)
 {
-  return libzw_value_is <value_dwarf> (val);
+  return val->is <value_dwarf> ();
 }
 
 bool
 zw_value_is_cu (zw_value const *val)
 {
-  return libzw_value_is <value_cu> (val);
+  return val->is <value_cu> ();
 }
 
 bool
 zw_value_is_die (zw_value const *val)
 {
-  return libzw_value_is <value_die> (val);
+  return val->is <value_die> ();
 }
 
 bool
 zw_value_is_attr (zw_value const *val)
 {
-  return libzw_value_is <value_attr> (val);
+  return val->is <value_attr> ();
 }
 
 bool
 zw_value_is_llelem (zw_value const *val)
 {
-  return libzw_value_is <value_loclist_elem> (val);
+  return val->is <value_loclist_elem> ();
 }
 
 bool
 zw_value_is_llop (zw_value const *val)
 {
-  return libzw_value_is <value_loclist_op> (val);
+  return val->is <value_loclist_op> ();
 }
 
 bool
 zw_value_is_aset (zw_value const *val)
 {
-  return libzw_value_is <value_aset> (val);
+  return val->is <value_aset> ();
 }
 
 namespace
@@ -223,7 +223,7 @@ namespace
   init_dwarf (char const *filename, doneness d, size_t pos, zw_error **out_err)
   {
     return capture_errors ([&] () {
-	return new zw_value {std::make_unique <value_dwarf> (filename, pos, d)};
+	return std::make_unique <value_dwarf> (filename, pos, d).release ();
       }, nullptr, out_err);
   }
 }
@@ -245,7 +245,7 @@ zw_value_dwarf_name (zw_value const *val)
 {
   assert (val != nullptr);
 
-  value_dwarf const *dw = value::as <value_dwarf> (val->m_value.get ());
+  value_dwarf const *dw = value::as <value_dwarf> (val);
   assert (dw != nullptr);
 
   return dw->get_fn ().c_str ();
@@ -253,22 +253,10 @@ zw_value_dwarf_name (zw_value const *val)
 
 namespace
 {
-  template <class T>
-  T const &
-  unpack (zw_value const *val)
-  {
-    assert (val != nullptr);
-
-    T const *hlv = value::as <T> (val->m_value.get ());
-    assert (hlv != nullptr);
-
-    return *hlv;
-  }
-
   value_cu const &
   cu (zw_value const *val)
   {
-    return unpack <value_cu> (val);
+    return value::require_as <value_cu> (val);
   }
 }
 
@@ -289,21 +277,7 @@ namespace
   value_die const &
   die (zw_value const *val)
   {
-    return unpack <value_die> (val);
-  }
-
-  zw_value const *
-  extract_dwarf (zw_value const *val, std::shared_ptr <dwfl_context> dwctx,
-		 zw_error **out_err)
-  {
-    return capture_errors ([&] () {
-	auto zwdw = std::make_unique <zw_value>
-	  (std::make_unique <value_dwarf> ("???", std::move (dwctx),
-					   0, doneness::raw));
-	auto ret = zwdw.get ();
-	libzw_cache (*val).push_back (std::move (zwdw));
-	return ret;
-      }, nullptr, out_err);
+    return value::require_as <value_die> (val);
   }
 }
 
@@ -316,7 +290,10 @@ zw_value_die_die (zw_value const *val)
 zw_value const *
 zw_value_die_dwarf (zw_value const *val, zw_error **out_err)
 {
-  return extract_dwarf (val, die (val).get_dwctx (), out_err);
+  return capture_errors ([&] () {
+      // get_dwarf caches things, so we need to cast away the const.
+      return &const_cast <value_die &> (die (val)).get_dwarf ();
+    }, nullptr, out_err);
 }
 
 namespace
@@ -324,7 +301,7 @@ namespace
   value_attr const &
   attr (zw_value const *val)
   {
-    return unpack <value_attr> (val);
+    return value::require_as <value_attr> (val);
   }
 }
 
@@ -337,7 +314,10 @@ zw_value_attr_attr (zw_value const *val)
 zw_value const *
 zw_value_attr_dwarf (zw_value const *val, zw_error **out_err)
 {
-  return extract_dwarf (val, attr (val).get_dwctx (), out_err);
+  return capture_errors ([&] () {
+      // get_dwarf caches things, so we need to cast away the const.
+      return &const_cast <value_attr &> (attr (val)).get_dwarf ();
+    }, nullptr, out_err);
 }
 
 
@@ -346,7 +326,7 @@ namespace
   value_loclist_elem const &
   llelem (zw_value const *val)
   {
-    return unpack <value_loclist_elem> (val);
+    return value::require_as <value_loclist_elem> (val);
   }
 }
 
@@ -382,7 +362,7 @@ namespace
   value_loclist_op const &
   llop (zw_value const *val)
   {
-    return unpack <value_loclist_op> (val);
+    return value::require_as <value_loclist_op> (val);
   }
 }
 
@@ -404,7 +384,7 @@ namespace
   value_aset const &
   aset (zw_value const *val)
   {
-    return unpack <value_aset> (val);
+    return value::require_as <value_aset> (val);
   }
 }
 
