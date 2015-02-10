@@ -313,7 +313,7 @@ value_die::cmp (value const &that) const
 namespace
 {
   bool
-  get_parent (value_die &value, Dwarf_Die &ret)
+  get_parent (value_die const &value, Dwarf_Die &ret)
   {
     Dwarf_Off par_off = value.get_dwctx ()->find_parent (value.get_die ());
     if (par_off == parent_cache::no_off)
@@ -327,7 +327,7 @@ namespace
   }
 
   std::unique_ptr <value_die>
-  fetch_parent_die (value_die *a)
+  fetch_parent_die (value_die const *a)
   {
     assert (a != nullptr);
     doneness d = a->get_doneness ();
@@ -350,7 +350,7 @@ namespace
 }
 
 std::unique_ptr <value_die>
-value_die::get_parent ()
+value_die::get_parent () const
 {
   return fetch_parent_die (this);
 }

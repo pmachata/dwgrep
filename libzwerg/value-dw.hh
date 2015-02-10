@@ -79,7 +79,7 @@ public:
   std::string &get_fn ()
   { return m_fn; }
 
-  std::shared_ptr <dwfl_context> get_dwctx ()
+  std::shared_ptr <dwfl_context> get_dwctx () const
   { return m_dwctx; }
 
   void show (std::ostream &o, brevity brv) const override;
@@ -113,7 +113,7 @@ public:
 
   value_cu (value_cu const &that) = default;
 
-  std::shared_ptr <dwfl_context> get_dwctx ()
+  std::shared_ptr <dwfl_context> get_dwctx () const
   { return m_dwctx; }
 
   Dwarf_CU &get_cu ()
@@ -161,7 +161,7 @@ public:
   {}
 
   std::shared_ptr <value_die>
-  get_import ()
+  get_import () const
   {
     assert (is_cooked ());
     return m_import;
@@ -183,7 +183,7 @@ public:
 
   cmp_result cmp (value const &that) const override;
 
-  std::unique_ptr <value_die> get_parent ();
+  std::unique_ptr <value_die> get_parent () const;
 };
 
 // -------------------------------------------------------------------
@@ -209,7 +209,7 @@ public:
 
   value_attr (value_attr const &that) = default;
 
-  std::shared_ptr <dwfl_context> get_dwctx ()
+  std::shared_ptr <dwfl_context> get_dwctx () const
   { return m_die.get_dwctx (); }
 
   value_die &get_value_die ()
@@ -254,7 +254,7 @@ public:
 
   value_abbrev_unit (value_abbrev_unit const &that) = default;
 
-  std::shared_ptr <dwfl_context> get_dwctx ()
+  std::shared_ptr <dwfl_context> get_dwctx () const
   { return m_dwctx; }
 
   Dwarf_CU &get_cu ()
@@ -287,7 +287,7 @@ public:
 
   value_abbrev (value_abbrev const &that) = default;
 
-  std::shared_ptr <dwfl_context> get_dwctx ()
+  std::shared_ptr <dwfl_context> get_dwctx () const
   { return m_dwctx; }
 
   Dwarf_Abbrev &get_abbrev ()
@@ -357,7 +357,7 @@ public:
 
   value_loclist_elem (value_loclist_elem const &that) = default;
 
-  std::shared_ptr <dwfl_context> get_dwctx ()
+  std::shared_ptr <dwfl_context> get_dwctx () const
   { return m_dwctx; }
 
   Dwarf_Attribute &get_attr ()
@@ -433,7 +433,7 @@ public:
 
   value_loclist_op (value_loclist_op const &that) = default;
 
-  std::shared_ptr <dwfl_context> get_dwctx ()
+  std::shared_ptr <dwfl_context> get_dwctx () const
   { return m_dwctx; }
 
   Dwarf_Attribute &get_attr ()
