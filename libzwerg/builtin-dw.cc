@@ -1367,7 +1367,7 @@ the CU DIE of this DIE's context.
 std::unique_ptr <value_producer <value>>
 op_value_attr::operate (std::unique_ptr <value_attr> a)
 {
-  return at_value (a->get_dwctx (), a->get_die (), a->get_attr ());
+  return at_value (a->get_dwctx (), a->get_value_die (), a->get_attr ());
 }
 
 std::string
@@ -2237,7 +2237,7 @@ op_atval_die::operate (std::unique_ptr <value_die> a)
 			a->get_doneness (), &attr))
     return nullptr;
 
-  return at_value (a->get_dwctx (), a->get_die (), attr);
+  return at_value (a->get_dwctx (), *a, attr);
 }
 
 std::string

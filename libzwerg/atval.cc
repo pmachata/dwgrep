@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2014 Red Hat, Inc.
+   Copyright (C) 2014, 2015 Red Hat, Inc.
    This file is part of dwgrep.
 
    This file is free software; you can redistribute it and/or modify
@@ -300,9 +300,10 @@ die_ranges (Dwarf_Die die)
 namespace
 {
   std::unique_ptr <value_producer <value>>
-  handle_at_dependent_value (Dwarf_Attribute attr, Dwarf_Die die,
+  handle_at_dependent_value (Dwarf_Attribute attr, value_die const &vd,
 			     std::shared_ptr <dwfl_context> dwctx)
   {
+    Dwarf_Die die = vd.get_die ();
     switch (dwarf_whatattr (&attr))
       {
       case DW_AT_language:
@@ -605,7 +606,7 @@ namespace
 
 std::unique_ptr <value_producer <value>>
 at_value (std::shared_ptr <dwfl_context> dwctx,
-	  Dwarf_Die die, Dwarf_Attribute attr)
+	  value_die const &vd, Dwarf_Attribute attr)
 {
   switch (dwarf_whatform (&attr))
     {
@@ -663,7 +664,7 @@ at_value (std::shared_ptr <dwfl_context> dwctx,
     case DW_FORM_block2:
     case DW_FORM_block4:
     case DW_FORM_block:
-      return handle_at_dependent_value (attr, die, dwctx);
+      return handle_at_dependent_value (attr, vd, dwctx);
 
     case DW_FORM_exprloc:
       return std::make_unique <locexpr_producer> (dwctx, attr);

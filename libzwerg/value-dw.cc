@@ -341,6 +341,8 @@ namespace
       if (! get_parent (*a, par_die))
 	return nullptr;
     while (d == doneness::cooked
+	   // Import another partial unit if possible, and keep
+	   // looking for the actual parent.
 	   && dwarf_tag (&par_die) == DW_TAG_partial_unit
 	   && a->get_import () != nullptr
 	   && (a = a->get_import ().get ()));
@@ -385,7 +387,7 @@ value_attr::show (std::ostream &o, brevity brv) const
       << constant (form, &dw_form_dom (), brevity::brief) << ")\t";
   }
 
-  auto vpr = at_value (m_die.get_dwctx (), m_die.get_die (), m_attr);
+  auto vpr = at_value (m_die.get_dwctx (), m_die, m_attr);
   while (auto v = vpr->next ())
     {
       if (auto d = value::as <value_die> (v.get ()))

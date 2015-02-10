@@ -37,7 +37,7 @@
 // Obtain a value of ATTR at DIE.
 std::unique_ptr <value_producer <value>>
 at_value (std::shared_ptr <dwfl_context> dwctx,
-	  Dwarf_Die die, Dwarf_Attribute attr);
+	  value_die const &die, Dwarf_Attribute attr);
 
 // Obtain DIE's ranges.
 value_aset die_ranges (Dwarf_Die die);
