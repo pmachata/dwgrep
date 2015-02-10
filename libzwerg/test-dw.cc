@@ -39,6 +39,7 @@
 #include "parser.hh"
 #include "stack.hh"
 #include "value-dw.hh"
+#include "atval.hh"
 
 std::string
 test_file (std::string name)
@@ -534,4 +535,31 @@ TEST_F (ZwTest, entry_dwarf_counts_every_unit_anew)
   for (auto prod = op_entry_dwarf {nullptr}.operate (std::move (vdw));
        auto va = prod->next (); )
     ASSERT_EQ (i++, va->get_pos ());
+}
+
+TEST_F (ZwTest, const_value_on_enum_with_type)
+{
+  std::unique_ptr <value_dwarf> vdw;
+  Dwarf *dw;
+  get_sole_dwarf ("const_value_on_enum_with_type.o", vdw, dw);
+  ASSERT_TRUE (vdw != nullptr);
+  ASSERT_TRUE (dw != nullptr);
+
+  value_die vd (vdw->get_dwctx (), dwpp_offdie (dw, 0x27), 0, doneness::cooked);
+
+  Dwarf_Die die = vd.get_die ();
+  Dwarf_Attribute attr;
+  ASSERT_TRUE (dwarf_attr (&die, DW_AT_const_value, &attr) != nullptr);
+
+  value_attr at (vd, attr, 0, doneness::cooked);
+  auto prod = at_value (vdw->get_dwctx (), vd, attr);
+  ASSERT_TRUE (prod != nullptr);
+
+  auto va = prod->next ();
+  ASSERT_TRUE (va != nullptr);
+  value_cst *cst = value::as <value_cst> (va.get ());
+  ASSERT_TRUE (cst != nullptr);
+  ASSERT_TRUE ((cst->get_constant () == constant {0, &dec_constant_dom}));
+
+  ASSERT_TRUE (prod->next () == nullptr);
 }

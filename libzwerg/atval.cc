@@ -387,13 +387,7 @@ namespace
 	    type_die = die;
 	  else
 	    {
-	      assert (! "atval dwarf_offdie");
-	      /*
-	      // Get DW_TAG_enumeration_type.
-	      if (dwarf_offdie (&*gr->dwarf, gr->find_parent (die),
-				&type_die) == nullptr)
-		throw_libdw ();
-	      */
+	      type_die = vd.get_parent ()->get_die ();
 
 	      if (dwarf_tag (&type_die) != DW_TAG_enumeration_type)
 		{
