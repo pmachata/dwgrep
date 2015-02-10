@@ -45,7 +45,6 @@
 #include "value-cst.hh"
 #include "value-str.hh"
 #include "value-dw.hh"
-#include "cache.hh"
 
 // dwopen
 value_dwarf
@@ -1245,59 +1244,10 @@ Takes an attribute on TOS and yields its form.
 
 // parent
 
-namespace
-{
-  template <class T>
-  bool
-  get_parent (T &value, Dwarf_Die &ret)
-  {
-    Dwarf_Off par_off = value.get_dwctx ()->find_parent (value.get_die ());
-    if (par_off == parent_cache::no_off)
-      return false;
-
-    if (dwarf_offdie (dwarf_cu_getdwarf (value.get_die ().cu),
-		      par_off, &ret) == nullptr)
-      throw_libdw ();
-
-    return true;
-  }
-
-  static bool
-  parent_die_handle_import (std::shared_ptr <value_die> &a)
-  {
-    if (auto b = a->get_import ())
-      {
-	a = b;
-	return true;
-      }
-    return false;
-  }
-
-  static std::unique_ptr <value_die>
-  parent_die_operate (std::shared_ptr <value_die> a)
-  {
-    doneness d = a->get_doneness ();
-
-    // Both cooked and raw DIE's have parents (unless they don't, in
-    // which case we are already at root).  But for cooked DIE's,
-    // when the parent is partial unit root, we need to traverse
-    // further along the import chain.
-    Dwarf_Die par_die;
-    do
-      if (! get_parent (*a, par_die))
-	return nullptr;
-    while (d == doneness::cooked
-	   && dwarf_tag (&par_die) == DW_TAG_partial_unit
-	   && parent_die_handle_import (a));
-
-    return std::make_unique <value_die> (a->get_dwctx (), par_die, 0, d);
-  }
-}
-
 std::unique_ptr <value_die>
 op_parent_die::operate (std::unique_ptr <value_die> a)
 {
-  return parent_die_operate (std::move (a));
+  return a->get_parent ();
 }
 
 std::string

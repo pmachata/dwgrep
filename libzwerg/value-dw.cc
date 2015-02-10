@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2014 Red Hat, Inc.
+   Copyright (C) 2014, 2015 Red Hat, Inc.
    This file is part of dwgrep.
 
    This file is free software; you can redistribute it and/or modify
@@ -43,6 +43,7 @@
 #include "flag_saver.hh"
 #include "op.hh"
 #include "value-dw.hh"
+#include "cache.hh"
 
 value_type const value_dwarf::vtype = value_type::alloc ("T_DWARF",
 R"docstring(
@@ -307,6 +308,51 @@ value_die::cmp (value const &that) const
     }
   else
     return cmp_result::fail;
+}
+
+namespace
+{
+  bool
+  get_parent (value_die &value, Dwarf_Die &ret)
+  {
+    Dwarf_Off par_off = value.get_dwctx ()->find_parent (value.get_die ());
+    if (par_off == parent_cache::no_off)
+      return false;
+
+    if (dwarf_offdie (dwarf_cu_getdwarf (value.get_die ().cu),
+		      par_off, &ret) == nullptr)
+      throw_libdw ();
+
+    return true;
+  }
+
+  std::unique_ptr <value_die>
+  fetch_parent_die (value_die *a)
+  {
+    assert (a != nullptr);
+    doneness d = a->get_doneness ();
+
+    // Both cooked and raw DIE's have parents (unless they don't, in
+    // which case we are already at root).  But for cooked DIE's,
+    // when the parent is partial unit root, we need to traverse
+    // further along the import chain.
+    Dwarf_Die par_die;
+    do
+      if (! get_parent (*a, par_die))
+	return nullptr;
+    while (d == doneness::cooked
+	   && dwarf_tag (&par_die) == DW_TAG_partial_unit
+	   && a->get_import () != nullptr
+	   && (a = a->get_import ().get ()));
+
+    return std::make_unique <value_die> (a->get_dwctx (), par_die, 0, d);
+  }
+}
+
+std::unique_ptr <value_die>
+value_die::get_parent ()
+{
+  return fetch_parent_die (this);
 }
 
 
