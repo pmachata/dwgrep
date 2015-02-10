@@ -409,28 +409,54 @@ several times, each time in a different context::
 
 namespace
 {
-  template <class A, class B>
-  struct op_entry_dwarf_base
-    : public stub_op
+  struct dwarf_entry_producer
+    : public value_producer <value_die>
   {
-    op_entry_dwarf_base (std::shared_ptr <op> upstream)
-      : stub_op {std::make_shared <B> (std::make_shared <A> (upstream))}
+    dwarf_unit_producer m_unitprod;
+    std::unique_ptr <die_it_producer <all_dies_iterator>> m_dieprod;
+    size_t m_i;
+
+    dwarf_entry_producer (std::shared_ptr <dwfl_context> dwctx, doneness d)
+      : m_unitprod {dwctx, d}
+      , m_i {0}
     {}
 
-    stack::uptr
+    std::unique_ptr <value_die>
     next () override
-    { return m_upstream->next (); }
-  };
-
-  struct op_entry_dwarf
-    : public op_entry_dwarf_base <op_unit_dwarf, op_entry_cu>
-  {
-    using op_entry_dwarf_base::op_entry_dwarf_base;
-
-    static std::string
-    docstring ()
     {
-      return
+      while (true)
+	{
+	  while (m_dieprod == nullptr)
+	    if (auto cu = m_unitprod.next ())
+	      m_dieprod = std::make_unique <die_it_producer <all_dies_iterator>>
+				(m_unitprod.m_dwctx, dwpp_cudie (cu->get_cu ()),
+				 m_unitprod.m_doneness);
+	    else
+	      return nullptr;
+
+	  if (auto ret = m_dieprod->next ())
+	    {
+	      ret->set_pos (m_i++);
+	      return ret;
+	    }
+
+	  m_dieprod = nullptr;
+	}
+    }
+  };
+}
+
+std::unique_ptr <value_producer <value_die>>
+op_entry_dwarf::operate (std::unique_ptr <value_dwarf> a)
+{
+  return std::make_unique <dwarf_entry_producer> (a->get_dwctx (),
+						  a->get_doneness ());
+}
+
+std::string
+op_entry_dwarf::docstring ()
+{
+  return
 R"docstring(
 
 Takes a Dwarf on TOS and yields DIE's that it contains.  This operator
@@ -439,18 +465,6 @@ behaves equivalently to the following::
 	unit entry
 
 )docstring";
-    }
-
-    static builtin_protomap
-    protomap ()
-    {
-      return { builtin_prototype ({value_dwarf::vtype}, yield::many,
-				  {value_die::vtype}) };
-    }
-
-    static selector get_selector ()
-    { return {value_dwarf::vtype}; }
-  };
 }
 
 

@@ -467,15 +467,34 @@ TEST_F (ZwTest, value_dwarf_doesnt_leak_fd)
   assert (rc == 0);
 }
 
+namespace
+{
+  void
+  get_sole_dwarf (char const *fn,
+		  std::unique_ptr <value_dwarf> &ret_vdw, Dwarf *&ret_dw)
+  {
+    ret_vdw = nullptr;
+    ret_dw = nullptr;
+
+    auto vdw = rdw (fn);
+    auto ctx = vdw->get_dwctx ();
+
+    std::vector <std::pair <Dwarf *, Dwarf_Addr>> modules
+      {dwfl_module_iterator {ctx->get_dwfl ()}, dwfl_module_iterator::end ()};
+    ASSERT_EQ (1, modules.size ());
+
+    ret_vdw = std::move (vdw);
+    ret_dw = modules[0].first;
+  }
+}
+
 TEST_F (ZwTest, attribute_die_cooked_no_dup)
 {
-  auto vdw = rdw ("attribute-die-cooked-no-dup.o");
-  auto ctx = vdw->get_dwctx ();
-
-  std::vector <std::pair <Dwarf *, Dwarf_Addr>> modules
-    {dwfl_module_iterator {ctx->get_dwfl ()}, dwfl_module_iterator::end ()};
-  ASSERT_EQ (1, modules.size ());
-  Dwarf *dw = modules[0].first;
+  std::unique_ptr <value_dwarf> vdw;
+  Dwarf *dw;
+  get_sole_dwarf ("attribute-die-cooked-no-dup.o", vdw, dw);
+  ASSERT_TRUE (vdw != nullptr);
+  ASSERT_TRUE (dw != nullptr);
 
   bool seen_specification = false;
   bool seen_abstract_origin = false;
@@ -502,4 +521,17 @@ TEST_F (ZwTest, attribute_die_cooked_no_dup)
 
   EXPECT_TRUE (seen_specification);
   EXPECT_TRUE (seen_abstract_origin);
+}
+
+TEST_F (ZwTest, entry_dwarf_counts_every_unit_anew)
+{
+  std::unique_ptr <value_dwarf> vdw;
+  Dwarf *dw;
+  get_sole_dwarf ("entry_dwarf_counts_every_unit_anew.o", vdw, dw);
+  ASSERT_TRUE (vdw != nullptr);
+
+  size_t i = 0;
+  for (auto prod = op_entry_dwarf {nullptr}.operate (std::move (vdw));
+       auto va = prod->next (); )
+    ASSERT_EQ (i++, va->get_pos ());
 }

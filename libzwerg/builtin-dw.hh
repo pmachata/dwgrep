@@ -90,6 +90,17 @@ struct op_entry_cu
   static std::string docstring ();
 };
 
+struct op_entry_dwarf
+  : public op_yielding_overload <value_die, value_dwarf>
+{
+  using op_yielding_overload::op_yielding_overload;
+
+  std::unique_ptr <value_producer <value_die>>
+  operate (std::unique_ptr <value_dwarf> a) override;
+
+  static std::string docstring ();
+};
+
 struct op_child_die
   : public op_yielding_overload <value_die, value_die>
 {
