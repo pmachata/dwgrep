@@ -170,7 +170,10 @@ public:
   Dwarf_Die &get_die ()
   { return m_die; }
 
-  std::shared_ptr <dwfl_context> get_dwctx ()
+  Dwarf_Die const &get_die () const
+  { return m_die; }
+
+  std::shared_ptr <dwfl_context> get_dwctx () const
   { return m_dwctx; }
 
   void show (std::ostream &o, brevity brv) const override;
@@ -191,29 +194,35 @@ class value_attr
   : public value
   , public doneness_aspect
 {
-  std::shared_ptr <dwfl_context> m_dwctx;
-  Dwarf_Die m_die;
+  value_die m_die;
   Dwarf_Attribute m_attr;
 
 public:
   static value_type const vtype;
 
-  value_attr (std::shared_ptr <dwfl_context> dwctx,
-	      Dwarf_Attribute attr, Dwarf_Die die, size_t pos, doneness d)
+  value_attr (value_die die, Dwarf_Attribute attr, size_t pos, doneness d)
     : value {vtype, pos}
     , doneness_aspect {d}
-    , m_dwctx {dwctx}
-    , m_die (die)
+    , m_die {die}
     , m_attr (attr)
   {}
 
   value_attr (value_attr const &that) = default;
 
   std::shared_ptr <dwfl_context> get_dwctx ()
-  { return m_dwctx; }
+  { return m_die.get_dwctx (); }
+
+  value_die &get_value_die ()
+  { return m_die; }
+
+  value_die const &get_value_die () const
+  { return m_die; }
 
   Dwarf_Die &get_die ()
-  { return m_die; }
+  { return m_die.get_die (); }
+
+  Dwarf_Die const &get_die () const
+  { return m_die.get_die (); }
 
   Dwarf_Attribute &get_attr ()
   { return m_attr; }

@@ -731,7 +731,7 @@ namespace
     : public value_producer <value_attr>
   {
     std::shared_ptr <dwfl_context> m_dwctx;
-    Dwarf_Die m_die;
+    std::unique_ptr <value_die> m_die;
     attr_iterator m_it;
     size_t m_i;
     doneness m_doneness;
@@ -740,9 +740,7 @@ namespace
     // Already seen attributes.
     std::vector <int> m_seen;
 
-    // We store full DIE's to allow DW_AT_specification's in a
-    // separate debug info files.
-    std::vector <Dwarf_Die> m_next;
+    std::vector <std::unique_ptr <value_die>> m_next;
 
     void
     schedule (Dwarf_Attribute &at)
@@ -754,7 +752,8 @@ namespace
       if (dwarf_formref_die (&at, &die_mem) == nullptr)
 	throw_libdw ();
 
-      m_next.push_back (die_mem);
+      m_next.push_back
+	(std::make_unique <value_die> (m_dwctx, die_mem, 0, m_doneness));
     }
 
     bool
@@ -763,9 +762,9 @@ namespace
       if (m_next.empty ())
 	return false;
 
-      m_die = m_next.back ();
-      m_it = attr_iterator {&m_die};
+      m_die = std::move (m_next.back ());
       m_next.pop_back ();
+      m_it = attr_iterator {&m_die->get_die ()};
       return true;
     }
 
@@ -783,7 +782,7 @@ namespace
       , m_doneness {value->get_doneness ()}
       , m_secondary {false}
     {
-      m_next.push_back (value->get_die ());
+      m_next.push_back (std::move (value));
       next_die ();
     }
 
@@ -813,8 +812,7 @@ namespace
       while (integrate && seen (at.code));
 
       m_seen.push_back (at.code);
-      return std::make_unique <value_attr>
-		(m_dwctx, at, m_die, m_i++, m_doneness);
+      return std::make_unique <value_attr> (*m_die, at, m_i++, m_doneness);
     }
   };
 }
@@ -2097,8 +2095,7 @@ Takes a DIE on TOS and yields a raw version thereof.
 value_attr
 op_raw_attr::operate (std::unique_ptr <value_attr> a)
 {
-  return value_attr {a->get_dwctx (), a->get_attr (), a->get_die (),
-		     0, doneness::raw};
+  return value_attr {a->get_value_die (), a->get_attr (), 0, doneness::raw};
 }
 
 std::string
@@ -2181,8 +2178,7 @@ Takes a DIE on TOS and yields a cooked version thereof.
 value_attr
 op_cooked_attr::operate (std::unique_ptr <value_attr> a)
 {
-  return value_attr {a->get_dwctx (), a->get_attr (), a->get_die (),
-		     0, doneness::cooked};
+  return value_attr {a->get_value_die (), a->get_attr (), 0, doneness::cooked};
 }
 
 std::string

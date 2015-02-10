@@ -266,7 +266,7 @@ value_die::show (std::ostream &o, brevity brv) const
     for (auto it = attr_iterator {die}; it != attr_iterator::end (); ++it)
       {
 	o << "\n\t";
-	value_attr {m_dwctx, **it, m_die, 0, doneness::raw}
+	value_attr {*this, **it, 0, doneness::raw}
 		.show (o, brevity::full);
       }
 }
@@ -385,7 +385,7 @@ value_attr::show (std::ostream &o, brevity brv) const
       << constant (form, &dw_form_dom (), brevity::brief) << ")\t";
   }
 
-  auto vpr = at_value (m_dwctx, m_die, m_attr);
+  auto vpr = at_value (m_die.get_dwctx (), m_die.get_die (), m_attr);
   while (auto v = vpr->next ())
     {
       if (auto d = value::as <value_die> (v.get ()))
@@ -411,8 +411,8 @@ value_attr::cmp (value const &that) const
 {
   if (auto v = value::as <value_attr> (&that))
     {
-      Dwarf_Off a = dwarf_dieoffset ((Dwarf_Die *) &m_die);
-      Dwarf_Off b = dwarf_dieoffset ((Dwarf_Die *) &v->m_die);
+      Dwarf_Off a = dwarf_dieoffset (const_cast <Dwarf_Die *> (&get_die ()));
+      Dwarf_Off b = dwarf_dieoffset (const_cast <Dwarf_Die *> (&v->get_die ()));
       if (a != b)
 	return compare (a, b);
       else
