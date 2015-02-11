@@ -770,8 +770,10 @@ expect_count 1 ./inconsistent-types -e '
 	let C := A @AT_specification child ?TAG_formal_parameter;
 	(B pos == C pos) (B @AT_type != C @AT_type)'
 
-# Test for ticket #14
+# Tests for ticket #14
 expect_out '0' ../tests/const_value_signedness_from_enumerator.o -e '
+	entry ?TAG_template_value_parameter @AT_const_value'
+expect_out '0' ../tests/const_value_signedness_small_enough.o -e '
 	entry ?TAG_template_value_parameter @AT_const_value'
 
 # Test merging of -e's.

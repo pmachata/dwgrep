@@ -39,6 +39,7 @@
 #include "value-seq.hh"
 #include "value-str.hh"
 #include "flag_saver.hh"
+#include "dwit.hh"
 
 namespace
 {
@@ -94,6 +95,12 @@ namespace
     if (dwarf_formudata (&attr, &uval) != 0)
       throw_libdw ();
     return value_cst (constant {uval, &dom}, 0);
+  }
+
+  value_cst
+  extract_unsigned (Dwarf_Attribute attr)
+  {
+    return extract_unsigned_with_domain (attr, dec_constant_dom);
   }
 
   std::unique_ptr <value_producer <value>>
@@ -499,12 +506,21 @@ namespace
 		  if (seen_unsigned && ! seen_signed)
 		    return atval_unsigned (attr);
 
+		  // Maybe the value is small enough that signedness
+		  // doesn't actually matter.
+		  value_cst vcst = extract_unsigned (attr);
+		  auto const &val = vcst.get_constant ().value ();
+		  assert (val.is_unsigned ());
+		  if (static_cast <int64_t> (val.uval ()) >= 0)
+		    return pass_single_value
+		      (std::make_unique <value_cst> (vcst));
+
 		  {
 		    ios_flag_saver ifs {std::cerr};
 		    std::cerr << "Can't figure out signedness of "
 				 "DW_AT_const_value on DIE "
-			      << std::hex << dwarf_dieoffset (&die)
-			      << std::endl;
+			      << std::hex << std::showbase
+			      << dwarf_dieoffset (&die) << std::endl;
 		  }
 
 		  return atval_signed (attr);

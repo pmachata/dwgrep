@@ -88,6 +88,12 @@ struct mpz_class
   int64_t sval () const;
 
   void swap (mpz_class &that);
+
+  bool is_signed () const
+  { return m_sign == signedness::sign; }
+
+  bool is_unsigned () const
+  { return m_sign == signedness::unsign; }
 };
 
 std::ostream &operator<< (std::ostream &o, mpz_class value);
