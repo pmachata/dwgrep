@@ -475,10 +475,28 @@ namespace
 			    " DW_AT_type is a DW_TAG_enumeration_type with"
 			    " DW_AT_type");
 
-		  // Maybe the form indicates the signedness.
-		  else if (attr.form == DW_FORM_sdata)
+		  // We may be able to figure out the signedness from
+		  // form of DW_AT_value of DW_TAG_enumeration_type's
+		  // children.
+		  bool seen_signed = false;
+		  bool seen_unsigned = false;
+		  for (auto it = child_iterator {type_die};
+		       it != child_iterator::end (); ++it)
+		    {
+		      Dwarf_Attribute a;
+		      if (dwarf_tag (*it) == DW_TAG_enumerator
+			  && dwarf_attr (*it, DW_AT_const_value, &a) != nullptr)
+			{
+			  if (a.form == DW_FORM_sdata)
+			    seen_signed = true;
+			  else if (a.form == DW_FORM_udata)
+			    seen_unsigned = true;
+			}
+		    }
+
+		  if (seen_signed && ! seen_unsigned)
 		    return atval_signed (attr);
-		  else if (attr.form == DW_FORM_udata)
+		  if (seen_unsigned && ! seen_signed)
 		    return atval_unsigned (attr);
 
 		  {
