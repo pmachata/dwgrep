@@ -86,14 +86,20 @@ namespace
       (std::make_unique <value_seq> (std::move (vv), 0));
   }
 
-  std::unique_ptr <value_producer <value>>
-  atval_unsigned_with_domain (Dwarf_Attribute attr, constant_dom const &dom)
+  value_cst
+  extract_unsigned_with_domain (Dwarf_Attribute attr, constant_dom const &dom)
   {
     Dwarf_Word uval;
     if (dwarf_formudata (&attr, &uval) != 0)
       throw_libdw ();
+    return value_cst (constant {uval, &dom}, 0);
+  }
+
+  std::unique_ptr <value_producer <value>>
+  atval_unsigned_with_domain (Dwarf_Attribute attr, constant_dom const &dom)
+  {
     return pass_single_value
-      (std::make_unique <value_cst> (constant {uval, &dom}, 0));
+      (std::make_unique <value_cst> (extract_unsigned_with_domain (attr, dom)));
   }
 
   std::unique_ptr <value_producer <value>>
