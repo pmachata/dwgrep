@@ -1,5 +1,6 @@
 #include <stdexcept>
 #include <cassert>
+#include <sstream>
 #include "int.hh"
 
 namespace
@@ -188,6 +189,12 @@ main(int argc, char *argv[])
   assert (mpz_class (INT64_MAX) / -1 == INT64_MIN + 1);
   assert_exception ("overflow", mpz_class (UINT64_MAX) / -1);
   assert_exception ("overflow", mpz_class (UINT64_MAX) / -2);
+
+  {
+    std::stringstream ss;
+    ss << mpz_class (INT64_MIN);
+    assert (ss.str () == "-9223372036854775808");
+  }
 
   return 0;
 }

@@ -83,7 +83,7 @@ std::ostream &
 operator<< (std::ostream &o, mpz_class value)
 {
   if (value < 0)
-    return o << '-' << std::abs (value.m_i);
+    return o << '-' << -value;
   else
     return o << value.m_u;
 }
