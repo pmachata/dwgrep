@@ -50,8 +50,8 @@ expect_out ()
     if [ -s $TMP ]; then
 	fail "$DWGREP" "$@"
 	echo "expected no error" >&2
-	echo -n "    got:" >&2
-	cat $TMP
+	echo -n "    got: " >&2
+	cat $TMP >&2
     fi
     if [ "$OUT" != "$GOT" ]; then
 	fail "$DWGREP" "$@"
