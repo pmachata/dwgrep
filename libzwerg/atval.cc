@@ -38,6 +38,7 @@
 #include "value-dw.hh"
 #include "value-seq.hh"
 #include "value-str.hh"
+#include "flag_saver.hh"
 
 namespace
 {
@@ -466,16 +467,28 @@ namespace
 
 	      else if (tag == DW_TAG_enumeration_type)
 		{
+		  // If there is a DW_AT_type, we might be able to use
+		  // it to figure out the type of the underlying
+		  // datum.
 		  if (dwarf_hasattr_integrate (&type_die, DW_AT_type))
-		    // We can use this DW_AT_type to figure out
-		    // whether this is signed or unsigned.
 		    assert (! "unhandled: DW_AT_const_value on a DIE whose"
 			    " DW_AT_type is a DW_TAG_enumeration_type with"
 			    " DW_AT_type");
 
-		  std::cerr << "DW_AT_const_value on a DIE whose DW_AT_type is "
-		    "a DW_TAG_enumeration_type without DW_AT_encoding or "
-		    "DW_AT_type.  Assuming signed.\n";
+		  // Maybe the form indicates the signedness.
+		  else if (attr.form == DW_FORM_sdata)
+		    return atval_signed (attr);
+		  else if (attr.form == DW_FORM_udata)
+		    return atval_unsigned (attr);
+
+		  {
+		    ios_flag_saver ifs {std::cerr};
+		    std::cerr << "Can't figure out signedness of "
+				 "DW_AT_const_value on DIE "
+			      << std::hex << dwarf_dieoffset (&die)
+			      << std::endl;
+		  }
+
 		  return atval_signed (attr);
 		}
 
