@@ -1,12 +1,15 @@
+version.h
 CMakeCache.txt
 CMakeFiles/
 CTestTestfile.cmake
 Makefile
 build/
 cmake_install.cmake
+install_manifest.txt
 doc/CMakeFiles/
 doc/_build/
 doc/_doctrees/
+doc/_source/
 doc/html/
 dwgrep
 dwgrep-gendoc
