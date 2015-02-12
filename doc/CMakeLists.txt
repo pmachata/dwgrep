@@ -62,7 +62,7 @@ ADD_CUSTOM_TARGET (doc-man
     COMMENT "Building manual pages")
 
 INSTALL (FILES ${SPHINX_MAN_DIR}/dwgrep.1
-  DESTINATION share/man/man1)
+  DESTINATION share/man/man1 OPTIONAL)
 
 ADD_CUSTOM_TARGET (doc)
 ADD_DEPENDENCIES (doc doc-html doc-man)
