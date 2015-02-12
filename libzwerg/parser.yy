@@ -493,12 +493,8 @@ Statement:
   {
     std::unique_ptr <tree> t1 {$1};
 
-    auto t = std::make_unique <tree> (*t1);
-    auto scp = tree::create_scope (std::move (t1));
-
-    auto ret = tree::create_cat <tree_type::CAT>
-      (std::move (t),
-       tree::create_unary <tree_type::CLOSE_STAR> (std::move (scp)));
+    auto ret = tree::create_unary <tree_type::CLOSE_PLUS>
+      (tree::create_scope (std::move (t1)));
 
     $$ = ret.release ();
   }

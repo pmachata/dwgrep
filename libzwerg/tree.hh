@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2014 Red Hat, Inc.
+   Copyright (C) 2014, 2015 Red Hat, Inc.
    This file is part of dwgrep.
 
    This file is free software; you can redistribute it and/or modify
@@ -69,8 +69,8 @@ enum class tree_arity_v
 //
 // NOP -- For holding a no-op that comes up in "%s" and (,X).
 //
-// CLOSE_STAR -- For holding X*.  X is the only child.  X+ is emulated
-// as (CAT X X*); X? is emulated as (X,).
+// CLOSE_STAR -- For holding X*.  X is the only child.
+// CLOSE_PLUS -- For holding X+; X? is emulated as (X,).
 //
 // ASSERT -- All assertions (such as ?some_tag) are modeled using an
 // ASSERT node, whose only child is a predicate node expressing the
@@ -105,6 +105,7 @@ enum class tree_arity_v
   TREE_TYPE (READ, STR)				\
   TREE_TYPE (NOP, NULLARY)			\
   TREE_TYPE (CLOSE_STAR, UNARY)			\
+  TREE_TYPE (CLOSE_PLUS, UNARY)			\
   TREE_TYPE (ASSERT, UNARY)			\
   TREE_TYPE (EMPTY_LIST, NULLARY)		\
   TREE_TYPE (PRED_AND, BINARY)			\

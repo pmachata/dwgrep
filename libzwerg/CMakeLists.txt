@@ -124,6 +124,11 @@ IF (GTEST_FOUND)
     ${GTEST_LIBRARIES} ${LIBELF_LIBRARY} ${DWARF_LIBRARIES})
   ADD_TEST (TestDw test-dw ${TESTCASE_DIR})
 
+  ADD_EXECUTABLE (test-op
+    test-op.cc $<TARGET_OBJECTS:TestStub> $<TARGET_OBJECTS:LibzwergCore>)
+  TARGET_LINK_LIBRARIES (test-op ${GTEST_LIBRARIES})
+  ADD_TEST (TestOp test-op ${TESTCASE_DIR})
+
   ADD_EXECUTABLE (test-value-cst test-value-cst.cc
     $<TARGET_OBJECTS:TestStub> $<TARGET_OBJECTS:LibzwergCore>)
   TARGET_LINK_LIBRARIES (test-value-cst ${GTEST_LIBRARIES})

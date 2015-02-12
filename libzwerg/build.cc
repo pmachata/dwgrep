@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2014 Red Hat, Inc.
+   Copyright (C) 2014, 2015 Red Hat, Inc.
    This file is part of dwgrep.
 
    This file is free software; you can redistribute it and/or modify
@@ -86,6 +86,7 @@ tree::build_pred () const
     case tree_type::SUBX_EVAL:
     case tree_type::EMPTY_LIST:
     case tree_type::CLOSE_STAR:
+    case tree_type::CLOSE_PLUS:
     case tree_type::CONST:
     case tree_type::STR:
     case tree_type::FORMAT:
@@ -223,7 +224,16 @@ tree::build_exec (std::shared_ptr <op> upstream) const
       {
 	auto origin = std::make_shared <op_origin> (nullptr);
 	auto op = child (0).build_exec (origin);
-	return std::make_shared <op_tr_closure> (upstream, origin, op);
+	return std::make_shared <op_tr_closure> (upstream, origin, op,
+						 op_tr_closure_kind::star);
+      }
+
+    case tree_type::CLOSE_PLUS:
+      {
+	auto origin = std::make_shared <op_origin> (nullptr);
+	auto op = child (0).build_exec (origin);
+	return std::make_shared <op_tr_closure> (upstream, origin, op,
+						 op_tr_closure_kind::plus);
       }
 
     case tree_type::SCOPE:

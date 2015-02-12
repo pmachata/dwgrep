@@ -506,12 +506,18 @@ struct op_tr_closure::pimpl
   std::set <std::shared_ptr <stack>, deref_less> m_seen;
   std::vector <std::shared_ptr <stack> > m_stks;
 
+  bool m_is_plus;
+  bool m_inner_drained;
+
   pimpl (std::shared_ptr <op> upstream,
 	 std::shared_ptr <op_origin> origin,
-	 std::shared_ptr <op> op)
+	 std::shared_ptr <op> op,
+	 op_tr_closure_kind k)
     : m_upstream {upstream}
     , m_origin {origin}
     , m_op {op}
+    , m_is_plus {k == op_tr_closure_kind::plus}
+    , m_inner_drained {true}
   {}
 
   void
@@ -528,38 +534,65 @@ struct op_tr_closure::pimpl
     m_upstream->reset ();
   }
 
+  std::unique_ptr <stack>
+  produce_and_cache (std::shared_ptr <stack> stk)
+  {
+    if (m_seen.insert (stk).second)
+      {
+	m_stks.push_back (stk);
+	return std::make_unique <stack> (*stk);
+      }
+    else
+      return nullptr;
+  }
+
+  bool
+  schedule (std::unique_ptr <stack> stk)
+  {
+    if (stk == nullptr)
+      return false;
+
+    m_op->reset ();
+    m_origin->set_next (std::move (stk));
+    m_inner_drained = false;
+    return true;
+  }
+
+  bool
+  schedule_next ()
+  {
+    if (m_stks.empty ())
+      return m_is_plus ? schedule (m_upstream->next ()) : false;
+
+    schedule (std::make_unique <stack> (*m_stks.back ()));
+    m_stks.pop_back ();
+    return true;
+  }
+
   stack::uptr
   next ()
   {
-    while (true)
+    do
       {
-	if (m_stks.empty ())
-	  {
-	    reset_me ();
-	    if (std::shared_ptr <stack> stk = m_upstream->next ())
-	      {
-		m_stks.push_back (stk);
-		m_seen.insert (stk);
-	      }
-	    else
-	      return nullptr;
-	  }
-
-	auto stk = m_stks.back ();
-	m_stks.pop_back ();
-
-	m_op->reset ();
-	m_origin->set_next (std::make_unique <stack> (*stk));
-
-	while (std::shared_ptr <stack> stk2 = m_op->next ())
-	  if (m_seen.find (stk2) == m_seen.end ())
-	    {
-	      m_stks.push_back (stk2);
-	      m_seen.insert (stk2);
-	    }
-
-	return std::make_unique <stack> (*stk);
+	while (std::shared_ptr <stack> stk = m_inner_drained ? nullptr : m_op->next ())
+	  if (auto ret = produce_and_cache (stk))
+	    return ret;
+	m_inner_drained = true;
       }
+    while (schedule_next ());
+
+    if (! m_is_plus)
+      {
+	m_seen.clear ();
+	if (std::shared_ptr <stack> stk = m_upstream->next ())
+	  {
+	    // With seen cache clean, this ought to succeed.
+	    auto ret = produce_and_cache (stk);
+	    assert (ret != nullptr);
+	    return ret;
+	  }
+      }
+
     return nullptr;
   }
 
@@ -572,8 +605,9 @@ struct op_tr_closure::pimpl
 
 op_tr_closure::op_tr_closure (std::shared_ptr <op> upstream,
 			      std::shared_ptr <op_origin> origin,
-			      std::shared_ptr <op> op)
-  : m_pimpl {std::make_unique <pimpl> (upstream, origin, op)}
+			      std::shared_ptr <op> op,
+			      op_tr_closure_kind k)
+  : m_pimpl {std::make_unique <pimpl> (upstream, origin, op, k)}
 {}
 
 op_tr_closure::~op_tr_closure ()

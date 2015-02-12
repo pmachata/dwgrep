@@ -776,6 +776,10 @@ expect_out '0' ../tests/const_value_signedness_from_enumerator.o -e '
 expect_out '0' ../tests/const_value_signedness_small_enough.o -e '
 	entry ?TAG_template_value_parameter @AT_const_value'
 
+# Test for ticket #7
+expect_count 1 -e '()******************'
+expect_count 1 -e '()++++++++++++++++++'
+
 # Test merging of -e's.
 expect_count 2 -e 1 -e , -e 2
 

@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2014 Red Hat, Inc.
+   Copyright (C) 2014, 2015 Red Hat, Inc.
    This file is part of dwgrep.
 
    This file is free software; you can redistribute it and/or modify
@@ -190,9 +190,9 @@ do_tests ()
   test ("1 add: 2", "(CAT (CONST<1>) (CONST<2>) (F_BUILTIN<add>))");
 
   test ("()*", "(CLOSE_STAR (NOP))");
-  test ("()+", "(CAT (NOP) (CLOSE_STAR (NOP)))");
+  test ("()+", "(CLOSE_PLUS (NOP))");
   test ("swap*", "(CLOSE_STAR (F_BUILTIN<swap>))");
-  test ("swap+", "(CAT (F_BUILTIN<swap>) (CLOSE_STAR (F_BUILTIN<swap>)))");
+  test ("swap+", "(CLOSE_PLUS (F_BUILTIN<swap>))");
   test ("swap?", "(ALT (F_BUILTIN<swap>) (NOP))");
 
   test ("1 dup",
@@ -202,7 +202,7 @@ do_tests ()
   test ("1* dup",
 	"(CAT (CLOSE_STAR (CONST<1>)) (F_BUILTIN<dup>))");
   test ("1+ dup",
-	"(CAT (CONST<1>) (CLOSE_STAR (CONST<1>)) (F_BUILTIN<dup>))");
+	"(CAT (CLOSE_PLUS (CONST<1>)) (F_BUILTIN<dup>))");
 
   test ("(elem 1)",
 	"(CAT (F_BUILTIN<elem>) (CONST<1>))");

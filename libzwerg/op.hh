@@ -445,6 +445,13 @@ public:
   std::string name () const override;
 };
 
+
+enum class op_tr_closure_kind
+  {
+    plus, // transitive
+    star, // transitive, reflective
+  };
+
 class op_tr_closure
   : public op
 {
@@ -454,7 +461,8 @@ class op_tr_closure
 public:
   op_tr_closure (std::shared_ptr <op> upstream,
 		 std::shared_ptr <op_origin> origin,
-		 std::shared_ptr <op> op);
+		 std::shared_ptr <op> op,
+		 op_tr_closure_kind k);
 
   ~op_tr_closure ();
 
