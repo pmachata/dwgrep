@@ -19,7 +19,7 @@ expect_count ()
     export total=$((total + 1))
     COUNT=$1
     shift
-    GOT=$(timeout 10 $DWGREP -c "$@" 2>&1)
+    GOT=$(timeout 1 $DWGREP -c "$@" 2>&1)
     if [ "$GOT" != "$COUNT" ]; then
 	fail "$DWGREP -c" "$@"
 	echo "expected: $COUNT" >&2
@@ -32,7 +32,7 @@ expect_error ()
     export total=$((total + 1))
     ERR=$1
     shift
-    GOT=$(timeout 10 $DWGREP "$@" 2>&1 >/dev/null)
+    GOT=$(timeout 1 $DWGREP "$@" 2>&1 >/dev/null)
     if [ "${GOT/${ERR}//}" == "$GOT" ]; then
 	fail "$DWGREP" "$@"
 	echo "expected error: $ERR" >&2
@@ -46,7 +46,7 @@ expect_out ()
     OUT=$1
     shift
     TMP=$(mktemp)
-    GOT=$(timeout 10 $DWGREP "$@" 2>$TMP)
+    GOT=$(timeout 1 $DWGREP "$@" 2>$TMP)
     if [ -s $TMP ]; then
 	fail "$DWGREP" "$@"
 	echo "expected no error" >&2
