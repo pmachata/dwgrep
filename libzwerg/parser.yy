@@ -483,8 +483,21 @@ Statement:
   {
     std::unique_ptr <tree> t1 {$1};
 
-    auto ret = tree::create_unary <tree_type::CLOSE_STAR>
-      (tree::create_scope (std::move (t1)));
+    auto ret = [&] () {
+      switch (t1->tt ())
+	{
+	case tree_type::CLOSE_STAR:
+	  return std::move (t1);
+
+	case tree_type::CLOSE_PLUS:
+	  t1->m_tt = tree_type::CLOSE_STAR;
+	  return std::move (t1);
+
+	default:
+	  return tree::create_unary <tree_type::CLOSE_STAR>
+			(tree::create_scope (std::move (t1)));
+	}
+    } ();
 
     $$ = ret.release ();
   }
@@ -493,8 +506,11 @@ Statement:
   {
     std::unique_ptr <tree> t1 {$1};
 
-    auto ret = tree::create_unary <tree_type::CLOSE_PLUS>
-      (tree::create_scope (std::move (t1)));
+    auto ret = (t1->tt () == tree_type::CLOSE_STAR
+		|| t1->tt () == tree_type::CLOSE_PLUS)
+      ? std::move (t1)
+      : tree::create_unary <tree_type::CLOSE_PLUS>
+		(tree::create_scope (std::move (t1)));
 
     $$ = ret.release ();
   }

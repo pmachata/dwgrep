@@ -191,6 +191,10 @@ do_tests ()
 
   test ("()*", "(CLOSE_STAR (NOP))");
   test ("()+", "(CLOSE_PLUS (NOP))");
+  test ("()******", "(CLOSE_STAR (NOP))");
+  test ("()++++++", "(CLOSE_PLUS (NOP))");
+  test ("()+*+*+*", "(CLOSE_STAR (NOP))");
+  test ("()*+*+*+", "(CLOSE_STAR (NOP))");
   test ("swap*", "(CLOSE_STAR (F_BUILTIN<swap>))");
   test ("swap+", "(CLOSE_PLUS (F_BUILTIN<swap>))");
   test ("swap?", "(ALT (F_BUILTIN<swap>) (NOP))");
