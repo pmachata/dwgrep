@@ -417,6 +417,15 @@ struct op_length_aset
   static std::string docstring ();
 };
 
+struct op_length_loclist_elem
+  : public op_once_overload <value_cst, value_loclist_elem>
+{
+  using op_once_overload::op_once_overload;
+
+  value_cst operate (std::unique_ptr <value_loclist_elem> a) override;
+  static std::string docstring ();
+};
+
 struct op_range_aset
   : public op_yielding_overload <value_aset, value_aset>
 {

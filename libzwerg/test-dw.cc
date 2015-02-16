@@ -563,3 +563,36 @@ TEST_F (ZwTest, const_value_on_enum_with_type)
 
   ASSERT_TRUE (prod->next () == nullptr);
 }
+
+TEST_F (ZwTest, test_op_length_loclist_elem)
+{
+  op_length_loclist_elem lengther {nullptr};
+  std::vector <unsigned> lengths = {1, 4, 1, 2, 1, 2};
+  auto it = lengths.begin ();
+  for (auto const &stk:
+	 run_dwquery (*builtins, "bitcount.o", "entry @AT_location"))
+    {
+      ASSERT_EQ (1, stk->size ());
+
+      auto val = stk->pop ();
+      ASSERT_TRUE (val != nullptr);
+
+      std::unique_ptr <value_loclist_elem> loc
+		{value::as <value_loclist_elem> (val.release ())};
+      ASSERT_TRUE (loc != nullptr);
+
+      value_cst vcst = lengther.operate (std::move (loc));
+      ASSERT_TRUE (it != lengths.end ());
+      ASSERT_EQ ((constant {*it++, &dec_constant_dom}), vcst.get_constant ());
+    }
+  ASSERT_EQ (it, lengths.end ());
+}
+
+TEST_F (ZwTest, test_op_length_loclist_elem_word)
+{
+  // Above, we check op_length_loclist_elem as a C++ entity.  Here, we
+  // make sure it operates well as a Zwerg word as well.
+  ASSERT_EQ (1, run_dwquery
+	     (*builtins, "bitcount.o",
+	      "[entry @AT_location length] == [1, 4, 1, 2, 1, 2]").size ());
+}

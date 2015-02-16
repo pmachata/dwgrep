@@ -1705,6 +1705,28 @@ that set::
 }
 
 
+value_cst
+op_length_loclist_elem::operate (std::unique_ptr <value_loclist_elem> a)
+{
+  return value_cst {constant {a->get_exprlen (), &dec_constant_dom}, 0};
+}
+
+std::string
+op_length_loclist_elem::docstring ()
+{
+  return
+R"docstring(
+
+Takes a location expression on TOS and yields number of operators in
+expression::
+
+	$ dwgrep ./tests/bitcount.o -e 'entry @AT_location (length == 4)'
+	0x10017..0x1001a:[0:breg5<0>, 2:breg1<0>, 4:and, 5:stack_value]
+
+)docstring";
+}
+
+
 // range
 
 namespace
@@ -2765,6 +2787,7 @@ dwgrep_vocabulary_dw ()
     auto t = std::make_shared <overload_tab> ();
 
     t->add_op_overload <op_length_aset> ();
+    t->add_op_overload <op_length_loclist_elem> ();
 
     voc.add (std::make_shared <overloaded_op_builtin> ("length", t));
   }
