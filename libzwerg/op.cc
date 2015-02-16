@@ -507,7 +507,7 @@ struct op_tr_closure::pimpl
   std::vector <std::shared_ptr <stack> > m_stks;
 
   bool m_is_plus;
-  bool m_inner_drained;
+  bool m_op_drained;
 
   pimpl (std::shared_ptr <op> upstream,
 	 std::shared_ptr <op_origin> origin,
@@ -517,7 +517,7 @@ struct op_tr_closure::pimpl
     , m_origin {origin}
     , m_op {op}
     , m_is_plus {k == op_tr_closure_kind::plus}
-    , m_inner_drained {true}
+    , m_op_drained {true}
   {}
 
   void
@@ -535,7 +535,7 @@ struct op_tr_closure::pimpl
   }
 
   std::unique_ptr <stack>
-  produce_and_cache (std::shared_ptr <stack> stk)
+  yield_and_cache (std::shared_ptr <stack> stk)
   {
     if (m_seen.insert (stk).second)
       {
@@ -546,25 +546,52 @@ struct op_tr_closure::pimpl
       return nullptr;
   }
 
+  stack::uptr
+  next_from_upstream ()
+  {
+    // When we get a new stack from upstream, that provides a fresh
+    // context, and we need to forget what we've seen so far.
+    // E.g. consider the following expression:
+    //
+    //     $ 'entry root dup child* ?eq'
+    //
+    // We should see as many root-root matches as there are entries.
+    // But if we fail to clear the seen-cache, we only see one.
+
+     m_seen.clear ();
+    return m_upstream->next ();
+  }
+
+  stack::uptr
+  next_from_op ()
+  {
+    if (m_op_drained)
+      return nullptr;
+    if (auto ret = m_op->next ())
+      return ret;
+    m_op_drained = true;
+    return nullptr;
+  }
+
   bool
-  schedule (std::unique_ptr <stack> stk)
+  send_to_op (std::unique_ptr <stack> stk)
   {
     if (stk == nullptr)
       return false;
 
     m_op->reset ();
     m_origin->set_next (std::move (stk));
-    m_inner_drained = false;
+    m_op_drained = false;
     return true;
   }
 
   bool
-  schedule_next ()
+  send_to_op ()
   {
     if (m_stks.empty ())
-      return m_is_plus ? schedule (m_upstream->next ()) : false;
+      return m_is_plus ? send_to_op (next_from_upstream ()) : false;
 
-    schedule (std::make_unique <stack> (*m_stks.back ()));
+    send_to_op (std::make_unique <stack> (*m_stks.back ()));
     m_stks.pop_back ();
     return true;
   }
@@ -573,25 +600,14 @@ struct op_tr_closure::pimpl
   next ()
   {
     do
-      {
-	while (std::shared_ptr <stack> stk = m_inner_drained ? nullptr : m_op->next ())
-	  if (auto ret = produce_and_cache (stk))
-	    return ret;
-	m_inner_drained = true;
-      }
-    while (schedule_next ());
+      while (std::shared_ptr <stack> stk = next_from_op ())
+	if (auto ret = yield_and_cache (stk))
+	  return ret;
+    while (send_to_op ());
 
     if (! m_is_plus)
-      {
-	m_seen.clear ();
-	if (std::shared_ptr <stack> stk = m_upstream->next ())
-	  {
-	    // With seen cache clean, this ought to succeed.
-	    auto ret = produce_and_cache (stk);
-	    assert (ret != nullptr);
-	    return ret;
-	  }
-      }
+      if (std::shared_ptr <stack> stk = next_from_upstream ())
+	return yield_and_cache (stk);
 
     return nullptr;
   }

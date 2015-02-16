@@ -383,6 +383,9 @@ expect_count 1 ./duplicate-const -e '
 expect_count 1 ./duplicate-const -e '
 	let A:=entry (?TAG_const_type||?TAG_volatile_type||?TAG_restrict_type);
 	A root child* (> A) (label == A label) (@AT_type == A @AT_type) A'
+expect_count 1 ./duplicate-const -e '
+	let A:=entry (?TAG_const_type||?TAG_volatile_type||?TAG_restrict_type);
+	A root child+ (> A) (label == A label) (@AT_type == A @AT_type) A'
 
 expect_count 1 ./nontrivial-types.o -e '
 	entry ?TAG_subprogram !AT_declaration dup child ?TAG_formal_parameter
