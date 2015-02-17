@@ -314,6 +314,41 @@ die_ranges (Dwarf_Die die)
 namespace
 {
   std::unique_ptr <value_producer <value>>
+  handle_encoding (Dwarf_Attribute attr, Dwarf_Word encoding)
+  {
+    switch (encoding)
+      {
+      case DW_ATE_signed:
+      case DW_ATE_signed_char:
+	return atval_signed (attr);
+
+      case DW_ATE_unsigned:
+      case DW_ATE_unsigned_char:
+      case DW_ATE_address:
+      case DW_ATE_boolean:
+	return atval_unsigned (attr);
+
+      case DW_ATE_UTF:
+	// XXX We could decode the character that this
+	// represents.
+	return atval_unsigned (attr);
+
+      case DW_ATE_float:
+      case DW_ATE_imaginary_float:
+      case DW_ATE_complex_float:
+      case DW_ATE_signed_fixed:
+      case DW_ATE_unsigned_fixed:
+      case DW_ATE_packed_decimal:
+      case DW_ATE_decimal_float:
+	return nullptr;
+
+      default:
+	assert (! "unknown enumerator encoding");
+	abort ();
+      }
+  }
+
+  std::unique_ptr <value_producer <value>>
   handle_at_dependent_value (Dwarf_Attribute attr, value_die const &vd,
 			     std::shared_ptr <dwfl_context> dwctx)
   {
@@ -497,8 +532,12 @@ namespace
 		};
 
 	      Dwarf_Word encoding;
-	      if (! extract_encoding (type_die, encoding)
-		  && tag == DW_TAG_enumeration_type)
+	      if (extract_encoding (type_die, encoding))
+		{
+		  if (auto ret = handle_encoding (attr, encoding))
+		    return ret;
+		}
+	      else if (tag == DW_TAG_enumeration_type)
 		{
 		  // If there is a DW_AT_type on the enumeration type,
 		  // we might be able to use it to figure out the type
@@ -552,44 +591,8 @@ namespace
 		  return atval_signed (attr);
 		}
 
-	      switch (encoding)
-		{
-		case DW_ATE_signed:
-		case DW_ATE_signed_char:
-		  return atval_signed (attr);
-
-		case DW_ATE_unsigned:
-		case DW_ATE_unsigned_char:
-		case DW_ATE_address:
-		case DW_ATE_boolean:
-		  return atval_unsigned (attr);
-
-		case DW_ATE_UTF:
-		  // XXX We could decode the character that this
-		  // represents.
-		  return atval_unsigned (attr);
-
-		case DW_ATE_float:
-		case DW_ATE_imaginary_float:
-		case DW_ATE_complex_float:
-		  // Break out so that it's passed as a block, if it's
-		  // a block.
-		  break;
-
-		case DW_ATE_signed_fixed:
-		case DW_ATE_unsigned_fixed:
-		case DW_ATE_packed_decimal:
-		case DW_ATE_decimal_float:
-		  // OK, gross.
-		  assert (! "weird-float enumerator unhandled");
-		  abort ();
-
-		default:
-		  // There's a couple more that nobody should
-		  // probably put inside DW_FORM_data*.
-		  assert (! "unknown enumerator encoding");
-		  abort ();
-		}
+	      // Otherwise break out and see if we can pass this as
+	      // block.
 	    }
 	  break;
 	}
