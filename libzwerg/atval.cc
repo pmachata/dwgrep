@@ -543,9 +543,12 @@ namespace
 		  // we might be able to use it to figure out the type
 		  // of the underlying datum.
 		  if (dwarf_hasattr_integrate (&type_die, DW_AT_type))
-		    assert (! "unhandled: DW_AT_const_value on a DIE whose"
-			    " DW_AT_type is a DW_TAG_enumeration_type with"
-			    " DW_AT_type");
+		    {
+		      Dwarf_Die type_type_die = get_type_die (type_die);
+		      if (extract_encoding (type_type_die, encoding))
+			if (auto ret = handle_encoding (attr, encoding))
+			  return ret;
+		    }
 
 		  // We may be able to figure out the signedness from
 		  // form of DW_AT_value of DW_TAG_enumeration_type's

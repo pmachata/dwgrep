@@ -537,34 +537,50 @@ TEST_F (ZwTest, entry_dwarf_counts_every_unit_anew)
     ASSERT_EQ (i++, va->get_pos ());
 }
 
-TEST_F (ZwTest, const_value_on_enum_with_type)
+namespace
 {
-  std::unique_ptr <value_dwarf> vdw;
-  Dwarf *dw;
-  get_sole_dwarf ("const_value_on_enum_with_type.o", vdw, dw);
-  ASSERT_TRUE (vdw != nullptr);
-  ASSERT_TRUE (dw != nullptr);
+  void
+  expect_zero_DW_AT_const_value_on (char const *dwname,
+				    Dwarf_Off die_off)
+  {
+    std::unique_ptr <value_dwarf> vdw;
+    Dwarf *dw;
+    get_sole_dwarf (dwname, vdw, dw);
+    ASSERT_TRUE (vdw != nullptr);
+    ASSERT_TRUE (dw != nullptr);
 
-  value_die vd (vdw->get_dwctx (), dwpp_offdie (dw, 0x27), 0, doneness::cooked);
+    value_die vd (vdw->get_dwctx (), dwpp_offdie (dw, die_off),
+		  0, doneness::cooked);
 
-  Dwarf_Die die = vd.get_die ();
-  Dwarf_Attribute attr;
-  ASSERT_TRUE (dwarf_attr (&die, DW_AT_const_value, &attr) != nullptr);
+    Dwarf_Die die = vd.get_die ();
+    Dwarf_Attribute attr;
+    ASSERT_TRUE (dwarf_attr (&die, DW_AT_const_value, &attr) != nullptr);
 
-  value_attr at (vd, attr, 0, doneness::cooked);
-  auto prod = at_value (vdw->get_dwctx (), vd, attr);
-  ASSERT_TRUE (prod != nullptr);
+    value_attr at (vd, attr, 0, doneness::cooked);
+    auto prod = at_value (vdw->get_dwctx (), vd, attr);
+    ASSERT_TRUE (prod != nullptr);
 
-  auto va = prod->next ();
-  ASSERT_TRUE (va != nullptr);
-  value_cst *cst = value::as <value_cst> (va.get ());
-  ASSERT_TRUE (cst != nullptr);
-  ASSERT_TRUE ((cst->get_constant () == constant {0, &dec_constant_dom}));
+    auto va = prod->next ();
+    ASSERT_TRUE (va != nullptr);
+    value_cst *cst = value::as <value_cst> (va.get ());
+    ASSERT_TRUE (cst != nullptr);
+    ASSERT_TRUE ((cst->get_constant () == constant {0, &dec_constant_dom}));
 
-  ASSERT_TRUE (prod->next () == nullptr);
+    ASSERT_TRUE (prod->next () == nullptr);
+  }
 }
 
-TEST_F (ZwTest, test_op_length_loclist_elem)
+TEST_F (ZwTest, const_value_on_enum_with_type)
+{
+  expect_zero_DW_AT_const_value_on ("const_value_on_enum_with_type.o", 0x27);
+}
+
+TEST_F (ZwTest, template_value_parameter_const_value_on_enum_with_type)
+{
+  expect_zero_DW_AT_const_value_on ("const_value_on_enum_with_type.o", 0x3f);
+}
+
+TEST_F (ZwTest, op_length_loclist_elem)
 {
   op_length_loclist_elem lengther {nullptr};
   std::vector <unsigned> lengths = {1, 4, 1, 2, 1, 2};
@@ -588,7 +604,7 @@ TEST_F (ZwTest, test_op_length_loclist_elem)
   ASSERT_EQ (it, lengths.end ());
 }
 
-TEST_F (ZwTest, test_op_length_loclist_elem_word)
+TEST_F (ZwTest, op_length_loclist_elem_word)
 {
   // Above, we check op_length_loclist_elem as a C++ entity.  Here, we
   // make sure it operates well as a Zwerg word as well.
@@ -597,7 +613,7 @@ TEST_F (ZwTest, test_op_length_loclist_elem_word)
 	      "[entry @AT_location length] == [1, 4, 1, 2, 1, 2]").size ());
 }
 
-TEST_F (ZwTest, test_imported_AT_decl_file)
+TEST_F (ZwTest, imported_AT_decl_file)
 {
   std::unique_ptr <value_dwarf> vdw;
   Dwarf *dw;
