@@ -419,22 +419,42 @@ namespace
 		}
 	    }
 
-	  Dwarf_Attribute at;
-	  while (dwarf_hasattr_integrate (&type_die, DW_AT_type))
+	  auto get_type_die = [] (Dwarf_Die die)
 	    {
-	      if (dwarf_attr_integrate (&type_die, DW_AT_type,
-					&at) == nullptr
-		  || dwarf_formref_die (&at, &type_die) == nullptr)
-		throw_libdw ();
-	      int tag = dwarf_tag (&type_die);
-	      if (tag != DW_TAG_const_type
-		  && tag != DW_TAG_volatile_type
-		  && tag != DW_TAG_restrict_type
-		  && tag != DW_TAG_typedef
-		  && tag != DW_TAG_subrange_type
-		  && tag != DW_TAG_packed_type)
-		break;
-	    }
+	      auto fetch_type = [] (Dwarf_Die &die)
+		{
+		  Dwarf_Attribute a;
+		  if (dwarf_hasattr_integrate (&die, DW_AT_type))
+		    if (dwarf_attr_integrate (&die, DW_AT_type, &a) == nullptr
+			|| dwarf_formref_die (&a, &die) == nullptr)
+		      throw_libdw ();
+		    else
+		      return true;
+		  else
+		    return false;
+		};
+
+	      auto keep_peeling = [] (Dwarf_Die &die)
+		{
+		  switch (dwarf_tag (&die))
+		  case DW_TAG_const_type:
+		  case DW_TAG_volatile_type:
+		  case DW_TAG_restrict_type:
+		  case DW_TAG_typedef:
+		  case DW_TAG_subrange_type:
+		  case DW_TAG_packed_type:
+		    return true;
+
+		  return false;
+		};
+
+	      while (fetch_type (die) && keep_peeling (die))
+		;
+
+	      return die;
+	    };
+
+	  type_die = get_type_die (type_die);
 
 	  int tag = dwarf_tag (&type_die);
 	  if (tag == DW_TAG_pointer_type
@@ -462,21 +482,27 @@ namespace
 	    }
 	  else
 	    {
-	      Dwarf_Word encoding;
-	      if (dwarf_hasattr_integrate (&type_die, DW_AT_encoding))
+	      auto extract_encoding = [] (Dwarf_Die &die, Dwarf_Word &ret_enc)
 		{
-		  if (dwarf_attr_integrate (&type_die, DW_AT_encoding,
+		  if (! dwarf_hasattr_integrate (&die, DW_AT_encoding))
+		    return false;
+
+		  Dwarf_Attribute at;
+		  if (dwarf_attr_integrate (&die, DW_AT_encoding,
 					    &at) == nullptr)
 		    throw_libdw ();
-		  if (dwarf_formudata (&at, &encoding) != 0)
+		  if (dwarf_formudata (&at, &ret_enc) != 0)
 		    throw_libdw ();
-		}
+		  return true;
+		};
 
-	      else if (tag == DW_TAG_enumeration_type)
+	      Dwarf_Word encoding;
+	      if (! extract_encoding (type_die, encoding)
+		  && tag == DW_TAG_enumeration_type)
 		{
-		  // If there is a DW_AT_type, we might be able to use
-		  // it to figure out the type of the underlying
-		  // datum.
+		  // If there is a DW_AT_type on the enumeration type,
+		  // we might be able to use it to figure out the type
+		  // of the underlying datum.
 		  if (dwarf_hasattr_integrate (&type_die, DW_AT_type))
 		    assert (! "unhandled: DW_AT_const_value on a DIE whose"
 			    " DW_AT_type is a DW_TAG_enumeration_type with"
