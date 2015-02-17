@@ -2221,33 +2221,74 @@ Takes an attribute on TOS and yields a cooked version thereof.
 
 namespace
 {
-  bool
-  find_attribute (Dwarf_Die a, int atname, doneness d, Dwarf_Attribute *ret)
+  enum class find_attribute_result
+    {
+      not_found = 0,
+      found,
+      found_integrated,
+    };
+
+  // Return whether the attribute was found.
+  //
+  // If found or found_integrated, and if RET is non-nullptr, prime
+  // the pointed-to value with found attribute
+  //
+  // If found_integrated, and if DWCTX is non-nullptr, a new value_die
+  // with the DIE where the attribute was found is created and passed
+  // in second slot of the returned pair.
+
+  std::pair <find_attribute_result, std::unique_ptr <value_die>>
+  find_attribute (Dwarf_Die die, int atname, doneness d,
+		  Dwarf_Attribute *ret_at,
+		  std::shared_ptr <dwfl_context> dwctx)
   {
-    if (dwarf_hasattr (&a, atname))
+    if (dwarf_hasattr (&die, atname))
       {
-	if (ret != nullptr)
-	  *ret = dwpp_attr (a, atname);
-	return true;
+	if (ret_at != nullptr)
+	  *ret_at = dwpp_attr (die, atname);
+	return std::make_pair (find_attribute_result::found, nullptr);
       }
     else if (d == doneness::cooked && attr_should_be_integrated (atname))
       {
-	auto recursively_find_at = [&] (int atname2)
+	// Find ATNAME in DIE referenced by ATNAME2.
+	auto recursively_find = [&] (int atname2)
+		-> std::pair <find_attribute_result,
+			      std::unique_ptr <value_die>>
 	  {
-	    if (dwarf_hasattr (&a, atname2))
+	    if (dwarf_hasattr (&die, atname2))
 	      {
-		Dwarf_Attribute at = dwpp_attr (a, atname2);
-		return find_attribute (dwpp_formref_die (at), atname, d, ret);
+		Dwarf_Attribute at = dwpp_attr (die, atname2);
+		Dwarf_Die integrated_die = dwpp_formref_die (at);
+		auto ret = find_attribute (integrated_die, atname, d,
+					   ret_at, nullptr);
+
+		// If this call found anything, translate from found
+		// to found_integrated and create the accompanying
+		// value_die if requested.
+		if (ret.first == find_attribute_result::found)
+		  {
+		    std::unique_ptr <value_die> vd
+		      = dwctx == nullptr ? nullptr
+		        : std::make_unique <value_die>
+					(dwctx, integrated_die, 0, d);
+		    return std::make_pair
+				(find_attribute_result::found_integrated,
+				 std::move (vd));
+		  }
+		else
+		  return ret;
 	      }
 	    else
-	      return false;
+	      return std::make_pair (find_attribute_result::not_found, nullptr);
 	  };
 
-	return recursively_find_at (DW_AT_specification)
-	  || recursively_find_at (DW_AT_abstract_origin);
+	auto ret = recursively_find (DW_AT_specification);
+	if (ret.first != find_attribute_result::not_found)
+	  return ret;
+	return recursively_find (DW_AT_abstract_origin);
       }
-    else
-      return false;
+
+    return std::make_pair (find_attribute_result::not_found, nullptr);
   }
 }
 
@@ -2255,11 +2296,13 @@ std::unique_ptr <value_producer <value>>
 op_atval_die::operate (std::unique_ptr <value_die> a)
 {
   Dwarf_Attribute attr;
-  if (! find_attribute (a->get_die (), m_atname,
-			a->get_doneness (), &attr))
+  auto r = find_attribute (a->get_die (), m_atname, a->get_doneness (),
+			   &attr, a->get_dwctx ());
+  if (r.first == find_attribute_result::not_found)
     return nullptr;
+  auto dv = r.second != nullptr ? std::move (r.second) : std::move (a);
 
-  return at_value (a->get_dwctx (), *a, attr);
+  return at_value (dv->get_dwctx (), *dv, attr);
 }
 
 std::string
@@ -2290,7 +2333,8 @@ pred_result
 pred_atname_die::result (value_die &a)
 {
   return find_attribute (a.get_die (), m_atname,
-			 a.get_doneness (), nullptr)
+			 a.get_doneness (), nullptr, nullptr).first
+		!= find_attribute_result::not_found
     ? pred_result::yes : pred_result::no;
 }
 

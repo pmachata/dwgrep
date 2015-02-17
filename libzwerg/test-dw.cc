@@ -596,3 +596,25 @@ TEST_F (ZwTest, test_op_length_loclist_elem_word)
 	     (*builtins, "bitcount.o",
 	      "[entry @AT_location length] == [1, 4, 1, 2, 1, 2]").size ());
 }
+
+TEST_F (ZwTest, test_imported_AT_decl_file)
+{
+  std::unique_ptr <value_dwarf> vdw;
+  Dwarf *dw;
+  get_sole_dwarf ("imported-AT_decl_file.o", vdw, dw);
+  ASSERT_TRUE (vdw != nullptr);
+  ASSERT_TRUE (dw != nullptr);
+
+  auto vd = std::make_unique <value_die>
+		(vdw->get_dwctx (), dwpp_offdie (dw, 0x1f),
+		 0, doneness::cooked);
+  auto prod = op_atval_die {nullptr, DW_AT_decl_file}.operate (std::move (vd));
+  ASSERT_TRUE (prod != nullptr);
+  auto v = prod->next ();
+  ASSERT_TRUE (v != nullptr);
+  auto vs = value::as <value_str> (v.get ());
+  ASSERT_TRUE (vs != nullptr);
+  std::string n = vs->get_string ();
+  ASSERT_EQ ("foo/foo.c", n);
+  ASSERT_TRUE (prod->next () == nullptr);
+}
