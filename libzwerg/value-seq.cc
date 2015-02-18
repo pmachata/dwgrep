@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2014 Red Hat, Inc.
+   Copyright (C) 2014, 2015 Red Hat, Inc.
    This file is part of dwgrep.
 
    This file is free software; you can redistribute it and/or modify
@@ -65,7 +65,7 @@ value_seq::value_seq (value_seq const &that)
 {}
 
 void
-value_seq::show (std::ostream &o, brevity brv) const
+value_seq::show (std::ostream &o) const
 {
   o << "[";
   bool seen = false;
@@ -74,7 +74,7 @@ value_seq::show (std::ostream &o, brevity brv) const
       if (seen)
 	o << ", ";
       seen = true;
-      v->show (o, brevity::brief);
+      v->show (o);
     }
   o << "]";
 }

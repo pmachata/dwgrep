@@ -165,7 +165,7 @@ value_dwarf::value_dwarf (std::string const &fn,
 {}
 
 void
-value_dwarf::show (std::ostream &o, brevity brv) const
+value_dwarf::show (std::ostream &o) const
 {
   o << "<Dwarf \"" << m_fn << "\">";
 }
@@ -200,7 +200,7 @@ units found in Dwarf files::
 )docstring");
 
 void
-value_cu::show (std::ostream &o, brevity brv) const
+value_cu::show (std::ostream &o) const
 {
   ios_flag_saver s {o};
   o << "CU " << std::hex << std::showbase << m_offset;
@@ -251,24 +251,12 @@ CU's::
 )docstring");
 
 void
-value_die::show (std::ostream &o, brevity brv) const
+value_die::show (std::ostream &o) const
 {
   Dwarf_Die *die = &unconst (m_die);
-
-  {
-    ios_flag_saver fs {o};
-    o << '[' << std::hex << dwarf_dieoffset (die) << ']'
-      << (brv == brevity::full ? '\t' : ' ')
-      << constant (dwarf_tag (die), &dw_tag_dom (), brevity::brief);
-  }
-
-  if (brv == brevity::full)
-    for (auto it = attr_iterator {die}; it != attr_iterator::end (); ++it)
-      {
-	o << "\n\t";
-	value_attr {*this, **it, 0, doneness::raw}
-		.show (o, brevity::full);
-      }
+  ios_flag_saver fs {o};
+  o << '[' << std::hex << dwarf_dieoffset (die) << "] "
+    << constant (dwarf_tag (die), &dw_tag_dom (), brevity::brief);
 }
 
 cmp_result
@@ -376,30 +364,17 @@ Values of this type represent attributes attached to DIE's::
 )docstring");
 
 void
-value_attr::show (std::ostream &o, brevity brv) const
+value_attr::show (std::ostream &o) const
 {
-  unsigned name = (unsigned) dwarf_whatattr ((Dwarf_Attribute *) &m_attr);
-  unsigned form = dwarf_whatform ((Dwarf_Attribute *) &m_attr);
-
   {
+    unsigned name = (unsigned) dwarf_whatattr ((Dwarf_Attribute *) &m_attr);
+    unsigned form = dwarf_whatform ((Dwarf_Attribute *) &m_attr);
     ios_flag_saver s {o};
-    o << constant (name, &dw_attr_dom (), brevity::brief) << " ("
-      << constant (form, &dw_form_dom (), brevity::brief) << ")\t";
+    o << constant (name, &dw_attr_dom (), brevity::full) << " ("
+      << constant (form, &dw_form_dom (), brevity::brief) << ") at ";
   }
 
-  auto vpr = at_value (m_die.get_dwctx (), m_die, m_attr);
-  while (auto v = vpr->next ())
-    {
-      if (auto d = value::as <value_die> (v.get ()))
-	{
-	  ios_flag_saver s {o};
-	  o << "[" << std::hex
-	    << dwarf_dieoffset ((Dwarf_Die *) &d->get_die ()) << "]";
-	}
-      else
-	v->show (o, brv);
-      o << ";";
-    }
+  o << get_value_die () << " ";
 }
 
 std::unique_ptr <value>
@@ -438,7 +413,7 @@ Values of this type represent abbreviation units found in Dwarf files::
 )docstring");
 
 void
-value_abbrev_unit::show (std::ostream &o, brevity brv) const
+value_abbrev_unit::show (std::ostream &o) const
 {
   ios_flag_saver s {o};
   o << "abbrev unit " << std::hex << std::showbase
@@ -480,7 +455,7 @@ abbreviation units::
 )docstring");
 
 void
-value_abbrev::show (std::ostream &o, brevity brv) const
+value_abbrev::show (std::ostream &o) const
 {
   o << '[' << dwarf_getabbrevcode (&m_abbrev) << "] "
     << "offset:" << constant (dwpp_abbrev_offset (m_abbrev),
@@ -488,21 +463,6 @@ value_abbrev::show (std::ostream &o, brevity brv) const
     << ", children:" << (dwarf_abbrevhaschildren (&m_abbrev) ? "yes" : "no")
     << ", tag:" << constant (dwarf_getabbrevtag (&m_abbrev),
 			     &dw_tag_dom (), brevity::brief);
-
-  if (brv == brevity::full)
-    {
-      size_t cnt = dwpp_abbrev_attrcnt (m_abbrev);
-      for (size_t i = 0; i < cnt; ++i)
-	{
-	  unsigned int name;
-	  unsigned int form;
-	  Dwarf_Off offset;
-	  if (dwarf_getabbrevattr (&m_abbrev, i, &name, &form, &offset) != 0)
-	    throw_libdw ();
-	  o << "\n\t";
-	  value_abbrev_attr {name, form, offset, 0}.show (o, brevity::full);
-	}
-    }
 }
 
 std::unique_ptr <value>
@@ -540,7 +500,7 @@ Values of this type represent attributes attached to abbreviations::
 )docstring");
 
 void
-value_abbrev_attr::show (std::ostream &o, brevity brv) const
+value_abbrev_attr::show (std::ostream &o) const
 {
   o << constant (offset, &dw_offset_dom (), brevity::full)
     << ' ' << constant (name, &dw_attr_dom (), brevity::brief)
@@ -566,38 +526,32 @@ value_abbrev_attr::cmp (value const &that) const
 namespace
 {
   void
-  show_loclist_op (std::ostream &o, brevity brv,
+  show_loclist_op (std::ostream &o,
 		   std::shared_ptr <dwfl_context> dwctx,
 		   Dwarf_Attribute const &attr, Dwarf_Op *dwop)
   {
     o << dwop->offset << ':'
       << constant {dwop->atom, &dw_locexpr_opcode_dom (), brevity::brief};
-    {
-      auto prod = dwop_number (dwctx, attr, dwop);
-      while (auto v = prod->next ())
-	{
-	  o << "<";
-	  v->show (o, brevity::brief);
-	  o << ">";
-	}
-    }
 
-    {
-      bool sep = false;
-      auto prod = dwop_number2 (dwctx, attr, dwop);
-      while (auto v = prod->next ())
-	{
-	  if (! sep)
-	    {
-	      o << "/";
-	      sep = true;
-	    }
+    bool sep = false;
 
-	  o << "<";
-	  v->show (o, brevity::brief);
-	  o << ">";
-	}
-    }
+    for (auto prod = dwop_number (dwctx, attr, dwop);
+	 auto v = prod->next (); )
+      {
+	if (sep)
+	  o << ' ';
+	sep = true;
+	o << *v;
+      }
+
+    for (auto prod = dwop_number2 (dwctx, attr, dwop);
+	 auto v = prod->next (); )
+      {
+	if (sep)
+	  o << ' ';
+	sep = true;
+	o << *v;
+      }
   }
 }
 
@@ -621,7 +575,7 @@ to it.  It contains location expression instructions, values of type
 )docstring");
 
 void
-value_loclist_elem::show (std::ostream &o, brevity brv) const
+value_loclist_elem::show (std::ostream &o) const
 {
   {
     ios_flag_saver s {o};
@@ -633,7 +587,7 @@ value_loclist_elem::show (std::ostream &o, brevity brv) const
     {
       if (i > 0)
 	o << ", ";
-      show_loclist_op (o, brv, m_dwctx, m_attr, m_expr + i);
+      show_loclist_op (o, m_dwctx, m_attr, m_expr + i);
     }
   o << "]";
 }
@@ -698,7 +652,7 @@ Address sets don't have to be continuous.
 )docstring");
 
 void
-value_aset::show (std::ostream &o, brevity brv) const
+value_aset::show (std::ostream &o) const
 {
   o << cov::format_ranges {cov};
 }
@@ -752,9 +706,9 @@ Values of this type hold location expression instructions::
 )docstring");
 
 void
-value_loclist_op::show (std::ostream &o, brevity brv) const
+value_loclist_op::show (std::ostream &o) const
 {
-  show_loclist_op (o, brv, m_dwctx, m_attr, m_dwop);
+  show_loclist_op (o, m_dwctx, m_attr, m_dwop);
 }
 
 std::unique_ptr <value>

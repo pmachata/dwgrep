@@ -1068,7 +1068,7 @@ op_address_attr::operate (std::unique_ptr <value_attr> a)
     }
 
   std::cerr << "`address' applied to non-address attribute:\n    ";
-  a->show (std::cerr, brevity::brief);
+  a->show (std::cerr);
   std::cerr << std::endl;
 
   return nullptr;

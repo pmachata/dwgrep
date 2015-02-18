@@ -53,7 +53,7 @@ namespace
       std::cerr << "<";
       std::for_each (stack.rbegin (), stack.rend (),
 		     [&stk] (std::reference_wrapper <value const> v) {
-		       v.get ().show ((std::cerr << ' '), brevity::brief);
+		       v.get ().show ((std::cerr << ' '));
 		     });
       std::cerr << " > (";
     }
@@ -67,7 +67,7 @@ namespace
 	  if (v == nullptr)
 	    std::cerr << " (unbound)";
 	  else
-	    v->show ((std::cerr << ' '), brevity::brief);
+	    v->show (std::cerr << ' ');
 	std::cerr << " }  ";
 
 	frame = frame->m_parent;
@@ -201,7 +201,7 @@ stringer_op::next ()
       if (auto stk = m_op->next ())
 	{
 	  std::stringstream ss;
-	  (stk->pop ())->show (ss, brevity::brief);
+	  (stk->pop ())->show (ss);
 	  return std::make_pair (std::move (stk), ss.str () + m_str);
 	}
 
@@ -315,7 +315,7 @@ op_const::name () const
 {
   std::stringstream ss;
   ss << "const<";
-  m_value->show (ss, brevity::brief);
+  m_value->show (ss);
   ss << ">";
   return ss.str ();
 }

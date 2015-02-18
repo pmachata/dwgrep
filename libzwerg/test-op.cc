@@ -121,7 +121,7 @@ namespace
     {}
 
     void
-    show (std::ostream &o, brevity brv) const override
+    show (std::ostream &o) const override
     {
       o << "canary";
     }

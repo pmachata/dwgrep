@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2014 Red Hat, Inc.
+   Copyright (C) 2014, 2015 Red Hat, Inc.
    This file is part of dwgrep.
 
    This file is free software; you can redistribute it and/or modify
@@ -51,7 +51,7 @@ public:
   constant const &get_constant () const
   { return m_cst; }
 
-  void show (std::ostream &o, brevity brv) const override;
+  void show (std::ostream &o) const override;
   std::unique_ptr <value> clone () const override;
   cmp_result cmp (value const &that) const override;
 };

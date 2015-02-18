@@ -86,7 +86,7 @@ public:
   std::shared_ptr <dwfl_context> get_dwctx () const
   { return m_dwctx; }
 
-  void show (std::ostream &o, brevity brv) const override;
+  void show (std::ostream &o) const override;
   cmp_result cmp (value const &that) const override;
   std::unique_ptr <value> clone () const override;
 };
@@ -126,7 +126,7 @@ public:
   Dwarf_Off get_offset () const
   { return m_offset; }
 
-  void show (std::ostream &o, brevity brv) const override;
+  void show (std::ostream &o) const override;
   cmp_result cmp (value const &that) const override;
   std::unique_ptr <value> clone () const override;
 };
@@ -209,7 +209,7 @@ public:
   std::shared_ptr <dwfl_context> get_dwctx () const
   { return m_dwctx; }
 
-  void show (std::ostream &o, brevity brv) const override;
+  void show (std::ostream &o) const override;
 
   std::unique_ptr <value> clone () const override
   { return std::make_unique <value_die> (*this); }
@@ -271,7 +271,7 @@ public:
   Dwarf_Attribute const &get_attr () const
   { return m_attr; }
 
-  void show (std::ostream &o, brevity brv) const override;
+  void show (std::ostream &o) const override;
   std::unique_ptr <value> clone () const override;
   cmp_result cmp (value const &that) const override;
 
@@ -310,7 +310,7 @@ public:
   Dwarf_CU &get_cu ()
   { return m_cu; }
 
-  void show (std::ostream &o, brevity brv) const override;
+  void show (std::ostream &o) const override;
   std::unique_ptr <value> clone () const override;
   cmp_result cmp (value const &that) const override;
 };
@@ -343,7 +343,7 @@ public:
   Dwarf_Abbrev &get_abbrev ()
   { return m_abbrev; }
 
-  void show (std::ostream &o, brevity brv) const override;
+  void show (std::ostream &o) const override;
   std::unique_ptr <value> clone () const override;
   cmp_result cmp (value const &that) const override;
 };
@@ -371,7 +371,7 @@ struct value_abbrev_attr
 
   value_abbrev_attr (value_abbrev_attr const &that) = default;
 
-  void show (std::ostream &o, brevity brv) const override;
+  void show (std::ostream &o) const override;
   std::unique_ptr <value> clone () const override;
   cmp_result cmp (value const &that) const override;
 };
@@ -428,7 +428,7 @@ public:
   size_t get_exprlen () const
   { return m_exprlen; }
 
-  void show (std::ostream &o, brevity brv) const override;
+  void show (std::ostream &o) const override;
   std::unique_ptr <value> clone () const override;
   cmp_result cmp (value const &that) const override;
 };
@@ -457,7 +457,7 @@ struct value_aset
   coverage const &get_coverage () const
   { return cov; }
 
-  void show (std::ostream &o, brevity brv) const override;
+  void show (std::ostream &o) const override;
   std::unique_ptr <value> clone () const override;
   cmp_result cmp (value const &that) const override;
 };
@@ -502,7 +502,7 @@ public:
   Dwarf_Op *get_dwop () const
   { return m_dwop; }
 
-  void show (std::ostream &o, brevity brv) const override;
+  void show (std::ostream &o) const override;
   std::unique_ptr <value> clone () const override;
   cmp_result cmp (value const &that) const override;
 };

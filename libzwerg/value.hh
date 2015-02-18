@@ -134,7 +134,7 @@ public:
   constant get_type_const () const;
 
   virtual ~zw_value () {}
-  virtual void show (std::ostream &o, brevity brv) const = 0;
+  virtual void show (std::ostream &o) const = 0;
   virtual std::unique_ptr <zw_value> clone () const = 0;
   virtual cmp_result cmp (zw_value const &that) const = 0;
 

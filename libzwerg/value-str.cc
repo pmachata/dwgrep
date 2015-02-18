@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2014 Red Hat, Inc.
+   Copyright (C) 2014, 2015 Red Hat, Inc.
    This file is part of dwgrep.
 
    This file is free software; you can redistribute it and/or modify
@@ -48,7 +48,7 @@ work.  Zwerg strings are not NUL-terminated::
 )docstring");
 
 void
-value_str::show (std::ostream &o, brevity brv) const
+value_str::show (std::ostream &o) const
 {
   o << m_str;
 }
