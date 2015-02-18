@@ -50,6 +50,7 @@ struct frame
   {}
 
   void bind_value (var_id index, std::unique_ptr <value> val);
+  void unbind_value (var_id index);
   value &read_value (var_id index);
 
   std::shared_ptr <frame> clone () const;

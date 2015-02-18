@@ -118,14 +118,17 @@ IF (GTEST_FOUND)
   SET (TESTCASE_DIR "--test-case-directory=${CMAKE_SOURCE_DIR}/tests/")
 
   ADD_LIBRARY (TestStub OBJECT test-stub.cc)
+  ADD_LIBRARY (TestZwAux OBJECT test-zw-aux.cc)
 
-  ADD_EXECUTABLE (test-dw test-dw.cc $<TARGET_OBJECTS:TestStub> ${LibzwergAll})
+  ADD_EXECUTABLE (test-dw test-dw.cc
+    $<TARGET_OBJECTS:TestStub> $<TARGET_OBJECTS:TestZwAux> ${LibzwergAll})
   TARGET_LINK_LIBRARIES (test-dw
     ${GTEST_LIBRARIES} ${LIBELF_LIBRARY} ${DWARF_LIBRARIES})
   ADD_TEST (TestDw test-dw ${TESTCASE_DIR})
 
-  ADD_EXECUTABLE (test-op
-    test-op.cc $<TARGET_OBJECTS:TestStub> $<TARGET_OBJECTS:LibzwergCore>)
+  ADD_EXECUTABLE (test-op test-op.cc
+    $<TARGET_OBJECTS:TestStub> $<TARGET_OBJECTS:TestZwAux>
+    $<TARGET_OBJECTS:LibzwergCore>)
   TARGET_LINK_LIBRARIES (test-op ${GTEST_LIBRARIES})
   ADD_TEST (TestOp test-op ${TESTCASE_DIR})
 

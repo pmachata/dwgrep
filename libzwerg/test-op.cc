@@ -32,6 +32,7 @@
 #include "op.hh"
 #include "init.hh"
 #include "value-cst.hh"
+#include "test-zw-aux.hh"
 
 struct ZwTest
   : public testing::Test
@@ -105,4 +106,57 @@ TEST_F (ZwTest, test_closure_star_star)
 TEST_F (ZwTest, test_closure_plus_plus)
 {
   test_closure_closure (op_tr_closure_kind::plus);
+}
+
+namespace
+{
+  struct value_canary
+    : public value
+  {
+    static value_type const vtype;
+    static unsigned dtor;
+
+    value_canary ()
+      : value {vtype, 0}
+    {}
+
+    void
+    show (std::ostream &o, brevity brv) const override
+    {
+      o << "canary";
+    }
+
+    std::unique_ptr <value>
+    clone () const override
+    {
+      return std::make_unique <value_canary> ();
+    }
+
+    cmp_result
+    cmp (value const &that) const override
+    {
+      if (that.is <value_canary> ())
+	return cmp_result::equal;
+      else
+	return cmp_result::fail;
+    }
+
+    ~value_canary ()
+    {
+      ++dtor;
+    }
+  };
+
+  value_type const value_canary::vtype = value_type::alloc ("canary", "");
+  unsigned value_canary::dtor = 0;
+}
+
+TEST_F (ZwTest, frame_with_value_referencing_it_doesnt_leak)
+{
+  auto stk = stack_with_value (std::make_unique <value_canary> ());
+  // Bind F to a canary and G to a closure.  The closure will keep the
+  // whole frame alive, including the canary.  Thus we can observe the
+  // absence of leak by observing whether the canary's destructor ran.
+  run_query (*builtins, std::move (stk), "{}->F G;");
+  ASSERT_EQ (1, value_canary::dtor);
 }

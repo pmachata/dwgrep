@@ -40,6 +40,12 @@ frame::bind_value (var_id index, std::unique_ptr <value> val)
   m_values[index] = std::move (val);
 }
 
+void
+frame::unbind_value (var_id index)
+{
+  m_values[index] = nullptr;
+}
+
 value &
 frame::read_value (var_id index)
 {

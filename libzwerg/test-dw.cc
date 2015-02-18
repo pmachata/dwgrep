@@ -30,6 +30,7 @@
 #include <sys/time.h>
 #include <sys/resource.h>
 
+#include "atval.hh"
 #include "builtin-dw-abbrev.hh"
 #include "builtin-dw.hh"
 #include "builtin.hh"
@@ -38,8 +39,8 @@
 #include "op.hh"
 #include "parser.hh"
 #include "stack.hh"
+#include "test-zw-aux.hh"
 #include "value-dw.hh"
-#include "atval.hh"
 
 std::string
 test_file (std::string name)
@@ -89,28 +90,6 @@ TEST (DwValueTest, dwarf_sanity)
 
 namespace
 {
-  std::unique_ptr <stack>
-  stack_with_value (std::unique_ptr <value> v)
-  {
-    auto stk = std::make_unique <stack> ();
-    stk->push (std::move (v));
-    return stk;
-  }
-
-  std::vector <std::unique_ptr <stack>>
-  run_query (vocabulary &voc,
-	     std::unique_ptr <stack> stk, std::string q)
-  {
-    std::shared_ptr <op> op = parse_query (voc, q)
-      .build_exec (std::make_shared <op_origin> (std::move (stk)));
-
-    std::vector <std::unique_ptr <stack>> yielded;
-    while (auto r = op->next ())
-      yielded.push_back (std::move (r));
-
-    return yielded;
-  }
-
   // A query on a stack with sole value, which is a Dwarf.
   std::vector <std::unique_ptr <stack>>
   run_dwquery (vocabulary &voc, std::string fn, std::string q)
