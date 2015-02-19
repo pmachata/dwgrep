@@ -110,13 +110,14 @@ TEST_F (ZwTest, test_closure_plus_plus)
 
 namespace
 {
+  struct empty {};
   struct value_canary
     : public value
   {
     static value_type const vtype;
-    std::shared_ptr <unsigned> m_counter;
+    std::shared_ptr <empty> m_counter;
 
-    value_canary (std::shared_ptr <unsigned> counter)
+    value_canary (std::shared_ptr <empty> counter)
       : value {vtype, 0}
       , m_counter {counter}
     {}
@@ -141,11 +142,6 @@ namespace
       else
 	return cmp_result::fail;
     }
-
-    ~value_canary ()
-    {
-      ++*m_counter;
-    }
   };
 
   value_type const value_canary::vtype = value_type::alloc ("canary", "");
@@ -153,20 +149,19 @@ namespace
 
 TEST_F (ZwTest, frame_with_value_referencing_it_doesnt_leak)
 {
-  auto counter = std::make_shared <unsigned> (0);
+  auto counter = std::make_shared <empty> ();
   auto stk = stack_with_value (std::make_unique <value_canary> (counter));
   // Bind F to a canary and G to a closure.  The closure will keep the
   // whole frame alive, including the canary.  Thus we can observe the
   // absence of leak by observing whether the canary's destructor ran.
   run_query (*builtins, std::move (stk), "{}->F G;");
-  ASSERT_EQ (1, *counter);
+  ASSERT_EQ (1, counter.use_count ());
 }
 
 TEST_F (ZwTest, frame_with_value_referencing_it_doesnt_leak_2)
 {
-  // See above for explanation of this test.
-  auto counter = std::make_shared <unsigned> (0);
+  auto counter = std::make_shared <empty> ();
   auto stk = stack_with_value (std::make_unique <value_canary> (counter));
   run_query (*builtins, std::move (stk), "{}->F G; G");
-  ASSERT_EQ (1, *counter);
+  ASSERT_EQ (1, counter.use_count ());
 }
