@@ -34,6 +34,7 @@
 #include "overload.hh"
 #include "value-dw.hh"
 #include "value-str.hh"
+#include "value-aset.hh"
 
 struct vocabulary;
 std::unique_ptr <vocabulary> dwgrep_vocabulary_dw ();
@@ -130,28 +131,6 @@ struct op_relem_loclist_elem
 
   std::unique_ptr <value_producer <value_loclist_op>>
   operate (std::unique_ptr <value_loclist_elem> a) override;
-
-  static std::string docstring ();
-};
-
-struct op_elem_aset
-  : public op_yielding_overload <value_cst, value_aset>
-{
-  using op_yielding_overload::op_yielding_overload;
-
-  std::unique_ptr <value_producer <value_cst>>
-  operate (std::unique_ptr <value_aset> val) override;
-
-  static std::string docstring ();
-};
-
-struct op_relem_aset
-  : public op_yielding_overload <value_cst, value_aset>
-{
-  using op_yielding_overload::op_yielding_overload;
-
-  std::unique_ptr <value_producer <value_cst>>
-  operate (std::unique_ptr <value_aset> val) override;
 
   static std::string docstring ();
 };
@@ -324,15 +303,6 @@ struct op_low_die
   static std::string docstring ();
 };
 
-struct op_low_aset
-  : public op_overload <value_cst, value_aset>
-{
-  using op_overload::op_overload;
-
-  std::unique_ptr <value_cst> operate (std::unique_ptr <value_aset> a) override;
-  static std::string docstring ();
-};
-
 struct op_high_die
   : public op_overload <value_cst, value_die>
 {
@@ -342,145 +312,12 @@ struct op_high_die
   static std::string docstring ();
 };
 
-struct op_high_aset
-  : public op_overload <value_cst, value_aset>
-{
-  using op_overload::op_overload;
-
-  std::unique_ptr <value_cst> operate (std::unique_ptr <value_aset> a) override;
-  static std::string docstring ();
-};
-
-struct op_aset_cst_cst
-  : public op_once_overload <value_aset, value_cst, value_cst>
-{
-  using op_once_overload::op_once_overload;
-
-  value_aset operate (std::unique_ptr <value_cst> a,
-		      std::unique_ptr <value_cst> b) override;
-
-  static std::string docstring ();
-};
-
-struct op_add_aset_cst
-  : public op_once_overload <value_aset, value_aset, value_cst>
-{
-  using op_once_overload::op_once_overload;
-
-  value_aset operate (std::unique_ptr <value_aset> a,
-		      std::unique_ptr <value_cst> b) override;
-
-  static std::string docstring ();
-};
-
-struct op_add_aset_aset
-  : public op_once_overload <value_aset, value_aset, value_aset>
-{
-  using op_once_overload::op_once_overload;
-
-  value_aset
-  operate (std::unique_ptr <value_aset> a,
-	   std::unique_ptr <value_aset> b) override;
-
-  static std::string docstring ();
-};
-
-struct op_sub_aset_cst
-  : public op_once_overload <value_aset, value_aset, value_cst>
-{
-  using op_once_overload::op_once_overload;
-
-  value_aset
-  operate (std::unique_ptr <value_aset> a,
-	   std::unique_ptr <value_cst> b) override;
-
-  static std::string docstring ();
-};
-
-struct op_sub_aset_aset
-  : public op_once_overload <value_aset, value_aset, value_aset>
-{
-  using op_once_overload::op_once_overload;
-
-  value_aset operate (std::unique_ptr <value_aset> a,
-		      std::unique_ptr <value_aset> b) override;
-
-  static std::string docstring ();
-};
-
-struct op_length_aset
-  : public op_once_overload <value_cst, value_aset>
-{
-  using op_once_overload::op_once_overload;
-
-  value_cst operate (std::unique_ptr <value_aset> a) override;
-  static std::string docstring ();
-};
-
 struct op_length_loclist_elem
   : public op_once_overload <value_cst, value_loclist_elem>
 {
   using op_once_overload::op_once_overload;
 
   value_cst operate (std::unique_ptr <value_loclist_elem> a) override;
-  static std::string docstring ();
-};
-
-struct op_range_aset
-  : public op_yielding_overload <value_aset, value_aset>
-{
-  using op_yielding_overload::op_yielding_overload;
-
-  std::unique_ptr <value_producer <value_aset>>
-  operate (std::unique_ptr <value_aset> a) override;
-
-  static std::string docstring ();
-};
-
-struct pred_containsp_aset_cst
-  : public pred_overload <value_aset, value_cst>
-{
-  using pred_overload::pred_overload;
-
-  pred_result result (value_aset &a, value_cst &b) override;
-  static std::string docstring ();
-};
-
-struct pred_containsp_aset_aset
-  : public pred_overload <value_aset, value_aset>
-{
-  using pred_overload::pred_overload;
-
-  pred_result result (value_aset &a, value_aset &b) override;
-  static std::string docstring ();
-};
-
-struct pred_overlapsp_aset_aset
-  : public pred_overload <value_aset, value_aset>
-{
-  using pred_overload::pred_overload;
-
-  pred_result result (value_aset &a, value_aset &b) override;
-  static std::string docstring ();
-};
-
-struct op_overlap_aset_aset
-  : public op_once_overload <value_aset, value_aset, value_aset>
-{
-  using op_once_overload::op_once_overload;
-
-  value_aset operate (std::unique_ptr <value_aset> a,
-		      std::unique_ptr <value_aset> b) override;
-
-  static std::string docstring ();
-};
-
-struct pred_emptyp_aset
-  : public pred_overload <value_aset>
-{
-  using pred_overload::pred_overload;
-
-  pred_result result (value_aset &a) override;
   static std::string docstring ();
 };
 

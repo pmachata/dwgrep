@@ -33,7 +33,6 @@
 #include "std-memory.hh"
 #include "value.hh"
 #include "dwfl_context.hh"
-#include "coverage.hh"
 
 enum class doneness
   {
@@ -427,35 +426,6 @@ public:
 
   size_t get_exprlen () const
   { return m_exprlen; }
-
-  void show (std::ostream &o) const override;
-  std::unique_ptr <value> clone () const override;
-  cmp_result cmp (value const &that) const override;
-};
-
-// -------------------------------------------------------------------
-// Set of addresses.
-// -------------------------------------------------------------------
-
-struct value_aset
-  : public value
-{
-  coverage cov;
-
-  static value_type const vtype;
-
-  value_aset (coverage a_cov, size_t pos)
-    : value {vtype, pos}
-    , cov {std::move (a_cov)}
-  {}
-
-  value_aset (value_aset const &that) = default;
-
-  coverage &get_coverage ()
-  { return cov; }
-
-  coverage const &get_coverage () const
-  { return cov; }
 
   void show (std::ostream &o) const override;
   std::unique_ptr <value> clone () const override;

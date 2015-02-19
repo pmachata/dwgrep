@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2014, 2015 Red Hat, Inc.
+   Copyright (C) 2015 Red Hat, Inc.
    This file is part of dwgrep.
 
    This file is free software; you can redistribute it and/or modify
@@ -26,29 +26,37 @@
    the GNU Lesser General Public License along with this program.  If
    not, see <http://www.gnu.org/licenses/>.  */
 
-#ifndef _ATVAL_H_
-#define _ATVAL_H_
+#ifndef VALUE_ASET_H
+#define VALUE_ASET_H
 
-#include "dwfl_context.hh"
-#include "op.hh"
+#include <memory>
+#include "coverage.hh"
+#include "value.hh"
 
-#include "value-dw.hh"
-#include "value-aset.hh"
+// Set of addresses.
+struct value_aset
+  : public value
+{
+  coverage cov;
 
-// Obtain a value of ATTR at DIE.
-std::unique_ptr <value_producer <value>>
-at_value (std::shared_ptr <dwfl_context> dwctx,
-	  value_die const &die, Dwarf_Attribute attr);
+  static value_type const vtype;
 
-// Obtain DIE's ranges.
-value_aset die_ranges (Dwarf_Die die);
+  value_aset (coverage a_cov, size_t pos)
+    : value {vtype, pos}
+    , cov {std::move (a_cov)}
+  {}
 
-std::unique_ptr <value_producer <value>>
-dwop_number (std::shared_ptr <dwfl_context> dwctx,
-	     Dwarf_Attribute const &attr, Dwarf_Op const *op);
+  value_aset (value_aset const &that) = default;
 
-std::unique_ptr <value_producer <value>>
-dwop_number2 (std::shared_ptr <dwfl_context> dwctx,
-	      Dwarf_Attribute const &attr, Dwarf_Op const *op);
+  coverage &get_coverage ()
+  { return cov; }
 
-#endif /* _ATVAL_H_ */
+  coverage const &get_coverage () const
+  { return cov; }
+
+  void show (std::ostream &o) const override;
+  std::unique_ptr <value> clone () const override;
+  cmp_result cmp (value const &that) const override;
+};
+
+#endif /* VALUE_ASET_H */

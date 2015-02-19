@@ -27,6 +27,7 @@
    not, see <http://www.gnu.org/licenses/>.  */
 
 #include <dwarf.h>
+#include "builtin-aset.hh"
 #include "builtin-dw.hh"
 #include "builtin-dw-abbrev.hh"
 #include "dwcst.hh"
