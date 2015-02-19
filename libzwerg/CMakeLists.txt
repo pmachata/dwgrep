@@ -64,6 +64,7 @@ ADD_LIBRARY (LibzwergDw OBJECT
   libzwerg-dw.cc
   value-dw.cc
   builtin-dw-abbrev.cc
+  builtin-dw-voc.cc
 )
 
 SET_TARGET_PROPERTIES (LibzwergDw PROPERTIES
