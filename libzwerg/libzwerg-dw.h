@@ -35,16 +35,6 @@
 extern "C" {
 #endif
 
-  /*
-   * Note: libzwerg doesn't export all value types that are available
-   * in the Dwarf module.  Only Dwarf, DIE and location list element
-   * are exported as of now.  Compile units can be represented by
-   * their CU DIE, individual attributes as two-element stack with DIE
-   * and an attribute name.  Special values (like address ranges) can
-   * be converted to lists and obtained that way.  There probably are
-   * value types that are legitimately useful but not exported.
-   */
-
   /**
    * Constant domains.
    */
