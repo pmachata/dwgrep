@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2014 Red Hat, Inc.
+   Copyright (C) 2014, 2015 Red Hat, Inc.
    This file is part of dwgrep.
 
    This file is free software; you can redistribute it and/or modify
@@ -27,6 +27,7 @@
    not, see <http://www.gnu.org/licenses/>.  */
 
 #include "stack.hh"
+#include "value-closure.hh"
 
 void
 frame::bind_value (var_id index, std::unique_ptr <value> val)
@@ -65,6 +66,11 @@ frame::clone () const
   for (auto const &val: m_values)
     ret->m_values.push_back (val != nullptr ? val->clone () : nullptr);
   return ret;
+}
+
+frame::~frame ()
+{
+  value_closure::maybe_unlink_frame (m_parent);
 }
 
 stack::stack (stack const &that)
@@ -148,4 +154,9 @@ bool
 stack::operator== (stack const &that) const
 {
   return compare_stack (m_values, that.m_values) == 0;
+}
+
+stack::~stack ()
+{
+  value_closure::maybe_unlink_frame (m_frame);
 }

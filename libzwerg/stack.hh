@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2014 Red Hat, Inc.
+   Copyright (C) 2014, 2015 Red Hat, Inc.
    This file is part of dwgrep.
 
    This file is free software; you can redistribute it and/or modify
@@ -49,6 +49,8 @@ struct frame
     , m_values {vars}
   {}
 
+  ~frame ();
+
   void bind_value (var_id index, std::unique_ptr <value> val);
   void unbind_value (var_id index);
   value &read_value (var_id index);
@@ -73,7 +75,7 @@ public:
 
   stack (stack const &other);
   stack (stack &&other) = default;
-  ~stack () = default;
+  ~stack ();
 
   std::shared_ptr <frame>
   nth_frame (size_t depth) const

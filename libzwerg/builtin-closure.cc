@@ -50,6 +50,11 @@ struct op_apply::pimpl
     m_old_frame = nullptr;
   }
 
+  ~pimpl ()
+  {
+    reset_me ();
+  }
+
   stack::uptr
   next ()
   {
@@ -67,6 +72,7 @@ struct op_apply::pimpl
 	      auto val = stk->pop ();
 	      auto &cl = static_cast <value_closure &> (*val);
 
+	      assert (m_old_frame == nullptr);
 	      m_old_frame = stk->nth_frame (0);
 	      stk->set_frame (cl.get_frame ());
 	      auto origin = std::make_shared <op_origin> (std::move (stk));

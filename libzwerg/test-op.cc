@@ -165,3 +165,11 @@ TEST_F (ZwTest, frame_with_value_referencing_it_doesnt_leak_2)
   run_query (*builtins, std::move (stk), "{}->F G; G");
   ASSERT_EQ (1, counter.use_count ());
 }
+
+TEST_F (ZwTest, frame_with_value_referencing_it_doesnt_leak_3)
+{
+  auto counter = std::make_shared <empty> ();
+  auto stk = stack_with_value (std::make_unique <value_canary> (counter));
+  run_query (*builtins, std::move (stk), "{{} apply}->F G; ?(G)");
+  ASSERT_EQ (1, counter.use_count ());
+}
