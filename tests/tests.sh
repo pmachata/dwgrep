@@ -6,6 +6,13 @@ cd $(dirname $0)
 failures=0
 total=0
 
+if [ -z "$ZW_TEST_TIMEOUT" ]; then
+    case "$DWGREP" in
+	valgrind*) ZW_TEST_TIMEOUT=100;;
+	*) ZW_TEST_TIMEOUT=1;;
+    esac
+fi
+
 fail ()
 {
     echo "FAIL: $@" >&2
@@ -19,7 +26,7 @@ expect_count ()
     export total=$((total + 1))
     COUNT=$1
     shift
-    GOT=$(timeout 1 $DWGREP -c "$@" 2>&1)
+    GOT=$(timeout $ZW_TEST_TIMEOUT $DWGREP -c "$@" 2>&1)
     if [ "$GOT" != "$COUNT" ]; then
 	fail "$DWGREP -c" "$@"
 	echo "expected: $COUNT" >&2
@@ -32,7 +39,7 @@ expect_error ()
     export total=$((total + 1))
     ERR=$1
     shift
-    GOT=$(timeout 1 $DWGREP "$@" 2>&1 >/dev/null)
+    GOT=$(timeout $ZW_TEST_TIMEOUT $DWGREP "$@" 2>&1 >/dev/null)
     if [ "${GOT/${ERR}//}" == "$GOT" ]; then
 	fail "$DWGREP" "$@"
 	echo "expected error: $ERR" >&2
@@ -46,7 +53,7 @@ expect_out ()
     OUT=$1
     shift
     TMP=$(mktemp)
-    GOT=$(timeout 1 $DWGREP "$@" 2>$TMP)
+    GOT=$(timeout $ZW_TEST_TIMEOUT $DWGREP "$@" 2>$TMP)
     if [ -s $TMP ]; then
 	fail "$DWGREP" "$@"
 	echo "expected no error" >&2
