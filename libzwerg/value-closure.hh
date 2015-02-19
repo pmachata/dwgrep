@@ -57,6 +57,32 @@ public:
   void show (std::ostream &o) const override;
   std::unique_ptr <value> clone () const override;
   cmp_result cmp (value const &that) const override;
+
+  // Destruction of stack frames is actually fairly involved.
+  // Consider:
+  //
+  //   '{} dup -> F G;'
+  //
+  // The current stack frame holds the closure associated with F and
+  // G, and that closure holds the stack frame again in case it needs
+  // to look up variables in surrounding context.  So we end up with a
+  // circular dependency.
+  //
+  // Note that neither of these shared pointers can be made weak.
+  // Closures need to hold on the surrounding context strongly,
+  // because in general it won't be the same frame as we are running
+  // in, and they will be the only one to keep that context alive.
+  // And frame naturally needs to hold its variables alive, nobody
+  // else can.
+  //
+  // So this routine checks this case explicitly.  If anyone but F now
+  // holds the reference, and all the references come back from the
+  // frame itself, sever those inner references so that the frame
+  // garbage-collects naturally when we leave the scope.
+  //
+  // This needs to be called strategically at points where
+  // participants of the reference cycle are lost track of.
+  static void maybe_unlink_frame (std::shared_ptr <frame> &f);
 };
 
 #endif /* _VALUE_CLOSURE_H_ */

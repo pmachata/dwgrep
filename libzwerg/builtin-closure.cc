@@ -46,6 +46,7 @@ struct op_apply::pimpl
   reset_me ()
   {
     m_op = nullptr;
+    value_closure::maybe_unlink_frame (m_old_frame);
     m_old_frame = nullptr;
   }
 
@@ -76,7 +77,10 @@ struct op_apply::pimpl
 
 	if (auto stk = m_op->next ())
 	  {
+	    // Restore the original stack frame.
+	    std::shared_ptr <frame> of = stk->nth_frame (0);
 	    stk->set_frame (m_old_frame);
+	    value_closure::maybe_unlink_frame (of);
 	    return stk;
 	  }
 

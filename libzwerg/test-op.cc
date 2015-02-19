@@ -114,10 +114,11 @@ namespace
     : public value
   {
     static value_type const vtype;
-    static unsigned dtor;
+    std::shared_ptr <unsigned> m_counter;
 
-    value_canary ()
+    value_canary (std::shared_ptr <unsigned> counter)
       : value {vtype, 0}
+      , m_counter {counter}
     {}
 
     void
@@ -129,7 +130,7 @@ namespace
     std::unique_ptr <value>
     clone () const override
     {
-      return std::make_unique <value_canary> ();
+      return std::make_unique <value_canary> (m_counter);
     }
 
     cmp_result
@@ -143,20 +144,29 @@ namespace
 
     ~value_canary ()
     {
-      ++dtor;
+      ++*m_counter;
     }
   };
 
   value_type const value_canary::vtype = value_type::alloc ("canary", "");
-  unsigned value_canary::dtor = 0;
 }
 
 TEST_F (ZwTest, frame_with_value_referencing_it_doesnt_leak)
 {
-  auto stk = stack_with_value (std::make_unique <value_canary> ());
+  auto counter = std::make_shared <unsigned> (0);
+  auto stk = stack_with_value (std::make_unique <value_canary> (counter));
   // Bind F to a canary and G to a closure.  The closure will keep the
   // whole frame alive, including the canary.  Thus we can observe the
   // absence of leak by observing whether the canary's destructor ran.
   run_query (*builtins, std::move (stk), "{}->F G;");
-  ASSERT_EQ (1, value_canary::dtor);
+  ASSERT_EQ (1, *counter);
+}
+
+TEST_F (ZwTest, frame_with_value_referencing_it_doesnt_leak_2)
+{
+  // See above for explanation of this test.
+  auto counter = std::make_shared <unsigned> (0);
+  auto stk = stack_with_value (std::make_unique <value_canary> (counter));
+  run_query (*builtins, std::move (stk), "{}->F G; G");
+  ASSERT_EQ (1, *counter);
 }

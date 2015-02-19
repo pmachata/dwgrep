@@ -810,48 +810,9 @@ struct op_scope::pimpl
 	if (auto stk = m_op->next ())
 	  {
 	    // Pop top stack frame.
-	    //
-	    // This is actually more complex than it looks.  For cases
-	    // like this:
-	    //
-	    //   '{} dup -> F G;'
-	    //
-	    // ... we end up with a circular dependency.  The current
-	    // stack frame holds the closure associated with F and G,
-	    // and that closure holds the stack frame again in case it
-	    // needs to look up variables in surrounding context.
-	    //
-	    // Note that neither of these shared pointers can be made
-	    // weak.  Closures need to hold on the surrounding context
-	    // strongly, because in general it won't be the same frame
-	    // as we are running in, and they will be the only one to
-	    // keep that context alive.  And frame naturally needs to
-	    // hold its variables alive, nobody else can.
-	    //
-	    // So simply popping the stack frame may not be enough,
-	    // because the stack frame might hold itself alive, and
-	    // leak.  Instead, we need to cut this chain explicitly.
-
-	    auto of = stk->nth_frame (0);
+	    std::shared_ptr <frame> of = stk->nth_frame (0);
 	    stk->set_frame (stk->nth_frame (1));
-
-	    auto points_back = [&of] (std::unique_ptr <value> const &v)
-	      {
-		if (auto vcl = value::as <value_closure> (v.get ()))
-		  return vcl->get_frame () == of;
-		return false;
-	      };
-
-	    // If anyone but OUTER_FRAME now holds the reference, and
-	    // all the references come back from the frame itself,
-	    // sever those inner references so that the frame
-	    // garbage-collects naturally when we leave the scope.
-	    if (of.use_count () > 1)
-	      if (std::count_if (of->m_values.begin (), of->m_values.end (),
-				 points_back) + 1 == of.use_count ())
-		for (size_t i = 0; i < of->m_values.size (); ++i)
-		  of->unbind_value (var_id (i));
-
+	    value_closure::maybe_unlink_frame (of);
 	    return stk;
 	  }
 

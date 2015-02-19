@@ -27,6 +27,7 @@
    not, see <http://www.gnu.org/licenses/>.  */
 
 #include <iostream>
+#include <algorithm>
 #include "std-memory.hh"
 
 #include "value-closure.hh"
@@ -46,8 +47,28 @@ value_closure::value_closure (value_closure const &that)
   : value_closure {*that.m_t, that.m_frame, that.get_pos ()}
 {}
 
-value_closure::~value_closure()
-{}
+void
+value_closure::maybe_unlink_frame (std::shared_ptr <frame> &f)
+{
+  auto points_back = [&f] (std::unique_ptr <value> const &v)
+    {
+      if (v != nullptr)
+	if (auto vcl = value::as <value_closure> (v.get ()))
+	  return vcl->get_frame () == f;
+      return false;
+    };
+
+  if (f.use_count () > 1)
+    if (std::count_if (f->m_values.begin (), f->m_values.end (),
+		       points_back) + 1 == f.use_count ())
+      for (size_t i = 0; i < f->m_values.size (); ++i)
+	f->unbind_value (var_id (i));
+}
+
+value_closure::~value_closure ()
+{
+  maybe_unlink_frame (m_frame);
+}
 
 void
 value_closure::show (std::ostream &o) const
