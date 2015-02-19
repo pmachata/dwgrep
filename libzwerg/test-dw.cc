@@ -613,3 +613,43 @@ TEST_F (ZwTest, imported_AT_decl_file)
   ASSERT_EQ ("foo/foo.c", n);
   ASSERT_TRUE (prod->next () == nullptr);
 }
+
+namespace
+{
+  void
+  test_builtin_constant (vocabulary &builtins, char const *name)
+  {
+    auto bi = builtins.find (name);
+    ASSERT_TRUE (bi != nullptr);
+    auto op = bi->build_exec
+      (std::make_shared <op_origin> (std::make_unique <stack> ()));
+    ASSERT_TRUE (op != nullptr);
+    auto stk = op->next ();
+    ASSERT_TRUE (stk != nullptr);
+    ASSERT_EQ (1, stk->size ());
+    auto val = stk->pop ();
+    ASSERT_TRUE (val->is <value_cst> ());
+    ASSERT_EQ (&slot_type_dom,
+	       value::as <value_cst> (val.get ())->get_constant ().dom ());
+    ASSERT_TRUE (op->next () == nullptr);
+  }
+}
+
+#define ADD_BUILTIN_CONSTANT_TEST(NAME)		\
+  TEST_F (ZwTest, test_builtin_##NAME)		\
+  {						\
+    test_builtin_constant (*builtins, #NAME);	\
+  }
+
+ADD_BUILTIN_CONSTANT_TEST (T_ASET)
+ADD_BUILTIN_CONSTANT_TEST (T_DWARF)
+ADD_BUILTIN_CONSTANT_TEST (T_CU)
+ADD_BUILTIN_CONSTANT_TEST (T_DIE)
+ADD_BUILTIN_CONSTANT_TEST (T_ATTR)
+ADD_BUILTIN_CONSTANT_TEST (T_ABBREV_UNIT)
+ADD_BUILTIN_CONSTANT_TEST (T_ABBREV)
+ADD_BUILTIN_CONSTANT_TEST (T_ABBREV_ATTR)
+ADD_BUILTIN_CONSTANT_TEST (T_LOCLIST_ELEM)
+ADD_BUILTIN_CONSTANT_TEST (T_LOCLIST_OP)
+
+#undef ADD_BUILTIN_CONSTANT_TEST
