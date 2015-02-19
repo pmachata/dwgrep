@@ -63,6 +63,7 @@ ADD_LIBRARY (LibzwergDw OBJECT
   dwmods.cc
   libzwerg-dw.cc
   value-dw.cc
+  builtin-dw.cc
   builtin-dw-abbrev.cc
   builtin-dw-voc.cc
 )
@@ -71,18 +72,10 @@ SET_TARGET_PROPERTIES (LibzwergDw PROPERTIES
   COMPILE_FLAGS "-fPIC"
 )
 
-# This file is too large for variable tracking assignments, so single
-# it out for customization.
-ADD_LIBRARY (BuiltinDw OBJECT builtin-dw.cc known-dwarf.h)
-SET_TARGET_PROPERTIES (BuiltinDw PROPERTIES
-  COMPILE_FLAGS "-fno-var-tracking-assignments -fPIC"
-)
-
 SET (LibzwergAll
 
   $<TARGET_OBJECTS:LibzwergCore>
   $<TARGET_OBJECTS:LibzwergDw>
-  $<TARGET_OBJECTS:BuiltinDw>
 )
 
 # libzwerg version script
