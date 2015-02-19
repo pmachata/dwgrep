@@ -131,7 +131,7 @@ IF (GTEST_FOUND)
   SET (TESTCASE_DIR "--test-case-directory=${CMAKE_SOURCE_DIR}/tests/")
 
   ADD_LIBRARY (TestStub OBJECT test-stub.cc)
-  ADD_LIBRARY (TestZwAux OBJECT test-zw-aux.cc)
+  ADD_LIBRARY (TestZwAux OBJECT test-zw-aux.cc parser.hh)
 
   ADD_EXECUTABLE (test-dw test-dw.cc
     $<TARGET_OBJECTS:TestStub> $<TARGET_OBJECTS:TestZwAux> ${LibzwergAll})
