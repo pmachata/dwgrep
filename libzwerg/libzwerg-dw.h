@@ -58,6 +58,9 @@ extern "C" {
   zw_cdom const *zw_cdom_dw_locexpr_opcode (void);
   zw_cdom const *zw_cdom_dw_address_class (void);
   zw_cdom const *zw_cdom_dw_endianity (void);
+  zw_cdom const *zw_cdom_elfsym_stt (void);
+  zw_cdom const *zw_cdom_elfsym_stb (void);
+  zw_cdom const *zw_cdom_elfsym_stv (void);
 
   /**
    * Dwarf.
@@ -163,6 +166,21 @@ extern "C" {
   };
 
   struct zw_aset_pair zw_value_aset_at (zw_value const *aset, size_t idx);
+
+
+  /**
+   * ELF symbols.
+   */
+
+  bool zw_value_is_elfsym (zw_value const *val);
+
+  unsigned zw_value_elfsym_symidx (zw_value const *elfsym);
+
+  char const *zw_value_elfsym_name (zw_value const *elfsym);
+
+  GElf_Sym zw_value_elfsym_symbol (zw_value const *elfsym);
+
+  Elf *zw_value_elfsym_elf (zw_value const *elfsym);
 
 
 #ifdef __cplusplus

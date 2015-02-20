@@ -165,6 +165,12 @@ zw_query_destroy (zw_query *query)
   delete query;
 }
 
+size_t
+zw_value_pos (zw_value const *value)
+{
+  return value->get_pos ();
+}
+
 void
 zw_value_destroy (zw_value *value)
 {

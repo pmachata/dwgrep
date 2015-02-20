@@ -135,6 +135,8 @@ private:
   void dump_attr (std::ostream &os, zw_value const &val, format fmt);
   void dump_llelem (std::ostream &os, zw_value const &val, format fmt);
   void dump_aset (std::ostream &os, zw_value const &val, format fmt);
+  void dump_elfsym (std::ostream &os, zw_value const &val, format fmt);
+  void dump_named_constant (std::ostream &os, unsigned cst, zw_cdom const &dom);
 };
 
 void
@@ -377,6 +379,42 @@ dumper::dump_aset (std::ostream &os, zw_value const &val, format fmt)
 }
 
 void
+dumper::dump_named_constant (std::ostream &os, unsigned v, zw_cdom const &dom)
+{
+  std::unique_ptr <zw_value, zw_deleter> cst
+	{zw_value_init_const_u64 (v, &dom, 0, zw_throw_on_error {})};
+  std::unique_ptr <zw_value, zw_deleter> str
+	{zw_value_const_format_brief (cst.get (), zw_throw_on_error {})};
+
+  dump_string (os, *str, format::full);
+}
+
+void
+dumper::dump_elfsym (std::ostream &os, zw_value const &val, format fmt)
+{
+  GElf_Sym sym = zw_value_elfsym_symbol (&val);
+  os << zw_value_elfsym_symidx (&val) << ":\t";
+  {
+    ios_flag_saver ifs {os};
+    os << std::hex << std::showbase << std::setfill ('0') << std::setw (16)
+       << std::internal << sym.st_value << ' ';
+  }
+  {
+    ios_flag_saver ifs {os};
+    os << std::setw (6) << sym.st_size;
+  }
+
+  dump_named_constant (os << ' ', GELF_ST_TYPE (sym.st_info),
+		       *zw_cdom_elfsym_stt ());
+  dump_named_constant (os << '\t', GELF_ST_BIND (sym.st_info),
+		       *zw_cdom_elfsym_stb ());
+  dump_named_constant (os << '\t', GELF_ST_VISIBILITY (sym.st_other),
+		       *zw_cdom_elfsym_stv ());
+
+  os << '\t' << zw_value_elfsym_name (&val);
+}
+
+void
 dumper::dump_value (std::ostream &os, zw_value const &val, format fmt)
 {
   bool brackets;
@@ -409,6 +447,8 @@ dumper::dump_value (std::ostream &os, zw_value const &val, format fmt)
     dump_llelem (os, val, fmt);
   else if (zw_value_is_aset (&val))
     dump_aset (os, val, fmt);
+  else if (zw_value_is_elfsym (&val))
+    dump_elfsym (os, val, fmt);
   else
     os << "<unknown value type>";
 

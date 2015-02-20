@@ -33,6 +33,7 @@
 #include "atval.hh"
 #include "builtin-dw-abbrev.hh"
 #include "builtin-dw.hh"
+#include "builtin-symbol.hh"
 #include "builtin.hh"
 #include "dwit.hh"
 #include "init.hh"
@@ -651,5 +652,27 @@ ADD_BUILTIN_CONSTANT_TEST (T_ABBREV)
 ADD_BUILTIN_CONSTANT_TEST (T_ABBREV_ATTR)
 ADD_BUILTIN_CONSTANT_TEST (T_LOCLIST_ELEM)
 ADD_BUILTIN_CONSTANT_TEST (T_LOCLIST_OP)
+ADD_BUILTIN_CONSTANT_TEST (T_ELFSYM)
 
 #undef ADD_BUILTIN_CONSTANT_TEST
+
+TEST_F (ZwTest, builtin_symbol_yields_once_per_symbol)
+{
+  size_t count = 0;
+  std::vector <std::string> names = {"", "enum.cc", "", "", "", "", "", "", "",
+				     "", "", "", "ae", "af"};
+  for (auto prod = op_symbol_dwarf {nullptr}.operate (rdw ("enum.o"));
+       auto val = prod->next ();)
+    {
+      ASSERT_LT (count, names.size ());
+      EXPECT_EQ (names[count], val->get_name ());
+      count++;
+    }
+  EXPECT_EQ (names.size (), count);
+
+  ASSERT_EQ (1, run_dwquery
+	     (*builtins, "enum.o",
+	      R"raw([symbol name] ==
+		 ["", "enum.cc", "", "", "", "", "", "", "",
+		  "", "", "", "ae", "af"])raw").size ());
+}

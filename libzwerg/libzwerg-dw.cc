@@ -30,7 +30,9 @@
 #include "libzwerg.hh"
 
 #include "builtin-dw.hh"
+#include "value-aset.hh"
 #include "value-dw.hh"
+#include "value-symbol.hh"
 #include "dwcst.hh"
 
 zw_cdom const *
@@ -166,6 +168,27 @@ zw_cdom_dw_endianity (void)
   return &cdom;
 }
 
+zw_cdom const *
+zw_cdom_elfsym_stt (void)
+{
+  static zw_cdom cdom {elfsym_stt_dom ()};
+  return &cdom;
+}
+
+zw_cdom const *
+zw_cdom_elfsym_stb (void)
+{
+  static zw_cdom cdom {elfsym_stb_dom ()};
+  return &cdom;
+}
+
+zw_cdom const *
+zw_cdom_elfsym_stv (void)
+{
+  static zw_cdom cdom {elfsym_stv_dom ()};
+  return &cdom;
+}
+
 zw_vocabulary const *
 zw_vocabulary_dwarf (zw_error **out_err)
 {
@@ -215,6 +238,12 @@ bool
 zw_value_is_aset (zw_value const *val)
 {
   return val->is <value_aset> ();
+}
+
+bool
+zw_value_is_elfsym (zw_value const *val)
+{
+  return val->is <value_symbol> ();
 }
 
 namespace
@@ -401,4 +430,31 @@ zw_value_aset_at (zw_value const *val, size_t idx)
   assert (idx < cov.size ());
   auto const &range = cov.at (idx);
   return {range.start, range.length};
+}
+
+namespace
+{
+  value_symbol const &
+  elfsym (zw_value const *val)
+  {
+    return value::require_as <value_symbol> (val);
+  }
+}
+
+unsigned
+zw_value_elfsym_symidx (zw_value const *val)
+{
+  return elfsym (val).get_symidx ();
+}
+
+GElf_Sym
+zw_value_elfsym_symbol (zw_value const *val)
+{
+  return elfsym (val).get_symbol ();
+}
+
+char const *
+zw_value_elfsym_name (zw_value const *val)
+{
+  return elfsym (val).get_name ();
 }

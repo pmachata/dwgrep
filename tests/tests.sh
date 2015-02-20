@@ -835,6 +835,11 @@ expect_out '0..0xffffffffffffffff:0 call_frame_cfa' \
 expect_out '0x10004..0x10009, 0x1000e..0x10015' \
 	aranges.o -e 'entry @AT_ranges'
 
+# T_ELFSYM
+expect_out "1:	0000000000000000      0 FILE	LOCAL	DEFAULT	enum.cc
+12:	0000000000000000      4 OBJECT	GLOBAL	DEFAULT	ae
+13:	0x00000000000004      4 OBJECT	GLOBAL	DEFAULT	af" \
+	enum.o -e 'symbol (name != "")'
 
 echo "$total tests total, $failures failures."
 

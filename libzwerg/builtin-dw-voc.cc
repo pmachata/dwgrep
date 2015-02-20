@@ -30,6 +30,7 @@
 #include "builtin-aset.hh"
 #include "builtin-dw.hh"
 #include "builtin-dw-abbrev.hh"
+#include "builtin-symbol.hh"
 #include "dwcst.hh"
 #include "known-dwarf.h"
 
@@ -49,6 +50,7 @@ dwgrep_vocabulary_dw ()
   add_builtin_type_constant <value_aset> (voc);
   add_builtin_type_constant <value_loclist_elem> (voc);
   add_builtin_type_constant <value_loclist_op> (voc);
+  add_builtin_type_constant <value_symbol> (voc);
 
   {
     auto t = std::make_shared <overload_tab> ();
@@ -338,6 +340,7 @@ dwgrep_vocabulary_dw ()
 
     t->add_op_overload <op_name_dwarf> ();
     t->add_op_overload <op_name_die> ();
+    t->add_op_overload <op_name_symbol> ();
 
     voc.add (std::make_shared <overloaded_op_builtin> ("name", t));
   }
@@ -362,6 +365,14 @@ dwgrep_vocabulary_dw ()
     t->add_op_overload <op_cooked_attr> ();
 
     voc.add (std::make_shared <overloaded_op_builtin> ("cooked", t));
+  }
+
+  {
+    auto t = std::make_shared <overload_tab> ();
+
+    t->add_op_overload <op_symbol_dwarf> ();
+
+    voc.add (std::make_shared <overloaded_op_builtin> ("symbol", t));
   }
 
   auto add_dw_at = [&voc] (unsigned code,

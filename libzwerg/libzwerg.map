@@ -71,6 +71,9 @@ LIBZWERG_0.1 {
 	zw_cdom_dw_locexpr_opcode;
 	zw_cdom_dw_address_class;
 	zw_cdom_dw_endianity;
+	zw_cdom_elfsym_stt;
+	zw_cdom_elfsym_stb;
+	zw_cdom_elfsym_stv;
 
 	zw_value_init_dwarf;
 	zw_value_init_dwarf_raw;
@@ -102,6 +105,11 @@ LIBZWERG_0.1 {
 	zw_value_is_aset;
 	zw_value_aset_length;
 	zw_value_aset_at;
+
+	zw_value_is_elfsym;
+	zw_value_elfsym_symidx;
+	zw_value_elfsym_symbol;
+	zw_value_elfsym_name;
 
   local:
 	*;
