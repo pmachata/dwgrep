@@ -27,6 +27,7 @@
    not, see <http://www.gnu.org/licenses/>.  */
 
 #include "overload.hh"
+#include "value-cst.hh"
 #include "value-dw.hh"
 #include "value-symbol.hh"
 #include "value-str.hh"
@@ -48,6 +49,17 @@ struct op_name_symbol
   using op_once_overload::op_once_overload;
 
   value_str
+  operate (std::unique_ptr <value_symbol> val) override;
+
+  static std::string docstring ();
+};
+
+struct op_label_symbol
+  : public op_once_overload <value_cst, value_symbol>
+{
+  using op_once_overload::op_once_overload;
+
+  value_cst
   operate (std::unique_ptr <value_symbol> val) override;
 
   static std::string docstring ();

@@ -676,3 +676,36 @@ TEST_F (ZwTest, builtin_symbol_yields_once_per_symbol)
 		 ["", "enum.cc", "", "", "", "", "", "", "",
 		  "", "", "", "ae", "af"])raw").size ());
 }
+
+TEST_F (ZwTest, builtin_symbol_label)
+{
+  std::vector <unsigned> results = {
+    STT_NOTYPE, STT_FILE, STT_SECTION, STT_SECTION, STT_SECTION, STT_SECTION,
+    STT_SECTION, STT_SECTION, STT_SECTION, STT_SECTION, STT_SECTION,
+    STT_SECTION, STT_OBJECT, STT_OBJECT
+  };
+
+  op_label_symbol op {nullptr};
+
+  size_t count = 0;
+  for (auto prod = op_symbol_dwarf {nullptr}.operate (rdw ("enum.o"));
+       auto val = prod->next ();)
+    {
+      ASSERT_LT (count, results.size ());
+
+      value_cst cst = op.operate (std::move (val));
+      ASSERT_EQ (&elfsym_stt_dom (), cst.get_constant ().dom ());
+      EXPECT_EQ (results[count], cst.get_constant ().value ());
+
+      count++;
+    }
+  EXPECT_EQ (results.size (), count);
+
+  /*
+  ASSERT_EQ (1, run_dwquery
+	     (*builtins, "enum.o",
+	      R"raw([symbol name] ==
+		 ["", "enum.cc", "", "", "", "", "", "", "",
+		  "", "", "", "ae", "af"])raw").size ());
+  */
+}

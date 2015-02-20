@@ -175,6 +175,7 @@ dwgrep_vocabulary_dw ()
     t->add_op_overload <op_label_abbrev> ();
     t->add_op_overload <op_label_abbrev_attr> ();
     t->add_op_overload <op_label_loclist_op> ();
+    t->add_op_overload <op_label_symbol> ();
 
     voc.add (std::make_shared <overloaded_op_builtin> ("label", t));
   }

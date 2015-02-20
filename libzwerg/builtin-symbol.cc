@@ -127,3 +127,22 @@ XXX
 
 )docstring";
 }
+
+
+value_cst
+op_label_symbol::operate (std::unique_ptr <value_symbol> val)
+{
+  constant cst {GELF_ST_TYPE (val->get_symbol ().st_info), &elfsym_stt_dom ()};
+  return value_cst {cst, 0};
+}
+
+std::string
+op_label_symbol::docstring ()
+{
+  return
+R"docstring(
+
+XXX
+
+)docstring";
+}
