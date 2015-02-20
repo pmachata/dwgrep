@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2014 Red Hat, Inc.
+   Copyright (C) 2014, 2015 Red Hat, Inc.
    This file is part of dwgrep.
 
    This file is free software; you can redistribute it and/or modify
@@ -35,16 +35,19 @@ class ios_flag_saver
 {
   std::ios &m_stream;
   std::ios::fmtflags m_flags;
+  char m_fillch;
 
 public:
   explicit ios_flag_saver (std::ios &stream)
     : m_stream (stream)
     , m_flags {stream.flags ()}
+    , m_fillch {stream.fill ()}
   {}
 
   ~ios_flag_saver ()
   {
     m_stream.flags (m_flags);
+    m_stream.fill (m_fillch);
   }
 };
 
