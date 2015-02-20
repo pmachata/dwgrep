@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2009, 2010, 2011, 2012, 2014 Red Hat, Inc.
+   Copyright (C) 2009, 2010, 2011, 2012, 2014, 2015 Red Hat, Inc.
    This file is part of dwgrep.
 
    This file is free software; you can redistribute it and/or modify
@@ -28,15 +28,39 @@
 
 #include "dwit.hh"
 
+namespace
+{
+  std::pair <Dwarf *, Dwarf_Addr>
+  getdwarf (Dwfl_Module *module)
+  {
+    assert (module != nullptr);
+    Dwarf_Addr addr;
+    Dwarf *ret = dwfl_module_getdwarf (module, &addr);
+    if (ret == nullptr)
+      throw_libdwfl ();
+    return std::make_pair (ret, addr);
+  }
+}
+
+Dwarf *
+dwfl_module::dwarf ()
+{
+  return getdwarf (m_module).first;
+}
+
+Dwarf_Addr
+dwfl_module::bias ()
+{
+  return getdwarf (m_module).second;
+}
+
 int
 dwfl_module_iterator::module_cb (Dwfl_Module *mod, void **data,
 				 const char *name,
 				 Dwarf_Addr addr, void *arg)
 {
   auto self = static_cast <dwfl_module_iterator *> (arg);
-  self->m_ret_dw = dwfl_module_getdwarf (mod, &self->m_ret_bias);
-  if (self->m_ret_dw == nullptr)
-    throw_libdwfl ();
+  self->m_module = dwfl_module {mod};
   return DWARF_CB_ABORT;
 }
 
@@ -82,10 +106,10 @@ dwfl_module_iterator::operator++ (int)
   return ret;
 }
 
-std::pair <Dwarf *, Dwarf_Addr>
+dwfl_module
 dwfl_module_iterator::operator* () const
 {
-  return std::make_pair (m_ret_dw, m_ret_bias);
+  return m_module;
 }
 
 bool

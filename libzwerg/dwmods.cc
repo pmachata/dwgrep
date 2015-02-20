@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2014 Red Hat, Inc.
+   Copyright (C) 2014, 2015 Red Hat, Inc.
    This file is part of dwgrep.
 
    This file is free software; you can redistribute it and/or modify
@@ -37,10 +37,11 @@ all_dwarfs (dwfl_context &dwctx)
   std::vector <Dwarf *> ret;
   std::for_each (dwfl_module_iterator {dwctx.get_dwfl ()},
 		 dwfl_module_iterator::end (),
-		 [&] (std::pair <Dwarf *, Dwarf_Addr> p)
+		 [&] (dwfl_module mod)
 		 {
-		   ret.push_back (p.first);
-		   if (Dwarf *alt = dwarf_getalt (p.first))
+		   Dwarf *dw = mod.dwarf ();
+		   ret.push_back (dw);
+		   if (Dwarf *alt = dwarf_getalt (dw))
 		     ret.push_back (alt);
 		 });
   return ret;

@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2009, 2010, 2011, 2012, 2014 Red Hat, Inc.
+   Copyright (C) 2009, 2010, 2011, 2012, 2014, 2015 Red Hat, Inc.
    This file is part of dwgrep.
 
    This file is free software; you can redistribute it and/or modify
@@ -36,13 +36,41 @@
 
 #include "dwpp.hh"
 
+class dwfl_module
+{
+  Dwfl_Module *m_module;
+
+public:
+  dwfl_module ()
+    : m_module {nullptr}
+  {}
+
+  explicit dwfl_module (Dwfl_Module *module)
+    : m_module {module}
+  {}
+
+  dwfl_module &
+  operator= (dwfl_module other)
+  {
+    std::swap (m_module, other.m_module);
+    return *this;
+  }
+
+  Dwarf *dwarf ();
+  Dwarf_Addr bias ();
+
+  operator Dwfl_Module * () const
+  {
+    return m_module;
+  }
+};
+
 class dwfl_module_iterator
-  : public std::iterator<std::input_iterator_tag, Dwfl_Module *>
+  : public std::iterator<std::input_iterator_tag, dwfl_module>
 {
   Dwfl *m_dwfl;
   ptrdiff_t m_offset;
-  Dwarf *m_ret_dw;
-  Dwarf_Addr m_ret_bias;
+  dwfl_module m_module;
 
   static int module_cb (Dwfl_Module *mod, void **data, const char *name,
 			Dwarf_Addr addr, void *arg);
@@ -60,7 +88,7 @@ public:
   dwfl_module_iterator &operator++ ();
   dwfl_module_iterator operator++ (int);
 
-  std::pair <Dwarf *, Dwarf_Addr> operator* () const;
+  dwfl_module operator* () const;
 
   bool operator== (dwfl_module_iterator const &that) const;
   bool operator!= (dwfl_module_iterator const &that) const;

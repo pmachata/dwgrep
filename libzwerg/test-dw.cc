@@ -459,12 +459,12 @@ namespace
     auto vdw = rdw (fn);
     auto ctx = vdw->get_dwctx ();
 
-    std::vector <std::pair <Dwarf *, Dwarf_Addr>> modules
+    std::vector <dwfl_module> modules
       {dwfl_module_iterator {ctx->get_dwfl ()}, dwfl_module_iterator::end ()};
     ASSERT_EQ (1, modules.size ());
 
     ret_vdw = std::move (vdw);
-    ret_dw = modules[0].first;
+    ret_dw = modules[0].dwarf ();
   }
 }
 
