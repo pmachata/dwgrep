@@ -1,6 +1,6 @@
 #!/bin/gawk -f
 
-## Copyright (C) 2012 Red Hat, Inc.
+## Copyright (C) 2012, 2015 Red Hat, Inc.
 ##
 ## This file is part of elfutils.
 ##
@@ -48,19 +48,12 @@ END {
     if (what && what != set) continue;
     split(DW[set], elts, ",");
     m = asort(elts);
-    lo = hi = "";
     if (m == 0) continue;
     print "\n#define ALL_KNOWN_DW_" set " \\";
     for (j = 1; j <= m; ++j) {
       elt = elts[j];
-      if (elt ~ /(lo|low)_user$/) {
-	lo = elt;
+      if (elt ~ /(low?|hi|high)_user$/)
 	continue;
-      }
-      if (elt ~ /(hi|high)_user$/) {
-	hi = elt;
-	continue;
-      }
       if (comment[set, elt])
 	print "  ONE_KNOWN_DW_" set "_DESC (" elt ", DW_" set "_" elt \
 	  ", \"" comment[set, elt] "\") \\";
