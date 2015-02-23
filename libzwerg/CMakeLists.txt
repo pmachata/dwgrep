@@ -15,12 +15,20 @@ ADD_CUSTOM_COMMAND (OUTPUT known-dwarf.h
   DEPENDS ${CMAKE_SOURCE_DIR}/known-dwarf.awk ${DWARF_INCLUDE_DIR}/dwarf.h
 )
 
+ADD_CUSTOM_COMMAND (OUTPUT known-elf.h
+  COMMAND gawk -f
+  	${CMAKE_SOURCE_DIR}/known-elf.awk
+	${ELF_INCLUDE_DIR}/elf.h > known-elf.h
+  DEPENDS ${CMAKE_SOURCE_DIR}/known-elf.awk ${ELF_INCLUDE_DIR}/elf.h
+)
+
 # Core pseudo-library.
 ADD_LIBRARY (LibzwergCore OBJECT
 
   ${BISON_Parser_OUTPUTS}
   ${FLEX_Lexer_OUTPUTS}
   known-dwarf.h
+  known-elf.h
   build.cc
   builtin-closure.cc
   builtin-cmp.cc
@@ -54,6 +62,7 @@ SET_TARGET_PROPERTIES (LibzwergCore PROPERTIES
 ADD_LIBRARY (LibzwergDw OBJECT
 
   known-dwarf.h
+  known-elf.h
   atval.cc
   cache.cc
   coverage.cc
