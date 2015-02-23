@@ -78,6 +78,7 @@ LIBZWERG_0.1 {
 	zw_value_init_dwarf;
 	zw_value_init_dwarf_raw;
 	zw_value_is_dwarf;
+	zw_value_dwarf_dwfl;
 	zw_value_dwarf_name;
 
 	zw_value_is_cu;

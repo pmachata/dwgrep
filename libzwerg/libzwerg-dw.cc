@@ -269,15 +269,25 @@ zw_value_init_dwarf_raw (char const *filename, size_t pos, zw_error **out_err)
   return init_dwarf (filename, doneness::raw, pos, out_err);
 }
 
+namespace
+{
+  value_dwarf const &
+  dwarf (zw_value const *val)
+  {
+    return value::require_as <value_dwarf> (val);
+  }
+}
+
+Dwfl *
+zw_value_dwarf_dwfl (zw_value const *val)
+{
+  return dwarf (val).get_dwctx ()->get_dwfl ();
+}
+
 char const *
 zw_value_dwarf_name (zw_value const *val)
 {
-  assert (val != nullptr);
-
-  value_dwarf const *dw = value::as <value_dwarf> (val);
-  assert (dw != nullptr);
-
-  return dw->get_fn ().c_str ();
+  return dwarf (val).get_fn ().c_str ();
 }
 
 namespace
