@@ -701,11 +701,19 @@ TEST_F (ZwTest, builtin_symbol_label)
     }
   EXPECT_EQ (results.size (), count);
 
-  /*
-  ASSERT_EQ (1, run_dwquery
+  EXPECT_EQ (1, run_dwquery
 	     (*builtins, "enum.o",
-	      R"raw([symbol name] ==
-		 ["", "enum.cc", "", "", "", "", "", "", "",
-		  "", "", "", "ae", "af"])raw").size ());
-  */
+	      R"foo([symbol label "%s"] ==
+		 ["STT_NOTYPE", "STT_FILE", "STT_SECTION", "STT_SECTION",
+		  "STT_SECTION", "STT_SECTION", "STT_SECTION", "STT_SECTION",
+		  "STT_SECTION", "STT_SECTION", "STT_SECTION", "STT_SECTION",
+		  "STT_OBJECT", "STT_OBJECT"])foo").size ());
+  // XXX add test that mentions the symbol names by name, and doesn't
+  // just test their string rendition.
+
+  EXPECT_EQ (1, run_dwquery
+	     (*builtins, "y.o",
+	      "symbol (name == \"main\") label \"%s\" == \"STT_ARM_TFUNC\"")
+	     .size ());
+  // XXX add here as well
 }
