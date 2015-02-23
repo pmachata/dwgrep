@@ -169,9 +169,9 @@ zw_cdom_dw_endianity (void)
 }
 
 zw_cdom const *
-zw_cdom_elfsym_stt (void)
+zw_cdom_elfsym_stt (int machine)
 {
-  static zw_cdom cdom {elfsym_stt_dom ()};
+  static zw_cdom cdom {elfsym_stt_dom (machine)};
   return &cdom;
 }
 

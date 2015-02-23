@@ -694,7 +694,7 @@ TEST_F (ZwTest, builtin_symbol_label)
       ASSERT_LT (count, results.size ());
 
       value_cst cst = op.operate (std::move (val));
-      ASSERT_EQ (&elfsym_stt_dom (), cst.get_constant ().dom ());
+      ASSERT_EQ (&elfsym_stt_dom (EM_X86_64), cst.get_constant ().dom ());
       EXPECT_EQ (results[count], cst.get_constant ().value ());
 
       count++;

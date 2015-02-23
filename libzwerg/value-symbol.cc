@@ -30,6 +30,7 @@
 #include <climits>
 #include "value-symbol.hh"
 #include "std-memory.hh"
+#include "known-elf.h"
 
 value_type const value_symbol::vtype = value_type::alloc ("T_ELFSYM",
 R"docstring(
@@ -90,6 +91,11 @@ namespace
       }
   }
 
+#define ONE_KNOWN_STT_DESC(SHORT, LONG, DESC) ONE_KNOWN_STT (SHORT, LONG)
+#define ONE_KNOWN_STT(SHORT, LONG)		\
+  case LONG:					\
+    return show ("STT", #SHORT, o, brv);
+
   struct elfsym_stt_dom_t
     : public constant_dom
   {
@@ -99,15 +105,7 @@ namespace
       using ::show;
       switch (int code = v < 0 || v.uval () > INT_MAX ? -1 : v.uval ())
 	{
-	case STT_NOTYPE:	return show ("STT", "NOYPE", o, brv);
-	case STT_OBJECT:	return show ("STT", "OBJECT", o, brv);
-	case STT_FUNC:		return show ("STT", "FUNC", o, brv);
-	case STT_SECTION:	return show ("STT", "SECTION", o, brv);
-	case STT_FILE:		return show ("STT", "FILE", o, brv);
-	case STT_COMMON:	return show ("STT", "COMMON", o, brv);
-	case STT_TLS:		return show ("STT", "TLS", o, brv);
-	case STT_NUM:		return show ("STT", "NUM", o, brv);
-	case STT_GNU_IFUNC:	return show ("STT", "GNU_IFUNC", o, brv);
+	  ALL_KNOWN_STT
 	default:
 	  show_unknown ("STT", code,
 			STT_LOOS, STT_HIOS, STT_LOPROC, STT_HIPROC, o, brv);
@@ -119,6 +117,28 @@ namespace
       return "STT_";
     }
   };
+
+#define ONE_KNOWN_STT_ARCH(ARCH)					\
+  struct elfsym_stt_##ARCH##_dom_t					\
+    : public elfsym_stt_dom_t						\
+  {									\
+    void								\
+    show (mpz_class const &v, std::ostream &o, brevity brv) const override \
+    {									\
+      using ::show;							\
+      switch (v < 0 || v.uval () > INT_MAX ? -1 : v.uval ())		\
+	{								\
+	  ALL_KNOWN_STT_##ARCH						\
+	}								\
+      elfsym_stt_dom_t::show (v, o, brv);				\
+    }									\
+  };
+
+  ALL_KNOWN_STT_ARCHES
+
+#undef ONE_KNOWN_STT_ARCH
+#undef ONE_KNOWN_STT
+#undef ONE_KNOWN_STT_DESC
 
   struct elfsym_stb_dom_t
     : public constant_dom
@@ -172,8 +192,20 @@ namespace
 }
 
 constant_dom const &
-elfsym_stt_dom ()
+elfsym_stt_dom (int machine)
 {
+  switch (machine)
+    {
+#define ONE_KNOWN_STT_ARCH(ARCH)		\
+      case EM_##ARCH:				\
+	{					\
+	  static elfsym_stt_##ARCH##_dom_t dom;	\
+	  return dom;				\
+	}
+      ALL_KNOWN_STT_ARCHES
+#undef ONE_KNOWN_STT_ARCH
+    }
+
   static elfsym_stt_dom_t dom;
   return dom;
 }

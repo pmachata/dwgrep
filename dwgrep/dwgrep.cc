@@ -109,10 +109,12 @@ dump_err (zw_error *err)
 class dumper
 {
   zw_vocabulary const &m_voc;
+  int m_machine;
 
 public:
-  explicit dumper (zw_vocabulary const &voc)
+  explicit dumper (zw_vocabulary const &voc, int machine)
     : m_voc {voc}
+    , m_machine {machine}
   {}
 
   enum class format
@@ -405,7 +407,7 @@ dumper::dump_elfsym (std::ostream &os, zw_value const &val, format fmt)
   }
 
   dump_named_constant (os << ' ', GELF_ST_TYPE (sym.st_info),
-		       *zw_cdom_elfsym_stt ());
+		       *zw_cdom_elfsym_stt (m_machine));
   dump_named_constant (os << '\t', GELF_ST_BIND (sym.st_info),
 		       *zw_cdom_elfsym_stb ());
   dump_named_constant (os << '\t', GELF_ST_VISIBILITY (sym.st_other),
@@ -454,6 +456,45 @@ dumper::dump_value (std::ostream &os, zw_value const &val, format fmt)
 
   if (brackets)
     os << ">";
+}
+
+static void
+error_no_machine (char const *fn, char const *errmsg)
+{
+  std::cerr << "dwgrep: " << fn << ": Couldn't determine machine type: "
+	    << errmsg << std::endl;
+}
+
+static void
+get_machine (Dwfl *dwfl, char const *fn, int &machinep)
+{
+  struct data
+  {
+    int &machinep;
+    char const *fn;
+  };
+
+  auto cb = [] (Dwfl_Module *mod, void **place, char const *name,
+		Dwarf_Addr addr, void *udata) -> int
+    {
+      struct data &d = *static_cast <struct data *> (udata);
+
+      GElf_Addr bias;
+      Elf *elf;
+      GElf_Ehdr ehdr;
+
+      if ((elf = dwfl_module_getelf (mod, &bias)) != nullptr
+	  && gelf_getehdr (elf, &ehdr) != nullptr)
+	d.machinep = ehdr.e_machine;
+      else
+	error_no_machine (d.fn, elf_errmsg (elf_errno ()));
+
+      return DWARF_CB_ABORT;
+    };
+
+  data d {machinep, fn};
+  if (dwfl_getmodules (dwfl, cb, &d, 0) < 0)
+    error_no_machine (fn, dwfl_errmsg (dwfl_errno ()));
 }
 
 int
@@ -593,8 +634,6 @@ try
     if (no_filename)
 	with_filename = false;
 
-    dumper dump {*voc};
-
     bool errors = false;
     bool match = false;
     for (auto const &fn: to_process)
@@ -603,15 +642,18 @@ try
 	  std::unique_ptr <zw_stack, zw_deleter> stack
 		{zw_stack_init (zw_throw_on_error {})};
 
+	  int machine = EM_NONE;
 	  if (fn[0] != '\0')
 	    {
 	      std::unique_ptr <zw_value, zw_deleter> dwv
 			{zw_value_init_dwarf (fn, 0, zw_throw_on_error {})};
+	      get_machine (zw_value_dwarf_dwfl (dwv.get ()), fn, machine);
 
 	      zw_stack_push_take (stack.get (), dwv.get (),
 				  zw_throw_on_error {});
 	      dwv.release ();
 	    }
+	  dumper dump {*voc, machine};
 
 	  std::unique_ptr <zw_result, zw_deleter> result
 		{zw_query_execute (query.get (), stack.get (),

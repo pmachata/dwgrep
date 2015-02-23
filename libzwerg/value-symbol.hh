@@ -70,7 +70,7 @@ public:
   cmp_result cmp (value const &that) const override;
 };
 
-constant_dom const &elfsym_stt_dom ();
+constant_dom const &elfsym_stt_dom (int machine);
 constant_dom const &elfsym_stb_dom ();
 constant_dom const &elfsym_stv_dom ();
 
