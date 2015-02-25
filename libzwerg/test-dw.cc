@@ -811,3 +811,72 @@ TEST_F (ZwTest, builtin_symbol_visibility)
 
 #undef TEST_STV
 }
+
+TEST_F (ZwTest, builtin_symbol_size)
+{
+  std::vector <size_t> results = {4, 137, 11, 0, 0, 0, 16, 0, 0};
+
+  op_size_symbol op {nullptr};
+
+  size_t count = 0;
+  for (auto prod = op_symbol_dwarf {nullptr}.operate (rdw ("twocus"));
+       auto val = prod->next ();)
+    if (val->get_pos () >= 63)
+      {
+	ASSERT_LT (count, results.size ());
+
+	value_cst cst = op.operate (std::move (val));
+	EXPECT_TRUE (cst.get_constant ().dom ()->safe_arith ());
+	EXPECT_EQ (results[count], cst.get_constant ().value ());
+
+	count++;
+      }
+
+  EXPECT_EQ (results.size (), count);
+
+  EXPECT_EQ (1, run_dwquery
+	     (*builtins, "twocus",
+	      R"foo([symbol (pos >= 63) size] ==
+		 [4, 137, 11, 0, 0, 0, 16, 0, 0])foo")
+	     .size ());
+}
+
+TEST_F (ZwTest, builtin_symbol_address_value)
+{
+  std::vector <GElf_Addr> results = {
+    0x4005b8, 0x4004d0, 0x4004b2, 0x601038, 0x4003d0, 0x601024,
+    0x4004bd, 0, 0x400390
+  };
+
+  op_address_symbol op {nullptr};
+
+  size_t count = 0;
+  for (auto prod = op_symbol_dwarf {nullptr}.operate (rdw ("twocus"));
+       auto val = prod->next ();)
+    if (val->get_pos () >= 63)
+      {
+	ASSERT_LT (count, results.size ());
+
+	value_cst cst = op.operate (std::move (val));
+	EXPECT_TRUE (cst.get_constant ().dom ()->safe_arith ());
+	EXPECT_EQ (results[count], cst.get_constant ().value ());
+
+	count++;
+      }
+
+  EXPECT_EQ (results.size (), count);
+
+  EXPECT_EQ (1, run_dwquery
+	     (*builtins, "twocus",
+	      R"foo([symbol (pos >= 63) address] ==
+		 [0x4005b8, 0x4004d0, 0x4004b2, 0x601038, 0x4003d0, 0x601024,
+		  0x4004bd, 0, 0x400390])foo")
+	     .size ());
+
+  EXPECT_EQ (1, run_dwquery
+	     (*builtins, "twocus",
+	      R"foo([symbol (pos >= 63) value] ==
+		 [0x4005b8, 0x4004d0, 0x4004b2, 0x601038, 0x4003d0, 0x601024,
+		  0x4004bd, 0, 0x400390])foo")
+	     .size ());
+}

@@ -141,6 +141,7 @@ dwgrep_vocabulary_dw ()
     t->add_op_overload <op_value_attr> ();
     // xxx raw
     t->add_op_overload <op_value_loclist_op> ();
+    t->add_op_overload <op_address_symbol> ();   // [sic]
 
     voc.add (std::make_shared <overloaded_op_builtin> ("value", t));
   }
@@ -164,6 +165,7 @@ dwgrep_vocabulary_dw ()
     t->add_op_overload <op_address_die> ();
     t->add_op_overload <op_address_attr> ();
     t->add_op_overload <op_address_loclist_elem> ();
+    t->add_op_overload <op_address_symbol> ();
 
     voc.add (std::make_shared <overloaded_op_builtin> ("address", t));
   }
@@ -391,6 +393,14 @@ dwgrep_vocabulary_dw ()
     t->add_op_overload <op_visibility_symbol> ();
 
     voc.add (std::make_shared <overloaded_op_builtin> ("visibility", t));
+  }
+
+  {
+    auto t = std::make_shared <overload_tab> ();
+
+    t->add_op_overload <op_size_symbol> ();
+
+    voc.add (std::make_shared <overloaded_op_builtin> ("size", t));
   }
 
   auto add_dw_at = [&voc] (unsigned code,

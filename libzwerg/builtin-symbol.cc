@@ -29,6 +29,7 @@
 #include <vector>
 #include "builtin-symbol.hh"
 #include "dwit.hh"
+#include "dwcst.hh"
 
 namespace
 {
@@ -182,6 +183,44 @@ op_visibility_symbol::operate (std::unique_ptr <value_symbol> val)
 
 std::string
 op_visibility_symbol::docstring ()
+{
+  return
+R"docstring(
+
+XXX
+
+)docstring";
+}
+
+
+value_cst
+op_address_symbol::operate (std::unique_ptr <value_symbol> val)
+{
+  constant cst {val->get_symbol ().st_value, &dw_address_dom ()};
+  return value_cst {cst, 0};
+}
+
+std::string
+op_address_symbol::docstring ()
+{
+  return
+R"docstring(
+
+XXX
+
+)docstring";
+}
+
+
+value_cst
+op_size_symbol::operate (std::unique_ptr <value_symbol> val)
+{
+  constant cst {val->get_symbol ().st_size, &dec_constant_dom};
+  return value_cst {cst, 0};
+}
+
+std::string
+op_size_symbol::docstring ()
 {
   return
 R"docstring(
