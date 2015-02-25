@@ -147,3 +147,23 @@ XXX
 
 )docstring";
 }
+
+
+value_cst
+op_binding_symbol::operate (std::unique_ptr <value_symbol> val)
+{
+  constant cst {GELF_ST_BIND (val->get_symbol ().st_info),
+		&elfsym_stb_dom (val->get_dwctx ()->get_machine ())};
+  return value_cst {cst, 0};
+}
+
+std::string
+op_binding_symbol::docstring ()
+{
+  return
+R"docstring(
+
+XXX
+
+)docstring";
+}

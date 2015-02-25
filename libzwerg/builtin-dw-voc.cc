@@ -377,6 +377,14 @@ dwgrep_vocabulary_dw ()
     voc.add (std::make_shared <overloaded_op_builtin> ("symbol", t));
   }
 
+  {
+    auto t = std::make_shared <overload_tab> ();
+
+    t->add_op_overload <op_binding_symbol> ();
+
+    voc.add (std::make_shared <overloaded_op_builtin> ("binding", t));
+  }
+
   auto add_dw_at = [&voc] (unsigned code,
 			   char const *qname, char const *bname,
 			   char const *atname,
@@ -626,6 +634,30 @@ dwgrep_vocabulary_dw ()
 #undef ONE_KNOWN_STT_ARCH
 #undef ONE_KNOWN_STT
 #undef ONE_KNOWN_STT_DESC
+
+
+#define ONE_KNOWN_STB_ADD(CODE, NAME)					\
+  add_builtin_constant (voc,						\
+			constant (CODE, &elfsym_stb_dom (machine)), NAME);
+
+#define ONE_KNOWN_STB_DESC(NAME, CODE, DESC) ONE_KNOWN_STB_ADD (CODE, #CODE)
+#define ONE_KNOWN_STB(NAME, CODE) ONE_KNOWN_STB_ADD (CODE, #CODE)
+
+  {
+    constexpr int machine = EM_NONE;
+    ALL_KNOWN_STB
+  }
+
+#define ONE_KNOWN_STB_ARCH(ARCH)		\
+    {						\
+      constexpr int machine = EM_##ARCH;	\
+      ALL_KNOWN_STB_##ARCH			\
+    }
+  ALL_KNOWN_STB_ARCHES
+
+#undef ONE_KNOWN_STB_ARCH
+#undef ONE_KNOWN_STB
+#undef ONE_KNOWN_STB_DESC
 
   return ret;
 }

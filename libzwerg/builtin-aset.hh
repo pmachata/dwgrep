@@ -29,6 +29,7 @@
 #ifndef BUILTIN_ASET_HH
 #define BUILTIN_ASET_HH
 
+#include "builtin.hh"
 #include "value-aset.hh"
 #include "value-cst.hh"
 

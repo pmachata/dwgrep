@@ -71,7 +71,7 @@ public:
 };
 
 constant_dom const &elfsym_stt_dom (int machine);
-constant_dom const &elfsym_stb_dom ();
+constant_dom const &elfsym_stb_dom (int machine);
 constant_dom const &elfsym_stv_dom ();
 
 #endif /* BUILTIN_SYMBOL_H */

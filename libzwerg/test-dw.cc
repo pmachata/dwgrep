@@ -726,8 +726,56 @@ TEST_F (ZwTest, builtin_symbol_label)
   // label constants thus come from a STT_ARM_ domain..  But
   // STT_SECTION by itself has a plain domain.  Check that the two are
   // compared as they should.
-  EXPECT_EQ (6, run_dwquery
-	     (*builtins, "y.o",
-	      "symbol (label == STT_SECTION)")
+  EXPECT_EQ (6, run_dwquery (*builtins, "y.o",
+			     "symbol (label == STT_SECTION)").size ());
+}
+
+TEST_F (ZwTest, builtin_symbol_binding)
+{
+  std::vector <unsigned> results = {
+    STB_LOCAL, STB_LOCAL, STB_LOCAL, STB_LOCAL, STB_LOCAL, STB_LOCAL,
+    STB_LOCAL, STB_LOCAL, STB_LOCAL, STB_LOCAL, STB_LOCAL, STB_LOCAL,
+    STB_GLOBAL, STB_GLOBAL
+  };
+
+  op_binding_symbol op {nullptr};
+
+  size_t count = 0;
+  for (auto prod = op_symbol_dwarf {nullptr}.operate (rdw ("enum.o"));
+       auto val = prod->next ();)
+    {
+      ASSERT_LT (count, results.size ());
+
+      value_cst cst = op.operate (std::move (val));
+      ASSERT_EQ (&elfsym_stb_dom (EM_X86_64), cst.get_constant ().dom ());
+      EXPECT_EQ (results[count], cst.get_constant ().value ());
+
+      count++;
+    }
+  EXPECT_EQ (results.size (), count);
+
+  EXPECT_EQ (1, run_dwquery
+	     (*builtins, "enum.o",
+	      R"foo([symbol binding] ==
+		 [STB_LOCAL, STB_LOCAL, STB_LOCAL, STB_LOCAL, STB_LOCAL,
+		  STB_LOCAL, STB_LOCAL, STB_LOCAL, STB_LOCAL, STB_LOCAL,
+		  STB_LOCAL, STB_LOCAL, STB_GLOBAL, STB_GLOBAL])foo")
 	     .size ());
+
+  EXPECT_EQ (1, run_dwquery
+	     (*builtins, "enum.o",
+	      R"foo([symbol binding "%s"] ==
+		 ["STB_LOCAL","STB_LOCAL","STB_LOCAL","STB_LOCAL","STB_LOCAL",
+		  "STB_LOCAL","STB_LOCAL","STB_LOCAL","STB_LOCAL","STB_LOCAL",
+		  "STB_LOCAL","STB_LOCAL","STB_GLOBAL","STB_GLOBAL"])foo")
+	     .size ());
+
+  EXPECT_EQ (1, run_dwquery
+	     (*builtins, "y-mips.o",
+	      "symbol (name == \"main\") binding == STB_MIPS_SPLIT_COMMON")
+	     .size ());
+
+  // See above at "label" for reasoning behind this test.
+  EXPECT_EQ (9, run_dwquery (*builtins, "y-mips.o",
+			     "symbol (binding == STB_LOCAL)").size ());
 }

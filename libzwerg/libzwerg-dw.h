@@ -67,8 +67,8 @@ extern "C" {
   zw_cdom const *zw_cdom_dw_address_class (void);
   zw_cdom const *zw_cdom_dw_endianity (void);
 
-  zw_cdom const *zw_cdom_elfsym_stb (void);
   zw_cdom const *zw_cdom_elfsym_stt (zw_machine const *machine);
+  zw_cdom const *zw_cdom_elfsym_stb (zw_machine const *machine);
   zw_cdom const *zw_cdom_elfsym_stv (void);
 
   /**

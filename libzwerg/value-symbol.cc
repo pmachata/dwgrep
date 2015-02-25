@@ -148,6 +148,12 @@ namespace
 #undef ONE_KNOWN_STT
 #undef ONE_KNOWN_STT_DESC
 
+
+#define ONE_KNOWN_STB_DESC(SHORT, LONG, DESC) ONE_KNOWN_STB (SHORT, LONG)
+#define ONE_KNOWN_STB(SHORT, LONG)		\
+  case LONG:					\
+    return show ("STB", #SHORT, o, brv);
+
   struct elfsym_stb_dom_t
     : public constant_dom
   {
@@ -157,11 +163,7 @@ namespace
       using ::show;
       switch (int code = v < 0 || v.uval () > INT_MAX ? -1 : v.uval ())
 	{
-	case STB_LOCAL:		return show ("STB", "LOCAL", o, brv);
-	case STB_GLOBAL:	return show ("STB", "GLOBAL", o, brv);
-	case STB_WEAK:		return show ("STB", "WEAK", o, brv);
-	case STB_NUM:		return show ("STB", "NUM", o, brv);
-	case STB_GNU_UNIQUE:	return show ("STB", "GNU_UNIQUE", o, brv);
+	  ALL_KNOWN_STB
 	default:
 	  show_unknown ("STB", code,
 			STB_LOOS, STB_HIOS, STB_LOPROC, STB_HIPROC, o, brv);
@@ -173,6 +175,36 @@ namespace
       return "STB_";
     }
   };
+
+#define ONE_KNOWN_STB_ARCH(ARCH)					\
+  struct elfsym_stb_##ARCH##_dom_t					\
+    : public elfsym_stb_dom_t						\
+  {									\
+    void								\
+    show (mpz_class const &v, std::ostream &o, brevity brv) const override \
+    {									\
+      using ::show;							\
+      switch (v < 0 || v.uval () > INT_MAX ? -1 : v.uval ())		\
+	{								\
+	  ALL_KNOWN_STB_##ARCH						\
+	}								\
+      elfsym_stb_dom_t::show (v, o, brv);				\
+    }									\
+									\
+    virtual constant_dom const *					\
+    most_enclosing (mpz_class const &v) const override			\
+    {									\
+      if (v < STT_LOOS)							\
+	return &elfsym_stb_dom (EM_NONE);				\
+      return this;							\
+    }									\
+  };
+
+  ALL_KNOWN_STB_ARCHES
+
+#undef ONE_KNOWN_STB_ARCH
+#undef ONE_KNOWN_STB
+#undef ONE_KNOWN_STB_DESC
 
   struct elfsym_stv_dom_t
     : public constant_dom
@@ -219,8 +251,20 @@ elfsym_stt_dom (int machine)
 }
 
 constant_dom const &
-elfsym_stb_dom ()
+elfsym_stb_dom (int machine)
 {
+  switch (machine)
+    {
+#define ONE_KNOWN_STB_ARCH(ARCH)		\
+      case EM_##ARCH:				\
+	{					\
+	  static elfsym_stb_##ARCH##_dom_t dom;	\
+	  return dom;				\
+	}
+      ALL_KNOWN_STB_ARCHES
+#undef ONE_KNOWN_STB_ARCH
+    }
+
   static elfsym_stb_dom_t dom;
   return dom;
 }

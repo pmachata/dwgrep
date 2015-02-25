@@ -409,7 +409,7 @@ dumper::dump_elfsym (std::ostream &os, zw_value const &val, format fmt)
   dump_named_constant (os << ' ', GELF_ST_TYPE (sym.st_info),
 		       *zw_cdom_elfsym_stt (m_machine));
   dump_named_constant (os << '\t', GELF_ST_BIND (sym.st_info),
-		       *zw_cdom_elfsym_stb ());
+		       *zw_cdom_elfsym_stb (m_machine));
   dump_named_constant (os << '\t', GELF_ST_VISIBILITY (sym.st_other),
 		       *zw_cdom_elfsym_stv ());
 
