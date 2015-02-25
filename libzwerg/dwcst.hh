@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2014 Red Hat, Inc.
+   Copyright (C) 2014, 2015 Red Hat, Inc.
    This file is part of dwgrep.
 
    This file is free software; you can redistribute it and/or modify
@@ -29,7 +29,7 @@
 #ifndef _DWCST_H_
 #define _DWCST_H_
 
-struct constant_dom;
+typedef struct zw_cdom constant_dom;
 
 constant_dom const &dw_tag_dom ();
 constant_dom const &dw_attr_dom ();

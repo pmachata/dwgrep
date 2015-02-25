@@ -303,49 +303,44 @@ char const *
 zw_cdom_name (zw_cdom const *cdom)
 {
   assert (cdom != nullptr);
-  return cdom->m_cdom.name ();
+  return cdom->name ();
 }
 
 bool
 zw_cdom_is_arith (zw_cdom const *cdom)
 {
   assert (cdom != nullptr);
-  return cdom->m_cdom.safe_arith ();
+  return cdom->safe_arith ();
 }
 
 zw_cdom const *
 zw_cdom_dec (void)
 {
-  static zw_cdom cdom {dec_constant_dom};
-  return &cdom;
+  return &dec_constant_dom;
 }
 
 zw_cdom const *
 zw_cdom_hex (void)
 {
-  static zw_cdom cdom {hex_constant_dom};
-  return &cdom;
+  return &hex_constant_dom;
 }
 
 zw_cdom const *
 zw_cdom_oct (void)
 {
-  static zw_cdom cdom {oct_constant_dom};
-  return &cdom;
+  return &oct_constant_dom;
 }
 
 zw_cdom const *
 zw_cdom_bin (void)
 {
-  static zw_cdom cdom {bin_constant_dom};
-  return &cdom;
+  return &bin_constant_dom;
 }
 
 zw_cdom const *
 zw_cdom_bool (void)
 {
-  static zw_cdom cdom {bool_constant_dom};
-  return &cdom;
+  return &bool_constant_dom;
 }
 
 namespace
@@ -355,7 +350,7 @@ namespace
   init_const (T i, zw_cdom const *dom, size_t pos, zw_error **out_err)
   {
     return capture_errors ([&] () {
-	constant cst {i, &dom->m_cdom};
+	constant cst {i, dom};
 	return new value_cst {cst, pos};
       }, nullptr, out_err);
   }

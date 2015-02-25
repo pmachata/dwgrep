@@ -56,15 +56,6 @@ struct zw_result
   std::shared_ptr <op> m_op;
 };
 
-struct zw_cdom
-{
-  constant_dom const &m_cdom;
-
-  explicit zw_cdom (constant_dom const &cdom)
-    : m_cdom {cdom}
-  {}
-};
-
 struct zw_stack
 {
   std::vector <std::unique_ptr <zw_value>> m_values;

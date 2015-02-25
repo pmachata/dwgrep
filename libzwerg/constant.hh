@@ -43,10 +43,11 @@ enum class brevity
     brief,
   };
 
-class constant_dom
+typedef class zw_cdom constant_dom;
+class zw_cdom
 {
 public:
-  virtual ~constant_dom () {}
+  virtual ~zw_cdom () {}
   virtual void show (mpz_class const &c, std::ostream &o,
 		     brevity brv) const = 0;
   virtual char const *name () const = 0;
