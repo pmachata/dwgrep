@@ -35,6 +35,14 @@
 extern "C" {
 #endif
 
+  typedef struct zw_machine zw_machine;
+
+  zw_machine *zw_machine_init (int code);
+
+  void zw_machine_destroy (zw_machine *machine, zw_error **out_err);
+
+  int zw_machine_code (zw_machine const *machine);
+
   /**
    * Constant domains.
    */
@@ -59,8 +67,8 @@ extern "C" {
   zw_cdom const *zw_cdom_dw_address_class (void);
   zw_cdom const *zw_cdom_dw_endianity (void);
 
-  zw_cdom const *zw_cdom_elfsym_stt (int machine);
   zw_cdom const *zw_cdom_elfsym_stb (void);
+  zw_cdom const *zw_cdom_elfsym_stt (zw_machine const *machine);
   zw_cdom const *zw_cdom_elfsym_stv (void);
 
   /**
@@ -84,6 +92,9 @@ extern "C" {
   Dwfl *zw_value_dwarf_dwfl (zw_value const *dw);
 
   char const *zw_value_dwarf_name (zw_value const *dw);
+
+  zw_machine const *zw_value_dwarf_machine (zw_value const *dw,
+					    zw_error **out_err);
 
 
   /**

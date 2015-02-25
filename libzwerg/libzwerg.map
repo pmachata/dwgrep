@@ -52,6 +52,10 @@ LIBZWERG_0.1 {
 	zw_value_seq_length;
 	zw_value_seq_at;
 
+	zw_machine_init;
+	zw_machine_destroy;
+	zw_machine_code;
+
 	zw_cdom_dw_tag;
 	zw_cdom_dw_attr;
 	zw_cdom_dw_form;
@@ -80,6 +84,7 @@ LIBZWERG_0.1 {
 	zw_value_is_dwarf;
 	zw_value_dwarf_dwfl;
 	zw_value_dwarf_name;
+	zw_value_dwarf_machine;
 
 	zw_value_is_cu;
 	zw_value_cu_cu;

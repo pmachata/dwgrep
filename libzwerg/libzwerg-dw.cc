@@ -35,6 +35,25 @@
 #include "value-symbol.hh"
 #include "dwcst.hh"
 
+zw_machine *
+zw_machine_init (int code)
+{
+  return reinterpret_cast <zw_machine *> (static_cast <uintptr_t> (code));
+}
+
+void
+zw_machine_destroy (zw_machine *machine, zw_error **out_err)
+{
+  // NOP.  The API is written this way mostly for robustness and
+  // homogeneity, but presently nothing is actually allocated.
+}
+
+int
+zw_machine_code (zw_machine const *machine)
+{
+  return static_cast <int> (reinterpret_cast <uintptr_t> (machine));
+}
+
 zw_cdom const *
 zw_cdom_dw_tag (void)
 {
@@ -169,16 +188,16 @@ zw_cdom_dw_endianity (void)
 }
 
 zw_cdom const *
-zw_cdom_elfsym_stt (int machine)
+zw_cdom_elfsym_stt (zw_machine const *machine)
 {
-  static zw_cdom cdom {elfsym_stt_dom (machine)};
+  static zw_cdom cdom {elfsym_stt_dom (zw_machine_code (machine))};
   return &cdom;
 }
 
 zw_cdom const *
-zw_cdom_elfsym_stb (void)
+zw_cdom_elfsym_stb (zw_machine const *machine)
 {
-  static zw_cdom cdom {elfsym_stb_dom ()};
+  static zw_cdom cdom {elfsym_stb_dom (zw_machine_code (machine))};
   return &cdom;
 }
 
@@ -289,6 +308,18 @@ zw_value_dwarf_name (zw_value const *val)
 {
   return dwarf (val).get_fn ().c_str ();
 }
+
+zw_machine const *
+zw_value_dwarf_machine (zw_value const *val, zw_error **out_err)
+{
+  return capture_errors ([&] () {
+      // This relies on the fact that zw_machine_init doesn't do any
+      // real allocation, and thus doesn't store the generated machine
+      // destriptor anywhere.
+      return zw_machine_init (dwarf (val).get_dwctx ()->get_machine ());
+    }, nullptr, out_err);
+}
+
 
 namespace
 {

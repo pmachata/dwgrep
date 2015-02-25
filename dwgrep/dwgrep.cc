@@ -109,10 +109,10 @@ dump_err (zw_error *err)
 class dumper
 {
   zw_vocabulary const &m_voc;
-  int m_machine;
+  zw_machine const *m_machine;
 
 public:
-  explicit dumper (zw_vocabulary const &voc, int machine)
+  explicit dumper (zw_vocabulary const &voc, zw_machine const *machine)
     : m_voc {voc}
     , m_machine {machine}
   {}
@@ -452,49 +452,10 @@ dumper::dump_value (std::ostream &os, zw_value const &val, format fmt)
   else if (zw_value_is_elfsym (&val))
     dump_elfsym (os, val, fmt);
   else
-    os << "<unknown value type>";
+    os << (/* assert (false), */"<unknown value type>");
 
   if (brackets)
     os << ">";
-}
-
-static void
-error_no_machine (char const *fn, char const *errmsg)
-{
-  std::cerr << "dwgrep: " << fn << ": Couldn't determine machine type: "
-	    << errmsg << std::endl;
-}
-
-static void
-get_machine (Dwfl *dwfl, char const *fn, int &machinep)
-{
-  struct data
-  {
-    int &machinep;
-    char const *fn;
-  };
-
-  auto cb = [] (Dwfl_Module *mod, void **place, char const *name,
-		Dwarf_Addr addr, void *udata) -> int
-    {
-      struct data &d = *static_cast <struct data *> (udata);
-
-      GElf_Addr bias;
-      Elf *elf;
-      GElf_Ehdr ehdr;
-
-      if ((elf = dwfl_module_getelf (mod, &bias)) != nullptr
-	  && gelf_getehdr (elf, &ehdr) != nullptr)
-	d.machinep = ehdr.e_machine;
-      else
-	error_no_machine (d.fn, elf_errmsg (elf_errno ()));
-
-      return DWARF_CB_ABORT;
-    };
-
-  data d {machinep, fn};
-  if (dwfl_getmodules (dwfl, cb, &d, 0) < 0)
-    error_no_machine (fn, dwfl_errmsg (dwfl_errno ()));
 }
 
 int
@@ -642,12 +603,13 @@ try
 	  std::unique_ptr <zw_stack, zw_deleter> stack
 		{zw_stack_init (zw_throw_on_error {})};
 
-	  int machine = EM_NONE;
+	  zw_machine const *machine = nullptr;
 	  if (fn[0] != '\0')
 	    {
 	      std::unique_ptr <zw_value, zw_deleter> dwv
 			{zw_value_init_dwarf (fn, 0, zw_throw_on_error {})};
-	      get_machine (zw_value_dwarf_dwfl (dwv.get ()), fn, machine);
+	      machine = zw_value_dwarf_machine (dwv.get (),
+						zw_throw_on_error {});
 
 	      zw_stack_push_take (stack.get (), dwv.get (),
 				  zw_throw_on_error {});
