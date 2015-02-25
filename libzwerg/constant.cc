@@ -175,16 +175,36 @@ operator<< (std::ostream &o, constant cst)
 bool
 constant::operator< (constant that) const
 {
-  if (dom () == nullptr && that.dom () != nullptr)
+  // We don't want to evaluate as equal two constants from different
+  // domains just because they happen to have the same value.
+
+  auto const *dom1 = dom ();
+  auto const *dom2 = that.dom ();
+
+  auto compare_magnitudes = [&] ()
+    { return value () < that.value (); };
+
+  if (dom1 == dom2)
+    // Both domains are the same.  Possibly both are nullptr.
+    return compare_magnitudes ();
+  if (dom1 == nullptr && dom2 != nullptr)
     return true;
-  if (dom () != nullptr && that.dom () == nullptr)
+  if (dom1 != nullptr && dom2 == nullptr)
     return false;
 
-  if (dom () != nullptr && dom ()->safe_arith () && that.dom ()->safe_arith ())
-    return value () < that.value ();
-  else
-    return std::make_pair (dom (), value ())
-	< std::make_pair (that.dom (), that.value ());
+  if (// If both domains are arithmetic, we can directly compare the
+      // values.
+      (dom1->safe_arith () && dom2->safe_arith ())
+
+      // Maybe we can find a common sub-domain that covers them both.
+      // That has no effect for arithmetic domains, so we don't need
+      // to care if both are arithmetic or only one of them is.
+      || (dom1->most_enclosing (value ())
+	  == dom2->most_enclosing (that.value ())))
+    return compare_magnitudes ();
+
+  // Otherwise order the two constants by their domains.
+  return dom1 < dom2;
 }
 
 bool

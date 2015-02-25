@@ -59,6 +59,22 @@ public:
   // and should be given up for the other one.  (E.g. hex domain
   // wouldn't.)
   virtual bool plain () const { return false; }
+
+  // Some domains form a hierarchy of sub-classes.  An example would
+  // be arch-specific domains for ELF symbols.  E.g. STT_ARM_TFUNC and
+  // STT_SPARC_REGISTER both have value of 13, so they have to be
+  // represented by different domains.  For reasons of practicality,
+  // both of these domains cover the common cases as well.  That means
+  // there could be two, say, STT_FUNC's, each coming from a different
+  // domain.  It is still desirable to have them compare equal.
+  //
+  // most_enclosing returns either itself, or a domain that best fits
+  // the constant in question.  E.g.
+  //    domain$STT_ARM>->most_enclosing (STT_FUNC)
+  // would return domain$STT, because there's nothing ARM-specific on
+  // that constant.
+  virtual constant_dom const *most_enclosing (mpz_class const &c) const
+  { return this; }
 };
 
 struct numeric_constant_dom_t

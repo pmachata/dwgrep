@@ -33,6 +33,7 @@
 #include "builtin-symbol.hh"
 #include "dwcst.hh"
 #include "known-dwarf.h"
+#include "known-elf.h"
 
 std::unique_ptr <vocabulary>
 dwgrep_vocabulary_dw ()
@@ -597,6 +598,34 @@ dwgrep_vocabulary_dw ()
   }
   ALL_KNOWN_DW_END;
 #undef ONE_KNOWN_DW_END
+
+  // Since the constants in elf.h are defined as macros, we can't pass
+  // them around as is, as they would get expanded.  So instead of
+  // having _DESC X-macro call forward to plain one, both stringify
+  // right away and pass to the _ADD macro.
+
+#define ONE_KNOWN_STT_ADD(CODE, NAME)					\
+  add_builtin_constant (voc,						\
+			constant (CODE, &elfsym_stt_dom (machine)), NAME);
+
+#define ONE_KNOWN_STT_DESC(NAME, CODE, DESC) ONE_KNOWN_STT_ADD (CODE, #CODE)
+#define ONE_KNOWN_STT(NAME, CODE) ONE_KNOWN_STT_ADD (CODE, #CODE)
+
+  {
+    constexpr int machine = EM_NONE;
+    ALL_KNOWN_STT
+  }
+
+#define ONE_KNOWN_STT_ARCH(ARCH)		\
+    {						\
+      constexpr int machine = EM_##ARCH;	\
+      ALL_KNOWN_STT_##ARCH			\
+    }
+  ALL_KNOWN_STT_ARCHES
+
+#undef ONE_KNOWN_STT_ARCH
+#undef ONE_KNOWN_STT
+#undef ONE_KNOWN_STT_DESC
 
   return ret;
 }

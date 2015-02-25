@@ -73,22 +73,7 @@ cmp_result
 value_cst::cmp (value const &that) const
 {
   if (auto v = value::as <value_cst> (&that))
-    {
-      // We don't want to evaluate as equal two constants from
-      // different domains just because they happen to have the same
-      // value.
-      if (! m_cst.dom ()->safe_arith () || ! v->m_cst.dom ()->safe_arith ())
-	{
-	  cmp_result ret = compare (m_cst.dom (), v->m_cst.dom ());
-	  if (ret != cmp_result::equal)
-	    return ret;
-	}
-
-      // Either they are both arithmetic, or they are both from the
-      // same non-arithmetic domain.  We can directly compare the
-      // values now.
-      return compare (m_cst, v->m_cst);
-    }
+    return compare (m_cst, v->m_cst);
   else
     return cmp_result::fail;
 }

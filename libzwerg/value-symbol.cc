@@ -132,6 +132,14 @@ namespace
 	}								\
       elfsym_stt_dom_t::show (v, o, brv);				\
     }									\
+									\
+    virtual constant_dom const *					\
+    most_enclosing (mpz_class const &v) const override			\
+    {									\
+      if (v < STT_LOOS)							\
+	return &elfsym_stt_dom (EM_NONE);				\
+      return this;							\
+    }									\
   };
 
   ALL_KNOWN_STT_ARCHES
