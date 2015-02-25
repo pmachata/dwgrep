@@ -41,6 +41,7 @@ namespace
     unsigned m_symidx;
     unsigned m_symcount;
     size_t m_i;
+    doneness m_doneness;
 
     bool
     next_module ()
@@ -61,10 +62,11 @@ namespace
       return false;
     }
 
-    symbol_producer (std::shared_ptr <dwfl_context> dwctx)
+    symbol_producer (std::shared_ptr <dwfl_context> dwctx, doneness d)
       : m_dwctx {dwctx}
       , m_dwit {dwctx->get_dwfl ()}
       , m_i {0}
+      , m_doneness {d}
     {
       next_module ();
     }
@@ -88,7 +90,7 @@ namespace
 	throw_libdwfl ();
 
       return std::make_unique <value_symbol> (m_dwctx, sym, name,
-					      symidx, m_i++);
+					      symidx, m_i++, m_doneness);
     }
   };
 }
@@ -96,7 +98,8 @@ namespace
 std::unique_ptr <value_producer <value_symbol>>
 op_symbol_dwarf::operate (std::unique_ptr <value_dwarf> val)
 {
-  return std::make_unique <symbol_producer> (val->get_dwctx ());
+  return std::make_unique <symbol_producer> (val->get_dwctx (),
+					     val->get_doneness ());
 }
 
 std::string

@@ -841,6 +841,9 @@ expect_out "1:	0000000000000000      0 FILE	LOCAL	DEFAULT	enum.cc
 13:	0x00000000000004      4 OBJECT	GLOBAL	DEFAULT	af" \
 	enum.o -e 'symbol (name != "")'
 
+expect_out "9:	0000000000000000     24 ARM_TFUNC	GLOBAL	DEFAULT	main" \
+	   -e '"y.o" dwopen symbol (pos == 9)'
+
 echo "$total tests total, $failures failures."
 
 trap - ERR

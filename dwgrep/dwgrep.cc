@@ -109,12 +109,10 @@ dump_err (zw_error *err)
 class dumper
 {
   zw_vocabulary const &m_voc;
-  zw_machine const *m_machine;
 
 public:
-  explicit dumper (zw_vocabulary const &voc, zw_machine const *machine)
+  explicit dumper (zw_vocabulary const &voc)
     : m_voc {voc}
-    , m_machine {machine}
   {}
 
   enum class format
@@ -406,10 +404,13 @@ dumper::dump_elfsym (std::ostream &os, zw_value const &val, format fmt)
     os << std::setw (6) << sym.st_size;
   }
 
+  zw_value const *dw = zw_value_elfsym_dwarf (&val, zw_throw_on_error {});
+  zw_machine const *machine = zw_value_dwarf_machine (dw, zw_throw_on_error {});
+
   dump_named_constant (os << ' ', GELF_ST_TYPE (sym.st_info),
-		       *zw_cdom_elfsym_stt (m_machine));
+		       *zw_cdom_elfsym_stt (machine));
   dump_named_constant (os << '\t', GELF_ST_BIND (sym.st_info),
-		       *zw_cdom_elfsym_stb (m_machine));
+		       *zw_cdom_elfsym_stb (machine));
   dump_named_constant (os << '\t', GELF_ST_VISIBILITY (sym.st_other),
 		       *zw_cdom_elfsym_stv ());
 
@@ -603,19 +604,16 @@ try
 	  std::unique_ptr <zw_stack, zw_deleter> stack
 		{zw_stack_init (zw_throw_on_error {})};
 
-	  zw_machine const *machine = nullptr;
 	  if (fn[0] != '\0')
 	    {
 	      std::unique_ptr <zw_value, zw_deleter> dwv
 			{zw_value_init_dwarf (fn, 0, zw_throw_on_error {})};
-	      machine = zw_value_dwarf_machine (dwv.get (),
-						zw_throw_on_error {});
 
 	      zw_stack_push_take (stack.get (), dwv.get (),
 				  zw_throw_on_error {});
 	      dwv.release ();
 	    }
-	  dumper dump {*voc, machine};
+	  dumper dump {*voc};
 
 	  std::unique_ptr <zw_result, zw_deleter> result
 		{zw_query_execute (query.get (), stack.get (),

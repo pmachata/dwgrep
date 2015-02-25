@@ -116,6 +116,7 @@ LIBZWERG_0.1 {
 	zw_value_elfsym_symidx;
 	zw_value_elfsym_symbol;
 	zw_value_elfsym_name;
+	zw_value_elfsym_dwarf;
 
   local:
 	*;

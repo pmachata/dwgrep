@@ -499,3 +499,12 @@ zw_value_elfsym_name (zw_value const *val)
 {
   return elfsym (val).get_name ();
 }
+
+zw_value const *
+zw_value_elfsym_dwarf (zw_value const *val, zw_error **out_err)
+{
+  return capture_errors ([&] () {
+      // get_dwarf caches things, so we need to cast away the const.
+      return &const_cast <value_symbol &> (elfsym (val)).get_dwarf ();
+    }, nullptr, out_err);
+}

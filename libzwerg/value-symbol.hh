@@ -29,24 +29,29 @@
 #ifndef BUILTIN_SYMBOL_H
 #define BUILTIN_SYMBOL_H
 
+#include <gelf.h>
+
 #include "value.hh"
 #include "dwfl_context.hh"
-#include <gelf.h>
+#include "value-dw.hh"
 
 class value_symbol
   : public value
+  , public doneness_aspect
 {
   std::shared_ptr <dwfl_context> m_dwctx;
   GElf_Sym m_symbol;
   char const *m_name;
+  dwarf_value_cache m_dwcache;
   unsigned m_symidx;
 
 public:
   static value_type const vtype;
 
   value_symbol (std::shared_ptr <dwfl_context> dwctx, GElf_Sym symbol,
-		char const *name, unsigned symidx, size_t pos)
+		char const *name, unsigned symidx, size_t pos, doneness d)
     : value {vtype, pos}
+    , doneness_aspect {d}
     , m_dwctx {dwctx}
     , m_symbol (symbol)
     , m_name {name}
@@ -68,6 +73,12 @@ public:
   void show (std::ostream &o) const override;
   std::unique_ptr <value> clone () const override;
   cmp_result cmp (value const &that) const override;
+
+  value_dwarf &
+  get_dwarf ()
+  {
+    return m_dwcache.get_dwarf (m_dwctx, 0, get_doneness ());
+  }
 };
 
 constant_dom const &elfsym_stt_dom (int machine);

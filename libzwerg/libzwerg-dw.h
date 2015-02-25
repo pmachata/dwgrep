@@ -195,6 +195,9 @@ extern "C" {
 
   Elf *zw_value_elfsym_elf (zw_value const *elfsym);
 
+  zw_value const *zw_value_elfsym_dwarf (zw_value const *elfsym,
+					 zw_error **out_err);
+
 
 #ifdef __cplusplus
 }
