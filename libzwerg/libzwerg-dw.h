@@ -134,7 +134,8 @@ extern "C" {
 
   Dwarf_Attribute zw_value_attr_attr (zw_value const *attr);
 
-  zw_value const *zw_value_attr_dwarf (zw_value const *attr);
+  zw_value const *zw_value_attr_dwarf (zw_value const *attr,
+				       zw_error **out_err);
 
 
   /**
