@@ -167,3 +167,23 @@ XXX
 
 )docstring";
 }
+
+
+value_cst
+op_visibility_symbol::operate (std::unique_ptr <value_symbol> val)
+{
+  constant cst {GELF_ST_VISIBILITY (val->get_symbol ().st_other),
+		&elfsym_stv_dom ()};
+  return value_cst {cst, 0};
+}
+
+std::string
+op_visibility_symbol::docstring ()
+{
+  return
+R"docstring(
+
+XXX
+
+)docstring";
+}

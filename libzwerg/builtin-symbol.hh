@@ -75,3 +75,14 @@ struct op_binding_symbol
 
   static std::string docstring ();
 };
+
+struct op_visibility_symbol
+  : public op_once_overload <value_cst, value_symbol>
+{
+  using op_once_overload::op_once_overload;
+
+  value_cst
+  operate (std::unique_ptr <value_symbol> val) override;
+
+  static std::string docstring ();
+};

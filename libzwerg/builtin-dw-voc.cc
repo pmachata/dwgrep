@@ -385,6 +385,14 @@ dwgrep_vocabulary_dw ()
     voc.add (std::make_shared <overloaded_op_builtin> ("binding", t));
   }
 
+  {
+    auto t = std::make_shared <overload_tab> ();
+
+    t->add_op_overload <op_visibility_symbol> ();
+
+    voc.add (std::make_shared <overloaded_op_builtin> ("visibility", t));
+  }
+
   auto add_dw_at = [&voc] (unsigned code,
 			   char const *qname, char const *bname,
 			   char const *atname,
@@ -634,6 +642,7 @@ dwgrep_vocabulary_dw ()
 #undef ONE_KNOWN_STT_ARCH
 #undef ONE_KNOWN_STT
 #undef ONE_KNOWN_STT_DESC
+#undef ONE_KNOWN_STT_ADD
 
 
 #define ONE_KNOWN_STB_ADD(CODE, NAME)					\
@@ -658,6 +667,19 @@ dwgrep_vocabulary_dw ()
 #undef ONE_KNOWN_STB_ARCH
 #undef ONE_KNOWN_STB
 #undef ONE_KNOWN_STB_DESC
+#undef ONE_KNOWN_STB_ADD
+
+
+#define ONE_KNOWN_STV_DESC(NAME, CODE, DESC) ONE_KNOWN_STV_ADD (CODE, #CODE)
+#define ONE_KNOWN_STV(NAME, CODE) ONE_KNOWN_STV_ADD (CODE, #CODE)
+#define ONE_KNOWN_STV_ADD(CODE, NAME)					\
+  add_builtin_constant (voc, constant (CODE, &elfsym_stv_dom ()), NAME);
+
+    ALL_KNOWN_STV
+
+#undef ONE_KNOWN_STV
+#undef ONE_KNOWN_STV_DESC
+#undef ONE_KNOWN_STV_ADD
 
   return ret;
 }

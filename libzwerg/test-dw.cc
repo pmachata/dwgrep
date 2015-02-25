@@ -779,3 +779,35 @@ TEST_F (ZwTest, builtin_symbol_binding)
   EXPECT_EQ (9, run_dwquery (*builtins, "y-mips.o",
 			     "symbol (binding == STB_LOCAL)").size ());
 }
+
+TEST_F (ZwTest, builtin_symbol_visibility)
+{
+  op_visibility_symbol op {nullptr};
+
+  size_t count = 0;
+  for (auto prod = op_symbol_dwarf {nullptr}.operate (rdw ("enum.o"));
+       auto val = prod->next ();)
+    {
+      value_cst cst = op.operate (std::move (val));
+      ASSERT_EQ (&elfsym_stv_dom (), cst.get_constant ().dom ());
+      EXPECT_EQ (STV_DEFAULT, cst.get_constant ().value ());
+
+      count++;
+    }
+  EXPECT_EQ (14, count);
+
+#define TEST_STV(NAME)					\
+  {							\
+    std::stringstream ss;				\
+    ss << constant {NAME, &elfsym_stv_dom ()};		\
+    EXPECT_EQ (#NAME, ss.str ());			\
+    EXPECT_TRUE (builtins->find (#NAME) != nullptr);	\
+  }
+
+  TEST_STV (STV_DEFAULT)
+  TEST_STV (STV_INTERNAL)
+  TEST_STV (STV_HIDDEN)
+  TEST_STV (STV_PROTECTED)
+
+#undef TEST_STV
+}
