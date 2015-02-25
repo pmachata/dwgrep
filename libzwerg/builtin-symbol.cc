@@ -132,26 +132,8 @@ XXX
 value_cst
 op_label_symbol::operate (std::unique_ptr <value_symbol> val)
 {
-  int machine = EM_NONE;
-  GElf_Addr bias;
-  for (auto it = dwfl_module_iterator {val->get_dwctx ()->get_dwfl ()};
-       it != dwfl_module_iterator::end (); ++it)
-    if (Elf *elf = dwfl_module_getelf (*it, &bias))
-      {
-	GElf_Ehdr ehdr;
-	if (gelf_getehdr (elf, &ehdr) == nullptr)
-	  throw_libelf ();
-	assert (machine == EM_NONE || machine == ehdr.e_machine);
-	machine = ehdr.e_machine;
-      }
-    else
-      throw_libdwfl ();
-
-  // This better be true.  That symbol must have come from somewhere.
-  assert (machine != EM_NONE);
-
   constant cst {GELF_ST_TYPE (val->get_symbol ().st_info),
-		&elfsym_stt_dom (machine)};
+		&elfsym_stt_dom (val->get_dwctx ()->get_machine ())};
   return value_cst {cst, 0};
 }
 

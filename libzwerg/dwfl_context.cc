@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2014 Red Hat, Inc.
+   Copyright (C) 2014, 2015 Red Hat, Inc.
    This file is part of dwgrep.
 
    This file is free software; you can redistribute it and/or modify
@@ -29,6 +29,7 @@
 #include "std-memory.hh"
 #include "dwfl_context.hh"
 #include "cache.hh"
+#include "dwit.hh"
 
 struct dwfl_context::pimpl
 {
@@ -66,4 +67,27 @@ bool
 dwfl_context::is_root (Dwarf_Die die)
 {
   return m_pimpl->is_root (die);
+}
+
+int
+dwfl_context::get_machine () const
+{
+  int machine = EM_NONE;
+  GElf_Addr bias;
+  for (auto it = dwfl_module_iterator {m_dwfl.get ()};
+       it != dwfl_module_iterator::end (); ++it)
+    if (Elf *elf = dwfl_module_getelf (*it, &bias))
+      {
+	GElf_Ehdr ehdr;
+	if (gelf_getehdr (elf, &ehdr) == nullptr)
+	  throw_libelf ();
+	assert (machine == EM_NONE || machine == ehdr.e_machine);
+	machine = ehdr.e_machine;
+      }
+    else
+      throw_libdwfl ();
+
+  // This better be true.  That symbol must have come from somewhere.
+  assert (machine != EM_NONE);
+  return machine;
 }

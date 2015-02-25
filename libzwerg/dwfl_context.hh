@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2014 Red Hat, Inc.
+   Copyright (C) 2014, 2015 Red Hat, Inc.
    This file is part of dwgrep.
 
    This file is free software; you can redistribute it and/or modify
@@ -48,6 +48,7 @@ public:
 
   Dwarf_Off find_parent (Dwarf_Die die);
   bool is_root (Dwarf_Die die);
+  int get_machine () const;
 };
 
 #endif /* _DWFL_CONTEXT_H_ */
