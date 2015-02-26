@@ -109,7 +109,8 @@ op_symbol_dwarf::docstring ()
   return
 R"docstring(
 
-XXX
+Takes a Dwarf on TOS and yields every symbol found in any of the
+symbol tables in ELF files that hosts the Dwarf data in question.
 
 )docstring";
 }
@@ -127,7 +128,7 @@ op_name_symbol::docstring ()
   return
 R"docstring(
 
-XXX
+Takes a symbol on TOS and yields its name.
 
 )docstring";
 }
@@ -145,7 +146,8 @@ op_label_symbol::docstring ()
   return
 R"docstring(
 
-XXX
+Takes a symbol on TOS and yields its type (a constant with domain
+``STT_``).
 
 )docstring";
 }
@@ -165,7 +167,8 @@ op_binding_symbol::docstring ()
   return
 R"docstring(
 
-XXX
+Takes a symbol on TOS and yields its binding (a constant with domain
+``STB_``).
 
 )docstring";
 }
@@ -185,7 +188,8 @@ op_visibility_symbol::docstring ()
   return
 R"docstring(
 
-XXX
+Takes a symbol on TOS and yields its ELF visibility (a constant with
+domain ``STV_``).
 
 )docstring";
 }
@@ -203,7 +207,8 @@ op_address_symbol::docstring ()
   return
 R"docstring(
 
-XXX
+Takes a symbol on TOS and yields its address (``st_value`` field of
+``GElf_Sym`` structure).
 
 )docstring";
 }
@@ -222,7 +227,7 @@ op_size_symbol::docstring ()
   return
 R"docstring(
 
-XXX
+Takes a symbol on TOS and yields its size.
 
 )docstring";
 }

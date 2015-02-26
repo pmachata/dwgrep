@@ -36,7 +36,17 @@
 value_type const value_symbol::vtype = value_type::alloc ("T_ELFSYM",
 R"docstring(
 
-XXX
+Values of this type represent ELF symbol table entries::
+
+	$ dwgrep/dwgrep dwgrep/dwgrep -e symbol
+	[...]
+	89:	0x0000000060cd90      0 NOTYPE	LOCAL	DEFAULT	__init_array_start
+	90:	0x0000000060cdb8      0 OBJECT	LOCAL	DEFAULT	_DYNAMIC
+	91:	0x00000000405f20   1001 FUNC	GLOBAL	DEFAULT	_ZN6dumper10dump_charpERSoPKcmNS_6formatE
+	92:	0x0000000060d3e0      0 NOTYPE	WEAK	DEFAULT	data_start
+	93:	0x0000000060d400    280 OBJECT	GLOBAL	DEFAULT	_ZSt3cin@@GLIBCXX_3.4
+	94:	0000000000000000      0 FUNC	GLOBAL	DEFAULT	_ZNSs6appendEPKcm@@GLIBCXX_3.4
+	[...]
 
 )docstring");
 
