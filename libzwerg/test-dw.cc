@@ -880,3 +880,11 @@ TEST_F (ZwTest, builtin_symbol_address_value)
 		  0x4004bd, 0, 0x400390])foo")
 	     .size ());
 }
+
+TEST_F (ZwTest, symbol_cmp)
+{
+  // Test all symbols on equality with itself.
+  for (auto prod = op_symbol_dwarf {nullptr}.operate (rdw ("enum.o"));
+       auto val = prod->next (); )
+    EXPECT_EQ (cmp_result::equal, val->cmp (*val));
+}

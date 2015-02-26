@@ -54,8 +54,10 @@ value_symbol::clone () const
 cmp_result
 value_symbol::cmp (value const &that) const
 {
-  assert (! "xxx value_symbol::cmp not implemented");
-  std::abort ();
+  if (auto v = value::as <value_symbol> (&that))
+    return compare (m_symidx, v->m_symidx);
+  else
+    return cmp_result::fail;
 }
 
 namespace
