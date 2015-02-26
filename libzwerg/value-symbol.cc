@@ -31,6 +31,7 @@
 #include "value-symbol.hh"
 #include "std-memory.hh"
 #include "known-elf.h"
+#include "dwcst.hh"
 
 value_type const value_symbol::vtype = value_type::alloc ("T_ELFSYM",
 R"docstring(
@@ -42,7 +43,7 @@ XXX
 void
 value_symbol::show (std::ostream &o) const
 {
-  o << "xxx symbol";
+  o << get_type () << ' ' << get_name () << '@' << get_address ();
 }
 
 std::unique_ptr <value>
@@ -58,6 +59,19 @@ value_symbol::cmp (value const &that) const
     return compare (m_symidx, v->m_symidx);
   else
     return cmp_result::fail;
+}
+
+constant
+value_symbol::get_type () const
+{
+  return constant {GELF_ST_TYPE (get_symbol ().st_info),
+		   &elfsym_stt_dom (get_dwctx ()->get_machine ())};
+}
+
+constant
+value_symbol::get_address () const
+{
+  return constant {get_symbol ().st_value, &dw_address_dom ()};
 }
 
 namespace

@@ -854,6 +854,11 @@ expect_out "\
 9:	0000000000000000     24 ARM_TFUNC	GLOBAL	DEFAULT	main" \
 	 -e '("y-mips.o", "y.o") dwopen symbol (pos == 9)'
 
+expect_out 'STT_FILE stdin@0
+STT_NOTYPE $a@0
+STT_ARM_TFUNC main@0' \
+	 y.o -e 'symbol (name != "") "%s"'
+
 
 # =============================================================================
 

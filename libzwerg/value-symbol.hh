@@ -79,6 +79,9 @@ public:
   {
     return m_dwcache.get_dwarf (m_dwctx, 0, get_doneness ());
   }
+
+  constant get_type () const;
+  constant get_address () const;
 };
 
 constant_dom const &elfsym_stt_dom (int machine);

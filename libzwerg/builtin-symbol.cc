@@ -136,9 +136,7 @@ XXX
 value_cst
 op_label_symbol::operate (std::unique_ptr <value_symbol> val)
 {
-  constant cst {GELF_ST_TYPE (val->get_symbol ().st_info),
-		&elfsym_stt_dom (val->get_dwctx ()->get_machine ())};
-  return value_cst {cst, 0};
+  return value_cst {val->get_type (), 0};
 }
 
 std::string
@@ -196,8 +194,7 @@ XXX
 value_cst
 op_address_symbol::operate (std::unique_ptr <value_symbol> val)
 {
-  constant cst {val->get_symbol ().st_value, &dw_address_dom ()};
-  return value_cst {cst, 0};
+  return value_cst {val->get_address (), 0};
 }
 
 std::string
