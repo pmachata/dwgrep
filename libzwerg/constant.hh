@@ -76,6 +76,9 @@ public:
   // that constant.
   virtual constant_dom const *most_enclosing (mpz_class const &c) const
   { return this; }
+
+  virtual char const *docstring () const
+  { return ""; }
 };
 
 struct numeric_constant_dom_t

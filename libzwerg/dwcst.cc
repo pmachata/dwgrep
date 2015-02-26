@@ -386,9 +386,31 @@ namespace
 			      m_low_user, m_high_user, m_print_unknown);
     }
 
-    char const *name () const override
+    char const *
+    name () const override
     {
       return m_name;
+    }
+
+    char const *
+    docstring () const override
+    {
+      return
+R"docstring(
+
+These words push to the stack the Dwarf constants referenced by their
+name.  Individual classes of constants (e.g. ``DW_TAG_``, ``DW_AT_``,
+...) have distinct domains.  That means that, say, ``DW_TAG_member``
+and ``DW_AT_bit_size`` don't compare equal, even though they both have
+the same underlying value.  It is possible to extract that numeric
+value using the word ``value``::
+
+	$ dwgrep -c -e 'DW_TAG_member == DW_AT_bit_size'
+	0
+	$ dwgrep -c -e 'DW_TAG_member value == DW_AT_bit_size value'
+	1
+
+)docstring";
     }
   };
 }

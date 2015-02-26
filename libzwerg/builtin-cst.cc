@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2014 Red Hat, Inc.
+   Copyright (C) 2014, 2015 Red Hat, Inc.
    This file is part of dwgrep.
 
    This file is free software; you can redistribute it and/or modify
@@ -100,8 +100,7 @@ builtin_constant::docstring () const
 {
   auto val = value::as <value_cst> (&*m_value);
   assert (val != nullptr);
-  auto dom = val->get_constant ().dom ();
-  return std::string ("@") + dom->name ();
+  return val->get_constant ().dom ()->docstring ();
 }
 
 

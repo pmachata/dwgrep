@@ -117,13 +117,41 @@ namespace
       }
   }
 
+  struct elfsym_dom
+    : public constant_dom
+  {
+    char const *
+    docstring () const override
+    {
+      return
+R"docstring(
+
+These words push to the stack the ELF constants referenced by their
+name.  Individual classes of constants (e.g. ``STT_``, ``STB_``, ...)
+have distinct domains.  Furthermore, constants related to some
+architectures and operating systems may have further subdivided
+constant domains.  Thus, e.g. ``STT_ARM_TFUNC`` and
+``STT_SPARC_REGISTER`` don't compare equal even though they are both
+``STT_`` constants with the same underlying value::
+
+	$ dwgrep -e '[(STT_SPARC_REGISTER, STT_ARM_TFUNC, STB_MIPS_SPLIT_COMMON) value]'
+	[13, 13, 13]
+	$ dwgrep -c -e 'STT_SPARC_REGISTER == STT_ARM_TFUNC'
+	0
+	$ dwgrep -c -e 'STT_SPARC_REGISTER == STB_MIPS_SPLIT_COMMON'
+	0
+
+)docstring";
+    }
+  };
+
 #define ONE_KNOWN_STT_DESC(SHORT, LONG, DESC) ONE_KNOWN_STT (SHORT, LONG)
 #define ONE_KNOWN_STT(SHORT, LONG)		\
   case LONG:					\
     return show ("STT", #SHORT, o, brv);
 
   struct elfsym_stt_dom_t
-    : public constant_dom
+    : public elfsym_dom
   {
     void
     show (mpz_class const &v, std::ostream &o, brevity brv) const override
@@ -138,7 +166,8 @@ namespace
 	}
     }
 
-    char const *name () const override
+    char const *
+    name () const override
     {
       return "STT_";
     }
@@ -181,7 +210,7 @@ namespace
     return show ("STB", #SHORT, o, brv);
 
   struct elfsym_stb_dom_t
-    : public constant_dom
+    : public elfsym_dom
   {
     void
     show (mpz_class const &v, std::ostream &o, brevity brv) const override
@@ -196,7 +225,8 @@ namespace
 	}
     }
 
-    char const *name () const override
+    char const *
+    name () const override
     {
       return "STB_";
     }
@@ -233,7 +263,7 @@ namespace
 #undef ONE_KNOWN_STB_DESC
 
   struct elfsym_stv_dom_t
-    : public constant_dom
+    : public elfsym_dom
   {
     void
     show (mpz_class const &v, std::ostream &o, brevity brv) const override
@@ -250,7 +280,8 @@ namespace
 	}
     }
 
-    char const *name () const override
+    char const *
+    name () const override
     {
       return "STV_";
     }
