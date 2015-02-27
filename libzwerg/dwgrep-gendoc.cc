@@ -34,6 +34,7 @@
 #include <sstream>
 
 #include "libzwergP.hh"
+#include "libzwerg.hh"
 #include "builtin.hh"
 #include "init.hh"
 #include "builtin-dw.hh"
@@ -124,9 +125,8 @@ split_pfx (std::vector <std::string> list)
   return std::move (ret);
 }
 
-static void
-doit (std::vector <std::pair <std::string, std::string>> entries,
-      std::string label)
+static std::vector <std::pair <std::vector <std::string>, std::string>>
+deduplicate (std::vector <std::pair <std::string, std::string>> entries)
 {
   entries.erase
     (std::remove_if (entries.begin (), entries.end (),
@@ -172,7 +172,7 @@ doit (std::vector <std::pair <std::string, std::string>> entries,
 	       return p1.first < p2.first;
 	     });
 
-  std::cout << format_entry_map (dentries, '-', label);
+  return dentries;
 }
 
 int
@@ -229,14 +229,8 @@ main (int argc, char const **argv)
 
   auto bis = [&] ()
     {
-      auto bldr = reinterpret_cast <decltype (&zw_vocabulary_core)> (sym);
-
-      zw_error *err;
-      zw_vocabulary const *voc = bldr (&err);
-      if (voc == nullptr)
-	  throw std::runtime_error (zw_error_message (err));
-
-      return voc->m_voc->get_builtins ();
+      return reinterpret_cast <decltype (&zw_vocabulary_core)> (sym)
+		(zw_throw_on_error {})->m_voc->get_builtins ();
     } ();
 
   std::transform (bis.begin (), bis.end (), std::back_inserter (entries),
@@ -278,6 +272,67 @@ main (int argc, char const **argv)
 		     }),
      entries.end ());
 
-  doit (types, handle + " type");
-  doit (entries, handle);
+  auto dd_entries = deduplicate (entries);
+
+  // Find words applicable to individual types.
+  for (auto &t: types)
+    if (t.second != "@hide")
+      {
+	std::vector <std::string> applicable;
+
+	for (auto const &bi: bis)
+	  if (auto *obi = dynamic_cast <overloaded_builtin const *>
+				(bi.second.get ()))
+	    for (auto const &ovld: obi->get_overload_tab ()->get_overloads ())
+	      {
+		auto const &types = std::get <0> (ovld).get_types ();
+		if (std::any_of (types.begin (), types.end (),
+				 [&t] (value_type const &vt) {
+				   return vt.name () == t.first;
+				 }))
+		  {
+		    std::string word = bi.first;
+
+		    // Look if it's covered by any of the word groups
+		    // (e.g. ?DW_AT_*).
+		    for (auto const &g: dd_entries)
+		      for (auto const &h: g.first)
+			if (! h.empty () && *h.rbegin () == '*'
+			    && h.compare (0, h.size () - 1,
+					  word, 0, h.size () - 1) == 0)
+			  {
+			    word = h;
+			    goto done;
+			  }
+
+		  done:
+		    if (std::find (applicable.begin (), applicable.end (),
+				   word) == applicable.end ())
+		      applicable.push_back (word);
+		    break;
+		  }
+	      }
+
+	if (! applicable.empty ())
+	  {
+	    std::stringstream ss;
+	    bool seen = false;
+	    for (auto const &a: applicable)
+	      {
+		if (! seen)
+		  ss << "\nApplicable words\n................\n";
+		else
+		  ss << ", ";
+
+		ss << ":ref:`\\" << a << " <" << handle << " " << a << ">`";
+		seen = true;
+	      }
+
+	    ss << "\n\n";
+	    t.second += ss.str ();
+	  }
+      }
+
+  std::cout << format_entry_map (deduplicate (types), '-', handle + " type");
+  std::cout << format_entry_map (std::move (dd_entries), '-', handle);
 }
