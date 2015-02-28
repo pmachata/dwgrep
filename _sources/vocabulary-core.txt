@@ -34,6 +34,11 @@ at runtime::
 	Error: overflow occured when computing 18446744073709551615+1
 
 
+Applicable words
+................
+:ref:`\add <zw_vocabulary_core add>`, :ref:`\div <zw_vocabulary_core div>`, :ref:`\mod <zw_vocabulary_core mod>`, :ref:`\mul <zw_vocabulary_core mul>`, :ref:`\sub <zw_vocabulary_core sub>`, :ref:`\value <zw_vocabulary_core value>`
+
+
 
 .. _zw_vocabulary_core type T_SEQ:
 
@@ -51,6 +56,11 @@ of other values (including other sequences)::
 	T_STR
 
 
+Applicable words
+................
+:ref:`\!empty <zw_vocabulary_core !empty>`, :ref:`\!ends <zw_vocabulary_core !ends>`, :ref:`\!find <zw_vocabulary_core !find>`, :ref:`\!starts <zw_vocabulary_core !starts>`, :ref:`\?empty <zw_vocabulary_core ?empty>`, :ref:`\?ends <zw_vocabulary_core ?ends>`, :ref:`\?find <zw_vocabulary_core ?find>`, :ref:`\?starts <zw_vocabulary_core ?starts>`, :ref:`\add <zw_vocabulary_core add>`, :ref:`\elem <zw_vocabulary_core elem>`, :ref:`\length <zw_vocabulary_core length>`, :ref:`\relem <zw_vocabulary_core relem>`
+
+
 
 .. _zw_vocabulary_core type T_STR:
 
@@ -66,6 +76,11 @@ work.  Zwerg strings are not NUL-terminated::
 	$ dwgrep '"abc \x00 def" (, length)'
 	abc  def
 	9
+
+
+Applicable words
+................
+:ref:`\!empty <zw_vocabulary_core !empty>`, :ref:`\!ends <zw_vocabulary_core !ends>`, :ref:`\!find <zw_vocabulary_core !find>`, :ref:`\!match <zw_vocabulary_core !match>`, :ref:`\!starts <zw_vocabulary_core !starts>`, :ref:`\!~ <zw_vocabulary_core !~>`, :ref:`\=~ <zw_vocabulary_core =~>`, :ref:`\?empty <zw_vocabulary_core ?empty>`, :ref:`\?ends <zw_vocabulary_core ?ends>`, :ref:`\?find <zw_vocabulary_core ?find>`, :ref:`\?match <zw_vocabulary_core ?match>`, :ref:`\?starts <zw_vocabulary_core ?starts>`, :ref:`\add <zw_vocabulary_core add>`, :ref:`\elem <zw_vocabulary_core elem>`, :ref:`\length <zw_vocabulary_core length>`, :ref:`\relem <zw_vocabulary_core relem>`
 
 
 
@@ -493,7 +508,7 @@ strings::
 false, true
 -----------
 
-@bool
+
 
 .. _zw_vocabulary_core length:
 
