@@ -1,3 +1,17 @@
 -*-org-*-
+* version 0.2 [2015-02-28 Sat]
+  - ELF symbol tables are supported.  New word `symbol` applicable to
+    DWARF value yields ELF symbols.  Words `label`, `value`,
+    `address`, `name`, `size` `binding`, `visibility` operate on ELF
+    symbols.
+
+  - C API is considerably more complete, and now used exclusively by
+    the "dwgrep" command-line driver to communicate with libzwerg.  It
+    is however still not considered stable and is undocumented.
+
+  - The word `length` is now applicable to location lists.
+
+  - Bug fixes (issues #5, #6, #7, #8, #14, #15, #16, #17, #22, #26).
+
 * version 0.1 [2014-12-10 Sun]
   - Initial release.
