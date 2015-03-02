@@ -112,7 +112,7 @@ class dumper
 
 public:
   explicit dumper (zw_vocabulary const &voc)
-    : m_voc {voc}
+    : m_voc (voc)
   {}
 
   enum class format
