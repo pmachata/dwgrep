@@ -255,7 +255,8 @@ dumper::dump_die (std::ostream &os, zw_value const &val, format fmt)
 	{zw_value_const_format_brief (tag.get (), zw_throw_on_error {})};
 
       size_t sz;
-      return std::string {zw_value_str_str (tmp.get (), &sz), sz};
+      auto buf = zw_value_str_str (tmp.get (), &sz);
+      return std::string {buf, sz};
     } ();
 
   {
