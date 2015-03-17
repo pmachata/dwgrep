@@ -75,7 +75,6 @@ namespace
 
     for (; it != cu_iterator::end (); ++it)
       // In cooked mode, we reject partial units.
-      // XXX Should we reject type units as well?
       if (dwarf_tag (*it) != DW_TAG_partial_unit)
 	return true;
 
