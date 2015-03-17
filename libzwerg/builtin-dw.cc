@@ -167,10 +167,8 @@ namespace
     if (dwarf_diecu (&die, &cudie, nullptr, nullptr) == nullptr)
       throw_libdw ();
 
-    Dwarf *dw = dwarf_cu_getdwarf (cudie.cu);
-    cu_iterator cuit {dw, cudie};
-
-    return value_cu (dwctx, *(*cuit)->cu, cuit.offset (), 0, d);
+    Dwarf_Off offset = dwarf_dieoffset (&cudie) - dwarf_cuoffset (&cudie);
+    return value_cu (dwctx, *cudie.cu, offset, 0, d);
   }
 }
 

@@ -818,6 +818,8 @@ expect_out '<Dwarf "a1.out">' a1.out -e ''
 
 # T_CU
 expect_out '<CU 0>' a1.out -e 'unit'
+expect_out '<CU 0>
+<CU 0x53>' twocus -e unit
 
 # T_DIE (both naked form and inner form)
 expect_out '[23]	const_type
