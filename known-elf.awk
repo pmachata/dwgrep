@@ -19,7 +19,7 @@
 
 $1 == "#define" {
   if (match($2, "^(ELFOSABI|ET|EM|SHN|SHT|STB|STT" \
-	        "|STV|PT|NT|DT|AT|ELF_NOTE_OS|R)_([A-Z_]*)$", fields) \
+	        "|STV|PT|DT|AT|ELF_NOTE_OS|R)_([A-Z0-9_]*)$", fields) \
       && ! match($2, "(_NUM|(LO|HI)(OS|PROC|RESERVE)|RNG(LO|HI))$")) {
     set = fields[1];
     elt = fields[2];
@@ -75,15 +75,32 @@ END {
       elt = elts[j];
       found = 0;
       if (set != "ELFOSABI" && set != "EM") {
-	for (k = 1; k <= a; ++k) {
-	  arch = arches[k];
-	  if (elt ~ "^" arches[k] "_") {
-	    found = 1;
-	    if (arch in known2)
-	      known2[arch] = known2[arch] "," elt;
-	    else
-	      known2[arch] = elt;
+	# R_ names some architectures in a funny way.  Translate the
+	# architecture key back for consistency's sake.  The
+	# enumerator with the mangled architecture name is still
+	# passed to ONE_KNOWN_R* invocation.
+	if (set "_" elt ~ "^R_390_") {
+	  found = 1;
+	  arch = "S390";
+	} else if (set "_" elt ~ "^R_IA64_") {
+	  found = 1;
+	  arch = "IA_64";
+
+	} else {
+	  for (k = 1; k <= a; ++k) {
+	    arch = arches[k];
+	    if (elt ~ "^" arches[k] "_") {
+	      found = 1;
+	      break;
+	    }
 	  }
+	}
+
+	if (found) {
+	  if (arch in known2)
+	    known2[arch] = known2[arch] "," elt;
+	  else
+	    known2[arch] = elt;
 	}
       }
 

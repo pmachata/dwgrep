@@ -729,6 +729,9 @@ TEST_F (ZwTest, builtin_symbol_label)
   // compared as they should.
   EXPECT_EQ (6, run_dwquery (*builtins, "y.o",
 			     "symbol (label == STT_SECTION)").size ());
+
+  // STT_ARM_16BIT used to be omitted by known-elf.awk.
+  ASSERT_TRUE (builtins->find ("STT_ARM_16BIT") != nullptr);
 }
 
 TEST_F (ZwTest, builtin_symbol_binding)
