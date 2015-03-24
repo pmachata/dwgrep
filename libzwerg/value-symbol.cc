@@ -257,7 +257,6 @@ constant domains.  Thus, e.g. ``STT_ARM_TFUNC`` and
 
 #undef ELF_ONE_KNOWN_STB_ARCH
 #undef ELF_ONE_KNOWN_STB
-#undef ELF_ONE_KNOWN_STB_DESC
 
   struct elfsym_stv_dom_t
     : public elfsym_dom
