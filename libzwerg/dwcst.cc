@@ -34,10 +34,10 @@ dwarf_tag_string (int tag, brevity brv)
 {
   switch (tag)
     {
-#define ONE_KNOWN_DW_TAG(NAME, CODE)					\
+#define DWARF_ONE_KNOWN_DW_TAG(NAME, CODE)				\
       case CODE: return abbreviate (#CODE, sizeof "DW_TAG", brv);
-      ALL_KNOWN_DW_TAG
-#undef ONE_KNOWN_DW_TAG
+      DWARF_ALL_KNOWN_DW_TAG
+#undef DWARF_ONE_KNOWN_DW_TAG
     default:
       return nullptr;
     }
@@ -49,10 +49,10 @@ dwarf_attr_string (int attrnum, brevity brv)
 {
   switch (attrnum)
     {
-#define ONE_KNOWN_DW_AT(NAME, CODE)					\
+#define DWARF_ONE_KNOWN_DW_AT(NAME, CODE)				\
       case CODE: return abbreviate (#CODE, sizeof "DW_AT", brv);
-      ALL_KNOWN_DW_AT
-#undef ONE_KNOWN_DW_AT
+      DWARF_ALL_KNOWN_DW_AT
+#undef DWARF_ONE_KNOWN_DW_AT
     default:
       return nullptr;
     }
@@ -64,12 +64,10 @@ dwarf_form_string (int form, brevity brv)
 {
   switch (form)
     {
-#define ONE_KNOWN_DW_FORM_DESC(NAME, CODE, DESC) ONE_KNOWN_DW_FORM (NAME, CODE)
-#define ONE_KNOWN_DW_FORM(NAME, CODE)					\
+#define DWARF_ONE_KNOWN_DW_FORM(NAME, CODE)				\
       case CODE: return abbreviate (#CODE, sizeof "DW_FORM", brv);
-      ALL_KNOWN_DW_FORM
+      DWARF_ALL_KNOWN_DW_FORM
 #undef ONE_KNOWN_DW_FORM
-#undef ONE_KNOWN_DW_FORM_DESC
     default:
       return nullptr;
     }
@@ -81,10 +79,10 @@ dwarf_lang_string (int lang, brevity brv)
 {
   switch (lang)
     {
-#define ONE_KNOWN_DW_LANG_DESC(NAME, CODE, DESC)			\
+#define DWARF_ONE_KNOWN_DW_LANG(NAME, CODE)			\
       case CODE: return abbreviate (#CODE, sizeof "DW_LANG", brv);
-      ALL_KNOWN_DW_LANG
-#undef ONE_KNOWN_DW_LANG_DESC
+      DWARF_ALL_KNOWN_DW_LANG
+#undef DWARF_ONE_KNOWN_DW_LANG
     default:
       return nullptr;
     }
@@ -96,10 +94,10 @@ dwarf_macinfo_string (int code, brevity brv)
 {
   switch (code)
     {
-#define ONE_KNOWN_DW_MACINFO(NAME, CODE)				\
+#define DWARF_ONE_KNOWN_DW_MACINFO(NAME, CODE)				\
       case CODE: return abbreviate (#CODE, sizeof "DW_MACINFO", brv);
-      ALL_KNOWN_DW_MACINFO
-#undef ONE_KNOWN_DW_MACINFO
+      DWARF_ALL_KNOWN_DW_MACINFO
+#undef DWARF_ONE_KNOWN_DW_MACINFO
     default:
       return nullptr;
     }
@@ -111,12 +109,12 @@ dwarf_macro_string (int code, brevity brv)
 {
   switch (code)
     {
-#define ONE_KNOWN_DW_MACRO_GNU(NAME, CODE)				\
+#define DWARF_ONE_KNOWN_DW_MACRO_GNU(NAME, CODE)			\
       /* N.B. don't snip the GNU_ part, that belongs to the constant,	\
 	 not to the domain.  */						\
     case CODE: return abbreviate (#CODE, sizeof "DW_MACRO", brv);
-      ALL_KNOWN_DW_MACRO_GNU
-#undef ONE_KNOWN_DW_MACRO_GNU
+      DWARF_ALL_KNOWN_DW_MACRO_GNU
+#undef DWARF_ONE_KNOWN_DW_MACRO_GNU
     default:
       return nullptr;
     }
@@ -128,10 +126,10 @@ dwarf_inline_string (int code, brevity brv)
 {
   switch (code)
     {
-#define ONE_KNOWN_DW_INL(NAME, CODE)					\
+#define DWARF_ONE_KNOWN_DW_INL(NAME, CODE)				\
       case CODE: return abbreviate (#CODE, sizeof "DW_INL", brv);
-      ALL_KNOWN_DW_INL
-#undef ONE_KNOWN_DW_INL
+      DWARF_ALL_KNOWN_DW_INL
+#undef DWARF_ONE_KNOWN_DW_INL
     default:
       return nullptr;
     }
@@ -143,10 +141,10 @@ dwarf_encoding_string (int code, brevity brv)
 {
   switch (code)
     {
-#define ONE_KNOWN_DW_ATE(NAME, CODE)					\
+#define DWARF_ONE_KNOWN_DW_ATE(NAME, CODE)				\
       case CODE: return abbreviate (#CODE, sizeof "DW_ATE", brv);
-      ALL_KNOWN_DW_ATE
-#undef ONE_KNOWN_DW_ATE
+      DWARF_ALL_KNOWN_DW_ATE
+#undef DWARF_ONE_KNOWN_DW_ATE
     default:
       return nullptr;
     }
@@ -158,10 +156,10 @@ dwarf_access_string (int code, brevity brv)
 {
   switch (code)
     {
-#define ONE_KNOWN_DW_ACCESS(NAME, CODE)					\
+#define DWARF_ONE_KNOWN_DW_ACCESS(NAME, CODE)				\
       case CODE: return abbreviate (#CODE, sizeof "DW_ACCESS", brv);
-      ALL_KNOWN_DW_ACCESS
-#undef ONE_KNOWN_DW_ACCESS
+      DWARF_ALL_KNOWN_DW_ACCESS
+#undef DWARF_ONE_KNOWN_DW_ACCESS
     default:
       return nullptr;
     }
@@ -173,10 +171,10 @@ dwarf_visibility_string (int code, brevity brv)
 {
   switch (code)
     {
-#define ONE_KNOWN_DW_VIS(NAME, CODE)					\
+#define DWARF_ONE_KNOWN_DW_VIS(NAME, CODE)				\
       case CODE: return abbreviate (#CODE, sizeof "DW_VIS", brv);
-      ALL_KNOWN_DW_VIS
-#undef ONE_KNOWN_DW_VIS
+      DWARF_ALL_KNOWN_DW_VIS
+#undef DWARF_ONE_KNOWN_DW_VIS
     default:
       return nullptr;
     }
@@ -188,10 +186,10 @@ dwarf_virtuality_string (int code, brevity brv)
 {
   switch (code)
     {
-#define ONE_KNOWN_DW_VIRTUALITY(NAME, CODE)				\
+#define DWARF_ONE_KNOWN_DW_VIRTUALITY(NAME, CODE)			\
       case CODE: return abbreviate (#CODE, sizeof "DW_VIRTUALITY", brv);
-      ALL_KNOWN_DW_VIRTUALITY
-#undef ONE_KNOWN_DW_VIRTUALITY
+      DWARF_ALL_KNOWN_DW_VIRTUALITY
+#undef DWARF_ONE_KNOWN_DW_VIRTUALITY
     default:
       return nullptr;
     }
@@ -203,10 +201,10 @@ dwarf_identifier_case_string (int code, brevity brv)
 {
   switch (code)
     {
-#define ONE_KNOWN_DW_ID(NAME, CODE)					\
+#define DWARF_ONE_KNOWN_DW_ID(NAME, CODE)				\
       case CODE: return abbreviate (#CODE, sizeof "DW_ID", brv);
-      ALL_KNOWN_DW_ID
-#undef ONE_KNOWN_DW_ID
+      DWARF_ALL_KNOWN_DW_ID
+#undef DWARF_ONE_KNOWN_DW_ID
     default:
       return nullptr;
     }
@@ -218,10 +216,10 @@ dwarf_calling_convention_string (int code, brevity brv)
 {
   switch (code)
     {
-#define ONE_KNOWN_DW_CC(NAME, CODE)					\
+#define DWARF_ONE_KNOWN_DW_CC(NAME, CODE)				\
       case CODE: return abbreviate (#CODE, sizeof "DW_CC", brv);
-      ALL_KNOWN_DW_CC
-#undef ONE_KNOWN_DW_CC
+      DWARF_ALL_KNOWN_DW_CC
+#undef DWARF_ONE_KNOWN_DW_CC
     default:
       return nullptr;
     }
@@ -233,10 +231,10 @@ dwarf_ordering_string (int code, brevity brv)
 {
   switch (code)
     {
-#define ONE_KNOWN_DW_ORD(NAME, CODE)					\
+#define DWARF_ONE_KNOWN_DW_ORD(NAME, CODE)				\
       case CODE: return abbreviate (#CODE, sizeof "DW_ORD", brv);
-      ALL_KNOWN_DW_ORD
-#undef ONE_KNOWN_DW_ORD
+      DWARF_ALL_KNOWN_DW_ORD
+#undef DWARF_ONE_KNOWN_DW_ORD
     default:
       return nullptr;
     }
@@ -248,10 +246,10 @@ dwarf_discr_list_string (int code, brevity brv)
 {
   switch (code)
     {
-#define ONE_KNOWN_DW_DSC(NAME, CODE)					\
+#define DWARF_ONE_KNOWN_DW_DSC(NAME, CODE)				\
       case CODE: return abbreviate (#CODE, sizeof "DW_DSC", brv);
-      ALL_KNOWN_DW_DSC
-#undef ONE_KNOWN_DW_DSC
+      DWARF_ALL_KNOWN_DW_DSC
+#undef DWARF_ONE_KNOWN_DW_DSC
     default:
       return nullptr;
     }
@@ -263,10 +261,10 @@ dwarf_decimal_sign_string (int code, brevity brv)
 {
   switch (code)
     {
-#define ONE_KNOWN_DW_DS(NAME, CODE)					\
+#define DWARF_ONE_KNOWN_DW_DS(NAME, CODE)				\
       case CODE: return abbreviate (#CODE, sizeof "DW_DS", brv);
-      ALL_KNOWN_DW_DS
-#undef ONE_KNOWN_DW_DS
+      DWARF_ALL_KNOWN_DW_DS
+#undef DWARF_ONE_KNOWN_DW_DS
     default:
       return nullptr;
     }
@@ -278,12 +276,10 @@ dwarf_locexpr_opcode_string (int code, brevity brv)
 {
   switch (code)
     {
-#define ONE_KNOWN_DW_OP_DESC(NAME, CODE, DESC) ONE_KNOWN_DW_OP (NAME, CODE)
-#define ONE_KNOWN_DW_OP(NAME, CODE)					\
+#define DWARF_ONE_KNOWN_DW_OP(NAME, CODE)				\
       case CODE: return abbreviate (#CODE, sizeof "DW_OP", brv);
-      ALL_KNOWN_DW_OP
-#undef ONE_KNOWN_DW_OP
-#undef ONE_KNOWN_DW_OP_DESC
+      DWARF_ALL_KNOWN_DW_OP
+#undef DWARF_ONE_KNOWN_DW_OP
     default:
       return nullptr;
     }
@@ -308,10 +304,10 @@ dwarf_endianity_string (int code, brevity brv)
 {
   switch (code)
     {
-#define ONE_KNOWN_DW_END(NAME, CODE)					\
+#define DWARF_ONE_KNOWN_DW_END(NAME, CODE)				\
       case CODE: return abbreviate (#CODE, sizeof "DW_END", brv);
-      ALL_KNOWN_DW_END
-#undef ONE_KNOWN_DW_END
+      DWARF_ALL_KNOWN_DW_END
+#undef DWARF_ONE_KNOWN_DW_END
     default:
       return nullptr;
     }

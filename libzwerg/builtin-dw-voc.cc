@@ -440,11 +440,11 @@ dwgrep_vocabulary_dw ()
       add_builtin_constant (voc, constant (code, &dw_attr_dom ()), lqname + 1);
     };
 
-#define ONE_KNOWN_DW_AT(NAME, CODE)					\
+#define DWARF_ONE_KNOWN_DW_AT(NAME, CODE)					\
   add_dw_at (CODE, "?AT_" #NAME, "!AT_" #NAME, "@AT_" #NAME,		\
 	     "?" #CODE, "!" #CODE, "@" #CODE);
-  ALL_KNOWN_DW_AT;
-#undef ONE_KNOWN_DW_AT
+  DWARF_ALL_KNOWN_DW_AT;
+#undef DWARF_ONE_KNOWN_DW_AT
 
   auto add_dw_tag = [&voc] (int code,
 			    char const *qname, char const *bname,
@@ -464,10 +464,10 @@ dwgrep_vocabulary_dw ()
       add_builtin_constant (voc, constant (code, &dw_tag_dom ()), lqname + 1);
     };
 
-#define ONE_KNOWN_DW_TAG(NAME, CODE)					\
+#define DWARF_ONE_KNOWN_DW_TAG(NAME, CODE)				\
   add_dw_tag (CODE, "?TAG_" #NAME, "!TAG_" #NAME, "?" #CODE, "!" #CODE);
-  ALL_KNOWN_DW_TAG;
-#undef ONE_KNOWN_DW_TAG
+  DWARF_ALL_KNOWN_DW_TAG;
+#undef DWARF_ONE_KNOWN_DW_TAG
 
   auto add_dw_form = [&voc] (unsigned code,
 			     char const *qname, char const *bname,
@@ -487,12 +487,10 @@ dwgrep_vocabulary_dw ()
       add_builtin_constant (voc, constant (code, &dw_form_dom ()), lqname + 1);
     };
 
-#define ONE_KNOWN_DW_FORM_DESC(NAME, CODE, DESC) ONE_KNOWN_DW_FORM (NAME, CODE)
-#define ONE_KNOWN_DW_FORM(NAME, CODE)					\
+#define DWARF_ONE_KNOWN_DW_FORM(NAME, CODE)				\
   add_dw_form (CODE, "?FORM_" #NAME, "!FORM_" #NAME, "?" #CODE, "!" #CODE);
-  ALL_KNOWN_DW_FORM;
-#undef ONE_KNOWN_DW_FORM
-#undef ONE_KNOWN_DW_FORM_DESC
+  DWARF_ALL_KNOWN_DW_FORM;
+#undef DWARF_ONE_KNOWN_DW_FORM
 
   auto add_dw_op = [&voc] (unsigned code,
 			   char const *qname, char const *bname,
@@ -513,183 +511,163 @@ dwgrep_vocabulary_dw ()
 			    lqname + 1);
     };
 
-#define ONE_KNOWN_DW_OP_DESC(NAME, CODE, DESC) ONE_KNOWN_DW_OP (NAME, CODE)
-#define ONE_KNOWN_DW_OP(NAME, CODE)					\
+#define DWARF_ONE_KNOWN_DW_OP(NAME, CODE)				\
   add_dw_op (CODE, "?OP_" #NAME, "!OP_" #NAME, "?" #CODE, "!" #CODE);
-  ALL_KNOWN_DW_OP;
-#undef ONE_KNOWN_DW_OP
-#undef ONE_KNOWN_DW_OP_DESC
+  DWARF_ALL_KNOWN_DW_OP;
+#undef DWARF_ONE_KNOWN_DW_OP
 
-#define ONE_KNOWN_DW_LANG_DESC(NAME, CODE, DESC)			\
+#define DWARF_ONE_KNOWN_DW_LANG(NAME, CODE)				\
   {									\
     add_builtin_constant (voc, constant (CODE, &dw_lang_dom ()), #CODE); \
   }
-  ALL_KNOWN_DW_LANG;
-#undef ONE_KNOWN_DW_LANG_DESC
+  DWARF_ALL_KNOWN_DW_LANG;
+#undef DWARF_ONE_KNOWN_DW_LANG
 
-#define ONE_KNOWN_DW_MACINFO(NAME, CODE)				\
+#define DWARF_ONE_KNOWN_DW_MACINFO(NAME, CODE)				\
   {									\
     add_builtin_constant (voc, constant (CODE, &dw_macinfo_dom ()), #CODE); \
   }
-  ALL_KNOWN_DW_MACINFO;
-#undef ONE_KNOWN_DW_MACINFO
+  DWARF_ALL_KNOWN_DW_MACINFO;
+#undef DWARF_ONE_KNOWN_DW_MACINFO
 
-#define ONE_KNOWN_DW_MACRO_GNU(NAME, CODE)				\
+#define DWARF_ONE_KNOWN_DW_MACRO_GNU(NAME, CODE)			\
   {									\
     add_builtin_constant (voc, constant (CODE, &dw_macro_dom ()), #CODE); \
   }
-  ALL_KNOWN_DW_MACRO_GNU;
-#undef ONE_KNOWN_DW_MACRO_GNU
+  DWARF_ALL_KNOWN_DW_MACRO_GNU;
+#undef DWARF_ONE_KNOWN_DW_MACRO_GNU
 
-#define ONE_KNOWN_DW_INL(NAME, CODE)					\
+#define DWARF_ONE_KNOWN_DW_INL(NAME, CODE)				\
   {									\
     add_builtin_constant (voc, constant (CODE, &dw_inline_dom ()), #CODE); \
   }
-  ALL_KNOWN_DW_INL;
-#undef ONE_KNOWN_DW_INL
+  DWARF_ALL_KNOWN_DW_INL;
+#undef DWARF_ONE_KNOWN_DW_INL
 
-#define ONE_KNOWN_DW_ATE(NAME, CODE)					\
+#define DWARF_ONE_KNOWN_DW_ATE(NAME, CODE)				\
   {									\
     add_builtin_constant (voc, constant (CODE, &dw_encoding_dom ()), #CODE); \
   }
-  ALL_KNOWN_DW_ATE;
-#undef ONE_KNOWN_DW_ATE
+  DWARF_ALL_KNOWN_DW_ATE;
+#undef DWARF_ONE_KNOWN_DW_ATE
 
-#define ONE_KNOWN_DW_ACCESS(NAME, CODE)					\
+#define DWARF_ONE_KNOWN_DW_ACCESS(NAME, CODE)				\
   {									\
     add_builtin_constant (voc, constant (CODE, &dw_access_dom ()), #CODE); \
   }
-  ALL_KNOWN_DW_ACCESS;
-#undef ONE_KNOWN_DW_ACCESS
+  DWARF_ALL_KNOWN_DW_ACCESS;
+#undef DWARF_ONE_KNOWN_DW_ACCESS
 
-#define ONE_KNOWN_DW_VIS(NAME, CODE)					\
+#define DWARF_ONE_KNOWN_DW_VIS(NAME, CODE)				\
   {									\
     add_builtin_constant (voc, constant (CODE, &dw_visibility_dom ()), #CODE); \
   }
-  ALL_KNOWN_DW_VIS;
-#undef ONE_KNOWN_DW_VIS
+  DWARF_ALL_KNOWN_DW_VIS;
+#undef DWARF_ONE_KNOWN_DW_VIS
 
-#define ONE_KNOWN_DW_VIRTUALITY(NAME, CODE)				\
+#define DWARF_ONE_KNOWN_DW_VIRTUALITY(NAME, CODE)			\
   {									\
     add_builtin_constant (voc, constant (CODE, &dw_virtuality_dom ()), #CODE); \
   }
-  ALL_KNOWN_DW_VIRTUALITY;
-#undef ONE_KNOWN_DW_VIRTUALITY
+  DWARF_ALL_KNOWN_DW_VIRTUALITY;
+#undef DWARF_ONE_KNOWN_DW_VIRTUALITY
 
-#define ONE_KNOWN_DW_ID(NAME, CODE)					\
+#define DWARF_ONE_KNOWN_DW_ID(NAME, CODE)				\
   {									\
     add_builtin_constant (voc,						\
 			  constant (CODE, &dw_identifier_case_dom ()), #CODE); \
   }
-  ALL_KNOWN_DW_ID;
-#undef ONE_KNOWN_DW_ID
+  DWARF_ALL_KNOWN_DW_ID;
+#undef DWARF_ONE_KNOWN_DW_ID
 
-#define ONE_KNOWN_DW_CC(NAME, CODE)					\
+#define DWARF_ONE_KNOWN_DW_CC(NAME, CODE)				\
   {									\
     add_builtin_constant (voc,						\
 			  constant (CODE, &dw_calling_convention_dom ()), \
 			  #CODE);					\
   }
-  ALL_KNOWN_DW_CC;
-#undef ONE_KNOWN_DW_CC
+  DWARF_ALL_KNOWN_DW_CC;
+#undef DWARF_ONE_KNOWN_DW_CC
 
-#define ONE_KNOWN_DW_ORD(NAME, CODE)					\
+#define DWARF_ONE_KNOWN_DW_ORD(NAME, CODE)				\
   {									\
     add_builtin_constant (voc, constant (CODE, &dw_ordering_dom ()), #CODE); \
   }
-  ALL_KNOWN_DW_ORD;
-#undef ONE_KNOWN_DW_ORD
+  DWARF_ALL_KNOWN_DW_ORD;
+#undef DWARF_ONE_KNOWN_DW_ORD
 
-#define ONE_KNOWN_DW_DSC(NAME, CODE)					\
+#define DWARF_ONE_KNOWN_DW_DSC(NAME, CODE)				\
   {									\
     add_builtin_constant (voc, constant (CODE, &dw_discr_list_dom ()), #CODE); \
   }
-  ALL_KNOWN_DW_DSC;
-#undef ONE_KNOWN_DW_DSC
+  DWARF_ALL_KNOWN_DW_DSC;
+#undef DWARF_ONE_KNOWN_DW_DSC
 
-#define ONE_KNOWN_DW_DS(NAME, CODE)					\
+#define DWARF_ONE_KNOWN_DW_DS(NAME, CODE)				\
   {									\
     add_builtin_constant (voc,						\
 			  constant (CODE, &dw_decimal_sign_dom ()), #CODE); \
   }
-  ALL_KNOWN_DW_DS;
-#undef ONE_KNOWN_DW_DS
+  DWARF_ALL_KNOWN_DW_DS;
+#undef DWARF_ONE_KNOWN_DW_DS
 
   add_builtin_constant (voc, constant (DW_ADDR_none, &dw_address_class_dom ()),
 			"DW_ADDR_none");
 
-#define ONE_KNOWN_DW_END(NAME, CODE)					\
+#define DWARF_ONE_KNOWN_DW_END(NAME, CODE)				\
   {									\
     add_builtin_constant (voc, constant (CODE, &dw_endianity_dom ()), #CODE); \
   }
-  ALL_KNOWN_DW_END;
-#undef ONE_KNOWN_DW_END
+  DWARF_ALL_KNOWN_DW_END;
+#undef DWARF_ONE_KNOWN_DW_END
 
-  // Since the constants in elf.h are defined as macros, we can't pass
-  // them around as is, as they would get expanded.  So instead of
-  // having _DESC X-macro call forward to plain one, both stringify
-  // right away and pass to the _ADD macro.
 
-#define ONE_KNOWN_STT_ADD(CODE, NAME)					\
+#define ELF_ONE_KNOWN_STT(NAME, CODE)					\
   add_builtin_constant (voc,						\
-			constant (CODE, &elfsym_stt_dom (machine)), NAME);
-
-#define ONE_KNOWN_STT_DESC(NAME, CODE, DESC) ONE_KNOWN_STT_ADD (CODE, #CODE)
-#define ONE_KNOWN_STT(NAME, CODE) ONE_KNOWN_STT_ADD (CODE, #CODE)
+			constant (CODE, &elfsym_stt_dom (machine)), #CODE);
 
   {
     constexpr int machine = EM_NONE;
-    ALL_KNOWN_STT
+    ELF_ALL_KNOWN_STT
   }
 
-#define ONE_KNOWN_STT_ARCH(ARCH)		\
+#define ELF_ONE_KNOWN_STT_ARCH(ARCH)		\
     {						\
       constexpr int machine = EM_##ARCH;	\
-      ALL_KNOWN_STT_##ARCH			\
+      ELF_ALL_KNOWN_STT_##ARCH			\
     }
-  ALL_KNOWN_STT_ARCHES
+  ELF_ALL_KNOWN_STT_ARCHES
 
-#undef ONE_KNOWN_STT_ARCH
-#undef ONE_KNOWN_STT
-#undef ONE_KNOWN_STT_DESC
-#undef ONE_KNOWN_STT_ADD
+#undef ELF_ONE_KNOWN_STT_ARCH
+#undef ELF_ONE_KNOWN_STT
 
 
-#define ONE_KNOWN_STB_ADD(CODE, NAME)					\
+#define ELF_ONE_KNOWN_STB(NAME, CODE)					\
   add_builtin_constant (voc,						\
-			constant (CODE, &elfsym_stb_dom (machine)), NAME);
-
-#define ONE_KNOWN_STB_DESC(NAME, CODE, DESC) ONE_KNOWN_STB_ADD (CODE, #CODE)
-#define ONE_KNOWN_STB(NAME, CODE) ONE_KNOWN_STB_ADD (CODE, #CODE)
+			constant (CODE, &elfsym_stb_dom (machine)), #CODE);
 
   {
     constexpr int machine = EM_NONE;
-    ALL_KNOWN_STB
+    ELF_ALL_KNOWN_STB
   }
 
-#define ONE_KNOWN_STB_ARCH(ARCH)		\
+#define ELF_ONE_KNOWN_STB_ARCH(ARCH)		\
     {						\
       constexpr int machine = EM_##ARCH;	\
-      ALL_KNOWN_STB_##ARCH			\
+      ELF_ALL_KNOWN_STB_##ARCH			\
     }
-  ALL_KNOWN_STB_ARCHES
+  ELF_ALL_KNOWN_STB_ARCHES
 
-#undef ONE_KNOWN_STB_ARCH
-#undef ONE_KNOWN_STB
-#undef ONE_KNOWN_STB_DESC
-#undef ONE_KNOWN_STB_ADD
+#undef ELF_ONE_KNOWN_STB_ARCH
+#undef ELF_ONE_KNOWN_STB
 
 
-#define ONE_KNOWN_STV_DESC(NAME, CODE, DESC) ONE_KNOWN_STV_ADD (CODE, #CODE)
-#define ONE_KNOWN_STV(NAME, CODE) ONE_KNOWN_STV_ADD (CODE, #CODE)
-#define ONE_KNOWN_STV_ADD(CODE, NAME)					\
-  add_builtin_constant (voc, constant (CODE, &elfsym_stv_dom ()), NAME);
+#define ELF_ONE_KNOWN_STV(NAME, CODE)					\
+  add_builtin_constant (voc, constant (CODE, &elfsym_stv_dom ()), #CODE);
 
-    ALL_KNOWN_STV
+    ELF_ALL_KNOWN_STV
 
-#undef ONE_KNOWN_STV
-#undef ONE_KNOWN_STV_DESC
-#undef ONE_KNOWN_STV_ADD
+#undef ELF_ONE_KNOWN_STV
 
   return ret;
 }

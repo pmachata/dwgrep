@@ -33,11 +33,6 @@ $1 ~ /DW([_A-Z]+)_([^ ]+)/ {
     DW[set] = DW[set] "," elt;
   else
     DW[set] = elt;
-  if ($NF == "*/" && $4 == "/*") {
-    c = $5;
-    for (i = 6; i < NF; ++i) c = c " " $i;
-    comment[set, elt] = c;
-  }
 }
 
 END {
@@ -49,16 +44,12 @@ END {
     split(DW[set], elts, ",");
     m = asort(elts);
     if (m == 0) continue;
-    print "\n#define ALL_KNOWN_DW_" set " \\";
+    print "\n#define DWARF_ALL_KNOWN_DW_" set " \\";
     for (j = 1; j <= m; ++j) {
       elt = elts[j];
       if (elt ~ /(low?|hi|high)_user$/)
 	continue;
-      if (comment[set, elt])
-	print "  ONE_KNOWN_DW_" set "_DESC (" elt ", DW_" set "_" elt \
-	  ", \"" comment[set, elt] "\") \\";
-      else
-	print "  ONE_KNOWN_DW_" set " (" elt ", DW_" set "_" elt ") \\";
+      print "  DWARF_ONE_KNOWN_DW_" set " (" elt ", DW_" set "_" elt ") \\";
     }
     print "  /* End of DW_" set "_*.  */";
   }

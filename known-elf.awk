@@ -30,13 +30,6 @@ $1 == "#define" {
     else
       KNOWN[set] = elt;
 
-    if ($NF == "*/" && $4 == "/*") {
-      c = $5;
-      for (i = 6; i < NF; ++i)
-	c = c " " $i;
-      COMMENT[set, elt] = c;
-    }
-
     if (set == "EM" && elt != "NONE") {
       if (ARCHES) {
 	ARCHES = ARCHES "," elt
@@ -49,14 +42,8 @@ $1 == "#define" {
   }
 }
 
-function emit(set, elt, comment) {
-  if (comment) {
-    gsub(/"/, "\\\"", comment);
-    print "  ONE_KNOWN_" set "_DESC (" elt ", " set "_" elt	\
-      ", \"" comment "\") \\";
-  } else {
-    print "  ONE_KNOWN_" set " (" elt ", " set "_" elt ") \\";
-  }
+function emit(set, elt) {
+  print "  ELF_ONE_KNOWN_" set " (" elt ", " set "_" elt ") \\";
 }
 
 END {
@@ -70,7 +57,7 @@ END {
     m = asort(elts);
     if (m == 0)
       continue;
-    print "\n#define ALL_KNOWN_" set " \\";
+    print "\n#define ELF_ALL_KNOWN_" set " \\";
 
     delete known2
     for (j = 1; j <= m; ++j) {
@@ -80,7 +67,7 @@ END {
 	# R_ names some architectures in a funny way.  Translate the
 	# architecture key back for consistency's sake.  The
 	# enumerator with the mangled architecture name is still
-	# passed to ONE_KNOWN_R* invocation.
+	# passed to ELF_ONE_KNOWN_R* invocation.
 	if (set "_" elt ~ "^R_390_") {
 	  found = 1;
 	  arch = "S390";
@@ -107,16 +94,16 @@ END {
       }
 
       if (! found)
-	emit(set, elt, COMMENT[set, elt])
+	emit(set, elt);
     }
 
     a2 = asorti(known2, used_arches);
     if (a2 == 0)
       continue;
 
-    print "\n#define ALL_KNOWN_" set "_ARCHES \\";
+    print "\n#define ELF_ALL_KNOWN_" set "_ARCHES \\";
     for (k = 1; k <= a2; ++k)
-      print "  ONE_KNOWN_" set "_ARCH (" used_arches[k] ") \\"
+      print "  ELF_ONE_KNOWN_" set "_ARCH (" used_arches[k] ") \\"
 
     for (k = 1; k <= a2; ++k) {
       arch = used_arches[k];
@@ -125,10 +112,10 @@ END {
       m2 = asort(elts2);
       if (m2 == 0)
 	continue;
-      print "\n#define ALL_KNOWN_" set2 " \\";
+      print "\n#define ELF_ALL_KNOWN_" set2 " \\";
       for (j2 = 1; j2 <= m2; ++j2) {
 	elt2 = elts2[j2];
-	emit(set, elt2, COMMENT[set, elt2]);
+	emit(set, elt2);
       }
     }
   }

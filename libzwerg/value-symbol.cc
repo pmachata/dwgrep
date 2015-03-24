@@ -145,8 +145,7 @@ constant domains.  Thus, e.g. ``STT_ARM_TFUNC`` and
     }
   };
 
-#define ONE_KNOWN_STT_DESC(SHORT, LONG, DESC) ONE_KNOWN_STT (SHORT, LONG)
-#define ONE_KNOWN_STT(SHORT, LONG)		\
+#define ELF_ONE_KNOWN_STT(SHORT, LONG)		\
   case LONG:					\
     return show ("STT", #SHORT, o, brv);
 
@@ -159,7 +158,7 @@ constant domains.  Thus, e.g. ``STT_ARM_TFUNC`` and
       using ::show;
       switch (int code = v < 0 || v.uval () > INT_MAX ? -1 : v.uval ())
 	{
-	  ALL_KNOWN_STT
+	  ELF_ALL_KNOWN_STT
 	default:
 	  show_unknown ("STT", code,
 			STT_LOOS, STT_HIOS, STT_LOPROC, STT_HIPROC, o, brv);
@@ -173,7 +172,7 @@ constant domains.  Thus, e.g. ``STT_ARM_TFUNC`` and
     }
   };
 
-#define ONE_KNOWN_STT_ARCH(ARCH)					\
+#define ELF_ONE_KNOWN_STT_ARCH(ARCH)					\
   struct elfsym_stt_##ARCH##_dom_t					\
     : public elfsym_stt_dom_t						\
   {									\
@@ -183,7 +182,7 @@ constant domains.  Thus, e.g. ``STT_ARM_TFUNC`` and
       using ::show;							\
       switch (v < 0 || v.uval () > INT_MAX ? -1 : v.uval ())		\
 	{								\
-	  ALL_KNOWN_STT_##ARCH						\
+	  ELF_ALL_KNOWN_STT_##ARCH					\
 	}								\
       elfsym_stt_dom_t::show (v, o, brv);				\
     }									\
@@ -197,15 +196,13 @@ constant domains.  Thus, e.g. ``STT_ARM_TFUNC`` and
     }									\
   };
 
-  ALL_KNOWN_STT_ARCHES
+  ELF_ALL_KNOWN_STT_ARCHES
 
-#undef ONE_KNOWN_STT_ARCH
-#undef ONE_KNOWN_STT
-#undef ONE_KNOWN_STT_DESC
+#undef ELF_ONE_KNOWN_STT_ARCH
+#undef ELF_ONE_KNOWN_STT
 
 
-#define ONE_KNOWN_STB_DESC(SHORT, LONG, DESC) ONE_KNOWN_STB (SHORT, LONG)
-#define ONE_KNOWN_STB(SHORT, LONG)		\
+#define ELF_ONE_KNOWN_STB(SHORT, LONG)		\
   case LONG:					\
     return show ("STB", #SHORT, o, brv);
 
@@ -218,7 +215,7 @@ constant domains.  Thus, e.g. ``STT_ARM_TFUNC`` and
       using ::show;
       switch (int code = v < 0 || v.uval () > INT_MAX ? -1 : v.uval ())
 	{
-	  ALL_KNOWN_STB
+	  ELF_ALL_KNOWN_STB
 	default:
 	  show_unknown ("STB", code,
 			STB_LOOS, STB_HIOS, STB_LOPROC, STB_HIPROC, o, brv);
@@ -232,7 +229,7 @@ constant domains.  Thus, e.g. ``STT_ARM_TFUNC`` and
     }
   };
 
-#define ONE_KNOWN_STB_ARCH(ARCH)					\
+#define ELF_ONE_KNOWN_STB_ARCH(ARCH)					\
   struct elfsym_stb_##ARCH##_dom_t					\
     : public elfsym_stb_dom_t						\
   {									\
@@ -242,7 +239,7 @@ constant domains.  Thus, e.g. ``STT_ARM_TFUNC`` and
       using ::show;							\
       switch (v < 0 || v.uval () > INT_MAX ? -1 : v.uval ())		\
 	{								\
-	  ALL_KNOWN_STB_##ARCH						\
+	  ELF_ALL_KNOWN_STB_##ARCH					\
 	}								\
       elfsym_stb_dom_t::show (v, o, brv);				\
     }									\
@@ -256,11 +253,11 @@ constant domains.  Thus, e.g. ``STT_ARM_TFUNC`` and
     }									\
   };
 
-  ALL_KNOWN_STB_ARCHES
+  ELF_ALL_KNOWN_STB_ARCHES
 
-#undef ONE_KNOWN_STB_ARCH
-#undef ONE_KNOWN_STB
-#undef ONE_KNOWN_STB_DESC
+#undef ELF_ONE_KNOWN_STB_ARCH
+#undef ELF_ONE_KNOWN_STB
+#undef ELF_ONE_KNOWN_STB_DESC
 
   struct elfsym_stv_dom_t
     : public elfsym_dom
@@ -293,14 +290,14 @@ elfsym_stt_dom (int machine)
 {
   switch (machine)
     {
-#define ONE_KNOWN_STT_ARCH(ARCH)		\
+#define ELF_ONE_KNOWN_STT_ARCH(ARCH)		\
       case EM_##ARCH:				\
 	{					\
 	  static elfsym_stt_##ARCH##_dom_t dom;	\
 	  return dom;				\
 	}
-      ALL_KNOWN_STT_ARCHES
-#undef ONE_KNOWN_STT_ARCH
+      ELF_ALL_KNOWN_STT_ARCHES
+#undef ELF_ONE_KNOWN_STT_ARCH
     }
 
   static elfsym_stt_dom_t dom;
@@ -312,14 +309,14 @@ elfsym_stb_dom (int machine)
 {
   switch (machine)
     {
-#define ONE_KNOWN_STB_ARCH(ARCH)		\
+#define ELF_ONE_KNOWN_STB_ARCH(ARCH)		\
       case EM_##ARCH:				\
 	{					\
 	  static elfsym_stb_##ARCH##_dom_t dom;	\
 	  return dom;				\
 	}
-      ALL_KNOWN_STB_ARCHES
-#undef ONE_KNOWN_STB_ARCH
+      ELF_ALL_KNOWN_STB_ARCHES
+#undef ELF_ONE_KNOWN_STB_ARCH
     }
 
   static elfsym_stb_dom_t dom;
