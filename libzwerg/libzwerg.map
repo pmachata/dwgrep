@@ -2,14 +2,12 @@ LIBZWERG_0.1 {
   global:
 	zw_error_destroy;
 	zw_error_message;
-	zw_error_code;
 
 	zw_vocabulary_init;
 	zw_vocabulary_destroy;
 	zw_vocabulary_core;
 	zw_vocabulary_dwarf;
 	zw_vocabulary_add;
-	zw_vocabulary_add_argv;
 
 	zw_stack_init;
 	zw_stack_destroy;
@@ -27,9 +25,6 @@ LIBZWERG_0.1 {
 	zw_result_destroy;
 
 	zw_value_pos;
-	zw_value_clone;
-	zw_value_init_named;
-	zw_value_format;
 	zw_value_destroy;
 
 	zw_value_init_const_i64;
@@ -46,9 +41,7 @@ LIBZWERG_0.1 {
 	zw_value_is_str;
 	zw_value_str_str;
 
-	zw_value_init_seq;
 	zw_value_is_seq;
-	zw_value_seq_append;
 	zw_value_seq_length;
 	zw_value_seq_at;
 
@@ -56,6 +49,13 @@ LIBZWERG_0.1 {
 	zw_machine_destroy;
 	zw_machine_code;
 
+	zw_cdom_name;
+	zw_cdom_is_arith;
+	zw_cdom_dec;
+	zw_cdom_hex;
+	zw_cdom_oct;
+	zw_cdom_bin;
+	zw_cdom_bool;
 	zw_cdom_dw_tag;
 	zw_cdom_dw_attr;
 	zw_cdom_dw_form;

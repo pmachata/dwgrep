@@ -36,13 +36,13 @@
 #include "dwcst.hh"
 
 zw_machine *
-zw_machine_init (int code)
+zw_machine_init (int code, zw_error **out_err)
 {
   return reinterpret_cast <zw_machine *> (static_cast <uintptr_t> (code));
 }
 
 void
-zw_machine_destroy (zw_machine *machine, zw_error **out_err)
+zw_machine_destroy (zw_machine *machine)
 {
   // NOP.  The API is written this way mostly for robustness and
   // homogeneity, but presently nothing is actually allocated.
@@ -291,10 +291,11 @@ zw_machine const *
 zw_value_dwarf_machine (zw_value const *val, zw_error **out_err)
 {
   return capture_errors ([&] () {
-      // This relies on the fact that zw_machine_init doesn't do any
-      // real allocation, and thus doesn't store the generated machine
-      // destriptor anywhere.
-      return zw_machine_init (dwarf (val).get_dwctx ()->get_machine ());
+      // We don't bother storing the machine anywhere, and neither do
+      // we pass valid pointer to error.  Both rely on the fact that
+      // zw_machine_init doesn't do any real allocation.
+      return zw_machine_init (dwarf (val).get_dwctx ()->get_machine (),
+			      nullptr);
     }, nullptr, out_err);
 }
 
