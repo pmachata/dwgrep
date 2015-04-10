@@ -134,6 +134,7 @@ private:
   void dump_die (std::ostream &os, zw_value const &val, format fmt);
   void dump_attr (std::ostream &os, zw_value const &val, format fmt);
   void dump_llelem (std::ostream &os, zw_value const &val, format fmt);
+  void dump_llop (std::ostream &os, zw_value const &val, format fmt);
   void dump_aset (std::ostream &os, zw_value const &val, format fmt);
   void dump_elfsym (std::ostream &os, zw_value const &val, format fmt);
   void dump_named_constant (std::ostream &os, unsigned cst, zw_cdom const &dom);
@@ -325,7 +326,7 @@ dumper::dump_llelem (std::ostream &os, zw_value const &val, format fmt)
   }
 
   static std::unique_ptr <zw_query, zw_deleter> query
-	{zw_query_parse (&m_voc, "[elem [offset, label, value]]",
+	{zw_query_parse (&m_voc, "[elem]",
 			 zw_throw_on_error {})};
   exec_query_on (val, *query,
 		 [&] (zw_stack const &stk) -> void
@@ -339,26 +340,46 @@ dumper::dump_llelem (std::ostream &os, zw_value const &val, format fmt)
 		       {
 			 if (i > 0)
 			   os << ", ";
-			 zw_value const *ppts = zw_value_seq_at (ops, i);
-			 assert (zw_value_is_seq (ppts));
 
-			 zw_value const *off = zw_value_seq_at (ppts, 0);
-			 dump_value (os, *off, format::brief);
-			 os << ' ';
-
-			 zw_value const *lbl = zw_value_seq_at (ppts, 1);
-			 dump_value (os, *lbl, format::brief);
-
-			 size_t nppts = zw_value_seq_length (ppts);
-			 for (size_t j = 2; j < nppts; ++j)
-			   {
-			     os << ' ';
-			     dump_value (os, *zw_value_seq_at (ppts, j),
-					 format::inner_brief);
-			   }
+			 dump_value (os, *zw_value_seq_at (ops, i),
+				     format::brief);
 		       }
 		   else
 		     os << "<empty location expression>";
+		 });
+}
+
+void
+dumper::dump_llop (std::ostream &os, zw_value const &val, format fmt)
+{
+  // We could get offset and label through zw_value_llop_op, but to
+  // get values reliably and without duplication, we'd need to go
+  // through Zwerg query "value" anyway.  So just do it all it one go.
+  static std::unique_ptr <zw_query, zw_deleter> query
+	{zw_query_parse (&m_voc, "[offset, label, value]",
+			 zw_throw_on_error {})};
+
+  exec_query_on (val, *query,
+		 [&] (zw_stack const &stk) -> void
+		 {
+		   assert (zw_stack_depth (&stk) == 2);
+		   zw_value const *properties = zw_stack_at (&stk, 0);
+		   assert (zw_value_is_seq (properties));
+
+		   zw_value const *off = zw_value_seq_at (properties, 0);
+		   dump_value (os, *off, format::brief);
+		   os << ' ';
+
+		   zw_value const *lbl = zw_value_seq_at (properties, 1);
+		   dump_value (os, *lbl, format::brief);
+
+		   size_t nppts = zw_value_seq_length (properties);
+		   for (size_t j = 2; j < nppts; ++j)
+		     {
+		       os << ' ';
+		       dump_value (os, *zw_value_seq_at (properties, j),
+				   format::inner_brief);
+		     }
 		 });
 }
 
@@ -449,6 +470,8 @@ dumper::dump_value (std::ostream &os, zw_value const &val, format fmt)
     dump_attr (os, val, fmt);
   else if (zw_value_is_llelem (&val))
     dump_llelem (os, val, fmt);
+  else if (zw_value_is_llop (&val))
+    dump_llop (os, val, fmt);
   else if (zw_value_is_aset (&val))
     dump_aset (os, val, fmt);
   else if (zw_value_is_elfsym (&val))

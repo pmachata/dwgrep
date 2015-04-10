@@ -861,6 +861,18 @@ STT_NOTYPE $a@0
 STT_ARM_TFUNC main@0' \
 	 y.o -e 'symbol (name != "") "%s"'
 
+# T_LOCLIST_OP
+
+# Test both T_LOCLIST_ELEM and the corresponding T_LOCLIST_OP output.
+expect_out '0x10017..0x1001a:0 breg5 <0>, 0x2 breg1 <0>, 0x4 and, 0x5 stack_value' \
+	bitcount.o -e 'entry (offset == 0x91) @AT_location (pos == 1)'
+
+expect_out '0 breg5 <0>
+0x2 breg1 <0>
+0x4 and
+0x5 stack_value' \
+	 bitcount.o -e 'entry (offset == 0x91) @AT_location (pos == 1) elem'
+
 
 # =============================================================================
 
