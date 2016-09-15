@@ -311,7 +311,7 @@ namespace
     std::shared_ptr <dwfl_context> m_dwctx;
 
     // Stack of iterator ranges.
-    std::vector <std::pair <It, It>> m_stack;
+    std::shared_ptr< std::vector <std::pair <It, It>> > m_stack;
 
     // Chain of DIE's where partial units were imported.
     std::shared_ptr <value_die> m_import;
@@ -325,21 +325,22 @@ namespace
       , m_i {0}
       , m_doneness {d}
     {
-      m_stack.push_back (get_it_range <It> (die, false));
+      m_stack = std::make_shared <std::vector <std::pair <It, It>>> ();
+      m_stack->push_back (get_it_range <It> (die, false));
     }
 
     std::unique_ptr <value_die>
     next () override
     {
       do
-	if (m_stack.empty ())
+	if (m_stack->empty ())
 	  return nullptr;
-      while (drop_finished_imports (m_stack, m_import)
+      while (drop_finished_imports (*m_stack, m_import)
 	     || (m_doneness == doneness::cooked
-		 && import_partial_units (m_stack, m_dwctx, m_import)));
+		 && import_partial_units (*m_stack, m_dwctx, m_import)));
 
       return std::make_unique <value_die>
-	(m_dwctx, m_import, **m_stack.back ().first++, m_i++, m_doneness);
+	(m_dwctx, m_import, **m_stack->back ().first++, m_i++, m_doneness);
     }
   };
 

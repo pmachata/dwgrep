@@ -285,7 +285,9 @@ all_dies_iterator::all_dies_iterator (Dwarf *dw)
 all_dies_iterator::all_dies_iterator (cu_iterator const &cuit)
   : m_cuit (cuit)
   , m_die (**m_cuit)
-{}
+{
+  m_stack = std::make_shared<std::vector<Dwarf_Off>>();
+}
 
 all_dies_iterator
 all_dies_iterator::end ()
@@ -297,7 +299,7 @@ bool
 all_dies_iterator::operator== (all_dies_iterator const &other) const
 {
   return m_cuit == other.m_cuit
-    && m_stack == other.m_stack
+    && *m_stack == *other.m_stack
     && (m_cuit == cu_iterator::end ()
 	|| m_die.addr == other.m_die.addr);
 }
@@ -314,7 +316,7 @@ all_dies_iterator::operator++ ()
   Dwarf_Die child;
   if (dwpp_child (m_die, child))
     {
-      m_stack.push_back (dwarf_dieoffset (&m_die));
+      m_stack->push_back (dwarf_dieoffset (&m_die));
       m_die = child;
       return *this;
     }
@@ -329,14 +331,14 @@ all_dies_iterator::operator++ ()
       case 1:
 	// No sibling found.  Go a level up and retry, unless this
 	// was a sole, childless CU DIE.
-	if (! m_stack.empty ())
+	if (! m_stack->empty ())
 	  {
-	    if (dwarf_offdie (m_cuit.m_dw, m_stack.back (), &m_die) == nullptr)
+	    if (dwarf_offdie (m_cuit.m_dw, m_stack->back (), &m_die) == nullptr)
 	      throw_libdw ();
-	    m_stack.pop_back ();
+	    m_stack->pop_back ();
 	  }
       }
-  while (!m_stack.empty ());
+  while (!m_stack->empty ());
 
   m_die = **++m_cuit;
   return *this;
@@ -370,13 +372,13 @@ all_dies_iterator
 all_dies_iterator::parent () const
 {
   assert (*this != end ());
-  if (m_stack.empty ())
+  if (m_stack->empty ())
     return end ();
 
   all_dies_iterator ret = *this;
-  if (dwarf_offdie (m_cuit.m_dw, m_stack.back (), &ret.m_die) == nullptr)
+  if (dwarf_offdie (m_cuit.m_dw, m_stack->back (), &ret.m_die) == nullptr)
     throw_libdw ();
-  ret.m_stack.pop_back ();
+  ret.m_stack->pop_back ();
   return ret;
 }
 
