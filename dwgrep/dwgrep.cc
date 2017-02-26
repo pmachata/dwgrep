@@ -31,6 +31,7 @@
 #include <cctype>
 #include <cstring>
 #include <fstream>
+#include <functional>
 #include <getopt.h>
 #include <iomanip>
 #include <iostream>
