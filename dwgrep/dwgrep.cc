@@ -1,4 +1,5 @@
 /*
+   Copyright (C) 2017 Petr Machata
    Copyright (C) 2014, 2015 Red Hat, Inc.
    This file is part of dwgrep.
 
@@ -96,6 +97,8 @@ show_help (std::vector <ext_option> const &ext_opts)
 
       std::string ds = strip (opt.second.second, " \t\n");
       auto period = ds.find_first_of (".");
+      while (ds.length () > period && ! std::isspace (ds[period + 1]))
+        period = ds.find_first_of (".", period + 1);
       std::cout << "\n\t" << ds.substr (0, period) << "\n";
     }
 }
