@@ -427,16 +427,14 @@
      : [some seq] elem (pos >= 3 && pos < 6)	# [3:6]
      : [some seq] relem (pos > 0)	# [:-1]
 
-     I don't suppose array operations will be widely used, so maybe
-     this is just fine.  Most of the time, instead of producing a
-     sequence, you would just assert position on the producing
-     expression directly.
+     There's now a convenient notation for this:
 
-     If it turns out to be useful, we can adopt an "at" word, which
-     would follow Python indexing conventions:
+     : [some seq] elem ?0	# elem (pos == 0)
+     : [some seq] relem ?0	# relem (pos == 0)
 
-     : [some seq] at: 0		# elem (pos == 0)
-     : [some seq] at: -1	# relem (pos == 0)
+     Might be perhaps worth it to have this as well:
+
+     : [some seq] @0		# elem (pos == 0)
 
      We could also have:
      -- slice :: ?T_SEQ ?T_CONST ?T_CONST -> ?()

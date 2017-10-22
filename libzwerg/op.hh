@@ -1,4 +1,5 @@
 /*
+   Copyright (C) 2017 Petr Machata
    Copyright (C) 2014, 2015 Red Hat, Inc.
    This file is part of dwgrep.
 
@@ -699,6 +700,24 @@ public:
   pred_result result (stack &stk) override;
   std::string name () const override;
   void reset () override;
+};
+
+class pred_pos
+  : public pred
+{
+  size_t m_pos;
+
+public:
+  explicit pred_pos (size_t pos)
+    : m_pos (pos)
+  {}
+
+  void
+  reset () override
+  {}
+
+  pred_result result (stack &stk) override;
+  std::string name () const override;
 };
 
 #endif /* _OP_H_ */

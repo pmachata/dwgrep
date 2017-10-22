@@ -1,4 +1,5 @@
 /*
+   Copyright (C) 2017 Petr Machata
    Copyright (C) 2014, 2015 Red Hat, Inc.
    This file is part of dwgrep.
 
@@ -212,6 +213,26 @@ std::string
 builtin_bin::docstring () const
 {
   return radices_docstring;
+}
+
+
+std::unique_ptr <pred>
+builtin_pred_pos::build_pred () const
+{
+  return maybe_invert (std::make_unique <pred_pos> (m_pos), m_positive);
+}
+
+char const *
+builtin_pred_pos::name () const
+{
+  return "pred_pos";
+}
+
+std::string
+builtin_pred_pos::docstring () const
+{
+  // No docstring, because this is just a service builtin for a piece of syntax.
+  return "";
 }
 
 

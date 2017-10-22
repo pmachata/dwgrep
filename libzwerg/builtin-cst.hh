@@ -1,4 +1,5 @@
 /*
+   Copyright (C) 2017 Petr Machata
    Copyright (C) 2014 Red Hat, Inc.
    This file is part of dwgrep.
 
@@ -88,6 +89,23 @@ struct builtin_bin
 {
   std::shared_ptr <op> build_exec (std::shared_ptr <op> upstream)
     const override;
+
+  char const *name () const override;
+  std::string docstring () const override;
+};
+
+struct builtin_pred_pos
+  : public pred_builtin
+{
+    size_t m_pos;
+
+public:
+  builtin_pred_pos (bool positive, size_t pos)
+    : pred_builtin (positive)
+    , m_pos (pos)
+  {}
+
+  std::unique_ptr <pred> build_pred () const override;
 
   char const *name () const override;
   std::string docstring () const override;

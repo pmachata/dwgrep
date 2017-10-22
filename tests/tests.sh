@@ -802,6 +802,20 @@ echo -e '7 == "foo\x00bar" length' > $TMP
 expect_count 1 -f $TMP
 rm $TMP
 
+# Test position assertion.
+expect_count 1 -e '[1, 2, 3] elem ?0 == 1'
+expect_count 1 -e '[1, 2, 3] elem ?1 == 2'
+expect_count 1 -e '[1, 2, 3] elem ?2 == 3'
+expect_count 0 -e '[1, 2, 3] elem ?3'
+
+expect_count 1 -e '[[1, 2, 3] elem !0] == [2, 3]'
+expect_count 1 -e '[[1, 2, 3] elem !1] == [1, 3]'
+expect_count 1 -e '[[1, 2, 3] elem !2] == [1, 2]'
+expect_count 1 -e '[[1, 2, 3] elem !3] == [1, 2, 3]'
+
+expect_count 1 -e '[1, 2, 3] relem ?0 == 3'
+expect_count 1 -e '[[1, 2, 3] relem !0] == [2, 1]'
+
 ### Test actual output of individual types by dwgrep driver.  ###
 
 # T_CONST

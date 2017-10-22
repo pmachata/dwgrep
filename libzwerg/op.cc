@@ -1,4 +1,5 @@
 /*
+   Copyright (C) 2017 Petr Machata
    Copyright (C) 2014, 2015 Red Hat, Inc.
    This file is part of dwgrep.
 
@@ -1222,4 +1223,19 @@ pred_subx_compare::reset ()
   m_op1->reset ();
   m_op2->reset ();
   m_pred->reset ();
+}
+
+pred_result
+pred_pos::result (stack &stk)
+{
+    auto const &value = stk.top ();
+    return value.get_pos () == m_pos ? pred_result::yes : pred_result::no;
+}
+
+std::string
+pred_pos::name () const
+{
+  std::stringstream ss;
+  ss << "pred_pos<" << m_pos << ">";
+  return ss.str ();
 }

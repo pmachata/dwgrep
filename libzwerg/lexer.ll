@@ -1,5 +1,6 @@
 %{ // -*-c++-*-
 /*
+   Copyright (C) 2017 Petr Machata
    Copyright (C) 2014 Red Hat, Inc.
    This file is part of dwgrep.
 
@@ -87,6 +88,12 @@ BIN [01]
 "\\dbg" return TOK_DEBUG;
 
 [?!@.\\]?{ID} return pass_string (yyscanner, yylval, TOK_WORD);
+[?!]0[xX]{HEX}+ |
+[?!]0[oO]?{OCT}+ |
+[?!]0[bB]?{BIN}+ |
+[?!]{DEC}+ {
+    return pass_string (yyscanner, yylval, TOK_NUMWORD);
+}
 
 "\"" {
   BEGIN STRING;

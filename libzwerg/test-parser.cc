@@ -1,4 +1,5 @@
 /*
+   Copyright (C) 2017 Petr Machata
    Copyright (C) 2014, 2015 Red Hat, Inc.
    This file is part of dwgrep.
 
@@ -322,6 +323,12 @@ do_tests ()
 
   test ("((1, 2), (3, 4))",
 	"(ALT (CONST<1>) (CONST<2>) (CONST<3>) (CONST<4>))");
+
+  test ("?0", "(F_BUILTIN<pred_pos>)");
+  test ("!0", "(F_BUILTIN<pred_pos>)");
+  test ("?0x0a", "(F_BUILTIN<pred_pos>)");
+  test ("!0o77", "(F_BUILTIN<pred_pos>)");
+  ftestx ("!-1", "Invalid");
 
   std::cerr << tests << " tests total, " << failed << " failures." << std::endl;
   assert (failed == 0);

@@ -1,5 +1,6 @@
 %code top { // -*-c++-*-
 /*
+   Copyright (C) 2017 Petr Machata
    Copyright (C) 2014, 2015 Red Hat, Inc.
    This file is part of dwgrep.
 
@@ -28,6 +29,7 @@
    not, see <http://www.gnu.org/licenses/>.  */
 
 #include "parser.hh"
+#include "builtin-cst.hh"
 }
 
 %code requires {
@@ -158,6 +160,27 @@
     }
 
     std::unique_ptr <tree>
+    parse_numword (strlit str)
+    {
+      assert (str.len > 1);
+      bool positive = str.buf[0] == '?';
+      ++str.buf;
+      --str.len;
+
+      auto val = parse_int (str).value ();
+      assert (val.is_unsigned ());
+
+      uint64_t pos64 = val.uval();
+      size_t pos = static_cast <size_t> (pos64);
+      if (pos != pos64)
+        throw std::runtime_error
+          (std::string ("Position assertion too large: `") + str.buf + "'");
+
+      auto bi = std::make_shared <builtin_pred_pos> (positive, pos);
+      return tree::create_builtin (bi);
+    }
+
+    std::unique_ptr <tree>
     tree_for_id_block (vocabulary const &builtins,
 		       std::unique_ptr <std::vector <std::string>> ids)
     {
@@ -247,7 +270,7 @@
 %token TOK_ASTERISK TOK_PLUS TOK_QMARK TOK_COMMA TOK_COLON
 %token TOK_SEMICOLON TOK_VBAR TOK_DOUBLE_VBAR TOK_ARROW TOK_ASSIGN
 
-%token TOK_IF TOK_THEN TOK_ELSE TOK_LET TOK_WORD TOK_OP TOK_LIT_STR
+%token TOK_IF TOK_THEN TOK_ELSE TOK_LET TOK_WORD TOK_NUMWORD TOK_OP TOK_LIT_STR
 %token TOK_LIT_INT
 
    // XXX These should eventually be moved to builtins.
@@ -262,10 +285,10 @@
   std::vector <std::string> *ids;
  }
 
-%type <t> Program AltList OrList OpList StatementList Statement
+%type <t> Program AltList OrList OpList StatementList Statement Word
 %type <ids> IdList IdListOpt IdBlockOpt
 %type <s> TOK_LIT_INT
-%type <s> TOK_WORD TOK_OP
+%type <s> TOK_WORD TOK_NUMWORD TOK_OP
 %type <t> TOK_LIT_STR
 
 %%
@@ -540,12 +563,12 @@ Statement:
   | TOK_LIT_INT
   { $$ = tree::create_const <tree_type::CONST> (parse_int ($1)).release (); }
 
-  | TOK_WORD
-  { $$ = parse_word (builtins, {$1.buf, $1.len}).release (); }
+  | Word
+  { $$ = $1; }
 
-  | TOK_WORD TOK_COLON Statement
+  | Word TOK_COLON Statement
   {
-    std::unique_ptr <tree> t1 {parse_word (builtins, {$1.buf, $1.len})};
+    std::unique_ptr <tree> t1 {$1};
     std::unique_ptr <tree> t3 {$3};
     $$ = tree::create_cat <tree_type::CAT>
 	(std::move (t3), std::move (t1)).release ();
@@ -560,13 +583,20 @@ Statement:
     $$ = $1;
   }
 
-
   | TOK_DEBUG
   {
     auto ret = tree::create_nullary <tree_type::F_DEBUG> ();
 
     $$ = ret.release ();
   }
+
+Word:
+  TOK_WORD
+  { $$ = parse_word (builtins, {$1.buf, $1.len}).release (); }
+
+  |
+  TOK_NUMWORD
+  { $$ = parse_numword ($1).release (); }
 
 %%
 
