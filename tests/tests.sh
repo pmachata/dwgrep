@@ -819,6 +819,10 @@ expect_count 1 -e '[[1, 2, 3] relem !0] == [2, 1]'
 expect_error "Unknown" -e foo
 expect_error "valid ELF" ./empty.s -e entry
 
+# Could be misparsed as '123 drop'
+expect_error "Invalid integer literal" -e '123drop'
+expect_error "Invalid integer literal" -e '?123drop'
+
 ### Test actual output of individual types by dwgrep driver.  ###
 
 # T_CONST

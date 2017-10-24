@@ -46,11 +46,11 @@
 %option reentrant
 %option extra-type="vocabulary const *"
 
-ID  [_a-zA-Z][_a-zA-Z0-9]*
+ALNUM [_a-zA-Z0-9]*
+ID  [_a-zA-Z]{ALNUM}
+INT [0-9]{ALNUM}
 HEX [a-fA-F0-9]
-DEC [0-9]
 OCT [0-7]
-BIN [01]
 
 %x STRING
 %x STRING_EMBEDDED
@@ -88,10 +88,7 @@ BIN [01]
 "\\dbg" return TOK_DEBUG;
 
 [?!@.\\]?{ID} return pass_string (yyscanner, yylval, TOK_WORD);
-[?!]0[xX]{HEX}+ |
-[?!]0[oO]?{OCT}+ |
-[?!]0[bB]?{BIN}+ |
-[?!]{DEC}+ {
+[?!]{INT} {
     return pass_string (yyscanner, yylval, TOK_NUMWORD);
 }
 
@@ -254,10 +251,7 @@ BIN [01]
     ("too few closing parentheses in embedded expression");
 }
 
-"-"?0[xX]{HEX}+ |
-"-"?0[oO]?{OCT}+ |
-"-"?0[bB]?{BIN}+ |
-"-"?{DEC}+ {
+"-"?{INT} {
     return pass_string (yyscanner, yylval, TOK_LIT_INT);
 }
 
