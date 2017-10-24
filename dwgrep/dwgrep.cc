@@ -685,7 +685,7 @@ try
       catch (std::runtime_error const &e)
 	{
 	  if (! no_messages)
-	    std::cout << "dwgrep: " << (fn[0] != '\0' ? fn : "<no-file>")
+	    std::cerr << "dwgrep: " << (fn[0] != '\0' ? fn : "<no-file>")
 		      << ": " << e.what () << std::endl;
 
 	  if (verbosity >= 0)
@@ -706,6 +706,6 @@ try
   }
 catch (std::runtime_error const& e)
   {
-    std::cout << "dwgrep: " << e.what () << std::endl;
+    std::cerr << "dwgrep: " << e.what () << std::endl;
     return 2;
   }
