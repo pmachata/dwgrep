@@ -823,6 +823,9 @@ expect_error "valid ELF" ./empty.s -e entry
 expect_error "Invalid integer literal" -e '123drop'
 expect_error "Invalid integer literal" -e '?123drop'
 
+expect_error "out of range" -e '1234567890987654321234567890987654321'
+expect_error "out of range" -e '?1234567890987654321234567890987654321'
+
 ### Test actual output of individual types by dwgrep driver.  ###
 
 # T_CONST

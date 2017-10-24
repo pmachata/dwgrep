@@ -137,11 +137,22 @@
 	  dom = &dec_constant_dom;
 	}
 
-      size_t pos;
-      uint64_t val = std::stoull ({buf, len}, &pos, base);
-      if (pos < len)
-	throw std::runtime_error
-	    (std::string ("Invalid integer literal: `") + str.buf + "'");
+      uint64_t val;
+      try
+	{
+	  size_t pos;
+	  val = std::stoull ({buf, len}, &pos, base);
+	  if (pos < len)
+	    throw std::runtime_error
+	      (std::string ("Invalid integer literal: `") + str.buf + "'");
+	}
+      catch (std::out_of_range const &e)
+	{
+          // Translate this particular exception so that the message is
+          // meaningful.
+	  throw std::runtime_error
+	    (std::string ("Integer literal out of range: `") + str.buf + "'");
+	}
 
       mpz_class ret = val;
       if (sign)
