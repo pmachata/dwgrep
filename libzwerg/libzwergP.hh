@@ -59,7 +59,7 @@ struct zw_value
 {
   std::shared_ptr <value> m_value;
 
-  zw_value (std::unique_ptr <value> value)
+  zw_value (std::shared_ptr <value> value)
     : m_value {std::move (value)}
   {}
 };

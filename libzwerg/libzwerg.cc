@@ -174,7 +174,7 @@ zw_stack_push (zw_stack *stack, zw_value const *value, zw_error **out_err)
 {
   return capture_errors ([&] () {
       stack->m_values.push_back
-	(std::make_unique <zw_value> (value->m_value->clone ()));
+	(std::make_unique <zw_value> (value->m_value));
       return true;
     }, false, out_err);
 }
@@ -278,7 +278,7 @@ zw_query_execute (zw_query const *query, zw_stack const *input_stack,
   return capture_errors ([&] () {
       auto stk = std::make_unique <stack> ();
       for (auto const &emt: input_stack->m_values)
-	stk->push (emt->m_value->clone ());
+	stk->push (emt->m_value);
       auto upstream = std::make_shared <op_origin> (std::move (stk));
       return new zw_result { query->m_query.build_exec (upstream) };
     }, nullptr, out_err);
