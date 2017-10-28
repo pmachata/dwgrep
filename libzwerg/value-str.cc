@@ -53,6 +53,12 @@ value_str::show (std::ostream &o, brevity brv) const
   o << m_str;
 }
 
+std::unique_ptr <value>
+value_str::clone () const
+{
+  return std::make_unique <value_str> (*this);
+}
+
 cmp_result
 value_str::cmp (value const &that) const
 {

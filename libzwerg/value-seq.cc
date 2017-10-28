@@ -47,9 +47,21 @@ of other values (including other sequences)::
 
 )docstring");
 
+namespace
+{
+  value_seq::seq_t
+  clone_seq (value_seq::seq_t const &seq)
+  {
+    value_seq::seq_t seq2;
+    for (auto const &v: seq)
+      seq2.emplace_back (std::move (v->clone ()));
+    return seq2;
+  }
+}
+
 value_seq::value_seq (value_seq const &that)
   : value {that}
-  , m_seq {that.m_seq}
+  , m_seq {std::make_shared <seq_t> (clone_seq (*that.m_seq))}
 {}
 
 void
@@ -65,6 +77,12 @@ value_seq::show (std::ostream &o, brevity brv) const
       v->show (o, brevity::brief);
     }
   o << "]";
+}
+
+std::unique_ptr <value>
+value_seq::clone () const
+{
+  return std::make_unique <value_seq> (*this);
 }
 
 namespace
@@ -206,8 +224,7 @@ namespace
     {
       if (m_idx < m_seq->size ())
 	{
-	  std::cerr << "XXX set_pos on shared value\n";
-	  std::shared_ptr <value> v = (*m_seq)[m_idx];
+	  std::shared_ptr <value> v = (*m_seq)[m_idx]->clone ();
 	  v->set_pos (m_idx++);
 	  return v;
 	}
@@ -227,8 +244,8 @@ namespace
     {
       if (m_idx < m_seq->size ())
 	{
-	  std::cerr << "XXX set_pos on shared value\n";
-	  std::shared_ptr <value> v = (*m_seq)[m_seq->size () - 1 - m_idx];
+	  std::shared_ptr <value> v
+            = (*m_seq)[m_seq->size () - 1 - m_idx]->clone ();
 	  v->set_pos (m_idx++);
 	  return v;
 	}

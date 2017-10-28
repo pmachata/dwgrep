@@ -55,6 +55,12 @@ value_closure::show (std::ostream &o, brevity brv) const
   o << "closure(" << *m_t << ")";
 }
 
+std::unique_ptr <value>
+value_closure::clone () const
+{
+  return std::make_unique <value_closure> (*this);
+}
+
 cmp_result
 value_closure::cmp (value const &v) const
 {

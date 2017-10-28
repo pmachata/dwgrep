@@ -169,6 +169,12 @@ value_dwarf::show (std::ostream &o, brevity brv) const
   o << "<Dwarf \"" << m_fn << "\">";
 }
 
+std::unique_ptr <value>
+value_dwarf::clone () const
+{
+  return std::make_unique <value_dwarf> (*this);
+}
+
 cmp_result
 value_dwarf::cmp (value const &that) const
 {
@@ -197,6 +203,12 @@ value_cu::show (std::ostream &o, brevity brv) const
 {
   ios_flag_saver s {o};
   o << "CU " << std::hex << std::showbase << m_offset;
+}
+
+std::unique_ptr <value>
+value_cu::clone () const
+{
+  return std::make_unique <value_cu> (*this);
 }
 
 cmp_result
@@ -342,6 +354,12 @@ value_attr::show (std::ostream &o, brevity brv) const
     }
 }
 
+std::unique_ptr <value>
+value_attr::clone () const
+{
+  return std::make_unique <value_attr> (*this);
+}
+
 cmp_result
 value_attr::cmp (value const &that) const
 {
@@ -377,6 +395,12 @@ value_abbrev_unit::show (std::ostream &o, brevity brv) const
   ios_flag_saver s {o};
   o << "abbrev unit " << std::hex << std::showbase
     << dwpp_cu_abbrev_unit_offset (m_cu);
+}
+
+std::unique_ptr <value>
+value_abbrev_unit::clone () const
+{
+  return std::make_unique <value_abbrev_unit> (*this);
 }
 
 cmp_result
@@ -433,6 +457,12 @@ value_abbrev::show (std::ostream &o, brevity brv) const
     }
 }
 
+std::unique_ptr <value>
+value_abbrev::clone () const
+{
+  return std::make_unique <value_abbrev> (*this);
+}
+
 cmp_result
 value_abbrev::cmp (value const &that) const
 {
@@ -467,6 +497,12 @@ value_abbrev_attr::show (std::ostream &o, brevity brv) const
   o << constant (offset, &dw_offset_dom (), brevity::full)
     << ' ' << constant (name, &dw_attr_dom (), brevity::brief)
     << " (" << constant (form, &dw_form_dom (), brevity::brief) << ")";
+}
+
+std::unique_ptr <value>
+value_abbrev_attr::clone () const
+{
+  return std::make_unique <value_abbrev_attr> (*this);
 }
 
 cmp_result
@@ -554,6 +590,12 @@ value_loclist_elem::show (std::ostream &o, brevity brv) const
   o << "]";
 }
 
+std::unique_ptr <value>
+value_loclist_elem::clone () const
+{
+  return std::make_unique <value_loclist_elem> (*this);
+}
+
 cmp_result
 value_loclist_elem::cmp (value const &that) const
 {
@@ -613,6 +655,12 @@ value_aset::show (std::ostream &o, brevity brv) const
   o << cov::format_ranges {cov};
 }
 
+std::unique_ptr <value>
+value_aset::clone () const
+{
+  return std::make_unique <value_aset> (*this);
+}
+
 cmp_result
 value_aset::cmp (value const &that) const
 {
@@ -659,6 +707,12 @@ void
 value_loclist_op::show (std::ostream &o, brevity brv) const
 {
   show_loclist_op (o, brv, m_dwctx, m_attr, m_dwop);
+}
+
+std::unique_ptr <value>
+value_loclist_op::clone () const
+{
+  return std::make_unique <value_loclist_op> (*this);
 }
 
 cmp_result

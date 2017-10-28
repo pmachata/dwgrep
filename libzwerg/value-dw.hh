@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2014, 2015 Red Hat, Inc.
+   Copyright (C) 2014 Red Hat, Inc.
    This file is part of dwgrep.
 
    This file is free software; you can redistribute it and/or modify
@@ -84,6 +84,7 @@ public:
 
   void show (std::ostream &o, brevity brv) const override;
   cmp_result cmp (value const &that) const override;
+  std::unique_ptr <value> clone () const override;
 };
 
 // -------------------------------------------------------------------
@@ -123,6 +124,7 @@ public:
 
   void show (std::ostream &o, brevity brv) const override;
   cmp_result cmp (value const &that) const override;
+  std::unique_ptr <value> clone () const override;
 };
 
 // -------------------------------------------------------------------
@@ -172,6 +174,10 @@ public:
   { return m_dwctx; }
 
   void show (std::ostream &o, brevity brv) const override;
+
+  std::unique_ptr <value> clone () const override
+  { return std::make_unique <value_die> (*this); }
+
   cmp_result cmp (value const &that) const override;
 };
 
@@ -211,6 +217,7 @@ public:
   { return m_attr; }
 
   void show (std::ostream &o, brevity brv) const override;
+  std::unique_ptr <value> clone () const override;
   cmp_result cmp (value const &that) const override;
 };
 
@@ -243,6 +250,7 @@ public:
   { return m_cu; }
 
   void show (std::ostream &o, brevity brv) const override;
+  std::unique_ptr <value> clone () const override;
   cmp_result cmp (value const &that) const override;
 };
 
@@ -275,6 +283,7 @@ public:
   { return m_abbrev; }
 
   void show (std::ostream &o, brevity brv) const override;
+  std::unique_ptr <value> clone () const override;
   cmp_result cmp (value const &that) const override;
 };
 
@@ -302,6 +311,7 @@ struct value_abbrev_attr
   value_abbrev_attr (value_abbrev_attr const &that) = default;
 
   void show (std::ostream &o, brevity brv) const override;
+  std::unique_ptr <value> clone () const override;
   cmp_result cmp (value const &that) const override;
 };
 
@@ -355,6 +365,7 @@ public:
   { return m_exprlen; }
 
   void show (std::ostream &o, brevity brv) const override;
+  std::unique_ptr <value> clone () const override;
   cmp_result cmp (value const &that) const override;
 };
 
@@ -380,6 +391,7 @@ struct value_aset
   { return cov; }
 
   void show (std::ostream &o, brevity brv) const override;
+  std::unique_ptr <value> clone () const override;
   cmp_result cmp (value const &that) const override;
 };
 
@@ -420,6 +432,7 @@ public:
   { return m_dwop; }
 
   void show (std::ostream &o, brevity brv) const override;
+  std::unique_ptr <value> clone () const override;
   cmp_result cmp (value const &that) const override;
 };
 
