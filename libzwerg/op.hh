@@ -127,7 +127,7 @@ public:
 // called, and aborts if it didn't propagate all the way through
 // (i.e. there was a buggy op on the way).
 //
-// Several operation use origin to handle sub-expressions
+// Several operations use origin to handle sub-expressions
 // (e.g. op_capture and pred_subx_any).
 class op_origin
   : public op

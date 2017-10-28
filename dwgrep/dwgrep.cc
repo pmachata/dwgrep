@@ -620,9 +620,9 @@ try
 	  to_process.push_back (argv[i]);
 
     if (to_process.size () > 1)
-	with_filename = true;
+      with_filename = true;
     if (no_filename)
-	with_filename = false;
+      with_filename = false;
 
     bool errors = false;
     bool match = false;

@@ -557,7 +557,7 @@ With this tool, we can make the formatting string clearer::
 	<Dwarf "./tests/nontrivial-types.o">
 
 But the actual output is still not very nice.  Ideally we'd mention
-names and source code corrdinates instead of Dwarf offsets and tag
+names and source code coordinates instead of Dwarf offsets and tag
 names.  But with splicing, that's actually quite easy to achieve::
 
 	$ dwgrep ./tests/nontrivial-types.o -f /dev/stdin <<"EOF"
