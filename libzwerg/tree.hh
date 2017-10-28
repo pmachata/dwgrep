@@ -1,4 +1,5 @@
 /*
+   Copyright (C) 2017 Petr Machata
    Copyright (C) 2014, 2015 Red Hat, Inc.
    This file is part of dwgrep.
 
@@ -195,9 +196,6 @@ public:
   // should be a valid op that the op produced by this node feeds off.
   std::shared_ptr <op>
   build_exec (std::shared_ptr <op> upstream) const;
-
-  // Produce program suitable for interpretation.
-  std::unique_ptr <pred> build_pred () const;
 
   // === Parser interface ===
   //

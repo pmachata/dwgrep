@@ -38,73 +38,76 @@
 #include "value-seq.hh"
 #include "value-str.hh"
 
-std::unique_ptr <pred>
-tree::build_pred () const
-{
-  switch (m_tt)
-    {
-    case tree_type::PRED_NOT:
-      return std::make_unique <pred_not> (child (0).build_pred ());
-
-    case tree_type::PRED_OR:
-      return std::make_unique <pred_or>
-	(m_children[0].build_pred (),
-	 m_children[1].build_pred ());
-
-    case tree_type::PRED_AND:
-      return std::make_unique <pred_and>
-	(m_children[0].build_pred (),
-	 m_children[1].build_pred ());
-
-    case tree_type::PRED_SUBX_ANY:
-      {
-	assert (m_children.size () == 1);
-	auto origin = std::make_shared <op_origin> (nullptr);
-	auto op = child (0).build_exec (origin);
-	return std::make_unique <pred_subx_any> (op, origin);
-      }
-
-    case tree_type::PRED_SUBX_CMP:
-      {
-	assert (m_children.size () == 3);
-	auto origin = std::make_shared <op_origin> (nullptr);
-	auto op1 = child (0).build_exec (origin);
-	auto op2 = child (1).build_exec (origin);
-	auto pred = child (2).build_pred ();
-	return std::make_unique <pred_subx_compare> (op1, op2, origin,
-						     std::move (pred));
-      }
-
-    case tree_type::F_BUILTIN:
-      return m_builtin->build_pred ();
-
-    case tree_type::CAT:
-    case tree_type::NOP:
-    case tree_type::ASSERT:
-    case tree_type::ALT:
-    case tree_type::OR:
-    case tree_type::CAPTURE:
-    case tree_type::SUBX_EVAL:
-    case tree_type::EMPTY_LIST:
-    case tree_type::CLOSE_STAR:
-    case tree_type::CLOSE_PLUS:
-    case tree_type::CONST:
-    case tree_type::STR:
-    case tree_type::FORMAT:
-    case tree_type::F_DEBUG:
-    case tree_type::BIND:
-    case tree_type::READ:
-    case tree_type::SCOPE:
-    case tree_type::BLOCK:
-    case tree_type::IFELSE:
-      assert (! "Should never get here.");
-      abort ();
-    }
-  abort ();
-}
-
 namespace
 {
+  std::shared_ptr <op>
+  build_exec (tree const &t, std::shared_ptr <op> upstream);
+
+  std::unique_ptr <pred>
+  build_pred (tree const &t)
+  {
+    switch (t.m_tt)
+      {
+      case tree_type::PRED_NOT:
+        return std::make_unique <pred_not> (build_pred (t.child (0)));
+
+      case tree_type::PRED_OR:
+        return std::make_unique <pred_or>
+          (build_pred (t.m_children[0]),
+           build_pred (t.m_children[1]));
+
+      case tree_type::PRED_AND:
+        return std::make_unique <pred_and>
+          (build_pred (t.m_children[0]),
+           build_pred (t.m_children[1]));
+
+      case tree_type::PRED_SUBX_ANY:
+        {
+          assert (t.m_children.size () == 1);
+          auto origin = std::make_shared <op_origin> (nullptr);
+          auto op = build_exec (t.child (0), origin);
+          return std::make_unique <pred_subx_any> (op, origin);
+        }
+
+      case tree_type::PRED_SUBX_CMP:
+        {
+          assert (t.m_children.size () == 3);
+          auto origin = std::make_shared <op_origin> (nullptr);
+          auto op1 = build_exec (t.child (0), origin);
+          auto op2 = build_exec (t.child (1), origin);
+          auto pred = build_pred (t.child (2));
+          return std::make_unique <pred_subx_compare> (op1, op2, origin,
+                                                       std::move (pred));
+        }
+
+      case tree_type::F_BUILTIN:
+        return t.m_builtin->build_pred ();
+
+      case tree_type::CAT:
+      case tree_type::NOP:
+      case tree_type::ASSERT:
+      case tree_type::ALT:
+      case tree_type::OR:
+      case tree_type::CAPTURE:
+      case tree_type::SUBX_EVAL:
+      case tree_type::EMPTY_LIST:
+      case tree_type::CLOSE_STAR:
+      case tree_type::CLOSE_PLUS:
+      case tree_type::CONST:
+      case tree_type::STR:
+      case tree_type::FORMAT:
+      case tree_type::F_DEBUG:
+      case tree_type::BIND:
+      case tree_type::READ:
+      case tree_type::SCOPE:
+      case tree_type::BLOCK:
+      case tree_type::IFELSE:
+        assert (! "Should never get here.");
+        abort ();
+      }
+    abort ();
+  }
+
   std::shared_ptr <op>
   build_exec (tree const &t, std::shared_ptr <op> upstream)
   {
@@ -158,7 +161,7 @@ namespace
 
       case tree_type::F_BUILTIN:
         {
-          if (auto pred = t.build_pred ())
+          if (auto pred = build_pred (t))
             return std::make_shared <op_assert> (upstream, std::move (pred));
           auto op = t.m_builtin->build_exec (upstream);
           assert (op != nullptr);
@@ -167,7 +170,7 @@ namespace
 
       case tree_type::ASSERT:
         return std::make_shared <op_assert>
-          (upstream, t.child (0).build_pred ());
+          (upstream, build_pred (t.child (0)));
 
       case tree_type::FORMAT:
         {
