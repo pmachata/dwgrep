@@ -506,24 +506,6 @@ public:
   void reset () override;
 };
 
-class op_scope
-  : public op
-{
-  struct pimpl;
-  std::unique_ptr <pimpl> m_pimpl;
-
-public:
-  op_scope (std::shared_ptr <op> upstream,
-	    std::shared_ptr <op_origin> origin,
-	    std::shared_ptr <op> op,
-	    size_t num_vars);
-  ~op_scope ();
-
-  stack::uptr next () override;
-  void reset () override;
-  std::string name () const override;
-};
-
 class op_bind
   : public op
 {

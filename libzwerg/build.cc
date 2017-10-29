@@ -271,12 +271,9 @@ namespace
         }
 
       case tree_type::SCOPE:
-        {
-          auto origin = std::make_shared <op_origin> (nullptr);
-          auto op = build_exec (t.child (0), origin, bn);
-          return std::make_shared <op_scope> (upstream, origin, op,
-                                              t.scp ()->num_names ());
-        }
+        // xxx create new bn
+        return build_exec (t.child (0), upstream, bn);
+        // xxx destroy new bn
 
       case tree_type::BLOCK:
         assert (t.scp () == nullptr);
@@ -284,9 +281,7 @@ namespace
 
       case tree_type::BIND:
         {
-          auto ret = std::make_shared <op_bind> (upstream,
-                                                 t.cst ().value ().uval (),
-                                                 t.scp ()->index (t.str ()));
+          auto ret = std::make_shared <op_bind> (upstream);
           bn.bind (t.str (), ret);
           return ret;
         }
@@ -294,9 +289,7 @@ namespace
       case tree_type::READ:
         {
           auto src = bn.find (t.str ());
-          return std::make_shared <op_read> (upstream, src,
-                                             t.cst ().value ().uval (),
-                                             t.scp ()->index (t.str ()));
+          return std::make_shared <op_read> (upstream, src);
         }
 
       case tree_type::F_DEBUG:
