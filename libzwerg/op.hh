@@ -528,19 +528,18 @@ class op_bind
   : public op
 {
   std::shared_ptr <op> m_upstream;
-  size_t m_depth;
-  var_id m_index;
+  std::unique_ptr <value> m_current;
 
 public:
-  op_bind (std::shared_ptr <op> upstream, size_t depth, var_id index)
+  explicit op_bind (std::shared_ptr <op> upstream)
     : m_upstream {upstream}
-    , m_depth {depth}
-    , m_index {index}
   {}
 
   stack::uptr next () override;
   void reset () override;
   std::string name () const override;
+
+  std::unique_ptr <value> current () const;
 };
 
 class op_read
@@ -550,7 +549,7 @@ class op_read
   std::unique_ptr <pimpl> m_pimpl;
 
 public:
-  op_read (std::shared_ptr <op> upstream, size_t depth, var_id index);
+  op_read (std::shared_ptr <op> upstream, std::shared_ptr <op_bind> src);
   ~op_read ();
 
   stack::uptr next () override;

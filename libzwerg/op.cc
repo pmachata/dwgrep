@@ -866,6 +866,7 @@ void
 op_bind::reset ()
 {
   m_upstream->reset ();
+  m_current = nullptr;
 }
 
 stack::uptr
@@ -873,8 +874,7 @@ op_bind::next ()
 {
   if (auto stk = m_upstream->next ())
     {
-      auto frame = stk->nth_frame (m_depth);
-      frame->bind_value (m_index, stk->pop ());
+      m_current = stk->pop ();
       return stk;
     }
   return nullptr;
@@ -883,22 +883,26 @@ op_bind::next ()
 std::string
 op_bind::name () const
 {
-  return std::string ("bind<") + std::to_string (m_index)
-    + "@" + std::to_string (m_depth) + ">";
+  return std::string ("bind");
+}
+
+std::unique_ptr <value>
+op_bind::current () const
+{
+  return m_current->clone ();
 }
 
 
 struct op_read::pimpl
 {
   std::shared_ptr <op> m_upstream;
+  std::shared_ptr <op_bind> m_src;
   std::shared_ptr <op> m_apply;
-  size_t m_depth;
-  var_id m_index;
 
-  pimpl (std::shared_ptr <op> upstream, size_t depth, var_id index)
+  pimpl (std::shared_ptr <op> upstream,
+         std::shared_ptr <op_bind> src)
     : m_upstream {upstream}
-    , m_depth {depth}
-    , m_index {index}
+    , m_src {src}
   {}
 
   void
@@ -916,10 +920,9 @@ struct op_read::pimpl
 	  {
 	    if (auto stk = m_upstream->next ())
 	      {
-		auto frame = stk->nth_frame (m_depth);
-		value &val = frame->read_value (m_index);
-		bool is_closure = val.is <value_closure> ();
-		stk->push (val.clone ());
+		auto val = m_src->current ();
+		bool is_closure = val->is <value_closure> ();
+		stk->push (std::move (val));
 
 		// If a referenced value is not a closure, then the
 		// result is just that one value.
@@ -953,8 +956,9 @@ struct op_read::pimpl
   }
 };
 
-op_read::op_read (std::shared_ptr <op> upstream, size_t depth, var_id index)
-  : m_pimpl {std::make_unique <pimpl> (upstream, depth, index)}
+op_read::op_read (std::shared_ptr <op> upstream,
+                  std::shared_ptr <op_bind> src)
+  : m_pimpl {std::make_unique <pimpl> (upstream, src)}
 {}
 
 op_read::~op_read ()
@@ -975,8 +979,7 @@ op_read::next ()
 std::string
 op_read::name () const
 {
-  return std::string ("read<") + std::to_string (m_pimpl->m_index)
-    + "@" + std::to_string (m_pimpl->m_depth) + ">";
+  return std::string ("read");
 }
 
 
