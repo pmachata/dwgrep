@@ -816,7 +816,7 @@ expect_count 1 -e '[[1, 2, 3] elem !3] == [1, 2, 3]'
 expect_count 1 -e '[1, 2, 3] relem ?0 == 3'
 expect_count 1 -e '[[1, 2, 3] relem !0] == [2, 1]'
 
-expect_error "Unknown" -e foo
+expect_error "unbound" -e foo
 expect_error "valid ELF" ./empty.s -e entry
 
 # Could be misparsed as '123 drop'

@@ -1,4 +1,5 @@
 /*
+   Copyright (C) 2017 Petr Machata
    Copyright (C) 2014 Red Hat, Inc.
    This file is part of dwgrep.
 
@@ -26,7 +27,6 @@
    the GNU Lesser General Public License along with this program.  If
    not, see <http://www.gnu.org/licenses/>.  */
 
-#include "scope.hh"
 #include "tree_cr.hh"
 
 std::unique_ptr <tree>
@@ -52,8 +52,7 @@ tree::create_assert (std::unique_ptr <tree> t)
 std::unique_ptr <tree>
 tree::create_scope (std::unique_ptr <tree> t1)
 {
-  auto t = std::make_unique <tree> (tree_type::SCOPE,
-				    std::make_shared <scope> (nullptr));
+  auto t = std::make_unique <tree> (tree_type::SCOPE);
   t->take_child (std::move (t1));
   return t;
 }
@@ -79,75 +78,44 @@ tree::take_cat (std::unique_ptr <tree> t)
 
 namespace
 {
-  tree
-  promote_scopes (tree t, std::shared_ptr <scope> scp)
+  // Shallow sweep through all children, but stopping at scopes, to determine if
+  // this particular scope has any bindings.
+  bool
+  scope_has_bindings (tree t)
   {
     switch (t.tt ())
       {
-      case tree_type::BIND:
-	if (scp->has_name (t.str ()))
-	  throw std::runtime_error (std::string ("Name `")
-				    + t.str () + "' rebound.");
-
-	scp->add_name (t.str ());
-	assert (t.m_children.size () == 0);
-	return t;
-
       case tree_type::SCOPE:
-	// First descend, so as to process all binds.
+	return false;
+      case tree_type::BIND:
+	return true;
+      default:
+	for (auto const &ch: t.m_children)
+	  if (scope_has_bindings (ch))
+	    return true;
+	return false;
+      }
+  }
+
+  tree
+  promote_scopes (tree t)
+  {
+    switch (t.tt ())
+      {
+      case tree_type::SCOPE:
 	assert (t.m_children.size () == 1);
-	t.child (0) = promote_scopes (t.child (0), t.scp ());
+	t.child (0) = promote_scopes (t.child (0));
 
 	// Only keep the scope if it is useful.
-	if (t.scp ()->empty ())
+	if (! scope_has_bindings(t.child (0)))
 	  return t.child (0);
 	else
 	  return t;
 
       default:
 	for (auto &c: t.m_children)
-	  c = promote_scopes (c, scp);
+	  c = promote_scopes (c);
 	return t;
-      }
-  }
-
-  void
-  link_scopes (tree &t, std::shared_ptr <scope> scp)
-  {
-    switch (t.tt ())
-      {
-      case tree_type::SCOPE:
-	t.scp ()->parent = scp;
-	link_scopes (t.child (0), t.scp ());
-	break;
-
-      case tree_type::BIND:
-      case tree_type::READ:
-	{
-	  assert (t.m_scope == nullptr);
-	  assert (t.m_cst == nullptr);
-
-	  // Find access coordinates.  Stack frames form a chain.  Here
-	  // we find what stack frame will be accessed (i.e. how deeply
-	  // nested is this OP inside SCOPE's) and at which position.
-
-	  size_t depth = 0;
-	  for (; scp != nullptr; scp = scp->parent, ++depth)
-	    if (scp->has_name (t.str ()))
-	      {
-		t.m_scope = scp;
-		t.m_cst = std::make_unique <constant> (depth, nullptr);
-		return;
-	      }
-
-	  throw std::runtime_error (std::string ("Unknown identifier `")
-				    + t.str () + "'.");
-	}
-
-      default:
-	for (auto &c: t.m_children)
-	  link_scopes (c, scp);
-	break;
       }
   }
 }
@@ -158,9 +126,11 @@ tree
 tree::resolve_scopes (tree t)
 {
   // Create whole-program scope.
-  tree u {tree_type::SCOPE, std::make_shared <scope> (nullptr)};
+  // xxx do we need this?
+  tree u {tree_type::SCOPE};
   u.push_child (t);
-  tree ret = ::promote_scopes (u, nullptr);
-  link_scopes (ret, nullptr);
+  // xxx scope promotion is not even that interesting anymore, since there are
+  // no runtime artifacts resulting from scopes.
+  tree ret = ::promote_scopes (u);
   return ret;
 }

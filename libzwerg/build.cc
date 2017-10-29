@@ -32,7 +32,6 @@
 #include <memory>
 
 #include "op.hh"
-#include "scope.hh"
 #include "tree.hh"
 #include "value-cst.hh"
 #include "value-seq.hh"
@@ -55,6 +54,9 @@ namespace
 
     void bind (std::string name, std::shared_ptr <op_bind> op)
     {
+      if (m_bindings.find (name) != m_bindings.end ())
+        throw std::runtime_error
+          (std::string () + "Name `" + name + "' rebound.");
       m_bindings.insert (std::make_pair (name, op));
     }
 
@@ -62,8 +64,8 @@ namespace
     {
       auto it = m_bindings.find (name);
       if (it == m_bindings.end ())
-        throw std::runtime_error (std::string ("attempt to read ")
-                                  + "an unbound variable `" + name + "'");
+        throw std::runtime_error
+          (std::string () + "Attempt to read an unbound name `" + name + "'");
       return it->second;
     }
   };
@@ -276,7 +278,6 @@ namespace
         // xxx destroy new bn
 
       case tree_type::BLOCK:
-        assert (t.scp () == nullptr);
         return std::make_shared <op_lex_closure> (upstream, t.child (0));
 
       case tree_type::BIND:

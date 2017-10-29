@@ -147,7 +147,6 @@ struct tree
 {
   std::unique_ptr <std::string> m_str;
   std::unique_ptr <constant> m_cst;
-  std::shared_ptr <scope> m_scope;
   std::shared_ptr <builtin const> m_builtin;
 
 public:
@@ -160,7 +159,6 @@ public:
 
   tree (tree_type tt, std::string const &str);
   tree (tree_type tt, constant const &cst);
-  tree (tree_type tt, std::shared_ptr <scope> scope);
 
   tree &operator= (tree other);
   void swap (tree &other);
@@ -171,7 +169,6 @@ public:
 
   std::string &str () const;
   constant &cst () const;
-  std::shared_ptr <scope> scp () const;
 
   void push_child (tree const &t);
 
