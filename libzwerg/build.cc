@@ -274,11 +274,83 @@ namespace
 
       case tree_type::SCOPE:
         // xxx create new bn
+	// xxx have a test demonstrating necessity of this as well
         return build_exec (t.child (0), upstream, bn);
         // xxx destroy new bn
 
       case tree_type::BLOCK:
-        return std::make_shared <op_lex_closure> (upstream, t.child (0));
+	{
+	  // Replace all current bindings with a pseudos.
+	  bindings pseudo_bn = bn.build_pseudo ();
+	  auto origin = std::make_shared <op_origin> (nullptr);
+	  auto op = build_exec (t.child (0), origin, pseudo_bn);
+	  // xxx now check which of the pseudobinds have more than one
+	  // reference--those have actually been used. The rest isn't
+	  // interesting.
+
+	  // return std::make_shared <op_close> ???
+
+	  // - When building a closure, 'struct bindings' is recreated to
+	  //   include all outer names and actual bindings that binds them.
+	  //   After building, if there are any op_bind's that have more than 1
+	  //   reference, those are references to environment of the block.
+	  //
+	  // - A randezvous cell is set up, which is a pointer to closure value
+	  //   that keeps track of which closure instance is currently evaluated
+	  //
+	  // - For each environment reference, a pseudo is set up. That:
+	  //   - knows about the randezvous
+	  //   - knows about the actual binding
+	  //   - has a number assigned that uniquely identifies it among
+	  //     the batch of pseudos for this closure
+	  //
+	  // - Now an op_lex_closure can be built, which knows about the
+	  //   pseudos and the randezvous
+	  //
+	  // - When op_lex_closure is executed, it goes through the list of
+	  //   pseudos and fetches values from actual source. It then builds a
+	  //   closure value, which:
+	  //   - holds those values in an array suitable for indexing
+	  //     by pseudo id
+	  //   - knows about the randezvous stack
+	  //   - holds origin and op with the actual compiled program
+	  //
+	  // - When op_apply is executed, it:
+	  //   - unless it was primed
+	  //     - fetches stack from its upstream and primes origin
+	  //   - remembers closure value currently at randezvous
+	  //   - overwrites randezvous with closure value on TOS
+	  //   - tries to pull stack from op
+	  //   - replaces previous randezvous value
+	  //   - yields if op yielded a stack
+	  //   - otherwise unprimes origin and retries
+	  //
+	  // - op_pseudo is a type of binding (op_bind::current is virtual).
+	  //   When op_pseudo is executed, it:
+	  //   - reads stack from upstream
+	  //   - reads closure currently at randezvous
+	  //   - reads value in that closure's array according to this
+	  //     pseudo's index
+	  //   - pushes that to upstream stack and yields
+	  //
+	  // The reason for all this complexity is that with expressions such as
+	  // this:
+	  //
+	  //  [let A := 1, 2; {A}] (|A| A elem ?0 A elem ?1) swap? apply
+	  //
+	  // ... we end up with a stack of two closure values that are identical
+	  // in many ways: the same piece of syntax compiled the code, the same
+	  // op_lex_closure build the value, and the same apply will end up
+	  // calling them, yet each of them must return a different value.
+	  // Previously, this was handled by storing a tree at closure value,
+	  // and having apply compile in-place. I want to avoid that.
+	  //
+	  // Another wrinkle is that several closures of the same type
+	  // (identical as per the above paragraph) might end up being in
+	  // recursive call chain.
+
+	  return std::make_shared <op_lex_closure> (upstream, t.child (0));
+	}
 
       case tree_type::BIND:
         {
