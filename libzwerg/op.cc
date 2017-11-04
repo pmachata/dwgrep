@@ -46,34 +46,16 @@ namespace
   void
   debug_stack (stack const &stk)
   {
-    {
-      std::vector <std::reference_wrapper <value const>> stack;
-      for (size_t i = 0, n = stk.size (); i < n; ++i)
-	stack.push_back (stk.get (i));
+    std::vector <std::reference_wrapper <value const>> stack;
+    for (size_t i = 0, n = stk.size (); i < n; ++i)
+      stack.push_back (stk.get (i));
 
-      std::cerr << "<";
-      std::for_each (stack.rbegin (), stack.rend (),
-		     [&stk] (std::reference_wrapper <value const> v) {
-		       v.get ().show ((std::cerr << ' '));
-		     });
-      std::cerr << " > (";
-    }
-
-    std::shared_ptr <frame> frame = stk.nth_frame (0);
-    while (frame != nullptr)
-      {
-	std::cerr << frame << ':' << frame.use_count ();
-	std::cerr << "{";
-	for (auto const &v: frame->m_values)
-	  if (v == nullptr)
-	    std::cerr << " (unbound)";
-	  else
-	    v->show (std::cerr << ' ');
-	std::cerr << " }  ";
-
-	frame = frame->m_parent;
-      }
-    std::cerr << ")\n";
+    std::cerr << "<";
+    std::for_each (stack.rbegin (), stack.rend (),
+		   [&stk] (std::reference_wrapper <value const> v) {
+		     v.get ().show ((std::cerr << ' '));
+		   });
+    std::cerr << " >";
   }
 }
 
