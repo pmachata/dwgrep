@@ -1,4 +1,5 @@
 /*
+   Copyright (C) 2017 Petr Machata
    Copyright (C) 2014, 2015 Red Hat, Inc.
    This file is part of dwgrep.
 
@@ -66,11 +67,6 @@ frame::clone () const
   for (auto const &val: m_values)
     ret->m_values.push_back (val != nullptr ? val->clone () : nullptr);
   return ret;
-}
-
-frame::~frame ()
-{
-  value_closure::maybe_unlink_frame (m_parent);
 }
 
 stack::stack (stack const &that)
@@ -154,9 +150,4 @@ bool
 stack::operator== (stack const &that) const
 {
   return compare_stack (m_values, that.m_values) == 0;
-}
-
-stack::~stack ()
-{
-  value_closure::maybe_unlink_frame (m_frame);
 }

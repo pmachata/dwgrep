@@ -1,4 +1,5 @@
 /*
+   Copyright (C) 2017 Petr Machata
    Copyright (C) 2014 Red Hat, Inc.
    This file is part of dwgrep.
 
@@ -35,8 +36,7 @@
 struct op_apply::pimpl
 {
   std::shared_ptr <op> m_upstream;
-  std::shared_ptr <op> m_op;
-  std::shared_ptr <frame> m_old_frame;
+  std::unique_ptr <value_closure> m_value;
 
   pimpl (std::shared_ptr <op> upstream)
     : m_upstream {upstream}
@@ -45,9 +45,7 @@ struct op_apply::pimpl
   void
   reset_me ()
   {
-    m_op = nullptr;
-    value_closure::maybe_unlink_frame (m_old_frame);
-    m_old_frame = nullptr;
+    m_value = nullptr;
   }
 
   ~pimpl ()
@@ -60,7 +58,7 @@ struct op_apply::pimpl
   {
     while (true)
       {
-	while (m_op == nullptr)
+	while (m_value == nullptr)
 	  if (auto stk = m_upstream->next ())
 	    {
 	      if (! stk->top ().is <value_closure> ())
@@ -69,26 +67,19 @@ struct op_apply::pimpl
 		  continue;
 		}
 
-	      auto val = stk->pop ();
-	      auto &cl = static_cast <value_closure &> (*val);
-
-	      assert (m_old_frame == nullptr);
-	      m_old_frame = stk->nth_frame (0);
-	      stk->set_frame (cl.get_frame ());
-	      auto origin = std::make_shared <op_origin> (std::move (stk));
-	      m_op = cl.get_tree ().build_exec (origin);
+	      m_value = std::unique_ptr <value_closure>
+		(static_cast <value_closure *> (stk->pop ().release ()));
+	      m_value->get_op ().reset ();
+	      m_value->get_origin ().set_next (std::move (stk));
 	    }
 	  else
 	    return nullptr;
 
-	if (auto stk = m_op->next ())
-	  {
-	    // Restore the original stack frame.
-	    std::shared_ptr <frame> of = stk->nth_frame (0);
-	    stk->set_frame (m_old_frame);
-	    value_closure::maybe_unlink_frame (of);
-	    return stk;
-	  }
+	value_closure *orig = m_value->rdv_exchange (&*m_value);
+	auto stk = m_value->get_op ().next ();
+	m_value->rdv_exchange (orig);
+	if (stk)
+	  return stk;
 
 	reset_me ();
       }

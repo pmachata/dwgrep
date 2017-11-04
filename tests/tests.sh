@@ -332,6 +332,9 @@ expect_count 1 -e '
 
 # Check closures.
 expect_count 1 -e '
+	[[let A := 1, 2; {A}]
+         (|B| B elem ?0 B elem ?1) swap? drop apply] == [2, 1]'
+expect_count 1 -e '
 	{|A| {|B| A}} 2 swap apply 9 swap apply (== 1 1 add)'
 expect_count 1 -e '
 	{|A| {A}} 5 swap apply apply (== 2 3 add)'

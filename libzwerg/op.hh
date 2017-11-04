@@ -35,7 +35,7 @@
 
 #include "stack.hh"
 #include "pred_result.hh"
-#include "tree.hh"
+#include "rendezvous.hh"
 
 // Subclasses of class op represent computations.  An op node is
 // typically constructed such that it directly feeds from another op
@@ -513,15 +513,17 @@ class op_bind
   std::unique_ptr <value> m_current;
 
 public:
-  explicit op_bind (std::shared_ptr <op> upstream)
+  explicit op_bind (std::shared_ptr <op> upstream,
+		    std::unique_ptr <value> current = nullptr)
     : m_upstream {upstream}
+    , m_current {std::move (current)}
   {}
 
   stack::uptr next () override;
   void reset () override;
   std::string name () const override;
 
-  std::unique_ptr <value> current () const;
+  virtual std::unique_ptr <value> current () const;
 };
 
 class op_read
@@ -539,17 +541,53 @@ public:
   std::string name () const override;
 };
 
-// Push to TOS a value_closure.
-class op_lex_closure
+// ---------- closure support -----------------
+
+// Pseudo bind plays the role of a bind for lexical blocks. It knows about the
+// actual binding that it's emulating, also about the rendezvous cell where it
+// reads what closure instance is currently under evaluation, and has a number
+// that it uses to find current bound value inside the closure value referenced
+// by the rendezvous.
+class pseudo_bind
+  : public op_bind
+// xxx make op_bind a subclass of an ABC. Rename pseudo_bind to something else.
+{
+  rendezvous m_rdv;
+  std::shared_ptr <op_bind> m_src;
+  unsigned m_id;
+
+public:
+  pseudo_bind (rendezvous rdv, std::shared_ptr <op_bind> src, unsigned id)
+    : op_bind {nullptr, nullptr}
+    , m_rdv {rdv}
+    , m_src {src}
+    , m_id {id}
+  {}
+
+  std::unique_ptr <value> fetch (unsigned assert_id) const;
+  std::unique_ptr <value> current () const override;
+};
+
+struct op_lex_closure
   : public op
 {
   std::shared_ptr <op> m_upstream;
-  tree m_t;
+  std::shared_ptr <op_origin> m_origin;
+  std::shared_ptr <op> m_op;
+  std::vector <std::shared_ptr <pseudo_bind>> m_pseudos;
+  rendezvous m_rdv;
 
 public:
-  op_lex_closure (std::shared_ptr <op> upstream, tree t)
+  op_lex_closure (std::shared_ptr <op> upstream,
+		  std::shared_ptr <op_origin> origin,
+		  std::shared_ptr <op> op,
+		  std::vector <std::shared_ptr <pseudo_bind>> pseudos,
+		  rendezvous rdv)
     : m_upstream {upstream}
-    , m_t {t}
+    , m_origin {origin}
+    , m_op {op}
+    , m_pseudos {pseudos}
+    , m_rdv {rdv}
   {}
 
   void reset () override;

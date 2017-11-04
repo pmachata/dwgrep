@@ -886,6 +886,22 @@ op_read::name () const
 }
 
 
+std::unique_ptr <value>
+pseudo_bind::fetch (unsigned assert_id) const
+{
+  assert (m_id == assert_id);
+  return m_src->current ();
+}
+
+std::unique_ptr <value>
+pseudo_bind::current () const
+{
+  value_closure *closure = *m_rdv;
+  assert (closure != nullptr);
+  return closure->get_env (m_id).clone ();
+}
+
+
 void
 op_lex_closure::reset ()
 {
@@ -897,9 +913,16 @@ op_lex_closure::next ()
 {
   if (auto stk = m_upstream->next ())
     {
-      stk->push (std::make_unique <value_closure> (m_t, stk->nth_frame (0), 0));
+      // Fetch actual values of the referenced environment bindings.
+      std::vector <std::unique_ptr <value>> env;
+      for (auto const &pseudo: m_pseudos)
+	env.push_back (pseudo->fetch (env.size ()));
+
+      stk->push (std::make_unique <value_closure> (m_origin, m_op,
+						   std::move (env), m_rdv, 0));
       return stk;
     }
+
   return nullptr;
 }
 

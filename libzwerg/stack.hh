@@ -1,4 +1,5 @@
 /*
+   Copyright (C) 2017 Petr Machata
    Copyright (C) 2014, 2015 Red Hat, Inc.
    This file is part of dwgrep.
 
@@ -49,8 +50,6 @@ struct frame
     , m_values {vars}
   {}
 
-  ~frame ();
-
   void bind_value (var_id index, std::unique_ptr <value> val);
   void unbind_value (var_id index);
   value &read_value (var_id index);
@@ -58,8 +57,8 @@ struct frame
   std::shared_ptr <frame> clone () const;
 };
 
-// Value file is a container type that's used for maintaining stacks
-// of dwgrep values.
+// Stack is a container type that's used for maintaining stacks of dwgrep
+// values.
 class stack
 {
   std::vector <std::unique_ptr <value>> m_values;
@@ -75,7 +74,6 @@ public:
 
   stack (stack const &other);
   stack (stack &&other) = default;
-  ~stack ();
 
   std::shared_ptr <frame>
   nth_frame (size_t depth) const
