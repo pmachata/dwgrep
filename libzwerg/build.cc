@@ -243,10 +243,10 @@ namespace
         }
 
       case tree_type::SCOPE:
-	// xxx create new bn
-	// xxx have a test demonstrating necessity of this as well
-	return build_exec (t.child (0), upstream, bn);
-	// xxx destroy new bn
+	{
+	  bindings scope {bn};
+	  return build_exec (t.child (0), upstream, scope);
+	}
 
       case tree_type::BLOCK:
 	{
