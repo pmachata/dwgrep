@@ -364,23 +364,6 @@ expect_count 1 -e '
 expect_count 3 -e '
 	let E := [0, 1, 2] elem; E (== pos)'
 
-# Check recursion.
-expect_count 1 -e '
-	{|A| (?(A 10 ?ge) 0 || A 1 add F 1 add)} ->F;
-	0 F
-	?(10 ?eq)'
-
-expect_count 1 -e '
-	{|F T| ?(F T ?le) F, ?(F T ?lt) F 1 add T seq} -> seq;
-	[1 10 seq] ?([1, 2, 3, 4, 5, 6, 7, 8, 9, 10] ?eq)'
-
-expect_count 1 -e '
-	{|N| (?(N 2 ?lt) 1 || N 1 sub fact N mul)} -> fact;
-	?(5 fact 120 ?eq)
-	?(6 fact 720 ?eq)
-	?(7 fact 5040 ?eq)
-	?(8 fact 40320 ?eq)'
-
 # Examples.
 expect_count 1 ./duplicate-const -e '
 	let ?cvr_type := {?TAG_const_type,?TAG_volatile_type,?TAG_restrict_type};

@@ -279,7 +279,7 @@
 %token TOK_QMARK_LPAREN TOK_BANG_LPAREN
 
 %token TOK_ASTERISK TOK_PLUS TOK_QMARK TOK_COMMA TOK_COLON
-%token TOK_SEMICOLON TOK_VBAR TOK_DOUBLE_VBAR TOK_ARROW TOK_ASSIGN
+%token TOK_SEMICOLON TOK_VBAR TOK_DOUBLE_VBAR TOK_ASSIGN
 
 %token TOK_IF TOK_THEN TOK_ELSE TOK_LET TOK_WORD TOK_NUMWORD TOK_OP TOK_LIT_STR
 %token TOK_LIT_INT
@@ -476,23 +476,6 @@ Statement:
        (tree::create_cat <tree_type::CAT>
 	(tree_for_id_block (builtins, std::move (ids)),
 	 std::move (t3))));
-
-    $$ = ret.release ();
-  }
-
-  | TOK_ARROW IdList TOK_SEMICOLON
-  {
-    std::unique_ptr <std::vector <std::string>> ids {$2};
-    assert (ids->size () > 0);
-
-    std::unique_ptr <tree> ret;
-    for (auto const &s: *ids)
-      if (builtins.find (s) == nullptr)
-	ret = tree::create_cat <tree_type::CAT>
-		(std::move (ret), tree::create_str <tree_type::BIND> (s));
-      else
-	throw std::runtime_error
-	    (std::string ("Can't rebind a builtin: `") + s + "'");
 
     $$ = ret.release ();
   }
