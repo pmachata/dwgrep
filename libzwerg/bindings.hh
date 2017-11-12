@@ -1,6 +1,5 @@
 /*
    Copyright (C) 2017 Petr Machata
-   Copyright (C) 2014, 2015 Red Hat, Inc.
    This file is part of dwgrep.
 
    This file is free software; you can redistribute it and/or modify
@@ -27,32 +26,34 @@
    the GNU Lesser General Public License along with this program.  If
    not, see <http://www.gnu.org/licenses/>.  */
 
-#include "test-zw-aux.hh"
-#include "op.hh"
-#include "parser.hh"
-#include "scon.hh"
+#ifndef _BINDINGS_H_
+#define _BINDINGS_H_
 
-#include "std-memory.hh"
+#include <map>
+#include <memory>
+#include <string>
+#include <vector>
 
-std::unique_ptr <stack>
-stack_with_value (std::unique_ptr <value> v)
+struct op_bind;
+
+class bindings
 {
-  auto stk = std::make_unique <stack> ();
-  stk->push (std::move (v));
-  return stk;
-}
+  std::map <std::string, std::shared_ptr <op_bind>> m_bindings;
+  bindings *m_super;
 
-std::vector <std::unique_ptr <stack>>
-run_query (vocabulary &voc,
-	   std::unique_ptr <stack> stk, std::string q)
-{
-  auto origin = std::make_shared <op_origin> ();
-  auto op = parse_query (voc, q).build_exec (origin);
-  scon scon {*origin, *op, std::move (stk)};
+public:
+  bindings ()
+    : m_super {nullptr}
+  {}
 
-  std::vector <std::unique_ptr <stack>> yielded;
-  while (auto r = scon.next ())
-    yielded.push_back (std::move (r));
+  explicit bindings (bindings &super)
+    : m_super {&super}
+  {}
 
-  return yielded;
-}
+  void bind (std::string name, std::shared_ptr <op_bind> op);
+  std::shared_ptr <op_bind> find (std::string name);
+  std::vector <std::string> names () const;
+  std::vector <std::string> names_closure () const;
+};
+
+#endif//_BINDINGS_H_

@@ -1,6 +1,5 @@
 /*
    Copyright (C) 2017 Petr Machata
-   Copyright (C) 2014, 2015 Red Hat, Inc.
    This file is part of dwgrep.
 
    This file is free software; you can redistribute it and/or modify
@@ -27,32 +26,25 @@
    the GNU Lesser General Public License along with this program.  If
    not, see <http://www.gnu.org/licenses/>.  */
 
-#include "test-zw-aux.hh"
+#ifndef _SCON_H_
+#define _SCON_H_
+
 #include "op.hh"
-#include "parser.hh"
-#include "scon.hh"
 
-#include "std-memory.hh"
-
-std::unique_ptr <stack>
-stack_with_value (std::unique_ptr <value> v)
+// State Contatiner keeps an activation record for one recursive instance of op
+// chain.
+class scon
 {
-  auto stk = std::make_unique <stack> ();
-  stk->push (std::move (v));
-  return stk;
-}
+  op const &m_op;
+  std::vector <uint8_t> m_buf;
 
-std::vector <std::unique_ptr <stack>>
-run_query (vocabulary &voc,
-	   std::unique_ptr <stack> stk, std::string q)
-{
-  auto origin = std::make_shared <op_origin> ();
-  auto op = parse_query (voc, q).build_exec (origin);
-  scon scon {*origin, *op, std::move (stk)};
+  void *buf ();
+  void *buf_end ();
 
-  std::vector <std::unique_ptr <stack>> yielded;
-  while (auto r = scon.next ())
-    yielded.push_back (std::move (r));
+public:
+  scon (op_origin const &origin, op const &op, stack::uptr stk);
+  ~scon ();
+  stack::uptr next ();
+};
 
-  return yielded;
-}
+#endif // _SCON_H_

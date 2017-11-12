@@ -1,4 +1,5 @@
 /*
+  Copyright (C) 2017 Petr Machata
   Copyright (C) 2014, 2015 Red Hat, Inc.
 
   This file is free software; you can redistribute it and/or modify
@@ -32,6 +33,7 @@
 #include "std-memory.hh"
 #include <iostream>
 
+#include "scon.hh"
 #include "tree.hh"
 
 struct vocabulary;
@@ -54,6 +56,12 @@ struct zw_query
 struct zw_result
 {
   std::shared_ptr <op> m_op;
+  scon m_scon;
+
+  zw_result (op_origin const &origin, std::shared_ptr <op> op, stack::uptr stk)
+    : m_op {op}
+    , m_scon {origin, *op, std::move (stk)}
+  {}
 };
 
 struct zw_stack

@@ -1,4 +1,5 @@
 /*
+   Copyright (C) 2017 Petr Machata
    Copyright (C) 2014 Red Hat, Inc.
    This file is part of dwgrep.
 
@@ -39,7 +40,7 @@ overload_instance::overload_instance
 {
   for (auto const &v: stencil)
     {
-      auto origin = std::make_shared <op_origin> (nullptr);
+      auto origin = std::make_shared <op_origin> ();
       auto op = std::get <1> (v)->build_exec (origin);
       auto pred = std::get <1> (v)->build_pred ();
 
@@ -167,6 +168,7 @@ struct overload_op::pimpl
   stack::uptr
   next (op &self)
   {
+#if 0
     while (true)
       {
 	while (m_op == nullptr)
@@ -192,6 +194,9 @@ struct overload_op::pimpl
 
 	reset_me ();
       }
+#else
+  return nullptr;
+#endif
   }
 
   void

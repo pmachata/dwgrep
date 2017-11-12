@@ -1,6 +1,5 @@
 /*
    Copyright (C) 2017 Petr Machata
-   Copyright (C) 2014, 2015 Red Hat, Inc.
    This file is part of dwgrep.
 
    This file is free software; you can redistribute it and/or modify
@@ -27,32 +26,40 @@
    the GNU Lesser General Public License along with this program.  If
    not, see <http://www.gnu.org/licenses/>.  */
 
-#include "test-zw-aux.hh"
-#include "op.hh"
-#include "parser.hh"
-#include "scon.hh"
+#ifndef _RENDEZVOUS_HH_
+#define _RENDEZVOUS_HH_
 
-#include "std-memory.hh"
+#include <memory>
 
-std::unique_ptr <stack>
-stack_with_value (std::unique_ptr <value> v)
+class value_closure;
+
+// A rendezvous cell keeps track of the particular closure value that is
+// currently under evaluation.
+class rendezvous
 {
-  auto stk = std::make_unique <stack> ();
-  stk->push (std::move (v));
-  return stk;
-}
+  std::shared_ptr <value_closure *> m_vp;
 
-std::vector <std::unique_ptr <stack>>
-run_query (vocabulary &voc,
-	   std::unique_ptr <stack> stk, std::string q)
-{
-  auto origin = std::make_shared <op_origin> ();
-  auto op = parse_query (voc, q).build_exec (origin);
-  scon scon {*origin, *op, std::move (stk)};
+public:
+  rendezvous ()
+    : m_vp {std::make_shared <value_closure *> (nullptr)}
+  {}
 
-  std::vector <std::unique_ptr <stack>> yielded;
-  while (auto r = scon.next ())
-    yielded.push_back (std::move (r));
+  value_closure *exchange (value_closure *vp)
+  {
+    value_closure *old = *m_vp;
+    *m_vp = vp;
+    return old;
+  }
 
-  return yielded;
-}
+  value_closure *operator* () const
+  {
+    return m_vp.operator* ();
+  }
+
+  value_closure **operator-> () const
+  {
+    return m_vp.operator-> ();
+  }
+};
+
+#endif /* _RENDEZVOUS_HH_ */

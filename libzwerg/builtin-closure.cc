@@ -32,34 +32,55 @@
 
 #include "builtin-closure.hh"
 #include "value-closure.hh"
+#include "scon.hh"
 
 struct op_apply::pimpl
 {
+  // xxx with this little state I don't think it makes sense to pimpl this
   std::shared_ptr <op> m_upstream;
-  std::unique_ptr <value_closure> m_value;
+
+  // State for the sub-program that the apply executes. This gets constructed
+  // each time a new program is pulled from upstream, then used to fetch stacks
+  // to yield, and then torn down.
+  struct substate
+  {
+    std::unique_ptr <value_closure> m_value;
+    scon m_scon;
+
+    substate (stack::uptr stk)
+      : m_value {static_cast <value_closure *> (stk->pop ().release ())}
+      , m_scon {m_value->get_origin (), m_value->get_op (), std::move (stk)}
+    {}
+
+    stack::uptr
+    next ()
+    {
+      // xxx I think that now that we have a full-featured stacking, the
+      // rendezvous logic can be rethought.
+      value_closure *orig = m_value->rdv_exchange (&*m_value);
+      auto stk = m_scon.next ();
+      m_value->rdv_exchange (orig);
+      return stk;
+    }
+  };
+
+  // State for this operation.
+  struct state
+  {
+    std::unique_ptr <substate> m_substate;
+  };
 
   pimpl (std::shared_ptr <op> upstream)
     : m_upstream {upstream}
   {}
 
-  void
-  reset_me ()
-  {
-    m_value = nullptr;
-  }
-
-  ~pimpl ()
-  {
-    reset_me ();
-  }
-
   stack::uptr
-  next ()
+  next (state *st) const
   {
     while (true)
       {
-	while (m_value == nullptr)
-	  if (auto stk = m_upstream->next ())
+	while (st->m_substate == nullptr)
+	  if (auto stk = m_upstream->next (st + 1))
 	    {
 	      if (! stk->top ().is <value_closure> ())
 		{
@@ -67,35 +88,46 @@ struct op_apply::pimpl
 		  continue;
 		}
 
-	      m_value = std::unique_ptr <value_closure>
-		(static_cast <value_closure *> (stk->pop ().release ()));
-	      m_value->get_op ().reset ();
-	      m_value->get_origin ().set_next (std::move (stk));
+	      st->m_substate = std::make_unique <substate> (std::move (stk));
 	    }
 	  else
 	    return nullptr;
 
-	value_closure *orig = m_value->rdv_exchange (&*m_value);
-	auto stk = m_value->get_op ().next ();
-	m_value->rdv_exchange (orig);
-	if (stk)
+	if (auto stk = st->m_substate->next ())
 	  return stk;
 
-	reset_me ();
+	st->m_substate = nullptr;
       }
   }
 
   void
-  reset ()
+  state_con (void *buf) const
   {
-    reset_me ();
-    m_upstream->reset ();
+    state *st = op::this_state <state> (buf);
+    new (st) state {};
+    m_upstream->state_con (op::next_state (st));
+  }
+
+  void
+  state_des (void *buf) const
+  {
+    state *st = op::this_state <state> (buf);
+    m_upstream->state_des (op::next_state (st));
+    st->~state ();
+  }
+
+  size_t
+  reserve () const
+  {
+    return m_upstream->reserve () + sizeof (pimpl::state);
   }
 };
 
 op_apply::op_apply (std::shared_ptr <op> upstream)
   : m_pimpl {std::make_unique <pimpl> (upstream)}
-{}
+{
+  std::cerr << m_pimpl.get () << " == " << this << std::endl;
+}
 
 op_apply::~op_apply ()
 {}
@@ -103,13 +135,42 @@ op_apply::~op_apply ()
 void
 op_apply::reset ()
 {
-  m_pimpl->reset ();
+  assert (0);
+  abort ();
 }
 
 stack::uptr
 op_apply::next ()
 {
-  return m_pimpl->next ();
+  assert (0);
+  abort ();
+}
+
+size_t
+op_apply::reserve () const
+{
+  return m_pimpl->reserve ();
+}
+
+void
+op_apply::state_con (void *buf) const
+{
+  m_pimpl->state_con (buf);
+}
+
+void
+op_apply::state_des (void *buf) const
+{
+  m_pimpl->state_des (buf);
+}
+
+stack::uptr
+op_apply::next (void *state) const
+{
+  std::cerr << this << " op_apply next" << std::endl;
+  auto ret = m_pimpl->next (static_cast <pimpl::state *> (state));
+  std::cerr << this << " /op_apply next" << std::endl;
+  return ret;
 }
 
 std::string

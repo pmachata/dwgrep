@@ -1,6 +1,5 @@
 /*
    Copyright (C) 2017 Petr Machata
-   Copyright (C) 2014, 2015 Red Hat, Inc.
    This file is part of dwgrep.
 
    This file is free software; you can redistribute it and/or modify
@@ -27,32 +26,36 @@
    the GNU Lesser General Public License along with this program.  If
    not, see <http://www.gnu.org/licenses/>.  */
 
-#include "test-zw-aux.hh"
-#include "op.hh"
-#include "parser.hh"
 #include "scon.hh"
 
-#include "std-memory.hh"
-
-std::unique_ptr <stack>
-stack_with_value (std::unique_ptr <value> v)
+scon::scon (op_origin const &origin, op const &op, stack::uptr stk)
+  : m_op {op}
+  , m_buf (op.reserve (), 0)
 {
-  auto stk = std::make_unique <stack> ();
-  stk->push (std::move (v));
-  return stk;
+  op.state_con (buf ());
+  if (stk)
+    origin.set_next (buf_end (), std::move (stk));
 }
 
-std::vector <std::unique_ptr <stack>>
-run_query (vocabulary &voc,
-	   std::unique_ptr <stack> stk, std::string q)
+scon::~scon ()
 {
-  auto origin = std::make_shared <op_origin> ();
-  auto op = parse_query (voc, q).build_exec (origin);
-  scon scon {*origin, *op, std::move (stk)};
+  m_op.state_des (buf ());
+}
 
-  std::vector <std::unique_ptr <stack>> yielded;
-  while (auto r = scon.next ())
-    yielded.push_back (std::move (r));
+stack::uptr
+scon::next ()
+{
+  return m_op.next (buf ());
+}
 
-  return yielded;
+void *
+scon::buf ()
+{
+  return m_buf.data ();
+}
+
+void *
+scon::buf_end ()
+{
+  return m_buf.data () + m_buf.size ();
 }

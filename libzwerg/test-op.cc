@@ -51,6 +51,7 @@ namespace
   void
   test_closure (op_tr_closure_kind k, size_t offset)
   {
+#if 0
     auto origin = std::make_shared <op_origin> (nullptr);
     auto inner = std::make_shared <op_const>
       (origin, std::make_unique <value_cst> (constant {0, &dec_constant_dom}, 0));
@@ -64,6 +65,7 @@ namespace
 	ASSERT_TRUE (stk != nullptr);
 	EXPECT_EQ (i + offset, stk->size ());
       }
+#endif
   }
 }
 
@@ -82,6 +84,7 @@ namespace
   void
   test_closure_closure (op_tr_closure_kind k)
   {
+#if 0
     auto v = std::make_unique <value_cst> (constant {0, &dec_constant_dom}, 0);
     auto inner_origin = std::make_shared <op_origin> (nullptr);
     auto inner = std::make_shared <op_const> (inner_origin, std::move (v));
@@ -95,6 +98,7 @@ namespace
 
     for (size_t i = 0; i < 20; ++i)
       ASSERT_TRUE (closure.next () != nullptr);
+#endif
   }
 }
 

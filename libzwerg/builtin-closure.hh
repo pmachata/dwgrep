@@ -1,4 +1,5 @@
 /*
+   Copyright (C) 2017 Petr Machata
    Copyright (C) 2014 Red Hat, Inc.
    This file is part of dwgrep.
 
@@ -46,6 +47,11 @@ public:
   void reset () override;
   stack::uptr next () override;
   std::string name () const override;
+
+  size_t reserve () const override;
+  stack::uptr next (void *state) const override;
+  void state_con (void *buf) const override;
+  void state_des (void *buf) const override;
 };
 
 struct builtin_apply

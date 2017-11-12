@@ -32,6 +32,7 @@
 
 #include <memory>
 #include <cassert>
+#include <iostream>
 
 #include "stack.hh"
 #include "pred_result.hh"
@@ -46,9 +47,39 @@ public:
   virtual ~op () {}
 
   // Produce next value.
-  virtual stack::uptr next () = 0;
-  virtual void reset () = 0;
+  virtual stack::uptr next () { abort (); return nullptr; }
+  virtual void reset () {}
   virtual std::string name () const = 0;
+
+  // xxx find a way to expose the reserve as non-virtual, or else precompute it,
+  // it's wasteful to keep calling this for each recursive instance. The program
+  // code stays the same, so what reserve() returns is query-compile-time
+  // constant.
+  virtual size_t reserve () const {
+    std::cerr << name () << std::endl;
+    assert (!"reserve not implemented");
+    return 0;
+  }
+  // xxx find a way to encapsulate the state_con / state_des calls in a managed
+  // object.
+  virtual void state_con (void *buf) const {}
+  virtual void state_des (void *buf) const {}
+  virtual stack::uptr next (void *buf) const { return nullptr; }
+
+  template <class State>
+  static State *
+  this_state (void *buf)
+  {
+    return static_cast <State *> (buf);
+  }
+
+  template <class State>
+  static void *
+  next_state (State *state)
+  {
+    // xxx alignment???
+    return state + 1;
+  }
 };
 
 template <class RT>
@@ -95,14 +126,18 @@ class inner_op
 {
 protected:
   std::shared_ptr <op> m_upstream;
+  size_t const m_reserve;
 
 public:
-  inner_op (std::shared_ptr <op> upstream)
+  // xxx make it non-default later
+  inner_op (std::shared_ptr <op> upstream, size_t reserve = 0)
     : m_upstream {upstream}
+    , m_reserve {reserve}
   {}
 
-  void reset () override
-  { m_upstream->reset (); }
+  size_t reserve () const override;
+  void state_con (void *buf) const override;
+  void state_des (void *buf) const override;
 };
 
 // Class pred is for holding predicates.  These don't alter the
@@ -132,20 +167,17 @@ public:
 class op_origin
   : public op
 {
-  stack::uptr m_stk;
-  bool m_reset;
+  struct state;
 
 public:
-  explicit op_origin (stack::uptr s)
-    : m_stk (std::move (s))
-    , m_reset (false)
-  {}
-
-  void set_next (stack::uptr s);
-
-  stack::uptr next () override;
   std::string name () const override;
-  void reset () override;
+
+  size_t reserve () const override;
+  void state_con (void *buf) const override;
+  void state_des (void *buf) const override;
+  stack::uptr next (void *buf) const override;
+
+  void set_next (void *buf_end, stack::uptr s) const;
 };
 
 struct stub_op
@@ -301,22 +333,18 @@ public:
 };
 
 class op_const
-  : public op
+  : public inner_op
 {
-  std::shared_ptr <op> m_upstream;
   std::unique_ptr <value> m_value;
 
 public:
   op_const (std::shared_ptr <op> upstream, std::unique_ptr <value> &&value)
-    : m_upstream {upstream}
+    : inner_op (upstream, 0)
     , m_value {std::move (value)}
   {}
 
-  stack::uptr next () override;
+  stack::uptr next (void *buf) const override;
   std::string name () const override;
-
-  void reset () override
-  { m_upstream->reset (); }
 };
 
 // Tine is placed at the beginning of each alt expression.  These
@@ -338,61 +366,66 @@ public:
 //          +- [ Tine 1 ] <-     [ B ]      <-+
 //  [ A ] <-+- [ Tine 2 ] <- [ C ] <- [ D ] <-+- [ Merge ] <- [ F ]
 //          +- [ Tine 3 ] <-     [ E ]      <-+
+class op_merge;
 class op_tine
   : public op
 {
-  std::shared_ptr <op> m_upstream;
-  std::shared_ptr <std::vector <stack::uptr>> m_file;
-  std::shared_ptr <bool> m_done;
+  friend class op_merge;
+
+  struct state {};
+  op_merge &m_merge;
   size_t m_branch_id;
 
 public:
-  op_tine (std::shared_ptr <op> upstream,
-	   std::shared_ptr <std::vector <stack::uptr>> file,
-	   std::shared_ptr <bool> done,
-	   size_t branch_id)
-    : m_upstream {upstream}
-    , m_file {file}
-    , m_done {done}
+  op_tine (op_merge &merge, size_t branch_id)
+    : m_merge {merge}
     , m_branch_id {branch_id}
-  {
-    assert (m_branch_id < m_file->size ());
-  }
+  {}
 
-  stack::uptr next () override;
   std::string name () const override;
-  void reset () override;
+  size_t reserve () const override { return sizeof (state); }
+  void state_con (void *buf) const override {}
+  void state_des (void *buf) const override {}
+  stack::uptr next (void *buf) const override;
 };
 
 class op_merge
   : public op
 {
+  friend class op_tine;
+
 public:
-  typedef std::vector <std::shared_ptr <op> > opvec_t;
+  typedef std::vector <std::shared_ptr <op>> opvec_t;
 
 private:
+  struct state;
+  std::shared_ptr <op> m_upstream;
   opvec_t m_ops;
-  opvec_t::iterator m_it;
-  std::shared_ptr <bool> m_done;
 
-  std::shared_ptr <bool>
-  set_false (std::shared_ptr <bool> flagp)
-  {
-    assert (flagp != nullptr);
-    *flagp = false;
-    return flagp;
-  }
+  size_t branch_off (size_t branch_id) const;
+
+  // Given BRANCH_ID-th op_tine's state STATE, finds op_merge's own state and
+  // upstream state and returns them.
+  std::pair <state &, void *> get_state (size_t branch_id,
+					 op_tine::state *state) const;
+  op &get_upstream () const;
 
 public:
-  op_merge (opvec_t ops, std::shared_ptr <bool> done)
-    : m_ops (ops)
-    , m_it (m_ops.begin ())
-    , m_done (set_false (done))
+  explicit op_merge (std::shared_ptr <op> upstream)
+    : m_upstream {upstream}
   {}
 
-  stack::uptr next () override;
+  void
+  add_branch (std::shared_ptr <op> branch)
+  {
+    m_ops.push_back (branch);
+  }
+
   std::string name () const override;
-  void reset () override;
+  size_t reserve () const override;
+  void state_con (void *buf) const override;
+  void state_des (void *buf) const override;
+  stack::uptr next (void *buf) const override;
 };
 
 class op_or
