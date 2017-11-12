@@ -47,8 +47,8 @@ public:
   virtual ~op () {}
 
   // Produce next value.
-  virtual stack::uptr next () { abort (); return nullptr; }
-  virtual void reset () {}
+  virtual stack::uptr next () { assert (!"op::next called"); abort (); }
+  virtual void reset () { assert (!"op::reset called"); abort (); }
   virtual std::string name () const = 0;
 
   // xxx find a way to expose the reserve as non-virtual, or else precompute it,
@@ -147,7 +147,7 @@ class pred
 public:
   virtual pred_result result (stack &stk) = 0;
   virtual std::string name () const = 0;
-  virtual void reset () = 0;
+  virtual void reset () { assert (!"pred::reset called"); abort (); }
   virtual ~pred () {}
 };
 
@@ -197,40 +197,30 @@ struct stub_pred
   void reset () override final {}
 };
 
-class op_nop
-  : public op
+struct op_nop
+  : public inner_op
 {
-  std::shared_ptr <op> m_upstream;
-
-public:
   explicit op_nop (std::shared_ptr <op> upstream)
-    : m_upstream {upstream}
+    : inner_op {upstream, 0}
   {}
 
-  stack::uptr next () override;
+  stack::uptr next (void *buf) const override;
   std::string name () const override;
-
-  void reset () override
-  { m_upstream->reset (); }
 };
 
 class op_assert
-  : public op
+  : public inner_op
 {
-  std::shared_ptr <op> m_upstream;
   std::unique_ptr <pred> m_pred;
 
 public:
   op_assert (std::shared_ptr <op> upstream, std::unique_ptr <pred> p)
-    : m_upstream {upstream}
+    : inner_op {upstream, 0}
     , m_pred {std::move (p)}
   {}
 
-  stack::uptr next () override;
+  stack::uptr next (void *buf) const override;
   std::string name () const override;
-
-  void reset () override
-  { m_upstream->reset (); }
 };
 
 // The stringer hieararchy supports op_format, which implements
@@ -751,7 +741,6 @@ public:
 
   pred_result result (stack &stk) override;
   std::string name () const override;
-  void reset () override;
 };
 
 class pred_pos

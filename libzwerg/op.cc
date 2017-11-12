@@ -40,6 +40,7 @@
 #include "value-cst.hh"
 #include "value-seq.hh"
 #include "value-str.hh"
+#include "scon.hh"
 
 namespace
 {
@@ -130,9 +131,9 @@ op_origin::next (void *buf) const
 
 
 stack::uptr
-op_nop::next ()
+op_nop::next (void *buf) const
 {
-  return m_upstream->next ();
+  return m_upstream->next (buf);
 }
 
 std::string
@@ -143,9 +144,9 @@ op_nop::name () const
 
 
 stack::uptr
-op_assert::next ()
+op_assert::next (void *buf) const
 {
-  while (auto stk = m_upstream->next ())
+  while (auto stk = m_upstream->next (buf))
     if (m_pred->result (*stk) == pred_result::yes)
       return stk;
   return nullptr;
@@ -1289,29 +1290,21 @@ pred_subx_any::reset ()
 pred_result
 pred_subx_compare::result (stack &stk)
 {
-#if 0
-  m_op1->reset ();
-  m_origin->set_next (std::make_unique <stack> (stk));
-  while (auto stk_1 = m_op1->next ())
+  for (scon scon1 {*m_origin, *m_op1, std::make_unique <stack> (stk)};
+       auto stk1 = scon1.next (); )
     {
-      m_op2->reset ();
-      m_origin->set_next (std::make_unique <stack> (stk));
-
-      while (auto stk_2 = m_op2->next ())
+      for (scon scon2 {*m_origin, *m_op2, std::make_unique <stack> (stk)};
+	   auto stk2 = scon2.next (); )
 	{
-	  stk_1->push (stk_2->pop ());
-
-	  if (m_pred->result (*stk_1) == pred_result::yes)
+	  stk1->push (stk2->pop ());
+	  if (m_pred->result (*stk1) == pred_result::yes)
 	    return pred_result::yes;
 
-	  stk_1->pop ();
+	  stk1->pop ();
 	}
     }
 
   return pred_result::no;
-#else
-  return pred_result::no;
-#endif
 }
 
 std::string
@@ -1321,13 +1314,6 @@ pred_subx_compare::name () const
     + m_op2->name () + "><" + m_pred->name () + ">";
 }
 
-void
-pred_subx_compare::reset ()
-{
-  m_op1->reset ();
-  m_op2->reset ();
-  m_pred->reset ();
-}
 
 pred_result
 pred_pos::result (stack &stk)
