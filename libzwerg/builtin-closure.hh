@@ -37,21 +37,20 @@
 class op_apply
   : public op
 {
-  class pimpl;
-  std::unique_ptr <pimpl> m_pimpl;
+  struct state;
+  struct substate;
+  std::shared_ptr <op> m_upstream;
 
 public:
-  op_apply (std::shared_ptr <op> upstream);
-  ~op_apply ();
+  op_apply (std::shared_ptr <op> upstream)
+    : m_upstream {upstream}
+  {}
 
-  void reset () override;
-  stack::uptr next () override;
   std::string name () const override;
-
   size_t reserve () const override;
-  stack::uptr next (void *state) const override;
   void state_con (void *buf) const override;
   void state_des (void *buf) const override;
+  stack::uptr next (void *buf) const override;
 };
 
 struct builtin_apply
