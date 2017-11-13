@@ -1,4 +1,5 @@
 /*
+   Copyright (C) 2017 Petr Machata
    Copyright (C) 2014, 2015 Red Hat, Inc.
    This file is part of dwgrep.
 
@@ -44,7 +45,7 @@ struct op_dwopen_str
 {
   using op_once_overload::op_once_overload;
 
-  value_dwarf operate (std::unique_ptr <value_str> a) override;
+  value_dwarf operate (std::unique_ptr <value_str> a) const override;
 
   static std::string docstring ();
 };
@@ -65,7 +66,7 @@ struct op_unit_die
 {
   using op_once_overload::op_once_overload;
 
-  value_cu operate (std::unique_ptr <value_die> a) override;
+  value_cu operate (std::unique_ptr <value_die> a) const override;
 
   static std::string docstring ();
 };
@@ -75,7 +76,7 @@ struct op_unit_attr
 {
   using op_once_overload::op_once_overload;
 
-  value_cu operate (std::unique_ptr <value_attr> a) override;
+  value_cu operate (std::unique_ptr <value_attr> a) const override;
 
   static std::string docstring ();
 };
@@ -151,7 +152,7 @@ struct op_offset_cu
 {
   using op_once_overload::op_once_overload;
 
-  value_cst operate (std::unique_ptr <value_cu> a) override;
+  value_cst operate (std::unique_ptr <value_cu> a) const override;
   static std::string docstring ();
 };
 
@@ -160,7 +161,7 @@ struct op_offset_die
 {
   using op_once_overload::op_once_overload;
 
-  value_cst operate (std::unique_ptr <value_die> val) override;
+  value_cst operate (std::unique_ptr <value_die> val) const override;
   static std::string docstring ();
 };
 
@@ -169,7 +170,7 @@ struct op_offset_loclist_op
 {
   using op_once_overload::op_once_overload;
 
-  value_cst operate (std::unique_ptr <value_loclist_op> val) override;
+  value_cst operate (std::unique_ptr <value_loclist_op> val) const override;
   static std::string docstring ();
 };
 
@@ -178,7 +179,7 @@ struct op_address_die
 {
   using op_once_overload::op_once_overload;
 
-  value_aset operate (std::unique_ptr <value_die> a) override;
+  value_aset operate (std::unique_ptr <value_die> a) const override;
   static std::string docstring ();
 };
 
@@ -187,7 +188,8 @@ struct op_address_attr
 {
   using op_overload::op_overload;
 
-  std::unique_ptr <value_cst> operate (std::unique_ptr <value_attr> a) override;
+  std::unique_ptr <value_cst>
+  operate (std::unique_ptr <value_attr> a) const override;
   static std::string docstring ();
 };
 
@@ -196,7 +198,7 @@ struct op_address_loclist_elem
 {
   using op_once_overload::op_once_overload;
 
-  value_aset operate (std::unique_ptr <value_loclist_elem> val) override;
+  value_aset operate (std::unique_ptr <value_loclist_elem> val) const override;
   static std::string docstring ();
 };
 
@@ -205,7 +207,7 @@ struct op_label_die
 {
   using op_once_overload::op_once_overload;
 
-  value_cst operate (std::unique_ptr <value_die> val) override;
+  value_cst operate (std::unique_ptr <value_die> val) const override;
   static std::string docstring ();
 };
 
@@ -214,7 +216,7 @@ struct op_label_attr
 {
   using op_once_overload::op_once_overload;
 
-  value_cst operate (std::unique_ptr <value_attr> val) override;
+  value_cst operate (std::unique_ptr <value_attr> val) const override;
   static std::string docstring ();
 };
 
@@ -223,7 +225,7 @@ struct op_label_loclist_op
 {
   using op_once_overload::op_once_overload;
 
-  value_cst operate (std::unique_ptr <value_loclist_op> val) override;
+  value_cst operate (std::unique_ptr <value_loclist_op> val) const override;
   static std::string docstring ();
 };
 
@@ -232,7 +234,7 @@ struct op_form_attr
 {
   using op_once_overload::op_once_overload;
 
-  value_cst operate (std::unique_ptr <value_attr> val) override;
+  value_cst operate (std::unique_ptr <value_attr> val) const override;
   static std::string docstring ();
 };
 
@@ -241,7 +243,8 @@ struct op_parent_die
 {
   using op_overload::op_overload;
 
-  std::unique_ptr <value_die> operate (std::unique_ptr <value_die> a) override;
+  std::unique_ptr <value_die>
+  operate (std::unique_ptr <value_die> a) const override;
   static std::string docstring ();
 };
 
@@ -259,7 +262,7 @@ struct op_root_cu
 {
   using op_once_overload::op_once_overload;
 
-  value_die operate (std::unique_ptr <value_cu> a) override;
+  value_die operate (std::unique_ptr <value_cu> a) const override;
   static std::string docstring ();
 };
 
@@ -268,7 +271,7 @@ struct op_root_die
 {
   using op_once_overload::op_once_overload;
 
-  value_die operate (std::unique_ptr <value_die> a) override;
+  value_die operate (std::unique_ptr <value_die> a) const override;
   static std::string docstring ();
 };
 
@@ -299,7 +302,8 @@ struct op_low_die
 {
   using op_overload::op_overload;
 
-  std::unique_ptr <value_cst> operate (std::unique_ptr <value_die> a) override;
+  std::unique_ptr <value_cst>
+  operate (std::unique_ptr <value_die> a) const override;
   static std::string docstring ();
 };
 
@@ -308,7 +312,8 @@ struct op_high_die
 {
   using op_overload::op_overload;
 
-  std::unique_ptr <value_cst> operate (std::unique_ptr <value_die> a) override;
+  std::unique_ptr <value_cst>
+  operate (std::unique_ptr <value_die> a) const override;
   static std::string docstring ();
 };
 
@@ -317,7 +322,7 @@ struct op_length_loclist_elem
 {
   using op_once_overload::op_once_overload;
 
-  value_cst operate (std::unique_ptr <value_loclist_elem> a) override;
+  value_cst operate (std::unique_ptr <value_loclist_elem> a) const override;
   static std::string docstring ();
 };
 
@@ -335,7 +340,7 @@ struct op_version_cu
 {
   using op_once_overload::op_once_overload;
 
-  value_cst operate (std::unique_ptr <value_cu> a) override;
+  value_cst operate (std::unique_ptr <value_cu> a) const override;
   static std::string docstring ();
 };
 
@@ -344,7 +349,7 @@ struct op_name_dwarf
 {
   using op_once_overload::op_once_overload;
 
-  value_str operate (std::unique_ptr <value_dwarf> a) override;
+  value_str operate (std::unique_ptr <value_dwarf> a) const override;
   static std::string docstring ();
 };
 
@@ -353,7 +358,8 @@ struct op_name_die
 {
   using op_overload::op_overload;
 
-  std::unique_ptr <value_str> operate (std::unique_ptr <value_die> a) override;
+  std::unique_ptr <value_str>
+  operate (std::unique_ptr <value_die> a) const override;
   static std::string docstring ();
 };
 
@@ -362,7 +368,7 @@ struct op_raw_dwarf
 {
   using op_once_overload::op_once_overload;
 
-  value_dwarf operate (std::unique_ptr <value_dwarf> a) override;
+  value_dwarf operate (std::unique_ptr <value_dwarf> a) const override;
   static std::string docstring ();
 };
 
@@ -371,7 +377,7 @@ struct op_raw_cu
 {
   using op_once_overload::op_once_overload;
 
-  value_cu operate (std::unique_ptr <value_cu> a) override;
+  value_cu operate (std::unique_ptr <value_cu> a) const override;
   static std::string docstring ();
 };
 
@@ -380,7 +386,7 @@ struct op_raw_die
 {
   using op_once_overload::op_once_overload;
 
-  value_die operate (std::unique_ptr <value_die> a) override;
+  value_die operate (std::unique_ptr <value_die> a) const override;
   static std::string docstring ();
 };
 
@@ -389,7 +395,7 @@ struct op_raw_attr
 {
   using op_once_overload::op_once_overload;
 
-  value_attr operate (std::unique_ptr <value_attr> a) override;
+  value_attr operate (std::unique_ptr <value_attr> a) const override;
   static std::string docstring ();
 };
 
@@ -398,7 +404,7 @@ struct op_cooked_dwarf
 {
   using op_once_overload::op_once_overload;
 
-  value_dwarf operate (std::unique_ptr <value_dwarf> a) override;
+  value_dwarf operate (std::unique_ptr <value_dwarf> a) const override;
   static std::string docstring ();
 };
 
@@ -407,7 +413,7 @@ struct op_cooked_cu
 {
   using op_once_overload::op_once_overload;
 
-  value_cu operate (std::unique_ptr <value_cu> a) override;
+  value_cu operate (std::unique_ptr <value_cu> a) const override;
   static std::string docstring ();
 };
 
@@ -416,7 +422,7 @@ struct op_cooked_die
 {
   using op_once_overload::op_once_overload;
 
-  value_die operate (std::unique_ptr <value_die> a) override;
+  value_die operate (std::unique_ptr <value_die> a) const override;
   static std::string docstring ();
 };
 
@@ -425,7 +431,7 @@ struct op_cooked_attr
 {
   using op_once_overload::op_once_overload;
 
-  value_attr operate (std::unique_ptr <value_attr> a) override;
+  value_attr operate (std::unique_ptr <value_attr> a) const override;
   static std::string docstring ();
 };
 

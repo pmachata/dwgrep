@@ -1,4 +1,5 @@
 /*
+   Copyright (C) 2017 Petr Machata
    Copyright (C) 2014, 2015 Red Hat, Inc.
    This file is part of dwgrep.
 
@@ -66,7 +67,7 @@ struct op_add_str
   using op_once_overload::op_once_overload;
 
   value_str operate (std::unique_ptr <value_str> a,
-		     std::unique_ptr <value_str> b) override;
+		     std::unique_ptr <value_str> b) const override;
 
   static std::string docstring ();
 };
@@ -76,7 +77,7 @@ struct op_length_str
 {
   using op_once_overload::op_once_overload;
 
-  value_cst operate (std::unique_ptr <value_str> a) override;
+  value_cst operate (std::unique_ptr <value_str> a) const override;
 
   static std::string docstring ();
 };

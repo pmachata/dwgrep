@@ -1,4 +1,5 @@
 /*
+  Copyright (C) 2017 Petr Machata
   Copyright (C) 2015 Red Hat, Inc.
 
   This file is free software; you can redistribute it and/or modify
@@ -64,27 +65,35 @@ struct zw_deleter
   }
 };
 
-struct zw_throw_on_error
+struct zw_throw_on_error_base
 {
-  zw_error *m_err;
-
-  zw_throw_on_error ()
-    : m_err {nullptr}
-  {}
-
   operator zw_error ** ()
   {
     return &m_err;
   }
 
+protected:
+  zw_error *m_err;
+
+  zw_throw_on_error_base ()
+    : m_err {nullptr}
+  {}
+
+  void throw_exc (std::string msg)
+  {
+    zw_error_destroy (m_err);
+    m_err = nullptr;
+    throw std::runtime_error (msg);
+  }
+};
+
+struct zw_throw_on_error
+  : public zw_throw_on_error_base
+{
   ~zw_throw_on_error () noexcept (false)
   {
     if (m_err != nullptr)
-      {
-	std::string msg = zw_error_message (m_err);
-	zw_error_destroy (m_err);
-	throw std::runtime_error (msg);
-      }
+      throw_exc (zw_error_message (m_err));
   }
 };
 

@@ -1,4 +1,5 @@
 /*
+   Copyright (C) 2017 Petr Machata
    Copyright (C) 2014, 2015 Red Hat, Inc.
    This file is part of dwgrep.
 
@@ -143,7 +144,7 @@ value_seq::cmp (value const &that) const
 
 value_seq
 op_add_seq::operate (std::unique_ptr <value_seq> a,
-		     std::unique_ptr <value_seq> b)
+		     std::unique_ptr <value_seq> b) const
 {
   auto seq = a->get_seq ();
   for (auto &v: *b->get_seq ())
@@ -171,7 +172,7 @@ using ``add``::
 }
 
 value_cst
-op_length_seq::operate (std::unique_ptr <value_seq> a)
+op_length_seq::operate (std::unique_ptr <value_seq> a) const
 {
   return {constant {a->get_seq ()->size (), &dec_constant_dom}, 0};
 }

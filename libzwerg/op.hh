@@ -183,10 +183,7 @@ public:
 struct stub_op
   : public inner_op
 {
-  stub_op (std::shared_ptr <op> upstream)
-    : inner_op {upstream}
-  {}
-
+  using inner_op::inner_op;
   std::string name () const override final { return "stub"; }
 };
 

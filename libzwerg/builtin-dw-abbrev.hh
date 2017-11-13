@@ -1,4 +1,5 @@
 /*
+   Copyright (C) 2017 Petr Machata
    Copyright (C) 2014 Red Hat, Inc.
    This file is part of dwgrep.
 
@@ -60,7 +61,7 @@ struct op_offset_abbrev_unit
 {
   using op_once_overload::op_once_overload;
 
-  value_cst operate (std::unique_ptr <value_abbrev_unit> a) override;
+  value_cst operate (std::unique_ptr <value_abbrev_unit> a) const override;
 
   static std::string docstring ();
 };
@@ -70,7 +71,7 @@ struct op_offset_abbrev
 {
   using op_once_overload::op_once_overload;
 
-  value_cst operate (std::unique_ptr <value_abbrev> a) override;
+  value_cst operate (std::unique_ptr <value_abbrev> a) const override;
   static std::string docstring ();
 };
 
@@ -79,7 +80,7 @@ struct op_offset_abbrev_attr
 {
   using op_once_overload::op_once_overload;
 
-  value_cst operate (std::unique_ptr <value_abbrev_attr> a) override;
+  value_cst operate (std::unique_ptr <value_abbrev_attr> a) const override;
   static std::string docstring ();
 };
 
@@ -88,7 +89,7 @@ struct op_label_abbrev
 {
   using op_once_overload::op_once_overload;
 
-  value_cst operate (std::unique_ptr <value_abbrev> a) override;
+  value_cst operate (std::unique_ptr <value_abbrev> a) const override;
   static std::string docstring ();
 };
 
@@ -97,7 +98,7 @@ struct op_label_abbrev_attr
 {
   using op_once_overload::op_once_overload;
 
-  value_cst operate (std::unique_ptr <value_abbrev_attr> a) override;
+  value_cst operate (std::unique_ptr <value_abbrev_attr> a) const override;
   static std::string docstring ();
 };
 
@@ -106,7 +107,7 @@ struct op_form_abbrev_attr
 {
   using op_once_overload::op_once_overload;
 
-  value_cst operate (std::unique_ptr <value_abbrev_attr> a) override;
+  value_cst operate (std::unique_ptr <value_abbrev_attr> a) const override;
   static std::string docstring ();
 };
 
@@ -135,7 +136,7 @@ struct op_abbrev_cu
 {
   using op_once_overload::op_once_overload;
 
-  value_abbrev_unit operate (std::unique_ptr <value_cu> a) override;
+  value_abbrev_unit operate (std::unique_ptr <value_cu> a) const override;
   static std::string docstring ();
 };
 
@@ -144,7 +145,7 @@ struct op_abbrev_die
 {
   using op_once_overload::op_once_overload;
 
-  value_abbrev operate (std::unique_ptr <value_die> a) override;
+  value_abbrev operate (std::unique_ptr <value_die> a) const override;
   static std::string docstring ();
 };
 
@@ -153,7 +154,7 @@ struct op_code_abbrev
 {
   using op_once_overload::op_once_overload;
 
-  value_cst operate (std::unique_ptr <value_abbrev> a) override;
+  value_cst operate (std::unique_ptr <value_abbrev> a) const override;
   static std::string docstring ();
 };
 

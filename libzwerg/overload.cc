@@ -50,9 +50,19 @@ overload_instance::overload_instance
 	origin = nullptr;
 
       m_selectors.push_back (std::get <0> (v));
-      m_execs.push_back (std::make_pair (origin, op));
+      m_execs.push_back (std::make_tuple (origin, op, op->reserve ()));
       m_preds.push_back (std::move (pred));
     }
+}
+
+size_t
+overload_instance::max_reserve () const
+{
+  size_t max = 0;
+  for (auto const &exec: m_execs)
+    if (std::get <2> (exec) > max)
+      max = std::get <2> (exec);
+  return max;
 }
 
 namespace
@@ -70,18 +80,20 @@ namespace
   }
 }
 
-std::pair <std::shared_ptr <op_origin>, std::shared_ptr <op>>
-overload_instance::find_exec (stack &stk)
+std::tuple <op_origin *, op *, size_t>
+overload_instance::find_exec (stack &stk) const
 {
   ssize_t idx = find_selector (selector {stk}, m_selectors);
   if (idx < 0)
-    return {nullptr, nullptr};
+    return {nullptr, nullptr, 0};
   else
-    return m_execs[idx];
+    return {std::get <0> (m_execs[idx]).get (),
+	    std::get <1> (m_execs[idx]).get (),
+	    std::get <2> (m_execs[idx])};
 }
 
 std::shared_ptr <pred>
-overload_instance::find_pred (stack &stk)
+overload_instance::find_pred (stack &stk) const
 {
   ssize_t idx = find_selector (selector {stk}, m_selectors);
   if (idx < 0)
@@ -118,7 +130,7 @@ show_expects (std::string const &name, std::vector <selector> selectors,
 }
 
 void
-overload_instance::show_error (std::string const &name, selector profile)
+overload_instance::show_error (std::string const &name, selector profile) const
 {
   return show_expects (name, m_selectors, profile);
 }
@@ -147,85 +159,84 @@ overload_tab::instantiate ()
 }
 
 
-struct overload_op::pimpl
+struct overload_op::state
 {
-  std::shared_ptr <op> m_upstream;
-  overload_instance m_ovl_inst;
-  std::shared_ptr <op> m_op;
+  op *m_op;
 
-  void
-  reset_me ()
-  {
-    m_op = nullptr;
-  }
-
-  pimpl (std::shared_ptr <op> upstream, overload_instance ovl_inst)
-    : m_upstream {upstream}
-    , m_ovl_inst {ovl_inst}
-    , m_op {nullptr}
+  state ()
+    : m_op {nullptr}
   {}
-
-  stack::uptr
-  next (op &self)
-  {
-#if 0
-    while (true)
-      {
-	while (m_op == nullptr)
-	  {
-	    if (auto stk = m_upstream->next ())
-	      {
-		auto ovl = m_ovl_inst.find_exec (*stk);
-		if (std::get <0> (ovl) == nullptr)
-		  m_ovl_inst.show_error (self.name (), selector {*stk});
-		else
-		  {
-		    m_op = std::get <1> (ovl);
-		    m_op->reset ();
-		    std::get <0> (ovl)->set_next (std::move (stk));
-		  }
-	      }
-	    else
-	      return nullptr;
-	  }
-
-	if (auto stk = m_op->next ())
-	  return stk;
-
-	reset_me ();
-      }
-#else
-  return nullptr;
-#endif
-  }
-
-  void
-  reset ()
-  {
-    reset_me ();
-    m_upstream->reset ();
-  }
 };
 
 overload_op::overload_op (std::shared_ptr <op> upstream,
 			  overload_instance ovl_inst)
-  : m_pimpl {std::make_unique <pimpl> (upstream, ovl_inst)}
+  : m_upstream {upstream}
+  , m_ovl_inst {ovl_inst}
 {}
 
-overload_op::~overload_op ()
-{}
-
-stack::uptr
-overload_op::next ()
+size_t
+overload_op::reserve () const
 {
-  return m_pimpl->next (*this);
+  return m_upstream->reserve () + m_ovl_inst.max_reserve () + sizeof (state);
 }
 
 void
-overload_op::reset ()
+overload_op::state_con (void *buf) const
 {
-  return m_pimpl->reset ();
+  state *st = this_state <state> (buf);
+  new (st) state {};
+  // next() manages state for the invoked overload.
+  auto ptr = reinterpret_cast <uint8_t *> (op::next_state (st));
+  ptr += m_ovl_inst.max_reserve ();
+  m_upstream->state_con (ptr);
 }
+
+void
+overload_op::state_des (void *buf) const
+{
+  state *st = this_state <state> (buf);
+  // next() manages state for the invoked overload.
+  auto ptr = reinterpret_cast <uint8_t *> (op::next_state (st));
+  ptr += m_ovl_inst.max_reserve ();
+  m_upstream->state_des (ptr);
+  st->~state ();
+}
+
+stack::uptr
+overload_op::next (void *buf) const
+{
+  state *st = this_state <state> (buf);
+  auto nst = reinterpret_cast <uint8_t *> (op::next_state (st));
+  auto ust = nst + m_ovl_inst.max_reserve ();
+  while (true)
+    {
+      while (st->m_op == nullptr)
+	{
+	  if (auto stk = m_upstream->next (ust))
+	    {
+	      auto ovl = m_ovl_inst.find_exec (*stk);
+	      if (std::get <0> (ovl) == nullptr)
+		m_ovl_inst.show_error (name (), selector {*stk});
+	      else
+		{
+		  st->m_op = std::get <1> (ovl);
+		  st->m_op->state_con (nst);
+		  void *end_nst = nst + std::get <2> (ovl);
+		  std::get <0> (ovl)->set_next (end_nst, std::move (stk));
+		}
+	    }
+	  else
+	    return nullptr;
+	}
+
+      if (auto stk = st->m_op->next (nst))
+	return stk;
+
+      st->m_op->state_des (op::next_state (st));
+      st->m_op = nullptr;
+    }
+}
+
 
 pred_result
 overload_pred::result (stack &stk)

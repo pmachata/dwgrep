@@ -1,4 +1,5 @@
 /*
+   Copyright (C) 2017 Petr Machata
    Copyright (C) 2014, 2015 Red Hat, Inc.
    This file is part of dwgrep.
 
@@ -71,7 +72,7 @@ value_str::cmp (value const &that) const
 
 value_str
 op_add_str::operate (std::unique_ptr <value_str> a,
-		     std::unique_ptr <value_str> b)
+		     std::unique_ptr <value_str> b) const
 {
   return value_str {a->get_string () + b->get_string (), 0};
 }
@@ -97,7 +98,7 @@ Using formatting strings may be a better way to concatenate strings::
 
 
 value_cst
-op_length_str::operate (std::unique_ptr <value_str> a)
+op_length_str::operate (std::unique_ptr <value_str> a) const
 {
   constant t {a->get_string ().length (), &dec_constant_dom};
   return value_cst {t, 0};

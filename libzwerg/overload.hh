@@ -1,4 +1,5 @@
 /*
+   Copyright (C) 2017 Petr Machata
    Copyright (C) 2014 Red Hat, Inc.
    This file is part of dwgrep.
 
@@ -68,8 +69,9 @@
 class overload_instance
 {
   std::vector <selector> m_selectors;
-  std::vector <std::pair <std::shared_ptr <op_origin>,
-			  std::shared_ptr <op>>> m_execs;
+  std::vector <std::tuple <std::shared_ptr <op_origin>,
+			   std::shared_ptr <op>,
+			   size_t>> m_execs;
   std::vector <std::shared_ptr <pred>> m_preds;
 
 public:
@@ -77,12 +79,11 @@ public:
 			<std::tuple <selector,
 				     std::shared_ptr <builtin>>> const &stencil);
 
-  std::pair <std::shared_ptr <op_origin>, std::shared_ptr <op>>
-    find_exec (stack &stk);
+  size_t max_reserve () const;
+  std::tuple <op_origin *, op *, size_t> find_exec (stack &stk) const;
+  std::shared_ptr <pred> find_pred (stack &stk) const;
 
-  std::shared_ptr <pred> find_pred (stack &stk);
-
-  void show_error (std::string const &name, selector profile);
+  void show_error (std::string const &name, selector profile) const;
 };
 
 struct overload_tab
@@ -110,15 +111,17 @@ public:
 class overload_op
   : public op
 {
-  class pimpl;
-  std::unique_ptr <pimpl> m_pimpl;
+  class state;
+  std::shared_ptr <op> m_upstream;
+  overload_instance m_ovl_inst;
 
 public:
   overload_op (std::shared_ptr <op> upstream, overload_instance ovl_inst);
-  ~overload_op ();
 
-  stack::uptr next () override final;
-  void reset () override final;
+  size_t reserve () const override;
+  void state_con (void *buf) const override;
+  void state_des (void *buf) const override;
+  stack::uptr next (void *buf) const override final;
 };
 
 class overload_pred
@@ -392,20 +395,20 @@ struct op_overload
   template <size_t... I>
   std::unique_ptr <RT>
   call_operate (std::index_sequence <I...>,
-		std::tuple <std::unique_ptr <VT>...> args)
+		std::tuple <std::unique_ptr <VT>...> args) const
   {
     return operate (std::move (std::get <I> (args))...);
   }
 
 public:
   op_overload (std::shared_ptr <op> upstream)
-    : stub_op {upstream}
+    : stub_op {upstream, 0}
   {}
 
   stack::uptr
-  next () override final
+  next (void *buf) const override final
   {
-    while (auto stk = this->m_upstream->next ())
+    while (auto stk = this->m_upstream->next (buf))
       if (auto nv = call_operate
 		(std::index_sequence_for <VT...> {},
 		 op_overload_impl <VT...>::template collect <0, VT...> (*stk)))
@@ -417,7 +420,7 @@ public:
     return nullptr;
   }
 
-  virtual std::unique_ptr <RT> operate (std::unique_ptr <VT>... vals) = 0;
+  virtual std::unique_ptr <RT> operate (std::unique_ptr <VT>... vals) const = 0;
 
   static builtin_protomap
   protomap ()
@@ -436,20 +439,20 @@ struct op_once_overload
   template <size_t... I>
   RT
   call_operate (std::index_sequence <I...>,
-		std::tuple <std::unique_ptr <VT>...> args)
+		std::tuple <std::unique_ptr <VT>...> args) const
   {
     return operate (std::move (std::get <I> (args))...);
   }
 
 public:
   op_once_overload (std::shared_ptr <op> upstream)
-    : stub_op {upstream}
+    : stub_op {upstream, 0}
   {}
 
   stack::uptr
-  next () override final
+  next (void *buf) const override final
   {
-    if (auto stk = this->m_upstream->next ())
+    if (auto stk = this->m_upstream->next (buf))
       {
 	auto ret = call_operate
 		(std::index_sequence_for <VT...> {},
@@ -461,7 +464,7 @@ public:
     return nullptr;
   }
 
-  virtual RT operate (std::unique_ptr <VT>... vals) = 0;
+  virtual RT operate (std::unique_ptr <VT>... vals) const = 0;
 
   static builtin_protomap
   protomap ()
