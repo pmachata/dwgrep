@@ -193,7 +193,7 @@ strings::
 
 // elem
 std::unique_ptr <value_producer <value_str>>
-op_elem_str::operate (std::unique_ptr <value_str> a)
+op_elem_str::operate (std::unique_ptr <value_str> a) const
 {
   return std::make_unique <str_elem_producer> (std::move (a));
 }
@@ -207,7 +207,7 @@ op_elem_str::docstring ()
 
 // relem
 std::unique_ptr <value_producer <value_str>>
-op_relem_str::operate (std::unique_ptr <value_str> a)
+op_relem_str::operate (std::unique_ptr <value_str> a) const
 {
   return std::make_unique <str_relem_producer> (std::move (a));
 }

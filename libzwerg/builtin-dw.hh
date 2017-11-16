@@ -56,7 +56,7 @@ struct op_unit_dwarf
   using op_yielding_overload::op_yielding_overload;
 
   std::unique_ptr <value_producer <value_cu>>
-  operate (std::unique_ptr <value_dwarf> a) override;
+  operate (std::unique_ptr <value_dwarf> a) const override;
 
   static std::string docstring ();
 };
@@ -87,7 +87,7 @@ struct op_entry_cu
   using op_yielding_overload::op_yielding_overload;
 
   std::unique_ptr <value_producer <value_die>>
-  operate (std::unique_ptr <value_cu> a) override;
+  operate (std::unique_ptr <value_cu> a) const override;
 
   static std::string docstring ();
 };
@@ -98,7 +98,7 @@ struct op_entry_dwarf
   using op_yielding_overload::op_yielding_overload;
 
   std::unique_ptr <value_producer <value_die>>
-  operate (std::unique_ptr <value_dwarf> a) override;
+  operate (std::unique_ptr <value_dwarf> a) const override;
 
   static std::string docstring ();
 };
@@ -109,7 +109,7 @@ struct op_child_die
   using op_yielding_overload::op_yielding_overload;
 
   std::unique_ptr <value_producer <value_die>>
-  operate (std::unique_ptr <value_die> a) override;
+  operate (std::unique_ptr <value_die> a) const override;
 
   static std::string docstring ();
 };
@@ -120,7 +120,7 @@ struct op_elem_loclist_elem
   using op_yielding_overload::op_yielding_overload;
 
   std::unique_ptr <value_producer <value_loclist_op>>
-  operate (std::unique_ptr <value_loclist_elem> a) override;
+  operate (std::unique_ptr <value_loclist_elem> a) const override;
 
   static std::string docstring ();
 };
@@ -131,7 +131,7 @@ struct op_relem_loclist_elem
   using op_yielding_overload::op_yielding_overload;
 
   std::unique_ptr <value_producer <value_loclist_op>>
-  operate (std::unique_ptr <value_loclist_elem> a) override;
+  operate (std::unique_ptr <value_loclist_elem> a) const override;
 
   static std::string docstring ();
 };
@@ -142,7 +142,7 @@ struct op_attribute_die
   using op_yielding_overload::op_yielding_overload;
 
   std::unique_ptr <value_producer <value_attr>>
-  operate (std::unique_ptr <value_die> a) override;
+  operate (std::unique_ptr <value_die> a) const override;
 
   static std::string docstring ();
 };
@@ -281,7 +281,7 @@ struct op_value_attr
   using op_yielding_overload::op_yielding_overload;
 
   std::unique_ptr <value_producer <value>>
-  operate (std::unique_ptr <value_attr> a) override;
+  operate (std::unique_ptr <value_attr> a) const override;
 
   static std::string docstring ();
 };
@@ -292,7 +292,7 @@ struct op_value_loclist_op
   using op_yielding_overload::op_yielding_overload;
 
   std::unique_ptr <value_producer <value>>
-  operate (std::unique_ptr <value_loclist_op> a) override;
+  operate (std::unique_ptr <value_loclist_op> a) const override;
 
   static std::string docstring ();
 };
@@ -447,7 +447,7 @@ public:
   {}
 
   std::unique_ptr <value_producer <value>>
-  operate (std::unique_ptr <value_die> a);
+  operate (std::unique_ptr <value_die> a) const;
 
   static std::string docstring ();
 };

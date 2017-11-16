@@ -88,6 +88,8 @@ op_apply::state_con (void *buf) const
 void
 op_apply::state_des (void *buf) const
 {
+  // xxx this looks like something that's written again and again, extract it
+  // somewhere
   state *st = op::this_state <state> (buf);
   m_upstream->state_des (op::next_state (st));
   st->~state ();
@@ -100,7 +102,7 @@ op_apply::next (void *buf) const
   while (true)
     {
       while (st->m_substate == nullptr)
-	if (auto stk = m_upstream->next (st + 1))
+	if (auto stk = m_upstream->next (op::next_state (st)))
 	  {
 	    if (! stk->top ().is <value_closure> ())
 	      {

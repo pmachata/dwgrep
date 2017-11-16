@@ -39,7 +39,7 @@ struct op_symbol_dwarf
   using op_yielding_overload::op_yielding_overload;
 
   std::unique_ptr <value_producer <value_symbol>>
-  operate (std::unique_ptr <value_dwarf> val) override;
+  operate (std::unique_ptr <value_dwarf> val) const override;
 
   static std::string docstring ();
 };

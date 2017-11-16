@@ -119,7 +119,7 @@ namespace
 }
 
 std::unique_ptr <value_producer <value_cu>>
-op_unit_dwarf::operate (std::unique_ptr <value_dwarf> a)
+op_unit_dwarf::operate (std::unique_ptr <value_dwarf> a) const
 {
   return std::make_unique <dwarf_unit_producer> (a->get_dwctx (),
 						 a->get_doneness ());
@@ -355,7 +355,7 @@ namespace
 
 
 std::unique_ptr <value_producer <value_die>>
-op_entry_cu::operate (std::unique_ptr <value_cu> a)
+op_entry_cu::operate (std::unique_ptr <value_cu> a) const
 {
   return make_cu_entry_producer (a->get_dwctx (), a->get_cu (),
 				 a->get_doneness ());
@@ -439,7 +439,7 @@ namespace
 }
 
 std::unique_ptr <value_producer <value_die>>
-op_entry_dwarf::operate (std::unique_ptr <value_dwarf> a)
+op_entry_dwarf::operate (std::unique_ptr <value_dwarf> a) const
 {
   return std::make_unique <dwarf_entry_producer> (a->get_dwctx (),
 						  a->get_doneness ());
@@ -474,7 +474,7 @@ namespace
 
 
 std::unique_ptr <value_producer <value_die>>
-op_child_die::operate (std::unique_ptr <value_die> a)
+op_child_die::operate (std::unique_ptr <value_die> a) const
 {
   return make_die_child_producer (a->get_dwctx (), a->get_die (),
 				  a->get_doneness ());
@@ -574,7 +574,7 @@ Takes a location expression on TOS and yields individual operators::
 }
 
 std::unique_ptr <value_producer <value_loclist_op>>
-op_elem_loclist_elem::operate (std::unique_ptr <value_loclist_elem> a)
+op_elem_loclist_elem::operate (std::unique_ptr <value_loclist_elem> a) const
 {
   return std::make_unique <elem_loclist_producer> (std::move (a), true);
 }
@@ -586,7 +586,7 @@ op_elem_loclist_elem::docstring ()
 }
 
 std::unique_ptr <value_producer <value_loclist_op>>
-op_relem_loclist_elem::operate (std::unique_ptr <value_loclist_elem> a)
+op_relem_loclist_elem::operate (std::unique_ptr <value_loclist_elem> a) const
 {
   return std::make_unique <elem_loclist_producer> (std::move (a), false);
 }
@@ -715,7 +715,7 @@ namespace
 }
 
 std::unique_ptr <value_producer <value_attr>>
-op_attribute_die::operate (std::unique_ptr <value_die> a)
+op_attribute_die::operate (std::unique_ptr <value_die> a) const
 {
   return std::make_unique <attribute_producer> (std::move (a));
 }
@@ -1263,7 +1263,7 @@ the CU DIE of this DIE's context.
 // value
 
 std::unique_ptr <value_producer <value>>
-op_value_attr::operate (std::unique_ptr <value_attr> a)
+op_value_attr::operate (std::unique_ptr <value_attr> a) const
 {
   return at_value (a->get_dwctx (), a->get_value_die (), a->get_attr ());
 }
@@ -1288,7 +1288,7 @@ expressions::
 
 
 std::unique_ptr <value_producer <value>>
-op_value_loclist_op::operate (std::unique_ptr <value_loclist_op> a)
+op_value_loclist_op::operate (std::unique_ptr <value_loclist_op> a) const
 {
   return std::make_unique <value_producer_cat <value>>
     (dwop_number (a->get_dwctx (), a->get_attr (), a->get_dwop ()),
@@ -1761,7 +1761,7 @@ namespace
 }
 
 std::unique_ptr <value_producer <value>>
-op_atval_die::operate (std::unique_ptr <value_die> a)
+op_atval_die::operate (std::unique_ptr <value_die> a) const
 {
   Dwarf_Attribute attr;
   auto r = find_attribute (a->get_die (), m_atname, a->get_doneness (),

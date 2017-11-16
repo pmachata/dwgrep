@@ -98,7 +98,7 @@ namespace
 }
 
 std::unique_ptr <value_producer <value_symbol>>
-op_symbol_dwarf::operate (std::unique_ptr <value_dwarf> val)
+op_symbol_dwarf::operate (std::unique_ptr <value_dwarf> val) const
 {
   return std::make_unique <symbol_producer> (val->get_dwctx (),
 					     val->get_doneness ());

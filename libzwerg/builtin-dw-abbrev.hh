@@ -40,7 +40,7 @@ struct op_entry_abbrev_unit
   using op_yielding_overload::op_yielding_overload;
 
   std::unique_ptr <value_producer <value_abbrev>>
-  operate (std::unique_ptr <value_abbrev_unit> a) override;
+  operate (std::unique_ptr <value_abbrev_unit> a) const override;
 
   static std::string docstring ();
 };
@@ -51,7 +51,7 @@ struct op_attribute_abbrev
   using op_yielding_overload::op_yielding_overload;
 
   std::unique_ptr <value_producer <value_abbrev_attr>>
-  operate (std::unique_ptr <value_abbrev> a) override;
+  operate (std::unique_ptr <value_abbrev> a) const override;
 
   static std::string docstring ();
 };
@@ -126,7 +126,7 @@ struct op_abbrev_dwarf
   using op_yielding_overload::op_yielding_overload;
 
   std::unique_ptr <value_producer <value_abbrev_unit>>
-  operate (std::unique_ptr <value_dwarf> a) override;
+  operate (std::unique_ptr <value_dwarf> a) const override;
 
   static std::string docstring ();
 };

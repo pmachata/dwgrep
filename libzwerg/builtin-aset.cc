@@ -101,7 +101,7 @@ Example::
 }
 
 std::unique_ptr <value_producer <value_cst>>
-op_elem_aset::operate (std::unique_ptr <value_aset> val)
+op_elem_aset::operate (std::unique_ptr <value_aset> val) const
 {
   return std::make_unique <elem_aset_producer>
     (val->get_coverage (), true);
@@ -114,7 +114,7 @@ op_elem_aset::docstring ()
 }
 
 std::unique_ptr <value_producer <value_cst>>
-op_relem_aset::operate (std::unique_ptr <value_aset> val)
+op_relem_aset::operate (std::unique_ptr <value_aset> val) const
 {
   return std::make_unique <elem_aset_producer>
     (val->get_coverage (), false);
@@ -394,7 +394,7 @@ namespace
 }
 
 std::unique_ptr <value_producer <value_aset>>
-op_range_aset::operate (std::unique_ptr <value_aset> a)
+op_range_aset::operate (std::unique_ptr <value_aset> a) const
 {
   return std::make_unique <aset_range_producer> (std::move (a));
 }

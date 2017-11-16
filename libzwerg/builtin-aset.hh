@@ -40,7 +40,7 @@ struct op_elem_aset
   using op_yielding_overload::op_yielding_overload;
 
   std::unique_ptr <value_producer <value_cst>>
-  operate (std::unique_ptr <value_aset> val) override;
+  operate (std::unique_ptr <value_aset> val) const override;
 
   static std::string docstring ();
 };
@@ -51,7 +51,7 @@ struct op_relem_aset
   using op_yielding_overload::op_yielding_overload;
 
   std::unique_ptr <value_producer <value_cst>>
-  operate (std::unique_ptr <value_aset> val) override;
+  operate (std::unique_ptr <value_aset> val) const override;
 
   static std::string docstring ();
 };
@@ -148,7 +148,7 @@ struct op_range_aset
   using op_yielding_overload::op_yielding_overload;
 
   std::unique_ptr <value_producer <value_aset>>
-  operate (std::unique_ptr <value_aset> a) override;
+  operate (std::unique_ptr <value_aset> a) const override;
 
   static std::string docstring ();
 };

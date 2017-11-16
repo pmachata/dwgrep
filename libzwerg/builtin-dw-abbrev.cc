@@ -74,7 +74,7 @@ namespace
 }
 
 std::unique_ptr <value_producer <value_abbrev>>
-op_entry_abbrev_unit::operate (std::unique_ptr <value_abbrev_unit> a)
+op_entry_abbrev_unit::operate (std::unique_ptr <value_abbrev_unit> a) const
 {
   return std::make_unique <producer_entry_abbrev_unit> (std::move (a));
 }
@@ -138,7 +138,7 @@ namespace
 }
 
 std::unique_ptr <value_producer <value_abbrev_attr>>
-op_attribute_abbrev::operate (std::unique_ptr <value_abbrev> a)
+op_attribute_abbrev::operate (std::unique_ptr <value_abbrev> a) const
 {
   return std::make_unique <producer_attribute_abbrev> (std::move (a));
 }
@@ -407,7 +407,7 @@ namespace
 }
 
 std::unique_ptr <value_producer <value_abbrev_unit>>
-op_abbrev_dwarf::operate (std::unique_ptr <value_dwarf> a)
+op_abbrev_dwarf::operate (std::unique_ptr <value_dwarf> a) const
 {
   return std::make_unique <producer_abbrev_dwarf> (a->get_dwctx ());
 }

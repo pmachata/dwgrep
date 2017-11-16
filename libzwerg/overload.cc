@@ -50,7 +50,8 @@ overload_instance::overload_instance
 	origin = nullptr;
 
       m_selectors.push_back (std::get <0> (v));
-      m_execs.push_back (std::make_tuple (origin, op, op->reserve ()));
+      size_t op_reserve = op != nullptr ? op->reserve () : 0;
+      m_execs.push_back (std::make_tuple (origin, op, op_reserve));
       m_preds.push_back (std::move (pred));
     }
 }

@@ -88,7 +88,7 @@ struct op_elem_str
   using op_yielding_overload::op_yielding_overload;
 
   std::unique_ptr <value_producer <value_str>>
-  operate (std::unique_ptr <value_str> a) override;
+  operate (std::unique_ptr <value_str> a) const override;
 
   static std::string docstring ();
 };
@@ -99,7 +99,7 @@ struct op_relem_str
   using op_yielding_overload::op_yielding_overload;
 
   std::unique_ptr <value_producer <value_str>>
-  operate (std::unique_ptr <value_str> a) override;
+  operate (std::unique_ptr <value_str> a) const override;
 
   static std::string docstring ();
 };

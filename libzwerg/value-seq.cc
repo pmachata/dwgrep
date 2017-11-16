@@ -257,7 +257,7 @@ namespace
 }
 
 std::unique_ptr <value_producer <value>>
-op_elem_seq::operate (std::unique_ptr <value_seq> a)
+op_elem_seq::operate (std::unique_ptr <value_seq> a) const
 {
   return std::make_unique <seq_elem_producer> (a->get_seq ());
 }
@@ -302,7 +302,7 @@ op_elem_seq::docstring ()
 }
 
 std::unique_ptr <value_producer <value>>
-op_relem_seq::operate (std::unique_ptr <value_seq> a)
+op_relem_seq::operate (std::unique_ptr <value_seq> a) const
 {
   return std::make_unique <seq_relem_producer> (a->get_seq ());
 }

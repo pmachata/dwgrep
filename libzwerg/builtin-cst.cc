@@ -262,9 +262,9 @@ as T_CONST, T_DIE, T_STR, etc.).
 }
 
 stack::uptr
-op_pos::next ()
+op_pos::next (void *buf) const
 {
-  if (auto stk = m_upstream->next ())
+  if (auto stk = m_upstream->next (buf))
     {
       auto vp = stk->pop ();
       static numeric_constant_dom_t pos_dom_obj ("pos");

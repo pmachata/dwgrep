@@ -124,7 +124,7 @@ struct op_pos
   : public inner_op
 {
   using inner_op::inner_op;
-  stack::uptr next () override;
+  stack::uptr next (void *buf) const override;
 
   static std::string docstring ();
 };

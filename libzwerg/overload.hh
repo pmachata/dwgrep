@@ -483,62 +483,76 @@ class op_yielding_overload
   template <size_t... I>
   std::unique_ptr <value_producer <RT>>
   call_operate (std::index_sequence <I...>,
-		std::tuple <std::unique_ptr <VT>...> args)
+		std::tuple <std::unique_ptr <VT>...> args) const
   {
     return operate (std::move (std::get <I> (args))...);
   }
 
-  stack::uptr m_stk;
-  std::unique_ptr <value_producer <RT>> m_prod;
-
-  void
-  reset_me ()
+  struct state
   {
-    m_prod = nullptr;
-    m_stk = nullptr;
-  }
+    stack::uptr m_stk;
+    std::unique_ptr <value_producer <RT>> m_prod;
+  };
 
 public:
   op_yielding_overload (std::shared_ptr <op> upstream)
     : stub_op {upstream}
   {}
 
-  stack::uptr
-  next () override final
+  size_t
+  reserve () const override final
   {
+    return m_upstream->reserve () + sizeof (state);
+  }
+
+  void
+  state_con (void *buf) const override final
+  {
+    state *st = this_state <state> (buf);
+    new (st) state {};
+    m_upstream->state_con (op::next_state (st));
+  }
+
+  void
+  state_des (void *buf) const override final
+  {
+    state *st = this_state <state> (buf);
+    st->~state ();
+    m_upstream->state_des (op::next_state (st));
+  }
+
+  stack::uptr
+  next (void *buf) const override final
+  {
+    state *st = this_state <state> (buf);
+
     while (true)
       {
-	while (m_prod == nullptr)
-	  if (auto stk = this->m_upstream->next ())
+	while (st->m_prod == nullptr)
+	  if (auto stk = this->m_upstream->next (op::next_state (st)))
 	    {
-	      m_prod = call_operate
+	      st->m_prod = call_operate
 		(std::index_sequence_for <VT...> {},
 		 op_overload_impl <VT...>::template collect <0, VT...> (*stk));
-	      m_stk = std::move (stk);
+	      st->m_stk = std::move (stk);
 	    }
 	  else
 	    return nullptr;
 
-	if (auto v = m_prod->next ())
+	if (auto v = st->m_prod->next ())
 	  {
-	    auto ret = std::make_unique <stack> (*m_stk);
+	    auto ret = std::make_unique <stack> (*st->m_stk);
 	    ret->push (std::move (v));
 	    return ret;
 	  }
 
-	reset_me ();
+	st->m_prod = nullptr;
+	st->m_stk = nullptr;
       }
   }
 
-  void
-  reset () override
-  {
-    reset_me ();
-    stub_op::reset ();
-  }
-
   virtual std::unique_ptr <value_producer <RT>>
-	operate (std::unique_ptr <VT>... vals) = 0;
+	operate (std::unique_ptr <VT>... vals) const = 0;
 
   static builtin_protomap
   protomap ()
