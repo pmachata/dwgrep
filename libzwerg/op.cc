@@ -904,140 +904,133 @@ op_f_debug::reset ()
 }
 
 
-void
-op_bind::reset ()
+struct op_bind::state
 {
-  m_upstream->reset ();
-  m_current = nullptr;
+  std::unique_ptr <value> m_current;
+};
+
+op_bind::op_bind (std::shared_ptr <op> upstream)
+  : inner_op {upstream, sizeof (state)}
+{}
+
+std::string
+op_bind::name () const
+{
+  std::stringstream ss;
+  ss << "bind<" << this << ">";
+  return ss.str ();
+}
+
+void
+op_bind::state_con (void *buf) const
+{
+  state *st = this_state <state> (buf);
+  new (st) state {};
+  m_upstream->state_con (next_state <state> (st));
+}
+
+void
+op_bind::state_des (void *buf) const
+{
+  state *st = this_state <state> (buf);
+  m_upstream->state_des (next_state <state> (st));
+  st->~state ();
 }
 
 stack::uptr
-op_bind::next ()
+op_bind::next (void *buf) const
 {
-  if (auto stk = m_upstream->next ())
+  state *st = this_state <state> (buf);
+  if (auto stk = m_upstream->next (next_state (st)))
     {
-      m_current = stk->pop ();
+      st->m_current = stk->pop ();
       return stk;
     }
   return nullptr;
 }
 
-std::string
-op_bind::name () const
-{
-  return std::string ("bind");
-}
-
 std::unique_ptr <value>
-op_bind::current () const
+op_bind::current (void *buf_end) const
 {
-  return m_current->clone ();
+  auto ptr = reinterpret_cast <uint8_t *> (buf_end);
+  state *st = this_state <state> (ptr - reserve ());
+  return st->m_current->clone ();
 }
 
 
-struct op_read::pimpl
+struct op_read::state
 {
-  std::shared_ptr <op> m_upstream;
-  std::shared_ptr <op_bind> m_src;
   std::shared_ptr <op> m_apply;
-
-  pimpl (std::shared_ptr <op> upstream,
-         std::shared_ptr <op_bind> src)
-    : m_upstream {upstream}
-    , m_src {src}
-  {}
-
-  void
-  reset_me ()
-  {
-    m_apply = nullptr;
-  }
-
-  stack::uptr
-  do_next ()
-  {
-#if 0
-    while (true)
-      {
-	if (m_apply == nullptr)
-	  {
-	    if (auto stk = m_upstream->next ())
-	      {
-		auto val = m_src->current ();
-		bool is_closure = val->is <value_closure> ();
-		stk->push (std::move (val));
-
-		// If a referenced value is not a closure, then the
-		// result is just that one value.
-		if (! is_closure)
-		  return stk;
-
-		// If it's a closure, then this is a function
-		// reference.  We need to execute it and fetch all the
-		// values.
-
-		auto origin = std::make_shared <op_origin> (std::move (stk));
-		m_apply = std::make_shared <op_apply> (origin);
-		std::cerr << m_apply.get () << " is a new apply" << std::endl;
-	      }
-	    else
-	      return nullptr;
-	  }
-
-	assert (m_apply != nullptr);
-	if (auto stk = m_apply->next ())
-	  return stk;
-
-	reset_me ();
-      }
-#else
-  return nullptr;
-#endif
-  }
-
-  stack::uptr
-  next ()
-  {
-    std::cerr << this << " op_read next" << std::endl;
-    auto ret = do_next ();
-    std::cerr << this << " /op_read next" << std::endl;
-    return ret;
-  }
-
-  void
-  reset ()
-  {
-    std::cerr << this << " op_read reset" << std::endl;
-    reset_me ();
-    m_upstream->reset ();
-    std::cerr << this << " /op_read reset" << std::endl;
-  }
 };
 
-op_read::op_read (std::shared_ptr <op> upstream,
-                  std::shared_ptr <op_bind> src)
-  : m_pimpl {std::make_unique <pimpl> (upstream, src)}
+op_read::op_read (std::shared_ptr <op> upstream, op_bind &src)
+  : inner_op {upstream, sizeof (state)}
+  , m_src {src}
 {}
-
-op_read::~op_read ()
-{}
-
-void
-op_read::reset ()
-{
-  m_pimpl->reset ();
-}
-
-stack::uptr
-op_read::next ()
-{
-  return m_pimpl->next ();
-}
 
 std::string
 op_read::name () const
 {
-  return std::string ("read");
+  std::stringstream ss;
+  ss << "read<" << &m_src << ">";
+  return ss.str ();
+}
+
+void
+op_read::state_con (void *buf) const
+{
+  state *st = this_state <state> (buf);
+  new (st) state {};
+  m_upstream->state_con (next_state <state> (st));
+}
+
+void
+op_read::state_des (void *buf) const
+{
+  state *st = this_state <state> (buf);
+  m_upstream->state_des (next_state <state> (st));
+  st->~state ();
+}
+
+stack::uptr
+op_read::next (void *buf) const
+{
+  state *st = this_state <state> (buf);
+  auto ptr = reinterpret_cast <uint8_t *> (buf);
+
+  while (true)
+    {
+      if (st->m_apply == nullptr)
+	{
+	  if (auto stk = m_upstream->next (next_state (st)))
+	    {
+	      auto val = m_src.current (ptr + reserve ());
+	      bool is_closure = val->is <value_closure> ();
+	      stk->push (std::move (val));
+
+	      // If a referenced value is not a closure, then the
+	      // result is just that one value.
+	      if (! is_closure)
+		return stk;
+
+	      // If it's a closure, then this is a function
+	      // reference.  We need to execute it and fetch all the
+	      // values.
+
+	      assert (! "implicit apply in read not yet implemented");
+	      //auto origin = std::make_shared <op_origin> (std::move (stk));
+	      //st->m_apply = std::make_shared <op_apply> (origin);
+	    }
+	  else
+	    return nullptr;
+	}
+
+      assert (st->m_apply != nullptr);
+      if (auto stk = st->m_apply->next ())//xxx
+	return stk;
+
+      st->m_apply = nullptr;
+    }
 }
 
 
@@ -1045,14 +1038,16 @@ std::unique_ptr <value>
 pseudo_bind::fetch (unsigned assert_id) const
 {
   assert (m_id == assert_id);
-  return m_src->current ();
+  assert (! "pseudo_bind not implemented");
+  return m_src->current (nullptr); // xxx
 }
 
 std::unique_ptr <value>
-pseudo_bind::current () const
+pseudo_bind::current (void *buf_end) const
 {
   value_closure *closure = *m_rdv;
   assert (closure != nullptr);
+  assert (! "pseudo_bind not implemented");
   return closure->get_env (m_id).clone ();
 }
 

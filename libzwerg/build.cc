@@ -335,7 +335,7 @@ namespace
       case tree_type::READ:
         {
           auto src = bn.find (t.str ());
-          return std::make_shared <op_read> (upstream, src);
+          return std::make_shared <op_read> (upstream, *src);
         }
 
       case tree_type::F_DEBUG:

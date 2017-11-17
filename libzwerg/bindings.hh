@@ -38,6 +38,8 @@ struct op_bind;
 
 class bindings
 {
+  // xxx looks like it should be an op_bind&, since the goal is not to keep them
+  // alive.
   std::map <std::string, std::shared_ptr <op_bind>> m_bindings;
   bindings *m_super;
 

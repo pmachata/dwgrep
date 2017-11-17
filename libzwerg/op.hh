@@ -527,38 +527,34 @@ public:
 };
 
 class op_bind
-  : public op
+  : public inner_op
 {
-  std::shared_ptr <op> m_upstream;
-  std::unique_ptr <value> m_current;
+  struct state;
 
 public:
-  explicit op_bind (std::shared_ptr <op> upstream,
-		    std::unique_ptr <value> current = nullptr)
-    : m_upstream {upstream}
-    , m_current {std::move (current)}
-  {}
+  explicit op_bind (std::shared_ptr <op> upstream);
 
-  stack::uptr next () override;
-  void reset () override;
   std::string name () const override;
+  void state_con (void *buf) const override;
+  void state_des (void *buf) const override;
+  stack::uptr next (void *buf) const override;
 
-  virtual std::unique_ptr <value> current () const;
+  virtual std::unique_ptr <value> current (void *buf_end) const;
 };
 
 class op_read
-  : public op
+  : public inner_op
 {
-  class pimpl;
-  std::unique_ptr <pimpl> m_pimpl;
+  class state;
+  op_bind &m_src;
 
 public:
-  op_read (std::shared_ptr <op> upstream, std::shared_ptr <op_bind> src);
-  ~op_read ();
+  op_read (std::shared_ptr <op> upstream, op_bind &src);
 
-  stack::uptr next () override;
-  void reset () override;
   std::string name () const override;
+  void state_con (void *buf) const override;
+  void state_des (void *buf) const override;
+  stack::uptr next (void *buf) const override;
 };
 
 // ---------- closure support -----------------
@@ -578,14 +574,14 @@ class pseudo_bind
 
 public:
   pseudo_bind (rendezvous rdv, std::shared_ptr <op_bind> src, unsigned id)
-    : op_bind {nullptr, nullptr}
+    : op_bind {nullptr}
     , m_rdv {rdv}
     , m_src {src}
     , m_id {id}
   {}
 
   std::unique_ptr <value> fetch (unsigned assert_id) const;
-  std::unique_ptr <value> current () const override;
+  std::unique_ptr <value> current (void *buf_end) const override;
 };
 
 struct op_lex_closure
