@@ -210,7 +210,7 @@ namespace
 
       case tree_type::SUBX_EVAL:
         {
-          auto origin = std::make_shared <op_origin> ();
+          auto origin = std::make_shared <op_inner_origin> (upstream);
           auto op = build_exec (t.child (0), origin, bn);
           return std::make_shared <op_subx> (upstream, origin, op,
                                              t.cst ().value ().uval ());

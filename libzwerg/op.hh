@@ -138,6 +138,24 @@ public:
   size_t reserve () const override;
   void state_con (void *buf) const override;
   void state_des (void *buf) const override;
+
+  template <class State>
+  void
+  simple_state_con (void *buf) const
+  {
+    State *st = this_state <State> (buf);
+    new (st) State {};
+    m_upstream->state_con (next_state (st));
+  }
+
+  template <class State>
+  void
+  simple_state_des (void *buf) const
+  {
+    State *st = this_state <State> (buf);
+    m_upstream->state_des (next_state (st));
+    st->~State ();
+  }
 };
 
 // Class pred is for holding predicates.  These don't alter the
@@ -173,6 +191,23 @@ public:
   std::string name () const override;
 
   size_t reserve () const override;
+  void state_con (void *buf) const override;
+  void state_des (void *buf) const override;
+  stack::uptr next (void *buf) const override;
+
+  void set_next (void *buf_end, stack::uptr s) const;
+};
+
+// xxx
+class op_inner_origin
+  : public inner_op
+{
+  struct state;
+
+public:
+  explicit op_inner_origin (std::shared_ptr <op> upstream);
+
+  std::string name () const override;
   void state_con (void *buf) const override;
   void state_des (void *buf) const override;
   stack::uptr next (void *buf) const override;
@@ -495,20 +530,24 @@ public:
 class op_subx
   : public op
 {
-  class pimpl;
-  std::unique_ptr <pimpl> m_pimpl;
+  class state;
+
+  std::shared_ptr <op> m_upstream;
+  std::shared_ptr <op_inner_origin> m_origin;
+  std::shared_ptr <op> m_op;
+  size_t m_keep;
 
 public:
   op_subx (std::shared_ptr <op> upstream,
-	   std::shared_ptr <op_origin> origin,
+	   std::shared_ptr <op_inner_origin> origin,
 	   std::shared_ptr <op> op,
 	   size_t keep);
 
-  ~op_subx ();
-
-  stack::uptr next () override;
   std::string name () const override;
-  void reset () override;
+  size_t reserve () const override;
+  void state_con (void *buf) const override;
+  void state_des (void *buf) const override;
+  stack::uptr next (void *buf) const override;
 };
 
 class op_f_debug

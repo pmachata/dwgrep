@@ -137,6 +137,18 @@ expect_count 1 -e '
 	sub mul div mod*/ add
 	== 3'
 
+# Test let.
+expect_count 1 -e 'let A := 1; A == 1'
+expect_count 1 -e 'let A := 1; let B := A; B == 1'
+expect_count 1 -e 'let A := 1, 2; A == 1'
+expect_count 1 -e 'let A := 1, 2; A == 2'
+expect_count 0 -e 'let A := 1; A == 2'
+expect_count 1 -e 'let A B := 1 2; (A == 1) (B == 2)'
+expect_count 1 -e 'let A B := (1, 2) (3, 4); (A == 1) (B == 3)'
+expect_count 1 -e 'let A B := (1, 2) (3, 4); (A == 2) (B == 3)'
+expect_count 1 -e 'let A B := (1, 2) (3, 4); (A == 1) (B == 4)'
+expect_count 1 -e 'let A B := (1, 2) (3, 4); (A == 2) (B == 4)'
+
 # Test that universe annotates position.
 expect_count 1 ./nontrivial-types.o -e '
 	entry (offset == 0xb8) (pos == 10)'

@@ -115,6 +115,7 @@ op_origin::set_next (void *buf_end, stack::uptr s) const
   // Origin has no upstream and therefore its state has to be the last.
   state *st = this_state <state> (buf_end) - 1;
 
+  // xxx update this comment
   // M_STK serves as a canary, because unless reset() percolated all the way
   // here, what STATE points at is sill a poisoned memory. Likewise if
   // set_next() is called before the next reset(), M_STK will be nonnull.
@@ -124,6 +125,55 @@ op_origin::set_next (void *buf_end, stack::uptr s) const
 
 stack::uptr
 op_origin::next (void *buf) const
+{
+  state *st = this_state <state> (buf);
+  return std::move (st->m_stk);
+}
+
+
+struct op_inner_origin::state
+{
+  stack::uptr m_stk;
+};
+
+op_inner_origin::op_inner_origin (std::shared_ptr <op> upstream)
+  : inner_op {upstream, sizeof (state)}
+{}
+
+std::string
+op_inner_origin::name () const
+{
+  return "inner_origin";
+}
+
+void
+op_inner_origin::state_con (void *buf) const
+{
+  simple_state_con <state> (buf);
+}
+
+void
+op_inner_origin::state_des (void *buf) const
+{
+  simple_state_des <state> (buf);
+}
+
+void
+op_inner_origin::set_next (void *buf_end, stack::uptr s) const
+{
+  // Origin has no upstream and therefore its state has to be the last.
+  state *st = this_state <state> (buf_end) - 1;
+
+  // xxx update this comment
+  // M_STK serves as a canary, because unless reset() percolated all the way
+  // here, what STATE points at is sill a poisoned memory. Likewise if
+  // set_next() is called before the next reset(), M_STK will be nonnull.
+  assert (st->m_stk == nullptr);
+  st->m_stk = std::move (s);
+}
+
+stack::uptr
+op_inner_origin::next (void *buf) const
 {
   state *st = this_state <state> (buf);
   return std::move (st->m_stk);
@@ -784,101 +834,85 @@ op_tr_closure::name () const
 }
 
 
-struct op_subx::pimpl
+struct op_subx::state
 {
-  std::shared_ptr <op> m_upstream;
-  std::shared_ptr <op_origin> m_origin;
-  std::shared_ptr <op> m_op;
   stack::uptr m_stk;
-  size_t m_keep;
-
-  pimpl (std::shared_ptr <op> upstream,
-	 std::shared_ptr <op_origin> origin,
-	 std::shared_ptr <op> op,
-	 size_t keep)
-    : m_upstream {upstream}
-    , m_origin {origin}
-    , m_op {op}
-    , m_keep {keep}
-  {}
-
-  void
-  reset_me ()
-  {
-    m_stk = nullptr;
-  }
-
-  stack::uptr
-  next ()
-  {
-#if 0
-    while (true)
-      {
-	while (m_stk == nullptr)
-	  if (m_stk = m_upstream->next ())
-	    {
-	      m_op->reset ();
-	      m_origin->set_next (std::make_unique <stack> (*m_stk));
-	    }
-	  else
-	    return nullptr;
-
-	if (auto stk = m_op->next ())
-	  {
-	    auto ret = std::make_unique <stack> (*m_stk);
-	    std::vector <std::unique_ptr <value>> kept;
-	    for (size_t i = 0; i < m_keep; ++i)
-	      kept.push_back (stk->pop ());
-	    for (size_t i = 0; i < m_keep; ++i)
-	      {
-		ret->push (std::move (kept.back ()));
-		kept.pop_back ();
-	      }
-	    return ret;
-	  }
-
-	reset_me ();
-      }
-#else
-  return nullptr;
-#endif
-  }
-
-  void
-  reset ()
-  {
-    reset_me ();
-    m_upstream->reset ();
-  }
 };
 
 op_subx::op_subx (std::shared_ptr <op> upstream,
-		  std::shared_ptr <op_origin> origin,
+		  std::shared_ptr <op_inner_origin> origin,
 		  std::shared_ptr <op> op,
 		  size_t keep)
-  : m_pimpl {std::make_unique <pimpl> (upstream, origin, op, keep)}
+  : m_upstream {upstream}
+  , m_origin {origin}
+  , m_op {op}
+  , m_keep {keep}
 {}
-
-op_subx::~op_subx ()
-{}
-
-stack::uptr
-op_subx::next ()
-{
-  return m_pimpl->next ();
-}
-
-void
-op_subx::reset ()
-{
-  m_pimpl->reset ();
-}
 
 std::string
 op_subx::name () const
 {
-  return std::string ("subx<") + m_pimpl->m_op->name () + ">";
+  return std::string ("subx<") + m_op->name () + ">";
 }
+
+size_t
+op_subx::reserve () const
+{
+  return m_op->reserve () + sizeof (state);
+}
+
+void
+op_subx::state_con (void *buf) const
+{
+  state *st = this_state <state> (buf);
+  new (st) state {};
+  m_op->state_con (next_state (st));
+}
+
+void
+op_subx::state_des (void *buf) const
+{
+  state *st = op::this_state <state> (buf);
+  m_op->state_des (next_state (st));
+  st->~state ();
+}
+
+stack::uptr
+op_subx::next (void *buf) const
+{
+  size_t op_reserve = m_op->reserve () - m_upstream->reserve ();
+
+  state *st = this_state <state> (buf);
+  auto opst = next_state (st);
+  auto ust = reinterpret_cast <uint8_t *> (opst) + op_reserve;
+
+  while (true)
+    {
+      while (st->m_stk == nullptr)
+	if (st->m_stk = m_upstream->next (ust))
+	  // ust is exactly the end of m_op area.
+	  m_origin->set_next (ust, std::make_unique <stack> (*st->m_stk));
+	else
+	  return nullptr;
+
+      if (auto stk = m_op->next (opst))
+	{
+	  auto ret = std::make_unique <stack> (*st->m_stk);
+	  std::vector <std::unique_ptr <value>> kept;
+	  for (size_t i = 0; i < m_keep; ++i)
+	    kept.push_back (stk->pop ());
+	  for (size_t i = 0; i < m_keep; ++i)
+	    {
+	      ret->push (std::move (kept.back ()));
+	      kept.pop_back ();
+	    }
+	  return ret;
+	}
+
+      st->m_stk = nullptr;
+    }
+}
+
 
 stack::uptr
 op_f_debug::next ()
@@ -924,17 +958,13 @@ op_bind::name () const
 void
 op_bind::state_con (void *buf) const
 {
-  state *st = this_state <state> (buf);
-  new (st) state {};
-  m_upstream->state_con (next_state <state> (st));
+  simple_state_con <state> (buf);
 }
 
 void
 op_bind::state_des (void *buf) const
 {
-  state *st = this_state <state> (buf);
-  m_upstream->state_des (next_state <state> (st));
-  st->~state ();
+  simple_state_des <state> (buf);
 }
 
 stack::uptr
@@ -979,17 +1009,13 @@ op_read::name () const
 void
 op_read::state_con (void *buf) const
 {
-  state *st = this_state <state> (buf);
-  new (st) state {};
-  m_upstream->state_con (next_state <state> (st));
+  simple_state_con <state> (buf);
 }
 
 void
 op_read::state_des (void *buf) const
 {
-  state *st = this_state <state> (buf);
-  m_upstream->state_des (next_state <state> (st));
-  st->~state ();
+  simple_state_des <state> (buf);
 }
 
 stack::uptr
