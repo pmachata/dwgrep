@@ -504,17 +504,29 @@ op_or::name () const
 }
 
 
-stack::uptr
-op_capture::next ()
+void
+op_capture::state_con (scon2 &sc) const
 {
-#if 0
-  if (auto stk = m_upstream->next ())
+  m_op->state_con (sc);
+  inner_op::state_con (sc);
+}
+
+void
+op_capture::state_des (scon2 &sc) const
+{
+  inner_op::state_des (sc);
+  m_op->state_des (sc);
+}
+
+stack::uptr
+op_capture::next (scon2 &sc) const
+{
+  if (auto stk = m_upstream->next (sc))
     {
-      m_op->reset ();
-      m_origin->set_next (std::make_unique <stack> (*stk));
+      m_origin->set_next (sc, std::make_unique <stack> (*stk));
 
       value_seq::seq_t vv;
-      while (auto stk2 = m_op->next ())
+      while (auto stk2 = m_op->next (sc))
 	vv.push_back (stk2->pop ());
 
       stk->push (std::make_unique <value_seq> (std::move (vv), 0));
@@ -522,16 +534,6 @@ op_capture::next ()
     }
 
   return nullptr;
-#else
-  return nullptr;
-#endif
-}
-
-void
-op_capture::reset ()
-{
-  m_op->reset ();
-  m_upstream->reset ();
 }
 
 std::string

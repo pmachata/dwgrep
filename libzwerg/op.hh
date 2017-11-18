@@ -422,9 +422,8 @@ public:
 };
 
 class op_capture
-  : public op
+  : public inner_op
 {
-  std::shared_ptr <op> m_upstream;
   std::shared_ptr <op_origin> m_origin;
   std::shared_ptr <op> m_op;
 
@@ -432,18 +431,15 @@ public:
   op_capture (std::shared_ptr <op> upstream,
 	      std::shared_ptr <op_origin> origin,
 	      std::shared_ptr <op> op)
-    : m_upstream {upstream}
+    : inner_op (upstream)
     , m_origin {origin}
     , m_op {op}
   {}
 
-  void reset () override;
-  stack::uptr next () override;
   std::string name () const override;
-
-  void state_con (scon2 &sc) const override { assert (! "op_capture"); }
-  void state_des (scon2 &sc) const override { assert (! "op_capture"); }
-  stack::uptr next (scon2 &sc) const { return nullptr; }
+  void state_con (scon2 &sc) const override;
+  void state_des (scon2 &sc) const override;
+  stack::uptr next (scon2 &sc) const override;
 };
 
 
