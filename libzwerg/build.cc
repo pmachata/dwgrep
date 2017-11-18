@@ -223,7 +223,7 @@ namespace
         {
           auto origin = std::make_shared <op_origin> (l);
           auto op = build_exec (t.child (0), l, origin, bn);
-          return std::make_shared <op_tr_closure> (upstream, origin, op,
+          return std::make_shared <op_tr_closure> (l, upstream, origin, op,
                                                    op_tr_closure_kind::star);
         }
 
@@ -231,7 +231,7 @@ namespace
         {
           auto origin = std::make_shared <op_origin> (l);
           auto op = build_exec (t.child (0), l, origin, bn);
-          return std::make_shared <op_tr_closure> (upstream, origin, op,
+          return std::make_shared <op_tr_closure> (l, upstream, origin, op,
                                                    op_tr_closure_kind::plus);
         }
 

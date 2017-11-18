@@ -437,26 +437,30 @@ enum class op_tr_closure_kind
   };
 
 class op_tr_closure
-  : public op
+  : public inner_op
 {
-  class pimpl;
-  std::unique_ptr <pimpl> m_pimpl;
+  struct state;
+  std::shared_ptr <op_origin> m_origin;
+  std::shared_ptr <op> m_op;
+  bool m_is_plus;
+  layout::loc m_ll;
+
+  stack::uptr next_from_op (state &st, scon2 &sc) const;
+  stack::uptr next_from_upstream (state &st, scon2 &sc) const;
+  bool send_to_op (state &st, scon2 &sc, std::unique_ptr <stack> stk) const;
+  bool send_to_op (state &st, scon2 &sc) const;
 
 public:
-  op_tr_closure (std::shared_ptr <op> upstream,
+  op_tr_closure (layout &l,
+		 std::shared_ptr <op> upstream,
 		 std::shared_ptr <op_origin> origin,
 		 std::shared_ptr <op> op,
 		 op_tr_closure_kind k);
 
-  ~op_tr_closure ();
-
-  stack::uptr next () override;
   std::string name () const override;
-  void reset () override;
-
-  void state_con (scon2 &sc) const override { assert (! "op_trclos"); }
-  void state_des (scon2 &sc) const override { assert (! "op_trclos"); }
-  stack::uptr next (scon2 &sc) const { return nullptr; }
+  void state_con (scon2 &sc) const override;
+  void state_des (scon2 &sc) const override;
+  stack::uptr next (scon2 &sc) const override;
 };
 
 class op_subx

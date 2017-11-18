@@ -601,42 +601,15 @@ namespace
   };
 }
 
-struct op_tr_closure::pimpl
+struct op_tr_closure::state
 {
-  std::shared_ptr <op> m_upstream;
-  std::shared_ptr <op_origin> m_origin;
-  std::shared_ptr <op> m_op;
-
   std::set <std::shared_ptr <stack>, deref_less> m_seen;
   std::vector <std::shared_ptr <stack> > m_stks;
-
-  bool m_is_plus;
   bool m_op_drained;
 
-  pimpl (std::shared_ptr <op> upstream,
-	 std::shared_ptr <op_origin> origin,
-	 std::shared_ptr <op> op,
-	 op_tr_closure_kind k)
-    : m_upstream {upstream}
-    , m_origin {origin}
-    , m_op {op}
-    , m_is_plus {k == op_tr_closure_kind::plus}
-    , m_op_drained {true}
+  state ()
+    : m_op_drained {true}
   {}
-
-  void
-  reset_me ()
-  {
-    m_stks.clear ();
-    m_seen.clear ();
-  }
-
-  void
-  reset ()
-  {
-    reset_me ();
-    m_upstream->reset ();
-  }
 
   std::unique_ptr <stack>
   yield_and_cache (std::shared_ptr <stack> stk)
@@ -649,110 +622,110 @@ struct op_tr_closure::pimpl
     else
       return nullptr;
   }
-
-  stack::uptr
-  next_from_upstream ()
-  {
-    // When we get a new stack from upstream, that provides a fresh
-    // context, and we need to forget what we've seen so far.
-    // E.g. consider the following expression:
-    //
-    //     $ 'entry root dup child* ?eq'
-    //
-    // We should see as many root-root matches as there are entries.
-    // But if we fail to clear the seen-cache, we only see one.
-
-     m_seen.clear ();
-    return m_upstream->next ();
-  }
-
-  stack::uptr
-  next_from_op ()
-  {
-    if (m_op_drained)
-      return nullptr;
-    if (auto ret = m_op->next ())
-      return ret;
-    m_op_drained = true;
-    return nullptr;
-  }
-
-  bool
-  send_to_op (std::unique_ptr <stack> stk)
-  {
-#if 0
-    if (stk == nullptr)
-      return false;
-
-    m_op->reset ();
-    m_origin->set_next (std::move (stk));
-    m_op_drained = false;
-    return true;
-#else
-  return false;
-#endif
-  }
-
-  bool
-  send_to_op ()
-  {
-    if (m_stks.empty ())
-      return m_is_plus ? send_to_op (next_from_upstream ()) : false;
-
-    send_to_op (std::make_unique <stack> (*m_stks.back ()));
-    m_stks.pop_back ();
-    return true;
-  }
-
-  stack::uptr
-  next ()
-  {
-    do
-      while (std::shared_ptr <stack> stk = next_from_op ())
-	if (auto ret = yield_and_cache (stk))
-	  return ret;
-    while (send_to_op ());
-
-    if (! m_is_plus)
-      if (std::shared_ptr <stack> stk = next_from_upstream ())
-	return yield_and_cache (stk);
-
-    return nullptr;
-  }
-
-  std::string
-  name () const
-  {
-    return std::string ("close<") + m_upstream->name () + ">";
-  }
 };
 
-op_tr_closure::op_tr_closure (std::shared_ptr <op> upstream,
+op_tr_closure::op_tr_closure (layout &l,
+			      std::shared_ptr <op> upstream,
 			      std::shared_ptr <op_origin> origin,
 			      std::shared_ptr <op> op,
 			      op_tr_closure_kind k)
-  : m_pimpl {std::make_unique <pimpl> (upstream, origin, op, k)}
+  : inner_op (upstream)
+  , m_origin {origin}
+  , m_op {op}
+  , m_is_plus {k == op_tr_closure_kind::plus}
+  , m_ll {l.reserve <state> ()}
 {}
 
-op_tr_closure::~op_tr_closure ()
-{}
-
-stack::uptr
-op_tr_closure::next ()
+void
+op_tr_closure::state_con (scon2 &sc) const
 {
-  return m_pimpl->next ();
+  sc.con <state> (m_ll);
+  m_op->state_con (sc);
+  inner_op::state_con (sc);
 }
 
 void
-op_tr_closure::reset ()
+op_tr_closure::state_des (scon2 &sc) const
 {
-  m_pimpl->reset ();
+  inner_op::state_des (sc);
+  m_op->state_des (sc);
+  sc.des <state> (m_ll);
+}
+
+stack::uptr
+op_tr_closure::next_from_op (state &st, scon2 &sc) const
+{
+  if (st.m_op_drained)
+    return nullptr;
+  if (auto ret = m_op->next (sc))
+    return ret;
+  st.m_op_drained = true;
+  return nullptr;
+}
+
+stack::uptr
+op_tr_closure::next_from_upstream (state &st, scon2 &sc) const
+{
+  // When we get a new stack from upstream, that provides a fresh
+  // context, and we need to forget what we've seen so far.
+  // E.g. consider the following expression:
+  //
+  //     $ 'entry root dup child* ?eq'
+  //
+  // We should see as many root-root matches as there are entries.
+  // But if we fail to clear the seen-cache, we only see one.
+
+  st.m_seen.clear ();
+  return m_upstream->next (sc);
+}
+
+bool
+op_tr_closure::send_to_op (state &st, scon2 &sc,
+			   std::unique_ptr <stack> stk) const
+{
+  if (stk == nullptr)
+    return false;
+
+  //m_op->reset ();
+  m_origin->set_next (sc, std::move (stk));
+  st.m_op_drained = false;
+  return true;
+}
+
+bool
+op_tr_closure::send_to_op (state &st, scon2 &sc) const
+{
+  if (st.m_stks.empty ())
+    return m_is_plus ? send_to_op (st, sc,
+				   next_from_upstream (st, sc)) : false;
+
+  send_to_op (st, sc, std::make_unique <stack> (*st.m_stks.back ()));
+  st.m_stks.pop_back ();
+  return true;
+}
+
+stack::uptr
+op_tr_closure::next (scon2 &sc) const
+{
+  state &st = sc.get <state> (m_ll);
+
+  do
+    while (std::shared_ptr <stack> stk = next_from_op (st, sc))
+      if (auto ret = st.yield_and_cache (stk))
+	return ret;
+  while (send_to_op (st, sc));
+
+  if (! m_is_plus)
+    if (std::shared_ptr <stack> stk = next_from_upstream (st, sc))
+      return st.yield_and_cache (stk);
+
+  return nullptr;
 }
 
 std::string
 op_tr_closure::name () const
 {
-  return m_pimpl->name ();
+  return std::string ("close<") + m_upstream->name () + ">";
 }
 
 
