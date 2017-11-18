@@ -70,12 +70,12 @@ public:
     this->get <State> (loc).~State ();
   }
 
-  template <class State>
+  template <class State, class... Args>
   void
-  reset (layout::loc loc)
+  reset (layout::loc loc, Args const&... args)
   {
     this->des <State> (loc);
-    this->con <State> (loc);
+    this->con <State> (loc, args...);
   }
 };
 

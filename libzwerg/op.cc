@@ -470,43 +470,65 @@ op_merge::name () const
 }
 
 
-void
-op_or::reset_me ()
+struct op_or::state
 {
-  m_branch_it = m_branches.end ();
+  decltype (op_or::m_branches)::const_iterator m_branch_it;
+
+  explicit state (decltype (op_or::m_branches) const &branches)
+    : m_branch_it {branches.end ()}
+  {}
+};
+
+op_or::op_or (layout &l, std::shared_ptr <op> upstream)
+  : inner_op {upstream}
+  , m_ll {l.reserve <state> ()}
+{}
+
+void
+op_or::state_con (scon2 &sc) const
+{
+  sc.con <state> (m_ll, m_branches);
   for (auto const &branch: m_branches)
-    branch.second->reset ();
+    branch.second->state_con (sc);
+  inner_op::state_con (sc);
+}
+
+void
+op_or::state_des (scon2 &sc) const
+{
+  inner_op::state_des (sc);
+  for (auto const &branch: m_branches)
+    branch.second->state_des (sc);
+  sc.des <state> (m_ll);
 }
 
 stack::uptr
-op_or::next ()
+op_or::next (scon2 &sc) const
 {
-#if 0
+  state &st = sc.get <state> (m_ll);
+
   while (true)
     {
-      while (m_branch_it == m_branches.end ())
+      while (st.m_branch_it == m_branches.end ())
 	{
-	  if (auto stk = m_upstream->next ())
-	    for (m_branch_it = m_branches.begin ();
-		 m_branch_it != m_branches.end (); ++m_branch_it)
+	  if (auto stk = m_upstream->next (sc))
+	    for (st.m_branch_it = m_branches.begin ();
+		 st.m_branch_it != m_branches.end (); ++st.m_branch_it)
 	      {
-		m_branch_it->second->reset ();
-		m_branch_it->first->set_next (std::make_unique <stack> (*stk));
-		if (auto stk2 = m_branch_it->second->next ())
+		auto &origin = st.m_branch_it->first;
+		origin->set_next (sc, std::make_unique <stack> (*stk));
+		if (auto stk2 = st.m_branch_it->second->next (sc))
 		  return stk2;
 	      }
 	  else
 	    return nullptr;
 	}
 
-      if (auto stk2 = m_branch_it->second->next ())
+      if (auto stk2 = st.m_branch_it->second->next (sc))
 	return stk2;
 
-      reset_me ();
+      sc.reset <state> (m_ll, m_branches);
     }
-#else
-  return nullptr;
-#endif
 }
 
 std::string

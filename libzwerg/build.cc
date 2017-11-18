@@ -138,7 +138,7 @@ namespace
 
       case tree_type::OR:
         {
-          auto o = std::make_shared <op_or> (upstream);
+          auto o = std::make_shared <op_or> (l, upstream);
           for (auto const &ch: t.m_children)
             {
               auto origin2 = std::make_shared <op_origin> (l);

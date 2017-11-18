@@ -385,36 +385,27 @@ public:
 };
 
 class op_or
-  : public op
+  : public inner_op
 {
-  std::shared_ptr <op> m_upstream;
+  struct state;
   std::vector <std::pair <std::shared_ptr <op_origin>,
 			  std::shared_ptr <op>>> m_branches;
-  decltype (m_branches)::const_iterator m_branch_it;
-
-  void reset_me ();
+  layout::loc m_ll;
 
 public:
-  op_or (std::shared_ptr <op> upstream)
-    : m_upstream {upstream}
-    , m_branch_it {m_branches.end ()}
-  {}
+  op_or (layout &l, std::shared_ptr <op> upstream);
+
+  std::string name () const override;
+  void state_con (scon2 &sc) const override;
+  void state_des (scon2 &sc) const override;
+  stack::uptr next (scon2 &sc) const override;
 
   void
   add_branch (std::shared_ptr <op_origin> origin,
 	      std::shared_ptr <op> op)
   {
-    assert (m_branch_it == m_branches.end ());
     m_branches.push_back (std::make_pair (origin, op));
-    m_branch_it = m_branches.end ();
   }
-
-  void state_con (scon2 &sc) const override { assert (! "op_or"); }
-  void state_des (scon2 &sc) const override { assert (! "op_or"); }
-  stack::uptr next (scon2 &sc) const override { return nullptr; }
-
-  stack::uptr next () override;
-  std::string name () const override;
 };
 
 class op_capture
