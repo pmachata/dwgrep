@@ -209,9 +209,10 @@ public:
 class stringer
 {
 public:
-  virtual std::pair <stack::uptr, std::string> next () = 0;
-  virtual void reset () = 0;
   virtual ~stringer () {}
+  virtual void state_con (scon2 &sc) const = 0;
+  virtual void state_des (scon2 &sc) const = 0;
+  virtual std::pair <stack::uptr, std::string> next (scon2 &sc) const = 0;
 };
 
 // The formatting starts here.  This uses a pattern similar to
@@ -221,18 +222,17 @@ public:
 class stringer_origin
   : public stringer
 {
-  stack::uptr m_stk;
-  bool m_reset;
+  struct state;
+  layout::loc m_ll;
 
 public:
-  stringer_origin ()
-    : m_reset (false)
-  {}
+  explicit stringer_origin (layout &l);
 
-  void set_next (stack::uptr s);
+  void state_con (scon2 &sc) const override;
+  void state_des (scon2 &sc) const override;
+  std::pair <stack::uptr, std::string> next (scon2 &sc) const override;
 
-  std::pair <stack::uptr, std::string> next () override;
-  void reset () override;
+  void set_next (scon2 &sc, stack::uptr s);
 };
 
 // A stringer for the literal parts (non-%s, non-%(%)) of the format
@@ -245,59 +245,55 @@ class stringer_lit
 
 public:
   stringer_lit (std::shared_ptr <stringer> upstream, std::string str)
-    : m_upstream (std::move (upstream))
-    , m_str (str)
+    : m_upstream {std::move (upstream)}
+    , m_str {str}
   {}
 
-  std::pair <stack::uptr, std::string> next () override;
-  void reset () override;
+  void state_con (scon2 &sc) const override;
+  void state_des (scon2 &sc) const override;
+  std::pair <stack::uptr, std::string> next (scon2 &sc) const override;
 };
 
 // A stringer for operational parts (%s, %(%)) of the format string.
 class stringer_op
   : public stringer
 {
+  struct state;
   std::shared_ptr <stringer> m_upstream;
   std::shared_ptr <op_origin> m_origin;
   std::shared_ptr <op> m_op;
-  std::string m_str;
-  bool m_have;
+  layout::loc m_ll;
 
 public:
-  stringer_op (std::shared_ptr <stringer> upstream,
+  stringer_op (layout &l,
+	       std::shared_ptr <stringer> upstream,
 	       std::shared_ptr <op_origin> origin,
-	       std::shared_ptr <op> op)
-    : m_upstream {upstream}
-    , m_origin {origin}
-    , m_op {op}
-    , m_have {false}
-  {}
+	       std::shared_ptr <op> op);
 
-  std::pair <stack::uptr, std::string> next () override;
-  void reset () override;
+  void state_con (scon2 &sc) const override;
+  void state_des (scon2 &sc) const override;
+  std::pair <stack::uptr, std::string> next (scon2 &sc) const override;
 };
 
 // A top-level format-string node.
 class op_format
-  : public op
+  : public inner_op
 {
-  class pimpl;
-  std::unique_ptr <pimpl> m_pimpl;
+  class state;
+  std::shared_ptr <stringer_origin> m_origin;
+  std::shared_ptr <stringer> m_stringer;
+  layout::loc m_ll;
 
 public:
-  op_format (std::shared_ptr <op> upstream,
+  op_format (layout &l,
+	     std::shared_ptr <op> upstream,
 	     std::shared_ptr <stringer_origin> origin,
 	     std::shared_ptr <stringer> stringer);
 
-  ~op_format ();
-
-  stack::uptr next () override;
   std::string name () const override;
-  void reset () override;
-
-  void state_con (scon2 &sc) const override { assert (! "op_format"); }
-  void state_des (scon2 &sc) const override { assert (! "op_format"); }
-  stack::uptr next (scon2 &sc) const { return nullptr; }
+  void state_con (scon2 &sc) const override;
+  void state_des (scon2 &sc) const override;
+  stack::uptr next (scon2 &sc) const override;
 };
 
 class op_const

@@ -166,7 +166,7 @@ namespace
 
       case tree_type::FORMAT:
         {
-          auto s_origin = std::make_shared <stringer_origin> ();
+          auto s_origin = std::make_shared <stringer_origin> (l);
           std::shared_ptr <stringer> strgr = s_origin;
           for (auto it = t.m_children.rbegin (), eit = t.m_children.rend ();
                it != eit; ++it)
@@ -178,11 +178,12 @@ namespace
                 {
                   auto origin2 = std::make_shared <op_origin> (l);
                   auto op = build_exec (tree, l, origin2, bn);
-                  strgr = std::make_shared <stringer_op> (strgr, origin2, op);
+                  strgr = std::make_shared <stringer_op> (l, strgr,
+							  origin2, op);
                 }
             }
 
-          return std::make_shared <op_format> (upstream, s_origin, strgr);
+          return std::make_shared <op_format> (l, upstream, s_origin, strgr);
         }
 
       case tree_type::CONST:

@@ -137,166 +137,189 @@ op_assert::name () const
 }
 
 
+struct stringer_origin::state
+{
+  stack::uptr m_stk;
+};
+
+stringer_origin::stringer_origin (layout &l)
+  : m_ll {l.reserve <state> ()}
+{}
+
 void
-stringer_origin::set_next (stack::uptr s)
+stringer_origin::state_con (scon2 &sc) const
 {
-  assert (m_stk == nullptr);
-
-  // set_next should have been preceded with a reset() call that
-  // should have percolated all the way here.
-  assert (m_reset);
-  m_reset = false;
-
-  m_stk = std::move (s);
-}
-
-std::pair <stack::uptr, std::string>
-stringer_origin::next ()
-{
-  return std::make_pair (std::move (m_stk), "");
+  sc.con <state> (m_ll);
 }
 
 void
-stringer_origin::reset ()
+stringer_origin::state_des (scon2 &sc) const
 {
-  m_stk = nullptr;
-  m_reset = true;
+  sc.des <state> (m_ll);
 }
 
 std::pair <stack::uptr, std::string>
-stringer_lit::next ()
+stringer_origin::next (scon2 &sc) const
 {
-  auto up = m_upstream->next ();
+  state &st = sc.get <state> (m_ll);
+  return std::make_pair (std::move (st.m_stk), "");
+}
+
+void
+stringer_origin::set_next (scon2 &sc, stack::uptr s)
+{
+  state &st = sc.get <state> (m_ll);
+  assert (st.m_stk == nullptr);
+  st.m_stk = std::move (s);
+}
+
+
+void
+stringer_lit::state_con (scon2 &sc) const
+{
+  m_upstream->state_con (sc);
+}
+
+void
+stringer_lit::state_des (scon2 &sc) const
+{
+  m_upstream->state_des (sc);
+}
+
+std::pair <stack::uptr, std::string>
+stringer_lit::next (scon2 &sc) const
+{
+  auto up = m_upstream->next (sc);
   if (up.first == nullptr)
     return std::make_pair (nullptr, "");
   up.second = m_str + up.second;
   return up;
 }
 
-void
-stringer_lit::reset ()
+
+struct stringer_op::state
 {
-  m_upstream->reset ();
+  std::string m_str;
+  bool m_have;
+
+  state ()
+    : m_have {false}
+  {}
+};
+
+stringer_op::stringer_op (layout &l,
+			  std::shared_ptr <stringer> upstream,
+			  std::shared_ptr <op_origin> origin,
+			  std::shared_ptr <op> op)
+  : m_upstream {upstream}
+  , m_origin {origin}
+  , m_op {op}
+  , m_ll {l.reserve <state> ()}
+{}
+
+void
+stringer_op::state_con (scon2 &sc) const
+{
+  sc.con <state> (m_ll);
+  m_op->state_con (sc);
+  m_upstream->state_con (sc);
+}
+
+void
+stringer_op::state_des (scon2 &sc) const
+{
+  m_upstream->state_des (sc);
+  m_op->state_des (sc);
+  sc.des <state> (m_ll);
 }
 
 std::pair <stack::uptr, std::string>
-stringer_op::next ()
+stringer_op::next (scon2 &sc) const
 {
-#if 0
+  state &st = sc.get <state> (m_ll);
+
   while (true)
     {
-      if (! m_have)
+      if (! st.m_have)
 	{
-	  auto up = m_upstream->next ();
+	  auto up = m_upstream->next (sc);
 	  if (up.first == nullptr)
 	    return std::make_pair (nullptr, "");
 
-	  m_op->reset ();
-	  m_origin->set_next (std::move (up.first));
-	  m_str = up.second;
-
-	  m_have = true;
+	  m_origin->set_next (sc, std::move (up.first));
+	  st.m_str = up.second;
+	  st.m_have = true;
 	}
 
-      if (auto stk = m_op->next ())
+      if (auto stk = m_op->next (sc))
 	{
 	  std::stringstream ss;
 	  (stk->pop ())->show (ss);
-	  return std::make_pair (std::move (stk), ss.str () + m_str);
+	  return std::make_pair (std::move (stk), ss.str () + st.m_str);
 	}
 
-      m_have = false;
+      st.m_have = false;
     }
-#else
-  return std::make_pair (nullptr, "");
-#endif
 }
 
-void
-stringer_op::reset ()
-{
-  m_have = false;
-  m_op->reset ();
-  m_upstream->reset ();
-}
 
-struct op_format::pimpl
+struct op_format::state
 {
-  std::shared_ptr <op> m_upstream;
-  std::shared_ptr <stringer_origin> m_origin;
-  std::shared_ptr <stringer> m_stringer;
   size_t m_pos;
 
-  pimpl (std::shared_ptr <op> upstream,
-	 std::shared_ptr <stringer_origin> origin,
-	 std::shared_ptr <stringer> stringer)
-    : m_upstream {upstream}
-    , m_origin {origin}
-    , m_stringer {stringer}
-    , m_pos {0}
+  state ()
+    : m_pos {0}
   {}
-
-  void
-  reset_me ()
-  {
-    m_stringer->reset ();
-    m_pos = 0;
-  }
-
-  stack::uptr
-  next ()
-  {
-#if 0
-    while (true)
-      {
-	auto stk = m_stringer->next ();
-	if (stk.first != nullptr)
-	  {
-	    stk.first->push (std::make_unique <value_str>
-			     (std::move (stk.second), m_pos++));
-	    return std::move (stk.first);
-	  }
-
-	if (auto stk = m_upstream->next ())
-	  {
-	    reset_me ();
-	    m_origin->set_next (std::move (stk));
-	  }
-	else
-	  return nullptr;
-      }
-#else
-  return nullptr;
-#endif
-  }
-
-  void
-  reset ()
-  {
-    reset_me ();
-    m_upstream->reset ();
-  }
 };
 
-op_format::op_format (std::shared_ptr <op> upstream,
+op_format::op_format (layout &l,
+		      std::shared_ptr <op> upstream,
 		      std::shared_ptr <stringer_origin> origin,
 		      std::shared_ptr <stringer> stringer)
-  : m_pimpl {std::make_unique <pimpl> (upstream, origin, stringer)}
+  : inner_op {upstream}
+  , m_origin {origin}
+  , m_stringer {stringer}
+  , m_ll {l.reserve <state> ()}
 {}
 
-op_format::~op_format ()
-{}
-
-stack::uptr
-op_format::next ()
+void
+op_format::state_con (scon2 &sc) const
 {
-  return m_pimpl->next ();
+  sc.con <state> (m_ll);
+  m_stringer->state_con (sc);
+  inner_op::state_con (sc);
 }
 
 void
-op_format::reset ()
+op_format::state_des (scon2 &sc) const
 {
-  m_pimpl->reset ();
+  inner_op::state_des (sc);
+  m_stringer->state_des (sc);
+  sc.des <state> (m_ll);
+}
+
+stack::uptr
+op_format::next (scon2 &sc) const
+{
+  state &st = sc.get <state> (m_ll);
+  while (true)
+    {
+      auto stk = m_stringer->next (sc);
+      if (stk.first != nullptr)
+	{
+	  stk.first->push (std::make_unique <value_str>
+			   (std::move (stk.second), st.m_pos++));
+	  return std::move (stk.first);
+	}
+
+      if (auto stk = m_upstream->next (sc))
+	{
+	  sc.reset <state> (m_ll);
+	  m_origin->set_next (sc, std::move (stk));
+	}
+      else
+	return nullptr;
+    }
 }
 
 std::string

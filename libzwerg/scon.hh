@@ -69,6 +69,14 @@ public:
   {
     this->get <State> (loc).~State ();
   }
+
+  template <class State>
+  void
+  reset (layout::loc loc)
+  {
+    this->des <State> (loc);
+    this->con <State> (loc);
+  }
 };
 
 class op;
