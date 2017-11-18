@@ -156,66 +156,61 @@ struct overload_op::state
   state ()
     : m_op {nullptr}
   {}
+
+  // xxx is this exception-safe?
 };
 
 overload_op::overload_op (layout &l, std::shared_ptr <op> upstream,
 			  overload_instance ovl_inst)
   : m_upstream {upstream}
-  , m_ll {0 /* xxx */}
+  , m_ll {l.reserve <state> ()}
   , m_ovl_inst {ovl_inst}
-{
-  assert (! "overload_op not implemented");
-}
+{}
 
 void
 overload_op::state_con (scon2 &sc) const
 {
-  assert (!"overload_op::state_con");
+  sc.con <state> (m_ll);
+  m_upstream->state_con (sc);
 }
 
 void
-overload_op::state_des (scon2 &buf) const
+overload_op::state_des (scon2 &sc) const
 {
-  assert (!"overload_op::state_des");
+  m_upstream->state_des (sc);
+  sc.des <state> (m_ll);
 }
 
 stack::uptr
 overload_op::next (scon2 &sc) const
 {
-#if 0
-  state *st = this_state <state> (buf);
-  auto nst = reinterpret_cast <uint8_t *> (op::next_state (st));
-  auto ust = nst + m_ovl_inst.max_reserve ();
+  state &st = sc.get <state> (m_ll);
   while (true)
     {
-      while (st->m_op == nullptr)
+      while (st.m_op == nullptr)
 	{
-	  if (auto stk = m_upstream->next (ust))
+	  if (auto stk = m_upstream->next (sc))
 	    {
 	      auto ovl = m_ovl_inst.find_exec (*stk);
 	      if (std::get <0> (ovl) == nullptr)
 		m_ovl_inst.show_error (name (), selector {*stk});
 	      else
 		{
-		  st->m_op = std::get <1> (ovl);
-		  st->m_op->state_con (nst);
-		  void *end_nst = nst + std::get <2> (ovl);
-		  std::get <0> (ovl)->set_next (end_nst, std::move (stk));
+		  st.m_op = std::get <1> (ovl);
+		  st.m_op->state_con (sc);
+		  std::get <0> (ovl)->set_next (sc, std::move (stk));
 		}
 	    }
 	  else
 	    return nullptr;
 	}
 
-      if (auto stk = st->m_op->next (nst))
+      if (auto stk = st.m_op->next (sc))
 	return stk;
 
-      st->m_op->state_des (op::next_state (st));
-      st->m_op = nullptr;
+      st.m_op->state_des (sc);
+      st.m_op = nullptr;
     }
- #else
-  return nullptr;
-#endif
 }
 
 
