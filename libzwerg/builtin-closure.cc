@@ -40,22 +40,27 @@
 struct op_apply::substate
 {
   std::unique_ptr <value_closure> m_value;
-  scon m_scon;
+  scon2 m_scon;
 
   substate (stack::uptr stk)
     : m_value {static_cast <value_closure *> (stk->pop ().release ())}
-    , m_scon {m_value->get_origin (), m_value->get_op (), std::move (stk)}
-  {}
+    , m_scon {layout {}} // xxx
+  {
+    assert (! "op_apply::substate");
+  }
 
   stack::uptr
   next ()
   {
     // xxx I think that now that we have a full-featured stacking, the
     // rendezvous logic can be rethought.
+    /*
     value_closure *orig = m_value->rdv_exchange (&*m_value);
     auto stk = m_scon.next ();
     m_value->rdv_exchange (orig);
     return stk;
+    */
+    return nullptr;
   }
 };
 
@@ -65,44 +70,41 @@ struct op_apply::state
   std::unique_ptr <substate> m_substate;
 };
 
+op_apply::op_apply (layout &l, std::shared_ptr <op> upstream)
+  : m_upstream {upstream}
+  , m_ll {l.reserve <state> ()}
+{}
+
 std::string
 op_apply::name () const
 {
   return "apply";
 }
 
-size_t
-op_apply::reserve () const
+void
+op_apply::state_con (scon2 &sc) const
 {
-  return m_upstream->reserve () + sizeof (state);
+  sc.con <state> (m_ll);
+  m_upstream->state_con (sc);
 }
 
 void
-op_apply::state_con (void *buf) const
-{
-  state *st = op::this_state <state> (buf);
-  new (st) state {};
-  m_upstream->state_con (op::next_state (st));
-}
-
-void
-op_apply::state_des (void *buf) const
+op_apply::state_des (scon2 &sc) const
 {
   // xxx this looks like something that's written again and again, extract it
   // somewhere
-  state *st = op::this_state <state> (buf);
-  m_upstream->state_des (op::next_state (st));
-  st->~state ();
+  m_upstream->state_des (sc);
+  sc.des <state> (m_ll);
 }
 
 stack::uptr
-op_apply::next (void *buf) const
+op_apply::next (scon2 &sc) const
 {
-  state *st = op::this_state <state> (buf);
+  state &st = sc.get <state> (m_ll);
   while (true)
     {
-      while (st->m_substate == nullptr)
-	if (auto stk = m_upstream->next (op::next_state (st)))
+      while (st.m_substate == nullptr)
+	if (auto stk = m_upstream->next (sc))
 	  {
 	    if (! stk->top ().is <value_closure> ())
 	      {
@@ -110,22 +112,22 @@ op_apply::next (void *buf) const
 		continue;
 	      }
 
-	    st->m_substate = std::make_unique <substate> (std::move (stk));
+	    st.m_substate = std::make_unique <substate> (std::move (stk));
 	  }
 	else
 	  return nullptr;
 
-      if (auto stk = st->m_substate->next ())
+      if (auto stk = st.m_substate->next ())
 	return stk;
 
-      st->m_substate = nullptr;
+      st.m_substate = nullptr;
     }
 }
 
 std::shared_ptr <op>
-builtin_apply::build_exec (std::shared_ptr <op> upstream) const
+builtin_apply::build_exec (layout &l, std::shared_ptr <op> upstream) const
 {
-  return std::make_shared <op_apply> (upstream);
+  return std::make_shared <op_apply> (l, upstream);
 }
 
 char const *

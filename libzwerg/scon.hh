@@ -29,10 +29,14 @@
 #ifndef _SCON_H_
 #define _SCON_H_
 
-#include "op.hh"
+#include <vector>
+#include <cstdint>
+
+#include "layout.hh"
 
 // State Contatiner keeps an activation record for one recursive instance of op
 // chain.
+#if 0
 class scon
 {
   op const &m_op;
@@ -45,6 +49,44 @@ public:
   scon (op_origin const &origin, op const &op, stack::uptr stk);
   ~scon ();
   stack::uptr next ();
+};
+#endif
+
+class scon2
+{
+  std::vector <uint8_t> m_buf;
+
+  void *
+  mem (layout::loc loc)
+  {
+    return m_buf.data () + loc.m_loc;
+  }
+
+public:
+  scon2 (layout const &l)
+    : m_buf (l.size ())
+  {}
+
+  template <class State>
+  State &
+  get (layout::loc loc)
+  {
+    return *reinterpret_cast <State *> (this->mem (loc));
+  }
+
+  template <class State, class... Args>
+  void
+  con (layout::loc loc, Args const&... args)
+  {
+    new (this->mem (loc)) State {args...};
+  }
+
+  template <class State>
+  void
+  des (layout::loc loc)
+  {
+    this->get <State> (loc).~State ();
+  }
 };
 
 #endif // _SCON_H_

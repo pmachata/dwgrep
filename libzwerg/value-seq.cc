@@ -314,7 +314,7 @@ op_relem_seq::docstring ()
 }
 
 pred_result
-pred_empty_seq::result (value_seq &a)
+pred_empty_seq::result (value_seq &a) const
 {
   return pred_result (a.get_seq ()->empty ());
 }
@@ -382,7 +382,7 @@ directly, if possible::
 )docstring";
 
 pred_result
-pred_find_seq::result (value_seq &haystack, value_seq &needle)
+pred_find_seq::result (value_seq &haystack, value_seq &needle) const
 {
   auto const &hay = *haystack.get_seq ();
   auto const &need = *needle.get_seq ();
@@ -427,7 +427,7 @@ For example::
 )docstring";
 
 pred_result
-pred_starts_seq::result (value_seq &haystack, value_seq &needle)
+pred_starts_seq::result (value_seq &haystack, value_seq &needle) const
 {
   auto const &hay = *haystack.get_seq ();
   auto const &need = *needle.get_seq ();
@@ -473,7 +473,7 @@ For example::
 )docstring";
 
 pred_result
-pred_ends_seq::result (value_seq &haystack, value_seq &needle)
+pred_ends_seq::result (value_seq &haystack, value_seq &needle) const
 {
   auto const &hay = *haystack.get_seq ();
   auto const &need = *needle.get_seq ();

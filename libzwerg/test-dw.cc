@@ -415,7 +415,8 @@ TEST_F (ZwTest, no_duplicate_abbrev_units)
   // information, we rely on CU iteration to discover the abbreviation
   // units, and thus were seeing duplicates in dwz files.
 
-  ASSERT_EQ (2, count (op_abbrev_dwarf {nullptr}
+  layout l;
+  ASSERT_EQ (2, count (op_abbrev_dwarf {l, nullptr}
 			.operate (rdw ("dwz-partial2-1"))));
 }
 
@@ -482,7 +483,8 @@ TEST_F (ZwTest, attribute_die_cooked_no_dup)
   bool seen_abstract_origin = false;
 
   value_die vd (vdw->get_dwctx (), dwpp_offdie (dw, 0x1c), 0, doneness::cooked);
-  for (auto prod = op_attribute_die {nullptr}
+  layout l;
+  for (auto prod = op_attribute_die {l, nullptr}
 			.operate (std::make_unique <value_die> (vd));
        auto va = prod->next (); )
     switch (int c = va->get_attr ().code)
@@ -513,7 +515,8 @@ TEST_F (ZwTest, entry_dwarf_counts_every_unit_anew)
   ASSERT_TRUE (vdw != nullptr);
 
   size_t i = 0;
-  for (auto prod = op_entry_dwarf {nullptr}.operate (std::move (vdw));
+  layout l;
+  for (auto prod = op_entry_dwarf {l, nullptr}.operate (std::move (vdw));
        auto va = prod->next (); )
     ASSERT_EQ (i++, va->get_pos ());
 }
@@ -563,7 +566,8 @@ TEST_F (ZwTest, template_value_parameter_const_value_on_enum_with_type)
 
 TEST_F (ZwTest, op_length_loclist_elem)
 {
-  op_length_loclist_elem lengther {nullptr};
+  layout l;
+  op_length_loclist_elem lengther {l, nullptr};
   std::vector <unsigned> lengths = {1, 4, 1, 2, 1, 2};
   auto it = lengths.begin ();
   for (auto const &stk:
@@ -602,10 +606,12 @@ TEST_F (ZwTest, imported_AT_decl_file)
   ASSERT_TRUE (vdw != nullptr);
   ASSERT_TRUE (dw != nullptr);
 
+  layout l;
   auto vd = std::make_unique <value_die>
 		(vdw->get_dwctx (), dwpp_offdie (dw, 0x1f),
 		 0, doneness::cooked);
-  auto prod = op_atval_die {nullptr, DW_AT_decl_file}.operate (std::move (vd));
+  auto prod = op_atval_die {l, nullptr,
+			    DW_AT_decl_file}.operate (std::move (vd));
   ASSERT_TRUE (prod != nullptr);
   auto v = prod->next ();
   ASSERT_TRUE (v != nullptr);
@@ -664,7 +670,8 @@ TEST_F (ZwTest, builtin_symbol_yields_once_per_symbol)
   size_t count = 0;
   std::vector <std::string> names = {"", "enum.cc", "", "", "", "", "", "", "",
 				     "", "", "", "ae", "af"};
-  for (auto prod = op_symbol_dwarf {nullptr}.operate (rdw ("enum.o"));
+  layout l;
+  for (auto prod = op_symbol_dwarf {l, nullptr}.operate (rdw ("enum.o"));
        auto val = prod->next ();)
     {
       ASSERT_LT (count, names.size ());
@@ -688,10 +695,11 @@ TEST_F (ZwTest, builtin_symbol_label)
     STT_SECTION, STT_OBJECT, STT_OBJECT
   };
 
-  op_label_symbol op {nullptr};
+  layout l;
+  op_label_symbol op {l, nullptr};
 
   size_t count = 0;
-  for (auto prod = op_symbol_dwarf {nullptr}.operate (rdw ("enum.o"));
+  for (auto prod = op_symbol_dwarf {l, nullptr}.operate (rdw ("enum.o"));
        auto val = prod->next ();)
     {
       ASSERT_LT (count, results.size ());
@@ -745,10 +753,11 @@ TEST_F (ZwTest, builtin_symbol_binding)
     STB_GLOBAL, STB_GLOBAL
   };
 
-  op_binding_symbol op {nullptr};
+  layout l;
+  op_binding_symbol op {l, nullptr};
 
   size_t count = 0;
-  for (auto prod = op_symbol_dwarf {nullptr}.operate (rdw ("enum.o"));
+  for (auto prod = op_symbol_dwarf {l, nullptr}.operate (rdw ("enum.o"));
        auto val = prod->next ();)
     {
       ASSERT_LT (count, results.size ());
@@ -790,10 +799,11 @@ TEST_F (ZwTest, builtin_symbol_binding)
 
 TEST_F (ZwTest, builtin_symbol_visibility)
 {
-  op_visibility_symbol op {nullptr};
+  layout l;
+  op_visibility_symbol op {l, nullptr};
 
   size_t count = 0;
-  for (auto prod = op_symbol_dwarf {nullptr}.operate (rdw ("enum.o"));
+  for (auto prod = op_symbol_dwarf {l, nullptr}.operate (rdw ("enum.o"));
        auto val = prod->next ();)
     {
       value_cst cst = op.operate (std::move (val));
@@ -824,10 +834,11 @@ TEST_F (ZwTest, builtin_symbol_size)
 {
   std::vector <size_t> results = {4, 137, 11, 0, 0, 0, 16, 0, 0};
 
-  op_size_symbol op {nullptr};
+  layout l;
+  op_size_symbol op {l, nullptr};
 
   size_t count = 0;
-  for (auto prod = op_symbol_dwarf {nullptr}.operate (rdw ("twocus"));
+  for (auto prod = op_symbol_dwarf {l, nullptr}.operate (rdw ("twocus"));
        auto val = prod->next ();)
     if (val->get_pos () >= 63)
       {
@@ -855,10 +866,11 @@ TEST_F (ZwTest, builtin_symbol_address_value)
     0x4004bd, 0, 0x400390
   };
 
-  op_address_symbol op {nullptr};
+  layout l;
+  op_address_symbol op {l, nullptr};
 
   size_t count = 0;
-  for (auto prod = op_symbol_dwarf {nullptr}.operate (rdw ("twocus"));
+  for (auto prod = op_symbol_dwarf {l, nullptr}.operate (rdw ("twocus"));
        auto val = prod->next ();)
     if (val->get_pos () >= 63)
       {
@@ -891,7 +903,8 @@ TEST_F (ZwTest, builtin_symbol_address_value)
 TEST_F (ZwTest, symbol_cmp)
 {
   // Test all symbols on equality with itself.
-  for (auto prod = op_symbol_dwarf {nullptr}.operate (rdw ("enum.o"));
+  layout l;
+  for (auto prod = op_symbol_dwarf {l, nullptr}.operate (rdw ("enum.o"));
        auto val = prod->next (); )
     EXPECT_EQ (cmp_result::equal, val->cmp (*val));
 }

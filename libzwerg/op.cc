@@ -60,28 +60,14 @@ namespace
   }
 }
 
-size_t
-inner_op::reserve () const
-{
-  return m_upstream->reserve () + m_reserve;
-}
-
-void
-inner_op::state_con (void *buf) const
-{
-  m_upstream->state_con (buf);
-}
-
-void
-inner_op::state_des (void *buf) const
-{
-  m_upstream->state_des (buf);
-}
-
 struct op_origin::state
 {
   stack::uptr m_stk;
 };
+
+op_origin::op_origin (layout &l)
+  : m_ll {l.reserve <state> ()}
+{}
 
 std::string
 op_origin::name () const
@@ -89,101 +75,43 @@ op_origin::name () const
   return "origin";
 }
 
-size_t
-op_origin::reserve () const
+void
+op_origin::state_con (scon2 &sc) const
 {
-  return sizeof (state);
+  sc.con <state> (m_ll);
 }
 
 void
-op_origin::state_con (void *buf) const
+op_origin::state_des (scon2 &sc) const
 {
-  state *st = this_state <state> (buf);
-  new (st) state {};
+  sc.des <state> (m_ll);
 }
 
 void
-op_origin::state_des (void *buf) const
+op_origin::set_next (scon2 &sc, stack::uptr s) const
 {
-  state *st = this_state <state> (buf);
-  st->~state ();
-}
-
-void
-op_origin::set_next (void *buf_end, stack::uptr s) const
-{
-  // Origin has no upstream and therefore its state has to be the last.
-  state *st = this_state <state> (buf_end) - 1;
+  state &st = sc.get <state> (m_ll);
 
   // xxx update this comment
   // M_STK serves as a canary, because unless reset() percolated all the way
   // here, what STATE points at is sill a poisoned memory. Likewise if
   // set_next() is called before the next reset(), M_STK will be nonnull.
-  assert (st->m_stk == nullptr);
-  st->m_stk = std::move (s);
+  assert (st.m_stk == nullptr);
+  st.m_stk = std::move (s);
 }
 
 stack::uptr
-op_origin::next (void *buf) const
+op_origin::next (scon2 &sc) const
 {
-  state *st = this_state <state> (buf);
-  return std::move (st->m_stk);
-}
-
-
-struct op_inner_origin::state
-{
-  stack::uptr m_stk;
-};
-
-op_inner_origin::op_inner_origin (std::shared_ptr <op> upstream)
-  : inner_op {upstream, sizeof (state)}
-{}
-
-std::string
-op_inner_origin::name () const
-{
-  return "inner_origin";
-}
-
-void
-op_inner_origin::state_con (void *buf) const
-{
-  simple_state_con <state> (buf);
-}
-
-void
-op_inner_origin::state_des (void *buf) const
-{
-  simple_state_des <state> (buf);
-}
-
-void
-op_inner_origin::set_next (void *buf_end, stack::uptr s) const
-{
-  // Origin has no upstream and therefore its state has to be the last.
-  state *st = this_state <state> (buf_end) - 1;
-
-  // xxx update this comment
-  // M_STK serves as a canary, because unless reset() percolated all the way
-  // here, what STATE points at is sill a poisoned memory. Likewise if
-  // set_next() is called before the next reset(), M_STK will be nonnull.
-  assert (st->m_stk == nullptr);
-  st->m_stk = std::move (s);
-}
-
-stack::uptr
-op_inner_origin::next (void *buf) const
-{
-  state *st = this_state <state> (buf);
-  return std::move (st->m_stk);
+  state &st = sc.get <state> (m_ll);
+  return std::move (st.m_stk);
 }
 
 
 stack::uptr
-op_nop::next (void *buf) const
+op_nop::next (scon2 &sc) const
 {
-  return m_upstream->next (buf);
+  return m_upstream->next (sc);
 }
 
 std::string
@@ -194,10 +122,10 @@ op_nop::name () const
 
 
 stack::uptr
-op_assert::next (void *buf) const
+op_assert::next (scon2 &sc) const
 {
-  while (auto stk = m_upstream->next (buf))
-    if (m_pred->result (*stk) == pred_result::yes)
+  while (auto stk = m_upstream->next (sc))
+    if (m_pred->result (sc, *stk) == pred_result::yes)
       return stk;
   return nullptr;
 }
@@ -379,9 +307,9 @@ op_format::name () const
 
 
 stack::uptr
-op_const::next (void *buf) const
+op_const::next (scon2 &sc) const
 {
-  if (auto stk = m_upstream->next (buf))
+  if (auto stk = m_upstream->next (sc))
     {
       stk->push (m_value->clone ());
       return stk;
@@ -414,12 +342,9 @@ struct op_merge::state
 };
 
 stack::uptr
-op_tine::next (void *buf) const
+op_tine::next (scon2 &sc) const
 {
-  state *st = op::this_state <state> (buf);
-  auto pair = m_merge.get_state (m_branch_id, st);
-  op_merge::state &mst = pair.first;
-  void *upstream_buf = pair.second;
+  op_merge::state &mst = m_merge.get_state (sc);
 
   if (mst.m_done)
     return nullptr;
@@ -427,7 +352,7 @@ op_tine::next (void *buf) const
   if (std::all_of (mst.m_file.begin (), mst.m_file.end (),
 		   [] (stack::uptr const &ptr) { return ptr == nullptr; }))
     {
-      if (auto stk = m_merge.get_upstream ().next (upstream_buf))
+      if (auto stk = m_merge.get_upstream ().next (sc))
 	for (auto &ptr: mst.m_file)
 	  ptr = std::make_unique <stack> (*stk);
       else
@@ -449,31 +374,15 @@ op_tine::name () const
 }
 
 
-size_t
-op_merge::branch_off (size_t branch_id) const
+op_merge::op_merge (layout &l, std::shared_ptr <op> upstream)
+  : m_upstream {upstream}
+  , m_ll {l.reserve <state> ()}
+{}
+
+op_merge::state &
+op_merge::get_state (scon2 &sc) const
 {
-  size_t off = sizeof (struct state);
-  for (size_t i = 0; i < branch_id; ++i)
-    off += m_ops[i]->reserve ();
-  return off;
-}
-
-std::pair <op_merge::state &, void *>
-op_merge::get_state (size_t branch_id, op_tine::state *tine_state) const
-{
-  auto buf_end = reinterpret_cast <uint8_t *> (tine_state + 1);
-
-  // The state for tine in BRANCH should be stored at the end of the area, so
-  // ask for branch_id + 1 to include the querying branch itself in the offset
-  // as well.
-  size_t off = branch_off (branch_id + 1);
-  uint8_t *this_buf = buf_end - off;
-  op_merge::state &st = *op::this_state <op_merge::state> (this_buf);
-
-  off = branch_off (m_ops.size ());
-  void *upstream_buf = this_buf + off;
-
-  return {st, upstream_buf};
+  return sc.get <state> (m_ll);
 }
 
 op &
@@ -482,64 +391,37 @@ op_merge::get_upstream () const
   return *m_upstream;
 }
 
-size_t
-op_merge::reserve () const
+void
+op_merge::state_con (scon2 &sc) const
 {
-  size_t off = sizeof (struct state);
+  sc.con <state> (m_ll, m_ops.size ());
   for (auto const &branch: m_ops)
-    off += branch->reserve ();
-  return off + m_upstream->reserve ();
+    branch->state_con (sc);
+  m_upstream->state_con (sc);
 }
 
 void
-op_merge::state_con (void *buf) const
+op_merge::state_des (scon2 &sc) const
 {
-  state *st = op::this_state <state> (buf);
-  new (st) state {m_ops.size ()};
-
-  auto ptr = reinterpret_cast <uint8_t *> (op::next_state (st));
-  for (std::shared_ptr <op> const &branch: m_ops)
-    {
-      branch->state_con (ptr);
-      // xxx figure out how to avoid the repeated reserve computation here and
-      // in des
-      ptr += branch->reserve ();
-    }
-
-  m_upstream->state_con (ptr);
-}
-
-void
-op_merge::state_des (void *buf) const
-{
-  state *st = op::this_state <state> (buf);
-
-  auto ptr = reinterpret_cast <uint8_t *> (op::next_state (st));
+  m_upstream->state_des (sc);
   for (auto const &branch: m_ops)
-    {
-      branch->state_des (ptr);
-      ptr += branch->reserve ();
-    }
-
-  m_upstream->state_des (ptr);
-  st->~state ();
+    branch->state_des (sc);
+  sc.des <state> (m_ll);
 }
 
 stack::uptr
-op_merge::next (void *buf) const
+op_merge::next (scon2 &sc) const
 {
-  state *st = op::this_state <state> (buf);
-  if (st->m_done)
+  state &st = sc.get <state> (m_ll);
+  if (st.m_done)
     return nullptr;
 
-  while (! st->m_done)
+  while (! st.m_done)
     {
-      auto brbuf = reinterpret_cast <uint8_t *> (buf);
-      brbuf += branch_off (st->m_idx);
-      if (auto ret = m_ops[st->m_idx]->next (brbuf))
+      if (auto ret = m_ops[st.m_idx]->next (sc))
 	return ret;
-      if (++st->m_idx == m_ops.size ())
-	st->m_idx = 0;
+      if (++st.m_idx == m_ops.size ())
+	st.m_idx = 0;
     }
 
   return nullptr;
@@ -571,13 +453,6 @@ op_or::reset_me ()
   m_branch_it = m_branches.end ();
   for (auto const &branch: m_branches)
     branch.second->reset ();
-}
-
-void
-op_or::reset ()
-{
-  reset_me ();
-  m_upstream->reset ();
 }
 
 stack::uptr
@@ -839,14 +714,16 @@ struct op_subx::state
   stack::uptr m_stk;
 };
 
-op_subx::op_subx (std::shared_ptr <op> upstream,
-		  std::shared_ptr <op_inner_origin> origin,
+op_subx::op_subx (layout &l,
+		  std::shared_ptr <op> upstream,
+		  std::shared_ptr <op_origin> origin,
 		  std::shared_ptr <op> op,
 		  size_t keep)
   : m_upstream {upstream}
   , m_origin {origin}
   , m_op {op}
   , m_keep {keep}
+  , m_ll {l.reserve <state> ()}
 {}
 
 std::string
@@ -855,49 +732,38 @@ op_subx::name () const
   return std::string ("subx<") + m_op->name () + ">";
 }
 
-size_t
-op_subx::reserve () const
+void
+op_subx::state_con (scon2 &sc) const
 {
-  return m_op->reserve () + sizeof (state);
+  sc.con <state> (m_ll);
+  m_op->state_con (sc);
+  m_upstream->state_con (sc);
 }
 
 void
-op_subx::state_con (void *buf) const
+op_subx::state_des (scon2 &sc) const
 {
-  state *st = this_state <state> (buf);
-  new (st) state {};
-  m_op->state_con (next_state (st));
-}
-
-void
-op_subx::state_des (void *buf) const
-{
-  state *st = op::this_state <state> (buf);
-  m_op->state_des (next_state (st));
-  st->~state ();
+  m_upstream->state_des (sc);
+  m_op->state_des (sc);
+  sc.des <state> (m_ll);
 }
 
 stack::uptr
-op_subx::next (void *buf) const
+op_subx::next (scon2 &sc) const
 {
-  size_t op_reserve = m_op->reserve () - m_upstream->reserve ();
-
-  state *st = this_state <state> (buf);
-  auto opst = next_state (st);
-  auto ust = reinterpret_cast <uint8_t *> (opst) + op_reserve;
+  state &st = sc.get <state> (m_ll);
 
   while (true)
     {
-      while (st->m_stk == nullptr)
-	if (st->m_stk = m_upstream->next (ust))
-	  // ust is exactly the end of m_op area.
-	  m_origin->set_next (ust, std::make_unique <stack> (*st->m_stk));
+      while (st.m_stk == nullptr)
+	if (st.m_stk = m_upstream->next (sc))
+	  m_origin->set_next (sc, std::make_unique <stack> (*st.m_stk));
 	else
 	  return nullptr;
 
-      if (auto stk = m_op->next (opst))
+      if (auto stk = m_op->next (sc))
 	{
-	  auto ret = std::make_unique <stack> (*st->m_stk);
+	  auto ret = std::make_unique <stack> (*st.m_stk);
 	  std::vector <std::unique_ptr <value>> kept;
 	  for (size_t i = 0; i < m_keep; ++i)
 	    kept.push_back (stk->pop ());
@@ -909,7 +775,7 @@ op_subx::next (void *buf) const
 	  return ret;
 	}
 
-      st->m_stk = nullptr;
+      st.m_stk = nullptr;
     }
 }
 
@@ -943,8 +809,9 @@ struct op_bind::state
   std::unique_ptr <value> m_current;
 };
 
-op_bind::op_bind (std::shared_ptr <op> upstream)
-  : inner_op {upstream, sizeof (state)}
+op_bind::op_bind (layout &l, std::shared_ptr <op> upstream)
+  : inner_op {upstream}
+  , m_ll {l.reserve <state> ()}
 {}
 
 std::string
@@ -956,35 +823,36 @@ op_bind::name () const
 }
 
 void
-op_bind::state_con (void *buf) const
+op_bind::state_con (scon2 &sc) const
 {
-  simple_state_con <state> (buf);
+  sc.con <state> (m_ll);
+  inner_op::state_con (sc);
 }
 
 void
-op_bind::state_des (void *buf) const
+op_bind::state_des (scon2 &sc) const
 {
-  simple_state_des <state> (buf);
+  inner_op::state_des (sc);
+  sc.des <state> (m_ll);
 }
 
 stack::uptr
-op_bind::next (void *buf) const
+op_bind::next (scon2 &sc) const
 {
-  state *st = this_state <state> (buf);
-  if (auto stk = m_upstream->next (next_state (st)))
+  state &st = sc.get <state> (m_ll);
+  if (auto stk = m_upstream->next (sc))
     {
-      st->m_current = stk->pop ();
+      st.m_current = stk->pop ();
       return stk;
     }
   return nullptr;
 }
 
 std::unique_ptr <value>
-op_bind::current (void *buf_end) const
+op_bind::current (scon2 &sc) const
 {
-  auto ptr = reinterpret_cast <uint8_t *> (buf_end);
-  state *st = this_state <state> (ptr - reserve ());
-  return st->m_current->clone ();
+  state &st = sc.get <state> (m_ll);
+  return st.m_current->clone ();
 }
 
 
@@ -993,9 +861,10 @@ struct op_read::state
   std::shared_ptr <op> m_apply;
 };
 
-op_read::op_read (std::shared_ptr <op> upstream, op_bind &src)
-  : inner_op {upstream, sizeof (state)}
+op_read::op_read (layout &l, std::shared_ptr <op> upstream, op_bind &src)
+  : inner_op {upstream}
   , m_src {src}
+  , m_ll {l.reserve <state> ()}
 {}
 
 std::string
@@ -1007,30 +876,31 @@ op_read::name () const
 }
 
 void
-op_read::state_con (void *buf) const
+op_read::state_con (scon2 &sc) const
 {
-  simple_state_con <state> (buf);
+  sc.con <state> (m_ll);
+  inner_op::state_con (sc);
 }
 
 void
-op_read::state_des (void *buf) const
+op_read::state_des (scon2 &sc) const
 {
-  simple_state_des <state> (buf);
+  inner_op::state_des (sc);
+  sc.des <state> (m_ll);
 }
 
 stack::uptr
-op_read::next (void *buf) const
+op_read::next (scon2 &sc) const
 {
-  state *st = this_state <state> (buf);
-  auto ptr = reinterpret_cast <uint8_t *> (buf);
+  state &st = sc.get <state> (m_ll);
 
   while (true)
     {
-      if (st->m_apply == nullptr)
+      if (st.m_apply == nullptr)
 	{
-	  if (auto stk = m_upstream->next (next_state (st)))
+	  if (auto stk = m_upstream->next (sc))
 	    {
-	      auto val = m_src.current (ptr + reserve ());
+	      auto val = m_src.current (sc);
 	      bool is_closure = val->is <value_closure> ();
 	      stk->push (std::move (val));
 
@@ -1045,31 +915,31 @@ op_read::next (void *buf) const
 
 	      assert (! "implicit apply in read not yet implemented");
 	      //auto origin = std::make_shared <op_origin> (std::move (stk));
-	      //st->m_apply = std::make_shared <op_apply> (origin);
+	      //st.m_apply = std::make_shared <op_apply> (origin);
 	    }
 	  else
 	    return nullptr;
 	}
 
-      assert (st->m_apply != nullptr);
-      if (auto stk = st->m_apply->next ())//xxx
+      assert (st.m_apply != nullptr);
+      if (auto stk = st.m_apply->next ())//xxx
 	return stk;
 
-      st->m_apply = nullptr;
+      st.m_apply = nullptr;
     }
 }
 
 
 std::unique_ptr <value>
-pseudo_bind::fetch (unsigned assert_id) const
+pseudo_bind::fetch (scon2 &sc, unsigned assert_id) const
 {
   assert (m_id == assert_id);
   assert (! "pseudo_bind not implemented");
-  return m_src->current (nullptr); // xxx
+  return m_src->current (sc);
 }
 
 std::unique_ptr <value>
-pseudo_bind::current (void *buf_end) const
+pseudo_bind::current (scon2 &sc) const
 {
   value_closure *closure = *m_rdv;
   assert (closure != nullptr);
@@ -1091,8 +961,11 @@ op_lex_closure::next ()
     {
       // Fetch actual values of the referenced environment bindings.
       std::vector <std::unique_ptr <value>> env;
+      assert (! "op_lex_closure::next");
+      /* xxx
       for (auto const &pseudo: m_pseudos)
 	env.push_back (pseudo->fetch (env.size ()));
+      */
 
       stk->push (std::make_unique <value_closure> (m_origin, m_op,
 						   std::move (env), m_rdv, 0));
@@ -1243,9 +1116,9 @@ op_ifelse::name () const
 
 
 pred_result
-pred_not::result (stack &stk)
+pred_not::result (scon2 &sc, stack &stk) const
 {
-  return ! m_a->result (stk);
+  return ! m_a->result (sc, stk);
 }
 
 std::string
@@ -1256,9 +1129,9 @@ pred_not::name () const
 
 
 pred_result
-pred_and::result (stack &stk)
+pred_and::result (scon2 &sc, stack &stk) const
 {
-  return m_a->result (stk) && m_b->result (stk);
+  return m_a->result (sc, stk) && m_b->result (sc, stk);
 }
 
 std::string
@@ -1269,9 +1142,9 @@ pred_and::name () const
 
 
 pred_result
-pred_or::result (stack &stk)
+pred_or::result (scon2 &sc, stack &stk) const
 {
-  return m_a->result (stk) || m_b->result (stk);
+  return m_a->result (sc, stk) || m_b->result (sc, stk);
 }
 
 std::string
@@ -1281,7 +1154,7 @@ pred_or::name () const
 }
 
 pred_result
-pred_subx_any::result (stack &stk)
+pred_subx_any::result (scon2 &sc, stack &stk) const
 {
 #if 0
   m_op->reset ();
@@ -1309,8 +1182,10 @@ pred_subx_any::reset ()
 
 
 pred_result
-pred_subx_compare::result (stack &stk)
+pred_subx_compare::result (scon2 &sc, stack &stk) const
 {
+  assert (! "pred_subx_compare::result");
+#if 0
   for (scon scon1 {*m_origin, *m_op1, std::make_unique <stack> (stk)};
        auto stk1 = scon1.next (); )
     {
@@ -1325,6 +1200,7 @@ pred_subx_compare::result (stack &stk)
 	}
     }
 
+#endif
   return pred_result::no;
 }
 
@@ -1337,7 +1213,7 @@ pred_subx_compare::name () const
 
 
 pred_result
-pred_pos::result (stack &stk)
+pred_pos::result (scon2 &sc, stack &stk) const
 {
     auto const &value = stk.top ();
     return value.get_pos () == m_pos ? pred_result::yes : pred_result::no;

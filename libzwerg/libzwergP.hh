@@ -35,6 +35,7 @@
 
 #include "scon.hh"
 #include "tree.hh"
+#include "op.hh"
 
 struct vocabulary;
 
@@ -56,12 +57,27 @@ struct zw_query
 struct zw_result
 {
   std::shared_ptr <op> m_op;
-  scon m_scon;
+  scon2 m_sc;
 
-  zw_result (op_origin const &origin, std::shared_ptr <op> op, stack::uptr stk)
+  zw_result (layout const &l,
+	     op_origin const &origin, std::shared_ptr <op> op, stack::uptr stk)
     : m_op {op}
-    , m_scon {origin, *op, std::move (stk)}
-  {}
+    , m_sc {l}
+  {
+    m_op->state_con (m_sc);
+    origin.set_next (m_sc, std::move (stk));
+  }
+
+  ~zw_result ()
+  {
+    m_op->state_des (m_sc);
+  }
+
+  stack::uptr
+  next ()
+  {
+    return m_op->next (m_sc);
+  }
 };
 
 struct zw_stack

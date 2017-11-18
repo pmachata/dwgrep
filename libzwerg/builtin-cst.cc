@@ -38,21 +38,20 @@
 namespace
 {
   class op_cast
-    : public op
+    : public inner_op
   {
-    std::shared_ptr <op> m_upstream;
     constant_dom const *m_dom;
 
   public:
     op_cast (std::shared_ptr <op> upstream, constant_dom const *dom)
-      : m_upstream {upstream}
+      : inner_op {upstream}
       , m_dom {dom}
     {}
 
     stack::uptr
-    next () override
+    next (scon2 &sc) const override
     {
-      while (auto stk = m_upstream->next ())
+      while (auto stk = m_upstream->next (sc))
 	{
 	  auto vp = stk->pop ();
 	  if (auto v = value::as <value_cst> (&*vp))
@@ -75,17 +74,12 @@ namespace
       ss << "f_cast<" << m_dom->name () << ">";
       return ss.str ();
     }
-
-    void reset () override
-    {
-      return m_upstream->reset ();
-    }
   };
 }
 
 
 std::shared_ptr <op>
-builtin_constant::build_exec (std::shared_ptr <op> upstream) const
+builtin_constant::build_exec (layout &l, std::shared_ptr <op> upstream) const
 {
   return std::make_shared <op_const> (upstream, m_value->clone ());
 }
@@ -141,7 +135,7 @@ Though you can achieve the same effect with formatting directives
 
 
 std::shared_ptr <op>
-builtin_hex::build_exec (std::shared_ptr <op> upstream) const
+builtin_hex::build_exec (layout &l, std::shared_ptr <op> upstream) const
 {
   return std::make_shared <op_cast> (upstream, &hex_constant_dom);
 }
@@ -160,7 +154,7 @@ builtin_hex::docstring () const
 
 
 std::shared_ptr <op>
-builtin_dec::build_exec (std::shared_ptr <op> upstream) const
+builtin_dec::build_exec (layout &l, std::shared_ptr <op> upstream) const
 {
   return std::make_shared <op_cast> (upstream, &dec_constant_dom);
 }
@@ -179,7 +173,7 @@ builtin_dec::docstring () const
 
 
 std::shared_ptr <op>
-builtin_oct::build_exec (std::shared_ptr <op> upstream) const
+builtin_oct::build_exec (layout &l, std::shared_ptr <op> upstream) const
 {
   return std::make_shared <op_cast> (upstream, &oct_constant_dom);
 }
@@ -198,7 +192,7 @@ builtin_oct::docstring () const
 
 
 std::shared_ptr <op>
-builtin_bin::build_exec (std::shared_ptr <op> upstream) const
+builtin_bin::build_exec (layout &l, std::shared_ptr <op> upstream) const
 {
   return std::make_shared <op_cast> (upstream, &bin_constant_dom);
 }
@@ -217,7 +211,7 @@ builtin_bin::docstring () const
 
 
 std::unique_ptr <pred>
-builtin_pred_pos::build_pred () const
+builtin_pred_pos::build_pred (layout &l) const
 {
   return maybe_invert (std::make_unique <pred_pos> (m_pos), m_positive);
 }
@@ -262,9 +256,9 @@ as T_CONST, T_DIE, T_STR, etc.).
 }
 
 stack::uptr
-op_pos::next (void *buf) const
+op_pos::next (scon2 &sc) const
 {
-  if (auto stk = m_upstream->next (buf))
+  if (auto stk = m_upstream->next (sc))
     {
       auto vp = stk->pop ();
       static numeric_constant_dom_t pos_dom_obj ("pos");

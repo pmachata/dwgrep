@@ -28,6 +28,7 @@
 
 #include "scon.hh"
 
+#if 0
 scon::scon (op_origin const &origin, op const &op, stack::uptr stk)
   : m_op {op}
   , m_buf (op.reserve (), 0)
@@ -59,3 +60,5 @@ scon::buf_end ()
 {
   return m_buf.data () + m_buf.size ();
 }
+
+#endif

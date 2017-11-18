@@ -41,47 +41,48 @@
 namespace
 {
   std::shared_ptr <op>
-  build_exec (tree const &t, std::shared_ptr <op> upstream, bindings &bn);
+  build_exec (tree const &t, layout &l,
+	      std::shared_ptr <op> upstream, bindings &bn);
 
   std::unique_ptr <pred>
-  build_pred (tree const &t, bindings &bn)
+  build_pred (tree const &t, layout &l, bindings &bn)
   {
     switch (t.m_tt)
       {
       case tree_type::PRED_NOT:
-        return std::make_unique <pred_not> (build_pred (t.child (0), bn));
+        return std::make_unique <pred_not> (build_pred (t.child (0), l, bn));
 
       case tree_type::PRED_OR:
         return std::make_unique <pred_or>
-          (build_pred (t.m_children[0], bn),
-           build_pred (t.m_children[1], bn));
+          (build_pred (t.m_children[0], l, bn),
+           build_pred (t.m_children[1], l, bn));
 
       case tree_type::PRED_AND:
         return std::make_unique <pred_and>
-          (build_pred (t.m_children[0], bn),
-           build_pred (t.m_children[1], bn));
+          (build_pred (t.m_children[0], l, bn),
+           build_pred (t.m_children[1], l, bn));
 
       case tree_type::PRED_SUBX_ANY:
         {
           assert (t.m_children.size () == 1);
-          auto origin = std::make_shared <op_origin> ();
-          auto op = build_exec (t.child (0), origin, bn);
+          auto origin = std::make_shared <op_origin> (l);
+          auto op = build_exec (t.child (0), l, origin, bn);
           return std::make_unique <pred_subx_any> (op, origin);
         }
 
       case tree_type::PRED_SUBX_CMP:
         {
           assert (t.m_children.size () == 3);
-          auto origin = std::make_shared <op_origin> ();
-          auto op1 = build_exec (t.child (0), origin, bn);
-          auto op2 = build_exec (t.child (1), origin, bn);
-          auto pred = build_pred (t.child (2), bn);
+          auto origin = std::make_shared <op_origin> (l);
+          auto op1 = build_exec (t.child (0), l, origin, bn);
+          auto op2 = build_exec (t.child (1), l, origin, bn);
+          auto pred = build_pred (t.child (2), l, bn);
           return std::make_unique <pred_subx_compare> (op1, op2, origin,
                                                        std::move (pred));
         }
 
       case tree_type::F_BUILTIN:
-        return t.m_builtin->build_pred ();
+        return t.m_builtin->build_pred (l);
 
       case tree_type::CAT:
       case tree_type::NOP:
@@ -109,7 +110,8 @@ namespace
   }
 
   std::shared_ptr <op>
-  build_exec (tree const &t, std::shared_ptr <op> upstream, bindings &bn)
+  build_exec (tree const &t, layout &l,
+	      std::shared_ptr <op> upstream, bindings &bn)
   {
     assert (upstream != nullptr);
 
@@ -117,17 +119,17 @@ namespace
       {
       case tree_type::CAT:
         for (auto const &ch: t.m_children)
-          upstream = build_exec (ch, upstream, bn);
+          upstream = build_exec (ch, l, upstream, bn);
         return upstream;
 
       case tree_type::ALT:
         {
-	  auto merge = std::make_shared <op_merge> (upstream);
+	  auto merge = std::make_shared <op_merge> (l, upstream);
 
 	  for (size_t i = 0; i < t.m_children.size (); ++i)
 	    {
 	      auto tine = std::make_shared <op_tine> (*merge, i);
-              auto op = build_exec (t.m_children[i], tine, bn);
+              auto op = build_exec (t.m_children[i], l, tine, bn);
 	      merge->add_branch (op);
 	    }
 
@@ -139,8 +141,8 @@ namespace
           auto o = std::make_shared <op_or> (upstream);
           for (auto const &ch: t.m_children)
             {
-              auto origin2 = std::make_shared <op_origin> ();
-              auto op = build_exec (ch, origin2, bn);
+              auto origin2 = std::make_shared <op_origin> (l);
+              auto op = build_exec (ch, l, origin2, bn);
               o->add_branch (origin2, op);
             }
           return o;
@@ -151,16 +153,16 @@ namespace
 
       case tree_type::F_BUILTIN:
         {
-          if (auto pred = build_pred (t, bn))
+          if (auto pred = build_pred (t, l, bn))
             return std::make_shared <op_assert> (upstream, std::move (pred));
-          auto op = t.m_builtin->build_exec (upstream);
+          auto op = t.m_builtin->build_exec (l, upstream);
           assert (op != nullptr);
           return op;
         }
 
       case tree_type::ASSERT:
         return std::make_shared <op_assert>
-          (upstream, build_pred (t.child (0), bn));
+          (upstream, build_pred (t.child (0), l, bn));
 
       case tree_type::FORMAT:
         {
@@ -174,8 +176,8 @@ namespace
                 strgr = std::make_shared <stringer_lit> (strgr, tree.str ());
               else
                 {
-                  auto origin2 = std::make_shared <op_origin> ();
-                  auto op = build_exec (tree, origin2, bn);
+                  auto origin2 = std::make_shared <op_origin> (l);
+                  auto op = build_exec (tree, l, origin2, bn);
                   strgr = std::make_shared <stringer_op> (strgr, origin2, op);
                 }
             }
@@ -203,31 +205,31 @@ namespace
 
       case tree_type::CAPTURE:
         {
-          auto origin = std::make_shared <op_origin> ();
-          auto op = build_exec (t.child (0), origin, bn);
+          auto origin = std::make_shared <op_origin> (l);
+          auto op = build_exec (t.child (0), l, origin, bn);
           return std::make_shared <op_capture> (upstream, origin, op);
         }
 
       case tree_type::SUBX_EVAL:
         {
-          auto origin = std::make_shared <op_inner_origin> (upstream);
-          auto op = build_exec (t.child (0), origin, bn);
-          return std::make_shared <op_subx> (upstream, origin, op,
+          auto origin = std::make_shared <op_origin> (l);
+          auto op = build_exec (t.child (0), l, origin, bn);
+          return std::make_shared <op_subx> (l, upstream, origin, op,
                                              t.cst ().value ().uval ());
         }
 
       case tree_type::CLOSE_STAR:
         {
-          auto origin = std::make_shared <op_origin> ();
-          auto op = build_exec (t.child (0), origin, bn);
+          auto origin = std::make_shared <op_origin> (l);
+          auto op = build_exec (t.child (0), l, origin, bn);
           return std::make_shared <op_tr_closure> (upstream, origin, op,
                                                    op_tr_closure_kind::star);
         }
 
       case tree_type::CLOSE_PLUS:
         {
-          auto origin = std::make_shared <op_origin> ();
-          auto op = build_exec (t.child (0), origin, bn);
+          auto origin = std::make_shared <op_origin> (l);
+          auto op = build_exec (t.child (0), l, origin, bn);
           return std::make_shared <op_tr_closure> (upstream, origin, op,
                                                    op_tr_closure_kind::plus);
         }
@@ -235,7 +237,7 @@ namespace
       case tree_type::SCOPE:
 	{
 	  bindings scope {bn};
-	  return build_exec (t.child (0), upstream, scope);
+	  return build_exec (t.child (0), l, upstream, scope);
 	}
 
       case tree_type::BLOCK:
@@ -245,10 +247,10 @@ namespace
 	  {
 	    bindings pseudo_bn;
 	    for (std::string const &name: bn.names_closure ())
-	      pseudo_bn.bind (name, std::make_shared <op_bind> (nullptr));
+	      pseudo_bn.bind (name, std::make_shared <op_bind> (l, nullptr));
 	    // OP is only necessary for keeping the references from inside the
 	    // block alive.
-	    auto op = build_exec (t.child (0), nullptr, pseudo_bn);
+	    auto op = build_exec (t.child (0), l, nullptr, pseudo_bn);
 	    for (std::string const &name: pseudo_bn.names ())
 	      {
 		std::shared_ptr <op_bind> bnd = pseudo_bn.find (name);
@@ -269,15 +271,16 @@ namespace
 	    for (std::string const &name: env_names)
 	      {
 		std::shared_ptr <op_bind> src = bn.find (name);
-		auto pseudo = std::make_shared <pseudo_bind> (rdv, src, id++);
+		auto pseudo = std::make_shared <pseudo_bind> (l, rdv,
+							      src, id++);
 		pseudos.push_back (pseudo);
 		pseudo_bn.bind (name, pseudo);
 	      }
 	  }
 
 	  // Finally, op_lex_closure can be built.
-	  auto origin = std::make_shared <op_origin> ();
-	  auto op = build_exec (t.child (0), origin, pseudo_bn);
+	  auto origin = std::make_shared <op_origin> (l);
+	  auto op = build_exec (t.child (0), l, origin, pseudo_bn);
 
 	  return std::make_shared <op_lex_closure> (upstream, origin, op,
 						    pseudos, rdv);
@@ -327,7 +330,7 @@ namespace
 
       case tree_type::BIND:
         {
-          auto ret = std::make_shared <op_bind> (upstream);
+          auto ret = std::make_shared <op_bind> (l, upstream);
           bn.bind (t.str (), ret);
           return ret;
         }
@@ -335,7 +338,7 @@ namespace
       case tree_type::READ:
         {
           auto src = bn.find (t.str ());
-          return std::make_shared <op_read> (upstream, *src);
+          return std::make_shared <op_read> (l, upstream, *src);
         }
 
       case tree_type::F_DEBUG:
@@ -343,14 +346,15 @@ namespace
 
       case tree_type::IFELSE:
         {
-          auto cond_origin = std::make_shared <op_origin> ();
-          auto cond_op = build_exec (t.child (0), cond_origin, bn);
+          auto cond_origin = std::make_shared <op_origin> (l);
+          auto cond_op = build_exec (t.child (0), l, cond_origin, bn);
 
-          auto then_origin = std::make_shared <op_origin> ();
-          auto then_op = build_exec (t.child (1), then_origin, bn);
+	  // xxx could else and origin share state space?
+          auto then_origin = std::make_shared <op_origin> (l);
+          auto then_op = build_exec (t.child (1), l, then_origin, bn);
 
-          auto else_origin = std::make_shared <op_origin> ();
-          auto else_op = build_exec (t.child (2), else_origin, bn);
+          auto else_origin = std::make_shared <op_origin> (l);
+          auto else_op = build_exec (t.child (2), l, else_origin, bn);
 
           return std::make_shared <op_ifelse> (upstream, cond_origin, cond_op,
                                                then_origin, then_op,
@@ -371,8 +375,8 @@ namespace
 }
 
 std::shared_ptr <op>
-tree::build_exec (std::shared_ptr <op> upstream) const
+tree::build_exec (layout &l, std::shared_ptr <op> upstream) const
 {
   bindings root;
-  return ::build_exec (*this, upstream, root);
+  return ::build_exec (*this, l, upstream, root);
 }

@@ -1,4 +1,5 @@
 /*
+   Copyright (C) 2017 Petr Machata
    Copyright (C) 2014 Red Hat, Inc.
    This file is part of dwgrep.
 
@@ -31,15 +32,29 @@
 #include "value-str.hh"
 #include "value-cst.hh"
 
+namespace
+{
+  template <class Builtin>
+  pred_result
+  result_of_builtin (stack &stk)
+  {
+    layout l;
+    auto pred = Builtin {true}.build_pred (l);
+    scon2 sc {l};
+    return pred->result (sc, stk);
+  }
+}
+
 TEST (TestBuiltinCmp, comparison_of_different_types)
 {
   stack stk;
   stk.push (std::make_unique <value_cst> (constant {7, &dec_constant_dom}, 0));
   stk.push (std::make_unique <value_str> ("foo", 0));
 
-  auto eqr = builtin_eq {true}.build_pred ()->result (stk);
-  auto ltr = builtin_lt {true}.build_pred ()->result (stk);
-  auto gtr = builtin_gt {true}.build_pred ()->result (stk);
+  layout l;
+  auto eqr = result_of_builtin <builtin_eq> (stk);
+  auto ltr = result_of_builtin <builtin_lt> (stk);
+  auto gtr = result_of_builtin <builtin_gt> (stk);
 
   ASSERT_NE (pred_result::fail, eqr);
   ASSERT_NE (pred_result::fail, ltr);

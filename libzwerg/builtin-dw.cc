@@ -1175,7 +1175,7 @@ particular DIE was explored::
 // ?root
 
 pred_result
-pred_rootp_die::result (value_die &a)
+pred_rootp_die::result (value_die &a) const
 {
   // N.B. the following works the same for raw as well as cooked
   // DIE's.  The difference in behavior is in 'parent', which for
@@ -1384,7 +1384,7 @@ expression::
 // ?haschildren
 
 pred_result
-pred_haschildrenp_die::result (value_die &a)
+pred_haschildrenp_die::result (value_die &a) const
 {
   return pred_result (dwarf_haschildren (&a.get_die ()));
 }
@@ -1798,7 +1798,7 @@ pred_atname_die::pred_atname_die (unsigned atname)
 {}
 
 pred_result
-pred_atname_die::result (value_die &a)
+pred_atname_die::result (value_die &a) const
 {
   return find_attribute (a.get_die (), m_atname,
 			 a.get_doneness (), nullptr, nullptr).first
@@ -1846,7 +1846,7 @@ pred_atname_attr::pred_atname_attr (unsigned atname)
 {}
 
 pred_result
-pred_atname_attr::result (value_attr &a)
+pred_atname_attr::result (value_attr &a) const
 {
   return pred_result (dwarf_whatattr (&a.get_attr ()) == m_atname);
 }
@@ -1872,7 +1872,7 @@ pred_atname_cst::pred_atname_cst (unsigned atname)
 {}
 
 pred_result
-pred_atname_cst::result (value_cst &a)
+pred_atname_cst::result (value_cst &a) const
 {
   return pred_result (m_const == a.get_constant ());
 }
@@ -1906,7 +1906,7 @@ pred_tag_die::pred_tag_die (int tag)
 {}
 
 pred_result
-pred_tag_die::result (value_die &a)
+pred_tag_die::result (value_die &a) const
 {
   return pred_result (dwarf_tag (&a.get_die ()) == m_tag);
 }
@@ -1933,7 +1933,7 @@ pred_tag_cst::pred_tag_cst (int tag)
 {}
 
 pred_result
-pred_tag_cst::result (value_cst &a)
+pred_tag_cst::result (value_cst &a) const
 {
   return pred_result (m_const == a.get_constant ());
 }
@@ -1964,7 +1964,7 @@ pred_form_attr::pred_form_attr (unsigned form)
 {}
 
 pred_result
-pred_form_attr::result (value_attr &a)
+pred_form_attr::result (value_attr &a) const
 {
   return pred_result (dwarf_whatform (&a.get_attr ()) == m_form);
 }
@@ -1992,7 +1992,7 @@ pred_form_cst::pred_form_cst (unsigned form)
 {}
 
 pred_result
-pred_form_cst::result (value_cst &a)
+pred_form_cst::result (value_cst &a) const
 {
   return pred_result (m_const == a.get_constant ());
 }
@@ -2017,7 +2017,7 @@ pred_op_loclist_elem::pred_op_loclist_elem (unsigned op)
 {}
 
 pred_result
-pred_op_loclist_elem::result (value_loclist_elem &a)
+pred_op_loclist_elem::result (value_loclist_elem &a) const
 {
   for (size_t i = 0; i < a.get_exprlen (); ++i)
     if (a.get_expr ()[i].atom == m_op)
@@ -2046,7 +2046,7 @@ pred_op_loclist_op::pred_op_loclist_op (unsigned op)
 {}
 
 pred_result
-pred_op_loclist_op::result (value_loclist_op &a)
+pred_op_loclist_op::result (value_loclist_op &a) const
 {
   return pred_result (a.get_dwop ()->atom == m_op);
 }
@@ -2072,7 +2072,7 @@ pred_op_cst::pred_op_cst (unsigned form)
 {}
 
 pred_result
-pred_op_cst::result (value_cst &a)
+pred_op_cst::result (value_cst &a) const
 {
   return pred_result (m_const == a.get_constant ());
 }

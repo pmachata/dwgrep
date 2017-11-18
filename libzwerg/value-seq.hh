@@ -117,7 +117,7 @@ struct pred_empty_seq
   : public pred_overload <value_seq>
 {
   using pred_overload::pred_overload;
-  pred_result result (value_seq &a) override;
+  pred_result result (value_seq &a) const override;
 
   static std::string docstring ();
 };
@@ -126,7 +126,7 @@ struct pred_find_seq
   : public pred_overload <value_seq, value_seq>
 {
   using pred_overload::pred_overload;
-  pred_result result (value_seq &haystack, value_seq &needle) override;
+  pred_result result (value_seq &haystack, value_seq &needle) const override;
 
   static std::string docstring ();
 };
@@ -135,7 +135,7 @@ struct pred_starts_seq
   : public pred_overload <value_seq, value_seq>
 {
   using pred_overload::pred_overload;
-  pred_result result (value_seq &haystack, value_seq &needle) override;
+  pred_result result (value_seq &haystack, value_seq &needle) const override;
 
   static std::string docstring ();
 };
@@ -144,7 +144,7 @@ struct pred_ends_seq
   : public pred_overload <value_seq, value_seq>
 {
   using pred_overload::pred_overload;
-  pred_result result (value_seq &haystack, value_seq &needle) override;
+  pred_result result (value_seq &haystack, value_seq &needle) const override;
 
   static std::string docstring ();
 };

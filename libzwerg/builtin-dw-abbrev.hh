@@ -116,7 +116,7 @@ struct pred_haschildrenp_abbrev
 {
   using pred_overload::pred_overload;
 
-  pred_result result (value_abbrev &a) override;
+  pred_result result (value_abbrev &a) const override;
   static std::string docstring ();
 };
 
@@ -167,7 +167,7 @@ struct pred_atname_abbrev
     : m_atname {atname}
   {}
 
-  pred_result result (value_abbrev &a) override;
+  pred_result result (value_abbrev &a) const override;
   static std::string docstring ();
 };
 
@@ -180,7 +180,7 @@ struct pred_atname_abbrev_attr
     : m_atname {atname}
   {}
 
-  pred_result result (value_abbrev_attr &a) override;
+  pred_result result (value_abbrev_attr &a) const override;
   static std::string docstring ();
 };
 
@@ -193,7 +193,7 @@ struct pred_tag_abbrev
     : m_tag {tag}
   {}
 
-  pred_result result (value_abbrev &a) override;
+  pred_result result (value_abbrev &a) const override;
   static std::string docstring ();
 };
 
@@ -206,7 +206,7 @@ struct pred_form_abbrev_attr
     : m_form {form}
   {}
 
-  pred_result result (value_abbrev_attr &a) override;
+  pred_result result (value_abbrev_attr &a) const override;
   static std::string docstring ();
 };
 

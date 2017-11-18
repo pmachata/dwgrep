@@ -44,10 +44,10 @@
 // adding new value types, and reuse the same operators for them, this
 // overloading infrastructure is provided.
 //
-// Every overload, i.e. a specialization of the operator to a type, is
+// Every overload, i.e. a specialization of an operator to a type, is
 // a builtin.  The op that this builtin creates contains the code that
 // handles the type that this overload is specialized to.  Most of the
-// time, both the op and the bulitin that wraps it are boring and
+// time, both the op and the builtin that wraps it are boring and
 // predictable.  You will most likely want to inherit the op off
 // either of op_overload, op_yielding_overload or pred_overload.
 //
@@ -70,17 +70,19 @@ class overload_instance
 {
   std::vector <selector> m_selectors;
   std::vector <std::tuple <std::shared_ptr <op_origin>,
-			   std::shared_ptr <op>,
-			   size_t>> m_execs;
+			   std::shared_ptr <op>>> m_execs;
   std::vector <std::shared_ptr <pred>> m_preds;
 
 public:
-  overload_instance (std::vector
+  // xxx this already needs the ops with layout locs set. Not sure how that can
+  // work. Anyway, overloaded_op should only take as much state space as the
+  // largest overload.
+  overload_instance (layout &l,
+		     std::vector
 			<std::tuple <selector,
 				     std::shared_ptr <builtin>>> const &stencil);
 
-  size_t max_reserve () const;
-  std::tuple <op_origin *, op *, size_t> find_exec (stack &stk) const;
+  std::tuple <op_origin *, op *> find_exec (stack &stk) const;
   std::shared_ptr <pred> find_pred (stack &stk) const;
 
   void show_error (std::string const &name, selector profile) const;
@@ -104,7 +106,7 @@ public:
   template <class T, class... As> void add_op_overload (As &&... arg);
   template <class T, class... As> void add_pred_overload (As &&... arg);
 
-  overload_instance instantiate ();
+  overload_instance instantiate (layout &l);
   overload_vec const &get_overloads () const { return m_overloads; }
 };
 
@@ -113,15 +115,16 @@ class overload_op
 {
   class state;
   std::shared_ptr <op> m_upstream;
+  layout::loc m_ll;
   overload_instance m_ovl_inst;
 
 public:
-  overload_op (std::shared_ptr <op> upstream, overload_instance ovl_inst);
+  overload_op (layout &l, std::shared_ptr <op> upstream,
+	       overload_instance ovl_inst);
 
-  size_t reserve () const override;
-  void state_con (void *buf) const override;
-  void state_des (void *buf) const override;
-  stack::uptr next (void *buf) const override final;
+  void state_con (scon2 &sc) const override;
+  void state_des (scon2 &sc) const override;
+  stack::uptr next (scon2 &sc) const override final;
 };
 
 class overload_pred
@@ -137,7 +140,7 @@ public:
   reset () override final
   {}
 
-  pred_result result (stack &stk) override final;
+  pred_result result (scon2 &sc, stack &stk) const override final;
 };
 
 // Base class for overloaded builtins.
@@ -176,7 +179,7 @@ struct overloaded_op_builtin
 {
   using overloaded_builtin::overloaded_builtin;
 
-  std::shared_ptr <op> build_exec (std::shared_ptr <op> upstream)
+  std::shared_ptr <op> build_exec (layout &l, std::shared_ptr <op> upstream)
     const override final;
 
   std::shared_ptr <overloaded_builtin>
@@ -195,7 +198,7 @@ struct overloaded_pred_builtin
     , m_positive {positive}
   {}
 
-  std::unique_ptr <pred> build_pred () const override final;
+  std::unique_ptr <pred> build_pred (layout &l) const override final;
 
   std::shared_ptr <overloaded_builtin>
   create_merged (std::shared_ptr <overload_tab> tab) const override final;
@@ -210,12 +213,13 @@ struct overload_op_builder_impl
 {
   template <size_t... I>
   static std::shared_ptr <op>
-  build (std::shared_ptr <op> upstream,
+  build (layout &l,
+	 std::shared_ptr <op> upstream,
 	 std::index_sequence <I...>,
 	 std::tuple <typename std::remove_reference <Args>::type...>
 	 	const &args)
   {
-    return std::make_shared <Op> (upstream, std::get <I> (args)...);
+    return std::make_shared <Op> (l, upstream, std::get <I> (args)...);
   }
 };
 
@@ -233,10 +237,10 @@ overload_tab::add_op_overload (Args &&... args)
     {}
 
     std::shared_ptr <op>
-    build_exec (std::shared_ptr <op> upstream) const override final
+    build_exec (layout &l, std::shared_ptr <op> upstream) const override final
     {
       return overload_op_builder_impl <Op, Args...>::template build
-	(upstream, std::index_sequence_for <Args...> {}, m_args);
+	(l, upstream, std::index_sequence_for <Args...> {}, m_args);
     }
 
     char const *
@@ -295,7 +299,7 @@ overload_tab::add_pred_overload (Args &&... args)
     {}
 
     std::unique_ptr <pred>
-    build_pred () const override final
+    build_pred (layout &l) const override final
     {
       return overload_pred_builder_impl <Pred, Args...>::template build
         (std::index_sequence_for <Args...> {}, m_args);
@@ -401,14 +405,14 @@ struct op_overload
   }
 
 public:
-  op_overload (std::shared_ptr <op> upstream)
-    : stub_op {upstream, 0}
+  op_overload (layout &l, std::shared_ptr <op> upstream)
+    : stub_op {upstream}
   {}
 
   stack::uptr
-  next (void *buf) const override final
+  next (scon2 &sc) const override final
   {
-    while (auto stk = this->m_upstream->next (buf))
+    while (auto stk = this->m_upstream->next (sc))
       if (auto nv = call_operate
 		(std::index_sequence_for <VT...> {},
 		 op_overload_impl <VT...>::template collect <0, VT...> (*stk)))
@@ -445,14 +449,14 @@ struct op_once_overload
   }
 
 public:
-  op_once_overload (std::shared_ptr <op> upstream)
-    : stub_op {upstream, 0}
+  op_once_overload (layout &l, std::shared_ptr <op> upstream)
+    : stub_op {upstream}
   {}
 
   stack::uptr
-  next (void *buf) const override final
+  next (scon2 &sc) const override final
   {
-    if (auto stk = this->m_upstream->next (buf))
+    if (auto stk = this->m_upstream->next (sc))
       {
 	auto ret = call_operate
 		(std::index_sequence_for <VT...> {},
@@ -494,60 +498,55 @@ class op_yielding_overload
     std::unique_ptr <value_producer <RT>> m_prod;
   };
 
+  layout::loc m_ll;
+
 public:
-  op_yielding_overload (std::shared_ptr <op> upstream)
+  op_yielding_overload (layout &l, std::shared_ptr <op> upstream)
     : stub_op {upstream}
+    , m_ll {l.reserve <state> ()}
   {}
 
-  size_t
-  reserve () const override final
+  void
+  state_con (scon2 &sc) const override final
   {
-    return m_upstream->reserve () + sizeof (state);
+    sc.con <state> (m_ll);
+    m_upstream->state_con (sc);
   }
 
   void
-  state_con (void *buf) const override final
+  state_des (scon2 &sc) const override final
   {
-    state *st = this_state <state> (buf);
-    new (st) state {};
-    m_upstream->state_con (op::next_state (st));
-  }
-
-  void
-  state_des (void *buf) const override final
-  {
-    state *st = this_state <state> (buf);
-    st->~state ();
-    m_upstream->state_des (op::next_state (st));
+    m_upstream->state_des (sc);
+    sc.des <state> (m_ll);
   }
 
   stack::uptr
-  next (void *buf) const override final
+  next (scon2 &sc) const override final
   {
-    state *st = this_state <state> (buf);
+    state &st = sc.get <state> (m_ll);
 
     while (true)
       {
-	while (st->m_prod == nullptr)
-	  if (auto stk = this->m_upstream->next (op::next_state (st)))
+	while (st.m_prod == nullptr)
+	  if (auto stk = this->m_upstream->next (sc))
 	    {
-	      st->m_prod = call_operate
+	      st.m_prod = call_operate
 		(std::index_sequence_for <VT...> {},
 		 op_overload_impl <VT...>::template collect <0, VT...> (*stk));
-	      st->m_stk = std::move (stk);
+	      st.m_stk = std::move (stk);
 	    }
 	  else
 	    return nullptr;
 
-	if (auto v = st->m_prod->next ())
+	if (auto v = st.m_prod->next ())
 	  {
-	    auto ret = std::make_unique <stack> (*st->m_stk);
+	    auto ret = std::make_unique <stack> (*st.m_stk);
 	    ret->push (std::move (v));
 	    return ret;
 	  }
 
-	st->m_prod = nullptr;
-	st->m_stk = nullptr;
+	st.m_prod = nullptr;
+	st.m_stk = nullptr;
       }
   }
 
@@ -590,20 +589,20 @@ struct pred_overload
 
   template <size_t... I>
   pred_result
-  call_result (std::index_sequence <I...>, std::tuple <VT &...> args)
+  call_result (std::index_sequence <I...>, std::tuple <VT &...> args) const
   {
     return result (std::get <I> (args)...);
   }
 
 public:
   pred_result
-  result (stack &stk) override
+  result (scon2 &sc, stack &stk) const override
   {
     return call_result (std::index_sequence_for <VT...> {},
 			collect <sizeof... (VT), VT...> (stk));
   }
 
-  virtual pred_result result (VT &... vals) = 0;
+  virtual pred_result result (VT &... vals) const = 0;
 
   static selector get_selector ()
   { return {VT::vtype...}; }

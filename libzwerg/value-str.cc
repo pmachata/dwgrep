@@ -221,7 +221,7 @@ op_relem_str::docstring ()
 
 // ?empty
 pred_result
-pred_empty_str::result (value_str &a)
+pred_empty_str::result (value_str &a) const
 {
   return pred_result (a.get_string () == "");
 }
@@ -249,7 +249,7 @@ This predicate holds if the string on TOS is empty::
 extern char const g_find_docstring[];
 
 pred_result
-pred_find_str::result (value_str &haystack, value_str &needle)
+pred_find_str::result (value_str &haystack, value_str &needle) const
 {
   return pred_result (haystack.get_string ().find (needle.get_string ())
 		      != std::string::npos);
@@ -267,7 +267,7 @@ pred_find_str::docstring ()
 extern char const g_starts_docstring[];
 
 pred_result
-pred_starts_str::result (value_str &haystack, value_str &needle)
+pred_starts_str::result (value_str &haystack, value_str &needle) const
 {
   auto const &hay = haystack.get_string ();
   auto const &need = needle.get_string ();
@@ -288,7 +288,7 @@ pred_starts_str::docstring ()
 extern char const g_ends_docstring[];
 
 pred_result
-pred_ends_str::result (value_str &haystack, value_str &needle)
+pred_ends_str::result (value_str &haystack, value_str &needle) const
 {
   auto const &hay = haystack.get_string ();
   auto const &need = needle.get_string ();
@@ -307,7 +307,7 @@ pred_ends_str::docstring ()
 // ?match
 
 pred_result
-pred_match_str::result (value_str &haystack, value_str &needle)
+pred_match_str::result (value_str &haystack, value_str &needle) const
 {
   regex_t re;
   if (regcomp (&re, needle.get_string ().c_str(),

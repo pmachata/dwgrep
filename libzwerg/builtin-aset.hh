@@ -158,7 +158,7 @@ struct pred_containsp_aset_cst
 {
   using pred_overload::pred_overload;
 
-  pred_result result (value_aset &a, value_cst &b) override;
+  pred_result result (value_aset &a, value_cst &b) const override;
   static std::string docstring ();
 };
 
@@ -167,7 +167,7 @@ struct pred_containsp_aset_aset
 {
   using pred_overload::pred_overload;
 
-  pred_result result (value_aset &a, value_aset &b) override;
+  pred_result result (value_aset &a, value_aset &b) const override;
   static std::string docstring ();
 };
 
@@ -176,7 +176,7 @@ struct pred_overlapsp_aset_aset
 {
   using pred_overload::pred_overload;
 
-  pred_result result (value_aset &a, value_aset &b) override;
+  pred_result result (value_aset &a, value_aset &b) const override;
   static std::string docstring ();
 };
 
@@ -196,7 +196,7 @@ struct pred_emptyp_aset
 {
   using pred_overload::pred_overload;
 
-  pred_result result (value_aset &a) override;
+  pred_result result (value_aset &a) const override;
   static std::string docstring ();
 };
 

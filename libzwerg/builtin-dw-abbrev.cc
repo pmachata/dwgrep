@@ -338,7 +338,7 @@ Takes an abbreviation attribute on TOS and yields its form.
 // ?haschildren :: T_ABBREV
 
 pred_result
-pred_haschildrenp_abbrev::result (value_abbrev &a)
+pred_haschildrenp_abbrev::result (value_abbrev &a) const
 {
   return pred_result (dwarf_abbrevhaschildren (&a.get_abbrev ()));
 }
@@ -497,7 +497,7 @@ Takes abbreviation on TOS and yields its code.
 // ?DW_AT_* :: T_ABBREV
 
 pred_result
-pred_atname_abbrev::result (value_abbrev &a)
+pred_atname_abbrev::result (value_abbrev &a) const
 {
   size_t cnt = dwpp_abbrev_attrcnt (a.get_abbrev ());
   for (size_t i = 0; i < cnt; ++i)
@@ -532,7 +532,7 @@ place with abbreviations::
 // ?DW_AT_A* :: T_ABBREV_ATTR
 
 pred_result
-pred_atname_abbrev_attr::result (value_abbrev_attr &a)
+pred_atname_abbrev_attr::result (value_abbrev_attr &a) const
 {
   return pred_result (a.name == m_atname);
 }
@@ -556,7 +556,7 @@ same as indicated by this word::
 // ?DW_TAG_* :: T_ABBREV
 
 pred_result
-pred_tag_abbrev::result (value_abbrev &a)
+pred_tag_abbrev::result (value_abbrev &a) const
 {
   return pred_result (dwarf_getabbrevtag (&a.get_abbrev ()) == m_tag);
 }
@@ -577,7 +577,7 @@ indicated by this word.
 // ?DW_FORM_* :: T_ABBREV_ATTR
 
 pred_result
-pred_form_abbrev_attr::result (value_abbrev_attr &a)
+pred_form_abbrev_attr::result (value_abbrev_attr &a) const
 {
   return pred_result (a.form == m_form);
 }

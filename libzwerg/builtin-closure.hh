@@ -40,23 +40,21 @@ class op_apply
   struct state;
   struct substate;
   std::shared_ptr <op> m_upstream;
+  layout::loc m_ll;
 
 public:
-  op_apply (std::shared_ptr <op> upstream)
-    : m_upstream {upstream}
-  {}
+  op_apply (layout &l, std::shared_ptr <op> upstream);
 
   std::string name () const override;
-  size_t reserve () const override;
-  void state_con (void *buf) const override;
-  void state_des (void *buf) const override;
-  stack::uptr next (void *buf) const override;
+  void state_con (scon2 &sc) const override;
+  void state_des (scon2 &sc) const override;
+  stack::uptr next (scon2 &sc) const override;
 };
 
 struct builtin_apply
   : public builtin
 {
-  std::shared_ptr <op> build_exec (std::shared_ptr <op> upstream)
+  std::shared_ptr <op> build_exec (layout &l, std::shared_ptr <op> upstream)
     const override;
 
   char const *name () const override;

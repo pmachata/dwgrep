@@ -253,7 +253,7 @@ struct pred_rootp_die
 {
   using pred_overload <value_die>::pred_overload;
 
-  pred_result result (value_die &a) override;
+  pred_result result (value_die &a) const override;
   static std::string docstring ();
 };
 
@@ -331,7 +331,7 @@ struct pred_haschildrenp_die
 {
   using pred_overload::pred_overload;
 
-  pred_result result (value_die &a) override;
+  pred_result result (value_die &a) const override;
   static std::string docstring ();
 };
 
@@ -441,8 +441,8 @@ class op_atval_die
   int m_atname;
 
 public:
-  op_atval_die (std::shared_ptr <op> upstream, int atname)
-    : op_yielding_overload {upstream}
+  op_atval_die (layout &l, std::shared_ptr <op> upstream, int atname)
+    : op_yielding_overload {l, upstream}
     , m_atname {atname}
   {}
 
@@ -459,7 +459,7 @@ class pred_atname_die
 
 public:
   pred_atname_die (unsigned atname);
-  pred_result result (value_die &a) override;
+  pred_result result (value_die &a) const override;
   static std::string docstring ();
 };
 
@@ -470,7 +470,7 @@ class pred_atname_attr
 
 public:
   pred_atname_attr (unsigned atname);
-  pred_result result (value_attr &a) override;
+  pred_result result (value_attr &a) const override;
   static std::string docstring ();
 };
 
@@ -481,7 +481,7 @@ class pred_atname_cst
 
 public:
   pred_atname_cst (unsigned atname);
-  pred_result result (value_cst &a) override;
+  pred_result result (value_cst &a) const override;
   static std::string docstring ();
 };
 
@@ -492,7 +492,7 @@ class pred_tag_die
 
 public:
   pred_tag_die (int tag);
-  pred_result result (value_die &a) override;
+  pred_result result (value_die &a) const override;
   static std::string docstring ();
 };
 
@@ -503,7 +503,7 @@ class pred_tag_cst
 
 public:
   pred_tag_cst (int tag);
-  pred_result result (value_cst &a) override;
+  pred_result result (value_cst &a) const override;
   static std::string docstring ();
 };
 
@@ -514,7 +514,7 @@ class pred_form_attr
 
 public:
   pred_form_attr (unsigned form);
-  pred_result result (value_attr &a) override;
+  pred_result result (value_attr &a) const override;
   static std::string docstring ();
 };
 
@@ -525,7 +525,7 @@ class pred_form_cst
 
 public:
   pred_form_cst (unsigned form);
-  pred_result result (value_cst &a) override;
+  pred_result result (value_cst &a) const override;
   static std::string docstring ();
 };
 
@@ -536,7 +536,7 @@ class pred_op_loclist_elem
 
 public:
   pred_op_loclist_elem (unsigned op);
-  pred_result result (value_loclist_elem &a) override;
+  pred_result result (value_loclist_elem &a) const override;
   static std::string docstring ();
 };
 
@@ -547,7 +547,7 @@ class pred_op_loclist_op
 
 public:
   pred_op_loclist_op (unsigned op);
-  pred_result result (value_loclist_op &a) override;
+  pred_result result (value_loclist_op &a) const override;
   static std::string docstring ();
 };
 
@@ -558,7 +558,7 @@ class pred_op_cst
 
 public:
   pred_op_cst (unsigned form);
-  pred_result result (value_cst &a) override;
+  pred_result result (value_cst &a) const override;
   static std::string docstring ();
 };
 

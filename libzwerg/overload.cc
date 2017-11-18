@@ -35,14 +35,15 @@
 #include "docstring.hh"
 
 overload_instance::overload_instance
-	(std::vector <std::tuple <selector,
+	(layout &l,
+	 std::vector <std::tuple <selector,
 				  std::shared_ptr <builtin>>> const &stencil)
 {
   for (auto const &v: stencil)
     {
-      auto origin = std::make_shared <op_origin> ();
-      auto op = std::get <1> (v)->build_exec (origin);
-      auto pred = std::get <1> (v)->build_pred ();
+      auto origin = std::make_shared <op_origin> (l);
+      auto op = std::get <1> (v)->build_exec (l, origin);
+      auto pred = std::get <1> (v)->build_pred (l);
 
       assert (op != nullptr || pred != nullptr);
 
@@ -50,20 +51,9 @@ overload_instance::overload_instance
 	origin = nullptr;
 
       m_selectors.push_back (std::get <0> (v));
-      size_t op_reserve = op != nullptr ? op->reserve () : 0;
-      m_execs.push_back (std::make_tuple (origin, op, op_reserve));
+      m_execs.push_back (std::make_tuple (origin, op));
       m_preds.push_back (std::move (pred));
     }
-}
-
-size_t
-overload_instance::max_reserve () const
-{
-  size_t max = 0;
-  for (auto const &exec: m_execs)
-    if (std::get <2> (exec) > max)
-      max = std::get <2> (exec);
-  return max;
 }
 
 namespace
@@ -81,16 +71,15 @@ namespace
   }
 }
 
-std::tuple <op_origin *, op *, size_t>
+std::tuple <op_origin *, op *>
 overload_instance::find_exec (stack &stk) const
 {
   ssize_t idx = find_selector (selector {stk}, m_selectors);
   if (idx < 0)
-    return {nullptr, nullptr, 0};
+    return {nullptr, nullptr};
   else
     return {std::get <0> (m_execs[idx]).get (),
-	    std::get <1> (m_execs[idx]).get (),
-	    std::get <2> (m_execs[idx])};
+	    std::get <1> (m_execs[idx]).get ()};
 }
 
 std::shared_ptr <pred>
@@ -154,9 +143,9 @@ overload_tab::add_overload (selector sel, std::shared_ptr <builtin> b)
 }
 
 overload_instance
-overload_tab::instantiate ()
+overload_tab::instantiate (layout &l)
 {
-  return overload_instance {m_overloads};
+  return overload_instance {l, m_overloads};
 }
 
 
@@ -169,43 +158,31 @@ struct overload_op::state
   {}
 };
 
-overload_op::overload_op (std::shared_ptr <op> upstream,
+overload_op::overload_op (layout &l, std::shared_ptr <op> upstream,
 			  overload_instance ovl_inst)
   : m_upstream {upstream}
+  , m_ll {0 /* xxx */}
   , m_ovl_inst {ovl_inst}
-{}
-
-size_t
-overload_op::reserve () const
 {
-  return m_upstream->reserve () + m_ovl_inst.max_reserve () + sizeof (state);
+  assert (! "overload_op not implemented");
 }
 
 void
-overload_op::state_con (void *buf) const
+overload_op::state_con (scon2 &sc) const
 {
-  state *st = this_state <state> (buf);
-  new (st) state {};
-  // next() manages state for the invoked overload.
-  auto ptr = reinterpret_cast <uint8_t *> (op::next_state (st));
-  ptr += m_ovl_inst.max_reserve ();
-  m_upstream->state_con (ptr);
+  assert (!"overload_op::state_con");
 }
 
 void
-overload_op::state_des (void *buf) const
+overload_op::state_des (scon2 &buf) const
 {
-  state *st = this_state <state> (buf);
-  // next() manages state for the invoked overload.
-  auto ptr = reinterpret_cast <uint8_t *> (op::next_state (st));
-  ptr += m_ovl_inst.max_reserve ();
-  m_upstream->state_des (ptr);
-  st->~state ();
+  assert (!"overload_op::state_des");
 }
 
 stack::uptr
-overload_op::next (void *buf) const
+overload_op::next (scon2 &sc) const
 {
+#if 0
   state *st = this_state <state> (buf);
   auto nst = reinterpret_cast <uint8_t *> (op::next_state (st));
   auto ust = nst + m_ovl_inst.max_reserve ();
@@ -236,11 +213,14 @@ overload_op::next (void *buf) const
       st->m_op->state_des (op::next_state (st));
       st->m_op = nullptr;
     }
+ #else
+  return nullptr;
+#endif
 }
 
 
 pred_result
-overload_pred::result (stack &stk)
+overload_pred::result (scon2 &sc, stack &stk) const
 {
   auto ovl = m_ovl_inst.find_pred (stk);
   if (ovl == nullptr)
@@ -249,7 +229,7 @@ overload_pred::result (stack &stk)
       return pred_result::fail;
     }
   else
-    return ovl->result (stk);
+    return ovl->result (sc, stk);
 }
 
 namespace
@@ -259,10 +239,11 @@ namespace
   {
     char const *m_name;
 
-    named_overload_op (std::shared_ptr <op> upstream,
+    named_overload_op (layout &l,
+		       std::shared_ptr <op> upstream,
 		       overload_instance ovl_inst,
 		       char const *name)
-      : overload_op {upstream, ovl_inst}
+      : overload_op {l, upstream, ovl_inst}
       , m_name {name}
     {}
 
@@ -294,10 +275,11 @@ overloaded_builtin::docstring () const
 }
 
 std::shared_ptr <op>
-overloaded_op_builtin::build_exec (std::shared_ptr <op> upstream) const
+overloaded_op_builtin::build_exec (layout &l,
+				   std::shared_ptr <op> upstream) const
 {
   return std::make_shared <named_overload_op>
-    (upstream, get_overload_tab ()->instantiate (), name ());
+    (l, upstream, get_overload_tab ()->instantiate (l), name ());
 }
 
 std::shared_ptr <overloaded_builtin>
@@ -327,10 +309,10 @@ namespace
 }
 
 std::unique_ptr <pred>
-overloaded_pred_builtin::build_pred () const
+overloaded_pred_builtin::build_pred (layout &l) const
 {
   return maybe_invert (std::make_unique <named_overload_pred>
-				(get_overload_tab ()->instantiate (), name ()),
+				(get_overload_tab ()->instantiate (l), name ()),
 		       m_positive);
 }
 

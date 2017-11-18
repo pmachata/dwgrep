@@ -108,7 +108,7 @@ struct pred_empty_str
   : public pred_overload <value_str>
 {
   using pred_overload::pred_overload;
-  pred_result result (value_str &a) override;
+  pred_result result (value_str &a) const override;
 
   static std::string docstring ();
 };
@@ -117,7 +117,7 @@ struct pred_find_str
   : public pred_overload <value_str, value_str>
 {
   using pred_overload::pred_overload;
-  pred_result result (value_str &haystack, value_str &needle) override;
+  pred_result result (value_str &haystack, value_str &needle) const override;
 
   static std::string docstring ();
 };
@@ -126,7 +126,7 @@ struct pred_starts_str
   : public pred_overload <value_str, value_str>
 {
   using pred_overload::pred_overload;
-  pred_result result (value_str &haystack, value_str &needle) override;
+  pred_result result (value_str &haystack, value_str &needle) const override;
 
   static std::string docstring ();
 };
@@ -135,7 +135,7 @@ struct pred_ends_str
   : public pred_overload <value_str, value_str>
 {
   using pred_overload::pred_overload;
-  pred_result result (value_str &haystack, value_str &needle) override;
+  pred_result result (value_str &haystack, value_str &needle) const override;
 
   static std::string docstring ();
 };
@@ -144,7 +144,7 @@ struct pred_match_str
   : public pred_overload <value_str, value_str>
 {
   using pred_overload::pred_overload;
-  pred_result result (value_str &haystack, value_str &needle) override;
+  pred_result result (value_str &haystack, value_str &needle) const override;
 
   static std::string docstring ();
 };

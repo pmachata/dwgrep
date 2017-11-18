@@ -46,7 +46,7 @@ public:
     : m_value {std::move (value)}
   {}
 
-  std::shared_ptr <op> build_exec (std::shared_ptr <op> upstream)
+  std::shared_ptr <op> build_exec (layout &l, std::shared_ptr <op> upstream)
     const override;
 
   char const *name () const override;
@@ -57,7 +57,7 @@ public:
 struct builtin_hex
   : public builtin
 {
-  std::shared_ptr <op> build_exec (std::shared_ptr <op> upstream)
+  std::shared_ptr <op> build_exec (layout &l, std::shared_ptr <op> upstream)
     const override;
 
   char const *name () const override;
@@ -67,7 +67,7 @@ struct builtin_hex
 struct builtin_dec
   : public builtin
 {
-  std::shared_ptr <op> build_exec (std::shared_ptr <op> upstream)
+  std::shared_ptr <op> build_exec (layout &l, std::shared_ptr <op> upstream)
     const override;
 
   char const *name () const override;
@@ -77,7 +77,7 @@ struct builtin_dec
 struct builtin_oct
   : public builtin
 {
-  std::shared_ptr <op> build_exec (std::shared_ptr <op> upstream)
+  std::shared_ptr <op> build_exec (layout &l, std::shared_ptr <op> upstream)
     const override;
 
   char const *name () const override;
@@ -87,7 +87,7 @@ struct builtin_oct
 struct builtin_bin
   : public builtin
 {
-  std::shared_ptr <op> build_exec (std::shared_ptr <op> upstream)
+  std::shared_ptr <op> build_exec (layout &l, std::shared_ptr <op> upstream)
     const override;
 
   char const *name () const override;
@@ -105,7 +105,7 @@ public:
     , m_pos (pos)
   {}
 
-  std::unique_ptr <pred> build_pred () const override;
+  std::unique_ptr <pred> build_pred (layout &l) const override;
 
   char const *name () const override;
   std::string docstring () const override;
@@ -124,7 +124,7 @@ struct op_pos
   : public inner_op
 {
   using inner_op::inner_op;
-  stack::uptr next (void *buf) const override;
+  stack::uptr next (scon2 &sc) const override;
 
   static std::string docstring ();
 };

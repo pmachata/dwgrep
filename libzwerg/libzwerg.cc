@@ -189,9 +189,10 @@ zw_query_execute (zw_query const *query, zw_stack const *input_stack,
       for (auto const &emt: input_stack->m_values)
 	stk->push (emt->clone ());
 
-      auto origin = std::make_shared <op_origin> ();
-      auto op = query->m_query.build_exec (origin);
-      return new zw_result {*origin, op, std::move (stk)};
+      layout l;
+      auto origin = std::make_shared <op_origin> (l);
+      auto op = query->m_query.build_exec (l, origin);
+      return new zw_result {l, *origin, op, std::move (stk)};
     }, nullptr, out_err);
 }
 
@@ -199,7 +200,7 @@ bool
 zw_result_next (zw_result *result, zw_stack **out_stack, zw_error **out_err)
 {
   return capture_errors ([&] () {
-      std::unique_ptr <stack> ret = result->m_scon.next ();
+      std::unique_ptr <stack> ret = result->next ();
       if (ret == nullptr)
 	{
 	  *out_stack = nullptr;

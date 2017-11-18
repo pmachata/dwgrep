@@ -1,4 +1,5 @@
 /*
+   Copyright (C) 2017 Petr Machata
    Copyright (C) 2014 Red Hat, Inc.
    This file is part of dwgrep.
 
@@ -65,7 +66,7 @@ namespace
     : public pred
   {
     pred_result
-    result (stack &stk) override
+    result (scon2 &sc, stack &stk) const override
     {
       return comparison_result (stk, cmp_result::equal);
     }
@@ -83,7 +84,7 @@ namespace
     : public pred
   {
     pred_result
-    result (stack &stk) override
+    result (scon2 &sc, stack &stk) const override
     {
       return comparison_result (stk, cmp_result::less);
     }
@@ -101,7 +102,7 @@ namespace
     : public pred
   {
     pred_result
-    result (stack &stk) override
+    result (scon2 &sc, stack &stk) const override
     {
       return comparison_result (stk, cmp_result::greater);
     }
@@ -146,7 +147,7 @@ always available.
 }
 
 std::unique_ptr <pred>
-builtin_eq::build_pred () const
+builtin_eq::build_pred (layout &l) const
 {
   return maybe_invert (std::make_unique <pred_eq> (), m_positive);
 }
@@ -168,7 +169,7 @@ builtin_eq::docstring () const
 
 
 std::unique_ptr <pred>
-builtin_lt::build_pred () const
+builtin_lt::build_pred (layout &l) const
 {
   return maybe_invert (std::make_unique <pred_lt> (), m_positive);
 }
@@ -190,7 +191,7 @@ builtin_lt::docstring () const
 
 
 std::unique_ptr <pred>
-builtin_gt::build_pred () const
+builtin_gt::build_pred (layout &l) const
 {
   return maybe_invert (std::make_unique <pred_gt> (), m_positive);
 }

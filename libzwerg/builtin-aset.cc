@@ -417,7 +417,7 @@ address set, presented as individual address sets::
 
 
 pred_result
-pred_containsp_aset_cst::result (value_aset &a, value_cst &b)
+pred_containsp_aset_cst::result (value_aset &a, value_cst &b) const
 {
   auto av = addressify (b.get_constant ());
   return pred_result (a.get_coverage ().is_covered (av.uval (), 1));
@@ -444,7 +444,7 @@ address set::
 
 
 pred_result
-pred_containsp_aset_aset::result (value_aset &a, value_aset &b)
+pred_containsp_aset_aset::result (value_aset &a, value_aset &b) const
 {
   // ?contains holds if A contains all of B.
   for (size_t i = 0; i < b.get_coverage ().size (); ++i)
@@ -470,7 +470,7 @@ where all of *B*'s addresses are covered by *A*.
 
 
 pred_result
-pred_overlapsp_aset_aset::result (value_aset &a, value_aset &b)
+pred_overlapsp_aset_aset::result (value_aset &a, value_aset &b) const
 {
   for (size_t i = 0; i < b.get_coverage ().size (); ++i)
     {
@@ -523,7 +523,7 @@ set that covers those addresses that both of the address sets cover.
 
 
 pred_result
-pred_emptyp_aset::result (value_aset &a)
+pred_emptyp_aset::result (value_aset &a) const
 {
   return pred_result (a.get_coverage ().empty ());
 }

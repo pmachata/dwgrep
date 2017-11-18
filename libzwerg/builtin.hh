@@ -1,4 +1,5 @@
 /*
+   Copyright (C) 2017 Petr Machata
    Copyright (C) 2014, 2015 Red Hat, Inc.
    This file is part of dwgrep.
 
@@ -36,6 +37,7 @@
 
 #include "constant.hh"
 #include "value.hh"
+#include "layout.hh"
 
 struct pred;
 struct op;
@@ -71,10 +73,10 @@ public:
   virtual ~builtin () {}
 
   virtual std::unique_ptr <pred>
-  build_pred () const;
+  build_pred (layout &l) const;
 
   virtual std::shared_ptr <op>
-  build_exec (std::shared_ptr <op> upstream) const;
+  build_exec (layout &l, std::shared_ptr <op> upstream) const;
 
   virtual char const *name () const = 0;
 
@@ -158,7 +160,7 @@ add_simple_exec_builtin (vocabulary &voc, char const *name)
     {}
 
     std::shared_ptr <op>
-    build_exec (std::shared_ptr <op> upstream) const override final
+    build_exec (layout &l, std::shared_ptr <op> upstream) const override final
     {
       return std::make_shared <this_op> (upstream, m_name);
     }
