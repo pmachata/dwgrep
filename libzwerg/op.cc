@@ -801,9 +801,9 @@ op_subx::next (scon2 &sc) const
 
 
 stack::uptr
-op_f_debug::next ()
+op_f_debug::next (scon2 &sc) const
 {
-  while (auto stk = m_upstream->next ())
+  while (auto stk = m_upstream->next (sc))
     {
       debug_stack (*stk);
       return stk;
@@ -815,12 +815,6 @@ std::string
 op_f_debug::name () const
 {
   return "f_debug";
-}
-
-void
-op_f_debug::reset ()
-{
-  m_upstream->reset ();
 }
 
 

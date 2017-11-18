@@ -231,9 +231,9 @@ builtin_pred_pos::docstring () const
 
 
 stack::uptr
-op_type::next ()
+op_type::next (scon2 &sc) const
 {
-  if (auto stk = m_upstream->next ())
+  if (auto stk = m_upstream->next (sc))
     {
       constant t = stk->pop ()->get_type_const ();
       stk->push (std::make_unique <value_cst> (t, 0));

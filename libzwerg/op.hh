@@ -488,22 +488,15 @@ public:
 };
 
 class op_f_debug
-  : public op
+  : public inner_op
 {
-  std::shared_ptr <op> m_upstream;
-
 public:
   explicit op_f_debug (std::shared_ptr <op> upstream)
-    : m_upstream {upstream}
+    : inner_op (upstream)
   {}
 
-  stack::uptr next () override;
   std::string name () const override;
-  void reset () override;
-
-  void state_con (scon2 &sc) const override { assert (! "op_debug "); }
-  void state_des (scon2 &sc) const override { assert (! "op_debug "); }
-  stack::uptr next (scon2 &sc) const { return nullptr; }
+  stack::uptr next (scon2 &sc) const override;
 };
 
 class op_bind

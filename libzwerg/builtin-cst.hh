@@ -115,7 +115,7 @@ struct op_type
   : public inner_op
 {
   using inner_op::inner_op;
-  stack::uptr next () override;
+  stack::uptr next (scon2 &sc) const override;
 
   static std::string docstring ();
 };
