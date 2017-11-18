@@ -1002,130 +1002,89 @@ op_lex_closure::name () const
 }
 
 
-struct op_ifelse::pimpl
+struct op_ifelse::state
 {
-  std::shared_ptr <op> m_upstream;
+  op *m_sel_op;
 
-  std::shared_ptr <op_origin> m_cond_origin;
-  std::shared_ptr <op> m_cond_op;
-
-  std::shared_ptr <op_origin> m_then_origin;
-  std::shared_ptr <op> m_then_op;
-
-  std::shared_ptr <op_origin> m_else_origin;
-  std::shared_ptr <op> m_else_op;
-
-  std::shared_ptr <op_origin> m_sel_origin;
-  std::shared_ptr <op> m_sel_op;
-
-  pimpl (std::shared_ptr <op> upstream,
-	 std::shared_ptr <op_origin> cond_origin,
-	 std::shared_ptr <op> cond_op,
-	 std::shared_ptr <op_origin> then_origin,
-	 std::shared_ptr <op> then_op,
-	 std::shared_ptr <op_origin> else_origin,
-	 std::shared_ptr <op> else_op)
-    : m_upstream {upstream}
-    , m_cond_origin {cond_origin}
-    , m_cond_op {cond_op}
-    , m_then_origin {then_origin}
-    , m_then_op {then_op}
-    , m_else_origin {else_origin}
-    , m_else_op {else_op}
-  {
-    reset_me ();
-  }
-
-  void
-  reset_me ()
-  {
-    m_sel_origin = nullptr;
-    m_sel_op = nullptr;
-  }
-
-  stack::uptr
-  do_next ()
-  {
-#if 0
-    while (true)
-      {
-	if (m_sel_op == nullptr)
-	  {
-	    if (auto stk = m_upstream->next ())
-	      {
-		m_cond_op->reset ();
-		m_cond_origin->set_next (std::make_unique <stack> (*stk));
-
-		if (m_cond_op->next () != nullptr)
-		  {
-		    m_sel_origin = m_then_origin;
-		    m_sel_op = m_then_op;
-		  }
-		else
-		  {
-		    m_sel_origin = m_else_origin;
-		    m_sel_op = m_else_op;
-		  }
-
-		m_sel_op->reset ();
-		m_sel_origin->set_next (std::move (stk));
-	      }
-	    else
-	      return nullptr;
-	  }
-
-	if (auto stk = m_sel_op->next ())
-	  return stk;
-
-	reset_me ();
-      }
-#else
-  return nullptr;
-#endif
-  }
-
-  stack::uptr
-  next ()
-  {
-    std::cerr << this << " op_ifelse next" << std::endl;
-    auto ret = do_next ();
-    std::cerr << this << " /op_ifelse next" << std::endl;
-    return ret;
-  }
-
-  void
-  reset ()
-  {
-    reset_me ();
-    m_upstream->reset ();
-  }
+  state ()
+    : m_sel_op {nullptr}
+  {}
 };
 
-op_ifelse::op_ifelse (std::shared_ptr <op> upstream,
+op_ifelse::op_ifelse (layout &l,
+		      std::shared_ptr <op> upstream,
 		      std::shared_ptr <op_origin> cond_origin,
 		      std::shared_ptr <op> cond_op,
 		      std::shared_ptr <op_origin> then_origin,
 		      std::shared_ptr <op> then_op,
 		      std::shared_ptr <op_origin> else_origin,
 		      std::shared_ptr <op> else_op)
-  : m_pimpl {std::make_unique <pimpl> (upstream, cond_origin, cond_op,
-				       then_origin, then_op,
-				       else_origin, else_op)}
-{}
-
-op_ifelse::~op_ifelse ()
+  : inner_op (upstream)
+  , m_cond_origin {cond_origin}
+  , m_cond_op {cond_op}
+  , m_then_origin {then_origin}
+  , m_then_op {then_op}
+  , m_else_origin {else_origin}
+  , m_else_op {else_op}
+  , m_ll {l.reserve <state> ()}
 {}
 
 void
-op_ifelse::reset ()
+op_ifelse::state_con (scon2 &sc) const
 {
-  m_pimpl->reset ();
+  sc.con <state> (m_ll);
+  inner_op::state_con (sc);
+}
+
+void
+op_ifelse::state_des (scon2 &sc) const
+{
+  inner_op::state_des (sc);
+  sc.des <state> (m_ll);
 }
 
 stack::uptr
-op_ifelse::next ()
+op_ifelse::next (scon2 &sc) const
 {
-  return m_pimpl->next ();
+  state &st = sc.get <state> (m_ll);
+
+  while (true)
+    {
+      if (st.m_sel_op == nullptr)
+	{
+	  if (auto stk = m_upstream->next (sc))
+	    {
+	      op_origin *sel_origin;
+	      {
+		scon_guard sg {sc, *m_cond_op};
+		m_cond_origin->set_next (sc, std::make_unique <stack> (*stk));
+
+		if (m_cond_op->next (sc) != nullptr)
+		  {
+		    sel_origin = m_then_origin.get ();
+		    st.m_sel_op = m_then_op.get ();
+		  }
+		else
+		  {
+		    sel_origin = m_else_origin.get ();
+		    st.m_sel_op = m_else_op.get ();
+		  }
+	      }
+
+	      // xxx exception safety
+	      st.m_sel_op->state_con (sc);
+	      sel_origin->set_next (sc, std::move (stk));
+	    }
+	  else
+	    return nullptr;
+	}
+
+      if (auto stk = st.m_sel_op->next (sc))
+	return stk;
+
+      st.m_sel_op->state_des (sc);
+      sc.reset <state> (m_ll);
+    }
 }
 
 std::string

@@ -351,13 +351,15 @@ namespace
           auto cond_op = build_exec (t.child (0), l, cond_origin, bn);
 
 	  // xxx could else and origin share state space?
+	  // xxx all three in fact could.
           auto then_origin = std::make_shared <op_origin> (l);
           auto then_op = build_exec (t.child (1), l, then_origin, bn);
 
           auto else_origin = std::make_shared <op_origin> (l);
           auto else_op = build_exec (t.child (2), l, else_origin, bn);
 
-          return std::make_shared <op_ifelse> (upstream, cond_origin, cond_op,
+          return std::make_shared <op_ifelse> (l, upstream,
+					       cond_origin, cond_op,
                                                then_origin, then_op,
                                                else_origin, else_op);
         }

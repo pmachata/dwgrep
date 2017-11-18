@@ -600,13 +600,25 @@ public:
 };
 
 class op_ifelse
-  : public op
+  : public inner_op
 {
-  class pimpl;
-  std::unique_ptr <pimpl> m_pimpl;
+  struct state;
+
+  std::shared_ptr <op_origin> m_cond_origin;
+  std::shared_ptr <op> m_cond_op;
+
+  std::shared_ptr <op_origin> m_then_origin;
+  std::shared_ptr <op> m_then_op;
+
+  std::shared_ptr <op_origin> m_else_origin;
+  std::shared_ptr <op> m_else_op;
+
+  layout::loc m_ll;
 
 public:
-  op_ifelse (std::shared_ptr <op> upstream,
+  // xxx reuse one origin for all three branches
+  op_ifelse (layout &l,
+	     std::shared_ptr <op> upstream,
 	     std::shared_ptr <op_origin> cond_origin,
 	     std::shared_ptr <op> cond_op,
 	     std::shared_ptr <op_origin> then_origin,
@@ -614,15 +626,10 @@ public:
 	     std::shared_ptr <op_origin> else_origin,
 	     std::shared_ptr <op> else_op);
 
-  ~op_ifelse ();
-
-  void reset () override;
-  stack::uptr next () override;
   std::string name () const override;
-
-  void state_con (scon2 &sc) const override { assert (! "op_ifelse"); }
-  void state_des (scon2 &sc) const override { assert (! "op_ifelse"); }
-  stack::uptr next (scon2 &sc) const { return nullptr; }
+  void state_con (scon2 &sc) const override;
+  void state_des (scon2 &sc) const override;
+  stack::uptr next (scon2 &sc) const override;
 };
 
 
