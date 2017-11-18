@@ -76,8 +76,6 @@ namespace
     {
       return "eq";
     }
-
-    void reset () override {}
   };
 
   struct pred_lt
@@ -94,8 +92,6 @@ namespace
     {
       return "lt";
     }
-
-    void reset () override {}
   };
 
   struct pred_gt
@@ -112,8 +108,6 @@ namespace
     {
       return "gt";
     }
-
-    void reset () override {}
   };
 
   char const *const cmp_docstring = R"docstring(

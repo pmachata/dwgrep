@@ -1174,12 +1174,6 @@ pred_subx_any::name () const
   return std::string ("pred_subx_any<") + m_op->name () + ">";
 }
 
-void
-pred_subx_any::reset ()
-{
-  m_op->reset ();
-}
-
 
 pred_result
 pred_subx_compare::result (scon2 &sc, stack &stk) const

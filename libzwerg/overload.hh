@@ -136,10 +136,6 @@ public:
     : m_ovl_inst {ovl_inst}
   {}
 
-  void
-  reset () override final
-  {}
-
   pred_result result (scon2 &sc, stack &stk) const override final;
 };
 

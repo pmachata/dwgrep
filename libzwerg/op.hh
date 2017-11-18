@@ -125,7 +125,6 @@ class pred
 public:
   virtual pred_result result (scon2 &sc, stack &stk) const = 0;
   virtual std::string name () const = 0;
-  virtual void reset () { assert (!"pred::reset called"); abort (); }//xxx
   virtual ~pred () {}
 };
 
@@ -170,7 +169,6 @@ struct stub_pred
   : public pred
 {
   std::string name () const override final { return "stub"; }
-  void reset () override final {}
 };
 
 struct op_nop
@@ -653,9 +651,6 @@ public:
 
   pred_result result (scon2 &sc, stack &stk) const override;
   std::string name () const override;
-
-  void reset () override
-  { m_a->reset (); }
 };
 
 class pred_and
@@ -672,12 +667,6 @@ public:
 
   pred_result result (scon2 &sc, stack &stk) const override;
   std::string name () const override;
-
-  void reset () override
-  {
-    m_a->reset ();
-    m_b->reset ();
-  }
 };
 
 class pred_or
@@ -694,12 +683,6 @@ public:
 
   pred_result result (scon2 &sc, stack &stk) const override;
   std::string name () const override;
-
-  void reset () override
-  {
-    m_a->reset ();
-    m_b->reset ();
-  }
 };
 
 class pred_subx_any
@@ -717,7 +700,6 @@ public:
 
   pred_result result (scon2 &sc, stack &stk) const override;
   std::string name () const override;
-  void reset () override;
 };
 
 class pred_subx_compare
@@ -751,10 +733,6 @@ class pred_pos
 public:
   explicit pred_pos (size_t pos)
     : m_pos (pos)
-  {}
-
-  void
-  reset () override
   {}
 
   pred_result result (scon2 &sc, stack &stk) const override;
