@@ -48,16 +48,14 @@ class op
 public:
   virtual ~op () {}
 
-  // Produce next value.
-  virtual stack::uptr next () { assert (!"op::next called"); abort (); }
-  virtual void reset () { assert (!"op::reset called"); abort (); }
   virtual std::string name () const = 0;
 
-  // xxx find a way to encapsulate the state_con / state_des calls in a managed
-  // object.
+  // Construct / destruct state for this op.
   virtual void state_con (scon2 &sc) const = 0;
   virtual void state_des (scon2 &sc) const = 0;
-  virtual stack::uptr next (scon2 &sc) const { return nullptr; }
+
+  // Produce next value.
+  virtual stack::uptr next (scon2 &sc) const = 0;
 };
 
 template <class RT>
@@ -583,13 +581,10 @@ public:
     , m_rdv {rdv}
   {}
 
-  void reset () override;
-  stack::uptr next () override;
   std::string name () const override;
-
   void state_con (scon2 &sc) const override { assert (! "op_lexclo"); }
   void state_des (scon2 &sc) const override { assert (! "op_lexclo"); }
-  stack::uptr next (scon2 &sc) const { return nullptr; }
+  stack::uptr next (scon2 &sc) const override;
 };
 
 class op_ifelse

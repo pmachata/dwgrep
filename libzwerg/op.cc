@@ -936,7 +936,7 @@ op_read::next (scon2 &sc) const
 	}
 
       assert (st.m_apply != nullptr);
-      if (auto stk = st.m_apply->next ())//xxx
+      if (auto stk = st.m_apply->next (sc))//xxx
 	return stk;
 
       st.m_apply = nullptr;
@@ -962,16 +962,10 @@ pseudo_bind::current (scon2 &sc) const
 }
 
 
-void
-op_lex_closure::reset ()
-{
-  m_upstream->reset ();
-}
-
 stack::uptr
-op_lex_closure::next ()
+op_lex_closure::next (scon2 &sc) const
 {
-  if (auto stk = m_upstream->next ())
+  if (auto stk = m_upstream->next (sc))
     {
       // Fetch actual values of the referenced environment bindings.
       std::vector <std::unique_ptr <value>> env;
