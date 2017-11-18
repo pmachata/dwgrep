@@ -1156,16 +1156,12 @@ pred_or::name () const
 pred_result
 pred_subx_any::result (scon2 &sc, stack &stk) const
 {
-#if 0
-  m_op->reset ();
-  m_origin->set_next (std::make_unique <stack> (stk));
-  if (m_op->next () != nullptr)
+  scon_guard sg {sc, *m_op};
+  m_origin->set_next (sc, std::make_unique <stack> (stk));
+  if (m_op->next (sc) != nullptr)
     return pred_result::yes;
   else
     return pred_result::no;
-#else
-  return pred_result::no;
-#endif
 }
 
 std::string
