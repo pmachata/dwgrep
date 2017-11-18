@@ -58,19 +58,15 @@ struct zw_result
 {
   std::shared_ptr <op> m_op;
   scon2 m_sc;
+  scon_guard m_sg;
 
   zw_result (layout const &l,
 	     op_origin const &origin, std::shared_ptr <op> op, stack::uptr stk)
     : m_op {op}
     , m_sc {l}
+    , m_sg {m_sc, *m_op}
   {
-    m_op->state_con (m_sc);
     origin.set_next (m_sc, std::move (stk));
-  }
-
-  ~zw_result ()
-  {
-    m_op->state_des (m_sc);
   }
 
   stack::uptr

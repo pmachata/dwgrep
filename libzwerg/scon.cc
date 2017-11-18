@@ -27,38 +27,18 @@
    not, see <http://www.gnu.org/licenses/>.  */
 
 #include "scon.hh"
+#include "op.hh"
 
-#if 0
-scon::scon (op_origin const &origin, op const &op, stack::uptr stk)
-  : m_op {op}
-  , m_buf (op.reserve (), 0)
+scon_guard::scon_guard (scon2 &sc, op &op)
+  : m_sc {sc}
+  , m_op {op}
 {
-  op.state_con (buf ());
-  if (stk)
-    origin.set_next (buf_end (), std::move (stk));
+  m_op.state_con (m_sc);
 }
 
-scon::~scon ()
+scon_guard::~scon_guard ()
 {
-  m_op.state_des (buf ());
+  // Des is just a destructor wrapper. If it excepts, it's as if a dtor
+  // excepted, so let it terminate.
+  m_op.state_des (m_sc);
 }
-
-stack::uptr
-scon::next ()
-{
-  return m_op.next (buf ());
-}
-
-void *
-scon::buf ()
-{
-  return m_buf.data ();
-}
-
-void *
-scon::buf_end ()
-{
-  return m_buf.data () + m_buf.size ();
-}
-
-#endif

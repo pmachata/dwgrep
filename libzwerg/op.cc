@@ -1184,23 +1184,23 @@ pred_subx_any::reset ()
 pred_result
 pred_subx_compare::result (scon2 &sc, stack &stk) const
 {
-  assert (! "pred_subx_compare::result");
-#if 0
-  for (scon scon1 {*m_origin, *m_op1, std::make_unique <stack> (stk)};
-       auto stk1 = scon1.next (); )
+  scon_guard sg {sc, *m_op1};
+  m_origin->set_next (sc, std::make_unique <stack> (stk));
+  while (auto stk1 = m_op1->next (sc))
     {
-      for (scon scon2 {*m_origin, *m_op2, std::make_unique <stack> (stk)};
-	   auto stk2 = scon2.next (); )
+      scon_guard sg {sc, *m_op2};
+      m_origin->set_next (sc, std::make_unique <stack> (stk));
+      while (auto stk2 = m_op2->next (sc))
 	{
 	  stk1->push (stk2->pop ());
-	  if (m_pred->result (*stk1) == pred_result::yes)
+
+	  if (m_pred->result (sc, *stk1) == pred_result::yes)
 	    return pred_result::yes;
 
 	  stk1->pop ();
 	}
     }
 
-#endif
   return pred_result::no;
 }
 
