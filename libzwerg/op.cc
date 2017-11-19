@@ -969,13 +969,9 @@ op_lex_closure::next (scon2 &sc) const
     {
       // Fetch actual values of the referenced environment bindings.
       std::vector <std::unique_ptr <value>> env;
-      assert (! "op_lex_closure::next");
-      /* xxx
-      for (auto const &pseudo: m_pseudos)
-	env.push_back (pseudo->fetch (env.size ()));
-      */
+      assert (m_pseudos.empty ());// xxx upvalues not supported yet
 
-      stk->push (std::make_unique <value_closure> (m_origin, m_op,
+      stk->push (std::make_unique <value_closure> (m_op_layout, m_origin, m_op,
 						   std::move (env), m_rdv, 0));
       return stk;
     }

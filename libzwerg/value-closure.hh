@@ -33,6 +33,7 @@
 #include "op.hh"
 #include "rendezvous.hh"
 #include "value.hh"
+#include "layout.hh"
 
 class tree;
 class frame;
@@ -41,6 +42,7 @@ class scope;
 class value_closure
   : public value
 {
+  layout m_op_layout;
   std::shared_ptr <op_origin> m_origin;
   std::shared_ptr <op> m_op;
   std::vector <std::unique_ptr <value>> m_env;
@@ -49,7 +51,8 @@ class value_closure
 public:
   static value_type const vtype;
 
-  value_closure (std::shared_ptr <op_origin> origin,
+  value_closure (layout op_layout,
+		 std::shared_ptr <op_origin> origin,
 		 std::shared_ptr <op> op,
 		 std::vector <std::unique_ptr <value>> env,
 		 rendezvous rdv, size_t pos);
@@ -57,6 +60,9 @@ public:
   void show (std::ostream &o) const override;
   std::unique_ptr <value> clone () const override;
   cmp_result cmp (value const &that) const override;
+
+  layout const &get_layout () const
+  { return m_op_layout; }
 
   op_origin &get_origin () const
   { return *m_origin; }

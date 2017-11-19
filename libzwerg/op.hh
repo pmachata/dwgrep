@@ -560,9 +560,9 @@ public:
 };
 
 struct op_lex_closure
-  : public op
+  : public inner_op
 {
-  std::shared_ptr <op> m_upstream;
+  layout m_op_layout;
   std::shared_ptr <op_origin> m_origin;
   std::shared_ptr <op> m_op;
   std::vector <std::shared_ptr <pseudo_bind>> m_pseudos;
@@ -570,11 +570,13 @@ struct op_lex_closure
 
 public:
   op_lex_closure (std::shared_ptr <op> upstream,
+		  layout op_layout,
 		  std::shared_ptr <op_origin> origin,
 		  std::shared_ptr <op> op,
 		  std::vector <std::shared_ptr <pseudo_bind>> pseudos,
 		  rendezvous rdv)
-    : m_upstream {upstream}
+    : inner_op {upstream}
+    , m_op_layout {op_layout}
     , m_origin {origin}
     , m_op {op}
     , m_pseudos {pseudos}
@@ -582,8 +584,6 @@ public:
   {}
 
   std::string name () const override;
-  void state_con (scon2 &sc) const override { assert (! "op_lexclo"); }
-  void state_des (scon2 &sc) const override { assert (! "op_lexclo"); }
   stack::uptr next (scon2 &sc) const override;
 };
 

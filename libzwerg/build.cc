@@ -251,7 +251,9 @@ namespace
 	      pseudo_bn.bind (name, std::make_shared <op_bind> (l, nullptr));
 	    // OP is only necessary for keeping the references from inside the
 	    // block alive.
-	    auto op = build_exec (t.child (0), l, nullptr, pseudo_bn);
+	    layout tmp;
+	    auto origin = std::make_shared <op_origin> (tmp);
+	    auto op = build_exec (t.child (0), tmp, origin, pseudo_bn);
 	    for (std::string const &name: pseudo_bn.names ())
 	      {
 		std::shared_ptr <op_bind> bnd = pseudo_bn.find (name);
@@ -280,10 +282,12 @@ namespace
 	  }
 
 	  // Finally, op_lex_closure can be built.
-	  auto origin = std::make_shared <op_origin> (l);
-	  auto op = build_exec (t.child (0), l, origin, pseudo_bn);
+	  layout op_layout;
+	  auto origin = std::make_shared <op_origin> (op_layout);
+	  auto op = build_exec (t.child (0), op_layout, origin, pseudo_bn);
 
-	  return std::make_shared <op_lex_closure> (upstream, origin, op,
+	  return std::make_shared <op_lex_closure> (upstream,
+						    op_layout, origin, op,
 						    pseudos, rdv);
 
 	  // - When op_lex_closure is executed, it goes through the list of

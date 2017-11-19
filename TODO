@@ -94,6 +94,74 @@
       - thread unsafe shared_ptr might be better
       - can we avoid the reference counting altogether?
 
+*** removal of cloning for named value reads
+    - the following is very slow:
+      : let A := [0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
+      : let B := [A elem 10 mul A elem add];
+      : let C := [B elem 100 mul B elem add];
+      : C elem
+      The reason is that C contains some 10K values, and "C elem" then ends up
+      cloning the stack, and therefore the top activation record, 10K times. To
+      clone an activation record, all the values in it need to be cloned,
+      because values are kept as unique pointers.
+
+      Converting values to shared pointers (and cloning only before doing
+      set_pos where needed) ends up being a significant win (ridiculous, on the
+      order of 100x).
+
+      But fundamentally, no sharing is even necessary, lifetime of each binding
+      can be statically determined.
+
+      : 1, 2                    (1)
+      : let A := 3, 4 ;         (2)
+      : 5, 6                    (3)
+      : A                       (4)
+
+      | (1) | (2)   | (3)     | (4)       |
+      |-----+-------+---------+-----------|
+      |   1 | 1,A=3 | 1,5,A=3 | 1,5,3,A=3 |
+      |     |       | 1,6,A=3 | 1,6,3,A=3 |
+      |     |       |         |           |
+      |     | 1,A=4 | 1,5,A=4 | 1,5,4,A=4 |
+      |     |       | 1,6,A=4 | 1,6,4,A=4 |
+      |     |       |         |           |
+      |-----+-------+---------+-----------|
+      |   2 | 2,A=3 | 2,5,A=3 | 2,5,3,A=3 |
+      |     |       | 2,6,A=3 | 2,6,3,A=3 |
+      |     |       |         |           |
+      |     | 2,A=4 | 2,5,A=4 | 2,5,4,A=4 |
+      |     |       | 2,6,A=4 | 2,6,4,A=4 |
+      |     |       |         |           |
+
+      - READ "A" can't on its own determine whether it should destroy the read
+        value, because it odesn't know if more computations are coming up next
+        that would need to use it.
+
+      - Since we can statically determine which binding a read refers to, maybe
+        the read could be given a pointer, and simply ask the bind op what the
+        current value is. op_read asks upstream for next stack, which prompts
+        reevaluation of all upstream nodes, and updates the op_bind as well.
+        Then it asks the op_bind directly what the value is. Then it pushes it.
+        Easy, no bookkeeping, no sharing.
+
+      - Current behavior for closures is that names that are unbound at the
+        point of closure definition cause "unbound variable" error when invoked,
+        even if the name was bound later on:
+
+        : let A := {B};
+        : let B := 7;
+        : A                 # attempt to read an unbound variable
+        (Likewise for let A := {{B}} ; and A apply, and for let B A := 7 {B};)
+
+        At the same time, closures remember the original value of the bound
+        variable, even across merges:
+
+        : [(7, 8) -> A; {A}] elem apply    # 7, 8
+
+        So something needs to be done, but to stay consistent with this
+        behavior, all that's needed is to eagerly create one pseudo bind op for
+        each referenced value and point the reads at that pseudo op.
+
 ** Dictionaries
    - Maybe have a key-value value type?  And a => operator for
      constructing this?  The dictionary would then be:
@@ -385,6 +453,112 @@
       : let swap_ := {|a b| b a};
       : let rot_ := {|a b c| b c a};
       : let over_ := {|a b| a b a};
+
+*** recursion
+    - A possible solution would be to have a reference cell sort of a value.
+      Like:
+      : let F := ref;
+      : {... F ...} F bind
+      Then all references to "F" would resolve to the above ref cell. That would
+      be initially empty, a follow-up bind would define the contents. When a
+      value of ref cell type is mentioned (op_read), if the cell is empty, it
+      stands for itself. If not, it's dereferenced and puts to stack the
+      contained value.
+
+    - One can implement recursion without special support by passing a closure
+      to call as an argument:
+
+      : let .f := {|a f|
+      :              if (a > 0) then (
+      :                1 add
+      :                (a 1 sub) {f} f    # <-- recursion
+      :              ) else ()
+      :           };
+      : let f := {{.f} .f};
+      : 0 10 f
+
+      In current codebase this doesn't work. The problem can be illustrated by
+      the following simplified code:
+
+      : let f := {|h| {h} h};
+      : {f} f
+
+      Since they all refer to closures, the reads of "h" and "f" above end up
+      implying an "apply" op. That is generated on demand, so each recursive
+      instance has its own apply.
+
+      The apply inspects TOS and takes the program from there (i.e. takes an
+      origin and an op). In then resets op, pushes a new stack to origin, and
+      pulls stacks to yield from op.
+
+      At a certain point in evaluation, the read of "h" in "{h}" sees the "{h}"
+      itself on TOS. It thus calls reset on the read operation that gave rise to
+      the apply itself. The read, having been reset, gives up the on-demand
+      generated apply, that's destroyed, and after the "reset" call code resumes
+      inside an already-destroyed object.
+
+      I believe this is a symptom of a larger problem. Sice several instances of
+      the same program can be in flight at once, having just one set of instance
+      variables per op is not enough. Imagine a recursive function such as this:
+
+      : let f := {|f| (1, 2) {f} f};
+
+      ... where the state of "1, 2" (i.e. which one to yield next) will differ
+      per activation record.
+
+      It seems that all state needs to be stored not at operations themselves,
+      but in a stack frame that will be passed around as part of next. A new
+      operation like "reserve" would then be required to return how much space
+      this op together with its upstream need, and that would be reserved.
+
+*** upvalues
+    - There needs to be a support for references to outside scope. Consider:
+
+      : program      {7  (|A|  { A })}  apply   apply
+      :
+      : toplev    O--[      cl       ]-[apply]-[apply]
+      :           __________^_______
+      : clos1     O--[7]-[|A|]-[ cl]
+      :                     _____^__
+      : clos2               O--[ A ]
+
+      The following state lifetime diagrams illustrate the problem:
+
+      : toplev   +------------------------------------+
+      : clos1                          +-----+
+      : clos2                                  +-----+
+      :           ---time--->
+
+      Lifetime of the state corresponding to the bind operation is disjoint from
+      the lifetime of the closure that performs the read. The current
+      implementation of op_read just takes a reference to the corresponding
+      op_bind, which won't work here, because op_bind's state will have been
+      destroyed by the time op_read requests the current value.
+
+      So environment references need to be handled differently:
+
+      - op_closure that constructs a closure that has references to environment
+        needs to fetch values at the point of closure construction, like op_read
+        does.
+      - value_closure that op_closure produces will hold the dictionary of
+        fetched values
+      - op_apply, as it constructs the state for the closure op chain, will
+        allocate a little extra space after the part where origin stores data.
+        It will put a reference to the value dictionary there
+      - reads that refer to environment will be translated not as op_read, but
+        as op_envread. op_envread will use m_upstream->reserve to figure out
+        where the service area with value dictionary is. It then copies the
+        value from there.
+      - some closures need to copy through environment values. Consider:
+        : {|A| {{A}}}
+        The op_closure that constructs {A} can't read the value from any op
+        directly, but rather needs to copy it from the outer closure's ({{A}})
+        environment. Thus op_closure actually does two things: fetches several
+        values directly, and copies several others from service area of its own
+        stack.
+      - To learn current value, op_read figures out state end and passes that to
+        the bind in question. Bind then learns its own place in the state and
+        returns the value from there.
 
 **  (“while” | “until”) EXPR₀ “do” EXPR₁ | “do” EXPR₁ (“while” | “until”) EXPR₀
 

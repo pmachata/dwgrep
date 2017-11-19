@@ -344,6 +344,8 @@ expect_count 1 -e '
 	(0, 1, 20) (== 10 || == 20)'
 
 # Check closures.
+expect_count 2 -e '
+	{let A := 1, 2; A} apply'
 expect_count 1 -e '
 	[[let A := 1, 2; {A}]
          (|B| B elem ?0 B elem ?1) swap? drop apply] == [2, 1]'

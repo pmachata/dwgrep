@@ -41,12 +41,14 @@ struct op_apply::substate
 {
   std::unique_ptr <value_closure> m_value;
   scon2 m_scon;
+  scon_guard m_sg;
 
   substate (stack::uptr stk)
     : m_value {static_cast <value_closure *> (stk->pop ().release ())}
-    , m_scon {layout {}} // xxx
+    , m_scon {m_value->get_layout ()}
+    , m_sg {m_scon, m_value->get_op ()}
   {
-    assert (! "op_apply::substate");
+    m_value->get_origin ().set_next (m_scon, std::move (stk));
   }
 
   stack::uptr
@@ -54,13 +56,10 @@ struct op_apply::substate
   {
     // xxx I think that now that we have a full-featured stacking, the
     // rendezvous logic can be rethought.
-    /*
     value_closure *orig = m_value->rdv_exchange (&*m_value);
-    auto stk = m_scon.next ();
+    auto stk = m_value->get_op ().next (m_scon);
     m_value->rdv_exchange (orig);
     return stk;
-    */
-    return nullptr;
   }
 };
 
