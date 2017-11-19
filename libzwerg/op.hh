@@ -520,6 +520,8 @@ class op_read
 {
   class state;
   op_bind &m_src;
+  std::shared_ptr <op_origin> m_origin;
+  std::shared_ptr <op> m_apply;
   layout::loc m_ll;
 
 public:

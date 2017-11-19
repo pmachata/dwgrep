@@ -872,12 +872,18 @@ op_bind::current (scon2 &sc) const
 
 struct op_read::state
 {
-  std::shared_ptr <op> m_apply;
+  bool m_apply;
+
+  state ()
+    : m_apply {false}
+  {}
 };
 
 op_read::op_read (layout &l, std::shared_ptr <op> upstream, op_bind &src)
   : inner_op {upstream}
   , m_src {src}
+  , m_origin {std::make_shared <op_origin> (l)}
+  , m_apply {std::make_shared <op_apply> (l, m_origin)}
   , m_ll {l.reserve <state> ()}
 {}
 
@@ -910,7 +916,7 @@ op_read::next (scon2 &sc) const
 
   while (true)
     {
-      if (st.m_apply == nullptr)
+      if (! st.m_apply)
 	{
 	  if (auto stk = m_upstream->next (sc))
 	    {
@@ -926,20 +932,17 @@ op_read::next (scon2 &sc) const
 	      // If it's a closure, then this is a function
 	      // reference.  We need to execute it and fetch all the
 	      // values.
-
-	      assert (! "implicit apply in read not yet implemented");
-	      //auto origin = std::make_shared <op_origin> (std::move (stk));
-	      //st.m_apply = std::make_shared <op_apply> (origin);
+	      m_origin->set_next (sc, std::move (stk));
+	      st.m_apply = true;
 	    }
 	  else
 	    return nullptr;
 	}
 
-      assert (st.m_apply != nullptr);
-      if (auto stk = st.m_apply->next (sc))//xxx
+      if (auto stk = m_apply->next (sc))
 	return stk;
 
-      st.m_apply = nullptr;
+      sc.reset <state> (m_ll);
     }
 }
 
