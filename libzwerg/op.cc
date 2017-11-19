@@ -952,7 +952,7 @@ pseudo_bind::fetch (scon2 &sc, unsigned assert_id) const
 {
   assert (m_id == assert_id);
   assert (! "pseudo_bind not implemented");
-  return m_src->current (sc);
+  return m_src.current (sc);
 }
 
 std::unique_ptr <value>

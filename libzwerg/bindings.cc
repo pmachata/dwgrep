@@ -32,20 +32,20 @@
 #include <stdexcept>
 
 void
-bindings::bind (std::string name, std::shared_ptr <op_bind> op)
+bindings::bind (std::string name, op_bind &op)
 {
   if (m_bindings.find (name) != m_bindings.end ())
     throw std::runtime_error
       (std::string () + "Name `" + name + "' rebound.");
-  m_bindings.insert (std::make_pair (name, op));
+  m_bindings.emplace (std::move (name), std::ref (op));
 }
 
-std::shared_ptr <op_bind>
+op_bind &
 bindings::find (std::string name)
 {
   auto it = m_bindings.find (name);
   if (it != m_bindings.end ())
-    return it->second;
+    return it->second.get ();
   else if (m_super != nullptr)
     return m_super->find (name);
   else

@@ -545,12 +545,11 @@ class pseudo_bind
 // xxx make op_bind a subclass of an ABC. Rename pseudo_bind to something else.
 {
   rendezvous m_rdv;
-  std::shared_ptr <op_bind> m_src;
+  op_bind &m_src;
   unsigned m_id;
 
 public:
-  pseudo_bind (layout &l, rendezvous rdv,
-	       std::shared_ptr <op_bind> src, unsigned id)
+  pseudo_bind (layout &l, rendezvous rdv, op_bind &src, unsigned id)
     : op_bind {l, nullptr}
     , m_rdv {rdv}
     , m_src {src}

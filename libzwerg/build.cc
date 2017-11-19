@@ -246,23 +246,21 @@ namespace
 	  // Figure out which names the block references.
 	  std::vector <std::string> env_names;
 	  {
+	    std::vector <std::unique_ptr <op_bind>> binds;
 	    bindings pseudo_bn;
 	    for (std::string const &name: bn.names_closure ())
-	      pseudo_bn.bind (name, std::make_shared <op_bind> (l, nullptr));
+	      {
+		auto bnd = std::make_unique <op_bind> (l, nullptr);
+		pseudo_bn.bind (name, *bnd);
+		binds.emplace_back (std::move (bnd));
+	      }
 	    // OP is only necessary for keeping the references from inside the
 	    // block alive.
 	    layout tmp;
 	    auto origin = std::make_shared <op_origin> (tmp);
 	    auto op = build_exec (t.child (0), tmp, origin, pseudo_bn);
 	    for (std::string const &name: pseudo_bn.names ())
-	      {
-		std::shared_ptr <op_bind> bnd = pseudo_bn.find (name);
-		// One reference from the pseudo_bn dictionary, one reference
-		// form the variable BND, anything more means the binding is
-		// referenced from inside the block.
-		if (bnd.use_count () > 2)
-		  env_names.push_back (name);
-	      }
+	      env_names.push_back (name);
 	  }
 
 	  // Replace the environment bindings with pseudos.
@@ -273,11 +271,11 @@ namespace
 	    unsigned id = 0;
 	    for (std::string const &name: env_names)
 	      {
-		std::shared_ptr <op_bind> src = bn.find (name);
+		op_bind &src = bn.find (name);
 		auto pseudo = std::make_shared <pseudo_bind> (l, rdv,
 							      src, id++);
 		pseudos.push_back (pseudo);
-		pseudo_bn.bind (name, pseudo);
+		pseudo_bn.bind (name, *pseudo);
 	      }
 	  }
 
@@ -336,14 +334,14 @@ namespace
       case tree_type::BIND:
         {
           auto ret = std::make_shared <op_bind> (l, upstream);
-          bn.bind (t.str (), ret);
+          bn.bind (t.str (), *ret);
           return ret;
         }
 
       case tree_type::READ:
         {
-          auto src = bn.find (t.str ());
-          return std::make_shared <op_read> (l, upstream, *src);
+          auto &src = bn.find (t.str ());
+          return std::make_shared <op_read> (l, upstream, src);
         }
 
       case tree_type::F_DEBUG:

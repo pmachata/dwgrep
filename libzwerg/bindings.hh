@@ -38,9 +38,7 @@ struct op_bind;
 
 class bindings
 {
-  // xxx looks like it should be an op_bind&, since the goal is not to keep them
-  // alive.
-  std::map <std::string, std::shared_ptr <op_bind>> m_bindings;
+  std::map <std::string, std::reference_wrapper <op_bind>> m_bindings;
   bindings *m_super;
 
 public:
@@ -52,8 +50,8 @@ public:
     : m_super {&super}
   {}
 
-  void bind (std::string name, std::shared_ptr <op_bind> op);
-  std::shared_ptr <op_bind> find (std::string name);
+  void bind (std::string name, op_bind &op);
+  op_bind &find (std::string name);
   std::vector <std::string> names () const;
   std::vector <std::string> names_closure () const;
 };
