@@ -51,9 +51,22 @@ public:
   {}
 
   void bind (std::string name, op_bind &op);
-  op_bind &find (std::string name);
+  op_bind *find (std::string name);
   std::vector <std::string> names () const;
   std::vector <std::string> names_closure () const;
+};
+
+class uprefs
+{
+  std::map <std::string, std::pair <bool, unsigned>> m_ids;
+  unsigned m_nextid;
+
+public:
+  uprefs ();
+  uprefs (bindings &bns, uprefs &super);
+
+  std::pair <bool, unsigned> find (std::string name);
+  std::vector <std::string> refd_names () const;
 };
 
 #endif//_BINDINGS_H_

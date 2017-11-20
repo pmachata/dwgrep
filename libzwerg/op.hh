@@ -533,6 +533,22 @@ public:
   stack::uptr next (scon2 &sc) const override;
 };
 
+class op_upread
+  : public inner_op
+{
+  class state;
+  unsigned m_id;
+  layout::loc m_ll;
+
+public:
+  op_upread (layout &l, std::shared_ptr <op> upstream, unsigned id);
+
+  std::string name () const override;
+  void state_con (scon2 &sc) const override;
+  void state_des (scon2 &sc) const override;
+  stack::uptr next (scon2 &sc) const override;
+};
+
 // ---------- closure support -----------------
 
 // Pseudo bind plays the role of a bind for lexical blocks. It knows about the

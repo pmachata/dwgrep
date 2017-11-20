@@ -40,17 +40,16 @@ bindings::bind (std::string name, op_bind &op)
   m_bindings.emplace (std::move (name), std::ref (op));
 }
 
-op_bind &
+op_bind *
 bindings::find (std::string name)
 {
   auto it = m_bindings.find (name);
   if (it != m_bindings.end ())
-    return it->second.get ();
+    return &it->second.get ();
   else if (m_super != nullptr)
     return m_super->find (name);
   else
-    throw std::runtime_error
-      (std::string () + "Attempt to read an unbound name `" + name + "'");
+    return nullptr;
 }
 
 std::vector <std::string>
@@ -72,4 +71,42 @@ bindings::names_closure () const
       names.insert (name);
 
   return {names.begin (), names.end ()};
+}
+
+
+uprefs::uprefs ()
+  : m_nextid {0}
+{}
+
+uprefs::uprefs (bindings &bns, uprefs &super)
+  : m_nextid {0}
+{
+  for (auto &nm: bns.names_closure ())
+    m_ids.emplace (std::move (nm), std::make_pair (false, 0));
+  for (auto &el: super.m_ids)
+    m_ids.emplace (el.first, std::make_pair (false, 0));
+}
+
+std::pair <bool, unsigned>
+uprefs::find (std::string name)
+{
+  auto it = m_ids.find (name);
+  if (it != m_ids.end ())
+    {
+      if (! it->second.first)
+	it->second = {true, m_nextid++};
+      return it->second;
+    }
+  else
+    return std::make_pair (false, -1u);
+}
+
+std::vector <std::string>
+uprefs::refd_names () const
+{
+  std::vector <std::string> ret;
+  for (auto &el: m_ids)
+    if (el.second.first)
+      ret.push_back (el.first);
+  return ret;
 }

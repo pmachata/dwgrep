@@ -947,6 +947,49 @@ op_read::next (scon2 &sc) const
 }
 
 
+class op_upread::state
+{
+};
+
+op_upread::op_upread (layout &l, std::shared_ptr <op> upstream, unsigned id)
+  : inner_op (upstream)
+    // xxx init apply and origin
+  , m_id {id}
+  , m_ll {l.reserve <state> ()}
+{}
+
+std::string
+op_upread::name () const
+{
+  std::stringstream ss;
+  ss << "upread<" << m_id << ">";
+  return ss.str ();
+}
+
+void
+op_upread::state_con (scon2 &sc) const
+{
+  sc.con <state> (m_ll);
+  // xxx apply & origin
+  inner_op::state_con (sc);
+}
+
+void
+op_upread::state_des (scon2 &sc) const
+{
+  inner_op::state_des (sc);
+  // xxx apply & origin
+  sc.des <state> (m_ll);
+}
+
+stack::uptr
+op_upread::next (scon2 &sc) const
+{
+  // xxx
+  return nullptr;
+}
+
+
 std::unique_ptr <value>
 pseudo_bind::fetch (scon2 &sc, unsigned assert_id) const
 {

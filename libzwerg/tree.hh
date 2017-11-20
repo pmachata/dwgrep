@@ -190,7 +190,7 @@ public:
   // Not every expression node needs to have an associated op, some
   // nodes will only install some plumbing (in particular, a CAT node
   // would only create a series of nested op's).  UPSTREAM should be
-  // nullptr if this is the toplevel-most expression, otherwise it
+  // an op_origin if this is the toplevel-most expression, otherwise it
   // should be a valid op that the op produced by this node feeds off.
   std::shared_ptr <op>
   build_exec (layout &l, std::shared_ptr <op> upstream) const;
