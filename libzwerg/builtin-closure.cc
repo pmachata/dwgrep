@@ -49,19 +49,14 @@ struct op_apply::substate
     , m_sg {m_scon, m_value->get_op ()}
   {
     m_scon.con <op_apply::rendezvous> (m_value->get_rdv_ll (),
-				       std::ref (m_value));
+				       std::ref (*m_value));
     m_value->get_origin ().set_next (m_scon, std::move (stk));
   }
 
   stack::uptr
   next ()
   {
-    // xxx I think that now that we have a full-featured stacking, the
-    // rendezvous logic can be rethought.
-    value_closure *orig = m_value->rdv_exchange (&*m_value);
-    auto stk = m_value->get_op ().next (m_scon);
-    m_value->rdv_exchange (orig);
-    return stk;
+    return m_value->get_op ().next (m_scon);
   }
 };
 

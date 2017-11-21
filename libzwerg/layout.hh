@@ -53,7 +53,8 @@ public:
   inline layout::loc
   reserve ()
   {
-    // xxx alignment
+    size_t align = alignof (State);
+    m_top = (m_top + (align - 1)) & -align;
     auto ret = loc {m_top};
     m_top += sizeof (State);
     return ret;
