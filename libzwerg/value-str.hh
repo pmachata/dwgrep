@@ -1,4 +1,5 @@
 /*
+   Copyright (C) 2017 Petr Machata
    Copyright (C) 2014, 2015 Red Hat, Inc.
    This file is part of dwgrep.
 
@@ -66,7 +67,7 @@ struct op_add_str
   using op_once_overload::op_once_overload;
 
   value_str operate (std::unique_ptr <value_str> a,
-		     std::unique_ptr <value_str> b) override;
+		     std::unique_ptr <value_str> b) const override;
 
   static std::string docstring ();
 };
@@ -76,7 +77,7 @@ struct op_length_str
 {
   using op_once_overload::op_once_overload;
 
-  value_cst operate (std::unique_ptr <value_str> a) override;
+  value_cst operate (std::unique_ptr <value_str> a) const override;
 
   static std::string docstring ();
 };
@@ -87,7 +88,7 @@ struct op_elem_str
   using op_yielding_overload::op_yielding_overload;
 
   std::unique_ptr <value_producer <value_str>>
-  operate (std::unique_ptr <value_str> a) override;
+  operate (std::unique_ptr <value_str> a) const override;
 
   static std::string docstring ();
 };
@@ -98,7 +99,7 @@ struct op_relem_str
   using op_yielding_overload::op_yielding_overload;
 
   std::unique_ptr <value_producer <value_str>>
-  operate (std::unique_ptr <value_str> a) override;
+  operate (std::unique_ptr <value_str> a) const override;
 
   static std::string docstring ();
 };
@@ -107,7 +108,7 @@ struct pred_empty_str
   : public pred_overload <value_str>
 {
   using pred_overload::pred_overload;
-  pred_result result (value_str &a) override;
+  pred_result result (value_str &a) const override;
 
   static std::string docstring ();
 };
@@ -116,7 +117,7 @@ struct pred_find_str
   : public pred_overload <value_str, value_str>
 {
   using pred_overload::pred_overload;
-  pred_result result (value_str &haystack, value_str &needle) override;
+  pred_result result (value_str &haystack, value_str &needle) const override;
 
   static std::string docstring ();
 };
@@ -125,7 +126,7 @@ struct pred_starts_str
   : public pred_overload <value_str, value_str>
 {
   using pred_overload::pred_overload;
-  pred_result result (value_str &haystack, value_str &needle) override;
+  pred_result result (value_str &haystack, value_str &needle) const override;
 
   static std::string docstring ();
 };
@@ -134,7 +135,7 @@ struct pred_ends_str
   : public pred_overload <value_str, value_str>
 {
   using pred_overload::pred_overload;
-  pred_result result (value_str &haystack, value_str &needle) override;
+  pred_result result (value_str &haystack, value_str &needle) const override;
 
   static std::string docstring ();
 };
@@ -143,7 +144,7 @@ struct pred_match_str
   : public pred_overload <value_str, value_str>
 {
   using pred_overload::pred_overload;
-  pred_result result (value_str &haystack, value_str &needle) override;
+  pred_result result (value_str &haystack, value_str &needle) const override;
 
   static std::string docstring ();
 };

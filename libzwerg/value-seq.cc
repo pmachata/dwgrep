@@ -1,4 +1,5 @@
 /*
+   Copyright (C) 2017 Petr Machata
    Copyright (C) 2014, 2015 Red Hat, Inc.
    This file is part of dwgrep.
 
@@ -143,7 +144,7 @@ value_seq::cmp (value const &that) const
 
 value_seq
 op_add_seq::operate (std::unique_ptr <value_seq> a,
-		     std::unique_ptr <value_seq> b)
+		     std::unique_ptr <value_seq> b) const
 {
   auto seq = a->get_seq ();
   for (auto &v: *b->get_seq ())
@@ -171,7 +172,7 @@ using ``add``::
 }
 
 value_cst
-op_length_seq::operate (std::unique_ptr <value_seq> a)
+op_length_seq::operate (std::unique_ptr <value_seq> a) const
 {
   return {constant {a->get_seq ()->size (), &dec_constant_dom}, 0};
 }
@@ -256,7 +257,7 @@ namespace
 }
 
 std::unique_ptr <value_producer <value>>
-op_elem_seq::operate (std::unique_ptr <value_seq> a)
+op_elem_seq::operate (std::unique_ptr <value_seq> a) const
 {
   return std::make_unique <seq_elem_producer> (a->get_seq ());
 }
@@ -301,7 +302,7 @@ op_elem_seq::docstring ()
 }
 
 std::unique_ptr <value_producer <value>>
-op_relem_seq::operate (std::unique_ptr <value_seq> a)
+op_relem_seq::operate (std::unique_ptr <value_seq> a) const
 {
   return std::make_unique <seq_relem_producer> (a->get_seq ());
 }
@@ -313,7 +314,7 @@ op_relem_seq::docstring ()
 }
 
 pred_result
-pred_empty_seq::result (value_seq &a)
+pred_empty_seq::result (value_seq &a) const
 {
   return pred_result (a.get_seq ()->empty ());
 }
@@ -381,7 +382,7 @@ directly, if possible::
 )docstring";
 
 pred_result
-pred_find_seq::result (value_seq &haystack, value_seq &needle)
+pred_find_seq::result (value_seq &haystack, value_seq &needle) const
 {
   auto const &hay = *haystack.get_seq ();
   auto const &need = *needle.get_seq ();
@@ -426,7 +427,7 @@ For example::
 )docstring";
 
 pred_result
-pred_starts_seq::result (value_seq &haystack, value_seq &needle)
+pred_starts_seq::result (value_seq &haystack, value_seq &needle) const
 {
   auto const &hay = *haystack.get_seq ();
   auto const &need = *needle.get_seq ();
@@ -472,7 +473,7 @@ For example::
 )docstring";
 
 pred_result
-pred_ends_seq::result (value_seq &haystack, value_seq &needle)
+pred_ends_seq::result (value_seq &haystack, value_seq &needle) const
 {
   auto const &hay = *haystack.get_seq ();
   auto const &need = *needle.get_seq ();

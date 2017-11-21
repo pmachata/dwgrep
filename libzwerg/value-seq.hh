@@ -1,4 +1,5 @@
 /*
+   Copyright (C) 2017 Petr Machata
    Copyright (C) 2014, 2015 Red Hat, Inc.
    This file is part of dwgrep.
 
@@ -75,7 +76,7 @@ struct op_add_seq
   using op_once_overload::op_once_overload;
 
   value_seq operate (std::unique_ptr <value_seq> a,
-		     std::unique_ptr <value_seq> b) override;
+		     std::unique_ptr <value_seq> b) const override;
 
   static std::string docstring ();
 };
@@ -85,7 +86,7 @@ struct op_length_seq
 {
   using op_once_overload::op_once_overload;
 
-  value_cst operate (std::unique_ptr <value_seq> a) override;
+  value_cst operate (std::unique_ptr <value_seq> a) const override;
 
   static std::string docstring ();
 };
@@ -96,7 +97,7 @@ struct op_elem_seq
   using op_yielding_overload::op_yielding_overload;
 
   std::unique_ptr <value_producer <value>>
-  operate (std::unique_ptr <value_seq> a) override;
+  operate (std::unique_ptr <value_seq> a) const override;
 
   static std::string docstring ();
 };
@@ -107,7 +108,7 @@ struct op_relem_seq
   using op_yielding_overload::op_yielding_overload;
 
   std::unique_ptr <value_producer <value>>
-  operate (std::unique_ptr <value_seq> a) override;
+  operate (std::unique_ptr <value_seq> a) const override;
 
   static std::string docstring ();
 };
@@ -116,7 +117,7 @@ struct pred_empty_seq
   : public pred_overload <value_seq>
 {
   using pred_overload::pred_overload;
-  pred_result result (value_seq &a) override;
+  pred_result result (value_seq &a) const override;
 
   static std::string docstring ();
 };
@@ -125,7 +126,7 @@ struct pred_find_seq
   : public pred_overload <value_seq, value_seq>
 {
   using pred_overload::pred_overload;
-  pred_result result (value_seq &haystack, value_seq &needle) override;
+  pred_result result (value_seq &haystack, value_seq &needle) const override;
 
   static std::string docstring ();
 };
@@ -134,7 +135,7 @@ struct pred_starts_seq
   : public pred_overload <value_seq, value_seq>
 {
   using pred_overload::pred_overload;
-  pred_result result (value_seq &haystack, value_seq &needle) override;
+  pred_result result (value_seq &haystack, value_seq &needle) const override;
 
   static std::string docstring ();
 };
@@ -143,7 +144,7 @@ struct pred_ends_seq
   : public pred_overload <value_seq, value_seq>
 {
   using pred_overload::pred_overload;
-  pred_result result (value_seq &haystack, value_seq &needle) override;
+  pred_result result (value_seq &haystack, value_seq &needle) const override;
 
   static std::string docstring ();
 };

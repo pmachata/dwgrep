@@ -1,4 +1,5 @@
 /*
+   Copyright (C) 2017 Petr Machata
    Copyright (C) 2015 Red Hat, Inc.
    This file is part of dwgrep.
 
@@ -100,7 +101,7 @@ Example::
 }
 
 std::unique_ptr <value_producer <value_cst>>
-op_elem_aset::operate (std::unique_ptr <value_aset> val)
+op_elem_aset::operate (std::unique_ptr <value_aset> val) const
 {
   return std::make_unique <elem_aset_producer>
     (val->get_coverage (), true);
@@ -113,7 +114,7 @@ op_elem_aset::docstring ()
 }
 
 std::unique_ptr <value_producer <value_cst>>
-op_relem_aset::operate (std::unique_ptr <value_aset> val)
+op_relem_aset::operate (std::unique_ptr <value_aset> val) const
 {
   return std::make_unique <elem_aset_producer>
     (val->get_coverage (), false);
@@ -126,7 +127,7 @@ op_relem_aset::docstring ()
 }
 
 std::unique_ptr <value_cst>
-op_low_aset::operate (std::unique_ptr <value_aset> a)
+op_low_aset::operate (std::unique_ptr <value_aset> a) const
 {
   auto &cov = a->get_coverage ();
   if (cov.empty ())
@@ -158,7 +159,7 @@ Doesn't yield at all if the set is empty::
 
 
 std::unique_ptr <value_cst>
-op_high_aset::operate (std::unique_ptr <value_aset> a)
+op_high_aset::operate (std::unique_ptr <value_aset> a) const
 {
   auto &cov = a->get_coverage ();
   if (cov.empty ())
@@ -208,7 +209,7 @@ namespace
 
 value_aset
 op_aset_cst_cst::operate (std::unique_ptr <value_cst> a,
-			  std::unique_ptr <value_cst> b)
+			  std::unique_ptr <value_cst> b) const
 {
   auto av = addressify (a->get_constant ());
   auto bv = addressify (b->get_constant ());
@@ -236,7 +237,7 @@ range though.)
 
 value_aset
 op_add_aset_cst::operate (std::unique_ptr <value_aset> a,
-			  std::unique_ptr <value_cst> b)
+			  std::unique_ptr <value_cst> b) const
 {
   auto bv = addressify (b->get_constant ());
   auto ret = a->get_coverage ();
@@ -263,7 +264,7 @@ range covered by given address set::
 
 value_aset
 op_add_aset_aset::operate (std::unique_ptr <value_aset> a,
-			   std::unique_ptr <value_aset> b)
+			   std::unique_ptr <value_aset> b) const
 {
   auto ret = a->get_coverage ();
   ret.add_all (b->get_coverage ());
@@ -290,7 +291,7 @@ their ranges::
 
 value_aset
 op_sub_aset_cst::operate (std::unique_ptr <value_aset> a,
-			  std::unique_ptr <value_cst> b)
+			  std::unique_ptr <value_cst> b) const
 {
   auto bv = addressify (b->get_constant ());
   auto ret = a->get_coverage ();
@@ -317,7 +318,7 @@ with a hole poked at the address given by the constant::
 
 value_aset
 op_sub_aset_aset::operate (std::unique_ptr <value_aset> a,
-			   std::unique_ptr <value_aset> b)
+			   std::unique_ptr <value_aset> b) const
 {
   auto ret = a->get_coverage ();
   ret.remove_all (b->get_coverage ());
@@ -338,7 +339,7 @@ contains all of the *A*'s addresses except those covered by *B*.
 
 
 value_cst
-op_length_aset::operate (std::unique_ptr <value_aset> a)
+op_length_aset::operate (std::unique_ptr <value_aset> a) const
 {
   uint64_t length = 0;
   for (size_t i = 0; i < a->get_coverage ().size (); ++i)
@@ -393,7 +394,7 @@ namespace
 }
 
 std::unique_ptr <value_producer <value_aset>>
-op_range_aset::operate (std::unique_ptr <value_aset> a)
+op_range_aset::operate (std::unique_ptr <value_aset> a) const
 {
   return std::make_unique <aset_range_producer> (std::move (a));
 }
@@ -416,7 +417,7 @@ address set, presented as individual address sets::
 
 
 pred_result
-pred_containsp_aset_cst::result (value_aset &a, value_cst &b)
+pred_containsp_aset_cst::result (value_aset &a, value_cst &b) const
 {
   auto av = addressify (b.get_constant ());
   return pred_result (a.get_coverage ().is_covered (av.uval (), 1));
@@ -443,7 +444,7 @@ address set::
 
 
 pred_result
-pred_containsp_aset_aset::result (value_aset &a, value_aset &b)
+pred_containsp_aset_aset::result (value_aset &a, value_aset &b) const
 {
   // ?contains holds if A contains all of B.
   for (size_t i = 0; i < b.get_coverage ().size (); ++i)
@@ -469,7 +470,7 @@ where all of *B*'s addresses are covered by *A*.
 
 
 pred_result
-pred_overlapsp_aset_aset::result (value_aset &a, value_aset &b)
+pred_overlapsp_aset_aset::result (value_aset &a, value_aset &b) const
 {
   for (size_t i = 0; i < b.get_coverage ().size (); ++i)
     {
@@ -495,7 +496,7 @@ overlap.
 
 value_aset
 op_overlap_aset_aset::operate (std::unique_ptr <value_aset> a,
-			       std::unique_ptr <value_aset> b)
+			       std::unique_ptr <value_aset> b) const
 {
   coverage ret;
   for (size_t i = 0; i < b->get_coverage ().size (); ++i)
@@ -522,7 +523,7 @@ set that covers those addresses that both of the address sets cover.
 
 
 pred_result
-pred_emptyp_aset::result (value_aset &a)
+pred_emptyp_aset::result (value_aset &a) const
 {
   return pred_result (a.get_coverage ().empty ());
 }

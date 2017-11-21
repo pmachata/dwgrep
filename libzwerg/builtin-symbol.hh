@@ -1,4 +1,5 @@
 /*
+   Copyright (C) 2017 Petr Machata
    Copyright (C) 2014, 2015 Red Hat, Inc.
    This file is part of dwgrep.
 
@@ -38,7 +39,7 @@ struct op_symbol_dwarf
   using op_yielding_overload::op_yielding_overload;
 
   std::unique_ptr <value_producer <value_symbol>>
-  operate (std::unique_ptr <value_dwarf> val) override;
+  operate (std::unique_ptr <value_dwarf> val) const override;
 
   static std::string docstring ();
 };
@@ -48,7 +49,7 @@ struct op_name_symbol
 {
   using op_once_overload::op_once_overload;
 
-  value_str operate (std::unique_ptr <value_symbol> val) override;
+  value_str operate (std::unique_ptr <value_symbol> val) const override;
   static std::string docstring ();
 };
 
@@ -57,7 +58,7 @@ struct op_label_symbol
 {
   using op_once_overload::op_once_overload;
 
-  value_cst operate (std::unique_ptr <value_symbol> val) override;
+  value_cst operate (std::unique_ptr <value_symbol> val) const override;
   static std::string docstring ();
 };
 
@@ -66,7 +67,7 @@ struct op_binding_symbol
 {
   using op_once_overload::op_once_overload;
 
-  value_cst operate (std::unique_ptr <value_symbol> val) override;
+  value_cst operate (std::unique_ptr <value_symbol> val) const override;
   static std::string docstring ();
 };
 
@@ -75,7 +76,7 @@ struct op_visibility_symbol
 {
   using op_once_overload::op_once_overload;
 
-  value_cst operate (std::unique_ptr <value_symbol> val) override;
+  value_cst operate (std::unique_ptr <value_symbol> val) const override;
   static std::string docstring ();
 };
 
@@ -84,7 +85,7 @@ struct op_address_symbol
 {
   using op_once_overload::op_once_overload;
 
-  value_cst operate (std::unique_ptr <value_symbol> val) override;
+  value_cst operate (std::unique_ptr <value_symbol> val) const override;
   static std::string docstring ();
 };
 
@@ -93,6 +94,6 @@ struct op_size_symbol
 {
   using op_once_overload::op_once_overload;
 
-  value_cst operate (std::unique_ptr <value_symbol> val) override;
+  value_cst operate (std::unique_ptr <value_symbol> val) const override;
   static std::string docstring ();
 };

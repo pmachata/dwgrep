@@ -1,4 +1,5 @@
 /*
+   Copyright (C) 2017 Petr Machata
    Copyright (C) 2014, 2015 Red Hat, Inc.
    This file is part of dwgrep.
 
@@ -71,7 +72,7 @@ value_str::cmp (value const &that) const
 
 value_str
 op_add_str::operate (std::unique_ptr <value_str> a,
-		     std::unique_ptr <value_str> b)
+		     std::unique_ptr <value_str> b) const
 {
   return value_str {a->get_string () + b->get_string (), 0};
 }
@@ -97,7 +98,7 @@ Using formatting strings may be a better way to concatenate strings::
 
 
 value_cst
-op_length_str::operate (std::unique_ptr <value_str> a)
+op_length_str::operate (std::unique_ptr <value_str> a) const
 {
   constant t {a->get_string ().length (), &dec_constant_dom};
   return value_cst {t, 0};
@@ -192,7 +193,7 @@ strings::
 
 // elem
 std::unique_ptr <value_producer <value_str>>
-op_elem_str::operate (std::unique_ptr <value_str> a)
+op_elem_str::operate (std::unique_ptr <value_str> a) const
 {
   return std::make_unique <str_elem_producer> (std::move (a));
 }
@@ -206,7 +207,7 @@ op_elem_str::docstring ()
 
 // relem
 std::unique_ptr <value_producer <value_str>>
-op_relem_str::operate (std::unique_ptr <value_str> a)
+op_relem_str::operate (std::unique_ptr <value_str> a) const
 {
   return std::make_unique <str_relem_producer> (std::move (a));
 }
@@ -220,7 +221,7 @@ op_relem_str::docstring ()
 
 // ?empty
 pred_result
-pred_empty_str::result (value_str &a)
+pred_empty_str::result (value_str &a) const
 {
   return pred_result (a.get_string () == "");
 }
@@ -248,7 +249,7 @@ This predicate holds if the string on TOS is empty::
 extern char const g_find_docstring[];
 
 pred_result
-pred_find_str::result (value_str &haystack, value_str &needle)
+pred_find_str::result (value_str &haystack, value_str &needle) const
 {
   return pred_result (haystack.get_string ().find (needle.get_string ())
 		      != std::string::npos);
@@ -266,7 +267,7 @@ pred_find_str::docstring ()
 extern char const g_starts_docstring[];
 
 pred_result
-pred_starts_str::result (value_str &haystack, value_str &needle)
+pred_starts_str::result (value_str &haystack, value_str &needle) const
 {
   auto const &hay = haystack.get_string ();
   auto const &need = needle.get_string ();
@@ -287,7 +288,7 @@ pred_starts_str::docstring ()
 extern char const g_ends_docstring[];
 
 pred_result
-pred_ends_str::result (value_str &haystack, value_str &needle)
+pred_ends_str::result (value_str &haystack, value_str &needle) const
 {
   auto const &hay = haystack.get_string ();
   auto const &need = needle.get_string ();
@@ -306,7 +307,7 @@ pred_ends_str::docstring ()
 // ?match
 
 pred_result
-pred_match_str::result (value_str &haystack, value_str &needle)
+pred_match_str::result (value_str &haystack, value_str &needle) const
 {
   regex_t re;
   if (regcomp (&re, needle.get_string ().c_str(),

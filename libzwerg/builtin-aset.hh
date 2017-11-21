@@ -1,4 +1,5 @@
 /*
+   Copyright (C) 2017 Petr Machata
    Copyright (C) 2015 Red Hat, Inc.
    This file is part of dwgrep.
 
@@ -39,7 +40,7 @@ struct op_elem_aset
   using op_yielding_overload::op_yielding_overload;
 
   std::unique_ptr <value_producer <value_cst>>
-  operate (std::unique_ptr <value_aset> val) override;
+  operate (std::unique_ptr <value_aset> val) const override;
 
   static std::string docstring ();
 };
@@ -50,7 +51,7 @@ struct op_relem_aset
   using op_yielding_overload::op_yielding_overload;
 
   std::unique_ptr <value_producer <value_cst>>
-  operate (std::unique_ptr <value_aset> val) override;
+  operate (std::unique_ptr <value_aset> val) const override;
 
   static std::string docstring ();
 };
@@ -60,7 +61,8 @@ struct op_low_aset
 {
   using op_overload::op_overload;
 
-  std::unique_ptr <value_cst> operate (std::unique_ptr <value_aset> a) override;
+  std::unique_ptr <value_cst>
+  operate (std::unique_ptr <value_aset> a) const override;
   static std::string docstring ();
 };
 
@@ -69,7 +71,8 @@ struct op_high_aset
 {
   using op_overload::op_overload;
 
-  std::unique_ptr <value_cst> operate (std::unique_ptr <value_aset> a) override;
+  std::unique_ptr <value_cst>
+  operate (std::unique_ptr <value_aset> a) const override;
   static std::string docstring ();
 };
 
@@ -79,7 +82,7 @@ struct op_aset_cst_cst
   using op_once_overload::op_once_overload;
 
   value_aset operate (std::unique_ptr <value_cst> a,
-		      std::unique_ptr <value_cst> b) override;
+		      std::unique_ptr <value_cst> b) const override;
 
   static std::string docstring ();
 };
@@ -90,7 +93,7 @@ struct op_add_aset_cst
   using op_once_overload::op_once_overload;
 
   value_aset operate (std::unique_ptr <value_aset> a,
-		      std::unique_ptr <value_cst> b) override;
+		      std::unique_ptr <value_cst> b) const override;
 
   static std::string docstring ();
 };
@@ -102,7 +105,7 @@ struct op_add_aset_aset
 
   value_aset
   operate (std::unique_ptr <value_aset> a,
-	   std::unique_ptr <value_aset> b) override;
+	   std::unique_ptr <value_aset> b) const override;
 
   static std::string docstring ();
 };
@@ -114,7 +117,7 @@ struct op_sub_aset_cst
 
   value_aset
   operate (std::unique_ptr <value_aset> a,
-	   std::unique_ptr <value_cst> b) override;
+	   std::unique_ptr <value_cst> b) const override;
 
   static std::string docstring ();
 };
@@ -125,7 +128,7 @@ struct op_sub_aset_aset
   using op_once_overload::op_once_overload;
 
   value_aset operate (std::unique_ptr <value_aset> a,
-		      std::unique_ptr <value_aset> b) override;
+		      std::unique_ptr <value_aset> b) const override;
 
   static std::string docstring ();
 };
@@ -135,7 +138,7 @@ struct op_length_aset
 {
   using op_once_overload::op_once_overload;
 
-  value_cst operate (std::unique_ptr <value_aset> a) override;
+  value_cst operate (std::unique_ptr <value_aset> a) const override;
   static std::string docstring ();
 };
 
@@ -145,7 +148,7 @@ struct op_range_aset
   using op_yielding_overload::op_yielding_overload;
 
   std::unique_ptr <value_producer <value_aset>>
-  operate (std::unique_ptr <value_aset> a) override;
+  operate (std::unique_ptr <value_aset> a) const override;
 
   static std::string docstring ();
 };
@@ -155,7 +158,7 @@ struct pred_containsp_aset_cst
 {
   using pred_overload::pred_overload;
 
-  pred_result result (value_aset &a, value_cst &b) override;
+  pred_result result (value_aset &a, value_cst &b) const override;
   static std::string docstring ();
 };
 
@@ -164,7 +167,7 @@ struct pred_containsp_aset_aset
 {
   using pred_overload::pred_overload;
 
-  pred_result result (value_aset &a, value_aset &b) override;
+  pred_result result (value_aset &a, value_aset &b) const override;
   static std::string docstring ();
 };
 
@@ -173,7 +176,7 @@ struct pred_overlapsp_aset_aset
 {
   using pred_overload::pred_overload;
 
-  pred_result result (value_aset &a, value_aset &b) override;
+  pred_result result (value_aset &a, value_aset &b) const override;
   static std::string docstring ();
 };
 
@@ -183,7 +186,7 @@ struct op_overlap_aset_aset
   using op_once_overload::op_once_overload;
 
   value_aset operate (std::unique_ptr <value_aset> a,
-		      std::unique_ptr <value_aset> b) override;
+		      std::unique_ptr <value_aset> b) const override;
 
   static std::string docstring ();
 };
@@ -193,7 +196,7 @@ struct pred_emptyp_aset
 {
   using pred_overload::pred_overload;
 
-  pred_result result (value_aset &a) override;
+  pred_result result (value_aset &a) const override;
   static std::string docstring ();
 };
 

@@ -1,4 +1,5 @@
 /*
+   Copyright (C) 2017 Petr Machata
    Copyright (C) 2014 Red Hat, Inc.
    This file is part of dwgrep.
 
@@ -73,7 +74,7 @@ namespace
 }
 
 std::unique_ptr <value_producer <value_abbrev>>
-op_entry_abbrev_unit::operate (std::unique_ptr <value_abbrev_unit> a)
+op_entry_abbrev_unit::operate (std::unique_ptr <value_abbrev_unit> a) const
 {
   return std::make_unique <producer_entry_abbrev_unit> (std::move (a));
 }
@@ -137,7 +138,7 @@ namespace
 }
 
 std::unique_ptr <value_producer <value_abbrev_attr>>
-op_attribute_abbrev::operate (std::unique_ptr <value_abbrev> a)
+op_attribute_abbrev::operate (std::unique_ptr <value_abbrev> a) const
 {
   return std::make_unique <producer_attribute_abbrev> (std::move (a));
 }
@@ -165,7 +166,7 @@ Takes an abbreviation on TOS and yields all its attributes::
 // offset :: T_ABBREV_UNIT -> T_CONST
 
 value_cst
-op_offset_abbrev_unit::operate (std::unique_ptr <value_abbrev_unit> a)
+op_offset_abbrev_unit::operate (std::unique_ptr <value_abbrev_unit> a) const
 {
   Dwarf_Die cudie;
   Dwarf_Off abbrev_off;
@@ -198,7 +199,7 @@ Dwarf section that it comes from::
 // offset :: T_ABBREV -> T_CONST
 
 value_cst
-op_offset_abbrev::operate (std::unique_ptr <value_abbrev> a)
+op_offset_abbrev::operate (std::unique_ptr <value_abbrev> a) const
 {
   constant c {dwpp_abbrev_offset (a->get_abbrev ()), &dw_offset_dom ()};
   return value_cst {c, 0};
@@ -232,7 +233,7 @@ section that it comes from::
 // offset :: T_ABBREV_ATTR -> T_CONST
 
 value_cst
-op_offset_abbrev_attr::operate (std::unique_ptr <value_abbrev_attr> a)
+op_offset_abbrev_attr::operate (std::unique_ptr <value_abbrev_attr> a) const
 {
   return value_cst {constant {a->offset, &dw_offset_dom ()}, 0};
 }
@@ -263,7 +264,7 @@ the Dwarf section that it comes from::
 // label :: T_ABBREV -> T_CONST
 
 value_cst
-op_label_abbrev::operate (std::unique_ptr <value_abbrev> a)
+op_label_abbrev::operate (std::unique_ptr <value_abbrev> a) const
 {
   unsigned int tag = dwarf_getabbrevtag (&a->get_abbrev ());
   return value_cst {constant {tag, &dw_tag_dom ()}, 0};
@@ -288,7 +289,7 @@ Takes an abbreviation on TOS and yields its tag::
 // label :: T_ABBREV_ATTR -> T_CONST
 
 value_cst
-op_label_abbrev_attr::operate (std::unique_ptr <value_abbrev_attr> a)
+op_label_abbrev_attr::operate (std::unique_ptr <value_abbrev_attr> a) const
 {
   return value_cst {constant {a->name, &dw_attr_dom ()}, 0};
 }
@@ -317,7 +318,7 @@ Takes an abbreviation attribute on TOS and yields its name::
 // form :: T_ABBREV_ATTR -> T_CONST
 
 value_cst
-op_form_abbrev_attr::operate (std::unique_ptr <value_abbrev_attr> a)
+op_form_abbrev_attr::operate (std::unique_ptr <value_abbrev_attr> a) const
 {
   return value_cst (constant {a->form, &dw_form_dom ()}, 0);
 }
@@ -337,7 +338,7 @@ Takes an abbreviation attribute on TOS and yields its form.
 // ?haschildren :: T_ABBREV
 
 pred_result
-pred_haschildrenp_abbrev::result (value_abbrev &a)
+pred_haschildrenp_abbrev::result (value_abbrev &a) const
 {
   return pred_result (dwarf_abbrevhaschildren (&a.get_abbrev ()));
 }
@@ -406,7 +407,7 @@ namespace
 }
 
 std::unique_ptr <value_producer <value_abbrev_unit>>
-op_abbrev_dwarf::operate (std::unique_ptr <value_dwarf> a)
+op_abbrev_dwarf::operate (std::unique_ptr <value_dwarf> a) const
 {
   return std::make_unique <producer_abbrev_dwarf> (a->get_dwctx ());
 }
@@ -427,7 +428,7 @@ therein.
 // abbrev :: T_CU -> T_ABBREV_UNIT
 
 value_abbrev_unit
-op_abbrev_cu::operate (std::unique_ptr <value_cu> a)
+op_abbrev_cu::operate (std::unique_ptr <value_cu> a) const
 {
   return value_abbrev_unit {a->get_dwctx (), a->get_cu (), 0};
 }
@@ -448,7 +449,7 @@ unit's abbreviations.
 // abbrev :: T_DIE -> T_ABBREV
 
 value_abbrev
-op_abbrev_die::operate (std::unique_ptr <value_die> a)
+op_abbrev_die::operate (std::unique_ptr <value_die> a) const
 {
   // If the DIE doesn't have an abbreviation yet, force its
   // look-up.
@@ -475,7 +476,7 @@ DIE.
 // code :: T_ABBREV -> T_CONST
 
 value_cst
-op_code_abbrev::operate (std::unique_ptr <value_abbrev> a)
+op_code_abbrev::operate (std::unique_ptr <value_abbrev> a) const
 {
   return value_cst {constant {dwarf_getabbrevcode (&a->get_abbrev ()),
 	&dw_abbrevcode_dom ()}, 0};
@@ -496,7 +497,7 @@ Takes abbreviation on TOS and yields its code.
 // ?DW_AT_* :: T_ABBREV
 
 pred_result
-pred_atname_abbrev::result (value_abbrev &a)
+pred_atname_abbrev::result (value_abbrev &a) const
 {
   size_t cnt = dwpp_abbrev_attrcnt (a.get_abbrev ());
   for (size_t i = 0; i < cnt; ++i)
@@ -531,7 +532,7 @@ place with abbreviations::
 // ?DW_AT_A* :: T_ABBREV_ATTR
 
 pred_result
-pred_atname_abbrev_attr::result (value_abbrev_attr &a)
+pred_atname_abbrev_attr::result (value_abbrev_attr &a) const
 {
   return pred_result (a.name == m_atname);
 }
@@ -555,7 +556,7 @@ same as indicated by this word::
 // ?DW_TAG_* :: T_ABBREV
 
 pred_result
-pred_tag_abbrev::result (value_abbrev &a)
+pred_tag_abbrev::result (value_abbrev &a) const
 {
   return pred_result (dwarf_getabbrevtag (&a.get_abbrev ()) == m_tag);
 }
@@ -576,7 +577,7 @@ indicated by this word.
 // ?DW_FORM_* :: T_ABBREV_ATTR
 
 pred_result
-pred_form_abbrev_attr::result (value_abbrev_attr &a)
+pred_form_abbrev_attr::result (value_abbrev_attr &a) const
 {
   return pred_result (a.form == m_form);
 }

@@ -1,4 +1,5 @@
 /*
+   Copyright (C) 2017 Petr Machata
    Copyright (C) 2014 Red Hat, Inc.
    This file is part of dwgrep.
 
@@ -417,7 +418,7 @@ public:
     return nullptr;
   }
 
-  virtual std::unique_ptr <RT> operate (std::unique_ptr <VT>... vals) = 0;
+  virtual std::unique_ptr <RT> operate (std::unique_ptr <VT>... vals) const = 0;
 
   static builtin_protomap
   protomap ()
@@ -461,7 +462,7 @@ public:
     return nullptr;
   }
 
-  virtual RT operate (std::unique_ptr <VT>... vals) = 0;
+  virtual RT operate (std::unique_ptr <VT>... vals) const = 0;
 
   static builtin_protomap
   protomap ()
@@ -535,7 +536,7 @@ public:
   }
 
   virtual std::unique_ptr <value_producer <RT>>
-	operate (std::unique_ptr <VT>... vals) = 0;
+	operate (std::unique_ptr <VT>... vals) const = 0;
 
   static builtin_protomap
   protomap ()
@@ -586,7 +587,7 @@ public:
 			collect <sizeof... (VT), VT...> (stk));
   }
 
-  virtual pred_result result (VT &... vals) = 0;
+  virtual pred_result result (VT &... vals) const = 0;
 
   static selector get_selector ()
   { return {VT::vtype...}; }

@@ -1,4 +1,5 @@
 /*
+   Copyright (C) 2017 Petr Machata
    Copyright (C) 2014, 2015 Red Hat, Inc.
    This file is part of dwgrep.
 
@@ -82,7 +83,7 @@ value_cst::cmp (value const &that) const
 // value
 
 value_cst
-op_value_cst::operate (std::unique_ptr <value_cst> a)
+op_value_cst::operate (std::unique_ptr <value_cst> a) const
 {
   return {constant {a->get_constant ().value (), &dec_constant_dom}, 0};
 }
@@ -158,7 +159,7 @@ denoted with ``->?`` relation::
 
 std::unique_ptr <value_cst>
 op_add_cst::operate (std::unique_ptr <value_cst> a,
-		     std::unique_ptr <value_cst> b)
+		     std::unique_ptr <value_cst> b) const
 {
   return simple_arith_op
     (*a, *b,
@@ -179,7 +180,7 @@ op_add_cst::docstring ()
 
 std::unique_ptr <value_cst>
 op_sub_cst::operate (std::unique_ptr <value_cst> a,
-		     std::unique_ptr <value_cst> b)
+		     std::unique_ptr <value_cst> b) const
 {
   return simple_arith_op
     (*a, *b,
@@ -200,7 +201,7 @@ op_sub_cst::docstring ()
 
 std::unique_ptr <value_cst>
 op_mul_cst::operate (std::unique_ptr <value_cst> a,
-		     std::unique_ptr <value_cst> b)
+		     std::unique_ptr <value_cst> b) const
 {
   return simple_arith_op
     (*a, *b,
@@ -221,7 +222,7 @@ op_mul_cst::docstring ()
 
 std::unique_ptr <value_cst>
 op_div_cst::operate (std::unique_ptr <value_cst> a,
-		     std::unique_ptr <value_cst> b)
+		     std::unique_ptr <value_cst> b) const
 {
   return simple_arith_op
     (*a, *b,
@@ -242,7 +243,7 @@ op_div_cst::docstring ()
 
 std::unique_ptr <value_cst>
 op_mod_cst::operate (std::unique_ptr <value_cst> a,
-		     std::unique_ptr <value_cst> b)
+		     std::unique_ptr <value_cst> b) const
 {
   return simple_arith_op
     (*a, *b,

@@ -1,4 +1,5 @@
 /*
+   Copyright (C) 2017 Petr Machata
    Copyright (C) 2014, 2015 Red Hat, Inc.
    This file is part of dwgrep.
 
@@ -43,7 +44,7 @@
 
 // dwopen
 value_dwarf
-op_dwopen_str::operate (std::unique_ptr <value_str> a)
+op_dwopen_str::operate (std::unique_ptr <value_str> a) const
 {
   return value_dwarf (a->get_string (), 0, doneness::cooked);
 }
@@ -118,7 +119,7 @@ namespace
 }
 
 std::unique_ptr <value_producer <value_cu>>
-op_unit_dwarf::operate (std::unique_ptr <value_dwarf> a)
+op_unit_dwarf::operate (std::unique_ptr <value_dwarf> a) const
 {
   return std::make_unique <dwarf_unit_producer> (a->get_dwctx (),
 						 a->get_doneness ());
@@ -174,7 +175,7 @@ namespace
 
 
 value_cu
-op_unit_die::operate (std::unique_ptr <value_die> a)
+op_unit_die::operate (std::unique_ptr <value_die> a) const
 {
   return cu_for_die (a->get_dwctx (), a->get_die (), a->get_doneness ());
 }
@@ -198,7 +199,7 @@ Take a DIE on TOS and yield a unit that this DIE belongs to::
 }
 
 value_cu
-op_unit_attr::operate (std::unique_ptr <value_attr> a)
+op_unit_attr::operate (std::unique_ptr <value_attr> a) const
 {
   return cu_for_die (a->get_dwctx (), a->get_die (), doneness::cooked);
 }
@@ -354,7 +355,7 @@ namespace
 
 
 std::unique_ptr <value_producer <value_die>>
-op_entry_cu::operate (std::unique_ptr <value_cu> a)
+op_entry_cu::operate (std::unique_ptr <value_cu> a) const
 {
   return make_cu_entry_producer (a->get_dwctx (), a->get_cu (),
 				 a->get_doneness ());
@@ -438,7 +439,7 @@ namespace
 }
 
 std::unique_ptr <value_producer <value_die>>
-op_entry_dwarf::operate (std::unique_ptr <value_dwarf> a)
+op_entry_dwarf::operate (std::unique_ptr <value_dwarf> a) const
 {
   return std::make_unique <dwarf_entry_producer> (a->get_dwctx (),
 						  a->get_doneness ());
@@ -473,7 +474,7 @@ namespace
 
 
 std::unique_ptr <value_producer <value_die>>
-op_child_die::operate (std::unique_ptr <value_die> a)
+op_child_die::operate (std::unique_ptr <value_die> a) const
 {
   return make_die_child_producer (a->get_dwctx (), a->get_die (),
 				  a->get_doneness ());
@@ -573,7 +574,7 @@ Takes a location expression on TOS and yields individual operators::
 }
 
 std::unique_ptr <value_producer <value_loclist_op>>
-op_elem_loclist_elem::operate (std::unique_ptr <value_loclist_elem> a)
+op_elem_loclist_elem::operate (std::unique_ptr <value_loclist_elem> a) const
 {
   return std::make_unique <elem_loclist_producer> (std::move (a), true);
 }
@@ -585,7 +586,7 @@ op_elem_loclist_elem::docstring ()
 }
 
 std::unique_ptr <value_producer <value_loclist_op>>
-op_relem_loclist_elem::operate (std::unique_ptr <value_loclist_elem> a)
+op_relem_loclist_elem::operate (std::unique_ptr <value_loclist_elem> a) const
 {
   return std::make_unique <elem_loclist_producer> (std::move (a), false);
 }
@@ -714,7 +715,7 @@ namespace
 }
 
 std::unique_ptr <value_producer <value_attr>>
-op_attribute_die::operate (std::unique_ptr <value_die> a)
+op_attribute_die::operate (std::unique_ptr <value_die> a) const
 {
   return std::make_unique <attribute_producer> (std::move (a));
 }
@@ -766,7 +767,7 @@ Example::
 
 // offset
 value_cst
-op_offset_cu::operate (std::unique_ptr <value_cu> a)
+op_offset_cu::operate (std::unique_ptr <value_cu> a) const
     {
       return value_cst {constant {a->get_offset (), &dw_offset_dom ()}, 0};
     }
@@ -815,7 +816,7 @@ Example::
 
 
 value_cst
-op_offset_die::operate (std::unique_ptr <value_die> val)
+op_offset_die::operate (std::unique_ptr <value_die> val) const
 {
   constant c {dwarf_dieoffset (&val->get_die ()), &dw_offset_dom ()};
   return value_cst {c, 0};
@@ -861,7 +862,7 @@ compare unequal despite them being physically the same DIE::
 
 
 value_cst
-op_offset_loclist_op::operate (std::unique_ptr <value_loclist_op> val)
+op_offset_loclist_op::operate (std::unique_ptr <value_loclist_op> val) const
 {
   Dwarf_Op const *dwop = val->get_dwop ();
   return value_cst {constant {dwop->offset, &dw_offset_dom ()}, 0};
@@ -899,7 +900,7 @@ the containing location expression::
 // address
 
 value_aset
-op_address_die::operate (std::unique_ptr <value_die> a)
+op_address_die::operate (std::unique_ptr <value_die> a) const
 {
   return die_ranges (a->get_die ());
 }
@@ -946,7 +947,7 @@ namespace
 
 
 std::unique_ptr <value_cst>
-op_address_attr::operate (std::unique_ptr <value_attr> a)
+op_address_attr::operate (std::unique_ptr <value_attr> a) const
 {
   if (dwarf_whatattr (&a->get_attr ()) == DW_AT_high_pc)
     return get_die_addr (a->get_die (), &dwarf_highpc);
@@ -998,6 +999,7 @@ value to absolute address::
 
 value_aset
 op_address_loclist_elem::operate (std::unique_ptr <value_loclist_elem> val)
+  const
 {
   uint64_t low = val->get_low ();
   uint64_t len = val->get_high () - low;
@@ -1036,7 +1038,7 @@ describing where it is valid::
 // label
 
 value_cst
-op_label_die::operate (std::unique_ptr <value_die> val)
+op_label_die::operate (std::unique_ptr <value_die> val) const
 {
   int tag = dwarf_tag (&val->get_die ());
   return value_cst {constant {tag, &dw_tag_dom ()}, 0};
@@ -1059,7 +1061,7 @@ Takes a DIE on TOS and yields its tag::
 
 
 value_cst
-op_label_attr::operate (std::unique_ptr <value_attr> val)
+op_label_attr::operate (std::unique_ptr <value_attr> val) const
 {
   constant cst {dwarf_whatattr (&val->get_attr ()), &dw_attr_dom ()};
   return value_cst {cst, 0};
@@ -1087,7 +1089,7 @@ Takes an attribute on TOS and yields its name::
 
 
 value_cst
-op_label_loclist_op::operate (std::unique_ptr <value_loclist_op> val)
+op_label_loclist_op::operate (std::unique_ptr <value_loclist_op> val) const
 {
   constant cst {val->get_dwop ()->atom, &dw_locexpr_opcode_dom (),
       brevity::brief};
@@ -1118,7 +1120,7 @@ operator::
 // form
 
 value_cst
-op_form_attr::operate (std::unique_ptr <value_attr> val)
+op_form_attr::operate (std::unique_ptr <value_attr> val) const
 {
   constant cst {dwarf_whatform (&val->get_attr ()), &dw_form_dom ()};
   return value_cst {cst, 0};
@@ -1139,7 +1141,7 @@ Takes an attribute on TOS and yields its form.
 // parent
 
 std::unique_ptr <value_die>
-op_parent_die::operate (std::unique_ptr <value_die> a)
+op_parent_die::operate (std::unique_ptr <value_die> a) const
 {
   return a->get_parent ();
 }
@@ -1173,7 +1175,7 @@ particular DIE was explored::
 // ?root
 
 pred_result
-pred_rootp_die::result (value_die &a)
+pred_rootp_die::result (value_die &a) const
 {
   // N.B. the following works the same for raw as well as cooked
   // DIE's.  The difference in behavior is in 'parent', which for
@@ -1199,7 +1201,7 @@ Holds for root DIE's, i.e. DIE's that don't have a parental DIE.
 // root
 
 value_die
-op_root_cu::operate (std::unique_ptr <value_cu> a)
+op_root_cu::operate (std::unique_ptr <value_cu> a) const
 {
   Dwarf_CU &cu = a->get_cu ();
   Dwarf_Die cudie;
@@ -1239,7 +1241,7 @@ namespace
 }
 
 value_die
-op_root_die::operate (std::unique_ptr <value_die> a)
+op_root_die::operate (std::unique_ptr <value_die> a) const
 {
   return op_root_die_operate (std::move (a));
 }
@@ -1261,7 +1263,7 @@ the CU DIE of this DIE's context.
 // value
 
 std::unique_ptr <value_producer <value>>
-op_value_attr::operate (std::unique_ptr <value_attr> a)
+op_value_attr::operate (std::unique_ptr <value_attr> a) const
 {
   return at_value (a->get_dwctx (), a->get_value_die (), a->get_attr ());
 }
@@ -1286,7 +1288,7 @@ expressions::
 
 
 std::unique_ptr <value_producer <value>>
-op_value_loclist_op::operate (std::unique_ptr <value_loclist_op> a)
+op_value_loclist_op::operate (std::unique_ptr <value_loclist_op> a) const
 {
   return std::make_unique <value_producer_cat <value>>
     (dwop_number (a->get_dwctx (), a->get_attr (), a->get_dwop ()),
@@ -1318,7 +1320,7 @@ Operands could be of any Zwerg type, some will be e.g. DIE's.
 // low
 
 std::unique_ptr <value_cst>
-op_low_die::operate (std::unique_ptr <value_die> a)
+op_low_die::operate (std::unique_ptr <value_die> a) const
 {
   return maybe_get_die_addr (a->get_die (), DW_AT_low_pc, &dwarf_lowpc);
 }
@@ -1338,7 +1340,7 @@ Equivalent to ``@AT_low_pc``.
 // high
 
 std::unique_ptr <value_cst>
-op_high_die::operate (std::unique_ptr <value_die> a)
+op_high_die::operate (std::unique_ptr <value_die> a) const
 {
   return maybe_get_die_addr (a->get_die (), DW_AT_high_pc, &dwarf_highpc);
 }
@@ -1358,7 +1360,7 @@ Equivalent to ``@AT_high_pc``.
 // length
 
 value_cst
-op_length_loclist_elem::operate (std::unique_ptr <value_loclist_elem> a)
+op_length_loclist_elem::operate (std::unique_ptr <value_loclist_elem> a) const
 {
   return value_cst {constant {a->get_exprlen (), &dec_constant_dom}, 0};
 }
@@ -1382,7 +1384,7 @@ expression::
 // ?haschildren
 
 pred_result
-pred_haschildrenp_die::result (value_die &a)
+pred_haschildrenp_die::result (value_die &a) const
 {
   return pred_result (dwarf_haschildren (&a.get_die ()));
 }
@@ -1415,7 +1417,7 @@ To determine whether there are actually any children, use
 // version
 
 value_cst
-op_version_cu::operate (std::unique_ptr <value_cu> a)
+op_version_cu::operate (std::unique_ptr <value_cu> a) const
 {
   Dwarf_CU &cu = a->get_cu ();
   Dwarf_Die cudie;
@@ -1443,7 +1445,7 @@ Dwarf standard according to which this CU has been written.
 // name
 
 value_str
-op_name_dwarf::operate (std::unique_ptr <value_dwarf> a)
+op_name_dwarf::operate (std::unique_ptr <value_dwarf> a) const
 {
   return value_str {std::string {a->get_fn ()}, 0};
 }
@@ -1464,7 +1466,7 @@ or replaced since the Dwarf was opened.
 
 
 std::unique_ptr <value_str>
-op_name_die::operate (std::unique_ptr <value_die> a)
+op_name_die::operate (std::unique_ptr <value_die> a) const
 {
   if (a->is_cooked ())
     {
@@ -1501,7 +1503,7 @@ Equivalent to ``@AT_name``.
 // raw
 
 value_dwarf
-op_raw_dwarf::operate (std::unique_ptr <value_dwarf> a)
+op_raw_dwarf::operate (std::unique_ptr <value_dwarf> a) const
 {
   return value_dwarf {a->get_fn (), a->get_dwctx (), 0, doneness::raw};
 }
@@ -1540,7 +1542,7 @@ kept intact (despite the sharing of underlying bits, as mentioned).
 
 
 value_cu
-op_raw_cu::operate (std::unique_ptr <value_cu> a)
+op_raw_cu::operate (std::unique_ptr <value_cu> a) const
 {
   return value_cu {a->get_dwctx (), a->get_cu (), a->get_offset (),
 		   0, doneness::raw};
@@ -1561,7 +1563,7 @@ Takes a CU on TOS and yields a raw version thereof.
 
 
 value_die
-op_raw_die::operate (std::unique_ptr <value_die> a)
+op_raw_die::operate (std::unique_ptr <value_die> a) const
 {
   return value_die {a->get_dwctx (), a->get_die (), 0, doneness::raw};
 }
@@ -1581,7 +1583,7 @@ Takes a DIE on TOS and yields a raw version thereof.
 
 
 value_attr
-op_raw_attr::operate (std::unique_ptr <value_attr> a)
+op_raw_attr::operate (std::unique_ptr <value_attr> a) const
 {
   return value_attr {a->get_value_die (), a->get_attr (), 0, doneness::raw};
 }
@@ -1603,7 +1605,7 @@ Takes an attribute on TOS and yields a raw version thereof.
 // cooked
 
 value_dwarf
-op_cooked_dwarf::operate (std::unique_ptr <value_dwarf> a)
+op_cooked_dwarf::operate (std::unique_ptr <value_dwarf> a) const
 {
   return value_dwarf {a->get_fn (), a->get_dwctx (), 0, doneness::cooked};
 }
@@ -1623,7 +1625,7 @@ Takes a Dwarf on TOS and yields a cooked version thereof.
 
 
 value_cu
-op_cooked_cu::operate (std::unique_ptr <value_cu> a)
+op_cooked_cu::operate (std::unique_ptr <value_cu> a) const
 {
   return value_cu {a->get_dwctx (), a->get_cu (), a->get_offset (),
 		   0, doneness::cooked};
@@ -1644,7 +1646,7 @@ Takes a CU on TOS and yields a cooked version thereof.
 
 
 value_die
-op_cooked_die::operate (std::unique_ptr <value_die> a)
+op_cooked_die::operate (std::unique_ptr <value_die> a) const
 {
   return value_die {a->get_dwctx (), a->get_die (), 0, doneness::cooked};
 }
@@ -1664,7 +1666,7 @@ Takes a DIE on TOS and yields a cooked version thereof.
 
 
 value_attr
-op_cooked_attr::operate (std::unique_ptr <value_attr> a)
+op_cooked_attr::operate (std::unique_ptr <value_attr> a) const
 {
   return value_attr {a->get_value_die (), a->get_attr (), 0, doneness::cooked};
 }
@@ -1759,7 +1761,7 @@ namespace
 }
 
 std::unique_ptr <value_producer <value>>
-op_atval_die::operate (std::unique_ptr <value_die> a)
+op_atval_die::operate (std::unique_ptr <value_die> a) const
 {
   Dwarf_Attribute attr;
   auto r = find_attribute (a->get_die (), m_atname, a->get_doneness (),
@@ -1796,7 +1798,7 @@ pred_atname_die::pred_atname_die (unsigned atname)
 {}
 
 pred_result
-pred_atname_die::result (value_die &a)
+pred_atname_die::result (value_die &a) const
 {
   return find_attribute (a.get_die (), m_atname,
 			 a.get_doneness (), nullptr, nullptr).first
@@ -1844,7 +1846,7 @@ pred_atname_attr::pred_atname_attr (unsigned atname)
 {}
 
 pred_result
-pred_atname_attr::result (value_attr &a)
+pred_atname_attr::result (value_attr &a) const
 {
   return pred_result (dwarf_whatattr (&a.get_attr ()) == m_atname);
 }
@@ -1870,7 +1872,7 @@ pred_atname_cst::pred_atname_cst (unsigned atname)
 {}
 
 pred_result
-pred_atname_cst::result (value_cst &a)
+pred_atname_cst::result (value_cst &a) const
 {
   return pred_result (m_const == a.get_constant ());
 }
@@ -1904,7 +1906,7 @@ pred_tag_die::pred_tag_die (int tag)
 {}
 
 pred_result
-pred_tag_die::result (value_die &a)
+pred_tag_die::result (value_die &a) const
 {
   return pred_result (dwarf_tag (&a.get_die ()) == m_tag);
 }
@@ -1931,7 +1933,7 @@ pred_tag_cst::pred_tag_cst (int tag)
 {}
 
 pred_result
-pred_tag_cst::result (value_cst &a)
+pred_tag_cst::result (value_cst &a) const
 {
   return pred_result (m_const == a.get_constant ());
 }
@@ -1962,7 +1964,7 @@ pred_form_attr::pred_form_attr (unsigned form)
 {}
 
 pred_result
-pred_form_attr::result (value_attr &a)
+pred_form_attr::result (value_attr &a) const
 {
   return pred_result (dwarf_whatform (&a.get_attr ()) == m_form);
 }
@@ -1990,7 +1992,7 @@ pred_form_cst::pred_form_cst (unsigned form)
 {}
 
 pred_result
-pred_form_cst::result (value_cst &a)
+pred_form_cst::result (value_cst &a) const
 {
   return pred_result (m_const == a.get_constant ());
 }
@@ -2015,7 +2017,7 @@ pred_op_loclist_elem::pred_op_loclist_elem (unsigned op)
 {}
 
 pred_result
-pred_op_loclist_elem::result (value_loclist_elem &a)
+pred_op_loclist_elem::result (value_loclist_elem &a) const
 {
   for (size_t i = 0; i < a.get_exprlen (); ++i)
     if (a.get_expr ()[i].atom == m_op)
@@ -2044,7 +2046,7 @@ pred_op_loclist_op::pred_op_loclist_op (unsigned op)
 {}
 
 pred_result
-pred_op_loclist_op::result (value_loclist_op &a)
+pred_op_loclist_op::result (value_loclist_op &a) const
 {
   return pred_result (a.get_dwop ()->atom == m_op);
 }
@@ -2070,7 +2072,7 @@ pred_op_cst::pred_op_cst (unsigned form)
 {}
 
 pred_result
-pred_op_cst::result (value_cst &a)
+pred_op_cst::result (value_cst &a) const
 {
   return pred_result (m_const == a.get_constant ());
 }

@@ -1,4 +1,5 @@
 /*
+   Copyright (C) 2017 Petr Machata
    Copyright (C) 2014, 2015 Red Hat, Inc.
    This file is part of dwgrep.
 
@@ -97,7 +98,7 @@ namespace
 }
 
 std::unique_ptr <value_producer <value_symbol>>
-op_symbol_dwarf::operate (std::unique_ptr <value_dwarf> val)
+op_symbol_dwarf::operate (std::unique_ptr <value_dwarf> val) const
 {
   return std::make_unique <symbol_producer> (val->get_dwctx (),
 					     val->get_doneness ());
@@ -117,7 +118,7 @@ symbol tables in ELF files that hosts the Dwarf data in question.
 
 
 value_str
-op_name_symbol::operate (std::unique_ptr <value_symbol> val)
+op_name_symbol::operate (std::unique_ptr <value_symbol> val) const
 {
   return {val->get_name (), 0};
 }
@@ -135,7 +136,7 @@ Takes a symbol on TOS and yields its name.
 
 
 value_cst
-op_label_symbol::operate (std::unique_ptr <value_symbol> val)
+op_label_symbol::operate (std::unique_ptr <value_symbol> val) const
 {
   return value_cst {val->get_type (), 0};
 }
@@ -154,7 +155,7 @@ Takes a symbol on TOS and yields its type (a constant with domain
 
 
 value_cst
-op_binding_symbol::operate (std::unique_ptr <value_symbol> val)
+op_binding_symbol::operate (std::unique_ptr <value_symbol> val) const
 {
   constant cst {GELF_ST_BIND (val->get_symbol ().st_info),
 		&elfsym_stb_dom (val->get_dwctx ()->get_machine ())};
@@ -175,7 +176,7 @@ Takes a symbol on TOS and yields its binding (a constant with domain
 
 
 value_cst
-op_visibility_symbol::operate (std::unique_ptr <value_symbol> val)
+op_visibility_symbol::operate (std::unique_ptr <value_symbol> val) const
 {
   constant cst {GELF_ST_VISIBILITY (val->get_symbol ().st_other),
 		&elfsym_stv_dom ()};
@@ -196,7 +197,7 @@ domain ``STV_``).
 
 
 value_cst
-op_address_symbol::operate (std::unique_ptr <value_symbol> val)
+op_address_symbol::operate (std::unique_ptr <value_symbol> val) const
 {
   return value_cst {val->get_address (), 0};
 }
@@ -215,7 +216,7 @@ Takes a symbol on TOS and yields its address (``st_value`` field of
 
 
 value_cst
-op_size_symbol::operate (std::unique_ptr <value_symbol> val)
+op_size_symbol::operate (std::unique_ptr <value_symbol> val) const
 {
   constant cst {val->get_symbol ().st_size, &dec_constant_dom};
   return value_cst {cst, 0};
