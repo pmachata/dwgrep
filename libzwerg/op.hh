@@ -36,7 +36,6 @@
 
 #include "stack.hh"
 #include "pred_result.hh"
-#include "rendezvous.hh"
 #include "layout.hh"
 #include "scon.hh"
 
@@ -540,33 +539,6 @@ public:
   stack::uptr next (scon2 &sc) const override;
 };
 
-// ---------- closure support -----------------
-
-// Pseudo bind plays the role of a bind for lexical blocks. It knows about the
-// actual binding that it's emulating, also about the rendezvous cell where it
-// reads what closure instance is currently under evaluation, and has a number
-// that it uses to find current bound value inside the closure value referenced
-// by the rendezvous.
-class pseudo_bind
-  : public op_bind
-// xxx make op_bind a subclass of an ABC. Rename pseudo_bind to something else.
-{
-  rendezvous m_rdv;
-  op_bind &m_src;
-  unsigned m_id;
-
-public:
-  pseudo_bind (layout &l, rendezvous rdv, op_bind &src, unsigned id)
-    : op_bind {l, nullptr}
-    , m_rdv {rdv}
-    , m_src {src}
-    , m_id {id}
-  {}
-
-  std::unique_ptr <value> fetch (scon2 &sc, unsigned assert_id) const;
-  std::unique_ptr <value> current (scon2 &sc) const override;
-};
-
 struct op_lex_closure
   : public inner_op
 {
@@ -574,7 +546,6 @@ struct op_lex_closure
   layout::loc m_rdv_ll;
   std::shared_ptr <op_origin> m_origin;
   std::shared_ptr <op> m_op;
-  rendezvous m_rdv;
   size_t m_n_upvalues;
 
 public:
@@ -582,7 +553,6 @@ public:
 		  layout op_layout, layout::loc rdv_ll,
 		  std::shared_ptr <op_origin> origin,
 		  std::shared_ptr <op> op,
-		  rendezvous rdv,
 		  size_t n_upvalues);
 
   std::string name () const override;

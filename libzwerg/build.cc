@@ -279,11 +279,9 @@ namespace
 	    upstream = build_read (it->second, upstream, bn, up, rdv_ll);
 
 
-	  rendezvous rdv;// xxx
-	  return std::make_shared <op_lex_closure> (upstream,
-						    inner_l, inner_rdv_ll,
-						    origin, op,
-						    rdv, refd_names.size ());
+	  return std::make_shared <op_lex_closure> (upstream, inner_l,
+						    inner_rdv_ll, origin, op,
+						    refd_names.size ());
 	}
 
       case tree_type::BIND:

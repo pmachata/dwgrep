@@ -33,6 +33,8 @@
 #include "op.hh"
 #include "builtin.hh"
 
+class value_closure;
+
 // Pop closure, execute it.
 class op_apply
   : public op

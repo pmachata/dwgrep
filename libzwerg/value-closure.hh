@@ -31,7 +31,6 @@
 #define _VALUE_CLOSURE_H_
 
 #include "op.hh"
-#include "rendezvous.hh"
 #include "value.hh"
 #include "layout.hh"
 
@@ -47,7 +46,6 @@ class value_closure
   std::shared_ptr <op_origin> m_origin;
   std::shared_ptr <op> m_op;
   std::vector <std::unique_ptr <value>> m_env;
-  rendezvous m_rdv;
 
 public:
   static value_type const vtype;
@@ -56,7 +54,7 @@ public:
 		 std::shared_ptr <op_origin> origin,
 		 std::shared_ptr <op> op,
 		 std::vector <std::unique_ptr <value>> env,
-		 rendezvous rdv, size_t pos);
+		 size_t pos);
 
   void show (std::ostream &o) const override;
   std::unique_ptr <value> clone () const override;
@@ -70,9 +68,6 @@ public:
 
   op &get_op () const
   { return *m_op; }
-
-  value_closure *rdv_exchange (value_closure *nv)
-  { return m_rdv.exchange (nv); }
 
   value &get_env (unsigned id)
   { return *m_env[id]; }

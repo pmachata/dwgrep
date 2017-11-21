@@ -925,36 +925,16 @@ op_upread::next (scon2 &sc) const
 }
 
 
-std::unique_ptr <value>
-pseudo_bind::fetch (scon2 &sc, unsigned assert_id) const
-{
-  assert (m_id == assert_id);
-  assert (! "pseudo_bind not implemented");
-  return m_src.current (sc);
-}
-
-std::unique_ptr <value>
-pseudo_bind::current (scon2 &sc) const
-{
-  value_closure *closure = *m_rdv;
-  assert (closure != nullptr);
-  assert (! "pseudo_bind not implemented");
-  return closure->get_env (m_id).clone ();
-}
-
-
 op_lex_closure::op_lex_closure (std::shared_ptr <op> upstream,
 				layout op_layout, layout::loc rdv_ll,
 				std::shared_ptr <op_origin> origin,
 				std::shared_ptr <op> op,
-				rendezvous rdv,
 				size_t n_upvalues)
   : inner_op {upstream}
   , m_op_layout {op_layout}
   , m_rdv_ll {rdv_ll}
   , m_origin {origin}
   , m_op {op}
-  , m_rdv {rdv}
   , m_n_upvalues {n_upvalues}
 {}
 
@@ -970,7 +950,7 @@ op_lex_closure::next (scon2 &sc) const
 
       stk->push (std::make_unique <value_closure> (m_op_layout, m_rdv_ll,
 						   m_origin, m_op,
-						   std::move (env), m_rdv, 0));
+						   std::move (env), 0));
       return stk;
     }
 
