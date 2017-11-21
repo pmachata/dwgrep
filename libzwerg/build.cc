@@ -36,39 +36,40 @@
 #include "value-cst.hh"
 #include "value-seq.hh"
 #include "value-str.hh"
+#include "builtin-closure.hh"
 #include "bindings.hh"
 
 namespace
 {
   std::shared_ptr <op>
-  build_exec (tree const &t, layout &l,
+  build_exec (tree const &t, layout &l, layout::loc rdv_ll,
 	      std::shared_ptr <op> upstream,
 	      bindings &bn, uprefs &up);
 
   std::unique_ptr <pred>
-  build_pred (tree const &t, layout &l,
+  build_pred (tree const &t, layout &l, layout::loc rdv_ll,
 	      bindings &bn, uprefs &up)
   {
     switch (t.m_tt)
       {
       case tree_type::PRED_NOT:
-        return std::make_unique <pred_not> (build_pred (t.child (0), l, bn, up));
+        return std::make_unique <pred_not> (build_pred (t.child (0), l, rdv_ll, bn, up));
 
       case tree_type::PRED_OR:
         return std::make_unique <pred_or>
-          (build_pred (t.m_children[0], l, bn, up),
-           build_pred (t.m_children[1], l, bn, up));
+          (build_pred (t.m_children[0], l, rdv_ll, bn, up),
+           build_pred (t.m_children[1], l, rdv_ll, bn, up));
 
       case tree_type::PRED_AND:
         return std::make_unique <pred_and>
-          (build_pred (t.m_children[0], l, bn, up),
-           build_pred (t.m_children[1], l, bn, up));
+          (build_pred (t.m_children[0], l, rdv_ll, bn, up),
+           build_pred (t.m_children[1], l, rdv_ll, bn, up));
 
       case tree_type::PRED_SUBX_ANY:
         {
           assert (t.m_children.size () == 1);
           auto origin = std::make_shared <op_origin> (l);
-          auto op = build_exec (t.child (0), l, origin, bn, up);
+          auto op = build_exec (t.child (0), l, rdv_ll, origin, bn, up);
           return std::make_unique <pred_subx_any> (op, origin);
         }
 
@@ -76,9 +77,9 @@ namespace
         {
           assert (t.m_children.size () == 3);
           auto origin = std::make_shared <op_origin> (l);
-          auto op1 = build_exec (t.child (0), l, origin, bn, up);
-          auto op2 = build_exec (t.child (1), l, origin, bn, up);
-          auto pred = build_pred (t.child (2), l, bn, up);
+          auto op1 = build_exec (t.child (0), l, rdv_ll, origin, bn, up);
+          auto op2 = build_exec (t.child (1), l, rdv_ll, origin, bn, up);
+          auto pred = build_pred (t.child (2), l, rdv_ll, bn, up);
           return std::make_unique <pred_subx_compare> (op1, op2, origin,
                                                        std::move (pred));
         }
@@ -112,27 +113,23 @@ namespace
   }
 
   std::shared_ptr <op>
-  build_read (std::string name, layout &l,
+  build_read (std::string name,
 	      std::shared_ptr <op> upstream,
-	      bindings &bn, uprefs &up)
+	      bindings &bn, uprefs &up, layout::loc rdv_ll)
   {
     if (op_bind *src = bn.find (name))
-      return std::make_shared <op_read> (l, upstream, *src);
+      return std::make_shared <op_rawread> (upstream, *src);
 
     auto refid = up.find (name);
     if (refid.first)
-      {
-	std::cerr << name << " is reference to upvalue #"
-		  << refid.second << std::endl;
-	return std::make_shared <op_upread> (l, upstream, refid.second);
-      }
+      return std::make_shared <op_upread> (upstream, refid.second, rdv_ll);
 
     throw std::runtime_error
       (std::string () + "Attempt to read an unbound name `" + name + "'");
   }
 
   std::shared_ptr <op>
-  build_exec (tree const &t, layout &l,
+  build_exec (tree const &t, layout &l, layout::loc rdv_ll,
 	      std::shared_ptr <op> upstream,
 	      bindings &bn, uprefs &up)
   {
@@ -142,7 +139,7 @@ namespace
       {
       case tree_type::CAT:
         for (auto const &ch: t.m_children)
-          upstream = build_exec (ch, l, upstream, bn, up);
+          upstream = build_exec (ch, l, rdv_ll, upstream, bn, up);
         return upstream;
 
       case tree_type::ALT:
@@ -152,7 +149,7 @@ namespace
 	  for (size_t i = 0; i < t.m_children.size (); ++i)
 	    {
 	      auto tine = std::make_shared <op_tine> (*merge, i);
-              auto op = build_exec (t.m_children[i], l, tine, bn, up);
+              auto op = build_exec (t.m_children[i], l, rdv_ll, tine, bn, up);
 	      merge->add_branch (op);
 	    }
 
@@ -165,7 +162,7 @@ namespace
           for (auto const &ch: t.m_children)
             {
               auto origin2 = std::make_shared <op_origin> (l);
-              auto op = build_exec (ch, l, origin2, bn, up);
+              auto op = build_exec (ch, l, rdv_ll, origin2, bn, up);
               o->add_branch (origin2, op);
             }
           return o;
@@ -176,7 +173,7 @@ namespace
 
       case tree_type::F_BUILTIN:
         {
-          if (auto pred = build_pred (t, l, bn, up))
+          if (auto pred = build_pred (t, l, rdv_ll, bn, up))
             return std::make_shared <op_assert> (upstream, std::move (pred));
           auto op = t.m_builtin->build_exec (l, upstream);
           assert (op != nullptr);
@@ -185,7 +182,7 @@ namespace
 
       case tree_type::ASSERT:
         return std::make_shared <op_assert>
-          (upstream, build_pred (t.child (0), l, bn, up));
+          (upstream, build_pred (t.child (0), l, rdv_ll, bn, up));
 
       case tree_type::FORMAT:
         {
@@ -200,7 +197,7 @@ namespace
               else
                 {
                   auto origin2 = std::make_shared <op_origin> (l);
-                  auto op = build_exec (tree, l, origin2, bn, up);
+                  auto op = build_exec (tree, l, rdv_ll, origin2, bn, up);
                   strgr = std::make_shared <stringer_op> (l, strgr,
 							  origin2, op);
                 }
@@ -230,14 +227,14 @@ namespace
       case tree_type::CAPTURE:
         {
           auto origin = std::make_shared <op_origin> (l);
-          auto op = build_exec (t.child (0), l, origin, bn, up);
+          auto op = build_exec (t.child (0), l, rdv_ll, origin, bn, up);
           return std::make_shared <op_capture> (upstream, origin, op);
         }
 
       case tree_type::SUBX_EVAL:
         {
           auto origin = std::make_shared <op_origin> (l);
-          auto op = build_exec (t.child (0), l, origin, bn, up);
+          auto op = build_exec (t.child (0), l, rdv_ll, origin, bn, up);
           return std::make_shared <op_subx> (l, upstream, origin, op,
                                              t.cst ().value ().uval ());
         }
@@ -245,7 +242,7 @@ namespace
       case tree_type::CLOSE_STAR:
         {
           auto origin = std::make_shared <op_origin> (l);
-          auto op = build_exec (t.child (0), l, origin, bn, up);
+          auto op = build_exec (t.child (0), l, rdv_ll, origin, bn, up);
           return std::make_shared <op_tr_closure> (l, upstream, origin, op,
                                                    op_tr_closure_kind::star);
         }
@@ -253,7 +250,7 @@ namespace
       case tree_type::CLOSE_PLUS:
         {
           auto origin = std::make_shared <op_origin> (l);
-          auto op = build_exec (t.child (0), l, origin, bn, up);
+          auto op = build_exec (t.child (0), l, rdv_ll, origin, bn, up);
           return std::make_shared <op_tr_closure> (l, upstream, origin, op,
                                                    op_tr_closure_kind::plus);
         }
@@ -261,7 +258,7 @@ namespace
       case tree_type::SCOPE:
 	{
 	  bindings scope {bn};
-	  return build_exec (t.child (0), l, upstream, scope, up);
+	  return build_exec (t.child (0), l, rdv_ll, upstream, scope, up);
 	}
 
       case tree_type::BLOCK:
@@ -269,24 +266,24 @@ namespace
 	  uprefs inner_up {bn, up};
 	  bindings inner_bn;
 	  layout inner_l;
+	  layout::loc inner_rdv_ll = op_apply::reserve_rendezvous (inner_l);
 	  auto origin = std::make_shared <op_origin> (inner_l);
-	  auto op = build_exec (t.child (0), inner_l, origin,
+	  auto op = build_exec (t.child (0), inner_l, inner_rdv_ll, origin,
 				inner_bn, inner_up);
 
-	  for (auto const &nm: inner_up.refd_names ())
-	    // xxx this might actually work. Emit a bunch of reads before the
-	    // closure, and give the closure a number of stack slots to pop.
-	    //
-	    // xxx Except reads need to be raw, without implied apply. To that
-	    // end, would it make sense to have read & apply as completely
-	    // distinct nodes, and emit "read" as "raw_read maybe_apply".
-	    build_read (nm, l, upstream, bn, up);
+	  std::map <unsigned, std::string> refd_names = inner_up.refd_names ();
+	  // Walk the refd names in backward order of their ID, so that
+	  // op_lex_closure can pop the upvalues from the stack in natural
+	  // order.
+	  for (auto it = refd_names.rbegin (); it != refd_names.rend (); ++it)
+	    upstream = build_read (it->second, upstream, bn, up, rdv_ll);
 
-	  rendezvous rdv;
-	  std::vector <std::shared_ptr <pseudo_bind>> xxx;
+
+	  rendezvous rdv;// xxx
 	  return std::make_shared <op_lex_closure> (upstream,
-						    inner_l, origin, op,
-						    xxx, rdv);
+						    inner_l, inner_rdv_ll,
+						    origin, op,
+						    rdv, refd_names.size ());
 	}
 
       case tree_type::BIND:
@@ -297,7 +294,10 @@ namespace
         }
 
       case tree_type::READ:
-	return build_read (t.str (), l, upstream, bn, up);
+	{
+	  auto op = build_read (t.str (), upstream, bn, up, rdv_ll);
+	  return std::make_shared <op_apply> (l, op, true);
+	}
 
       case tree_type::F_DEBUG:
         return std::make_shared <op_f_debug> (upstream);
@@ -305,15 +305,15 @@ namespace
       case tree_type::IFELSE:
         {
           auto cond_origin = std::make_shared <op_origin> (l);
-          auto cond_op = build_exec (t.child (0), l, cond_origin, bn, up);
+          auto cond_op = build_exec (t.child (0), l, rdv_ll, cond_origin, bn, up);
 
 	  // xxx could else and origin share state space?
 	  // xxx all three in fact could.
           auto then_origin = std::make_shared <op_origin> (l);
-          auto then_op = build_exec (t.child (1), l, then_origin, bn, up);
+          auto then_op = build_exec (t.child (1), l, rdv_ll, then_origin, bn, up);
 
           auto else_origin = std::make_shared <op_origin> (l);
-          auto else_op = build_exec (t.child (2), l, else_origin, bn, up);
+          auto else_op = build_exec (t.child (2), l, rdv_ll, else_origin, bn, up);
 
           return std::make_shared <op_ifelse> (l, upstream,
 					       cond_origin, cond_op,
@@ -339,5 +339,6 @@ tree::build_exec (layout &l, std::shared_ptr <op> upstream) const
 {
   uprefs up;
   bindings bn;
-  return ::build_exec (*this, l, upstream, bn, up);
+  layout::loc no_ll {0xdeadbeef};
+  return ::build_exec (*this, l, no_ll, upstream, bn, up);
 }

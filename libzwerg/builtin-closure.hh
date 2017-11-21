@@ -41,14 +41,34 @@ class op_apply
   struct substate;
   std::shared_ptr <op> m_upstream;
   layout::loc m_ll;
+  bool m_skip_non_closures;
 
 public:
-  op_apply (layout &l, std::shared_ptr <op> upstream);
+  // When skip_non_closures is true and the incoming stack doesn't have a
+  // closure on TOS, op_apply lets it pass through. Otherwise it complains.
+  op_apply (layout &l, std::shared_ptr <op> upstream, bool skip_non_closures = false);
 
   std::string name () const override;
   void state_con (scon2 &sc) const override;
   void state_des (scon2 &sc) const override;
   stack::uptr next (scon2 &sc) const override;
+
+  // Rendezvous state. Rendezvous is an area at the beginning of substate where
+  // the closure being executed is stored.
+  struct rendezvous
+  {
+    value_closure &closure;
+
+    rendezvous (value_closure &closure)
+      : closure {closure}
+    {}
+  };
+
+  static layout::loc
+  reserve_rendezvous (layout &l)
+  {
+    return l.reserve <rendezvous> ();
+  }
 };
 
 struct builtin_apply

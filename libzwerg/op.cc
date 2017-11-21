@@ -870,92 +870,37 @@ op_bind::current (scon2 &sc) const
 }
 
 
-struct op_read::state
-{
-  bool m_apply;
-
-  state ()
-    : m_apply {false}
-  {}
-};
-
-op_read::op_read (layout &l, std::shared_ptr <op> upstream, op_bind &src)
+op_rawread::op_rawread (std::shared_ptr <op> upstream, op_bind &src)
   : inner_op {upstream}
   , m_src {src}
-  , m_origin {std::make_shared <op_origin> (l)}
-  , m_apply {std::make_shared <op_apply> (l, m_origin)}
-  , m_ll {l.reserve <state> ()}
 {}
 
 std::string
-op_read::name () const
+op_rawread::name () const
 {
   std::stringstream ss;
-  ss << "read<" << &m_src << ">";
+  ss << "rawread<" << &m_src << ">";
   return ss.str ();
 }
 
-void
-op_read::state_con (scon2 &sc) const
-{
-  sc.con <state> (m_ll);
-  inner_op::state_con (sc);
-}
-
-void
-op_read::state_des (scon2 &sc) const
-{
-  inner_op::state_des (sc);
-  sc.des <state> (m_ll);
-}
-
 stack::uptr
-op_read::next (scon2 &sc) const
+op_rawread::next (scon2 &sc) const
 {
-  state &st = sc.get <state> (m_ll);
-
-  while (true)
+  if (auto stk = m_upstream->next (sc))
     {
-      if (! st.m_apply)
-	{
-	  if (auto stk = m_upstream->next (sc))
-	    {
-	      auto val = m_src.current (sc);
-	      bool is_closure = val->is <value_closure> ();
-	      stk->push (std::move (val));
-
-	      // If a referenced value is not a closure, then the
-	      // result is just that one value.
-	      if (! is_closure)
-		return stk;
-
-	      // If it's a closure, then this is a function
-	      // reference.  We need to execute it and fetch all the
-	      // values.
-	      m_origin->set_next (sc, std::move (stk));
-	      st.m_apply = true;
-	    }
-	  else
-	    return nullptr;
-	}
-
-      if (auto stk = m_apply->next (sc))
-	return stk;
-
-      sc.reset <state> (m_ll);
+      stk->push (m_src.current (sc));
+      return stk;
     }
+  else
+    return nullptr;
 }
 
 
-class op_upread::state
-{
-};
-
-op_upread::op_upread (layout &l, std::shared_ptr <op> upstream, unsigned id)
+op_upread::op_upread (std::shared_ptr <op> upstream, unsigned id,
+		      layout::loc rdv_ll)
   : inner_op (upstream)
-    // xxx init apply and origin
   , m_id {id}
-  , m_ll {l.reserve <state> ()}
+  , m_rdv_ll {rdv_ll}
 {}
 
 std::string
@@ -966,27 +911,17 @@ op_upread::name () const
   return ss.str ();
 }
 
-void
-op_upread::state_con (scon2 &sc) const
-{
-  sc.con <state> (m_ll);
-  // xxx apply & origin
-  inner_op::state_con (sc);
-}
-
-void
-op_upread::state_des (scon2 &sc) const
-{
-  inner_op::state_des (sc);
-  // xxx apply & origin
-  sc.des <state> (m_ll);
-}
-
 stack::uptr
 op_upread::next (scon2 &sc) const
 {
-  // xxx
-  return nullptr;
+  auto &rdv = sc.get <op_apply::rendezvous> (m_rdv_ll);
+  if (auto stk = m_upstream->next (sc))
+    {
+      stk->push (rdv.closure.get_env (m_id).clone ());
+      return stk;
+    }
+  else
+    return nullptr;
 }
 
 
@@ -1008,6 +943,21 @@ pseudo_bind::current (scon2 &sc) const
 }
 
 
+op_lex_closure::op_lex_closure (std::shared_ptr <op> upstream,
+				layout op_layout, layout::loc rdv_ll,
+				std::shared_ptr <op_origin> origin,
+				std::shared_ptr <op> op,
+				rendezvous rdv,
+				size_t n_upvalues)
+  : inner_op {upstream}
+  , m_op_layout {op_layout}
+  , m_rdv_ll {rdv_ll}
+  , m_origin {origin}
+  , m_op {op}
+  , m_rdv {rdv}
+  , m_n_upvalues {n_upvalues}
+{}
+
 stack::uptr
 op_lex_closure::next (scon2 &sc) const
 {
@@ -1015,9 +965,11 @@ op_lex_closure::next (scon2 &sc) const
     {
       // Fetch actual values of the referenced environment bindings.
       std::vector <std::unique_ptr <value>> env;
-      assert (m_pseudos.empty ());// xxx upvalues not supported yet
+      for (size_t i = 0; i < m_n_upvalues; ++i)
+	env.push_back (std::move (stk->pop ()));
 
-      stk->push (std::make_unique <value_closure> (m_op_layout, m_origin, m_op,
+      stk->push (std::make_unique <value_closure> (m_op_layout, m_rdv_ll,
+						   m_origin, m_op,
 						   std::move (env), m_rdv, 0));
       return stk;
     }

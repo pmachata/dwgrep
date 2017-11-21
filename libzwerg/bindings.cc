@@ -101,12 +101,12 @@ uprefs::find (std::string name)
     return std::make_pair (false, -1u);
 }
 
-std::vector <std::string>
+std::map <unsigned, std::string>
 uprefs::refd_names () const
 {
-  std::vector <std::string> ret;
+  std::map <unsigned, std::string> ret;
   for (auto &el: m_ids)
     if (el.second.first)
-      ret.push_back (el.first);
+      ret[el.second.second] = el.first;
   return ret;
 }

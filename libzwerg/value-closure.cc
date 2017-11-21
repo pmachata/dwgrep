@@ -37,13 +37,14 @@
 value_type const value_closure::vtype
 	= value_type::alloc ("T_CLOSURE", "@hide");
 
-value_closure::value_closure (layout op_layout,
+value_closure::value_closure (layout op_layout, layout::loc rdv_ll,
 			      std::shared_ptr <op_origin> origin,
 			      std::shared_ptr <op> op,
 			      std::vector <std::unique_ptr <value>> env,
 			      rendezvous rdv, size_t pos)
   : value {vtype, pos}
   , m_op_layout {op_layout}
+  , m_rdv_ll {rdv_ll}
   , m_origin {origin}
   , m_op {op}
   , m_env {std::move (env)}
@@ -62,7 +63,8 @@ value_closure::clone () const
   std::vector <std::unique_ptr <value>> env;
   for (auto const &envv: m_env)
     env.push_back (envv->clone ());
-  return std::make_unique <value_closure> (m_op_layout, m_origin, m_op,
+  return std::make_unique <value_closure> (m_op_layout, m_rdv_ll,
+					   m_origin, m_op,
 					   std::move (env), m_rdv, get_pos ());
 }
 

@@ -515,37 +515,28 @@ public:
   virtual std::unique_ptr <value> current (scon2 &sc) const;
 };
 
-class op_read
+class op_rawread
   : public inner_op
 {
-  class state;
   op_bind &m_src;
-  std::shared_ptr <op_origin> m_origin;
-  std::shared_ptr <op> m_apply;
-  layout::loc m_ll;
 
 public:
-  op_read (layout &l, std::shared_ptr <op> upstream, op_bind &src);
+  op_rawread (std::shared_ptr <op> upstream, op_bind &src);
 
   std::string name () const override;
-  void state_con (scon2 &sc) const override;
-  void state_des (scon2 &sc) const override;
   stack::uptr next (scon2 &sc) const override;
 };
 
 class op_upread
   : public inner_op
 {
-  class state;
   unsigned m_id;
-  layout::loc m_ll;
+  layout::loc m_rdv_ll;
 
 public:
-  op_upread (layout &l, std::shared_ptr <op> upstream, unsigned id);
+  op_upread (std::shared_ptr <op> upstream, unsigned id, layout::loc rdv_ll);
 
   std::string name () const override;
-  void state_con (scon2 &sc) const override;
-  void state_des (scon2 &sc) const override;
   stack::uptr next (scon2 &sc) const override;
 };
 
@@ -580,25 +571,19 @@ struct op_lex_closure
   : public inner_op
 {
   layout m_op_layout;
+  layout::loc m_rdv_ll;
   std::shared_ptr <op_origin> m_origin;
   std::shared_ptr <op> m_op;
-  std::vector <std::shared_ptr <pseudo_bind>> m_pseudos;
   rendezvous m_rdv;
+  size_t m_n_upvalues;
 
 public:
   op_lex_closure (std::shared_ptr <op> upstream,
-		  layout op_layout,
+		  layout op_layout, layout::loc rdv_ll,
 		  std::shared_ptr <op_origin> origin,
 		  std::shared_ptr <op> op,
-		  std::vector <std::shared_ptr <pseudo_bind>> pseudos,
-		  rendezvous rdv)
-    : inner_op {upstream}
-    , m_op_layout {op_layout}
-    , m_origin {origin}
-    , m_op {op}
-    , m_pseudos {pseudos}
-    , m_rdv {rdv}
-  {}
+		  rendezvous rdv,
+		  size_t n_upvalues);
 
   std::string name () const override;
   stack::uptr next (scon2 &sc) const override;

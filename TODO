@@ -539,7 +539,7 @@
 
       - op_closure that constructs a closure that has references to environment
         needs to fetch values at the point of closure construction, like op_read
-        does.
+        does (but without apply).
       - value_closure that op_closure produces will hold the dictionary of
         fetched values
       - op_apply, as it constructs the state for the closure op chain, will

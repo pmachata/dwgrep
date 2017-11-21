@@ -48,6 +48,8 @@ struct op_apply::substate
     , m_scon {m_value->get_layout ()}
     , m_sg {m_scon, m_value->get_op ()}
   {
+    m_scon.con <op_apply::rendezvous> (m_value->get_rdv_ll (),
+				       std::ref (m_value));
     m_value->get_origin ().set_next (m_scon, std::move (stk));
   }
 
@@ -69,9 +71,11 @@ struct op_apply::state
   std::unique_ptr <substate> m_substate;
 };
 
-op_apply::op_apply (layout &l, std::shared_ptr <op> upstream)
+op_apply::op_apply (layout &l, std::shared_ptr <op> upstream,
+		    bool skip_non_closures)
   : m_upstream {upstream}
   , m_ll {l.reserve <state> ()}
+  , m_skip_non_closures {skip_non_closures}
 {}
 
 std::string
@@ -107,6 +111,9 @@ op_apply::next (scon2 &sc) const
 	  {
 	    if (! stk->top ().is <value_closure> ())
 	      {
+		if (m_skip_non_closures)
+		  return stk;
+
 		std::cerr << "Error: `apply' expects a T_CLOSURE on TOS.\n";
 		continue;
 	      }

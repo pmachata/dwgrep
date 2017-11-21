@@ -66,7 +66,7 @@ public:
   uprefs (bindings &bns, uprefs &super);
 
   std::pair <bool, unsigned> find (std::string name);
-  std::vector <std::string> refd_names () const;
+  std::map <unsigned, std::string> refd_names () const;
 };
 
 #endif//_BINDINGS_H_

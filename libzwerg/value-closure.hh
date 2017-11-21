@@ -43,6 +43,7 @@ class value_closure
   : public value
 {
   layout m_op_layout;
+  layout::loc m_rdv_ll;
   std::shared_ptr <op_origin> m_origin;
   std::shared_ptr <op> m_op;
   std::vector <std::unique_ptr <value>> m_env;
@@ -51,7 +52,7 @@ class value_closure
 public:
   static value_type const vtype;
 
-  value_closure (layout op_layout,
+  value_closure (layout op_layout, layout::loc rdv_ll,
 		 std::shared_ptr <op_origin> origin,
 		 std::shared_ptr <op> op,
 		 std::vector <std::unique_ptr <value>> env,
@@ -75,6 +76,9 @@ public:
 
   value &get_env (unsigned id)
   { return *m_env[id]; }
+
+  layout::loc get_rdv_ll () const
+  { return m_rdv_ll; }
 };
 
 #endif /* _VALUE_CLOSURE_H_ */

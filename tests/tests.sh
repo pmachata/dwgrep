@@ -374,10 +374,22 @@ expect_count 1 -e '
 	?(1 5 slice [1, 2, 3, 4] ?eq)
 	?(5 -1 slice [5, 6, 7, 8] ?eq)
 	?(-2 -1 slice [8] ?eq)'
+expect_count 1 -e '
+	1 2 3 [|A B C| A, B, C] == [1, 2, 3]'
+expect_count 1 -e '
+	1 2 3 {|A B C| [A, B, C]} apply == [1, 2, 3]'
+expect_count 1 -e '
+	1 2 3 {|A B C| {[A, B, C]}} apply apply == [1, 2, 3]'
+expect_count 1 -e '
+	1 2 3 {|A B C| {{[A, B, C]}}} apply apply apply == [1, 2, 3]'
+expect_count 1 -e '
+	1 2 3 {|A B C| {{[C, B, A]}}} apply apply apply == [3, 2, 1]'
 
 # Check that bindings remember position.
 expect_count 3 -e '
 	let E := [0, 1, 2] elem; E (== pos)'
+expect_count 3 -e '
+	{{let E := [0, 1, 2] elem; {E}}} apply apply apply (== pos)'
 
 # Examples.
 expect_count 1 ./duplicate-const -e '
