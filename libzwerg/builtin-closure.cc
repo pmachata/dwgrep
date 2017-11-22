@@ -1,4 +1,5 @@
 /*
+   Copyright (C) 2017 Petr Machata
    Copyright (C) 2014 Red Hat, Inc.
    This file is part of dwgrep.
 
@@ -56,7 +57,7 @@ struct op_apply::pimpl
   }
 
   stack::uptr
-  next ()
+  next (bool skip_non_closures)
   {
     while (true)
       {
@@ -65,6 +66,9 @@ struct op_apply::pimpl
 	    {
 	      if (! stk->top ().is <value_closure> ())
 		{
+		  if (skip_non_closures)
+		    return stk;
+
 		  std::cerr << "Error: `apply' expects a T_CLOSURE on TOS.\n";
 		  continue;
 		}
@@ -102,8 +106,9 @@ struct op_apply::pimpl
   }
 };
 
-op_apply::op_apply (std::shared_ptr <op> upstream)
+op_apply::op_apply (std::shared_ptr <op> upstream, bool skip_non_closures)
   : m_pimpl {std::make_unique <pimpl> (upstream)}
+  , m_skip_non_closures {skip_non_closures}
 {}
 
 op_apply::~op_apply ()
@@ -118,7 +123,7 @@ op_apply::reset ()
 stack::uptr
 op_apply::next ()
 {
-  return m_pimpl->next ();
+  return m_pimpl->next (m_skip_non_closures);
 }
 
 std::string

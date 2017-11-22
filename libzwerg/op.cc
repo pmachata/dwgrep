@@ -891,7 +891,6 @@ op_bind::name () const
 struct op_read::pimpl
 {
   std::shared_ptr <op> m_upstream;
-  std::shared_ptr <op> m_apply;
   size_t m_depth;
   var_id m_index;
 
@@ -901,54 +900,23 @@ struct op_read::pimpl
     , m_index {index}
   {}
 
-  void
-  reset_me ()
-  {
-    m_apply = nullptr;
-  }
-
   stack::uptr
   next ()
   {
-    while (true)
+    if (auto stk = m_upstream->next ())
       {
-	if (m_apply == nullptr)
-	  {
-	    if (auto stk = m_upstream->next ())
-	      {
-		auto frame = stk->nth_frame (m_depth);
-		value &val = frame->read_value (m_index);
-		bool is_closure = val.is <value_closure> ();
-		stk->push (val.clone ());
-
-		// If a referenced value is not a closure, then the
-		// result is just that one value.
-		if (! is_closure)
-		  return stk;
-
-		// If it's a closure, then this is a function
-		// reference.  We need to execute it and fetch all the
-		// values.
-
-		auto origin = std::make_shared <op_origin> (std::move (stk));
-		m_apply = std::make_shared <op_apply> (origin);
-	      }
-	    else
-	      return nullptr;
-	  }
-
-	assert (m_apply != nullptr);
-	if (auto stk = m_apply->next ())
-	  return stk;
-
-	reset_me ();
+	auto frame = stk->nth_frame (m_depth);
+	value &val = frame->read_value (m_index);
+	stk->push (val.clone ());
+	return stk;
       }
+    else
+      return nullptr;
   }
 
   void
   reset ()
   {
-    reset_me ();
     m_upstream->reset ();
   }
 };

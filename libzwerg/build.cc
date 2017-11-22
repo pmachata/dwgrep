@@ -37,6 +37,7 @@
 #include "value-cst.hh"
 #include "value-seq.hh"
 #include "value-str.hh"
+#include "builtin-closure.hh"
 
 namespace
 {
@@ -259,8 +260,12 @@ namespace
                                            t.scp ()->index (t.str ()));
 
       case tree_type::READ:
-        return std::make_shared <op_read> (upstream, t.cst ().value ().uval (),
-                                           t.scp ()->index (t.str ()));
+	{
+	  auto op = std::make_shared <op_read> (upstream,
+						t.cst ().value ().uval (),
+						t.scp ()->index (t.str ()));
+	  return std::make_shared <op_apply> (op, true);
+	}
 
       case tree_type::F_DEBUG:
         return std::make_shared <op_f_debug> (upstream);

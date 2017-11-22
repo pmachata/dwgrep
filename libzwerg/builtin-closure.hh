@@ -1,4 +1,5 @@
 /*
+   Copyright (C) 2017 Petr Machata
    Copyright (C) 2014 Red Hat, Inc.
    This file is part of dwgrep.
 
@@ -38,9 +39,12 @@ class op_apply
 {
   class pimpl;
   std::unique_ptr <pimpl> m_pimpl;
+  bool m_skip_non_closures;
 
 public:
-  op_apply (std::shared_ptr <op> upstream);
+  // When skip_non_closures is true and the incoming stack doesn't have a
+  // closure on TOS, op_apply lets it pass through. Otherwise it complains.
+  op_apply (std::shared_ptr <op> upstream, bool skip_non_closures = false);
   ~op_apply ();
 
   void reset () override;
