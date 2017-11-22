@@ -77,7 +77,6 @@ OCT [0-7]
 
 ":" return TOK_COLON;
 ";" return TOK_SEMICOLON;
-"->" return TOK_ARROW;
 ":=" return TOK_ASSIGN;
 
 "if" return TOK_IF;
