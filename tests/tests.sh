@@ -137,6 +137,19 @@ expect_count 1 -e '
 	sub mul div mod*/ add
 	== 3'
 
+# Test let.
+expect_count 1 -e 'let A := 1; A == 1'
+expect_count 1 -e 'let A := 1; let B := A; B == 1'
+expect_count 1 -e 'let A := 1, 2; A == 1'
+expect_count 1 -e 'let A := 1, 2; A == 2'
+expect_count 0 -e 'let A := 1; A == 2'
+expect_count 1 -e 'let A B := 1 2; (A == 1) (B == 2)'
+expect_count 1 -e 'let A B := (1, 2) (3, 4); (A == 1) (B == 3)'
+expect_count 1 -e 'let A B := (1, 2) (3, 4); (A == 2) (B == 3)'
+expect_count 1 -e 'let A B := (1, 2) (3, 4); (A == 1) (B == 4)'
+expect_count 1 -e 'let A B := (1, 2) (3, 4); (A == 2) (B == 4)'
+expect_count 2 -e 'let A := 1; (A, A) 1 ?eq'
+
 # Test that universe annotates position.
 expect_count 1 ./nontrivial-types.o -e '
 	entry (offset == 0xb8) (pos == 10)'
@@ -331,6 +344,11 @@ expect_count 1 -e '
 	(0, 1, 20) (== 10 || == 20)'
 
 # Check closures.
+expect_count 2 -e '
+	{let A := 1, 2; A} apply'
+expect_count 1 -e '
+	[[let A := 1, 2; {A}]
+         (|B| B elem ?0 B elem ?1) swap? drop apply] == [2, 1]'
 expect_count 1 -e '
 	{|A| {|B| A}} 2 swap apply 9 swap apply (== 1 1 add)'
 expect_count 1 -e '
@@ -356,10 +374,22 @@ expect_count 1 -e '
 	?(1 5 slice [1, 2, 3, 4] ?eq)
 	?(5 -1 slice [5, 6, 7, 8] ?eq)
 	?(-2 -1 slice [8] ?eq)'
+expect_count 1 -e '
+	1 2 3 [|A B C| A, B, C] == [1, 2, 3]'
+expect_count 1 -e '
+	1 2 3 {|A B C| [A, B, C]} apply == [1, 2, 3]'
+expect_count 1 -e '
+	1 2 3 {|A B C| {[A, B, C]}} apply apply == [1, 2, 3]'
+expect_count 1 -e '
+	1 2 3 {|A B C| {{[A, B, C]}}} apply apply apply == [1, 2, 3]'
+expect_count 1 -e '
+	1 2 3 {|A B C| {{[C, B, A]}}} apply apply apply == [3, 2, 1]'
 
 # Check that bindings remember position.
 expect_count 3 -e '
 	let E := [0, 1, 2] elem; E (== pos)'
+expect_count 3 -e '
+	{{let E := [0, 1, 2] elem; {E}}} apply apply apply (== pos)'
 
 # Check recursion.
 expect_count 1 -e '
