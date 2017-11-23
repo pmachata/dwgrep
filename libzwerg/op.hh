@@ -32,6 +32,7 @@
 
 #include <memory>
 #include <cassert>
+#include <set>
 
 #include "stack.hh"
 #include "pred_result.hh"
@@ -458,16 +459,37 @@ enum class op_tr_closure_kind
 class op_tr_closure
   : public op
 {
-  class pimpl;
-  std::unique_ptr <pimpl> m_pimpl;
+  std::shared_ptr <op> m_upstream;
+  std::shared_ptr <op_origin> m_origin;
+  std::shared_ptr <op> m_op;
+  bool m_is_plus;
+
+  struct deref_less
+  {
+    template <class T>
+    bool
+    operator() (T const &a, T const &b)
+    {
+      return *a < *b;
+    }
+  };
+
+  std::set <std::shared_ptr <stack>, deref_less> m_seen;
+  std::vector <std::shared_ptr <stack> > m_stks;
+  bool m_op_drained;
+
+  stack::uptr next_from_op ();
+  stack::uptr next_from_upstream ();
+  bool send_to_op (std::unique_ptr <stack> stk);
+  bool send_to_op ();
+  std::unique_ptr <stack> yield_and_cache (std::shared_ptr <stack> stk);
+  void reset_me ();
 
 public:
   op_tr_closure (std::shared_ptr <op> upstream,
 		 std::shared_ptr <op_origin> origin,
 		 std::shared_ptr <op> op,
 		 op_tr_closure_kind k);
-
-  ~op_tr_closure ();
 
   stack::uptr next () override;
   std::string name () const override;
