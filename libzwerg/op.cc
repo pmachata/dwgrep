@@ -218,79 +218,51 @@ stringer_op::reset ()
   m_upstream->reset ();
 }
 
-struct op_format::pimpl
-{
-  std::shared_ptr <op> m_upstream;
-  std::shared_ptr <stringer_origin> m_origin;
-  std::shared_ptr <stringer> m_stringer;
-  size_t m_pos;
-
-  pimpl (std::shared_ptr <op> upstream,
-	 std::shared_ptr <stringer_origin> origin,
-	 std::shared_ptr <stringer> stringer)
-    : m_upstream {upstream}
-    , m_origin {origin}
-    , m_stringer {stringer}
-    , m_pos {0}
-  {}
-
-  void
-  reset_me ()
-  {
-    m_stringer->reset ();
-    m_pos = 0;
-  }
-
-  stack::uptr
-  next ()
-  {
-    while (true)
-      {
-	auto stk = m_stringer->next ();
-	if (stk.first != nullptr)
-	  {
-	    stk.first->push (std::make_unique <value_str>
-			     (std::move (stk.second), m_pos++));
-	    return std::move (stk.first);
-	  }
-
-	if (auto stk = m_upstream->next ())
-	  {
-	    reset_me ();
-	    m_origin->set_next (std::move (stk));
-	  }
-	else
-	  return nullptr;
-      }
-  }
-
-  void
-  reset ()
-  {
-    reset_me ();
-    m_upstream->reset ();
-  }
-};
 
 op_format::op_format (std::shared_ptr <op> upstream,
 		      std::shared_ptr <stringer_origin> origin,
 		      std::shared_ptr <stringer> stringer)
-  : m_pimpl {std::make_unique <pimpl> (upstream, origin, stringer)}
-{}
-
-op_format::~op_format ()
+  : m_upstream {upstream}
+  , m_origin {origin}
+  , m_stringer {stringer}
+  , m_pos {0}
 {}
 
 stack::uptr
 op_format::next ()
 {
-  return m_pimpl->next ();
+  while (true)
+    {
+      auto stk = m_stringer->next ();
+      if (stk.first != nullptr)
+	{
+	  stk.first->push (std::make_unique <value_str>
+			   (std::move (stk.second), m_pos++));
+	  return std::move (stk.first);
+	}
+
+      if (auto stk = m_upstream->next ())
+	{
+	  reset_me ();
+	  m_origin->set_next (std::move (stk));
+	}
+      else
+	return nullptr;
+    }
+}
+
+void
+op_format::reset_me ()
+{
+  m_stringer->reset ();
+  m_pos = 0;
 }
 
 void
 op_format::reset ()
 {
-  m_pimpl->reset ();
+  reset_me ();
+  m_upstream->reset ();
 }
 
 std::string

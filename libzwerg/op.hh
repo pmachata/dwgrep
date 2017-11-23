@@ -285,15 +285,17 @@ public:
 class op_format
   : public op
 {
-  class pimpl;
-  std::unique_ptr <pimpl> m_pimpl;
+  std::shared_ptr <op> m_upstream;
+  std::shared_ptr <stringer_origin> m_origin;
+  std::shared_ptr <stringer> m_stringer;
+  size_t m_pos;
+
+  void reset_me ();
 
 public:
   op_format (std::shared_ptr <op> upstream,
 	     std::shared_ptr <stringer_origin> origin,
 	     std::shared_ptr <stringer> stringer);
-
-  ~op_format ();
 
   stack::uptr next () override;
   std::string name () const override;
