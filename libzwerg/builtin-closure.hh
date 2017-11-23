@@ -37,9 +37,12 @@
 class op_apply
   : public op
 {
-  class pimpl;
-  std::unique_ptr <pimpl> m_pimpl;
+  std::shared_ptr <op> m_upstream;
+  std::shared_ptr <op> m_op;
+  std::shared_ptr <frame> m_old_frame;
   bool m_skip_non_closures;
+
+  void reset_me ();
 
 public:
   // When skip_non_closures is true and the incoming stack doesn't have a

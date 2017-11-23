@@ -33,97 +33,71 @@
 #include "builtin-closure.hh"
 #include "value-closure.hh"
 
-struct op_apply::pimpl
-{
-  std::shared_ptr <op> m_upstream;
-  std::shared_ptr <op> m_op;
-  std::shared_ptr <frame> m_old_frame;
-
-  pimpl (std::shared_ptr <op> upstream)
-    : m_upstream {upstream}
-  {}
-
-  void
-  reset_me ()
-  {
-    m_op = nullptr;
-    value_closure::maybe_unlink_frame (m_old_frame);
-    m_old_frame = nullptr;
-  }
-
-  ~pimpl ()
-  {
-    reset_me ();
-  }
-
-  stack::uptr
-  next (bool skip_non_closures)
-  {
-    while (true)
-      {
-	while (m_op == nullptr)
-	  if (auto stk = m_upstream->next ())
-	    {
-	      if (! stk->top ().is <value_closure> ())
-		{
-		  if (skip_non_closures)
-		    return stk;
-
-		  std::cerr << "Error: `apply' expects a T_CLOSURE on TOS.\n";
-		  continue;
-		}
-
-	      auto val = stk->pop ();
-	      auto &cl = static_cast <value_closure &> (*val);
-
-	      assert (m_old_frame == nullptr);
-	      m_old_frame = stk->nth_frame (0);
-	      stk->set_frame (cl.get_frame ());
-	      auto origin = std::make_shared <op_origin> (std::move (stk));
-	      m_op = cl.get_tree ().build_exec (origin);
-	    }
-	  else
-	    return nullptr;
-
-	if (auto stk = m_op->next ())
-	  {
-	    // Restore the original stack frame.
-	    std::shared_ptr <frame> of = stk->nth_frame (0);
-	    stk->set_frame (m_old_frame);
-	    value_closure::maybe_unlink_frame (of);
-	    return stk;
-	  }
-
-	reset_me ();
-      }
-  }
-
-  void
-  reset ()
-  {
-    reset_me ();
-    m_upstream->reset ();
-  }
-};
-
 op_apply::op_apply (std::shared_ptr <op> upstream, bool skip_non_closures)
-  : m_pimpl {std::make_unique <pimpl> (upstream)}
+  : m_upstream {upstream}
   , m_skip_non_closures {skip_non_closures}
 {}
 
 op_apply::~op_apply ()
-{}
+{
+  reset_me ();
+}
+
+void
+op_apply::reset_me ()
+{
+  m_op = nullptr;
+  value_closure::maybe_unlink_frame (m_old_frame);
+  m_old_frame = nullptr;
+}
 
 void
 op_apply::reset ()
 {
-  m_pimpl->reset ();
+  reset_me ();
+  m_upstream->reset ();
 }
 
 stack::uptr
 op_apply::next ()
 {
-  return m_pimpl->next (m_skip_non_closures);
+  while (true)
+    {
+      while (m_op == nullptr)
+	if (auto stk = m_upstream->next ())
+	  {
+	    if (! stk->top ().is <value_closure> ())
+	      {
+		if (m_skip_non_closures)
+		  return stk;
+
+		std::cerr << "Error: `apply' expects a T_CLOSURE on TOS.\n";
+		continue;
+	      }
+
+	    auto val = stk->pop ();
+	    auto &cl = static_cast <value_closure &> (*val);
+
+	    assert (m_old_frame == nullptr);
+	    m_old_frame = stk->nth_frame (0);
+	    stk->set_frame (cl.get_frame ());
+	    auto origin = std::make_shared <op_origin> (std::move (stk));
+	    m_op = cl.get_tree ().build_exec (origin);
+	  }
+	else
+	  return nullptr;
+
+      if (auto stk = m_op->next ())
+	{
+	  // Restore the original stack frame.
+	  std::shared_ptr <frame> of = stk->nth_frame (0);
+	  stk->set_frame (m_old_frame);
+	  value_closure::maybe_unlink_frame (of);
+	  return stk;
+	}
+
+      reset_me ();
+    }
 }
 
 std::string
