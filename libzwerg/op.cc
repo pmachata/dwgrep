@@ -775,63 +775,37 @@ op_bind::name () const
 }
 
 
-struct op_read::pimpl
-{
-  std::shared_ptr <op> m_upstream;
-  size_t m_depth;
-  var_id m_index;
-
-  pimpl (std::shared_ptr <op> upstream, size_t depth, var_id index)
-    : m_upstream {upstream}
-    , m_depth {depth}
-    , m_index {index}
-  {}
-
-  stack::uptr
-  next ()
-  {
-    if (auto stk = m_upstream->next ())
-      {
-	auto frame = stk->nth_frame (m_depth);
-	value &val = frame->read_value (m_index);
-	stk->push (val.clone ());
-	return stk;
-      }
-    else
-      return nullptr;
-  }
-
-  void
-  reset ()
-  {
-    m_upstream->reset ();
-  }
-};
-
 op_read::op_read (std::shared_ptr <op> upstream, size_t depth, var_id index)
-  : m_pimpl {std::make_unique <pimpl> (upstream, depth, index)}
-{}
-
-op_read::~op_read ()
+  : m_upstream {upstream}
+  , m_depth {depth}
+  , m_index {index}
 {}
 
 void
 op_read::reset ()
 {
-  m_pimpl->reset ();
+  m_upstream->reset ();
 }
 
 stack::uptr
 op_read::next ()
 {
-  return m_pimpl->next ();
+  if (auto stk = m_upstream->next ())
+    {
+      auto frame = stk->nth_frame (m_depth);
+      value &val = frame->read_value (m_index);
+      stk->push (val.clone ());
+      return stk;
+    }
+  else
+    return nullptr;
 }
 
 std::string
 op_read::name () const
 {
-  return std::string ("read<") + std::to_string (m_pimpl->m_index)
-    + "@" + std::to_string (m_pimpl->m_depth) + ">";
+  return std::string ("read<") + std::to_string (m_index)
+    + "@" + std::to_string (m_depth) + ">";
 }
 
 

@@ -573,12 +573,12 @@ public:
 class op_read
   : public op
 {
-  class pimpl;
-  std::unique_ptr <pimpl> m_pimpl;
+  std::shared_ptr <op> m_upstream;
+  size_t m_depth;
+  var_id m_index;
 
 public:
   op_read (std::shared_ptr <op> upstream, size_t depth, var_id index);
-  ~op_read ();
 
   stack::uptr next () override;
   void reset () override;
