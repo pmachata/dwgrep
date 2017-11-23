@@ -152,10 +152,7 @@ public:
 struct stub_op
   : public inner_op
 {
-  stub_op (std::shared_ptr <op> upstream)
-    : inner_op {upstream}
-  {}
-
+  using inner_op::inner_op;
   std::string name () const override final { return "stub"; }
 };
 
@@ -167,39 +164,30 @@ struct stub_pred
 };
 
 class op_nop
-  : public op
+  : public inner_op
 {
-  std::shared_ptr <op> m_upstream;
-
 public:
   explicit op_nop (std::shared_ptr <op> upstream)
-    : m_upstream {upstream}
+    : inner_op {upstream}
   {}
 
   stack::uptr next () override;
   std::string name () const override;
-
-  void reset () override
-  { m_upstream->reset (); }
 };
 
 class op_assert
-  : public op
+  : public inner_op
 {
-  std::shared_ptr <op> m_upstream;
   std::unique_ptr <pred> m_pred;
 
 public:
   op_assert (std::shared_ptr <op> upstream, std::unique_ptr <pred> p)
-    : m_upstream {upstream}
+    : inner_op {upstream}
     , m_pred {std::move (p)}
   {}
 
   stack::uptr next () override;
   std::string name () const override;
-
-  void reset () override
-  { m_upstream->reset (); }
 };
 
 // The stringer hieararchy supports op_format, which implements
@@ -284,9 +272,8 @@ public:
 
 // A top-level format-string node.
 class op_format
-  : public op
+  : public inner_op
 {
-  std::shared_ptr <op> m_upstream;
   std::shared_ptr <stringer_origin> m_origin;
   std::shared_ptr <stringer> m_stringer;
   size_t m_pos;
@@ -304,22 +291,18 @@ public:
 };
 
 class op_const
-  : public op
+  : public inner_op
 {
-  std::shared_ptr <op> m_upstream;
   std::unique_ptr <value> m_value;
 
 public:
   op_const (std::shared_ptr <op> upstream, std::unique_ptr <value> &&value)
-    : m_upstream {upstream}
+    : inner_op {upstream}
     , m_value {std::move (value)}
   {}
 
   stack::uptr next () override;
   std::string name () const override;
-
-  void reset () override
-  { m_upstream->reset (); }
 };
 
 // Tine is placed at the beginning of each alt expression.  These
@@ -342,9 +325,8 @@ public:
 //  [ A ] <-+- [ Tine 2 ] <- [ C ] <- [ D ] <-+- [ Merge ] <- [ F ]
 //          +- [ Tine 3 ] <-     [ E ]      <-+
 class op_tine
-  : public op
+  : public inner_op
 {
-  std::shared_ptr <op> m_upstream;
   std::shared_ptr <std::vector <stack::uptr>> m_file;
   std::shared_ptr <bool> m_done;
   size_t m_branch_id;
@@ -354,7 +336,7 @@ public:
 	   std::shared_ptr <std::vector <stack::uptr>> file,
 	   std::shared_ptr <bool> done,
 	   size_t branch_id)
-    : m_upstream {upstream}
+    : inner_op {upstream}
     , m_file {file}
     , m_done {done}
     , m_branch_id {branch_id}
@@ -399,9 +381,8 @@ public:
 };
 
 class op_or
-  : public op
+  : public inner_op
 {
-  std::shared_ptr <op> m_upstream;
   std::vector <std::pair <std::shared_ptr <op_origin>,
 			  std::shared_ptr <op>>> m_branches;
   decltype (m_branches)::const_iterator m_branch_it;
@@ -410,7 +391,7 @@ class op_or
 
 public:
   op_or (std::shared_ptr <op> upstream)
-    : m_upstream {upstream}
+    : inner_op {upstream}
     , m_branch_it {m_branches.end ()}
   {}
 
@@ -429,9 +410,8 @@ public:
 };
 
 class op_capture
-  : public op
+  : public inner_op
 {
-  std::shared_ptr <op> m_upstream;
   std::shared_ptr <op_origin> m_origin;
   std::shared_ptr <op> m_op;
 
@@ -439,7 +419,7 @@ public:
   op_capture (std::shared_ptr <op> upstream,
 	      std::shared_ptr <op_origin> origin,
 	      std::shared_ptr <op> op)
-    : m_upstream {upstream}
+    : inner_op {upstream}
     , m_origin {origin}
     , m_op {op}
   {}
@@ -457,9 +437,8 @@ enum class op_tr_closure_kind
   };
 
 class op_tr_closure
-  : public op
+  : public inner_op
 {
-  std::shared_ptr <op> m_upstream;
   std::shared_ptr <op_origin> m_origin;
   std::shared_ptr <op> m_op;
   bool m_is_plus;
@@ -497,9 +476,8 @@ public:
 };
 
 class op_subx
-  : public op
+  : public inner_op
 {
-  std::shared_ptr <op> m_upstream;
   std::shared_ptr <op_origin> m_origin;
   std::shared_ptr <op> m_op;
   stack::uptr m_stk;
@@ -519,18 +497,13 @@ public:
 };
 
 class op_f_debug
-  : public op
+  : public inner_op
 {
-  std::shared_ptr <op> m_upstream;
-
 public:
-  explicit op_f_debug (std::shared_ptr <op> upstream)
-    : m_upstream {upstream}
-  {}
+  using inner_op::inner_op;
 
   stack::uptr next () override;
   std::string name () const override;
-  void reset () override;
 };
 
 class op_scope
@@ -552,28 +525,25 @@ public:
 };
 
 class op_bind
-  : public op
+  : public inner_op
 {
-  std::shared_ptr <op> m_upstream;
   size_t m_depth;
   var_id m_index;
 
 public:
   op_bind (std::shared_ptr <op> upstream, size_t depth, var_id index)
-    : m_upstream {upstream}
+    : inner_op {upstream}
     , m_depth {depth}
     , m_index {index}
   {}
 
   stack::uptr next () override;
-  void reset () override;
   std::string name () const override;
 };
 
 class op_read
-  : public op
+  : public inner_op
 {
-  std::shared_ptr <op> m_upstream;
   size_t m_depth;
   var_id m_index;
 
@@ -581,33 +551,28 @@ public:
   op_read (std::shared_ptr <op> upstream, size_t depth, var_id index);
 
   stack::uptr next () override;
-  void reset () override;
   std::string name () const override;
 };
 
 // Push to TOS a value_closure.
 class op_lex_closure
-  : public op
+  : public inner_op
 {
-  std::shared_ptr <op> m_upstream;
   tree m_t;
 
 public:
   op_lex_closure (std::shared_ptr <op> upstream, tree t)
-    : m_upstream {upstream}
+    : inner_op {upstream}
     , m_t {t}
   {}
 
-  void reset () override;
   stack::uptr next () override;
   std::string name () const override;
 };
 
 class op_ifelse
-  : public op
+  : public inner_op
 {
-  std::shared_ptr <op> m_upstream;
-
   std::shared_ptr <op_origin> m_cond_origin;
   std::shared_ptr <op> m_cond_op;
 

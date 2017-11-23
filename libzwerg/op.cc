@@ -222,7 +222,7 @@ stringer_op::reset ()
 op_format::op_format (std::shared_ptr <op> upstream,
 		      std::shared_ptr <stringer_origin> origin,
 		      std::shared_ptr <stringer> stringer)
-  : m_upstream {upstream}
+  : inner_op {upstream}
   , m_origin {origin}
   , m_stringer {stringer}
   , m_pos {0}
@@ -262,7 +262,7 @@ void
 op_format::reset ()
 {
   reset_me ();
-  m_upstream->reset ();
+  inner_op::reset ();
 }
 
 std::string
@@ -321,7 +321,7 @@ op_tine::reset ()
 {
   for (auto &stk: *m_file)
     stk = nullptr;
-  m_upstream->reset ();
+  inner_op::reset ();
 }
 
 std::string
@@ -376,7 +376,7 @@ void
 op_or::reset ()
 {
   reset_me ();
-  m_upstream->reset ();
+  inner_op::reset ();
 }
 
 stack::uptr
@@ -447,7 +447,7 @@ void
 op_capture::reset ()
 {
   m_op->reset ();
-  m_upstream->reset ();
+  inner_op::reset ();
 }
 
 std::string
@@ -461,7 +461,7 @@ op_tr_closure::op_tr_closure (std::shared_ptr <op> upstream,
 			      std::shared_ptr <op_origin> origin,
 			      std::shared_ptr <op> op,
 			      op_tr_closure_kind k)
-  : m_upstream {upstream}
+  : inner_op {upstream}
   , m_origin {origin}
   , m_op {op}
   , m_is_plus {k == op_tr_closure_kind::plus}
@@ -557,7 +557,7 @@ void
 op_tr_closure::reset ()
 {
   reset_me ();
-  m_upstream->reset ();
+  inner_op::reset ();
 }
 
 std::string
@@ -571,7 +571,7 @@ op_subx::op_subx (std::shared_ptr <op> upstream,
 		  std::shared_ptr <op_origin> origin,
 		  std::shared_ptr <op> op,
 		  size_t keep)
-  : m_upstream {upstream}
+  : inner_op {upstream}
   , m_origin {origin}
   , m_op {op}
   , m_keep {keep}
@@ -619,7 +619,7 @@ void
 op_subx::reset ()
 {
   reset_me ();
-  m_upstream->reset ();
+  inner_op::reset ();
 }
 
 std::string
@@ -643,12 +643,6 @@ std::string
 op_f_debug::name () const
 {
   return "f_debug";
-}
-
-void
-op_f_debug::reset ()
-{
-  m_upstream->reset ();
 }
 
 
@@ -749,12 +743,6 @@ op_scope::name () const
 }
 
 
-void
-op_bind::reset ()
-{
-  m_upstream->reset ();
-}
-
 stack::uptr
 op_bind::next ()
 {
@@ -776,16 +764,10 @@ op_bind::name () const
 
 
 op_read::op_read (std::shared_ptr <op> upstream, size_t depth, var_id index)
-  : m_upstream {upstream}
+  : inner_op {upstream}
   , m_depth {depth}
   , m_index {index}
 {}
-
-void
-op_read::reset ()
-{
-  m_upstream->reset ();
-}
 
 stack::uptr
 op_read::next ()
@@ -808,12 +790,6 @@ op_read::name () const
     + "@" + std::to_string (m_depth) + ">";
 }
 
-
-void
-op_lex_closure::reset ()
-{
-  m_upstream->reset ();
-}
 
 stack::uptr
 op_lex_closure::next ()
@@ -840,7 +816,7 @@ op_ifelse::op_ifelse (std::shared_ptr <op> upstream,
 		      std::shared_ptr <op> then_op,
 		      std::shared_ptr <op_origin> else_origin,
 		      std::shared_ptr <op> else_op)
-  : m_upstream {upstream}
+  : inner_op {upstream}
   , m_cond_origin {cond_origin}
   , m_cond_op {cond_op}
   , m_then_origin {then_origin}
@@ -862,7 +838,7 @@ void
 op_ifelse::reset ()
 {
   reset_me ();
-  m_upstream->reset ();
+  inner_op::reset ();
 }
 
 stack::uptr
