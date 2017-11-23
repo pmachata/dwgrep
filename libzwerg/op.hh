@@ -606,8 +606,21 @@ public:
 class op_ifelse
   : public op
 {
-  class pimpl;
-  std::unique_ptr <pimpl> m_pimpl;
+  std::shared_ptr <op> m_upstream;
+
+  std::shared_ptr <op_origin> m_cond_origin;
+  std::shared_ptr <op> m_cond_op;
+
+  std::shared_ptr <op_origin> m_then_origin;
+  std::shared_ptr <op> m_then_op;
+
+  std::shared_ptr <op_origin> m_else_origin;
+  std::shared_ptr <op> m_else_op;
+
+  std::shared_ptr <op_origin> m_sel_origin;
+  std::shared_ptr <op> m_sel_op;
+
+  void reset_me ();
 
 public:
   op_ifelse (std::shared_ptr <op> upstream,
@@ -617,8 +630,6 @@ public:
 	     std::shared_ptr <op> then_op,
 	     std::shared_ptr <op_origin> else_origin,
 	     std::shared_ptr <op> else_op);
-
-  ~op_ifelse ();
 
   void reset () override;
   stack::uptr next () override;
