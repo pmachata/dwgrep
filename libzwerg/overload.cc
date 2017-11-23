@@ -146,65 +146,11 @@ overload_tab::instantiate ()
 }
 
 
-struct overload_op::pimpl
-{
-  std::shared_ptr <op> m_upstream;
-  overload_instance m_ovl_inst;
-  std::shared_ptr <op> m_op;
-
-  void
-  reset_me ()
-  {
-    m_op = nullptr;
-  }
-
-  pimpl (std::shared_ptr <op> upstream, overload_instance ovl_inst)
-    : m_upstream {upstream}
-    , m_ovl_inst {ovl_inst}
-    , m_op {nullptr}
-  {}
-
-  stack::uptr
-  next (op &self)
-  {
-    while (true)
-      {
-	while (m_op == nullptr)
-	  {
-	    if (auto stk = m_upstream->next ())
-	      {
-		auto ovl = m_ovl_inst.find_exec (*stk);
-		if (std::get <0> (ovl) == nullptr)
-		  m_ovl_inst.show_error (self.name (), selector {*stk});
-		else
-		  {
-		    m_op = std::get <1> (ovl);
-		    m_op->reset ();
-		    std::get <0> (ovl)->set_next (std::move (stk));
-		  }
-	      }
-	    else
-	      return nullptr;
-	  }
-
-	if (auto stk = m_op->next ())
-	  return stk;
-
-	reset_me ();
-      }
-  }
-
-  void
-  reset ()
-  {
-    reset_me ();
-    m_upstream->reset ();
-  }
-};
-
 overload_op::overload_op (std::shared_ptr <op> upstream,
 			  overload_instance ovl_inst)
-  : m_pimpl {std::make_unique <pimpl> (upstream, ovl_inst)}
+  : m_upstream {upstream}
+  , m_ovl_inst {ovl_inst}
+  , m_op {nullptr}
 {}
 
 overload_op::~overload_op ()
@@ -213,13 +159,44 @@ overload_op::~overload_op ()
 stack::uptr
 overload_op::next ()
 {
-  return m_pimpl->next (*this);
+  while (true)
+    {
+      while (m_op == nullptr)
+	{
+	  if (auto stk = m_upstream->next ())
+	    {
+	      auto ovl = m_ovl_inst.find_exec (*stk);
+	      if (std::get <0> (ovl) == nullptr)
+		m_ovl_inst.show_error (name (), selector {*stk});
+	      else
+		{
+		  m_op = std::get <1> (ovl);
+		  m_op->reset ();
+		  std::get <0> (ovl)->set_next (std::move (stk));
+		}
+	    }
+	  else
+	    return nullptr;
+	}
+
+      if (auto stk = m_op->next ())
+	return stk;
+
+      reset_me ();
+    }
+}
+
+void
+overload_op::reset_me ()
+{
+  m_op = nullptr;
 }
 
 void
 overload_op::reset ()
 {
-  return m_pimpl->reset ();
+  reset_me ();
+  m_upstream->reset ();
 }
 
 pred_result

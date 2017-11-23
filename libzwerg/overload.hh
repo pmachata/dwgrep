@@ -111,8 +111,11 @@ public:
 class overload_op
   : public op
 {
-  class pimpl;
-  std::unique_ptr <pimpl> m_pimpl;
+  std::shared_ptr <op> m_upstream;
+  overload_instance m_ovl_inst;
+  std::shared_ptr <op> m_op;
+
+  void reset_me ();
 
 public:
   overload_op (std::shared_ptr <op> upstream, overload_instance ovl_inst);
