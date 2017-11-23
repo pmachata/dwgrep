@@ -567,96 +567,65 @@ op_tr_closure::name () const
 }
 
 
-struct op_subx::pimpl
-{
-  std::shared_ptr <op> m_upstream;
-  std::shared_ptr <op_origin> m_origin;
-  std::shared_ptr <op> m_op;
-  stack::uptr m_stk;
-  size_t m_keep;
-
-  pimpl (std::shared_ptr <op> upstream,
-	 std::shared_ptr <op_origin> origin,
-	 std::shared_ptr <op> op,
-	 size_t keep)
-    : m_upstream {upstream}
-    , m_origin {origin}
-    , m_op {op}
-    , m_keep {keep}
-  {}
-
-  void
-  reset_me ()
-  {
-    m_stk = nullptr;
-  }
-
-  stack::uptr
-  next ()
-  {
-    while (true)
-      {
-	while (m_stk == nullptr)
-	  if (m_stk = m_upstream->next ())
-	    {
-	      m_op->reset ();
-	      m_origin->set_next (std::make_unique <stack> (*m_stk));
-	    }
-	  else
-	    return nullptr;
-
-	if (auto stk = m_op->next ())
-	  {
-	    auto ret = std::make_unique <stack> (*m_stk);
-	    std::vector <std::unique_ptr <value>> kept;
-	    for (size_t i = 0; i < m_keep; ++i)
-	      kept.push_back (stk->pop ());
-	    for (size_t i = 0; i < m_keep; ++i)
-	      {
-		ret->push (std::move (kept.back ()));
-		kept.pop_back ();
-	      }
-	    return ret;
-	  }
-
-	reset_me ();
-      }
-  }
-
-  void
-  reset ()
-  {
-    reset_me ();
-    m_upstream->reset ();
-  }
-};
-
 op_subx::op_subx (std::shared_ptr <op> upstream,
 		  std::shared_ptr <op_origin> origin,
 		  std::shared_ptr <op> op,
 		  size_t keep)
-  : m_pimpl {std::make_unique <pimpl> (upstream, origin, op, keep)}
-{}
-
-op_subx::~op_subx ()
+  : m_upstream {upstream}
+  , m_origin {origin}
+  , m_op {op}
+  , m_keep {keep}
 {}
 
 stack::uptr
 op_subx::next ()
 {
-  return m_pimpl->next ();
+  while (true)
+    {
+      while (m_stk == nullptr)
+	if (m_stk = m_upstream->next ())
+	  {
+	    m_op->reset ();
+	    m_origin->set_next (std::make_unique <stack> (*m_stk));
+	  }
+	else
+	  return nullptr;
+
+      if (auto stk = m_op->next ())
+	{
+	  auto ret = std::make_unique <stack> (*m_stk);
+	  std::vector <std::unique_ptr <value>> kept;
+	  for (size_t i = 0; i < m_keep; ++i)
+	    kept.push_back (stk->pop ());
+	  for (size_t i = 0; i < m_keep; ++i)
+	    {
+	      ret->push (std::move (kept.back ()));
+	      kept.pop_back ();
+	    }
+	  return ret;
+	}
+
+      reset_me ();
+    }
+}
+
+void
+op_subx::reset_me ()
+{
+  m_stk = nullptr;
 }
 
 void
 op_subx::reset ()
 {
-  m_pimpl->reset ();
+  reset_me ();
+  m_upstream->reset ();
 }
 
 std::string
 op_subx::name () const
 {
-  return std::string ("subx<") + m_pimpl->m_op->name () + ">";
+  return std::string ("subx<") + m_op->name () + ">";
 }
 
 stack::uptr

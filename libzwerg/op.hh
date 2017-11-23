@@ -499,16 +499,19 @@ public:
 class op_subx
   : public op
 {
-  class pimpl;
-  std::unique_ptr <pimpl> m_pimpl;
+  std::shared_ptr <op> m_upstream;
+  std::shared_ptr <op_origin> m_origin;
+  std::shared_ptr <op> m_op;
+  stack::uptr m_stk;
+  size_t m_keep;
+
+  void reset_me ();
 
 public:
   op_subx (std::shared_ptr <op> upstream,
 	   std::shared_ptr <op_origin> origin,
 	   std::shared_ptr <op> op,
 	   size_t keep);
-
-  ~op_subx ();
 
   stack::uptr next () override;
   std::string name () const override;
