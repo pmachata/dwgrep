@@ -53,7 +53,7 @@ namespace
     switch (t.m_tt)
       {
       case tree_type::PRED_NOT:
-        return std::make_unique <pred_not> (build_pred (t.child (0), l, rdv_ll, bn, up));
+	return std::make_unique <pred_not> (build_pred (t.child (0), l, rdv_ll, bn, up));
 
       case tree_type::PRED_OR:
         return std::make_unique <pred_or>
@@ -248,12 +248,12 @@ namespace
         }
 
       case tree_type::CLOSE_PLUS:
-        {
-          auto origin = std::make_shared <op_origin> (l);
-          auto op = build_exec (t.child (0), l, rdv_ll, origin, bn, up);
-          return std::make_shared <op_tr_closure> (l, upstream, origin, op,
-                                                   op_tr_closure_kind::plus);
-        }
+	{
+	  auto origin = std::make_shared <op_origin> (l);
+	  auto op = build_exec (t.child (0), l, rdv_ll, origin, bn, up);
+	  return std::make_shared <op_tr_closure> (l, upstream, origin, op,
+						   op_tr_closure_kind::plus);
+	}
 
       case tree_type::SCOPE:
 	{
@@ -285,11 +285,11 @@ namespace
 	}
 
       case tree_type::BIND:
-        {
-          auto ret = std::make_shared <op_bind> (l, upstream);
-          bn.bind (t.str (), *ret);
-          return ret;
-        }
+	{
+	  auto ret = std::make_shared <op_bind> (l, upstream);
+	  bn.bind (t.str (), *ret);
+	  return ret;
+	}
 
       case tree_type::READ:
 	{
@@ -298,34 +298,34 @@ namespace
 	}
 
       case tree_type::F_DEBUG:
-        return std::make_shared <op_f_debug> (upstream);
+	return std::make_shared <op_f_debug> (upstream);
 
       case tree_type::IFELSE:
-        {
-          auto cond_origin = std::make_shared <op_origin> (l);
-          auto cond_op = build_exec (t.child (0), l, rdv_ll, cond_origin, bn, up);
+	{
+	  auto cond_origin = std::make_shared <op_origin> (l);
+	  auto cond_op = build_exec (t.child (0), l, rdv_ll, cond_origin, bn, up);
 
 	  // xxx could else and origin share state space?
 	  // xxx all three in fact could.
-          auto then_origin = std::make_shared <op_origin> (l);
-          auto then_op = build_exec (t.child (1), l, rdv_ll, then_origin, bn, up);
+	  auto then_origin = std::make_shared <op_origin> (l);
+	  auto then_op = build_exec (t.child (1), l, rdv_ll, then_origin, bn, up);
 
-          auto else_origin = std::make_shared <op_origin> (l);
-          auto else_op = build_exec (t.child (2), l, rdv_ll, else_origin, bn, up);
+	  auto else_origin = std::make_shared <op_origin> (l);
+	  auto else_op = build_exec (t.child (2), l, rdv_ll, else_origin, bn, up);
 
-          return std::make_shared <op_ifelse> (l, upstream,
+	  return std::make_shared <op_ifelse> (l, upstream,
 					       cond_origin, cond_op,
-                                               then_origin, then_op,
-                                               else_origin, else_op);
-        }
+					       then_origin, then_op,
+					       else_origin, else_op);
+	}
 
       case tree_type::PRED_AND:
       case tree_type::PRED_OR:
       case tree_type::PRED_NOT:
       case tree_type::PRED_SUBX_ANY:
       case tree_type::PRED_SUBX_CMP:
-        assert (! "Should never get here.");
-        abort ();
+	assert (! "Should never get here.");
+	abort ();
       }
 
     abort ();
