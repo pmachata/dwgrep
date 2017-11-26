@@ -37,6 +37,7 @@
 #include "constant.hh"
 #include "stack.hh"
 #include "builtin.hh"
+#include "layout.hh"
 
 // These constants describe how a tree is allowed to be constructed.
 // It's mostly present to make sure we don't inadvertently construct
@@ -195,7 +196,7 @@ public:
   // nullptr if this is the toplevel-most expression, otherwise it
   // should be a valid op that the op produced by this node feeds off.
   std::shared_ptr <op>
-  build_exec (std::shared_ptr <op> upstream) const;
+  build_exec (layout &l, std::shared_ptr <op> upstream) const;
 
   // === Parser interface ===
   //

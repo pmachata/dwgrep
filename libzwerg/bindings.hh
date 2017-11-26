@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2014, 2015 Red Hat, Inc.
+   Copyright (C) 2017 Petr Machata
    This file is part of dwgrep.
 
    This file is free software; you can redistribute it and/or modify
@@ -26,31 +26,47 @@
    the GNU Lesser General Public License along with this program.  If
    not, see <http://www.gnu.org/licenses/>.  */
 
-#include "test-zw-aux.hh"
-#include "std-memory.hh"
-#include "parser.hh"
-#include "op.hh"
+#ifndef _BINDINGS_H_
+#define _BINDINGS_H_
 
-std::unique_ptr <stack>
-stack_with_value (std::unique_ptr <value> v)
+#include <map>
+#include <memory>
+#include <string>
+#include <vector>
+
+struct op_bind;
+
+class bindings
 {
-  auto stk = std::make_unique <stack> ();
-  stk->push (std::move (v));
-  return stk;
-}
+  std::map <std::string, std::reference_wrapper <op_bind>> m_bindings;
+  bindings *m_super;
 
-std::vector <std::unique_ptr <stack>>
-run_query (vocabulary &voc,
-	   std::unique_ptr <stack> stk, std::string q)
+public:
+  bindings ()
+    : m_super {nullptr}
+  {}
+
+  explicit bindings (bindings &super)
+    : m_super {&super}
+  {}
+
+  void bind (std::string name, op_bind &op);
+  op_bind *find (std::string name);
+  std::vector <std::string> names () const;
+  std::vector <std::string> names_closure () const;
+};
+
+class uprefs
 {
-  layout l;
-  std::shared_ptr <op> op = parse_query (voc, q)
-    .build_exec (l, std::make_shared <op_origin> (std::move (stk)));
+  std::map <std::string, std::pair <bool, unsigned>> m_ids;
+  unsigned m_nextid;
 
-  std::vector <std::unique_ptr <stack>> yielded;
-  while (auto r = op->next ())
-    yielded.push_back (std::move (r));
+public:
+  uprefs ();
+  uprefs (bindings &bns, uprefs &super);
 
-  return yielded;
-}
+  std::pair <bool, unsigned> find (std::string name);
+  std::map <unsigned, std::string> refd_names () const;
+};
 
+#endif//_BINDINGS_H_

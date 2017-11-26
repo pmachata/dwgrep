@@ -29,6 +29,7 @@ ADD_LIBRARY (LibzwergCore OBJECT
   ${FLEX_Lexer_OUTPUTS}
   known-dwarf.h
   known-elf.h
+  bindings.cc
   build.cc
   builtin-closure.cc
   builtin-cmp.cc

@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2014, 2015 Red Hat, Inc.
+   Copyright (C) 2017 Petr Machata
    This file is part of dwgrep.
 
    This file is free software; you can redistribute it and/or modify
@@ -26,31 +26,45 @@
    the GNU Lesser General Public License along with this program.  If
    not, see <http://www.gnu.org/licenses/>.  */
 
-#include "test-zw-aux.hh"
-#include "std-memory.hh"
-#include "parser.hh"
-#include "op.hh"
+#ifndef _LAYOUT_HH_
+#define _LAYOUT_HH_
 
-std::unique_ptr <stack>
-stack_with_value (std::unique_ptr <value> v)
+#include <cstddef>
+
+class layout
 {
-  auto stk = std::make_unique <stack> ();
-  stk->push (std::move (v));
-  return stk;
-}
+  size_t m_top;
 
-std::vector <std::unique_ptr <stack>>
-run_query (vocabulary &voc,
-	   std::unique_ptr <stack> stk, std::string q)
-{
-  layout l;
-  std::shared_ptr <op> op = parse_query (voc, q)
-    .build_exec (l, std::make_shared <op_origin> (std::move (stk)));
+public:
+  struct loc
+  {
+    size_t m_loc;
 
-  std::vector <std::unique_ptr <stack>> yielded;
-  while (auto r = op->next ())
-    yielded.push_back (std::move (r));
+    loc (size_t loc)
+      : m_loc {loc}
+    {}
+  };
 
-  return yielded;
-}
+  layout ()
+    : m_top {0}
+  {}
 
+  template <class State>
+  inline layout::loc
+  reserve ()
+  {
+    size_t align = alignof (State);
+    m_top = (m_top + (align - 1)) & -align;
+    auto ret = loc {m_top};
+    m_top += sizeof (State);
+    return ret;
+  }
+
+  size_t
+  size () const
+  {
+    return m_top;
+  }
+};
+
+#endif // _LAYOUT_HH_

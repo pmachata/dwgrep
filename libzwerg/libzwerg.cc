@@ -186,8 +186,9 @@ zw_query_execute (zw_query const *query, zw_stack const *input_stack,
       auto stk = std::make_unique <stack> ();
       for (auto const &emt: input_stack->m_values)
 	stk->push (emt->clone ());
+      layout l;
       auto upstream = std::make_shared <op_origin> (std::move (stk));
-      return new zw_result { query->m_query.build_exec (upstream) };
+      return new zw_result { query->m_query.build_exec (l, upstream) };
     }, nullptr, out_err);
 }
 
