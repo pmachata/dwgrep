@@ -1,4 +1,5 @@
 /*
+   Copyright (C) 2017 Petr Machata
    Copyright (C) 2014, 2015 Red Hat, Inc.
    This file is part of dwgrep.
 
@@ -620,10 +621,12 @@ namespace
   void
   test_builtin_constant (vocabulary &builtins, char const *name)
   {
+    layout l;
     auto bi = builtins.find (name);
     ASSERT_TRUE (bi != nullptr);
-    auto op = bi->build_exec
-      (std::make_shared <op_origin> (std::make_unique <stack> ()));
+    auto origin = std::make_shared <op_origin> (std::make_unique <stack> ());
+    auto op = bi->build_exec (l, origin);
+
     ASSERT_TRUE (op != nullptr);
     auto stk = op->next ();
     ASSERT_TRUE (stk != nullptr);

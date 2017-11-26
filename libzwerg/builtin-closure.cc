@@ -108,7 +108,7 @@ op_apply::name () const
 }
 
 std::shared_ptr <op>
-builtin_apply::build_exec (std::shared_ptr <op> upstream) const
+builtin_apply::build_exec (layout &l, std::shared_ptr <op> upstream) const
 {
   return std::make_shared <op_apply> (upstream);
 }

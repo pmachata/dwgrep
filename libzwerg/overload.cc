@@ -34,14 +34,15 @@
 #include "docstring.hh"
 
 overload_instance::overload_instance
-	(std::vector <std::tuple <selector,
+	(layout &l,
+	 std::vector <std::tuple <selector,
 				  std::shared_ptr <builtin>>> const &stencil)
 {
   for (auto const &v: stencil)
     {
       auto origin = std::make_shared <op_origin> (nullptr);
-      auto op = std::get <1> (v)->build_exec (origin);
-      auto pred = std::get <1> (v)->build_pred ();
+      auto op = std::get <1> (v)->build_exec (l, origin);
+      auto pred = std::get <1> (v)->build_pred (l);
 
       assert (op != nullptr || pred != nullptr);
 
@@ -140,9 +141,9 @@ overload_tab::add_overload (selector sel, std::shared_ptr <builtin> b)
 }
 
 overload_instance
-overload_tab::instantiate ()
+overload_tab::instantiate (layout &l)
 {
-  return overload_instance {m_overloads};
+  return overload_instance {l, m_overloads};
 }
 
 
@@ -254,10 +255,11 @@ overloaded_builtin::docstring () const
 }
 
 std::shared_ptr <op>
-overloaded_op_builtin::build_exec (std::shared_ptr <op> upstream) const
+overloaded_op_builtin::build_exec (layout &l,
+				   std::shared_ptr <op> upstream) const
 {
   return std::make_shared <named_overload_op>
-    (upstream, get_overload_tab ()->instantiate (), name ());
+    (upstream, get_overload_tab ()->instantiate (l), name ());
 }
 
 std::shared_ptr <overloaded_builtin>
@@ -287,10 +289,10 @@ namespace
 }
 
 std::unique_ptr <pred>
-overloaded_pred_builtin::build_pred () const
+overloaded_pred_builtin::build_pred (layout &l) const
 {
   return maybe_invert (std::make_unique <named_overload_pred>
-				(get_overload_tab ()->instantiate (), name ()),
+				(get_overload_tab ()->instantiate (l), name ()),
 		       m_positive);
 }
 

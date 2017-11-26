@@ -58,7 +58,7 @@ public:
 struct builtin_apply
   : public builtin
 {
-  std::shared_ptr <op> build_exec (std::shared_ptr <op> upstream)
+  std::shared_ptr <op> build_exec (layout &l, std::shared_ptr <op> upstream)
     const override;
 
   char const *name () const override;

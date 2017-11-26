@@ -74,7 +74,8 @@ class overload_instance
   std::vector <std::shared_ptr <pred>> m_preds;
 
 public:
-  overload_instance (std::vector
+  overload_instance (layout &l,
+		     std::vector
 			<std::tuple <selector,
 				     std::shared_ptr <builtin>>> const &stencil);
 
@@ -103,7 +104,7 @@ public:
   template <class T, class... As> void add_op_overload (As &&... arg);
   template <class T, class... As> void add_pred_overload (As &&... arg);
 
-  overload_instance instantiate ();
+  overload_instance instantiate (layout &l);
   overload_vec const &get_overloads () const { return m_overloads; }
 };
 
@@ -176,7 +177,7 @@ struct overloaded_op_builtin
 {
   using overloaded_builtin::overloaded_builtin;
 
-  std::shared_ptr <op> build_exec (std::shared_ptr <op> upstream)
+  std::shared_ptr <op> build_exec (layout &l, std::shared_ptr <op> upstream)
     const override final;
 
   std::shared_ptr <overloaded_builtin>
@@ -195,7 +196,7 @@ struct overloaded_pred_builtin
     , m_positive {positive}
   {}
 
-  std::unique_ptr <pred> build_pred () const override final;
+  std::unique_ptr <pred> build_pred (layout &l) const override final;
 
   std::shared_ptr <overloaded_builtin>
   create_merged (std::shared_ptr <overload_tab> tab) const override final;
@@ -233,7 +234,7 @@ overload_tab::add_op_overload (Args &&... args)
     {}
 
     std::shared_ptr <op>
-    build_exec (std::shared_ptr <op> upstream) const override final
+    build_exec (layout &l, std::shared_ptr <op> upstream) const override final
     {
       return overload_op_builder_impl <Op, Args...>::template build
 	(upstream, std::index_sequence_for <Args...> {}, m_args);
@@ -295,7 +296,7 @@ overload_tab::add_pred_overload (Args &&... args)
     {}
 
     std::unique_ptr <pred>
-    build_pred () const override final
+    build_pred (layout &l) const override final
     {
       return overload_pred_builder_impl <Pred, Args...>::template build
         (std::index_sequence_for <Args...> {}, m_args);

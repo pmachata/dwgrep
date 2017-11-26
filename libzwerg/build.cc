@@ -86,7 +86,7 @@ namespace
         }
 
       case tree_type::F_BUILTIN:
-        return t.m_builtin->build_pred ();
+        return t.m_builtin->build_pred (l);
 
       case tree_type::CAT:
       case tree_type::NOP:
@@ -170,7 +170,7 @@ namespace
         {
           if (auto pred = build_pred (t, l, rdv_ll, bn, up))
             return std::make_shared <op_assert> (upstream, std::move (pred));
-          auto op = t.m_builtin->build_exec (upstream);
+          auto op = t.m_builtin->build_exec (l, upstream);
           assert (op != nullptr);
           return op;
         }

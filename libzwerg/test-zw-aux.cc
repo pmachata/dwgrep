@@ -44,8 +44,8 @@ run_query (vocabulary &voc,
 	   std::unique_ptr <stack> stk, std::string q)
 {
   layout l;
-  std::shared_ptr <op> op = parse_query (voc, q)
-    .build_exec (l, std::make_shared <op_origin> (std::move (stk)));
+  auto origin = std::make_shared <op_origin> (std::move (stk));
+  auto op = parse_query (voc, q).build_exec (l, origin);
 
   std::vector <std::unique_ptr <stack>> yielded;
   while (auto r = op->next ())

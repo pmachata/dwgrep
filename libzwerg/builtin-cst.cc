@@ -85,7 +85,7 @@ namespace
 
 
 std::shared_ptr <op>
-builtin_constant::build_exec (std::shared_ptr <op> upstream) const
+builtin_constant::build_exec (layout &l, std::shared_ptr <op> upstream) const
 {
   return std::make_shared <op_const> (upstream, m_value->clone ());
 }
@@ -141,7 +141,7 @@ Though you can achieve the same effect with formatting directives
 
 
 std::shared_ptr <op>
-builtin_hex::build_exec (std::shared_ptr <op> upstream) const
+builtin_hex::build_exec (layout &l, std::shared_ptr <op> upstream) const
 {
   return std::make_shared <op_cast> (upstream, &hex_constant_dom);
 }
@@ -160,7 +160,7 @@ builtin_hex::docstring () const
 
 
 std::shared_ptr <op>
-builtin_dec::build_exec (std::shared_ptr <op> upstream) const
+builtin_dec::build_exec (layout &l, std::shared_ptr <op> upstream) const
 {
   return std::make_shared <op_cast> (upstream, &dec_constant_dom);
 }
@@ -179,7 +179,7 @@ builtin_dec::docstring () const
 
 
 std::shared_ptr <op>
-builtin_oct::build_exec (std::shared_ptr <op> upstream) const
+builtin_oct::build_exec (layout &l, std::shared_ptr <op> upstream) const
 {
   return std::make_shared <op_cast> (upstream, &oct_constant_dom);
 }
@@ -198,7 +198,7 @@ builtin_oct::docstring () const
 
 
 std::shared_ptr <op>
-builtin_bin::build_exec (std::shared_ptr <op> upstream) const
+builtin_bin::build_exec (layout &l, std::shared_ptr <op> upstream) const
 {
   return std::make_shared <op_cast> (upstream, &bin_constant_dom);
 }
@@ -217,7 +217,7 @@ builtin_bin::docstring () const
 
 
 std::unique_ptr <pred>
-builtin_pred_pos::build_pred () const
+builtin_pred_pos::build_pred (layout &l) const
 {
   return maybe_invert (std::make_unique <pred_pos> (m_pos), m_positive);
 }

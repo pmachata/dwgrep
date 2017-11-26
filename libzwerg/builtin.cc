@@ -1,4 +1,5 @@
 /*
+   Copyright (C) 2017 Petr Machata
    Copyright (C) 2014 Red Hat, Inc.
    This file is part of dwgrep.
 
@@ -37,13 +38,13 @@
 #include "value-cst.hh"
 
 std::unique_ptr <pred>
-builtin::build_pred () const
+builtin::build_pred (layout &l) const
 {
   return nullptr;
 }
 
 std::shared_ptr <op>
-builtin::build_exec (std::shared_ptr <op> upstream) const
+builtin::build_exec (layout &l, std::shared_ptr <op> upstream) const
 {
   return nullptr;
 }

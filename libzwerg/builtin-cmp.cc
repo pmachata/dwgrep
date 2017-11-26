@@ -146,7 +146,7 @@ always available.
 }
 
 std::unique_ptr <pred>
-builtin_eq::build_pred () const
+builtin_eq::build_pred (layout &l) const
 {
   return maybe_invert (std::make_unique <pred_eq> (), m_positive);
 }
@@ -168,7 +168,7 @@ builtin_eq::docstring () const
 
 
 std::unique_ptr <pred>
-builtin_lt::build_pred () const
+builtin_lt::build_pred (layout &l) const
 {
   return maybe_invert (std::make_unique <pred_lt> (), m_positive);
 }
@@ -190,7 +190,7 @@ builtin_lt::docstring () const
 
 
 std::unique_ptr <pred>
-builtin_gt::build_pred () const
+builtin_gt::build_pred (layout &l) const
 {
   return maybe_invert (std::make_unique <pred_gt> (), m_positive);
 }

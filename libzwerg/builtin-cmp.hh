@@ -1,4 +1,5 @@
 /*
+   Copyright (C) 2017 Petr Machata
    Copyright (C) 2014 Red Hat, Inc.
    This file is part of dwgrep.
 
@@ -36,7 +37,7 @@ struct builtin_eq
 {
   using pred_builtin::pred_builtin;
 
-  std::unique_ptr <pred> build_pred () const override;
+  std::unique_ptr <pred> build_pred (layout &l) const override;
 
   char const *name () const override;
   std::string docstring () const override;
@@ -47,7 +48,7 @@ struct builtin_lt
 {
   using pred_builtin::pred_builtin;
 
-  std::unique_ptr <pred> build_pred () const override;
+  std::unique_ptr <pred> build_pred (layout &l) const override;
 
   char const *name () const override;
   std::string docstring () const override;
@@ -58,7 +59,7 @@ struct builtin_gt
 {
   using pred_builtin::pred_builtin;
 
-  std::unique_ptr <pred> build_pred () const override;
+  std::unique_ptr <pred> build_pred (layout &l) const override;
 
   char const *name () const override;
   std::string docstring () const override;
