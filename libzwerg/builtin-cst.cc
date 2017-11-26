@@ -49,7 +49,7 @@ namespace
     {}
 
     stack::uptr
-    next (scon2 &sc) const override
+    next (scon &sc) const override
     {
       while (auto stk = m_upstream->next (sc))
 	{
@@ -231,7 +231,7 @@ builtin_pred_pos::docstring () const
 
 
 stack::uptr
-op_type::next (scon2 &sc) const
+op_type::next (scon &sc) const
 {
   if (auto stk = m_upstream->next (sc))
     {
@@ -256,7 +256,7 @@ as T_CONST, T_DIE, T_STR, etc.).
 }
 
 stack::uptr
-op_pos::next (scon2 &sc) const
+op_pos::next (scon &sc) const
 {
   if (auto stk = m_upstream->next (sc))
     {

@@ -29,7 +29,15 @@
 #include "scon.hh"
 #include "op.hh"
 
-scon_guard::scon_guard (scon2 &sc, op &op)
+scon::scon (layout const &l)
+  // 85 is 0b1010101, a pattern that's very unlikely to be valid data. If
+  // op::state_con is not called, this is likely to cause a loud & early
+  // failure. op_origin relies on this poisoning to detect that the state_con
+  // chain is interrupted.
+  : m_buf (l.size (), 85)
+{}
+
+scon_guard::scon_guard (scon &sc, op &op)
   : m_sc {sc}
   , m_op {op}
 {

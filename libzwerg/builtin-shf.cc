@@ -60,7 +60,7 @@ operators are present for completeness' sake.
 }
 
 stack::uptr
-op_drop::next (scon2 &sc) const
+op_drop::next (scon &sc) const
 {
   if (auto stk = m_upstream->next (sc))
     {
@@ -78,7 +78,7 @@ op_drop::docstring ()
 
 
 stack::uptr
-op_swap::next (scon2 &sc) const
+op_swap::next (scon &sc) const
 {
   if (auto stk = m_upstream->next (sc))
     {
@@ -99,7 +99,7 @@ op_swap::docstring ()
 
 
 stack::uptr
-op_dup::next (scon2 &sc) const
+op_dup::next (scon &sc) const
 {
   if (auto stk = m_upstream->next (sc))
     {
@@ -117,7 +117,7 @@ op_dup::docstring ()
 
 
 stack::uptr
-op_over::next (scon2 &sc) const
+op_over::next (scon &sc) const
 {
   if (auto stk = m_upstream->next (sc))
     {
@@ -135,7 +135,7 @@ op_over::docstring ()
 
 
 stack::uptr
-op_rot::next (scon2 &sc) const
+op_rot::next (scon &sc) const
 {
   if (auto stk = m_upstream->next (sc))
     {

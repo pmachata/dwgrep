@@ -50,11 +50,11 @@ public:
   virtual std::string name () const = 0;
 
   // Construct / destruct state for this op.
-  virtual void state_con (scon2 &sc) const = 0;
-  virtual void state_des (scon2 &sc) const = 0;
+  virtual void state_con (scon &sc) const = 0;
+  virtual void state_des (scon &sc) const = 0;
 
   // Produce next value.
-  virtual stack::uptr next (scon2 &sc) const = 0;
+  virtual stack::uptr next (scon &sc) const = 0;
 };
 
 template <class RT>
@@ -108,10 +108,10 @@ public:
     : m_upstream {upstream}
   {}
 
-  void state_con (scon2 &sc) const override
+  void state_con (scon &sc) const override
   { m_upstream->state_con (sc); }
 
-  void state_des (scon2 &sc) const override
+  void state_des (scon &sc) const override
   { m_upstream->state_des (sc); }
 };
 
@@ -120,7 +120,7 @@ public:
 class pred
 {
 public:
-  virtual pred_result result (scon2 &sc, stack &stk) const = 0;
+  virtual pred_result result (scon &sc, stack &stk) const = 0;
   virtual std::string name () const = 0;
   virtual ~pred () {}
 };
@@ -148,11 +148,11 @@ public:
   explicit op_origin (layout &l);
 
   std::string name () const override;
-  void state_con (scon2 &sc) const override;
-  void state_des (scon2 &sc) const override;
-  stack::uptr next (scon2 &sc) const override;
+  void state_con (scon &sc) const override;
+  void state_des (scon &sc) const override;
+  stack::uptr next (scon &sc) const override;
 
-  void set_next (scon2 &sc, stack::uptr s) const;
+  void set_next (scon &sc, stack::uptr s) const;
 };
 
 struct stub_op
@@ -176,7 +176,7 @@ struct op_nop
   {}
 
   std::string name () const override;
-  stack::uptr next (scon2 &sc) const override;
+  stack::uptr next (scon &sc) const override;
 };
 
 class op_assert
@@ -191,7 +191,7 @@ public:
   {}
 
   std::string name () const override;
-  stack::uptr next (scon2 &sc) const override;
+  stack::uptr next (scon &sc) const override;
 };
 
 // The stringer hieararchy supports op_format, which implements
@@ -207,9 +207,9 @@ class stringer
 {
 public:
   virtual ~stringer () {}
-  virtual void state_con (scon2 &sc) const = 0;
-  virtual void state_des (scon2 &sc) const = 0;
-  virtual std::pair <stack::uptr, std::string> next (scon2 &sc) const = 0;
+  virtual void state_con (scon &sc) const = 0;
+  virtual void state_des (scon &sc) const = 0;
+  virtual std::pair <stack::uptr, std::string> next (scon &sc) const = 0;
 };
 
 // The formatting starts here.  This uses a pattern similar to
@@ -225,11 +225,11 @@ class stringer_origin
 public:
   explicit stringer_origin (layout &l);
 
-  void state_con (scon2 &sc) const override;
-  void state_des (scon2 &sc) const override;
-  std::pair <stack::uptr, std::string> next (scon2 &sc) const override;
+  void state_con (scon &sc) const override;
+  void state_des (scon &sc) const override;
+  std::pair <stack::uptr, std::string> next (scon &sc) const override;
 
-  void set_next (scon2 &sc, stack::uptr s);
+  void set_next (scon &sc, stack::uptr s);
 };
 
 // A stringer for the literal parts (non-%s, non-%(%)) of the format
@@ -246,9 +246,9 @@ public:
     , m_str {str}
   {}
 
-  void state_con (scon2 &sc) const override;
-  void state_des (scon2 &sc) const override;
-  std::pair <stack::uptr, std::string> next (scon2 &sc) const override;
+  void state_con (scon &sc) const override;
+  void state_des (scon &sc) const override;
+  std::pair <stack::uptr, std::string> next (scon &sc) const override;
 };
 
 // A stringer for operational parts (%s, %(%)) of the format string.
@@ -267,9 +267,9 @@ public:
 	       std::shared_ptr <op_origin> origin,
 	       std::shared_ptr <op> op);
 
-  void state_con (scon2 &sc) const override;
-  void state_des (scon2 &sc) const override;
-  std::pair <stack::uptr, std::string> next (scon2 &sc) const override;
+  void state_con (scon &sc) const override;
+  void state_des (scon &sc) const override;
+  std::pair <stack::uptr, std::string> next (scon &sc) const override;
 };
 
 // A top-level format-string node.
@@ -288,9 +288,9 @@ public:
 	     std::shared_ptr <stringer> stringer);
 
   std::string name () const override;
-  void state_con (scon2 &sc) const override;
-  void state_des (scon2 &sc) const override;
-  stack::uptr next (scon2 &sc) const override;
+  void state_con (scon &sc) const override;
+  void state_des (scon &sc) const override;
+  stack::uptr next (scon &sc) const override;
 };
 
 class op_const
@@ -305,7 +305,7 @@ public:
   {}
 
   std::string name () const override;
-  stack::uptr next (scon2 &sc) const override;
+  stack::uptr next (scon &sc) const override;
 };
 
 // Tine is placed at the beginning of each alt expression.  These
@@ -344,9 +344,9 @@ public:
   {}
 
   std::string name () const override;
-  void state_con (scon2 &sc) const override {}
-  void state_des (scon2 &sc) const override {}
-  stack::uptr next (scon2 &sc) const override;
+  void state_con (scon &sc) const override {}
+  void state_des (scon &sc) const override {}
+  stack::uptr next (scon &sc) const override;
 };
 
 class op_merge
@@ -363,7 +363,7 @@ private:
   layout::loc m_ll;
   opvec_t m_ops;
 
-  state &get_state (scon2 &sc) const;
+  state &get_state (scon &sc) const;
   op &get_upstream () const;
 
 public:
@@ -376,9 +376,9 @@ public:
   }
 
   std::string name () const override;
-  void state_con (scon2 &sc) const override;
-  void state_des (scon2 &sc) const override;
-  stack::uptr next (scon2 &sc) const override;
+  void state_con (scon &sc) const override;
+  void state_des (scon &sc) const override;
+  stack::uptr next (scon &sc) const override;
 };
 
 class op_or
@@ -393,9 +393,9 @@ public:
   op_or (layout &l, std::shared_ptr <op> upstream);
 
   std::string name () const override;
-  void state_con (scon2 &sc) const override;
-  void state_des (scon2 &sc) const override;
-  stack::uptr next (scon2 &sc) const override;
+  void state_con (scon &sc) const override;
+  void state_des (scon &sc) const override;
+  stack::uptr next (scon &sc) const override;
 
   void
   add_branch (std::shared_ptr <op_origin> origin,
@@ -421,9 +421,9 @@ public:
   {}
 
   std::string name () const override;
-  void state_con (scon2 &sc) const override;
-  void state_des (scon2 &sc) const override;
-  stack::uptr next (scon2 &sc) const override;
+  void state_con (scon &sc) const override;
+  void state_des (scon &sc) const override;
+  stack::uptr next (scon &sc) const override;
 };
 
 
@@ -442,10 +442,10 @@ class op_tr_closure
   bool m_is_plus;
   layout::loc m_ll;
 
-  stack::uptr next_from_op (state &st, scon2 &sc) const;
-  stack::uptr next_from_upstream (state &st, scon2 &sc) const;
-  bool send_to_op (state &st, scon2 &sc, std::unique_ptr <stack> stk) const;
-  bool send_to_op (state &st, scon2 &sc) const;
+  stack::uptr next_from_op (state &st, scon &sc) const;
+  stack::uptr next_from_upstream (state &st, scon &sc) const;
+  bool send_to_op (state &st, scon &sc, std::unique_ptr <stack> stk) const;
+  bool send_to_op (state &st, scon &sc) const;
 
 public:
   op_tr_closure (layout &l,
@@ -455,17 +455,16 @@ public:
 		 op_tr_closure_kind k);
 
   std::string name () const override;
-  void state_con (scon2 &sc) const override;
-  void state_des (scon2 &sc) const override;
-  stack::uptr next (scon2 &sc) const override;
+  void state_con (scon &sc) const override;
+  void state_des (scon &sc) const override;
+  stack::uptr next (scon &sc) const override;
 };
 
 class op_subx
-  : public op
+  : public inner_op
 {
   class state;
 
-  std::shared_ptr <op> m_upstream;
   std::shared_ptr <op_origin> m_origin;
   std::shared_ptr <op> m_op;
   size_t m_keep;
@@ -479,9 +478,9 @@ public:
 	   size_t keep);
 
   std::string name () const override;
-  void state_con (scon2 &sc) const override;
-  void state_des (scon2 &sc) const override;
-  stack::uptr next (scon2 &sc) const override;
+  void state_con (scon &sc) const override;
+  void state_des (scon &sc) const override;
+  stack::uptr next (scon &sc) const override;
 };
 
 class op_f_debug
@@ -493,7 +492,7 @@ public:
   {}
 
   std::string name () const override;
-  stack::uptr next (scon2 &sc) const override;
+  stack::uptr next (scon &sc) const override;
 };
 
 class op_bind
@@ -506,12 +505,11 @@ public:
   explicit op_bind (layout &l, std::shared_ptr <op> upstream);
 
   std::string name () const override;
-  void state_con (scon2 &sc) const override;
-  void state_des (scon2 &sc) const override;
-  stack::uptr next (scon2 &sc) const override;
+  void state_con (scon &sc) const override;
+  void state_des (scon &sc) const override;
+  stack::uptr next (scon &sc) const override;
 
-  // xxx devirtualize
-  virtual std::unique_ptr <value> current (scon2 &sc) const;
+  std::unique_ptr <value> current (scon &sc) const;
 };
 
 class op_read
@@ -523,7 +521,7 @@ public:
   op_read (std::shared_ptr <op> upstream, op_bind &src);
 
   std::string name () const override;
-  stack::uptr next (scon2 &sc) const override;
+  stack::uptr next (scon &sc) const override;
 };
 
 class op_upread
@@ -536,7 +534,7 @@ public:
   op_upread (std::shared_ptr <op> upstream, unsigned id, layout::loc rdv_ll);
 
   std::string name () const override;
-  stack::uptr next (scon2 &sc) const override;
+  stack::uptr next (scon &sc) const override;
 };
 
 struct op_lex_closure
@@ -556,7 +554,7 @@ public:
 		  size_t n_upvalues);
 
   std::string name () const override;
-  stack::uptr next (scon2 &sc) const override;
+  stack::uptr next (scon &sc) const override;
 };
 
 class op_ifelse
@@ -587,9 +585,9 @@ public:
 	     std::shared_ptr <op> else_op);
 
   std::string name () const override;
-  void state_con (scon2 &sc) const override;
-  void state_des (scon2 &sc) const override;
-  stack::uptr next (scon2 &sc) const override;
+  void state_con (scon &sc) const override;
+  void state_des (scon &sc) const override;
+  stack::uptr next (scon &sc) const override;
 };
 
 
@@ -603,7 +601,7 @@ public:
     : m_a {std::move (a)}
   {}
 
-  pred_result result (scon2 &sc, stack &stk) const override;
+  pred_result result (scon &sc, stack &stk) const override;
   std::string name () const override;
 };
 
@@ -619,7 +617,7 @@ public:
     , m_b {std::move (b)}
   {}
 
-  pred_result result (scon2 &sc, stack &stk) const override;
+  pred_result result (scon &sc, stack &stk) const override;
   std::string name () const override;
 };
 
@@ -635,7 +633,7 @@ public:
     , m_b { std::move (b) }
   {}
 
-  pred_result result (scon2 &sc, stack &stk) const override;
+  pred_result result (scon &sc, stack &stk) const override;
   std::string name () const override;
 };
 
@@ -652,7 +650,7 @@ public:
     , m_origin {origin}
   {}
 
-  pred_result result (scon2 &sc, stack &stk) const override;
+  pred_result result (scon &sc, stack &stk) const override;
   std::string name () const override;
 };
 
@@ -675,7 +673,7 @@ public:
     , m_pred {std::move (pred)}
   {}
 
-  pred_result result (scon2 &sc, stack &stk) const override;
+  pred_result result (scon &sc, stack &stk) const override;
   std::string name () const override;
 };
 
@@ -689,7 +687,7 @@ public:
     : m_pos (pos)
   {}
 
-  pred_result result (scon2 &sc, stack &stk) const override;
+  pred_result result (scon &sc, stack &stk) const override;
   std::string name () const override;
 };
 

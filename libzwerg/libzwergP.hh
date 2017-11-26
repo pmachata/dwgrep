@@ -57,7 +57,7 @@ struct zw_query
 struct zw_result
 {
   std::shared_ptr <op> m_op;
-  scon2 m_sc;
+  scon m_sc;
   scon_guard m_sg;
 
   zw_result (layout const &l,

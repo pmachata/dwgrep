@@ -40,7 +40,7 @@
 struct op_apply::substate
 {
   std::unique_ptr <value_closure> m_value;
-  scon2 m_scon;
+  scon m_scon;
   scon_guard m_sg;
 
   substate (stack::uptr stk)
@@ -80,14 +80,14 @@ op_apply::name () const
 }
 
 void
-op_apply::state_con (scon2 &sc) const
+op_apply::state_con (scon &sc) const
 {
   sc.con <state> (m_ll);
   m_upstream->state_con (sc);
 }
 
 void
-op_apply::state_des (scon2 &sc) const
+op_apply::state_des (scon &sc) const
 {
   // xxx this looks like something that's written again and again, extract it
   // somewhere
@@ -96,7 +96,7 @@ op_apply::state_des (scon2 &sc) const
 }
 
 stack::uptr
-op_apply::next (scon2 &sc) const
+op_apply::next (scon &sc) const
 {
   state &st = sc.get <state> (m_ll);
   while (true)

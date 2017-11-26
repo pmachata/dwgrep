@@ -66,7 +66,7 @@ namespace
     : public pred
   {
     pred_result
-    result (scon2 &sc, stack &stk) const override
+    result (scon &sc, stack &stk) const override
     {
       return comparison_result (stk, cmp_result::equal);
     }
@@ -82,7 +82,7 @@ namespace
     : public pred
   {
     pred_result
-    result (scon2 &sc, stack &stk) const override
+    result (scon &sc, stack &stk) const override
     {
       return comparison_result (stk, cmp_result::less);
     }
@@ -98,7 +98,7 @@ namespace
     : public pred
   {
     pred_result
-    result (scon2 &sc, stack &stk) const override
+    result (scon &sc, stack &stk) const override
     {
       return comparison_result (stk, cmp_result::greater);
     }

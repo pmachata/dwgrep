@@ -122,9 +122,9 @@ public:
   overload_op (layout &l, std::shared_ptr <op> upstream,
 	       overload_instance ovl_inst);
 
-  void state_con (scon2 &sc) const override;
-  void state_des (scon2 &sc) const override;
-  stack::uptr next (scon2 &sc) const override final;
+  void state_con (scon &sc) const override;
+  void state_des (scon &sc) const override;
+  stack::uptr next (scon &sc) const override final;
 };
 
 class overload_pred
@@ -136,7 +136,7 @@ public:
     : m_ovl_inst {ovl_inst}
   {}
 
-  pred_result result (scon2 &sc, stack &stk) const override final;
+  pred_result result (scon &sc, stack &stk) const override final;
 };
 
 // Base class for overloaded builtins.
@@ -406,7 +406,7 @@ public:
   {}
 
   stack::uptr
-  next (scon2 &sc) const override final
+  next (scon &sc) const override final
   {
     while (auto stk = this->m_upstream->next (sc))
       if (auto nv = call_operate
@@ -450,7 +450,7 @@ public:
   {}
 
   stack::uptr
-  next (scon2 &sc) const override final
+  next (scon &sc) const override final
   {
     if (auto stk = this->m_upstream->next (sc))
       {
@@ -503,21 +503,21 @@ public:
   {}
 
   void
-  state_con (scon2 &sc) const override final
+  state_con (scon &sc) const override final
   {
     sc.con <state> (m_ll);
     m_upstream->state_con (sc);
   }
 
   void
-  state_des (scon2 &sc) const override final
+  state_des (scon &sc) const override final
   {
     m_upstream->state_des (sc);
     sc.des <state> (m_ll);
   }
 
   stack::uptr
-  next (scon2 &sc) const override final
+  next (scon &sc) const override final
   {
     state &st = sc.get <state> (m_ll);
 
@@ -592,7 +592,7 @@ struct pred_overload
 
 public:
   pred_result
-  result (scon2 &sc, stack &stk) const override
+  result (scon &sc, stack &stk) const override
   {
     return call_result (std::index_sequence_for <VT...> {},
 			collect <sizeof... (VT), VT...> (stk));

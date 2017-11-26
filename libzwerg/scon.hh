@@ -34,7 +34,7 @@
 
 #include "layout.hh"
 
-class scon2
+class scon
 {
   std::vector <uint8_t> m_buf;
 
@@ -45,9 +45,7 @@ class scon2
   }
 
 public:
-  scon2 (layout const &l)
-    : m_buf (l.size ())
-  {}
+  scon (layout const &l);
 
   template <class State>
   State &
@@ -82,10 +80,10 @@ public:
 class op;
 struct scon_guard
 {
-  scon2 &m_sc;
+  scon &m_sc;
   op &m_op;
 
-  scon_guard (scon2 &sc, op &op);
+  scon_guard (scon &sc, op &op);
   ~scon_guard ();
 };
 

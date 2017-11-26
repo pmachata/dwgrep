@@ -49,7 +49,8 @@ run_query (vocabulary &voc,
   layout l;
   auto origin = std::make_shared <op_origin> (l);
   auto op = parse_query (voc, q).build_exec (l, origin);
-  scon2 sc {l};
+
+  scon sc {l};
 
   std::vector <std::unique_ptr <stack>> yielded;
   while (auto r = op->next (sc))

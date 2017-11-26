@@ -51,9 +51,9 @@ public:
   op_apply (layout &l, std::shared_ptr <op> upstream, bool skip_non_closures = false);
 
   std::string name () const override;
-  void state_con (scon2 &sc) const override;
-  void state_des (scon2 &sc) const override;
-  stack::uptr next (scon2 &sc) const override;
+  void state_con (scon &sc) const override;
+  void state_des (scon &sc) const override;
+  stack::uptr next (scon &sc) const override;
 
   // Rendezvous state. Rendezvous is an area at the beginning of substate where
   // the closure being executed is stored.

@@ -168,21 +168,21 @@ overload_op::overload_op (layout &l, std::shared_ptr <op> upstream,
 {}
 
 void
-overload_op::state_con (scon2 &sc) const
+overload_op::state_con (scon &sc) const
 {
   sc.con <state> (m_ll);
   m_upstream->state_con (sc);
 }
 
 void
-overload_op::state_des (scon2 &sc) const
+overload_op::state_des (scon &sc) const
 {
   m_upstream->state_des (sc);
   sc.des <state> (m_ll);
 }
 
 stack::uptr
-overload_op::next (scon2 &sc) const
+overload_op::next (scon &sc) const
 {
   state &st = sc.get <state> (m_ll);
   while (true)
@@ -215,7 +215,7 @@ overload_op::next (scon2 &sc) const
 
 
 pred_result
-overload_pred::result (scon2 &sc, stack &stk) const
+overload_pred::result (scon &sc, stack &stk) const
 {
   auto ovl = m_ovl_inst.find_pred (stk);
   if (ovl == nullptr)
