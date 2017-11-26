@@ -886,7 +886,7 @@ op_ifelse::name () const
 
 
 pred_result
-pred_not::result (stack &stk)
+pred_not::result (stack &stk) const
 {
   return ! m_a->result (stk);
 }
@@ -899,7 +899,7 @@ pred_not::name () const
 
 
 pred_result
-pred_and::result (stack &stk)
+pred_and::result (stack &stk) const
 {
   return m_a->result (stk) && m_b->result (stk);
 }
@@ -912,7 +912,7 @@ pred_and::name () const
 
 
 pred_result
-pred_or::result (stack &stk)
+pred_or::result (stack &stk) const
 {
   return m_a->result (stk) || m_b->result (stk);
 }
@@ -924,7 +924,7 @@ pred_or::name () const
 }
 
 pred_result
-pred_subx_any::result (stack &stk)
+pred_subx_any::result (stack &stk) const
 {
   m_op->reset ();
   m_origin->set_next (std::make_unique <stack> (stk));
@@ -948,7 +948,7 @@ pred_subx_any::reset ()
 
 
 pred_result
-pred_subx_compare::result (stack &stk)
+pred_subx_compare::result (stack &stk) const
 {
   m_op1->reset ();
   m_origin->set_next (std::make_unique <stack> (stk));
@@ -987,7 +987,7 @@ pred_subx_compare::reset ()
 }
 
 pred_result
-pred_pos::result (stack &stk)
+pred_pos::result (stack &stk) const
 {
     auto const &value = stk.top ();
     return value.get_pos () == m_pos ? pred_result::yes : pred_result::no;

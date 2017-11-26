@@ -111,7 +111,7 @@ public:
 class pred
 {
 public:
-  virtual pred_result result (stack &stk) = 0;
+  virtual pred_result result (stack &stk) const = 0;
   virtual std::string name () const = 0;
   virtual void reset () = 0;
   virtual ~pred () {}
@@ -612,7 +612,7 @@ public:
     : m_a {std::move (a)}
   {}
 
-  pred_result result (stack &stk) override;
+  pred_result result (stack &stk) const override;
   std::string name () const override;
 
   void reset () override
@@ -631,7 +631,7 @@ public:
     , m_b {std::move (b)}
   {}
 
-  pred_result result (stack &stk) override;
+  pred_result result (stack &stk) const override;
   std::string name () const override;
 
   void reset () override
@@ -653,7 +653,7 @@ public:
     , m_b { std::move (b) }
   {}
 
-  pred_result result (stack &stk) override;
+  pred_result result (stack &stk) const override;
   std::string name () const override;
 
   void reset () override
@@ -676,7 +676,7 @@ public:
     , m_origin {origin}
   {}
 
-  pred_result result (stack &stk) override;
+  pred_result result (stack &stk) const override;
   std::string name () const override;
   void reset () override;
 };
@@ -700,7 +700,7 @@ public:
     , m_pred {std::move (pred)}
   {}
 
-  pred_result result (stack &stk) override;
+  pred_result result (stack &stk) const override;
   std::string name () const override;
   void reset () override;
 };
@@ -719,7 +719,7 @@ public:
   reset () override
   {}
 
-  pred_result result (stack &stk) override;
+  pred_result result (stack &stk) const override;
   std::string name () const override;
 };
 

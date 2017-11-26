@@ -70,7 +70,7 @@ namespace
 }
 
 std::pair <std::shared_ptr <op_origin>, std::shared_ptr <op>>
-overload_instance::find_exec (stack &stk)
+overload_instance::find_exec (stack &stk) const
 {
   ssize_t idx = find_selector (selector {stk}, m_selectors);
   if (idx < 0)
@@ -80,7 +80,7 @@ overload_instance::find_exec (stack &stk)
 }
 
 std::shared_ptr <pred>
-overload_instance::find_pred (stack &stk)
+overload_instance::find_pred (stack &stk) const
 {
   ssize_t idx = find_selector (selector {stk}, m_selectors);
   if (idx < 0)
@@ -117,7 +117,7 @@ show_expects (std::string const &name, std::vector <selector> selectors,
 }
 
 void
-overload_instance::show_error (std::string const &name, selector profile)
+overload_instance::show_error (std::string const &name, selector profile) const
 {
   return show_expects (name, m_selectors, profile);
 }
@@ -200,7 +200,7 @@ overload_op::reset ()
 }
 
 pred_result
-overload_pred::result (stack &stk)
+overload_pred::result (stack &stk) const
 {
   auto ovl = m_ovl_inst.find_pred (stk);
   if (ovl == nullptr)

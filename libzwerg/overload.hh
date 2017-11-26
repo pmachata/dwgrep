@@ -79,11 +79,10 @@ public:
 				     std::shared_ptr <builtin>>> const &stencil);
 
   std::pair <std::shared_ptr <op_origin>, std::shared_ptr <op>>
-    find_exec (stack &stk);
+    find_exec (stack &stk) const;
+  std::shared_ptr <pred> find_pred (stack &stk) const;
 
-  std::shared_ptr <pred> find_pred (stack &stk);
-
-  void show_error (std::string const &name, selector profile);
+  void show_error (std::string const &name, selector profile) const;
 };
 
 struct overload_tab
@@ -138,7 +137,7 @@ public:
   reset () override final
   {}
 
-  pred_result result (stack &stk) override final;
+  pred_result result (stack &stk) const override final;
 };
 
 // Base class for overloaded builtins.
@@ -396,7 +395,7 @@ struct op_overload
   template <size_t... I>
   std::unique_ptr <RT>
   call_operate (std::index_sequence <I...>,
-		std::tuple <std::unique_ptr <VT>...> args)
+		std::tuple <std::unique_ptr <VT>...> args) const
   {
     return operate (std::move (std::get <I> (args))...);
   }
@@ -440,7 +439,7 @@ struct op_once_overload
   template <size_t... I>
   RT
   call_operate (std::index_sequence <I...>,
-		std::tuple <std::unique_ptr <VT>...> args)
+		std::tuple <std::unique_ptr <VT>...> args) const
   {
     return operate (std::move (std::get <I> (args))...);
   }
@@ -484,7 +483,7 @@ class op_yielding_overload
   template <size_t... I>
   std::unique_ptr <value_producer <RT>>
   call_operate (std::index_sequence <I...>,
-		std::tuple <std::unique_ptr <VT>...> args)
+		std::tuple <std::unique_ptr <VT>...> args) const
   {
     return operate (std::move (std::get <I> (args))...);
   }
@@ -577,14 +576,14 @@ struct pred_overload
 
   template <size_t... I>
   pred_result
-  call_result (std::index_sequence <I...>, std::tuple <VT &...> args)
+  call_result (std::index_sequence <I...>, std::tuple <VT &...> args) const
   {
     return result (std::get <I> (args)...);
   }
 
 public:
   pred_result
-  result (stack &stk) override
+  result (stack &stk) const override
   {
     return call_result (std::index_sequence_for <VT...> {},
 			collect <sizeof... (VT), VT...> (stk));
