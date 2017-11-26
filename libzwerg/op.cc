@@ -394,7 +394,7 @@ op_tine::name () const
 
 
 op_merge::op_merge (layout &l, std::shared_ptr <op> upstream)
-  : m_upstream {upstream}
+  : inner_op {upstream}
   , m_ll {l.reserve <state> ()}
 {}
 
@@ -416,13 +416,13 @@ op_merge::state_con (scon &sc) const
   sc.con <state> (m_ll, m_ops.size ());
   for (auto const &branch: m_ops)
     branch->state_con (sc);
-  m_upstream->state_con (sc);
+  inner_op::state_con (sc);
 }
 
 void
 op_merge::state_des (scon &sc) const
 {
-  m_upstream->state_des (sc);
+  inner_op::state_des (sc);
   for (auto const &branch: m_ops)
     branch->state_des (sc);
   sc.des <state> (m_ll);
@@ -737,7 +737,7 @@ op_subx::op_subx (layout &l,
 		  std::shared_ptr <op_origin> origin,
 		  std::shared_ptr <op> op,
 		  size_t keep)
-  : m_upstream {upstream}
+  : inner_op {upstream}
   , m_origin {origin}
   , m_op {op}
   , m_keep {keep}
@@ -755,13 +755,13 @@ op_subx::state_con (scon &sc) const
 {
   sc.con <state> (m_ll);
   m_op->state_con (sc);
-  m_upstream->state_con (sc);
+  inner_op::state_con (sc);
 }
 
 void
 op_subx::state_des (scon &sc) const
 {
-  m_upstream->state_des (sc);
+  inner_op::state_des (sc);
   m_op->state_des (sc);
   sc.des <state> (m_ll);
 }

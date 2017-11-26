@@ -350,7 +350,7 @@ public:
 };
 
 class op_merge
-  : public op
+  : public inner_op
 {
   friend class op_tine;
 
@@ -359,7 +359,6 @@ public:
 
 private:
   struct state;
-  std::shared_ptr <op> m_upstream;
   layout::loc m_ll;
   opvec_t m_ops;
 
@@ -415,7 +414,7 @@ public:
   op_capture (std::shared_ptr <op> upstream,
 	      std::shared_ptr <op_origin> origin,
 	      std::shared_ptr <op> op)
-    : inner_op (upstream)
+    : inner_op {upstream}
     , m_origin {origin}
     , m_op {op}
   {}
@@ -487,9 +486,7 @@ class op_f_debug
   : public inner_op
 {
 public:
-  explicit op_f_debug (std::shared_ptr <op> upstream)
-    : inner_op (upstream)
-  {}
+  using inner_op::inner_op;
 
   std::string name () const override;
   stack::uptr next (scon &sc) const override;
