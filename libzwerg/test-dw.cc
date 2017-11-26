@@ -627,21 +627,25 @@ namespace
   void
   test_builtin_constant (vocabulary &builtins, char const *name)
   {
-#if 0
+    layout l;
     auto bi = builtins.find (name);
     ASSERT_TRUE (bi != nullptr);
-    auto op = bi->build_exec
-      (std::make_shared <op_origin> (std::make_unique <stack> ()));
+    auto origin = std::make_shared <op_origin> (l);
+    auto op = bi->build_exec (l, origin);
+
+    scon sc {l};
+    scon_guard sg {sc, *op};
+    origin->set_next (sc, std::make_unique <stack> ());
+
     ASSERT_TRUE (op != nullptr);
-    auto stk = op->next ();
+    auto stk = op->next (sc);
     ASSERT_TRUE (stk != nullptr);
     ASSERT_EQ (1, stk->size ());
     auto val = stk->pop ();
     ASSERT_TRUE (val->is <value_cst> ());
     ASSERT_EQ (&slot_type_dom,
 	       value::as <value_cst> (val.get ())->get_constant ().dom ());
-    ASSERT_TRUE (op->next () == nullptr);
-#endif
+    ASSERT_TRUE (op->next (sc) == nullptr);
   }
 }
 

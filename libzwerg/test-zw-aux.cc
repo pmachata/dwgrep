@@ -51,6 +51,8 @@ run_query (vocabulary &voc,
   auto op = parse_query (voc, q).build_exec (l, origin);
 
   scon sc {l};
+  scon_guard sg {sc, *op};
+  origin->set_next (sc, std::move (stk));
 
   std::vector <std::unique_ptr <stack>> yielded;
   while (auto r = op->next (sc))

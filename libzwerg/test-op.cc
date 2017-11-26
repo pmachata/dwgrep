@@ -51,21 +51,25 @@ namespace
   void
   test_closure (op_tr_closure_kind k, size_t offset)
   {
-#if 0
-    auto origin = std::make_shared <op_origin> (nullptr);
-    auto inner = std::make_shared <op_const>
-      (origin, std::make_unique <value_cst> (constant {0, &dec_constant_dom}, 0));
+    layout l;
+    auto v = std::make_unique <value_cst> (constant {0, &dec_constant_dom}, 0);
+    auto inner_origin = std::make_shared <op_origin> (l);
+    auto inner = std::make_shared <op_const> (inner_origin, std::move (v));
 
-    op_tr_closure closure {std::make_shared <op_origin> (std::make_unique <stack> ()),
-			   origin, inner, k};
+    auto outer_origin = std::make_shared <op_origin> (l);
+    auto outer = std::make_shared <op_tr_closure> (l, outer_origin,
+						   inner_origin, inner, k);
+
+    scon sc {l};
+    scon_guard sg {sc, *outer};
+    outer_origin->set_next (sc, std::make_unique <stack> ());
 
     for (size_t i = 0; i < 20; ++i)
       {
-	auto stk = closure.next ();
+	auto stk = outer->next (sc);
 	ASSERT_TRUE (stk != nullptr);
 	EXPECT_EQ (i + offset, stk->size ());
       }
-#endif
   }
 }
 
@@ -84,21 +88,24 @@ namespace
   void
   test_closure_closure (op_tr_closure_kind k)
   {
-#if 0
+    layout l;
     auto v = std::make_unique <value_cst> (constant {0, &dec_constant_dom}, 0);
-    auto inner_origin = std::make_shared <op_origin> (nullptr);
+    auto inner_origin = std::make_shared <op_origin> (l);
     auto inner = std::make_shared <op_const> (inner_origin, std::move (v));
 
-    auto outer_origin = std::make_shared <op_origin> (nullptr);
-    auto outer = std::make_shared <op_tr_closure> (outer_origin,
-						   inner_origin, inner, k);
+    auto mid_origin = std::make_shared <op_origin> (l);
+    auto mid = std::make_shared <op_tr_closure> (l, mid_origin,
+						 inner_origin, inner, k);
 
-    op_tr_closure closure {std::make_shared <op_origin> (std::make_unique <stack> ()),
-			   outer_origin, outer, k};
+    auto outer_origin = std::make_shared <op_origin> (l);
+    auto outer = std::make_shared <op_tr_closure> (l, outer_origin,
+						   mid_origin, mid, k);
+    scon sc {l};
+    scon_guard sg {sc, *outer};
+    outer_origin->set_next (sc, std::make_unique <stack> ());
 
     for (size_t i = 0; i < 20; ++i)
-      ASSERT_TRUE (closure.next () != nullptr);
-#endif
+      ASSERT_TRUE (outer->next (sc) != nullptr);
   }
 }
 
