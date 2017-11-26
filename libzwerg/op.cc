@@ -870,21 +870,13 @@ op_bind::current (scon2 &sc) const
 }
 
 
-op_rawread::op_rawread (std::shared_ptr <op> upstream, op_bind &src)
+op_read::op_read (std::shared_ptr <op> upstream, op_bind &src)
   : inner_op {upstream}
   , m_src {src}
 {}
 
-std::string
-op_rawread::name () const
-{
-  std::stringstream ss;
-  ss << "rawread<" << &m_src << ">";
-  return ss.str ();
-}
-
 stack::uptr
-op_rawread::next (scon2 &sc) const
+op_read::next (scon &sc) const
 {
   if (auto stk = m_upstream->next (sc))
     {

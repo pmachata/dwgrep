@@ -118,7 +118,7 @@ namespace
 	      bindings &bn, uprefs &up, layout::loc rdv_ll)
   {
     if (op_bind *src = bn.find (name))
-      return std::make_shared <op_rawread> (upstream, *src);
+      return std::make_shared <op_read> (upstream, *src);
 
     auto refid = up.find (name);
     if (refid.first)

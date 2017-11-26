@@ -514,13 +514,13 @@ public:
   virtual std::unique_ptr <value> current (scon2 &sc) const;
 };
 
-class op_rawread
+class op_read
   : public inner_op
 {
   op_bind &m_src;
 
 public:
-  op_rawread (std::shared_ptr <op> upstream, op_bind &src);
+  op_read (std::shared_ptr <op> upstream, op_bind &src);
 
   std::string name () const override;
   stack::uptr next (scon2 &sc) const override;
