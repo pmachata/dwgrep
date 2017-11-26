@@ -32,7 +32,6 @@
 
 #include <memory>
 #include <cassert>
-#include <iostream>
 
 #include "stack.hh"
 #include "pred_result.hh"
@@ -96,7 +95,6 @@ struct value_producer_cat
 };
 
 // An op that's not an origin has an upstream.
-// xxx drop it, doesn't look it encaps useful behavior
 class inner_op
   : public op
 {
@@ -168,9 +166,10 @@ struct stub_pred
   std::string name () const override final { return "stub"; }
 };
 
-struct op_nop
+class op_nop
   : public inner_op
 {
+public:
   explicit op_nop (std::shared_ptr <op> upstream)
     : inner_op {upstream}
   {}
@@ -299,7 +298,7 @@ class op_const
   std::unique_ptr <value> m_value;
 
 public:
-  op_const (std::shared_ptr <op> upstream, std::unique_ptr <value> &&value)
+  op_const (std::shared_ptr <op> upstream, std::unique_ptr <value> value)
     : inner_op (upstream)
     , m_value {std::move (value)}
   {}

@@ -133,8 +133,6 @@ namespace
 	      std::shared_ptr <op> upstream,
 	      bindings &bn, uprefs &up)
   {
-    assert (upstream != nullptr);
-
     switch (t.m_tt)
       {
       case tree_type::CAT:

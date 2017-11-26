@@ -42,8 +42,8 @@ class op_apply
   struct state;
   struct substate;
   std::shared_ptr <op> m_upstream;
-  layout::loc m_ll;
   bool m_skip_non_closures;
+  layout::loc m_ll;
 
 public:
   // When skip_non_closures is true and the incoming stack doesn't have a

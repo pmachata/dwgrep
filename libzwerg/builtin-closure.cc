@@ -69,8 +69,8 @@ struct op_apply::state
 op_apply::op_apply (layout &l, std::shared_ptr <op> upstream,
 		    bool skip_non_closures)
   : m_upstream {upstream}
-  , m_ll {l.reserve <state> ()}
   , m_skip_non_closures {skip_non_closures}
+  , m_ll {l.reserve <state> ()}
 {}
 
 std::string
@@ -89,8 +89,6 @@ op_apply::state_con (scon &sc) const
 void
 op_apply::state_des (scon &sc) const
 {
-  // xxx this looks like something that's written again and again, extract it
-  // somewhere
   m_upstream->state_des (sc);
   sc.des <state> (m_ll);
 }

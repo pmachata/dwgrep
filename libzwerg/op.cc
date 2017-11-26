@@ -684,7 +684,6 @@ op_tr_closure::send_to_op (state &st, scon &sc,
   if (stk == nullptr)
     return false;
 
-  //m_op->reset ();
   m_origin->set_next (sc, std::move (stk));
   st.m_op_drained = false;
   return true;
@@ -744,12 +743,6 @@ op_subx::op_subx (layout &l,
   , m_ll {l.reserve <state> ()}
 {}
 
-std::string
-op_subx::name () const
-{
-  return std::string ("subx<") + m_op->name () + ">";
-}
-
 void
 op_subx::state_con (scon &sc) const
 {
@@ -795,6 +788,12 @@ op_subx::next (scon &sc) const
 
       st.m_stk = nullptr;
     }
+}
+
+std::string
+op_subx::name () const
+{
+  return std::string ("subx<") + m_op->name () + ">";
 }
 
 
@@ -883,6 +882,14 @@ op_read::next (scon &sc) const
     }
   else
     return nullptr;
+}
+
+std::string
+op_read::name () const
+{
+  std::stringstream ss;
+  ss << "read<" << &m_src << ">";
+  return ss.str ();
 }
 
 
@@ -1107,18 +1114,18 @@ pred_subx_compare::result (scon &sc, stack &stk) const
 {
   scon_guard sg {sc, *m_op1};
   m_origin->set_next (sc, std::make_unique <stack> (stk));
-  while (auto stk1 = m_op1->next (sc))
+  while (auto stk_1 = m_op1->next (sc))
     {
       scon_guard sg {sc, *m_op2};
       m_origin->set_next (sc, std::make_unique <stack> (stk));
-      while (auto stk2 = m_op2->next (sc))
+      while (auto stk_2 = m_op2->next (sc))
 	{
-	  stk1->push (stk2->pop ());
+	  stk_1->push (stk_2->pop ());
 
-	  if (m_pred->result (sc, *stk1) == pred_result::yes)
+	  if (m_pred->result (sc, *stk_1) == pred_result::yes)
 	    return pred_result::yes;
 
-	  stk1->pop ();
+	  stk_1->pop ();
 	}
     }
 
