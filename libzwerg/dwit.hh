@@ -32,6 +32,7 @@
 #include <vector>
 #include <cassert>
 #include <algorithm>
+#include <memory>
 #include <dwarf.h>
 
 #include "dwpp.hh"
@@ -154,7 +155,7 @@ class all_dies_iterator
   : public std::iterator<std::input_iterator_tag, Dwarf_Die *>
 {
   cu_iterator m_cuit;
-  std::vector<Dwarf_Off> m_stack;
+  std::shared_ptr< std::vector<Dwarf_Off> > m_stack;
   Dwarf_Die m_die;
 
   all_dies_iterator (Dwarf_Off offset);

@@ -80,7 +80,7 @@ zw_vocabulary_core (zw_error **out_err)
 
 extern "C" bool
 zw_vocabulary_add (zw_vocabulary *voc, zw_vocabulary const *to_add,
-		   zw_error **out_err)
+       zw_error **out_err)
 {
   assert (voc != nullptr);
   assert (to_add != nullptr);
@@ -92,6 +92,45 @@ zw_vocabulary_add (zw_vocabulary *voc, zw_vocabulary const *to_add,
     }, false, out_err);
 }
 
+namespace
+{
+  // Keep a few zw_stacks around for reuse. This does not give back memory for m_values, taking
+  // pressure off of malloc/free
+  class stack_cache
+  {
+    zw_stack* stacks[16] = {nullptr}; // A stack of stacks
+    size_t end = 0;
+  public:
+    ~stack_cache()
+    {
+      // Free all that we took
+      for ( size_t i = 0; i < end; ++i )
+        delete stacks[ i ];
+    }
+
+    zw_stack* aquire()
+    {
+      if ( end == 0 )
+        return new zw_stack;
+      else
+        return stacks[ --end ];
+    }
+
+    void release( zw_stack *stack )
+    {
+      if ( end == 16 )
+      {
+        delete stack;
+      }
+      else
+      {
+        stack->m_values.clear();
+        stacks[ end++ ] = stack;
+      }
+    }
+  };
+  static stack_cache m_stack_cache;
+}
 
 zw_stack *
 zw_stack_init (zw_error **out_err)
@@ -104,7 +143,7 @@ zw_stack_init (zw_error **out_err)
 void
 zw_stack_destroy (zw_stack *stack)
 {
-  delete stack;
+  m_stack_cache.release( stack );
 }
 
 bool
@@ -142,15 +181,15 @@ zw_stack_at (zw_stack const *stack, size_t depth)
 
 zw_query *
 zw_query_parse (zw_vocabulary const *voc, char const *query,
-		zw_error **out_err)
+    zw_error **out_err)
 {
   return zw_query_parse_len (voc, query, strlen (query), out_err);
 }
 
 zw_query *
 zw_query_parse_len (zw_vocabulary const *voc,
-		    char const *query, size_t query_len,
-		    zw_error **out_err)
+        char const *query, size_t query_len,
+        zw_error **out_err)
 {
   return capture_errors ([&] () {
       tree t = parse_query (*voc->m_voc, {query, query_len});
@@ -180,12 +219,12 @@ zw_value_destroy (zw_value *value)
 
 zw_result *
 zw_query_execute (zw_query const *query, zw_stack const *input_stack,
-		  zw_error **out_err)
+      zw_error **out_err)
 {
   return capture_errors ([&] () {
       auto stk = std::make_unique <stack> ();
       for (auto const &emt: input_stack->m_values)
-	stk->push (emt->clone ());
+  stk->push (emt->clone ());
       auto upstream = std::make_shared <op_origin> (std::move (stk));
       return new zw_result { query->m_query.build_exec (upstream) };
     }, nullptr, out_err);
@@ -197,21 +236,21 @@ zw_result_next (zw_result *result, zw_stack **out_stack, zw_error **out_err)
   return capture_errors ([&] () {
       std::unique_ptr <stack> ret = result->m_op->next ();
       if (ret == nullptr)
-	{
-	  *out_stack = nullptr;
-	  return true;
-	}
+  {
+    *out_stack = nullptr;
+    return true;
+  }
 
       size_t sz = ret->size ();
 
-      std::vector <std::unique_ptr <zw_value>> values;
+      *out_stack = m_stack_cache.aquire();
+      auto &values = (*out_stack)->m_values;
       values.resize (sz);
 
       auto it = values.rbegin ();
       for (size_t i = 0; i < sz; ++i)
-	*it++ = ret->pop ();
+        *it++ = ret->pop ();
 
-      *out_stack = new zw_stack { std::move (values) };
       return true;
     }, false, out_err);
 }
@@ -350,36 +389,36 @@ namespace
   init_const (T i, zw_cdom const *dom, size_t pos, zw_error **out_err)
   {
     return capture_errors ([&] () {
-	constant cst {i, dom};
-	return new value_cst {cst, pos};
+  constant cst {i, dom};
+  return new value_cst {cst, pos};
       }, nullptr, out_err);
   }
 }
 
 zw_value *
 zw_value_init_const_i64 (int64_t i, zw_cdom const *dom,
-			 size_t pos, zw_error **out_err)
+       size_t pos, zw_error **out_err)
 {
   return init_const (i, dom, pos, out_err);
 }
 
 zw_value *
 zw_value_init_const_u64 (uint64_t i, zw_cdom const *dom,
-			 size_t pos, zw_error **out_err)
+       size_t pos, zw_error **out_err)
 {
   return init_const (i, dom, pos, out_err);
 }
 
 zw_value *
 zw_value_init_str (char const *str, size_t pos,
-		   zw_error **out_err)
+       zw_error **out_err)
 {
   return zw_value_init_str_len (str, strlen (str), pos, out_err);
 }
 
 zw_value *
 zw_value_init_str_len (char const *cstr, size_t len, size_t pos,
-		       zw_error **out_err)
+           zw_error **out_err)
 {
   return capture_errors ([&] () {
       std::string str {cstr, len};
