@@ -32,7 +32,6 @@
 #include <memory>
 
 #include "op.hh"
-#include "scope.hh"
 #include "tree.hh"
 #include "value-cst.hh"
 #include "value-seq.hh"
@@ -114,12 +113,26 @@ namespace
   }
 
   std::shared_ptr <op>
+  build_read (std::string name,
+	      std::shared_ptr <op> upstream,
+	      bindings &bn, uprefs &up, layout::loc rdv_ll)
+  {
+    if (op_bind *src = bn.find (name))
+      return std::make_shared <op_read> (upstream, *src);
+
+    auto refid = up.find (name);
+    if (refid.first)
+      return std::make_shared <op_upread> (upstream, refid.second, rdv_ll);
+
+    throw std::runtime_error
+      (std::string () + "Attempt to read an unbound name `" + name + "'");
+  }
+
+  std::shared_ptr <op>
   build_exec (tree const &t, layout &l, layout::loc rdv_ll,
 	      std::shared_ptr <op> upstream,
 	      bindings &bn, uprefs &up)
   {
-    assert (upstream != nullptr);
-
     switch (t.m_tt)
       {
       case tree_type::CAT:
@@ -243,30 +256,42 @@ namespace
       case tree_type::SCOPE:
         {
           bindings scope {bn};
-          auto origin = std::make_shared <op_origin> (l);
-          auto op = build_exec (t.child (0), l, rdv_ll, origin, scope, up);
-          return std::make_shared <op_scope> (l, upstream, origin, op,
-                                              t.scp ()->num_names ());
+          return build_exec (t.child (0), l, rdv_ll, upstream, scope, up);
         }
 
       case tree_type::BLOCK:
-        assert (t.scp () == nullptr);
-        return std::make_shared <op_lex_closure> (upstream, t.child (0));
+	{
+	  uprefs inner_up {bn, up};
+	  bindings inner_bn;
+	  layout inner_l;
+	  layout::loc inner_rdv_ll = op_apply::reserve_rendezvous (inner_l);
+	  auto origin = std::make_shared <op_origin> (inner_l);
+	  auto op = build_exec (t.child (0), inner_l, inner_rdv_ll, origin,
+				inner_bn, inner_up);
+
+	  std::map <unsigned, std::string> refd_names = inner_up.refd_names ();
+	  // Walk the refd names in backward order of their ID, so that
+	  // op_lex_closure can pop the upvalues from the stack in natural
+	  // order.
+	  for (auto it = refd_names.rbegin (); it != refd_names.rend (); ++it)
+	    upstream = build_read (it->second, upstream, bn, up, rdv_ll);
+
+
+	  return std::make_shared <op_lex_closure> (upstream, inner_l,
+						    inner_rdv_ll, origin, op,
+						    refd_names.size ());
+	}
 
       case tree_type::BIND:
         {
-          auto ret = std::make_shared <op_bind> (upstream,
-                                                 t.cst ().value ().uval (),
-                                                 t.scp ()->index (t.str ()));
+          auto ret = std::make_shared <op_bind> (l, upstream);
           bn.bind (t.str (), *ret);
           return ret;
         }
 
       case tree_type::READ:
 	{
-	  auto op = std::make_shared <op_read> (upstream,
-						t.cst ().value ().uval (),
-						t.scp ()->index (t.str ()));
+	  auto op = build_read (t.str (), upstream, bn, up, rdv_ll);
 	  return std::make_shared <op_apply> (l, op, true);
 	}
 

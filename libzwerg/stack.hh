@@ -1,4 +1,5 @@
 /*
+   Copyright (C) 2017 Petr Machata
    Copyright (C) 2014, 2015 Red Hat, Inc.
    This file is part of dwgrep.
 
@@ -37,33 +38,11 @@
 
 enum var_id: unsigned {};
 
-// Stack frame, or activation record, of a running procedure (or other
-// sort of context).
-struct frame
-{
-  std::shared_ptr <frame> m_parent;
-  std::vector <std::unique_ptr <value>> m_values;
-
-  frame (std::shared_ptr <frame> parent, size_t vars)
-    : m_parent {parent}
-    , m_values {vars}
-  {}
-
-  ~frame ();
-
-  void bind_value (var_id index, std::unique_ptr <value> val);
-  void unbind_value (var_id index);
-  value &read_value (var_id index);
-
-  std::shared_ptr <frame> clone () const;
-};
-
-// Value file is a container type that's used for maintaining stacks
-// of dwgrep values.
+// Stack is a container type that's used for maintaining stacks of dwgrep
+// values.
 class stack
 {
   std::vector <std::unique_ptr <value>> m_values;
-  std::shared_ptr <frame> m_frame;
   selector::sel_t m_profile;
 
 public:
@@ -75,22 +54,6 @@ public:
 
   stack (stack const &other);
   stack (stack &&other) = default;
-  ~stack ();
-
-  std::shared_ptr <frame>
-  nth_frame (size_t depth) const
-  {
-    auto ret = m_frame;
-    for (size_t i = 0; i < depth; ++i)
-      ret = ret->m_parent;
-    return ret;
-  }
-
-  void
-  set_frame (std::shared_ptr <frame> frame)
-  {
-    m_frame = frame;
-  }
 
   size_t
   size () const

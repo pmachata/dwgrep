@@ -33,11 +33,14 @@
 #include "op.hh"
 #include "builtin.hh"
 
+class value_closure;
+
 // Pop closure, execute it.
 class op_apply
   : public op
 {
   struct state;
+  struct substate;
   std::shared_ptr <op> m_upstream;
   bool m_skip_non_closures;
   layout::loc m_ll;
@@ -45,13 +48,29 @@ class op_apply
 public:
   // When skip_non_closures is true and the incoming stack doesn't have a
   // closure on TOS, op_apply lets it pass through. Otherwise it complains.
-  op_apply (layout &l, std::shared_ptr <op> upstream,
-	    bool skip_non_closures = false);
+  op_apply (layout &l, std::shared_ptr <op> upstream, bool skip_non_closures = false);
 
+  std::string name () const override;
   void state_con (scon &sc) const override;
   void state_des (scon &sc) const override;
   stack::uptr next (scon &sc) const override;
-  std::string name () const override;
+
+  // Rendezvous state. Rendezvous is an area at the beginning of substate where
+  // the closure being executed is stored.
+  struct rendezvous
+  {
+    value_closure &closure;
+
+    rendezvous (value_closure &closure)
+      : closure {closure}
+    {}
+  };
+
+  static layout::loc
+  reserve_rendezvous (layout &l)
+  {
+    return l.reserve <rendezvous> ();
+  }
 };
 
 struct builtin_apply

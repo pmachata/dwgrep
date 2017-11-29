@@ -1,4 +1,5 @@
 /*
+   Copyright (C) 2017 Petr Machata
    Copyright (C) 2014, 2015 Red Hat, Inc.
    This file is part of dwgrep.
 
@@ -29,53 +30,8 @@
 #include "stack.hh"
 #include "value-closure.hh"
 
-void
-frame::bind_value (var_id index, std::unique_ptr <value> val)
-{
-  assert (index < m_values.size ());
-  // XXX this might actually be an assertion.  Cases of this should be
-  // statically determinable.
-  if (m_values[index] != nullptr)
-    throw std::runtime_error ("attempt to rebind a bound variable");
-
-  m_values[index] = std::move (val);
-}
-
-void
-frame::unbind_value (var_id index)
-{
-  m_values[index] = nullptr;
-}
-
-value &
-frame::read_value (var_id index)
-{
-  assert (index < m_values.size ());
-  // XXX this might actually be an assertion.  Cases of this should be
-  // statically determinable.
-  if (m_values[index] == nullptr)
-    throw std::runtime_error ("attempt to read an unbound variable");
-
-  return *m_values[index];
-}
-
-std::shared_ptr <frame>
-frame::clone () const
-{
-  auto ret = std::make_shared <frame> (m_parent, 0);
-  for (auto const &val: m_values)
-    ret->m_values.push_back (val != nullptr ? val->clone () : nullptr);
-  return ret;
-}
-
-frame::~frame ()
-{
-  value_closure::maybe_unlink_frame (m_parent);
-}
-
 stack::stack (stack const &that)
-  : m_frame {that.m_frame != nullptr ? that.m_frame->clone () : nullptr}
-  , m_profile {that.m_profile}
+  : m_profile {that.m_profile}
 {
   for (auto const &v: that.m_values)
     m_values.push_back (v->clone ());
@@ -154,9 +110,4 @@ bool
 stack::operator== (stack const &that) const
 {
   return compare_stack (m_values, that.m_values) == 0;
-}
-
-stack::~stack ()
-{
-  value_closure::maybe_unlink_frame (m_frame);
 }

@@ -40,40 +40,23 @@
 #include "value-cst.hh"
 #include "value-seq.hh"
 #include "value-str.hh"
+#include "scon.hh"
 
 namespace
 {
   void
   debug_stack (stack const &stk)
   {
-    {
-      std::vector <std::reference_wrapper <value const>> stack;
-      for (size_t i = 0, n = stk.size (); i < n; ++i)
-	stack.push_back (stk.get (i));
+    std::vector <std::reference_wrapper <value const>> stack;
+    for (size_t i = 0, n = stk.size (); i < n; ++i)
+      stack.push_back (stk.get (i));
 
-      std::cerr << "<";
-      std::for_each (stack.rbegin (), stack.rend (),
-		     [&stk] (std::reference_wrapper <value const> v) {
-		       v.get ().show ((std::cerr << ' '));
-		     });
-      std::cerr << " > (";
-    }
-
-    std::shared_ptr <frame> frame = stk.nth_frame (0);
-    while (frame != nullptr)
-      {
-	std::cerr << frame << ':' << frame.use_count ();
-	std::cerr << "{";
-	for (auto const &v: frame->m_values)
-	  if (v == nullptr)
-	    std::cerr << " (unbound)";
-	  else
-	    v->show (std::cerr << ' ');
-	std::cerr << " }  ";
-
-	frame = frame->m_parent;
-      }
-    std::cerr << ")\n";
+    std::cerr << "<";
+    std::for_each (stack.rbegin (), stack.rend (),
+		   [&stk] (std::reference_wrapper <value const> v) {
+		     v.get ().show ((std::cerr << ' '));
+		   });
+    std::cerr << " >";
   }
 }
 
@@ -832,107 +815,61 @@ op_f_debug::name () const
 }
 
 
-struct op_scope::state
+struct op_bind::state
 {
-  bool m_primed;
-
-  state ()
-    : m_primed {false}
-  {}
+  std::unique_ptr <value> m_current;
 };
 
-op_scope::op_scope (layout &l,
-		    std::shared_ptr <op> upstream,
-		    std::shared_ptr <op_origin> origin,
-		    std::shared_ptr <op> op,
-		    size_t num_vars)
+op_bind::op_bind (layout &l, std::shared_ptr <op> upstream)
   : inner_op {upstream}
-  , m_origin {origin}
-  , m_op {op}
-  , m_num_vars {num_vars}
   , m_ll {l.reserve <state> ()}
 {}
 
+std::string
+op_bind::name () const
+{
+  std::stringstream ss;
+  ss << "bind<" << this << ">";
+  return ss.str ();
+}
+
 void
-op_scope::state_con (scon &sc) const
+op_bind::state_con (scon &sc) const
 {
   sc.con <state> (m_ll);
-  m_op->state_con (sc);
   inner_op::state_con (sc);
 }
 
 void
-op_scope::state_des (scon &sc) const
+op_bind::state_des (scon &sc) const
 {
   inner_op::state_des (sc);
-  m_op->state_des (sc);
   sc.des <state> (m_ll);
 }
 
 stack::uptr
-op_scope::next (scon &sc) const
-{
-  state &st = sc.get <state> (m_ll);
-
-  while (true)
-    {
-      while (! st.m_primed)
-	if (auto stk = m_upstream->next (sc))
-	  {
-	    // Push new stack frame.
-	    stk->set_frame (std::make_shared <frame> (stk->nth_frame (0),
-						      m_num_vars));
-	    m_origin->set_next (sc, std::move (stk));
-	    st.m_primed = true;
-	  }
-	else
-	  return nullptr;
-
-      if (auto stk = m_op->next (sc))
-	{
-	  // Pop top stack frame.
-	  std::shared_ptr <frame> of = stk->nth_frame (0);
-	  stk->set_frame (stk->nth_frame (1));
-	  value_closure::maybe_unlink_frame (of);
-	  return stk;
-	}
-
-      st.m_primed = false;
-    }
-}
-
-std::string
-op_scope::name () const
-{
-  return std::string ("scope<vars=") + std::to_string (m_num_vars)
-    + ", " + m_op->name () + ">";
-}
-
-
-stack::uptr
 op_bind::next (scon &sc) const
 {
+  state &st = sc.get <state> (m_ll);
   if (auto stk = m_upstream->next (sc))
     {
-      auto frame = stk->nth_frame (m_depth);
-      frame->bind_value (m_index, stk->pop ());
+      st.m_current = stk->pop ();
       return stk;
     }
   return nullptr;
 }
 
-std::string
-op_bind::name () const
+std::unique_ptr <value>
+op_bind::current (scon &sc) const
 {
-  return std::string ("bind<") + std::to_string (m_index)
-    + "@" + std::to_string (m_depth) + ">";
+  state &st = sc.get <state> (m_ll);
+  return st.m_current->clone ();
 }
 
 
-op_read::op_read (std::shared_ptr <op> upstream, size_t depth, var_id index)
+op_read::op_read (std::shared_ptr <op> upstream, op_bind &src)
   : inner_op {upstream}
-  , m_depth {depth}
-  , m_index {index}
+  , m_src {src}
 {}
 
 stack::uptr
@@ -940,9 +877,7 @@ op_read::next (scon &sc) const
 {
   if (auto stk = m_upstream->next (sc))
     {
-      auto frame = stk->nth_frame (m_depth);
-      value &val = frame->read_value (m_index);
-      stk->push (val.clone ());
+      stk->push (m_src.current (sc));
       return stk;
     }
   else
@@ -952,19 +887,70 @@ op_read::next (scon &sc) const
 std::string
 op_read::name () const
 {
-  return std::string ("read<") + std::to_string (m_index)
-    + "@" + std::to_string (m_depth) + ">";
+  std::stringstream ss;
+  ss << "read<" << &m_src << ">";
+  return ss.str ();
 }
 
+
+op_upread::op_upread (std::shared_ptr <op> upstream, unsigned id,
+		      layout::loc rdv_ll)
+  : inner_op (upstream)
+  , m_id {id}
+  , m_rdv_ll {rdv_ll}
+{}
+
+std::string
+op_upread::name () const
+{
+  std::stringstream ss;
+  ss << "upread<" << m_id << ">";
+  return ss.str ();
+}
+
+stack::uptr
+op_upread::next (scon &sc) const
+{
+  auto &rdv = sc.get <op_apply::rendezvous> (m_rdv_ll);
+  if (auto stk = m_upstream->next (sc))
+    {
+      stk->push (rdv.closure.get_env (m_id).clone ());
+      return stk;
+    }
+  else
+    return nullptr;
+}
+
+
+op_lex_closure::op_lex_closure (std::shared_ptr <op> upstream,
+				layout op_layout, layout::loc rdv_ll,
+				std::shared_ptr <op_origin> origin,
+				std::shared_ptr <op> op,
+				size_t n_upvalues)
+  : inner_op {upstream}
+  , m_op_layout {op_layout}
+  , m_rdv_ll {rdv_ll}
+  , m_origin {origin}
+  , m_op {op}
+  , m_n_upvalues {n_upvalues}
+{}
 
 stack::uptr
 op_lex_closure::next (scon &sc) const
 {
   if (auto stk = m_upstream->next (sc))
     {
-      stk->push (std::make_unique <value_closure> (m_t, stk->nth_frame (0), 0));
+      // Fetch actual values of the referenced environment bindings.
+      std::vector <std::unique_ptr <value>> env;
+      for (size_t i = 0; i < m_n_upvalues; ++i)
+	env.push_back (std::move (stk->pop ()));
+
+      stk->push (std::make_unique <value_closure> (m_op_layout, m_rdv_ll,
+						   m_origin, m_op,
+						   std::move (env), 0));
       return stk;
     }
+
   return nullptr;
 }
 

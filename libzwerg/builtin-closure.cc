@@ -32,54 +32,38 @@
 
 #include "builtin-closure.hh"
 #include "value-closure.hh"
+#include "scon.hh"
 
-namespace
+// State for the sub-program that the apply executes. This gets constructed each
+// time a new program is pulled from upstream, then used to fetch stacks to
+// yield, and then torn down.
+struct op_apply::substate
 {
-  struct substate
+  std::unique_ptr <value_closure> m_value;
+  scon m_scon;
+  scon_guard m_sg;
+
+  substate (stack::uptr stk)
+    : m_value {static_cast <value_closure *> (stk->pop ().release ())}
+    , m_scon {m_value->get_layout ()}
+    , m_sg {m_scon, m_value->get_op ()}
   {
-    layout m_l;
-    std::shared_ptr <op_origin> m_origin;
-    std::shared_ptr <op> m_op;
-    scon m_sc;
-    scon_guard m_sg;
-    std::shared_ptr <frame> m_old_frame;
+    m_scon.con <op_apply::rendezvous> (m_value->get_rdv_ll (),
+				       std::ref (*m_value));
+    m_value->get_origin ().set_next (m_scon, std::move (stk));
+  }
 
-    substate (value_closure &cl, stack::uptr stk)
-      : m_l {}
-      , m_origin {std::make_shared <op_origin> (m_l)}
-      , m_op {cl.get_tree ().build_exec (m_l, m_origin)}
-      , m_sc {m_l}
-      , m_sg {m_sc, *m_op}
-      , m_old_frame {stk->nth_frame (0)}
-    {
-      stk->set_frame (cl.get_frame ());
-      m_origin->set_next (m_sc, std::move (stk));
-    }
+  stack::uptr
+  next ()
+  {
+    return m_value->get_op ().next (m_scon);
+  }
+};
 
-    stack::uptr
-    next ()
-    {
-      if (auto stk = m_op->next (m_sc))
-	{
-	  // Restore the original stack frame.
-	  std::shared_ptr <frame> of = stk->nth_frame (0);
-	  stk->set_frame (m_old_frame);
-	  value_closure::maybe_unlink_frame (of);
-	  return stk;
-	}
-      return nullptr;
-    }
-
-    ~substate ()
-    {
-      value_closure::maybe_unlink_frame (m_old_frame);
-    }
-  };
-}
-
+// State for this operation.
 struct op_apply::state
 {
-  std::unique_ptr <substate> m_ss;
+  std::unique_ptr <substate> m_substate;
 };
 
 op_apply::op_apply (layout &l, std::shared_ptr <op> upstream,
@@ -88,6 +72,12 @@ op_apply::op_apply (layout &l, std::shared_ptr <op> upstream,
   , m_skip_non_closures {skip_non_closures}
   , m_ll {l.reserve <state> ()}
 {}
+
+std::string
+op_apply::name () const
+{
+  return "apply";
+}
 
 void
 op_apply::state_con (scon &sc) const
@@ -109,7 +99,7 @@ op_apply::next (scon &sc) const
   state &st = sc.get <state> (m_ll);
   while (true)
     {
-      while (st.m_ss == nullptr)
+      while (st.m_substate == nullptr)
 	if (auto stk = m_upstream->next (sc))
 	  {
 	    if (! stk->top ().is <value_closure> ())
@@ -121,24 +111,16 @@ op_apply::next (scon &sc) const
 		continue;
 	      }
 
-	    auto val = stk->pop ();
-	    auto &cl = static_cast <value_closure &> (*val);
-	    st.m_ss = std::make_unique <substate> (cl, std::move (stk));
+	    st.m_substate = std::make_unique <substate> (std::move (stk));
 	  }
 	else
 	  return nullptr;
 
-      if (auto stk = st.m_ss->next ())
+      if (auto stk = st.m_substate->next ())
 	return stk;
 
-      st.m_ss = nullptr;
+      st.m_substate = nullptr;
     }
-}
-
-std::string
-op_apply::name () const
-{
-  return "apply";
 }
 
 std::shared_ptr <op>

@@ -71,14 +71,15 @@ namespace
   }
 }
 
-std::pair <std::shared_ptr <op_origin>, std::shared_ptr <op>>
+std::pair <op_origin *, op *>
 overload_instance::find_exec (stack &stk) const
 {
   ssize_t idx = find_selector (selector {stk}, m_selectors);
   if (idx < 0)
     return {nullptr, nullptr};
   else
-    return m_execs[idx];
+    return {std::get <0> (m_execs[idx]).get (),
+	    std::get <1> (m_execs[idx]).get ()};
 }
 
 std::shared_ptr <pred>
@@ -150,7 +151,7 @@ overload_tab::instantiate (layout &l)
 
 struct overload_op::state
 {
-  std::shared_ptr <op> m_op;
+  op *m_op;
 
   state ()
     : m_op {nullptr}

@@ -32,11 +32,9 @@
 
 #include <memory>
 #include <cassert>
-#include <set>
 
 #include "stack.hh"
 #include "pred_result.hh"
-#include "tree.hh"
 #include "layout.hh"
 #include "scon.hh"
 
@@ -493,72 +491,66 @@ public:
   stack::uptr next (scon &sc) const override;
 };
 
-class op_scope
-  : public inner_op
-{
-  struct state;
-  std::shared_ptr <op_origin> m_origin;
-  std::shared_ptr <op> m_op;
-  size_t m_num_vars;
-  layout::loc m_ll;
-
-public:
-  op_scope (layout &l,
-	    std::shared_ptr <op> upstream,
-	    std::shared_ptr <op_origin> origin,
-	    std::shared_ptr <op> op,
-	    size_t num_vars);
-
-  void state_con (scon &sc) const override;
-  void state_des (scon &sc) const override;
-  stack::uptr next (scon &sc) const override;
-  std::string name () const override;
-};
-
 class op_bind
   : public inner_op
 {
-  size_t m_depth;
-  var_id m_index;
+  struct state;
+  layout::loc m_ll;
 
 public:
-  op_bind (std::shared_ptr <op> upstream, size_t depth, var_id index)
-    : inner_op {upstream}
-    , m_depth {depth}
-    , m_index {index}
-  {}
+  explicit op_bind (layout &l, std::shared_ptr <op> upstream);
 
-  stack::uptr next (scon &sc) const override;
   std::string name () const override;
+  void state_con (scon &sc) const override;
+  void state_des (scon &sc) const override;
+  stack::uptr next (scon &sc) const override;
+
+  std::unique_ptr <value> current (scon &sc) const;
 };
 
 class op_read
   : public inner_op
 {
-  size_t m_depth;
-  var_id m_index;
+  op_bind &m_src;
 
 public:
-  op_read (std::shared_ptr <op> upstream, size_t depth, var_id index);
+  op_read (std::shared_ptr <op> upstream, op_bind &src);
 
-  stack::uptr next (scon &sc) const override;
   std::string name () const override;
+  stack::uptr next (scon &sc) const override;
 };
 
-// Push to TOS a value_closure.
-class op_lex_closure
+class op_upread
   : public inner_op
 {
-  tree m_t;
+  unsigned m_id;
+  layout::loc m_rdv_ll;
 
 public:
-  op_lex_closure (std::shared_ptr <op> upstream, tree t)
-    : inner_op {upstream}
-    , m_t {t}
-  {}
+  op_upread (std::shared_ptr <op> upstream, unsigned id, layout::loc rdv_ll);
 
-  stack::uptr next (scon &sc) const override;
   std::string name () const override;
+  stack::uptr next (scon &sc) const override;
+};
+
+struct op_lex_closure
+  : public inner_op
+{
+  layout m_op_layout;
+  layout::loc m_rdv_ll;
+  std::shared_ptr <op_origin> m_origin;
+  std::shared_ptr <op> m_op;
+  size_t m_n_upvalues;
+
+public:
+  op_lex_closure (std::shared_ptr <op> upstream,
+		  layout op_layout, layout::loc rdv_ll,
+		  std::shared_ptr <op_origin> origin,
+		  std::shared_ptr <op> op,
+		  size_t n_upvalues);
+
+  std::string name () const override;
+  stack::uptr next (scon &sc) const override;
 };
 
 class op_ifelse

@@ -1,4 +1,5 @@
 /*
+   Copyright (C) 2017 Petr Machata
    Copyright (C) 2014, 2015 Red Hat, Inc.
    This file is part of dwgrep.
 
@@ -36,50 +37,34 @@
 value_type const value_closure::vtype
 	= value_type::alloc ("T_CLOSURE", "@hide");
 
-value_closure::value_closure (tree const &t,
-			      std::shared_ptr <frame> frame, size_t pos)
+value_closure::value_closure (layout op_layout, layout::loc rdv_ll,
+			      std::shared_ptr <op_origin> origin,
+			      std::shared_ptr <op> op,
+			      std::vector <std::unique_ptr <value>> env,
+			      size_t pos)
   : value {vtype, pos}
-  , m_t {std::make_unique <tree> (t)}
-  , m_frame {frame}
+  , m_op_layout {op_layout}
+  , m_rdv_ll {rdv_ll}
+  , m_origin {origin}
+  , m_op {op}
+  , m_env {std::move (env)}
 {}
-
-value_closure::value_closure (value_closure const &that)
-  : value_closure {*that.m_t, that.m_frame, that.get_pos ()}
-{}
-
-void
-value_closure::maybe_unlink_frame (std::shared_ptr <frame> &f)
-{
-  auto points_back = [&f] (std::unique_ptr <value> const &v)
-    {
-      if (v != nullptr)
-	if (auto vcl = value::as <value_closure> (v.get ()))
-	  return vcl->get_frame () == f;
-      return false;
-    };
-
-  if (f.use_count () > 1)
-    if (std::count_if (f->m_values.begin (), f->m_values.end (),
-		       points_back) + 1 == f.use_count ())
-      for (size_t i = 0; i < f->m_values.size (); ++i)
-	f->unbind_value (var_id (i));
-}
-
-value_closure::~value_closure ()
-{
-  maybe_unlink_frame (m_frame);
-}
 
 void
 value_closure::show (std::ostream &o) const
 {
-  o << "closure(" << *m_t << ")";
+  o << "closure";
 }
 
 std::unique_ptr <value>
 value_closure::clone () const
 {
-  return std::make_unique <value_closure> (*this);
+  std::vector <std::unique_ptr <value>> env;
+  for (auto const &envv: m_env)
+    env.push_back (envv->clone ());
+  return std::make_unique <value_closure> (m_op_layout, m_rdv_ll,
+					   m_origin, m_op,
+					   std::move (env), get_pos ());
 }
 
 cmp_result
@@ -87,10 +72,7 @@ value_closure::cmp (value const &v) const
 {
   if (auto that = value::as <value_closure> (&v))
     {
-      auto a = std::make_tuple (static_cast <tree &> (*m_t), m_frame);
-      auto b = std::make_tuple (static_cast <tree &> (*that->m_t),
-				that->m_frame);
-      return compare (a, b);
+      return compare (this, that);
     }
   else
     return cmp_result::fail;

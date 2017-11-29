@@ -44,10 +44,10 @@
 // adding new value types, and reuse the same operators for them, this
 // overloading infrastructure is provided.
 //
-// Every overload, i.e. a specialization of the operator to a type, is
+// Every overload, i.e. a specialization of an operator to a type, is
 // a builtin.  The op that this builtin creates contains the code that
 // handles the type that this overload is specialized to.  Most of the
-// time, both the op and the bulitin that wraps it are boring and
+// time, both the op and the builtin that wraps it are boring and
 // predictable.  You will most likely want to inherit the op off
 // either of op_overload, op_yielding_overload or pred_overload.
 //
@@ -79,8 +79,7 @@ public:
 			<std::tuple <selector,
 				     std::shared_ptr <builtin>>> const &stencil);
 
-  std::pair <std::shared_ptr <op_origin>, std::shared_ptr <op>>
-    find_exec (stack &stk) const;
+  std::pair <op_origin *, op *> find_exec (stack &stk) const;
   std::shared_ptr <pred> find_pred (stack &stk) const;
 
   void show_error (std::string const &name, selector profile) const;
