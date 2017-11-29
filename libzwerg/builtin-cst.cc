@@ -38,21 +38,20 @@
 namespace
 {
   class op_cast
-    : public op
+    : public inner_op
   {
-    std::shared_ptr <op> m_upstream;
     constant_dom const *m_dom;
 
   public:
     op_cast (std::shared_ptr <op> upstream, constant_dom const *dom)
-      : m_upstream {upstream}
+      : inner_op {upstream}
       , m_dom {dom}
     {}
 
     stack::uptr
-    next () override
+    next (scon &sc) const override
     {
-      while (auto stk = m_upstream->next ())
+      while (auto stk = m_upstream->next (sc))
 	{
 	  auto vp = stk->pop ();
 	  if (auto v = value::as <value_cst> (&*vp))
@@ -74,11 +73,6 @@ namespace
       std::stringstream ss;
       ss << "f_cast<" << m_dom->name () << ">";
       return ss.str ();
-    }
-
-    void reset () override
-    {
-      return m_upstream->reset ();
     }
   };
 }
@@ -237,9 +231,9 @@ builtin_pred_pos::docstring () const
 
 
 stack::uptr
-op_type::next ()
+op_type::next (scon &sc) const
 {
-  if (auto stk = m_upstream->next ())
+  if (auto stk = m_upstream->next (sc))
     {
       constant t = stk->pop ()->get_type_const ();
       stk->push (std::make_unique <value_cst> (t, 0));
@@ -262,9 +256,9 @@ as T_CONST, T_DIE, T_STR, etc.).
 }
 
 stack::uptr
-op_pos::next ()
+op_pos::next (scon &sc) const
 {
-  if (auto stk = m_upstream->next ())
+  if (auto stk = m_upstream->next (sc))
     {
       auto vp = stk->pop ();
       static numeric_constant_dom_t pos_dom_obj ("pos");

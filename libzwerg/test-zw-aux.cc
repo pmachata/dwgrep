@@ -1,4 +1,5 @@
 /*
+   Copyright (C) 2017 Petr Machata
    Copyright (C) 2014, 2015 Red Hat, Inc.
    This file is part of dwgrep.
 
@@ -27,9 +28,11 @@
    not, see <http://www.gnu.org/licenses/>.  */
 
 #include "test-zw-aux.hh"
-#include "std-memory.hh"
-#include "parser.hh"
 #include "op.hh"
+#include "parser.hh"
+#include "scon.hh"
+
+#include "std-memory.hh"
 
 std::unique_ptr <stack>
 stack_with_value (std::unique_ptr <value> v)
@@ -44,13 +47,16 @@ run_query (vocabulary &voc,
 	   std::unique_ptr <stack> stk, std::string q)
 {
   layout l;
-  auto origin = std::make_shared <op_origin> (std::move (stk));
+  auto origin = std::make_shared <op_origin> (l);
   auto op = parse_query (voc, q).build_exec (l, origin);
 
+  scon sc {l};
+  scon_guard sg {sc, *op};
+  origin->set_next (sc, std::move (stk));
+
   std::vector <std::unique_ptr <stack>> yielded;
-  while (auto r = op->next ())
+  while (auto r = op->next (sc))
     yielded.push_back (std::move (r));
 
   return yielded;
 }
-

@@ -1,6 +1,5 @@
 /*
    Copyright (C) 2017 Petr Machata
-   Copyright (C) 2014 Red Hat, Inc.
    This file is part of dwgrep.
 
    This file is free software; you can redistribute it and/or modify
@@ -27,54 +26,65 @@
    the GNU Lesser General Public License along with this program.  If
    not, see <http://www.gnu.org/licenses/>.  */
 
-#ifndef _BUILTIN_SHF_H_
-#define _BUILTIN_SHF_H_
+#ifndef _SCON_H_
+#define _SCON_H_
 
-#include "op.hh"
+#include <vector>
+#include <cstdint>
 
-struct op_drop
-  : public inner_op
+#include "layout.hh"
+
+class scon
 {
-  using inner_op::inner_op;
-  stack::uptr next (scon &sc) const override;
+  std::vector <uint8_t> m_buf;
 
-  static std::string docstring ();
+  void *
+  mem (layout::loc loc)
+  {
+    return m_buf.data () + loc.m_loc;
+  }
+
+public:
+  scon (layout const &l);
+
+  template <class State>
+  State &
+  get (layout::loc loc)
+  {
+    return *reinterpret_cast <State *> (this->mem (loc));
+  }
+
+  template <class State, class... Args>
+  void
+  con (layout::loc loc, Args const&... args)
+  {
+    new (this->mem (loc)) State {args...};
+  }
+
+  template <class State>
+  void
+  des (layout::loc loc)
+  {
+    this->get <State> (loc).~State ();
+  }
+
+  template <class State, class... Args>
+  void
+  reset (layout::loc loc, Args const&... args)
+  {
+    this->des <State> (loc);
+    this->con <State> (loc, args...);
+  }
 };
 
-struct op_swap
-  : public inner_op
+class op;
+struct scon_guard
 {
-  using inner_op::inner_op;
-  stack::uptr next (scon &sc) const override;
+  scon &m_sc;
+  op &m_op;
 
-  static std::string docstring ();
+  scon_guard (scon &sc, op &op);
+  ~scon_guard ();
 };
 
-struct op_dup
-  : public inner_op
-{
-  using inner_op::inner_op;
-  stack::uptr next (scon &sc) const override;
-
-  static std::string docstring ();
-};
-
-struct op_over
-  : public inner_op
-{
-  using inner_op::inner_op;
-  stack::uptr next (scon &sc) const override;
-
-  static std::string docstring ();
-};
-
-struct op_rot
-  : public inner_op
-{
-  using inner_op::inner_op;
-  stack::uptr next (scon &sc) const override;
-
-  static std::string docstring ();
-};
-
-#endif /* _BUILTIN_SHF_H_ */
+#endif // _SCON_H_

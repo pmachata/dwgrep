@@ -1,6 +1,5 @@
 /*
    Copyright (C) 2017 Petr Machata
-   Copyright (C) 2014 Red Hat, Inc.
    This file is part of dwgrep.
 
    This file is free software; you can redistribute it and/or modify
@@ -27,54 +26,27 @@
    the GNU Lesser General Public License along with this program.  If
    not, see <http://www.gnu.org/licenses/>.  */
 
-#ifndef _BUILTIN_SHF_H_
-#define _BUILTIN_SHF_H_
-
+#include "scon.hh"
 #include "op.hh"
 
-struct op_drop
-  : public inner_op
+scon::scon (layout const &l)
+  // 85 is 0b1010101, a pattern that's very unlikely to be valid data. If
+  // op::state_con is not called, this is likely to cause a loud & early
+  // failure. op_origin relies on this poisoning to detect that the state_con
+  // chain is interrupted.
+  : m_buf (l.size (), 85)
+{}
+
+scon_guard::scon_guard (scon &sc, op &op)
+  : m_sc {sc}
+  , m_op {op}
 {
-  using inner_op::inner_op;
-  stack::uptr next (scon &sc) const override;
+  m_op.state_con (m_sc);
+}
 
-  static std::string docstring ();
-};
-
-struct op_swap
-  : public inner_op
+scon_guard::~scon_guard ()
 {
-  using inner_op::inner_op;
-  stack::uptr next (scon &sc) const override;
-
-  static std::string docstring ();
-};
-
-struct op_dup
-  : public inner_op
-{
-  using inner_op::inner_op;
-  stack::uptr next (scon &sc) const override;
-
-  static std::string docstring ();
-};
-
-struct op_over
-  : public inner_op
-{
-  using inner_op::inner_op;
-  stack::uptr next (scon &sc) const override;
-
-  static std::string docstring ();
-};
-
-struct op_rot
-  : public inner_op
-{
-  using inner_op::inner_op;
-  stack::uptr next (scon &sc) const override;
-
-  static std::string docstring ();
-};
-
-#endif /* _BUILTIN_SHF_H_ */
+  // Des is just a destructor wrapper. If it excepts, it's as if a dtor
+  // excepted, so let it terminate.
+  m_op.state_des (m_sc);
+}

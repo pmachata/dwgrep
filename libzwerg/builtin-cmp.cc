@@ -1,4 +1,5 @@
 /*
+   Copyright (C) 2017 Petr Machata
    Copyright (C) 2014 Red Hat, Inc.
    This file is part of dwgrep.
 
@@ -65,7 +66,7 @@ namespace
     : public pred
   {
     pred_result
-    result (stack &stk) const override
+    result (scon &sc, stack &stk) const override
     {
       return comparison_result (stk, cmp_result::equal);
     }
@@ -75,15 +76,13 @@ namespace
     {
       return "eq";
     }
-
-    void reset () override {}
   };
 
   struct pred_lt
     : public pred
   {
     pred_result
-    result (stack &stk) const override
+    result (scon &sc, stack &stk) const override
     {
       return comparison_result (stk, cmp_result::less);
     }
@@ -93,15 +92,13 @@ namespace
     {
       return "lt";
     }
-
-    void reset () override {}
   };
 
   struct pred_gt
     : public pred
   {
     pred_result
-    result (stack &stk) const override
+    result (scon &sc, stack &stk) const override
     {
       return comparison_result (stk, cmp_result::greater);
     }
@@ -111,8 +108,6 @@ namespace
     {
       return "gt";
     }
-
-    void reset () override {}
   };
 
   char const *const cmp_docstring = R"docstring(

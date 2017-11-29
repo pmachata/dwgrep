@@ -33,38 +33,84 @@
 #include "builtin-closure.hh"
 #include "value-closure.hh"
 
-op_apply::op_apply (std::shared_ptr <op> upstream, bool skip_non_closures)
+namespace
+{
+  struct substate
+  {
+    layout m_l;
+    std::shared_ptr <op_origin> m_origin;
+    std::shared_ptr <op> m_op;
+    scon m_sc;
+    scon_guard m_sg;
+    std::shared_ptr <frame> m_old_frame;
+
+    substate (value_closure &cl, stack::uptr stk)
+      : m_l {}
+      , m_origin {std::make_shared <op_origin> (m_l)}
+      , m_op {cl.get_tree ().build_exec (m_l, m_origin)}
+      , m_sc {m_l}
+      , m_sg {m_sc, *m_op}
+      , m_old_frame {stk->nth_frame (0)}
+    {
+      stk->set_frame (cl.get_frame ());
+      m_origin->set_next (m_sc, std::move (stk));
+    }
+
+    stack::uptr
+    next ()
+    {
+      if (auto stk = m_op->next (m_sc))
+	{
+	  // Restore the original stack frame.
+	  std::shared_ptr <frame> of = stk->nth_frame (0);
+	  stk->set_frame (m_old_frame);
+	  value_closure::maybe_unlink_frame (of);
+	  return stk;
+	}
+      return nullptr;
+    }
+
+    ~substate ()
+    {
+      value_closure::maybe_unlink_frame (m_old_frame);
+    }
+  };
+}
+
+struct op_apply::state
+{
+  std::unique_ptr <substate> m_ss;
+};
+
+op_apply::op_apply (layout &l, std::shared_ptr <op> upstream,
+		    bool skip_non_closures)
   : m_upstream {upstream}
   , m_skip_non_closures {skip_non_closures}
+  , m_ll {l.reserve <state> ()}
 {}
 
-op_apply::~op_apply ()
+void
+op_apply::state_con (scon &sc) const
 {
-  reset_me ();
+  sc.con <state> (m_ll);
+  m_upstream->state_con (sc);
 }
 
 void
-op_apply::reset_me ()
+op_apply::state_des (scon &sc) const
 {
-  m_op = nullptr;
-  value_closure::maybe_unlink_frame (m_old_frame);
-  m_old_frame = nullptr;
-}
-
-void
-op_apply::reset ()
-{
-  reset_me ();
-  m_upstream->reset ();
+  m_upstream->state_des (sc);
+  sc.des <state> (m_ll);
 }
 
 stack::uptr
-op_apply::next ()
+op_apply::next (scon &sc) const
 {
+  state &st = sc.get <state> (m_ll);
   while (true)
     {
-      while (m_op == nullptr)
-	if (auto stk = m_upstream->next ())
+      while (st.m_ss == nullptr)
+	if (auto stk = m_upstream->next (sc))
 	  {
 	    if (! stk->top ().is <value_closure> ())
 	      {
@@ -77,27 +123,15 @@ op_apply::next ()
 
 	    auto val = stk->pop ();
 	    auto &cl = static_cast <value_closure &> (*val);
-
-	    assert (m_old_frame == nullptr);
-	    m_old_frame = stk->nth_frame (0);
-	    stk->set_frame (cl.get_frame ());
-	    auto origin = std::make_shared <op_origin> (std::move (stk));
-	    layout l;
-	    m_op = cl.get_tree ().build_exec (l, origin);
+	    st.m_ss = std::make_unique <substate> (cl, std::move (stk));
 	  }
 	else
 	  return nullptr;
 
-      if (auto stk = m_op->next ())
-	{
-	  // Restore the original stack frame.
-	  std::shared_ptr <frame> of = stk->nth_frame (0);
-	  stk->set_frame (m_old_frame);
-	  value_closure::maybe_unlink_frame (of);
-	  return stk;
-	}
+      if (auto stk = st.m_ss->next ())
+	return stk;
 
-      reset_me ();
+      st.m_ss = nullptr;
     }
 }
 
@@ -110,7 +144,7 @@ op_apply::name () const
 std::shared_ptr <op>
 builtin_apply::build_exec (layout &l, std::shared_ptr <op> upstream) const
 {
-  return std::make_shared <op_apply> (upstream);
+  return std::make_shared <op_apply> (l, upstream);
 }
 
 char const *

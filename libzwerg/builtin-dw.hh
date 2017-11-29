@@ -441,8 +441,8 @@ class op_atval_die
   int m_atname;
 
 public:
-  op_atval_die (std::shared_ptr <op> upstream, int atname)
-    : op_yielding_overload {upstream}
+  op_atval_die (layout &l, std::shared_ptr <op> upstream, int atname)
+    : op_yielding_overload {l, upstream}
     , m_atname {atname}
   {}
 

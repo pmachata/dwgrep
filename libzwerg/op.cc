@@ -77,11 +77,14 @@ namespace
   }
 }
 
-stack::uptr
-op_origin::next ()
+struct op_origin::state
 {
-  return std::move (m_stk);
-}
+  stack::uptr m_stk;
+};
+
+op_origin::op_origin (layout &l)
+  : m_ll {l.reserve <state> ()}
+{}
 
 std::string
 op_origin::name () const
@@ -90,30 +93,38 @@ op_origin::name () const
 }
 
 void
-op_origin::set_next (stack::uptr s)
+op_origin::state_con (scon &sc) const
 {
-  assert (m_stk == nullptr);
-
-  // set_next should have been preceded with a reset() call that
-  // should have percolated all the way here.
-  assert (m_reset);
-  m_reset = false;
-
-  m_stk = std::move (s);
+  sc.con <state> (m_ll);
 }
 
 void
-op_origin::reset ()
+op_origin::state_des (scon &sc) const
 {
-  m_stk = nullptr;
-  m_reset = true;
+  sc.des <state> (m_ll);
+}
+
+void
+op_origin::set_next (scon &sc, stack::uptr s) const
+{
+  state &st = sc.get <state> (m_ll);
+  // Unless state_con percolated all the way here, the following line likely
+  // crashes the process, because the state buffer is still poisoned.
+  st.m_stk = std::move (s);
+}
+
+stack::uptr
+op_origin::next (scon &sc) const
+{
+  state &st = sc.get <state> (m_ll);
+  return std::move (st.m_stk);
 }
 
 
 stack::uptr
-op_nop::next ()
+op_nop::next (scon &sc) const
 {
-  return m_upstream->next ();
+  return m_upstream->next (sc);
 }
 
 std::string
@@ -124,10 +135,10 @@ op_nop::name () const
 
 
 stack::uptr
-op_assert::next ()
+op_assert::next (scon &sc) const
 {
-  while (auto stk = m_upstream->next ())
-    if (m_pred->result (*stk) == pred_result::yes)
+  while (auto stk = m_upstream->next (sc))
+    if (m_pred->result (sc, *stk) == pred_result::yes)
       return stk;
   return nullptr;
 }
@@ -139,130 +150,189 @@ op_assert::name () const
 }
 
 
+struct stringer_origin::state
+{
+  stack::uptr m_stk;
+};
+
+stringer_origin::stringer_origin (layout &l)
+  : m_ll {l.reserve <state> ()}
+{}
+
 void
-stringer_origin::set_next (stack::uptr s)
+stringer_origin::state_con (scon &sc) const
 {
-  assert (m_stk == nullptr);
-
-  // set_next should have been preceded with a reset() call that
-  // should have percolated all the way here.
-  assert (m_reset);
-  m_reset = false;
-
-  m_stk = std::move (s);
-}
-
-std::pair <stack::uptr, std::string>
-stringer_origin::next ()
-{
-  return std::make_pair (std::move (m_stk), "");
+  sc.con <state> (m_ll);
 }
 
 void
-stringer_origin::reset ()
+stringer_origin::state_des (scon &sc) const
 {
-  m_stk = nullptr;
-  m_reset = true;
+  sc.des <state> (m_ll);
 }
 
 std::pair <stack::uptr, std::string>
-stringer_lit::next ()
+stringer_origin::next (scon &sc) const
 {
-  auto up = m_upstream->next ();
+  state &st = sc.get <state> (m_ll);
+  return std::make_pair (std::move (st.m_stk), "");
+}
+
+void
+stringer_origin::set_next (scon &sc, stack::uptr s)
+{
+  state &st = sc.get <state> (m_ll);
+  assert (st.m_stk == nullptr);
+  st.m_stk = std::move (s);
+}
+
+
+void
+stringer_lit::state_con (scon &sc) const
+{
+  m_upstream->state_con (sc);
+}
+
+void
+stringer_lit::state_des (scon &sc) const
+{
+  m_upstream->state_des (sc);
+}
+
+std::pair <stack::uptr, std::string>
+stringer_lit::next (scon &sc) const
+{
+  auto up = m_upstream->next (sc);
   if (up.first == nullptr)
     return std::make_pair (nullptr, "");
   up.second = m_str + up.second;
   return up;
 }
 
-void
-stringer_lit::reset ()
+
+struct stringer_op::state
 {
-  m_upstream->reset ();
+  std::string m_str;
+  bool m_have;
+
+  state ()
+    : m_have {false}
+  {}
+};
+
+stringer_op::stringer_op (layout &l,
+			  std::shared_ptr <stringer> upstream,
+			  std::shared_ptr <op_origin> origin,
+			  std::shared_ptr <op> op)
+  : m_upstream {upstream}
+  , m_origin {origin}
+  , m_op {op}
+  , m_ll {l.reserve <state> ()}
+{}
+
+void
+stringer_op::state_con (scon &sc) const
+{
+  sc.con <state> (m_ll);
+  m_op->state_con (sc);
+  m_upstream->state_con (sc);
+}
+
+void
+stringer_op::state_des (scon &sc) const
+{
+  m_upstream->state_des (sc);
+  m_op->state_des (sc);
+  sc.des <state> (m_ll);
 }
 
 std::pair <stack::uptr, std::string>
-stringer_op::next ()
+stringer_op::next (scon &sc) const
 {
+  state &st = sc.get <state> (m_ll);
+
   while (true)
     {
-      if (! m_have)
+      if (! st.m_have)
 	{
-	  auto up = m_upstream->next ();
+	  auto up = m_upstream->next (sc);
 	  if (up.first == nullptr)
 	    return std::make_pair (nullptr, "");
 
-	  m_op->reset ();
-	  m_origin->set_next (std::move (up.first));
-	  m_str = up.second;
-
-	  m_have = true;
+	  m_origin->set_next (sc, std::move (up.first));
+	  st.m_str = up.second;
+	  st.m_have = true;
 	}
 
-      if (auto stk = m_op->next ())
+      if (auto stk = m_op->next (sc))
 	{
 	  std::stringstream ss;
 	  (stk->pop ())->show (ss);
-	  return std::make_pair (std::move (stk), ss.str () + m_str);
+	  return std::make_pair (std::move (stk), ss.str () + st.m_str);
 	}
 
-      m_have = false;
+      st.m_have = false;
     }
 }
 
-void
-stringer_op::reset ()
+
+struct op_format::state
 {
-  m_have = false;
-  m_op->reset ();
-  m_upstream->reset ();
-}
+  size_t m_pos;
 
+  state ()
+    : m_pos {0}
+  {}
+};
 
-op_format::op_format (std::shared_ptr <op> upstream,
+op_format::op_format (layout &l,
+		      std::shared_ptr <op> upstream,
 		      std::shared_ptr <stringer_origin> origin,
 		      std::shared_ptr <stringer> stringer)
   : inner_op {upstream}
   , m_origin {origin}
   , m_stringer {stringer}
-  , m_pos {0}
+  , m_ll {l.reserve <state> ()}
 {}
 
-stack::uptr
-op_format::next ()
+void
+op_format::state_con (scon &sc) const
 {
+  sc.con <state> (m_ll);
+  m_stringer->state_con (sc);
+  inner_op::state_con (sc);
+}
+
+void
+op_format::state_des (scon &sc) const
+{
+  inner_op::state_des (sc);
+  m_stringer->state_des (sc);
+  sc.des <state> (m_ll);
+}
+
+stack::uptr
+op_format::next (scon &sc) const
+{
+  state &st = sc.get <state> (m_ll);
   while (true)
     {
-      auto stk = m_stringer->next ();
+      auto stk = m_stringer->next (sc);
       if (stk.first != nullptr)
 	{
 	  stk.first->push (std::make_unique <value_str>
-			   (std::move (stk.second), m_pos++));
+			   (std::move (stk.second), st.m_pos++));
 	  return std::move (stk.first);
 	}
 
-      if (auto stk = m_upstream->next ())
+      if (auto stk = m_upstream->next (sc))
 	{
-	  reset_me ();
-	  m_origin->set_next (std::move (stk));
+	  sc.reset <state> (m_ll);
+	  m_origin->set_next (sc, std::move (stk));
 	}
       else
 	return nullptr;
     }
-}
-
-void
-op_format::reset_me ()
-{
-  m_stringer->reset ();
-  m_pos = 0;
-}
-
-void
-op_format::reset ()
-{
-  reset_me ();
-  inner_op::reset ();
 }
 
 std::string
@@ -273,9 +343,9 @@ op_format::name () const
 
 
 stack::uptr
-op_const::next ()
+op_const::next (scon &sc) const
 {
-  if (auto stk = m_upstream->next ())
+  if (auto stk = m_upstream->next (sc))
     {
       stk->push (m_value->clone ());
       return stk;
@@ -294,115 +364,183 @@ op_const::name () const
 }
 
 
-stack::uptr
-op_tine::next ()
+struct op_merge::state
 {
-  if (*m_done)
+  std::vector <stack::uptr> m_file;
+  size_t m_idx;
+  bool m_done;
+
+  explicit state (size_t sz)
+    : m_file (sz)
+    , m_idx {0}
+    , m_done {false}
+  {}
+};
+
+stack::uptr
+op_tine::next (scon &sc) const
+{
+  op_merge::state &mst = m_merge.get_state (sc);
+
+  if (mst.m_done)
     return nullptr;
 
-  if (std::all_of (m_file->begin (), m_file->end (),
+  if (std::all_of (mst.m_file.begin (), mst.m_file.end (),
 		   [] (stack::uptr const &ptr) { return ptr == nullptr; }))
     {
-      if (auto stk = m_upstream->next ())
-	for (auto &ptr: *m_file)
+      if (auto stk = m_merge.get_upstream ().next (sc))
+	for (auto &ptr: mst.m_file)
 	  ptr = std::make_unique <stack> (*stk);
       else
 	{
-	  *m_done = true;
+	  mst.m_done = true;
 	  return nullptr;
 	}
     }
 
-  return std::move ((*m_file)[m_branch_id]);
-}
-
-void
-op_tine::reset ()
-{
-  for (auto &stk: *m_file)
-    stk = nullptr;
-  inner_op::reset ();
+  return std::move (mst.m_file[m_branch_id]);
 }
 
 std::string
 op_tine::name () const
 {
-  return "tine";
+  std::stringstream ss;
+  ss << "tine<" << m_branch_id << ">";
+  return ss.str ();
 }
 
 
-stack::uptr
-op_merge::next ()
+op_merge::op_merge (layout &l, std::shared_ptr <op> upstream)
+  : inner_op {upstream}
+  , m_ll {l.reserve <state> ()}
+{}
+
+op_merge::state &
+op_merge::get_state (scon &sc) const
 {
-  if (*m_done)
+  return sc.get <state> (m_ll);
+}
+
+op &
+op_merge::get_upstream () const
+{
+  return *m_upstream;
+}
+
+void
+op_merge::state_con (scon &sc) const
+{
+  sc.con <state> (m_ll, m_ops.size ());
+  for (auto const &branch: m_ops)
+    branch->state_con (sc);
+  inner_op::state_con (sc);
+}
+
+void
+op_merge::state_des (scon &sc) const
+{
+  inner_op::state_des (sc);
+  for (auto const &branch: m_ops)
+    branch->state_des (sc);
+  sc.des <state> (m_ll);
+}
+
+stack::uptr
+op_merge::next (scon &sc) const
+{
+  state &st = sc.get <state> (m_ll);
+  if (st.m_done)
     return nullptr;
 
-  while (! *m_done)
+  while (! st.m_done)
     {
-      if (auto ret = (*m_it)->next ())
+      if (auto ret = m_ops[st.m_idx]->next (sc))
 	return ret;
-      if (++m_it == m_ops.end ())
-	m_it = m_ops.begin ();
+      if (++st.m_idx == m_ops.size ())
+	st.m_idx = 0;
     }
 
   return nullptr;
 }
 
-void
-op_merge::reset ()
-{
-  *m_done = false;
-  m_it = m_ops.begin ();
-  for (auto op: m_ops)
-    op->reset ();
-}
-
 std::string
 op_merge::name () const
 {
-  return "merge";
+  std::stringstream ss;
+  ss << "merge<";
+
+  bool first = true;
+  for (auto const &branch: m_ops)
+    {
+      if (! first)
+	ss << ",";
+      ss << branch->name ();
+      first = false;
+    }
+
+  ss << ">";
+  return ss.str ();
 }
 
 
-void
-op_or::reset_me ()
+struct op_or::state
 {
-  m_branch_it = m_branches.end ();
+  decltype (op_or::m_branches)::const_iterator m_branch_it;
+
+  explicit state (decltype (op_or::m_branches) const &branches)
+    : m_branch_it {branches.end ()}
+  {}
+};
+
+op_or::op_or (layout &l, std::shared_ptr <op> upstream)
+  : inner_op {upstream}
+  , m_ll {l.reserve <state> ()}
+{}
+
+void
+op_or::state_con (scon &sc) const
+{
+  sc.con <state> (m_ll, m_branches);
   for (auto const &branch: m_branches)
-    branch.second->reset ();
+    branch.second->state_con (sc);
+  inner_op::state_con (sc);
 }
 
 void
-op_or::reset ()
+op_or::state_des (scon &sc) const
 {
-  reset_me ();
-  inner_op::reset ();
+  inner_op::state_des (sc);
+  for (auto const &branch: m_branches)
+    branch.second->state_des (sc);
+  sc.des <state> (m_ll);
 }
 
 stack::uptr
-op_or::next ()
+op_or::next (scon &sc) const
 {
+  state &st = sc.get <state> (m_ll);
+
   while (true)
     {
-      while (m_branch_it == m_branches.end ())
+      while (st.m_branch_it == m_branches.end ())
 	{
-	  if (auto stk = m_upstream->next ())
-	    for (m_branch_it = m_branches.begin ();
-		 m_branch_it != m_branches.end (); ++m_branch_it)
+	  if (auto stk = m_upstream->next (sc))
+	    for (st.m_branch_it = m_branches.begin ();
+		 st.m_branch_it != m_branches.end (); ++st.m_branch_it)
 	      {
-		m_branch_it->second->reset ();
-		m_branch_it->first->set_next (std::make_unique <stack> (*stk));
-		if (auto stk2 = m_branch_it->second->next ())
+		auto &origin = st.m_branch_it->first;
+		origin->set_next (sc, std::make_unique <stack> (*stk));
+		if (auto stk2 = st.m_branch_it->second->next (sc))
 		  return stk2;
 	      }
 	  else
 	    return nullptr;
 	}
 
-      if (auto stk2 = m_branch_it->second->next ())
+      if (auto stk2 = st.m_branch_it->second->next (sc))
 	return stk2;
 
-      reset_me ();
+      sc.reset <state> (m_ll, m_branches);
     }
 }
 
@@ -424,16 +562,29 @@ op_or::name () const
 }
 
 
-stack::uptr
-op_capture::next ()
+void
+op_capture::state_con (scon &sc) const
 {
-  if (auto stk = m_upstream->next ())
+  m_op->state_con (sc);
+  inner_op::state_con (sc);
+}
+
+void
+op_capture::state_des (scon &sc) const
+{
+  inner_op::state_des (sc);
+  m_op->state_des (sc);
+}
+
+stack::uptr
+op_capture::next (scon &sc) const
+{
+  if (auto stk = m_upstream->next (sc))
     {
-      m_op->reset ();
-      m_origin->set_next (std::make_unique <stack> (*stk));
+      m_origin->set_next (sc, std::make_unique <stack> (*stk));
 
       value_seq::seq_t vv;
-      while (auto stk2 = m_op->next ())
+      while (auto stk2 = m_op->next (sc))
 	vv.push_back (stk2->pop ());
 
       stk->push (std::make_unique <value_seq> (std::move (vv), 0));
@@ -443,13 +594,6 @@ op_capture::next ()
   return nullptr;
 }
 
-void
-op_capture::reset ()
-{
-  m_op->reset ();
-  inner_op::reset ();
-}
-
 std::string
 op_capture::name () const
 {
@@ -457,19 +601,62 @@ op_capture::name () const
 }
 
 
-op_tr_closure::op_tr_closure (std::shared_ptr <op> upstream,
+namespace
+{
+  struct deref_less
+  {
+    template <class T>
+    bool
+    operator() (T const &a, T const &b)
+    {
+      return *a < *b;
+    }
+  };
+}
+
+struct op_tr_closure::state
+{
+  std::set <std::shared_ptr <stack>, deref_less> m_seen;
+  std::vector <std::shared_ptr <stack> > m_stks;
+  bool m_op_drained;
+
+  state ()
+    : m_op_drained {true}
+  {}
+
+  std::unique_ptr <stack> yield_and_cache (std::shared_ptr <stack> stk);
+};
+
+op_tr_closure::op_tr_closure (layout &l,
+			      std::shared_ptr <op> upstream,
 			      std::shared_ptr <op_origin> origin,
 			      std::shared_ptr <op> op,
 			      op_tr_closure_kind k)
-  : inner_op {upstream}
+  : inner_op (upstream)
   , m_origin {origin}
   , m_op {op}
   , m_is_plus {k == op_tr_closure_kind::plus}
-  , m_op_drained {true}
+  , m_ll {l.reserve <state> ()}
 {}
 
+void
+op_tr_closure::state_con (scon &sc) const
+{
+  sc.con <state> (m_ll);
+  m_op->state_con (sc);
+  inner_op::state_con (sc);
+}
+
+void
+op_tr_closure::state_des (scon &sc) const
+{
+  inner_op::state_des (sc);
+  m_op->state_des (sc);
+  sc.des <state> (m_ll);
+}
+
 std::unique_ptr <stack>
-op_tr_closure::yield_and_cache (std::shared_ptr <stack> stk)
+op_tr_closure::state::yield_and_cache (std::shared_ptr <stack> stk)
 {
   if (m_seen.insert (stk).second)
     {
@@ -481,7 +668,7 @@ op_tr_closure::yield_and_cache (std::shared_ptr <stack> stk)
 }
 
 stack::uptr
-op_tr_closure::next_from_upstream ()
+op_tr_closure::next_from_upstream (state &st, scon &sc) const
 {
   // When we get a new stack from upstream, that provides a fresh
   // context, and we need to forget what we've seen so far.
@@ -492,72 +679,61 @@ op_tr_closure::next_from_upstream ()
   // We should see as many root-root matches as there are entries.
   // But if we fail to clear the seen-cache, we only see one.
 
-  m_seen.clear ();
-  return m_upstream->next ();
+  st.m_seen.clear ();
+  return m_upstream->next (sc);
 }
 
 stack::uptr
-op_tr_closure::next_from_op ()
+op_tr_closure::next_from_op (state &st, scon &sc) const
 {
-  if (m_op_drained)
+  if (st.m_op_drained)
     return nullptr;
-  if (auto ret = m_op->next ())
+  if (auto ret = m_op->next (sc))
     return ret;
-  m_op_drained = true;
+  st.m_op_drained = true;
   return nullptr;
 }
 
 bool
-op_tr_closure::send_to_op (std::unique_ptr <stack> stk)
+op_tr_closure::send_to_op (state &st, scon &sc,
+			   std::unique_ptr <stack> stk) const
 {
   if (stk == nullptr)
     return false;
 
-  m_op->reset ();
-  m_origin->set_next (std::move (stk));
-  m_op_drained = false;
+  m_origin->set_next (sc, std::move (stk));
+  st.m_op_drained = false;
   return true;
 }
 
 bool
-op_tr_closure::send_to_op ()
+op_tr_closure::send_to_op (state &st, scon &sc) const
 {
-  if (m_stks.empty ())
-    return m_is_plus ? send_to_op (next_from_upstream ()) : false;
+  if (st.m_stks.empty ())
+    return m_is_plus ? send_to_op (st, sc,
+				   next_from_upstream (st, sc)) : false;
 
-  send_to_op (std::make_unique <stack> (*m_stks.back ()));
-  m_stks.pop_back ();
+  send_to_op (st, sc, std::make_unique <stack> (*st.m_stks.back ()));
+  st.m_stks.pop_back ();
   return true;
 }
 
 stack::uptr
-op_tr_closure::next ()
+op_tr_closure::next (scon &sc) const
 {
+  state &st = sc.get <state> (m_ll);
+
   do
-    while (std::shared_ptr <stack> stk = next_from_op ())
-      if (auto ret = yield_and_cache (stk))
+    while (std::shared_ptr <stack> stk = next_from_op (st, sc))
+      if (auto ret = st.yield_and_cache (stk))
 	return ret;
-  while (send_to_op ());
+  while (send_to_op (st, sc));
 
   if (! m_is_plus)
-    if (std::shared_ptr <stack> stk = next_from_upstream ())
-      return yield_and_cache (stk);
+    if (std::shared_ptr <stack> stk = next_from_upstream (st, sc))
+      return st.yield_and_cache (stk);
 
   return nullptr;
-}
-
-void
-op_tr_closure::reset_me ()
-{
-  m_stks.clear ();
-  m_seen.clear ();
-}
-
-void
-op_tr_closure::reset ()
-{
-  reset_me ();
-  inner_op::reset ();
 }
 
 std::string
@@ -567,7 +743,13 @@ op_tr_closure::name () const
 }
 
 
-op_subx::op_subx (std::shared_ptr <op> upstream,
+struct op_subx::state
+{
+  stack::uptr m_stk;
+};
+
+op_subx::op_subx (layout &l,
+		  std::shared_ptr <op> upstream,
 		  std::shared_ptr <op_origin> origin,
 		  std::shared_ptr <op> op,
 		  size_t keep)
@@ -575,25 +757,41 @@ op_subx::op_subx (std::shared_ptr <op> upstream,
   , m_origin {origin}
   , m_op {op}
   , m_keep {keep}
+  , m_ll {l.reserve <state> ()}
 {}
 
-stack::uptr
-op_subx::next ()
+void
+op_subx::state_con (scon &sc) const
 {
+  sc.con <state> (m_ll);
+  m_op->state_con (sc);
+  inner_op::state_con (sc);
+}
+
+void
+op_subx::state_des (scon &sc) const
+{
+  inner_op::state_des (sc);
+  m_op->state_des (sc);
+  sc.des <state> (m_ll);
+}
+
+stack::uptr
+op_subx::next (scon &sc) const
+{
+  state &st = sc.get <state> (m_ll);
+
   while (true)
     {
-      while (m_stk == nullptr)
-	if (m_stk = m_upstream->next ())
-	  {
-	    m_op->reset ();
-	    m_origin->set_next (std::make_unique <stack> (*m_stk));
-	  }
+      while (st.m_stk == nullptr)
+	if (st.m_stk = m_upstream->next (sc))
+	  m_origin->set_next (sc, std::make_unique <stack> (*st.m_stk));
 	else
 	  return nullptr;
 
-      if (auto stk = m_op->next ())
+      if (auto stk = m_op->next (sc))
 	{
-	  auto ret = std::make_unique <stack> (*m_stk);
+	  auto ret = std::make_unique <stack> (*st.m_stk);
 	  std::vector <std::unique_ptr <value>> kept;
 	  for (size_t i = 0; i < m_keep; ++i)
 	    kept.push_back (stk->pop ());
@@ -605,21 +803,8 @@ op_subx::next ()
 	  return ret;
 	}
 
-      reset_me ();
+      st.m_stk = nullptr;
     }
-}
-
-void
-op_subx::reset_me ()
-{
-  m_stk = nullptr;
-}
-
-void
-op_subx::reset ()
-{
-  reset_me ();
-  inner_op::reset ();
 }
 
 std::string
@@ -628,10 +813,11 @@ op_subx::name () const
   return std::string ("subx<") + m_op->name () + ">";
 }
 
+
 stack::uptr
-op_f_debug::next ()
+op_f_debug::next (scon &sc) const
 {
-  while (auto stk = m_upstream->next ())
+  while (auto stk = m_upstream->next (sc))
     {
       debug_stack (*stk);
       return stk;
@@ -646,107 +832,87 @@ op_f_debug::name () const
 }
 
 
-struct op_scope::pimpl
+struct op_scope::state
 {
-  std::shared_ptr <op> m_upstream;
-  std::shared_ptr <op_origin> m_origin;
-  std::shared_ptr <op> m_op;
-  size_t m_num_vars;
   bool m_primed;
 
-  pimpl (std::shared_ptr <op> upstream,
-	 std::shared_ptr <op_origin> origin,
-	 std::shared_ptr <op> op,
-	 size_t num_vars)
-    : m_upstream {upstream}
-    , m_origin {origin}
-    , m_op {op}
-    , m_num_vars {num_vars}
-    , m_primed {false}
+  state ()
+    : m_primed {false}
   {}
-
-  void
-  reset_me ()
-  {
-    m_primed = false;
-  }
-
-  stack::uptr
-  next ()
-  {
-    while (true)
-      {
-	while (! m_primed)
-	  if (auto stk = m_upstream->next ())
-	    {
-	      // Push new stack frame.
-	      stk->set_frame (std::make_shared <frame> (stk->nth_frame (0),
-							m_num_vars));
-	      m_op->reset ();
-	      m_origin->set_next (std::move (stk));
-	      m_primed = true;
-	    }
-	  else
-	    return nullptr;
-
-	if (auto stk = m_op->next ())
-	  {
-	    // Pop top stack frame.
-	    std::shared_ptr <frame> of = stk->nth_frame (0);
-	    stk->set_frame (stk->nth_frame (1));
-	    value_closure::maybe_unlink_frame (of);
-	    return stk;
-	  }
-
-	reset_me ();
-      }
-  }
-
-  ~pimpl ()
-  {}
-
-  void
-  reset ()
-  {
-    reset_me ();
-    m_upstream->reset ();
-  }
 };
 
-op_scope::op_scope (std::shared_ptr <op> upstream,
+op_scope::op_scope (layout &l,
+		    std::shared_ptr <op> upstream,
 		    std::shared_ptr <op_origin> origin,
 		    std::shared_ptr <op> op,
 		    size_t num_vars)
-  : m_pimpl {std::make_unique <pimpl> (upstream, origin, op, num_vars)}
+  : inner_op {upstream}
+  , m_origin {origin}
+  , m_op {op}
+  , m_num_vars {num_vars}
+  , m_ll {l.reserve <state> ()}
 {}
 
-op_scope::~op_scope ()
-{}
-
-stack::uptr
-op_scope::next ()
+void
+op_scope::state_con (scon &sc) const
 {
-  return m_pimpl->next ();
+  sc.con <state> (m_ll);
+  m_op->state_con (sc);
+  inner_op::state_con (sc);
 }
 
 void
-op_scope::reset ()
+op_scope::state_des (scon &sc) const
 {
-  return m_pimpl->reset ();
+  inner_op::state_des (sc);
+  m_op->state_des (sc);
+  sc.des <state> (m_ll);
+}
+
+stack::uptr
+op_scope::next (scon &sc) const
+{
+  state &st = sc.get <state> (m_ll);
+
+  while (true)
+    {
+      while (! st.m_primed)
+	if (auto stk = m_upstream->next (sc))
+	  {
+	    // Push new stack frame.
+	    stk->set_frame (std::make_shared <frame> (stk->nth_frame (0),
+						      m_num_vars));
+	    m_origin->set_next (sc, std::move (stk));
+	    st.m_primed = true;
+	  }
+	else
+	  return nullptr;
+
+      if (auto stk = m_op->next (sc))
+	{
+	  // Pop top stack frame.
+	  std::shared_ptr <frame> of = stk->nth_frame (0);
+	  stk->set_frame (stk->nth_frame (1));
+	  value_closure::maybe_unlink_frame (of);
+	  return stk;
+	}
+
+      st.m_primed = false;
+    }
 }
 
 std::string
 op_scope::name () const
 {
-  return std::string ("scope<vars=") + std::to_string (m_pimpl->m_num_vars)
-    + ", " + m_pimpl->m_op->name () + ">";
+  return std::string ("scope<vars=") + std::to_string (m_num_vars)
+    + ", " + m_op->name () + ">";
 }
 
 
 stack::uptr
-op_bind::next ()
+op_bind::next (scon &sc) const
 {
-  if (auto stk = m_upstream->next ())
+  if (auto stk = m_upstream->next (sc))
     {
       auto frame = stk->nth_frame (m_depth);
       frame->bind_value (m_index, stk->pop ());
@@ -770,9 +936,9 @@ op_read::op_read (std::shared_ptr <op> upstream, size_t depth, var_id index)
 {}
 
 stack::uptr
-op_read::next ()
+op_read::next (scon &sc) const
 {
-  if (auto stk = m_upstream->next ())
+  if (auto stk = m_upstream->next (sc))
     {
       auto frame = stk->nth_frame (m_depth);
       value &val = frame->read_value (m_index);
@@ -792,9 +958,9 @@ op_read::name () const
 
 
 stack::uptr
-op_lex_closure::next ()
+op_lex_closure::next (scon &sc) const
 {
-  if (auto stk = m_upstream->next ())
+  if (auto stk = m_upstream->next (sc))
     {
       stk->push (std::make_unique <value_closure> (m_t, stk->nth_frame (0), 0));
       return stk;
@@ -809,72 +975,87 @@ op_lex_closure::name () const
 }
 
 
-op_ifelse::op_ifelse (std::shared_ptr <op> upstream,
+struct op_ifelse::state
+{
+  op *m_sel_op;
+
+  state ()
+    : m_sel_op {nullptr}
+  {}
+};
+
+op_ifelse::op_ifelse (layout &l,
+		      std::shared_ptr <op> upstream,
 		      std::shared_ptr <op_origin> cond_origin,
 		      std::shared_ptr <op> cond_op,
 		      std::shared_ptr <op_origin> then_origin,
 		      std::shared_ptr <op> then_op,
 		      std::shared_ptr <op_origin> else_origin,
 		      std::shared_ptr <op> else_op)
-  : inner_op {upstream}
+  : inner_op (upstream)
   , m_cond_origin {cond_origin}
   , m_cond_op {cond_op}
   , m_then_origin {then_origin}
   , m_then_op {then_op}
   , m_else_origin {else_origin}
   , m_else_op {else_op}
+  , m_ll {l.reserve <state> ()}
+{}
+
+void
+op_ifelse::state_con (scon &sc) const
 {
-    reset_me ();
+  sc.con <state> (m_ll);
+  inner_op::state_con (sc);
 }
 
 void
-op_ifelse::reset_me ()
+op_ifelse::state_des (scon &sc) const
 {
-  m_sel_origin = nullptr;
-  m_sel_op = nullptr;
-}
-
-void
-op_ifelse::reset ()
-{
-  reset_me ();
-  inner_op::reset ();
+  inner_op::state_des (sc);
+  sc.des <state> (m_ll);
 }
 
 stack::uptr
-op_ifelse::next ()
+op_ifelse::next (scon &sc) const
 {
+  state &st = sc.get <state> (m_ll);
+
   while (true)
     {
-      if (m_sel_op == nullptr)
+      if (st.m_sel_op == nullptr)
 	{
-	  if (auto stk = m_upstream->next ())
+	  if (auto stk = m_upstream->next (sc))
 	    {
-	      m_cond_op->reset ();
-	      m_cond_origin->set_next (std::make_unique <stack> (*stk));
+	      op_origin *sel_origin;
+	      {
+		scon_guard sg {sc, *m_cond_op};
+		m_cond_origin->set_next (sc, std::make_unique <stack> (*stk));
 
-	      if (m_cond_op->next () != nullptr)
-		{
-		  m_sel_origin = m_then_origin;
-		  m_sel_op = m_then_op;
-		}
-	      else
-		{
-		  m_sel_origin = m_else_origin;
-		  m_sel_op = m_else_op;
-		}
+		if (m_cond_op->next (sc) != nullptr)
+		  {
+		    sel_origin = m_then_origin.get ();
+		    st.m_sel_op = m_then_op.get ();
+		  }
+		else
+		  {
+		    sel_origin = m_else_origin.get ();
+		    st.m_sel_op = m_else_op.get ();
+		  }
+	      }
 
-	      m_sel_op->reset ();
-	      m_sel_origin->set_next (std::move (stk));
+	      st.m_sel_op->state_con (sc);
+	      sel_origin->set_next (sc, std::move (stk));
 	    }
 	  else
 	    return nullptr;
 	}
 
-      if (auto stk = m_sel_op->next ())
+      if (auto stk = st.m_sel_op->next (sc))
 	return stk;
 
-      reset_me ();
+      st.m_sel_op->state_des (sc);
+      sc.reset <state> (m_ll);
     }
 }
 
@@ -886,9 +1067,9 @@ op_ifelse::name () const
 
 
 pred_result
-pred_not::result (stack &stk) const
+pred_not::result (scon &sc, stack &stk) const
 {
-  return ! m_a->result (stk);
+  return ! m_a->result (sc, stk);
 }
 
 std::string
@@ -899,9 +1080,9 @@ pred_not::name () const
 
 
 pred_result
-pred_and::result (stack &stk) const
+pred_and::result (scon &sc, stack &stk) const
 {
-  return m_a->result (stk) && m_b->result (stk);
+  return m_a->result (sc, stk) && m_b->result (sc, stk);
 }
 
 std::string
@@ -912,9 +1093,9 @@ pred_and::name () const
 
 
 pred_result
-pred_or::result (stack &stk) const
+pred_or::result (scon &sc, stack &stk) const
 {
-  return m_a->result (stk) || m_b->result (stk);
+  return m_a->result (sc, stk) || m_b->result (sc, stk);
 }
 
 std::string
@@ -924,11 +1105,11 @@ pred_or::name () const
 }
 
 pred_result
-pred_subx_any::result (stack &stk) const
+pred_subx_any::result (scon &sc, stack &stk) const
 {
-  m_op->reset ();
-  m_origin->set_next (std::make_unique <stack> (stk));
-  if (m_op->next () != nullptr)
+  scon_guard sg {sc, *m_op};
+  m_origin->set_next (sc, std::make_unique <stack> (stk));
+  if (m_op->next (sc) != nullptr)
     return pred_result::yes;
   else
     return pred_result::no;
@@ -940,28 +1121,21 @@ pred_subx_any::name () const
   return std::string ("pred_subx_any<") + m_op->name () + ">";
 }
 
-void
-pred_subx_any::reset ()
-{
-  m_op->reset ();
-}
-
 
 pred_result
-pred_subx_compare::result (stack &stk) const
+pred_subx_compare::result (scon &sc, stack &stk) const
 {
-  m_op1->reset ();
-  m_origin->set_next (std::make_unique <stack> (stk));
-  while (auto stk_1 = m_op1->next ())
+  scon_guard sg {sc, *m_op1};
+  m_origin->set_next (sc, std::make_unique <stack> (stk));
+  while (auto stk_1 = m_op1->next (sc))
     {
-      m_op2->reset ();
-      m_origin->set_next (std::make_unique <stack> (stk));
-
-      while (auto stk_2 = m_op2->next ())
+      scon_guard sg {sc, *m_op2};
+      m_origin->set_next (sc, std::make_unique <stack> (stk));
+      while (auto stk_2 = m_op2->next (sc))
 	{
 	  stk_1->push (stk_2->pop ());
 
-	  if (m_pred->result (*stk_1) == pred_result::yes)
+	  if (m_pred->result (sc, *stk_1) == pred_result::yes)
 	    return pred_result::yes;
 
 	  stk_1->pop ();
@@ -978,16 +1152,9 @@ pred_subx_compare::name () const
     + m_op2->name () + "><" + m_pred->name () + ">";
 }
 
-void
-pred_subx_compare::reset ()
-{
-  m_op1->reset ();
-  m_op2->reset ();
-  m_pred->reset ();
-}
 
 pred_result
-pred_pos::result (stack &stk) const
+pred_pos::result (scon &sc, stack &stk) const
 {
     auto const &value = stk.top ();
     return value.get_pos () == m_pos ? pred_result::yes : pred_result::no;

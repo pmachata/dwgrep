@@ -40,7 +40,8 @@ namespace
   {
     layout l;
     auto pred = Builtin {true}.build_pred (l);
-    return pred->result (stk);
+    scon sc {l};
+    return pred->result (sc, stk);
   }
 }
 

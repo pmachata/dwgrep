@@ -37,21 +37,20 @@
 class op_apply
   : public op
 {
+  struct state;
   std::shared_ptr <op> m_upstream;
-  std::shared_ptr <op> m_op;
-  std::shared_ptr <frame> m_old_frame;
   bool m_skip_non_closures;
-
-  void reset_me ();
+  layout::loc m_ll;
 
 public:
   // When skip_non_closures is true and the incoming stack doesn't have a
   // closure on TOS, op_apply lets it pass through. Otherwise it complains.
-  op_apply (std::shared_ptr <op> upstream, bool skip_non_closures = false);
-  ~op_apply ();
+  op_apply (layout &l, std::shared_ptr <op> upstream,
+	    bool skip_non_closures = false);
 
-  void reset () override;
-  stack::uptr next () override;
+  void state_con (scon &sc) const override;
+  void state_des (scon &sc) const override;
+  stack::uptr next (scon &sc) const override;
   std::string name () const override;
 };
 

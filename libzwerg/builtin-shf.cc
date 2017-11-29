@@ -1,4 +1,5 @@
 /*
+   Copyright (C) 2017 Petr Machata
    Copyright (C) 2014 Red Hat, Inc.
    This file is part of dwgrep.
 
@@ -59,9 +60,9 @@ operators are present for completeness' sake.
 }
 
 stack::uptr
-op_drop::next ()
+op_drop::next (scon &sc) const
 {
-  if (auto stk = m_upstream->next ())
+  if (auto stk = m_upstream->next (sc))
     {
       stk->pop ();
       return stk;
@@ -77,9 +78,9 @@ op_drop::docstring ()
 
 
 stack::uptr
-op_swap::next ()
+op_swap::next (scon &sc) const
 {
-  if (auto stk = m_upstream->next ())
+  if (auto stk = m_upstream->next (sc))
     {
       auto a = stk->pop ();
       auto b = stk->pop ();
@@ -98,9 +99,9 @@ op_swap::docstring ()
 
 
 stack::uptr
-op_dup::next ()
+op_dup::next (scon &sc) const
 {
-  if (auto stk = m_upstream->next ())
+  if (auto stk = m_upstream->next (sc))
     {
       stk->push (stk->top ().clone ());
       return stk;
@@ -116,9 +117,9 @@ op_dup::docstring ()
 
 
 stack::uptr
-op_over::next ()
+op_over::next (scon &sc) const
 {
-  if (auto stk = m_upstream->next ())
+  if (auto stk = m_upstream->next (sc))
     {
       stk->push (stk->get (1).clone ());
       return stk;
@@ -134,9 +135,9 @@ op_over::docstring ()
 
 
 stack::uptr
-op_rot::next ()
+op_rot::next (scon &sc) const
 {
-  if (auto stk = m_upstream->next ())
+  if (auto stk = m_upstream->next (sc))
     {
       auto a = stk->pop ();
       auto b = stk->pop ();

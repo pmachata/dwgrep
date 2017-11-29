@@ -1,4 +1,5 @@
 /*
+   Copyright (C) 2017 Petr Machata
    Copyright (C) 2014 Red Hat, Inc.
    This file is part of dwgrep.
 
@@ -40,7 +41,7 @@ overload_instance::overload_instance
 {
   for (auto const &v: stencil)
     {
-      auto origin = std::make_shared <op_origin> (nullptr);
+      auto origin = std::make_shared <op_origin> (l);
       auto op = std::get <1> (v)->build_exec (l, origin);
       auto pred = std::get <1> (v)->build_pred (l);
 
@@ -147,61 +148,72 @@ overload_tab::instantiate (layout &l)
 }
 
 
-overload_op::overload_op (std::shared_ptr <op> upstream,
+struct overload_op::state
+{
+  std::shared_ptr <op> m_op;
+
+  state ()
+    : m_op {nullptr}
+  {}
+
+};
+
+overload_op::overload_op (layout &l, std::shared_ptr <op> upstream,
 			  overload_instance ovl_inst)
   : m_upstream {upstream}
+  , m_ll {l.reserve <state> ()}
   , m_ovl_inst {ovl_inst}
-  , m_op {nullptr}
 {}
 
-overload_op::~overload_op ()
-{}
+void
+overload_op::state_con (scon &sc) const
+{
+  sc.con <state> (m_ll);
+  m_upstream->state_con (sc);
+}
+
+void
+overload_op::state_des (scon &sc) const
+{
+  m_upstream->state_des (sc);
+  sc.des <state> (m_ll);
+}
 
 stack::uptr
-overload_op::next ()
+overload_op::next (scon &sc) const
 {
+  state &st = sc.get <state> (m_ll);
   while (true)
     {
-      while (m_op == nullptr)
+      while (st.m_op == nullptr)
 	{
-	  if (auto stk = m_upstream->next ())
+	  if (auto stk = m_upstream->next (sc))
 	    {
 	      auto ovl = m_ovl_inst.find_exec (*stk);
 	      if (std::get <0> (ovl) == nullptr)
 		m_ovl_inst.show_error (name (), selector {*stk});
 	      else
 		{
-		  m_op = std::get <1> (ovl);
-		  m_op->reset ();
-		  std::get <0> (ovl)->set_next (std::move (stk));
+		  st.m_op = std::get <1> (ovl);
+		  st.m_op->state_con (sc);
+		  std::get <0> (ovl)->set_next (sc, std::move (stk));
 		}
 	    }
 	  else
 	    return nullptr;
 	}
 
-      if (auto stk = m_op->next ())
+      if (auto stk = st.m_op->next (sc))
 	return stk;
 
-      reset_me ();
+      st.m_op->state_des (sc);
+      st.m_op = nullptr;
     }
 }
 
-void
-overload_op::reset_me ()
-{
-  m_op = nullptr;
-}
-
-void
-overload_op::reset ()
-{
-  reset_me ();
-  m_upstream->reset ();
-}
 
 pred_result
-overload_pred::result (stack &stk) const
+overload_pred::result (scon &sc, stack &stk) const
 {
   auto ovl = m_ovl_inst.find_pred (stk);
   if (ovl == nullptr)
@@ -210,7 +222,7 @@ overload_pred::result (stack &stk) const
       return pred_result::fail;
     }
   else
-    return ovl->result (stk);
+    return ovl->result (sc, stk);
 }
 
 namespace
@@ -220,10 +232,11 @@ namespace
   {
     char const *m_name;
 
-    named_overload_op (std::shared_ptr <op> upstream,
+    named_overload_op (layout &l,
+		       std::shared_ptr <op> upstream,
 		       overload_instance ovl_inst,
 		       char const *name)
-      : overload_op {upstream, ovl_inst}
+      : overload_op {l, upstream, ovl_inst}
       , m_name {name}
     {}
 
@@ -259,7 +272,7 @@ overloaded_op_builtin::build_exec (layout &l,
 				   std::shared_ptr <op> upstream) const
 {
   return std::make_shared <named_overload_op>
-    (upstream, get_overload_tab ()->instantiate (l), name ());
+    (l, upstream, get_overload_tab ()->instantiate (l), name ());
 }
 
 std::shared_ptr <overloaded_builtin>

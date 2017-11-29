@@ -37,6 +37,8 @@
 #include "stack.hh"
 #include "pred_result.hh"
 #include "tree.hh"
+#include "layout.hh"
+#include "scon.hh"
 
 // Subclasses of class op represent computations.  An op node is
 // typically constructed such that it directly feeds from another op
@@ -46,10 +48,14 @@ class op
 public:
   virtual ~op () {}
 
-  // Produce next value.
-  virtual stack::uptr next () = 0;
-  virtual void reset () = 0;
   virtual std::string name () const = 0;
+
+  // Construct / destruct state for this op.
+  virtual void state_con (scon &sc) const = 0;
+  virtual void state_des (scon &sc) const = 0;
+
+  // Produce next value.
+  virtual stack::uptr next (scon &sc) const = 0;
 };
 
 template <class RT>
@@ -102,8 +108,11 @@ public:
     : m_upstream {upstream}
   {}
 
-  void reset () override
-  { m_upstream->reset (); }
+  void state_con (scon &sc) const override
+  { m_upstream->state_con (sc); }
+
+  void state_des (scon &sc) const override
+  { m_upstream->state_des (sc); }
 };
 
 // Class pred is for holding predicates.  These don't alter the
@@ -111,9 +120,8 @@ public:
 class pred
 {
 public:
-  virtual pred_result result (stack &stk) const = 0;
+  virtual pred_result result (scon &sc, stack &stk) const = 0;
   virtual std::string name () const = 0;
-  virtual void reset () = 0;
   virtual ~pred () {}
 };
 
@@ -133,20 +141,18 @@ public:
 class op_origin
   : public op
 {
-  stack::uptr m_stk;
-  bool m_reset;
+  struct state;
+  layout::loc m_ll;
 
 public:
-  explicit op_origin (stack::uptr s)
-    : m_stk (std::move (s))
-    , m_reset (false)
-  {}
+  explicit op_origin (layout &l);
 
-  void set_next (stack::uptr s);
-
-  stack::uptr next () override;
   std::string name () const override;
-  void reset () override;
+  void state_con (scon &sc) const override;
+  void state_des (scon &sc) const override;
+  stack::uptr next (scon &sc) const override;
+
+  void set_next (scon &sc, stack::uptr s) const;
 };
 
 struct stub_op
@@ -160,7 +166,6 @@ struct stub_pred
   : public pred
 {
   std::string name () const override final { return "stub"; }
-  void reset () override final {}
 };
 
 class op_nop
@@ -171,8 +176,8 @@ public:
     : inner_op {upstream}
   {}
 
-  stack::uptr next () override;
   std::string name () const override;
+  stack::uptr next (scon &sc) const override;
 };
 
 class op_assert
@@ -186,8 +191,8 @@ public:
     , m_pred {std::move (p)}
   {}
 
-  stack::uptr next () override;
   std::string name () const override;
+  stack::uptr next (scon &sc) const override;
 };
 
 // The stringer hieararchy supports op_format, which implements
@@ -202,9 +207,10 @@ public:
 class stringer
 {
 public:
-  virtual std::pair <stack::uptr, std::string> next () = 0;
-  virtual void reset () = 0;
   virtual ~stringer () {}
+  virtual void state_con (scon &sc) const = 0;
+  virtual void state_des (scon &sc) const = 0;
+  virtual std::pair <stack::uptr, std::string> next (scon &sc) const = 0;
 };
 
 // The formatting starts here.  This uses a pattern similar to
@@ -214,18 +220,17 @@ public:
 class stringer_origin
   : public stringer
 {
-  stack::uptr m_stk;
-  bool m_reset;
+  struct state;
+  layout::loc m_ll;
 
 public:
-  stringer_origin ()
-    : m_reset (false)
-  {}
+  explicit stringer_origin (layout &l);
 
-  void set_next (stack::uptr s);
+  void state_con (scon &sc) const override;
+  void state_des (scon &sc) const override;
+  std::pair <stack::uptr, std::string> next (scon &sc) const override;
 
-  std::pair <stack::uptr, std::string> next () override;
-  void reset () override;
+  void set_next (scon &sc, stack::uptr s);
 };
 
 // A stringer for the literal parts (non-%s, non-%(%)) of the format
@@ -238,56 +243,55 @@ class stringer_lit
 
 public:
   stringer_lit (std::shared_ptr <stringer> upstream, std::string str)
-    : m_upstream (std::move (upstream))
-    , m_str (str)
+    : m_upstream {std::move (upstream)}
+    , m_str {str}
   {}
 
-  std::pair <stack::uptr, std::string> next () override;
-  void reset () override;
+  void state_con (scon &sc) const override;
+  void state_des (scon &sc) const override;
+  std::pair <stack::uptr, std::string> next (scon &sc) const override;
 };
 
 // A stringer for operational parts (%s, %(%)) of the format string.
 class stringer_op
   : public stringer
 {
+  struct state;
   std::shared_ptr <stringer> m_upstream;
   std::shared_ptr <op_origin> m_origin;
   std::shared_ptr <op> m_op;
-  std::string m_str;
-  bool m_have;
+  layout::loc m_ll;
 
 public:
-  stringer_op (std::shared_ptr <stringer> upstream,
+  stringer_op (layout &l,
+	       std::shared_ptr <stringer> upstream,
 	       std::shared_ptr <op_origin> origin,
-	       std::shared_ptr <op> op)
-    : m_upstream {upstream}
-    , m_origin {origin}
-    , m_op {op}
-    , m_have {false}
-  {}
+	       std::shared_ptr <op> op);
 
-  std::pair <stack::uptr, std::string> next () override;
-  void reset () override;
+  void state_con (scon &sc) const override;
+  void state_des (scon &sc) const override;
+  std::pair <stack::uptr, std::string> next (scon &sc) const override;
 };
 
 // A top-level format-string node.
 class op_format
   : public inner_op
 {
+  class state;
   std::shared_ptr <stringer_origin> m_origin;
   std::shared_ptr <stringer> m_stringer;
-  size_t m_pos;
-
-  void reset_me ();
+  layout::loc m_ll;
 
 public:
-  op_format (std::shared_ptr <op> upstream,
+  op_format (layout &l,
+	     std::shared_ptr <op> upstream,
 	     std::shared_ptr <stringer_origin> origin,
 	     std::shared_ptr <stringer> stringer);
 
-  stack::uptr next () override;
   std::string name () const override;
-  void reset () override;
+  void state_con (scon &sc) const override;
+  void state_des (scon &sc) const override;
+  stack::uptr next (scon &sc) const override;
 };
 
 class op_const
@@ -296,13 +300,13 @@ class op_const
   std::unique_ptr <value> m_value;
 
 public:
-  op_const (std::shared_ptr <op> upstream, std::unique_ptr <value> &&value)
-    : inner_op {upstream}
+  op_const (std::shared_ptr <op> upstream, std::unique_ptr <value> value)
+    : inner_op (upstream)
     , m_value {std::move (value)}
   {}
 
-  stack::uptr next () override;
   std::string name () const override;
+  stack::uptr next (scon &sc) const override;
 };
 
 // Tine is placed at the beginning of each alt expression.  These
@@ -321,92 +325,84 @@ public:
 //
 // Thus the way the expression (A (B, C D, E) F) is constructed as:
 //
-//          +- [ Tine 1 ] <-     [ B ]      <-+
-//  [ A ] <-+- [ Tine 2 ] <- [ C ] <- [ D ] <-+- [ Merge ] <- [ F ]
-//          +- [ Tine 3 ] <-     [ E ]      <-+
+//  [ A ] <------------------------------+
+//  [ Tine 1 ] <-     [ B ]      <-+     |
+//  [ Tine 2 ] <- [ C ] <- [ D ] <-+- [ Merge ] <- [ F ]
+//  [ Tine 3 ] <-     [ E ]      <-+
+class op_merge;
 class op_tine
-  : public inner_op
+  : public op
 {
-  std::shared_ptr <std::vector <stack::uptr>> m_file;
-  std::shared_ptr <bool> m_done;
+  friend class op_merge;
+
+  op_merge &m_merge;
   size_t m_branch_id;
 
 public:
-  op_tine (std::shared_ptr <op> upstream,
-	   std::shared_ptr <std::vector <stack::uptr>> file,
-	   std::shared_ptr <bool> done,
-	   size_t branch_id)
-    : inner_op {upstream}
-    , m_file {file}
-    , m_done {done}
+  op_tine (op_merge &merge, size_t branch_id)
+    : m_merge {merge}
     , m_branch_id {branch_id}
-  {
-    assert (m_branch_id < m_file->size ());
-  }
+  {}
 
-  stack::uptr next () override;
   std::string name () const override;
-  void reset () override;
+  void state_con (scon &sc) const override {}
+  void state_des (scon &sc) const override {}
+  stack::uptr next (scon &sc) const override;
 };
 
 class op_merge
-  : public op
+  : public inner_op
 {
+  friend class op_tine;
+
 public:
-  typedef std::vector <std::shared_ptr <op> > opvec_t;
+  typedef std::vector <std::shared_ptr <op>> opvec_t;
 
 private:
+  struct state;
+  layout::loc m_ll;
   opvec_t m_ops;
-  opvec_t::iterator m_it;
-  std::shared_ptr <bool> m_done;
 
-  std::shared_ptr <bool>
-  set_false (std::shared_ptr <bool> flagp)
-  {
-    assert (flagp != nullptr);
-    *flagp = false;
-    return flagp;
-  }
+  state &get_state (scon &sc) const;
+  op &get_upstream () const;
 
 public:
-  op_merge (opvec_t ops, std::shared_ptr <bool> done)
-    : m_ops (ops)
-    , m_it (m_ops.begin ())
-    , m_done (set_false (done))
-  {}
+  op_merge (layout &l, std::shared_ptr <op> upstream);
 
-  stack::uptr next () override;
+  void
+  add_branch (std::shared_ptr <op> branch)
+  {
+    m_ops.push_back (branch);
+  }
+
   std::string name () const override;
-  void reset () override;
+  void state_con (scon &sc) const override;
+  void state_des (scon &sc) const override;
+  stack::uptr next (scon &sc) const override;
 };
 
 class op_or
   : public inner_op
 {
+  struct state;
   std::vector <std::pair <std::shared_ptr <op_origin>,
 			  std::shared_ptr <op>>> m_branches;
-  decltype (m_branches)::const_iterator m_branch_it;
-
-  void reset_me ();
+  layout::loc m_ll;
 
 public:
-  op_or (std::shared_ptr <op> upstream)
-    : inner_op {upstream}
-    , m_branch_it {m_branches.end ()}
-  {}
+  op_or (layout &l, std::shared_ptr <op> upstream);
+
+  std::string name () const override;
+  void state_con (scon &sc) const override;
+  void state_des (scon &sc) const override;
+  stack::uptr next (scon &sc) const override;
 
   void
   add_branch (std::shared_ptr <op_origin> origin,
 	      std::shared_ptr <op> op)
   {
-    assert (m_branch_it == m_branches.end ());
     m_branches.push_back (std::make_pair (origin, op));
-    m_branch_it = m_branches.end ();
   }
-
-  void reset () override;
-  stack::uptr next () override;
-  std::string name () const override;
 };
 
 class op_capture
@@ -424,9 +420,10 @@ public:
     , m_op {op}
   {}
 
-  void reset () override;
-  stack::uptr next () override;
   std::string name () const override;
+  void state_con (scon &sc) const override;
+  void state_des (scon &sc) const override;
+  stack::uptr next (scon &sc) const override;
 };
 
 
@@ -439,61 +436,51 @@ enum class op_tr_closure_kind
 class op_tr_closure
   : public inner_op
 {
+  struct state;
   std::shared_ptr <op_origin> m_origin;
   std::shared_ptr <op> m_op;
   bool m_is_plus;
+  layout::loc m_ll;
 
-  struct deref_less
-  {
-    template <class T>
-    bool
-    operator() (T const &a, T const &b)
-    {
-      return *a < *b;
-    }
-  };
-
-  std::set <std::shared_ptr <stack>, deref_less> m_seen;
-  std::vector <std::shared_ptr <stack> > m_stks;
-  bool m_op_drained;
-
-  stack::uptr next_from_op ();
-  stack::uptr next_from_upstream ();
-  bool send_to_op (std::unique_ptr <stack> stk);
-  bool send_to_op ();
-  std::unique_ptr <stack> yield_and_cache (std::shared_ptr <stack> stk);
-  void reset_me ();
+  stack::uptr next_from_op (state &st, scon &sc) const;
+  stack::uptr next_from_upstream (state &st, scon &sc) const;
+  bool send_to_op (state &st, scon &sc, std::unique_ptr <stack> stk) const;
+  bool send_to_op (state &st, scon &sc) const;
 
 public:
-  op_tr_closure (std::shared_ptr <op> upstream,
+  op_tr_closure (layout &l,
+		 std::shared_ptr <op> upstream,
 		 std::shared_ptr <op_origin> origin,
 		 std::shared_ptr <op> op,
 		 op_tr_closure_kind k);
 
-  stack::uptr next () override;
   std::string name () const override;
-  void reset () override;
+  void state_con (scon &sc) const override;
+  void state_des (scon &sc) const override;
+  stack::uptr next (scon &sc) const override;
 };
 
 class op_subx
   : public inner_op
 {
+  class state;
+
   std::shared_ptr <op_origin> m_origin;
   std::shared_ptr <op> m_op;
-  stack::uptr m_stk;
   size_t m_keep;
-
-  void reset_me ();
+  layout::loc m_ll;
 
 public:
-  op_subx (std::shared_ptr <op> upstream,
+  op_subx (layout &l,
+	   std::shared_ptr <op> upstream,
 	   std::shared_ptr <op_origin> origin,
 	   std::shared_ptr <op> op,
 	   size_t keep);
 
-  stack::uptr next () override;
   std::string name () const override;
-  void reset () override;
+  void state_con (scon &sc) const override;
+  void state_des (scon &sc) const override;
+  stack::uptr next (scon &sc) const override;
 };
 
 class op_f_debug
@@ -502,25 +489,29 @@ class op_f_debug
 public:
   using inner_op::inner_op;
 
-  stack::uptr next () override;
   std::string name () const override;
+  stack::uptr next (scon &sc) const override;
 };
 
 class op_scope
-  : public op
+  : public inner_op
 {
-  struct pimpl;
-  std::unique_ptr <pimpl> m_pimpl;
+  struct state;
+  std::shared_ptr <op_origin> m_origin;
+  std::shared_ptr <op> m_op;
+  size_t m_num_vars;
+  layout::loc m_ll;
 
 public:
-  op_scope (std::shared_ptr <op> upstream,
+  op_scope (layout &l,
+	    std::shared_ptr <op> upstream,
 	    std::shared_ptr <op_origin> origin,
 	    std::shared_ptr <op> op,
 	    size_t num_vars);
-  ~op_scope ();
 
-  stack::uptr next () override;
-  void reset () override;
+  void state_con (scon &sc) const override;
+  void state_des (scon &sc) const override;
+  stack::uptr next (scon &sc) const override;
   std::string name () const override;
 };
 
@@ -537,7 +528,7 @@ public:
     , m_index {index}
   {}
 
-  stack::uptr next () override;
+  stack::uptr next (scon &sc) const override;
   std::string name () const override;
 };
 
@@ -550,7 +541,7 @@ class op_read
 public:
   op_read (std::shared_ptr <op> upstream, size_t depth, var_id index);
 
-  stack::uptr next () override;
+  stack::uptr next (scon &sc) const override;
   std::string name () const override;
 };
 
@@ -566,13 +557,15 @@ public:
     , m_t {t}
   {}
 
-  stack::uptr next () override;
+  stack::uptr next (scon &sc) const override;
   std::string name () const override;
 };
 
 class op_ifelse
   : public inner_op
 {
+  struct state;
+
   std::shared_ptr <op_origin> m_cond_origin;
   std::shared_ptr <op> m_cond_op;
 
@@ -582,13 +575,11 @@ class op_ifelse
   std::shared_ptr <op_origin> m_else_origin;
   std::shared_ptr <op> m_else_op;
 
-  std::shared_ptr <op_origin> m_sel_origin;
-  std::shared_ptr <op> m_sel_op;
-
-  void reset_me ();
+  layout::loc m_ll;
 
 public:
-  op_ifelse (std::shared_ptr <op> upstream,
+  op_ifelse (layout &l,
+	     std::shared_ptr <op> upstream,
 	     std::shared_ptr <op_origin> cond_origin,
 	     std::shared_ptr <op> cond_op,
 	     std::shared_ptr <op_origin> then_origin,
@@ -596,9 +587,10 @@ public:
 	     std::shared_ptr <op_origin> else_origin,
 	     std::shared_ptr <op> else_op);
 
-  void reset () override;
-  stack::uptr next () override;
   std::string name () const override;
+  void state_con (scon &sc) const override;
+  void state_des (scon &sc) const override;
+  stack::uptr next (scon &sc) const override;
 };
 
 
@@ -612,11 +604,8 @@ public:
     : m_a {std::move (a)}
   {}
 
-  pred_result result (stack &stk) const override;
+  pred_result result (scon &sc, stack &stk) const override;
   std::string name () const override;
-
-  void reset () override
-  { m_a->reset (); }
 };
 
 class pred_and
@@ -631,14 +620,8 @@ public:
     , m_b {std::move (b)}
   {}
 
-  pred_result result (stack &stk) const override;
+  pred_result result (scon &sc, stack &stk) const override;
   std::string name () const override;
-
-  void reset () override
-  {
-    m_a->reset ();
-    m_b->reset ();
-  }
 };
 
 class pred_or
@@ -653,14 +636,8 @@ public:
     , m_b { std::move (b) }
   {}
 
-  pred_result result (stack &stk) const override;
+  pred_result result (scon &sc, stack &stk) const override;
   std::string name () const override;
-
-  void reset () override
-  {
-    m_a->reset ();
-    m_b->reset ();
-  }
 };
 
 class pred_subx_any
@@ -676,9 +653,8 @@ public:
     , m_origin {origin}
   {}
 
-  pred_result result (stack &stk) const override;
+  pred_result result (scon &sc, stack &stk) const override;
   std::string name () const override;
-  void reset () override;
 };
 
 class pred_subx_compare
@@ -700,9 +676,8 @@ public:
     , m_pred {std::move (pred)}
   {}
 
-  pred_result result (stack &stk) const override;
+  pred_result result (scon &sc, stack &stk) const override;
   std::string name () const override;
-  void reset () override;
 };
 
 class pred_pos
@@ -715,11 +690,7 @@ public:
     : m_pos (pos)
   {}
 
-  void
-  reset () override
-  {}
-
-  pred_result result (stack &stk) const override;
+  pred_result result (scon &sc, stack &stk) const override;
   std::string name () const override;
 };
 
