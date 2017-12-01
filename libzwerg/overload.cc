@@ -39,11 +39,13 @@ overload_instance::overload_instance
 	 std::vector <std::tuple <selector,
 				  std::shared_ptr <builtin>>> const &stencil)
 {
+  std::vector <layout> subls;
   for (auto const &v: stencil)
     {
-      auto origin = std::make_shared <op_origin> (l);
-      auto op = std::get <1> (v)->build_exec (l, origin);
-      auto pred = std::get <1> (v)->build_pred (l);
+      layout subl {l.size ()};
+      auto origin = std::make_shared <op_origin> (subl);
+      auto op = std::get <1> (v)->build_exec (subl, origin);
+      auto pred = std::get <1> (v)->build_pred (subl);
 
       assert (op != nullptr || pred != nullptr);
 
@@ -53,7 +55,11 @@ overload_instance::overload_instance
       m_selectors.push_back (std::get <0> (v));
       m_execs.push_back (std::make_pair (origin, op));
       m_preds.push_back (std::move (pred));
+
+      subls.push_back (subl);
     }
+
+  l.add_union (subls);
 }
 
 namespace

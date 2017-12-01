@@ -40,6 +40,7 @@ ADD_LIBRARY (LibzwergCore OBJECT
   docstring.cc
   init.cc
   int.cc
+  layout.cc
   libzwerg.cc
   op.cc
   overload.cc

@@ -26,42 +26,36 @@
    the GNU Lesser General Public License along with this program.  If
    not, see <http://www.gnu.org/licenses/>.  */
 
-#ifndef _LAYOUT_HH_
-#define _LAYOUT_HH_
+#include "layout.hh"
 
-#include <cstddef>
-#include <vector>
-
-class layout
+namespace
 {
-  size_t m_size;
-
-public:
-  struct loc
+  size_t
+  align (size_t top, size_t align)
   {
-    size_t m_loc;
-
-    loc (size_t loc)
-      : m_loc {loc}
-    {}
-  };
-
-  explicit layout (size_t size = 0)
-    : m_size {size}
-  {}
-
-  layout::loc reserve (size_t size, size_t align);
-  void add_union (std::vector <layout> layouts);
-  template <class State> layout::loc reserve ();
-
-  size_t size () const;
-};
-
-template <class State>
-layout::loc
-layout::reserve ()
-{
-  return reserve (sizeof (State), alignof (State));
+    return (top + (align - 1)) & -align;
+  }
 }
 
-#endif // _LAYOUT_HH_
+layout::loc
+layout::reserve (size_t size, size_t align)
+{
+  m_size = ::align (m_size, align);
+  auto ret = loc {m_size};
+  m_size += size;
+  return ret;
+}
+
+void
+layout::add_union (std::vector <layout> layouts)
+{
+  for (auto const &layout: layouts)
+    if (layout.m_size > m_size)
+      m_size = layout.m_size;
+}
+
+size_t
+layout::size () const
+{
+  return m_size;
+}
