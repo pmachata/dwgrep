@@ -31,6 +31,7 @@
 
 #include <vector>
 #include <cstdint>
+#include <memory>
 
 #include "layout.hh"
 
@@ -78,6 +79,7 @@ public:
 };
 
 class op;
+class stack;
 struct scon_guard
 {
   scon &m_sc;
@@ -85,6 +87,8 @@ struct scon_guard
 
   scon_guard (scon &sc, op &op);
   ~scon_guard ();
+
+  std::unique_ptr <stack> next () const;
 };
 
 #endif // _SCON_H_

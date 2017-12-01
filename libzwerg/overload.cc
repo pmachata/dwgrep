@@ -33,6 +33,7 @@
 
 #include "overload.hh"
 #include "docstring.hh"
+#include "../extern/optional.hpp"
 
 overload_instance::overload_instance
 	(layout &l,
@@ -157,12 +158,7 @@ overload_tab::instantiate (layout &l)
 
 struct overload_op::state
 {
-  op *m_op;
-
-  state ()
-    : m_op {nullptr}
-  {}
-
+  nonstd::optional <scon_guard> m_sg;
 };
 
 overload_op::overload_op (layout &l, std::shared_ptr <op> upstream,
@@ -192,7 +188,7 @@ overload_op::next (scon &sc) const
   state &st = sc.get <state> (m_ll);
   while (true)
     {
-      while (st.m_op == nullptr)
+      while (st.m_sg == nonstd::nullopt)
 	{
 	  if (auto stk = m_upstream->next (sc))
 	    {
@@ -201,8 +197,7 @@ overload_op::next (scon &sc) const
 		m_ovl_inst.show_error (name (), selector {*stk});
 	      else
 		{
-		  st.m_op = std::get <1> (ovl);
-		  st.m_op->state_con (sc);
+		  st.m_sg.emplace (sc, *std::get <1> (ovl));
 		  std::get <0> (ovl)->set_next (sc, std::move (stk));
 		}
 	    }
@@ -210,11 +205,10 @@ overload_op::next (scon &sc) const
 	    return nullptr;
 	}
 
-      if (auto stk = st.m_op->next (sc))
+      if (auto stk = st.m_sg->next ())
 	return stk;
 
-      st.m_op->state_des (sc);
-      st.m_op = nullptr;
+      st.m_sg = nonstd::nullopt;
     }
 }
 

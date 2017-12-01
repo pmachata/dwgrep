@@ -50,3 +50,9 @@ scon_guard::~scon_guard ()
   // excepted, so let it terminate.
   m_op.state_des (m_sc);
 }
+
+stack::uptr
+scon_guard::next () const
+{
+  return m_op.next (m_sc);
+}
