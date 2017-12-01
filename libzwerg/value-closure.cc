@@ -72,7 +72,9 @@ value_closure::cmp (value const &v) const
 {
   if (auto that = value::as <value_closure> (&v))
     {
-      return compare (this, that);
+      auto a = std::make_tuple (m_op, std::cref (m_env));
+      auto b = std::make_tuple (that->m_op, std::cref (that->m_env));
+      return compare (a, b);
     }
   else
     return cmp_result::fail;

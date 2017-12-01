@@ -185,3 +185,17 @@ TEST_F (ZwTest, frame_with_value_referencing_it_doesnt_leak_3)
   run_query (*builtins, std::move (stk), "{{} apply} (|F G| ?(G))");
   ASSERT_EQ (1, counter.use_count ());
 }
+
+TEST_F (ZwTest, iterate_lexical_closure_1)
+{
+  auto stk = std::make_unique <stack> ();
+  auto yielded = run_query (*builtins, std::move (stk), "1 (drop {})*");
+  ASSERT_EQ (2, yielded.size ());
+}
+
+TEST_F (ZwTest, iterate_lexical_closure_2)
+{
+  auto stk = std::make_unique <stack> ();
+  auto yielded = run_query (*builtins, std::move (stk), "{} (drop {})*");
+  ASSERT_EQ (2, yielded.size ());
+}
