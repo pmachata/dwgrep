@@ -32,6 +32,7 @@
 #include <memory>
 #include <set>
 #include <algorithm>
+#include "../extern/optional.hpp"
 
 #include "op.hh"
 #include "builtin-closure.hh"
@@ -195,12 +196,7 @@ stringer_lit::next (scon &sc) const
 
 struct stringer_op::state
 {
-  std::string m_str;
-  bool m_have;
-
-  state ()
-    : m_have {false}
-  {}
+  nonstd::optional<std::string> m_str;
 };
 
 stringer_op::stringer_op (layout &l,
@@ -236,25 +232,24 @@ stringer_op::next (scon &sc) const
 
   while (true)
     {
-      if (! st.m_have)
+      if (! st.m_str)
 	{
 	  auto up = m_upstream->next (sc);
 	  if (up.first == nullptr)
 	    return std::make_pair (nullptr, "");
 
 	  m_origin->set_next (sc, std::move (up.first));
-	  st.m_str = up.second;
-	  st.m_have = true;
+	  st.m_str.emplace (std::move (up.second));
 	}
 
       if (auto stk = m_op->next (sc))
 	{
 	  std::stringstream ss;
 	  (stk->pop ())->show (ss);
-	  return std::make_pair (std::move (stk), ss.str () + st.m_str);
+	  return std::make_pair (std::move (stk), ss.str () + *st.m_str);
 	}
 
-      st.m_have = false;
+      st.m_str = nonstd::nullopt;
     }
 }
 
