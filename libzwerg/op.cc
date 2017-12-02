@@ -958,11 +958,7 @@ op_lex_closure::name () const
 
 struct op_ifelse::state
 {
-  op *m_sel_op;
-
-  state ()
-    : m_sel_op {nullptr}
-  {}
+  nonstd::optional <scon_guard> m_sg;
 };
 
 op_ifelse::op_ifelse (layout &l,
@@ -1004,39 +1000,41 @@ op_ifelse::next (scon &sc) const
 
   while (true)
     {
-      if (st.m_sel_op == nullptr)
+      // Condition and then and else branches share state space. So in the
+      // following, make sure that the condition state space is only used after
+      // the then/else one is destroyed, and vice versa, that the then/else is
+      // not initialized before the condition stops running.
+      if (st.m_sg == nonstd::nullopt)
 	{
 	  if (auto stk = m_upstream->next (sc))
 	    {
-	      op_origin *sel_origin;
+	      stack::uptr cond_stk;
 	      {
 		scon_guard sg {sc, *m_cond_op};
 		m_cond_origin->set_next (sc, std::make_unique <stack> (*stk));
-
-		if (m_cond_op->next (sc) != nullptr)
-		  {
-		    sel_origin = m_then_origin.get ();
-		    st.m_sel_op = m_then_op.get ();
-		  }
-		else
-		  {
-		    sel_origin = m_else_origin.get ();
-		    st.m_sel_op = m_else_op.get ();
-		  }
+		cond_stk = sg.next ();
 	      }
 
-	      st.m_sel_op->state_con (sc);
-	      sel_origin->set_next (sc, std::move (stk));
+	      if (cond_stk != nullptr)
+		{
+		  st.m_sg.emplace (std::ref (sc), *m_then_op);
+		  m_then_origin->set_next (sc, std::move (stk));
+		}
+	      else
+		{
+		  st.m_sg.emplace (std::ref (sc), *m_else_op);
+		  m_else_origin->set_next (sc, std::move (stk));
+		}
 	    }
 	  else
 	    return nullptr;
 	}
 
-      if (auto stk = st.m_sel_op->next (sc))
+      assert (st.m_sg);
+      if (auto stk = st.m_sg->next ())
 	return stk;
 
-      st.m_sel_op->state_des (sc);
-      sc.reset <state> (m_ll);
+      st.m_sg = nonstd::nullopt;
     }
 }
 

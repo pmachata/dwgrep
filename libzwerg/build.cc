@@ -300,15 +300,22 @@ namespace
 
       case tree_type::IFELSE:
         {
-          auto cond_origin = std::make_shared <op_origin> (l);
-          auto cond_op = build_exec (t.child (0), l, rdv_ll, cond_origin, bn, up);
+          auto cond_subl = l;
+          auto cond_origin = std::make_shared <op_origin> (cond_subl);
+          auto cond_op = build_exec (t.child (0), cond_subl, rdv_ll,
+                                     cond_origin, bn, up);
 
-          auto then_origin = std::make_shared <op_origin> (l);
-          auto then_op = build_exec (t.child (1), l, rdv_ll, then_origin, bn, up);
+          auto then_subl = l;
+          auto then_origin = std::make_shared <op_origin> (then_subl);
+          auto then_op = build_exec (t.child (1), then_subl, rdv_ll,
+                                     then_origin, bn, up);
 
-          auto else_origin = std::make_shared <op_origin> (l);
-          auto else_op = build_exec (t.child (2), l, rdv_ll, else_origin, bn, up);
+          auto else_subl = l;
+          auto else_origin = std::make_shared <op_origin> (else_subl);
+          auto else_op = build_exec (t.child (2), else_subl, rdv_ll,
+                                     else_origin, bn, up);
 
+          l.add_union ({cond_subl, then_subl, else_subl});
           return std::make_shared <op_ifelse> (l, upstream,
                                                cond_origin, cond_op,
                                                then_origin, then_op,
