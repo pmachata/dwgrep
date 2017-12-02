@@ -83,9 +83,11 @@ class stack;
 struct scon_guard
 {
   scon &m_sc;
-  op &m_op;
+  op *m_op;
 
   scon_guard (scon &sc, op &op);
+  scon_guard (scon_guard const &cp) = delete;
+  scon_guard (scon_guard &&mv);
   ~scon_guard ();
 
   std::unique_ptr <stack> next () const;

@@ -37,22 +37,30 @@ scon::scon (layout const &l)
   : m_buf (l.size (), 85)
 {}
 
+scon_guard::scon_guard (scon_guard &&mv)
+  : m_sc {mv.m_sc}
+  , m_op {mv.m_op}
+{
+  mv.m_op = nullptr;
+}
+
 scon_guard::scon_guard (scon &sc, op &op)
   : m_sc {sc}
-  , m_op {op}
+  , m_op {&op}
 {
-  m_op.state_con (m_sc);
+  m_op->state_con (m_sc);
 }
 
 scon_guard::~scon_guard ()
 {
   // Des is just a destructor wrapper. If it excepts, it's as if a dtor
   // excepted, so let it terminate.
-  m_op.state_des (m_sc);
+  if (m_op != nullptr)
+    m_op->state_des (m_sc);
 }
 
 stack::uptr
 scon_guard::next () const
 {
-  return m_op.next (m_sc);
+  return m_op->next (m_sc);
 }
