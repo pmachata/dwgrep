@@ -632,7 +632,7 @@ tree
 parse_query (vocabulary const &builtins,
 	     char const *begin, char const *end)
 {
-  return tree::resolve_scopes (parse_subquery (builtins, begin, end));
+  return parse_subquery (builtins, begin, end);
 }
 
 tree

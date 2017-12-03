@@ -235,8 +235,6 @@ public:
   static std::unique_ptr <tree>
   create_scope (std::unique_ptr <tree> t1);
 
-  static tree resolve_scopes (tree t);
-
   // push_back (*T) and delete T.
   void take_child (std::unique_ptr <tree> t);
 

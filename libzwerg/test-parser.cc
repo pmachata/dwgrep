@@ -136,25 +136,27 @@ do_tests ()
   test ("drop", "(F_BUILTIN<drop>)");
 
   test ("if () then () else ()",
-	"(IFELSE (NOP) (NOP) (NOP))");
+	"(IFELSE (SCOPE (NOP)) (SCOPE (NOP)) (SCOPE (NOP)))");
   test ("if 1 then 2 else 3",
-	"(IFELSE (CONST<1>) (CONST<2>) (CONST<3>))");
+	"(IFELSE (SCOPE (CONST<1>)) (SCOPE (CONST<2>)) (SCOPE (CONST<3>)))");
   test ("if if 0 then 1 else 2 then 3 else 4",
-	"(IFELSE (IFELSE (CONST<0>) (CONST<1>) (CONST<2>))"
-	" (CONST<3>) (CONST<4>))");
+	"(IFELSE (SCOPE (IFELSE (SCOPE (CONST<0>)) (SCOPE (CONST<1>))"
+	" (SCOPE (CONST<2>)))) (SCOPE (CONST<3>)) (SCOPE (CONST<4>)))");
   test ("if 1 then if 0 then 2 else 3 else 4",
-	"(IFELSE (CONST<1>) (IFELSE (CONST<0>) (CONST<2>) (CONST<3>))"
-	" (CONST<4>))");
+	"(IFELSE (SCOPE (CONST<1>)) (SCOPE (IFELSE (SCOPE (CONST<0>))"
+	" (SCOPE (CONST<2>)) (SCOPE (CONST<3>)))) (SCOPE (CONST<4>)))");
   test ("if 1 then 2 else if 0 then 3 else 4",
-	"(IFELSE (CONST<1>) (CONST<2>)"
-	" (IFELSE (CONST<0>) (CONST<3>) (CONST<4>)))");
+	"(IFELSE (SCOPE (CONST<1>)) (SCOPE (CONST<2>))"
+	" (SCOPE (IFELSE (SCOPE (CONST<0>)) (SCOPE (CONST<3>))"
+	" (SCOPE (CONST<4>)))))");
   test ("if 1 then 2 "
 	"else if 0 then 3 "
 	"else if 6 then 4 "
 	"else 5 ",
-	"(IFELSE (CONST<1>) (CONST<2>)"
-	" (IFELSE (CONST<0>) (CONST<3>)"
-	" (IFELSE (CONST<6>) (CONST<4>) (CONST<5>))))");
+	"(IFELSE (SCOPE (CONST<1>)) (SCOPE (CONST<2>))"
+	" (SCOPE (IFELSE (SCOPE (CONST<0>)) (SCOPE (CONST<3>))"
+	" (SCOPE (IFELSE (SCOPE (CONST<6>)) (SCOPE (CONST<4>))"
+	" (SCOPE (CONST<5>)))))))");
 
   test ("?eq", "(F_BUILTIN<?eq>)");
   test ("!eq", "(F_BUILTIN<!eq>)");
@@ -190,24 +192,24 @@ do_tests ()
 
   test ("1 add: 2", "(CAT (CONST<1>) (CONST<2>) (F_BUILTIN<add>))");
 
-  test ("()*", "(CLOSE_STAR (NOP))");
-  test ("()+", "(CLOSE_PLUS (NOP))");
-  test ("()******", "(CLOSE_STAR (NOP))");
-  test ("()++++++", "(CLOSE_PLUS (NOP))");
-  test ("()+*+*+*", "(CLOSE_STAR (NOP))");
-  test ("()*+*+*+", "(CLOSE_STAR (NOP))");
-  test ("swap*", "(CLOSE_STAR (F_BUILTIN<swap>))");
-  test ("swap+", "(CLOSE_PLUS (F_BUILTIN<swap>))");
+  test ("()*", "(CLOSE_STAR (SCOPE (NOP)))");
+  test ("()+", "(CLOSE_PLUS (SCOPE (NOP)))");
+  test ("()******", "(CLOSE_STAR (SCOPE (NOP)))");
+  test ("()++++++", "(CLOSE_PLUS (SCOPE (NOP)))");
+  test ("()+*+*+*", "(CLOSE_STAR (SCOPE (NOP)))");
+  test ("()*+*+*+", "(CLOSE_STAR (SCOPE (NOP)))");
+  test ("swap*", "(CLOSE_STAR (SCOPE (F_BUILTIN<swap>)))");
+  test ("swap+", "(CLOSE_PLUS (SCOPE (F_BUILTIN<swap>)))");
   test ("swap?", "(ALT (F_BUILTIN<swap>) (NOP))");
 
   test ("1 dup",
 	"(CAT (CONST<1>) (F_BUILTIN<dup>))");
   test ("1 dup*",
-	"(CAT (CONST<1>) (CLOSE_STAR (F_BUILTIN<dup>)))");
+	"(CAT (CONST<1>) (CLOSE_STAR (SCOPE (F_BUILTIN<dup>))))");
   test ("1* dup",
-	"(CAT (CLOSE_STAR (CONST<1>)) (F_BUILTIN<dup>))");
+	"(CAT (CLOSE_STAR (SCOPE (CONST<1>))) (F_BUILTIN<dup>))");
   test ("1+ dup",
-	"(CAT (CLOSE_PLUS (CONST<1>)) (F_BUILTIN<dup>))");
+	"(CAT (CLOSE_PLUS (SCOPE (CONST<1>))) (F_BUILTIN<dup>))");
 
   test ("(elem 1)",
 	"(CAT (F_BUILTIN<elem>) (CONST<1>))");
@@ -231,42 +233,46 @@ do_tests ()
 	"(CAT (F_BUILTIN<dup>) (F_BUILTIN<swap>) (F_BUILTIN<elem>) (CONST<1>))");
 
   test ("dup, over",
-	"(ALT (F_BUILTIN<dup>) (F_BUILTIN<over>))");
+	"(ALT (SCOPE (F_BUILTIN<dup>)) (SCOPE (F_BUILTIN<over>)))");
   test ("dup, over, rot",
-	"(ALT (F_BUILTIN<dup>) (F_BUILTIN<over>) (F_BUILTIN<rot>))");
+	"(ALT (SCOPE (F_BUILTIN<dup>)) (SCOPE (F_BUILTIN<over>))"
+	" (SCOPE (F_BUILTIN<rot>)))");
   test ("swap,",
-	"(ALT (F_BUILTIN<swap>) (NOP))");
+	"(ALT (SCOPE (F_BUILTIN<swap>)) (SCOPE (NOP)))");
   test ("swap dup, over",
-	"(ALT (CAT (F_BUILTIN<swap>) (F_BUILTIN<dup>)) (F_BUILTIN<over>))");
+	"(ALT (SCOPE (CAT (F_BUILTIN<swap>) (F_BUILTIN<dup>)))"
+	" (SCOPE (F_BUILTIN<over>)))");
   test ("swap dup, over elem, 1 dup",
-	"(ALT (CAT (F_BUILTIN<swap>) (F_BUILTIN<dup>)) "
-	"(CAT (F_BUILTIN<over>) (F_BUILTIN<elem>)) "
-	"(CAT (CONST<1>) (F_BUILTIN<dup>)))");
+	"(ALT (SCOPE (CAT (F_BUILTIN<swap>) (F_BUILTIN<dup>))) "
+	"(SCOPE (CAT (F_BUILTIN<over>) (F_BUILTIN<elem>))) "
+	"(SCOPE (CAT (CONST<1>) (F_BUILTIN<dup>))))");
   test ("(swap dup, (over elem, (1 dup)))",
-	"(ALT (CAT (F_BUILTIN<swap>) (F_BUILTIN<dup>))"
-	" (CAT (F_BUILTIN<over>) (F_BUILTIN<elem>)) "
-	"(CAT (CONST<1>) (F_BUILTIN<dup>)))");
+	"(ALT (SCOPE (CAT (F_BUILTIN<swap>) (F_BUILTIN<dup>)))"
+	" (SCOPE (CAT (F_BUILTIN<over>) (F_BUILTIN<elem>))) "
+	"(SCOPE (CAT (CONST<1>) (F_BUILTIN<dup>))))");
   test ("elem, dup*",
-	"(ALT (F_BUILTIN<elem>) (CLOSE_STAR (F_BUILTIN<dup>)))");
+	"(ALT (SCOPE (F_BUILTIN<elem>)) (SCOPE (CLOSE_STAR (SCOPE (F_BUILTIN<dup>)))))");
 
   test ("[]",
 	"(EMPTY_LIST)");
   test ("[()]",
-	"(CAPTURE (NOP))");
+	"(SCOPE (CAPTURE (SCOPE (NOP))))");
   test ("[elem]",
-	"(CAPTURE (F_BUILTIN<elem>))");
+	"(SCOPE (CAPTURE (SCOPE (F_BUILTIN<elem>))))");
   test ("[,]",
-	"(CAPTURE (ALT (NOP) (NOP)))");
+	"(SCOPE (CAPTURE (SCOPE (ALT (SCOPE (NOP)) (SCOPE (NOP))))))");
   test ("[,,]",
-	"(CAPTURE (ALT (NOP) (NOP) (NOP)))");
+	"(SCOPE (CAPTURE (SCOPE (ALT (SCOPE (NOP))"
+	" (SCOPE (NOP)) (SCOPE (NOP))))))");
   test ("[1,,2,]",
-	"(CAPTURE (ALT (CONST<1>) (NOP) (CONST<2>) (NOP)))");
+	"(SCOPE (CAPTURE (SCOPE (ALT (SCOPE (CONST<1>))"
+	" (SCOPE (NOP)) (SCOPE (CONST<2>)) (SCOPE (NOP))))))");
 
   // Formatting strings.
   test ("\"%%\"", "(FORMAT (STR<%>))");
   test ("\"a%( \")%( [elem] %)(\" %)b\"",
 	"(FORMAT (STR<a>) (FORMAT (STR<)>)"
-	" (CAPTURE (F_BUILTIN<elem>))"
+	" (SCOPE (CAPTURE (SCOPE (F_BUILTIN<elem>))))"
 	" (STR<(>)) (STR<b>))");
   test ("\"abc%sdef\"",
 	"(FORMAT (STR<abc>) (NOP) (STR<def>))");
@@ -294,22 +300,22 @@ do_tests ()
   test ("\"co\\n\"\\ \"\\ti\"\\   r\"\\nued\"",
 	"(FORMAT (STR<co\n\ti\\nued>))");
 
-  ftest (",", "(ALT (NOP) (NOP))");
+  ftest (",", "(ALT (SCOPE (NOP)) (SCOPE (NOP)))");
   ftest ("elem dup (swap,)",
 	 "(CAT (F_BUILTIN<elem>) (F_BUILTIN<dup>)"
-	 " (ALT (F_BUILTIN<swap>) (NOP)))");
+	 " (ALT (SCOPE (F_BUILTIN<swap>)) (SCOPE (NOP))))");
   ftest ("elem dup (,swap)",
 	 "(CAT (F_BUILTIN<elem>) (F_BUILTIN<dup>)"
-	 " (ALT (NOP) (F_BUILTIN<swap>)))");
+	 " (ALT (SCOPE (NOP)) (SCOPE (F_BUILTIN<swap>))))");
   ftest ("elem (drop,drop)",
 	 "(CAT (F_BUILTIN<elem>)"
-	 " (ALT (F_BUILTIN<drop>) (F_BUILTIN<drop>)))");
+	 " (ALT (SCOPE (F_BUILTIN<drop>)) (SCOPE (F_BUILTIN<drop>))))");
   ftest ("elem (,drop 1)",
 	 "(CAT (F_BUILTIN<elem>)"
-	 " (ALT (NOP) (CAT (F_BUILTIN<drop>) (CONST<1>))))");
+	 " (ALT (SCOPE (NOP)) (SCOPE (CAT (F_BUILTIN<drop>) (CONST<1>)))))");
   ftest ("elem (drop 1,)",
 	 "(CAT (F_BUILTIN<elem>)"
-	 " (ALT (CAT (F_BUILTIN<drop>) (CONST<1>)) (NOP)))");
+	 " (ALT (SCOPE (CAT (F_BUILTIN<drop>) (CONST<1>))) (SCOPE (NOP))))");
   ftest ("elem drop \"foo\"",
 	 "(CAT (F_BUILTIN<elem>)"
 	 " (F_BUILTIN<drop>) (FORMAT (STR<foo>)))");
@@ -322,7 +328,8 @@ do_tests ()
 	 true);
 
   test ("((1, 2), (3, 4))",
-	"(ALT (CONST<1>) (CONST<2>) (CONST<3>) (CONST<4>))");
+	"(ALT (SCOPE (CONST<1>)) (SCOPE (CONST<2>))"
+	" (SCOPE (CONST<3>)) (SCOPE (CONST<4>)))");
 
   test ("?0", "(F_BUILTIN<pred_pos>)");
   test ("!0", "(F_BUILTIN<pred_pos>)");
