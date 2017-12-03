@@ -34,10 +34,6 @@
 #include "value.hh"
 #include "layout.hh"
 
-class tree;
-class frame;
-class scope;
-
 class value_closure
   : public value
 {
