@@ -1,5 +1,40 @@
 -*-org-*-
+* version 0.3
+
+** Backward-incompatible Changes
+
+  - Change parsing of integer literals. Integer literals are now seqences of
+    alphanumeric characters that start with a decimal digit (e.g. 123, 0xff),
+    whereas before, they were seqences of characters indicated by the number
+    prefix (e.g. 0x indicated [0-9a-f] as appropriate character set).
+
+    Thus apparent typos such as "0b123" are not parsed as "0b1" followed by "23"
+    anymore, but as "0b123", which is flagged as error. Likewise strings such as
+    "123drop", which were previously valid, are not anymore.
+
+** Other Changes
+
+  - dwgrep can now dump location lists.
+
+  - Small changes to the C API and a lot of documentation. The API in still
+    unstable and preliminary.
+
+  - Fix building on GCC 4.8 and 7.0.
+    - Fixes #28: Include <functional> header for std::function
+
+  - Rework how variable binding and closure invocation works. There should be no
+    user-visible changes for programs that were not relying on undocumented
+    behavior.
+    - Fixes #25: Frame cloning too expensive
+
+  - Error messages are now printed to stderr, not stdout.
+
+  - Fix --help to include full first sentence of option description, and not
+    stop at the first period.
+
+
 * version 0.2 [2015-02-28 Sat]
+
   - ELF symbol tables are supported.  New word `symbol` applicable to
     DWARF value yields ELF symbols.  Words `label`, `value`,
     `address`, `name`, `size` `binding`, `visibility` operate on ELF
@@ -13,5 +48,7 @@
 
   - Bug fixes (issues #5, #6, #7, #8, #14, #15, #16, #17, #22, #26).
 
+
 * version 0.1 [2014-12-10 Sun]
+
   - Initial release.
