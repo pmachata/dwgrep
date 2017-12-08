@@ -1,6 +1,7 @@
 # This file lists the people who contributed to making of dwgrep in
 # alphabetical order.
 
+Jonathan Wakely <jwakely@redhat.com>
 Jakub Filak <jfilak@redhat.com>
 Josh Stone <jistone@redhat.com>
 Petr Machata <pmachata@redhat.com>
