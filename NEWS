@@ -22,9 +22,8 @@
   - Fix building on GCC 4.8 and 7.0.
     - Fixes #28: Include <functional> header for std::function
 
-  - Rework how variable binding and closure invocation works. There should be no
-    user-visible changes for programs that were not relying on undocumented
-    behavior.
+  - Rework how variable binding works. There should be no user-visible changes
+    for programs that were not relying on undocumented behavior.
     - Fixes #25: Frame cloning too expensive
 
   - Error messages are now printed to stderr, not stdout.
