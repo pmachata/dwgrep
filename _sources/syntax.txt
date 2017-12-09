@@ -129,6 +129,9 @@ For example::
 Integer literals
 ----------------
 
+Integer literals are words that start with a decimal digit. For integer literal
+to be valid, it needs to have a certain shape:
+
 Form::
 
 	“-”?(“0x”|“0o”|“0b”|“0”|“”){digits}
@@ -150,6 +153,11 @@ Zwerg integers can hold any 64-bit signed or unsigned number::
 
 	$ dwgrep '0xffffffffffffffff -0x7fffffffffffffff add'
 	0x8000000000000000
+
+Invalid integer literals are diagnosed at query compilation time::
+
+	$ dwgrep '123foo'
+	dwgrep: Invalid integer literal: `123foo'
 
 
 Named constants

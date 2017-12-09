@@ -6,15 +6,15 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Command line reference &mdash; dwgrep 0.2 documentation</title>
+    <title>Command line reference &#8212; dwgrep 0.3 documentation</title>
     
-    <link rel="stylesheet" href="_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="_static/classic.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
     
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '0.2',
+        VERSION:     '0.3',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,13 +23,14 @@
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <link rel="top" title="dwgrep 0.2 documentation" href="index.html" />
-    <link rel="up" title="Table of contents" href="fulltoc.html" />
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="top" title="dwgrep 0.3 documentation" href="index.html" />
     <link rel="next" title="Tutorial" href="tutorial.html" />
-    <link rel="prev" title="Table of contents" href="fulltoc.html" /> 
+    <link rel="prev" title="Welcome to dwgrep’s documentation!" href="index.html" /> 
   </head>
-  <body>
-    <div class="related">
+  <body role="document">
+    <div class="related" role="navigation" aria-label="related navigation">
       <h3>Navigation</h3>
       <ul>
         <li class="right" style="margin-right: 10px">
@@ -39,24 +40,23 @@
           <a href="tutorial.html" title="Tutorial"
              accesskey="N">next</a> |</li>
         <li class="right" >
-          <a href="fulltoc.html" title="Table of contents"
+          <a href="index.html" title="Welcome to dwgrep’s documentation!"
              accesskey="P">previous</a> |</li>
-        <li><a href="index.html">dwgrep 0.2 documentation</a> &raquo;</li>
-          <li><a href="fulltoc.html" accesskey="U">Table of contents</a> &raquo;</li> 
+        <li class="nav-item nav-item-0"><a href="index.html">dwgrep 0.3 documentation</a> &#187;</li> 
       </ul>
     </div>  
 
     <div class="document">
       <div class="documentwrapper">
         <div class="bodywrapper">
-          <div class="body">
+          <div class="body" role="main">
             
   <div class="section" id="command-line-reference">
 <span id="cli"></span><h1>Command line reference<a class="headerlink" href="#command-line-reference" title="Permalink to this headline">¶</a></h1>
 <div class="section" id="synopsis">
 <h2>Synopsis<a class="headerlink" href="#synopsis" title="Permalink to this headline">¶</a></h2>
-<div class="highlight-python"><div class="highlight"><pre>dwgrep [OPTIONS] PATTERN [FILE...]
-dwgrep [OPTIONS] [-e PATTERN | -f FILE] [FILE...]
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">dwgrep</span> <span class="p">[</span><span class="n">OPTIONS</span><span class="p">]</span> <span class="n">PATTERN</span> <span class="p">[</span><span class="n">FILE</span><span class="o">...</span><span class="p">]</span>
+<span class="n">dwgrep</span> <span class="p">[</span><span class="n">OPTIONS</span><span class="p">]</span> <span class="p">[</span><span class="o">-</span><span class="n">e</span> <span class="n">PATTERN</span> <span class="o">|</span> <span class="o">-</span><span class="n">f</span> <span class="n">FILE</span><span class="p">]</span> <span class="p">[</span><span class="n">FILE</span><span class="o">...</span><span class="p">]</span>
 </pre></div>
 </div>
 </div>
@@ -70,43 +70,43 @@ shared library which can be used from C.</p>
 <div class="section" id="options">
 <h2>Options<a class="headerlink" href="#options" title="Permalink to this headline">¶</a></h2>
 <dl class="docutils">
-<dt><tt class="docutils literal"><span class="pre">-H</span></tt>, <tt class="docutils literal"><span class="pre">--with-filename</span></tt></dt>
+<dt><code class="docutils literal"><span class="pre">-H</span></code>, <code class="docutils literal"><span class="pre">--with-filename</span></code></dt>
 <dd>Print the filename for each match.  This is the default when
 there is more than one file to search.</dd>
-<dt><tt class="docutils literal"><span class="pre">-c</span></tt>, <tt class="docutils literal"><span class="pre">--count</span></tt></dt>
+<dt><code class="docutils literal"><span class="pre">-c</span></code>, <code class="docutils literal"><span class="pre">--count</span></code></dt>
 <dd>Print only a count of query results, not the results
 themselves.</dd>
-<dt><tt class="docutils literal"><span class="pre">-e</span></tt>, <tt class="docutils literal"><span class="pre">--expr=EXPR</span></tt></dt>
-<dd><em>EXPR</em> is a query to run.  At most one <tt class="docutils literal"><span class="pre">-e</span></tt> or <tt class="docutils literal"><span class="pre">-f</span></tt> option
+<dt><code class="docutils literal"><span class="pre">-e</span></code>, <code class="docutils literal"><span class="pre">--expr=EXPR</span></code></dt>
+<dd><em>EXPR</em> is a query to run.  At most one <code class="docutils literal"><span class="pre">-e</span></code> or <code class="docutils literal"><span class="pre">-f</span></code> option
 shall be present.  The selected query is run over the input
 file(s).</dd>
-<dt><tt class="docutils literal"><span class="pre">-f</span></tt>, <tt class="docutils literal"><span class="pre">--file=FILE</span></tt></dt>
+<dt><code class="docutils literal"><span class="pre">-f</span></code>, <code class="docutils literal"><span class="pre">--file=FILE</span></code></dt>
 <dd>Load query from <em>FILE</em>.  A Zwerg script stored in the given
 file is read and run over the input file(s).  At most one
-<tt class="docutils literal"><span class="pre">-e</span></tt> or <tt class="docutils literal"><span class="pre">-f</span></tt> option shall be present.</dd>
-<dt><tt class="docutils literal"><span class="pre">-h</span></tt>, <tt class="docutils literal"><span class="pre">--no-filename</span></tt></dt>
+<code class="docutils literal"><span class="pre">-e</span></code> or <code class="docutils literal"><span class="pre">-f</span></code> option shall be present.</dd>
+<dt><code class="docutils literal"><span class="pre">-h</span></code>, <code class="docutils literal"><span class="pre">--no-filename</span></code></dt>
 <dd>Suppress printing filename on output.  This is the default
 when there is less than two files to search.</dd>
-<dt><tt class="docutils literal"><span class="pre">-q</span></tt>, <tt class="docutils literal"><span class="pre">--silent</span></tt>, <tt class="docutils literal"><span class="pre">--quiet</span></tt></dt>
+<dt><code class="docutils literal"><span class="pre">-q</span></code>, <code class="docutils literal"><span class="pre">--silent</span></code>, <code class="docutils literal"><span class="pre">--quiet</span></code></dt>
 <dd>Suppress all normal output.  Exit immediately with zero status
 if any match is found, even if an error was detected.</dd>
-<dt><tt class="docutils literal"><span class="pre">-s</span></tt>, <tt class="docutils literal"><span class="pre">--no-messages</span></tt></dt>
+<dt><code class="docutils literal"><span class="pre">-s</span></code>, <code class="docutils literal"><span class="pre">--no-messages</span></code></dt>
 <dd><p class="first">Suppress error messages.  All normal output is produced, but
 error messages (if any) are not shown.</p>
 <p class="last">Note that currently libzwerg produces some error messages on
 its own (e.g. division by zero), and those are still
 displayed.</p>
 </dd>
-<dt><tt class="docutils literal"><span class="pre">--help</span></tt></dt>
+<dt><code class="docutils literal"><span class="pre">--help</span></code></dt>
 <dd>Show help and exit.</dd>
-<dt><tt class="docutils literal"><span class="pre">--version</span></tt></dt>
+<dt><code class="docutils literal"><span class="pre">--version</span></code></dt>
 <dd>Show version in the format MAJOR.MINOR and exit.</dd>
 </dl>
 </div>
 <div class="section" id="examples">
 <h2>Examples<a class="headerlink" href="#examples" title="Permalink to this headline">¶</a></h2>
 <p>Find ELF files:</p>
-<div class="highlight-python"><div class="highlight"><pre>$ dwgrep -sh $(find /usr/lib64/ -type f) -e &#39;name&#39;
+<div class="highlight-default"><div class="highlight"><pre><span></span>$ dwgrep -sh $(find /usr/lib64/ -type f) -e &#39;name&#39;
 /usr/lib64/libogrove.so.0.0.1
 /usr/lib64/libmp3lame.so.0.0.0
 /usr/lib64/libgimpcolor-2.0.so.0.600.12
@@ -116,14 +116,14 @@ displayed.</p>
 </pre></div>
 </div>
 <p>Find ELF files that include Dwarf information:</p>
-<div class="highlight-python"><div class="highlight"><pre>$ dwgrep -sh $(find /usr/lib64/ -type f) -e &#39;?(unit) name&#39;
+<div class="highlight-default"><div class="highlight"><pre><span></span>$ dwgrep -sh $(find /usr/lib64/ -type f) -e &#39;?(unit) name&#39;
 /usr/lib64/python3.2/config-3.2mu/python.o
 /usr/lib64/libxqilla.so.5.0.4
 [... etc ...]
 </pre></div>
 </div>
 <p>Find namespace names defined in one of them:</p>
-<div class="highlight-python"><div class="highlight"><pre>$ dwgrep /usr/lib64/libxqilla.so.5.0.4 -e &#39;
+<div class="highlight-default"><div class="highlight"><pre><span></span>$ dwgrep /usr/lib64/libxqilla.so.5.0.4 -e &#39;
         entry ?TAG_namespace name&#39; | sort -u
 __debug
 __detail
@@ -134,8 +134,8 @@ xercesc_3_0
 XQParser
 </pre></div>
 </div>
-<p>Find names of variables defined in the namespace <tt class="docutils literal"><span class="pre">xercesc_3_0</span></tt>:</p>
-<div class="highlight-python"><div class="highlight"><pre>$ dwgrep /usr/lib64/libxqilla.so.5.0.4 -e &#39;
+<p>Find names of variables defined in the namespace <code class="docutils literal"><span class="pre">xercesc_3_0</span></code>:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span>$ dwgrep /usr/lib64/libxqilla.so.5.0.4 -e &#39;
         entry ?TAG_namespace (name == &quot;xercesc_3_0&quot;)
         child ?TAG_variable name&#39; | sort -u
 chAmpersand
@@ -146,8 +146,8 @@ chBang
 [... etc ...]
 </pre></div>
 </div>
-<p>Of those, only list the ones that don&#8217;t start in <tt class="docutils literal"><span class="pre">ch</span></tt>:</p>
-<div class="highlight-python"><div class="highlight"><pre>$ dwgrep /usr/lib64/libxqilla.so.5.0.4 -e &#39;
+<p>Of those, only list the ones that don&#8217;t start in <code class="docutils literal"><span class="pre">ch</span></code>:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span>$ dwgrep /usr/lib64/libxqilla.so.5.0.4 -e &#39;
         entry ?TAG_namespace (name == &quot;xercesc_3_0&quot;)
         child ?TAG_variable name
         (!~ &quot;ch.*&quot;)&#39; | sort -u
@@ -158,7 +158,7 @@ gNameCharMask
 </pre></div>
 </div>
 <p>Look where they are declared:</p>
-<div class="highlight-python"><div class="highlight"><pre>$ dwgrep /usr/lib64/libxqilla.so.5.0.4 -e &#39;
+<div class="highlight-default"><div class="highlight"><pre><span></span>$ dwgrep /usr/lib64/libxqilla.so.5.0.4 -e &#39;
         entry ?TAG_namespace (name == &quot;xercesc_3_0&quot;)
         child ?TAG_variable (name !~ &quot;ch.*&quot;)
         @AT_decl_file&#39; | sort -u
@@ -167,7 +167,7 @@ gNameCharMask
 </pre></div>
 </div>
 <p>Use formatting strings to include line number information in the mix:</p>
-<div class="highlight-python"><div class="highlight"><pre>$ dwgrep /usr/lib64/libxqilla.so.5.0.4 -e &#39;
+<div class="highlight-default"><div class="highlight"><pre><span></span>$ dwgrep /usr/lib64/libxqilla.so.5.0.4 -e &#39;
         entry ?TAG_namespace (name == &quot;xercesc_3_0&quot;)
         child ?TAG_variable (name !~ &quot;ch.*&quot;)
         &quot;%(@AT_decl_file%): %(dup @AT_decl_line%)&quot;&#39; | sort -u
@@ -197,7 +197,7 @@ tutorial.</p>
           </div>
         </div>
       </div>
-      <div class="sphinxsidebar">
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
         <div class="sphinxsidebarwrapper">
   <h3><a href="index.html">Table Of Contents</a></h3>
   <ul>
@@ -212,34 +212,33 @@ tutorial.</p>
 </ul>
 
   <h4>Previous topic</h4>
-  <p class="topless"><a href="fulltoc.html"
-                        title="previous chapter">Table of contents</a></p>
+  <p class="topless"><a href="index.html"
+                        title="previous chapter">Welcome to dwgrep&#8217;s documentation!</a></p>
   <h4>Next topic</h4>
   <p class="topless"><a href="tutorial.html"
                         title="next chapter">Tutorial</a></p>
-  <h3>This Page</h3>
-  <ul class="this-page-menu">
-    <li><a href="_sources/cli.txt"
-           rel="nofollow">Show Source</a></li>
-  </ul>
-<div id="searchbox" style="display: none">
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/cli.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
   <h3>Quick search</h3>
     <form class="search" action="search.html" method="get">
-      <input type="text" name="q" />
-      <input type="submit" value="Go" />
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
       <input type="hidden" name="check_keywords" value="yes" />
       <input type="hidden" name="area" value="default" />
     </form>
-    <p class="searchtip" style="font-size: 90%">
-    Enter search terms or a module, class or function name.
-    </p>
 </div>
 <script type="text/javascript">$('#searchbox').show(0);</script>
         </div>
       </div>
       <div class="clearer"></div>
     </div>
-    <div class="related">
+    <div class="related" role="navigation" aria-label="related navigation">
       <h3>Navigation</h3>
       <ul>
         <li class="right" style="margin-right: 10px">
@@ -249,15 +248,14 @@ tutorial.</p>
           <a href="tutorial.html" title="Tutorial"
              >next</a> |</li>
         <li class="right" >
-          <a href="fulltoc.html" title="Table of contents"
+          <a href="index.html" title="Welcome to dwgrep’s documentation!"
              >previous</a> |</li>
-        <li><a href="index.html">dwgrep 0.2 documentation</a> &raquo;</li>
-          <li><a href="fulltoc.html" >Table of contents</a> &raquo;</li> 
+        <li class="nav-item nav-item-0"><a href="index.html">dwgrep 0.3 documentation</a> &#187;</li> 
       </ul>
     </div>
-    <div class="footer">
-        &copy; Copyright 2014, 2015, Petr Machata.
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.2.
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2014, 2015, 2017, Petr Machata.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.4.8.
     </div>
   </body>
 </html>

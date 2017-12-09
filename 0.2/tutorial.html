@@ -1,0 +1,781 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Tutorial &mdash; dwgrep 0.2 documentation</title>
+    
+    <link rel="stylesheet" href="_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '0.2',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="dwgrep 0.2 documentation" href="index.html" />
+    <link rel="up" title="Table of contents" href="fulltoc.html" />
+    <link rel="next" title="Assorted examples" href="examples.html" />
+    <link rel="prev" title="Command line reference" href="cli.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="examples.html" title="Assorted examples"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="cli.html" title="Command line reference"
+             accesskey="P">previous</a> |</li>
+        <li><a href="index.html">dwgrep 0.2 documentation</a> &raquo;</li>
+          <li><a href="fulltoc.html" accesskey="U">Table of contents</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="tutorial">
+<span id="id1"></span><h1>Tutorial<a class="headerlink" href="#tutorial" title="Permalink to this headline">¶</a></h1>
+<p>To get our feet wet, we will develop a query to find functions the
+arguments of which are directly of structure or class types.  Passing
+such values in parameters may incur a potentially expensive copy, and
+it might be desirable to audit these uses.  If you have a <tt class="docutils literal"><span class="pre">dwgrep</span></tt>
+distribution tarball handy, there&#8217;s a file
+<tt class="docutils literal"><span class="pre">tests/nontrivial-types.o</span></tt>, which you can use to play along with the
+tutorial.  Or your can compile one yourself, this is the source that
+we are using:</p>
+<div class="highlight-python"><div class="highlight"><pre>struct foo {};
+
+int blah (struct foo f) {
+  return 0;
+}
+
+int main(int argc, char *argv[])
+{
+  return blah ((struct foo) {});
+}
+</pre></div>
+</div>
+<p>First and foremost, a quick word about the <a class="reference internal" href="cli.html#cli"><em>command line
+interface</em></a>.  <tt class="docutils literal"><span class="pre">dwgrep</span></tt> is to some extent modeled after <tt class="docutils literal"><span class="pre">grep</span></tt>
+utility.  The following invokes <tt class="docutils literal"><span class="pre">dwgrep</span></tt> with an empty query on
+aforementioned file:</p>
+<div class="highlight-python"><div class="highlight"><pre>$ dwgrep &#39;&#39; ./tests/nontrivial-types.o
+&lt;Dwarf &quot;./tests/nontrivial-types.o&quot;&gt;
+</pre></div>
+</div>
+<p>Much like with <tt class="docutils literal"><span class="pre">grep</span></tt>, you can change the order of arguments if you
+denote which of them is query:</p>
+<div class="highlight-python"><div class="highlight"><pre>$ dwgrep ./tests/nontrivial-types.o -e &#39;&#39;
+&lt;Dwarf &quot;./tests/nontrivial-types.o&quot;&gt;
+</pre></div>
+</div>
+<p>You can also use <tt class="docutils literal"><span class="pre">-c</span></tt> if you only care about the number of results,
+not the results themselves:</p>
+<div class="highlight-python"><div class="highlight"><pre>$ dwgrep -c ./tests/nontrivial-types.o -e &#39;&#39;
+1
+</pre></div>
+</div>
+<p>The empty query is not very interesting, but it shows us that the
+input stack actually contains one value: the Dwarf file that we gave
+on the command line.  So let&#8217;s look inside!</p>
+<div class="section" id="entry-unit-die-iteration">
+<h2><tt class="docutils literal"><span class="pre">entry</span></tt>, <tt class="docutils literal"><span class="pre">unit</span></tt> &#8212; DIE iteration<a class="headerlink" href="#entry-unit-die-iteration" title="Permalink to this headline">¶</a></h2>
+<p>There are several functions for entering the graph, the most useful
+one is likely <tt class="docutils literal"><span class="pre">entry</span></tt>.  This takes <a class="footnote-reference" href="#takes" id="id2">[1]</a> a Dwarf, and yields
+<a class="footnote-reference" href="#yields" id="id3">[2]</a> all DIE&#8217;s in that Dwarf:</p>
+<div class="highlight-python"><div class="highlight"><pre>$ dwgrep ./tests/nontrivial-types.o -e &#39;entry&#39;
+[b]     compile_unit
+        producer (strp) GNU C 4.6.3 20120306 (Red Hat 4.6.3-2);
+        [... more attributes ...]
+[2d]    structure_type
+        name (string)   foo;
+[... more output ...]
+</pre></div>
+</div>
+<table class="docutils footnote" frame="void" id="takes" rules="none">
+<colgroup><col class="label" /><col /></colgroup>
+<tbody valign="top">
+<tr><td class="label"><a class="fn-backref" href="#id2">[1]</a></td><td><p class="first">The word &#8220;takes&#8221; is generally used to mean that the
+function expects a stack, whose top value(s) fits the given
+description.  E.g. <tt class="docutils literal"><span class="pre">length</span></tt> takes a string or a sequence, <tt class="docutils literal"><span class="pre">add</span></tt>
+takes two integers, strings or sequences, etc.</p>
+<p class="last">Taken values are discarded from the stack, though typically the
+function in question pushes some other value(s) in their stead.</p>
+</td></tr>
+</tbody>
+</table>
+<table class="docutils footnote" frame="void" id="yields" rules="none">
+<colgroup><col class="label" /><col /></colgroup>
+<tbody valign="top">
+<tr><td class="label"><a class="fn-backref" href="#id3">[2]</a></td><td>This word is used to mean that the function produces
+stack(s) with the outlined property.  E.g. if <tt class="docutils literal"><span class="pre">length</span></tt> takes a
+string or a sequence, and yields their length, that means that the
+top value is popped, its length is determined, and a value
+corresponding to that length is pushed back.  Such stack is then
+sent to output.</td></tr>
+</tbody>
+</table>
+<p>Other words include <tt class="docutils literal"><span class="pre">unit</span></tt>, which selects compilation and type
+units, and <tt class="docutils literal"><span class="pre">abbrev</span></tt> which selects abbreviation units.</p>
+<p>It is impractical to have to repeat the whole <tt class="docutils literal"><span class="pre">dwgrep</span></tt> command line
+every time a code snippet needs to be shown.  In the following we will
+use the following notation:</p>
+<div class="highlight-python"><div class="highlight"><pre>$ &#39;unit&#39;
+CU 0
+</pre></div>
+</div>
+<p>The dollar at the beginning represents the command line prompt, and
+then the query itself is given in single quotes.</p>
+<p>If we don&#8217;t care about query output (e.g. if it is trivial,
+predictable or uninteresting), we will just list the query itself:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">entry</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="dw-tag-foo-tag-foo-die-tag-assertion">
+<h2><tt class="docutils literal"><span class="pre">?DW_TAG_foo</span></tt>, <tt class="docutils literal"><span class="pre">?TAG_foo</span></tt> &#8212; DIE tag assertion<a class="headerlink" href="#dw-tag-foo-tag-foo-die-tag-assertion" title="Permalink to this headline">¶</a></h2>
+<p>The assertion <tt class="docutils literal"><span class="pre">?DW_TAG_foo</span></tt> holds <a class="footnote-reference" href="#holds" id="id4">[3]</a> for DIE&#8217;s the tag of
+which is <tt class="docutils literal"><span class="pre">DW_TAG_foo</span></tt>.</p>
+<table class="docutils footnote" frame="void" id="holds" rules="none">
+<colgroup><col class="label" /><col /></colgroup>
+<tbody valign="top">
+<tr><td class="label"><a class="fn-backref" href="#id4">[3]</a></td><td>The functions which either yield an unmodified input or
+nothing at all are called assertions, and are very common in Zwerg
+expressions.  We say that assertion holds if the values on top of
+stack (TOS) satisfy some property.  If the assertion holds, it
+yields an unchanged incoming stack.  If it doesn&#8217;t hold, it yields
+nothing at all.  Assertions never modify the stack.</td></tr>
+</tbody>
+</table>
+<p>You can write <tt class="docutils literal"><span class="pre">?DW_TAG_foo</span></tt> also as <tt class="docutils literal"><span class="pre">?TAG_foo</span></tt>, they do the same
+thing.  In the following, that&#8217;s how we will refer to this assertion.</p>
+<p>In Zwerg, function pipelines are formed by simply placing functions
+next to each other.  The stacks that the left function produces
+becomes an input of the right function.</p>
+<p>For example, to list all subprograms, one would use the following
+expression:</p>
+<div class="highlight-python"><div class="highlight"><pre>$ &#39;entry ?TAG_subprogram&#39;
+[35]    subprogram
+        external (flag) true;
+        name (strp)     blah;
+        [... more attributes ...]
+[6c]    subprogram
+        external (flag) true;
+        name (strp)     main;
+        [... more attributes ...]
+</pre></div>
+</div>
+</div>
+<div class="section" id="dw-at-foo-dw-at-foo-attribute-presence-assertion">
+<h2><tt class="docutils literal"><span class="pre">?DW_AT_foo</span></tt>, <tt class="docutils literal"><span class="pre">!DW_AT_foo</span></tt> &#8212; attribute presence assertion<a class="headerlink" href="#dw-at-foo-dw-at-foo-attribute-presence-assertion" title="Permalink to this headline">¶</a></h2>
+<p><tt class="docutils literal"><span class="pre">?DW_AT_foo</span></tt> holds on DIE&#8217;s that have an attribute <tt class="docutils literal"><span class="pre">DW_AT_foo</span></tt>,
+and on attributes that are <tt class="docutils literal"><span class="pre">DW_AT_foo</span></tt>.  As with tags (and any
+Dwarf-related assertions at all), you can shorten this to <tt class="docutils literal"><span class="pre">?AT_foo</span></tt>.</p>
+<p><tt class="docutils literal"><span class="pre">!DW_AT_foo</span></tt> similarly holds on DIE&#8217;s that do NOT have an attribute
+<tt class="docutils literal"><span class="pre">DW_AT_foo</span></tt>, or on attributes that are NOT <tt class="docutils literal"><span class="pre">DW_AT_foo</span></tt>.</p>
+<p>For assertions, concatenation happens to work as a logical and, so
+for example, this is how we can get a list of all subprograms that
+have a declaration attribute:</p>
+<div class="highlight-python"><div class="highlight"><pre>entry ?TAG_subprogram ?AT_declaration
+</pre></div>
+</div>
+<p>Similarly, to get subprograms that do not have declaration attribute,
+we say:</p>
+<div class="highlight-python"><div class="highlight"><pre>entry ?TAG_subprogram !AT_declaration
+</pre></div>
+</div>
+</div>
+<div class="section" id="child-child-traversal">
+<h2><tt class="docutils literal"><span class="pre">child</span></tt> &#8212; child traversal<a class="headerlink" href="#child-child-traversal" title="Permalink to this headline">¶</a></h2>
+<p><tt class="docutils literal"><span class="pre">child</span></tt> takes a DIE and yields each of its children.  (Which is to
+say: it yields nothing for child-less DIE&#8217;s, or it can actually yield
+a number of stacks if there are many DIE&#8217;s.  Each of them will have
+one of the children on TOS.)</p>
+<p>Applied to DIE&#8217;s in our running example, this will get us to formal
+arguments of the selected subprograms:</p>
+<div class="highlight-python"><div class="highlight"><pre>$ &#39;entry ?TAG_subprogram !AT_declaration child&#39;
+[58]    formal_parameter
+        name (string)   f;
+        [... more attributes ...]
+[8f]    formal_parameter
+        name (strp)     argc;
+        [... more attributes ...]
+[9d]    formal_parameter
+        name (strp)     argv;
+        [... more attributes ...]
+</pre></div>
+</div>
+<p>If we want to make sure these children are actually formal
+parameters:</p>
+<div class="highlight-python"><div class="highlight"><pre>entry ?TAG_subprogram !AT_declaration child ?TAG_formal_parameter
+</pre></div>
+</div>
+</div>
+<div class="section" id="dw-at-foo-value-of-attribute-dw-at-foo">
+<h2><tt class="docutils literal"><span class="pre">&#64;DW_AT_foo</span></tt> &#8212; value of attribute <tt class="docutils literal"><span class="pre">DW_AT_foo</span></tt><a class="headerlink" href="#dw-at-foo-value-of-attribute-dw-at-foo" title="Permalink to this headline">¶</a></h2>
+<p>This word is used for accessing values of attributes.  It always takes
+a DIE, but what it yields varies by the attribute type.  It could be
+another DIE, a string or a number, a sequence of other values, or
+whatever value type is deemed best for representing a given piece of
+Dwarf.</p>
+<p>We could for example obtain names of the formal parameters selected
+above:</p>
+<div class="highlight-python"><div class="highlight"><pre>$ &#39;entry ?TAG_subprogram !AT_declaration child ?TAG_formal_parameter @AT_name&#39;
+f
+argc
+argv
+</pre></div>
+</div>
+<p>This could be used e.g. to select a particular attribute&#8211;we&#8217;ll see
+later how to do this.</p>
+<p>In is not an error to request value of attribute that a DIE doesn&#8217;t
+have.  In such case, <tt class="docutils literal"><span class="pre">&#64;AT_*</span></tt> would simply not yield at all:</p>
+<div class="highlight-python"><div class="highlight"><pre>$ dwgrep ./tests/aranges.o -c -e &#39;entry @AT_data_member_location&#39;
+0
+</pre></div>
+</div>
+<p><tt class="docutils literal"><span class="pre">&#64;AT_*</span></tt> forms could actually also yield more than once.  For example
+attributes of location expression types yield once for every covered
+address range:</p>
+<div class="highlight-python"><div class="highlight"><pre>$ dwgrep ./tests/aranges.o -c -e &#39;entry ?AT_location&#39;
+1
+
+$ dwgrep ./tests/aranges.o -e &#39;entry @AT_location&#39;
+0x10000..0x10010:[0:reg5]
+0x10010..0x1001a:[0:fbreg&lt;-24&gt;]
+</pre></div>
+</div>
+<p>There&#8217;s another use of this same feature: for attributes with
+reference form, we get the effect of traversing over the edge rooted
+at given attribute.  For example, we could get types of formal
+parameters:</p>
+<div class="highlight-python"><div class="highlight"><pre>$ &#39;entry ?TAG_subprogram !AT_declaration child ?TAG_formal_parameter @AT_type&#39;
+[2d]    structure_type
+        name (string)   foo;
+        [... more attributes ...]
+[65]    base_type
+        byte_size (data1)       4;
+        encoding (data1)        DW_ATE_signed;
+        name (string)   int;
+[ac]    pointer_type
+        byte_size (data1)       8;
+        type (ref4)     [b2];
+</pre></div>
+</div>
+<p>That&#8217;s quite a bit more useful&#8211;we could find out whether the formal
+parameters have structure types:</p>
+<div class="highlight-python"><div class="highlight"><pre>$ &#39;entry ?TAG_subprogram !AT_declaration child ?TAG_formal_parameter
+   @AT_type ?TAG_structure_type&#39;
+[2d]    structure_type
+        name (string)   foo;
+        [... more attributes ...]
+</pre></div>
+</div>
+<p>So that will let us know whether there are any offenders like that.
+That&#8217;s closer to being interesting, but not quite what we need either.
+We would like to know about the subprograms themselves, that have this
+property!</p>
+</div>
+<div class="section" id="expr-expr-sub-expression-assertions">
+<h2><tt class="docutils literal"><span class="pre">?(EXPR)</span></tt>, <tt class="docutils literal"><span class="pre">!(EXPR)</span></tt> &#8212; Sub-expression assertions<a class="headerlink" href="#expr-expr-sub-expression-assertions" title="Permalink to this headline">¶</a></h2>
+<p>Some Zwerg expressions are evaluated in what we call a sub-expression
+context.  What happens in sub-expression context, stays there&#8211;the
+stack effects of sub-expression computation never leak back to the
+surrounding expression.</p>
+<p><tt class="docutils literal"><span class="pre">?(EXPR)</span></tt> expression is one such case.  It asserts that <em>EXPR</em>
+produces at least one element.  We can use it to get to DIE&#8217;s that
+have arguments that are structures:</p>
+<div class="highlight-python"><div class="highlight"><pre>$ &#39;entry ?TAG_subprogram !AT_declaration
+   ?(child ?TAG_formal_parameter @AT_type ?TAG_structure_type)&#39;
+[35]    subprogram
+        external (flag) true;
+        name (strp)     blah;
+        decl_file (data1)       /home/petr/proj/dwgrep/x.c;
+        decl_line (data1)       3;
+        prototyped (flag)       true;
+        type (ref4)     [65];
+        low_pc (addr)   0x10000;
+        high_pc (addr)  0x1000b;
+        frame_base (block1)     0..0xffffffffffffffff:[0:call_frame_cfa];
+        sibling (ref4)  [65];
+</pre></div>
+</div>
+<p>This asks whether, after going to types of children that are formal
+parameters, we get a structure.  Because the initial two assertions
+have no stack effects anyway, we might say the same thing thus:</p>
+<div class="highlight-python"><div class="highlight"><pre>entry ?(?TAG_subprogram !AT_declaration
+        child ?TAG_formal_parameter @AT_type ?TAG_structure_type)&#39;
+</pre></div>
+</div>
+<p>The other sub-expression assertion, <tt class="docutils literal"><span class="pre">!(EXPR)</span></tt>, holds if <em>EXPR</em>
+produces no values at all.  E.g. to select child-less DIE&#8217;s in some
+query, we would say:</p>
+<div class="highlight-python"><div class="highlight"><pre>some other query !(child)
+</pre></div>
+</div>
+</div>
+<div class="section" id="expr-expr-expr-expr-infix-assertions">
+<h2><tt class="docutils literal"><span class="pre">EXPR</span> <span class="pre">==</span> <span class="pre">EXPR</span></tt>, <tt class="docutils literal"><span class="pre">EXPR</span> <span class="pre">!=</span> <span class="pre">EXPR</span></tt> &#8212; Infix assertions<a class="headerlink" href="#expr-expr-expr-expr-infix-assertions" title="Permalink to this headline">¶</a></h2>
+<p>As you might well know, mere presence of <tt class="docutils literal"><span class="pre">DW_AT_declaration</span></tt>
+attribute doesn&#8217;t tell use whether a DIE is a pure declaration.  We
+can probably safely assume that when a compiler produces that
+attribute, it will have a value of true (and a form of
+<tt class="docutils literal"><span class="pre">DW_FORM_flag_present</span></tt>), so most of the time <tt class="docutils literal"><span class="pre">?AT_declaration</span></tt>
+(and <tt class="docutils literal"><span class="pre">!AT_declaration</span></tt>) is all you need to write.  But if there are
+grounds for suspicion that this is not so, or if we simply want to
+shield ourselves from the possibility, we need to actually look at
+<tt class="docutils literal"><span class="pre">DW_AT_declaration</span></tt>&#8216;s value.  So instead of ?AT_declaration, we
+should be writing this:</p>
+<div class="highlight-python"><div class="highlight"><pre>(@AT_declaration == true)
+</pre></div>
+</div>
+<p>This intuitively-looking construct actually deserves a closer
+attention.  Infix assertions are always evaluated in sub-expression
+context.  The mode of operation is that each side is evaluated
+separately with the same incoming stack.  Then if the assertion holds
+for any pair of stacks that the two sides yield, the overall assertion
+holds.  Zwerg has a full suite of these operators&#8211;<tt class="docutils literal"><span class="pre">!=</span></tt>, <tt class="docutils literal"><span class="pre">&lt;</span></tt>,
+<tt class="docutils literal"><span class="pre">&lt;=</span></tt>, etc.  There&#8217;s also <tt class="docutils literal"><span class="pre">=~</span></tt> and <tt class="docutils literal"><span class="pre">!~</span></tt> for matching regular
+expressions.</p>
+<p>Importantly, infix assertions really are assertions.  If they hold,
+they produce unchanged incoming stack, otherwise they produce nothing
+at all.  Thus expressions such as <tt class="docutils literal"><span class="pre">((A</span> <span class="pre">&gt;</span> <span class="pre">B)</span> <span class="pre">==</span> <span class="pre">(C</span> <span class="pre">&gt;</span> <span class="pre">D))</span></tt> don&#8217;t mean
+what they seem to.  This one for example is just <tt class="docutils literal"><span class="pre">((A</span> <span class="pre">&gt;</span> <span class="pre">B)</span> <span class="pre">(C</span> <span class="pre">&gt;</span>
+<span class="pre">D))</span></tt>&#8211;i.e. two independent conditions.  But consider for example this
+snippet:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="p">((</span><span class="n">A</span> <span class="o">&gt;</span> <span class="n">B</span><span class="p">)</span> <span class="o">!=</span> <span class="p">(</span><span class="n">C</span> <span class="o">&gt;</span> <span class="n">D</span><span class="p">))</span>    <span class="c"># WRONG!</span>
+</pre></div>
+</div>
+<p>If the two <tt class="docutils literal"><span class="pre">&gt;</span></tt>&#8216;s hold, the expression reduces to <tt class="docutils literal"><span class="pre">!=</span></tt>, or
+inequality of two nops.  Such assertion thus simply never holds
+<a class="footnote-reference" href="#alwaysfail" id="id5">[4]</a>.</p>
+<table class="docutils footnote" frame="void" id="alwaysfail" rules="none">
+<colgroup><col class="label" /><col /></colgroup>
+<tbody valign="top">
+<tr><td class="label"><a class="fn-backref" href="#id5">[4]</a></td><td>If for whatever reason you actually do need an
+assertion that never holds, a simple one is <tt class="docutils literal"><span class="pre">!()</span></tt>.</td></tr>
+</tbody>
+</table>
+<p>Precedence of comparison operators is lower than that of
+concatenation, so you can write a couple words on each side of the
+operator.  For example, to look for DIE&#8217;s where one of the location
+expression opcodes is <tt class="docutils literal"><span class="pre">DW_OP_addr</span></tt>, you could say:</p>
+<div class="highlight-python"><div class="highlight"><pre>entry (@AT_location elem label == DW_OP_addr)
+</pre></div>
+</div>
+<p>Due to this precedence setting, comparisons are typically enclosed in
+parens (as in the example), so that they don&#8217;t force too much of your
+computation into sub-expression context.  The precedence is however
+above <tt class="docutils literal"><span class="pre">,</span></tt> and <tt class="docutils literal"><span class="pre">||</span></tt> that are introduced further, so those need to
+be parenthesized further if they should be a comparison operand.</p>
+<p>For completeness sake, to check that a flag is false, you would use
+the following form:</p>
+<div class="highlight-python"><div class="highlight"><pre>!(@AT_declaration == true)
+</pre></div>
+</div>
+<p>If there&#8217;s no <tt class="docutils literal"><span class="pre">DW_AT_declaration</span></tt> at a given DIE, the left hand side
+of the inner expression doesn&#8217;t yield anything, and the outer <tt class="docutils literal"><span class="pre">!()</span></tt>
+succeeds&#8211;which is what we want, because flag absence is an implicit
+false value.  If the attribute is present, then the <tt class="docutils literal"><span class="pre">!()</span></tt>
+effectively works as a logical negation.  Contrast this with the
+following:</p>
+<div class="highlight-python"><div class="highlight"><pre>(@AT_declaration == false)      # WRONG!
+</pre></div>
+</div>
+<p>You would be probably hard pressed to even find a Dwarf file that
+actually encodes false flags like this, so the above is useless.</p>
+<p>Back to the problem at hand&#8211;besides DW_TAG_structure_type, we care
+about <tt class="docutils literal"><span class="pre">DW_TAG_class_type</span></tt> as well!  We can express &#8220;and&#8221; easily
+simply by juxtaposing the assertions, but we would like a way of
+expressing &#8220;or&#8221; as well.</p>
+</div>
+<div class="section" id="expr-expr-alt-lists">
+<h2><tt class="docutils literal"><span class="pre">EXPR,</span> <span class="pre">EXPR</span></tt> &#8212; ALT-lists<a class="headerlink" href="#expr-expr-alt-lists" title="Permalink to this headline">¶</a></h2>
+<p>An expression like <tt class="docutils literal"><span class="pre">EXPR₁,</span> <span class="pre">EXPR₂,</span> <span class="pre">...</span></tt> evaluates all constituent
+<em>EXPRₙ</em>&#8216;s with the same input, and then yields all values that each
+<em>EXPRₙ</em> yields.  If the expressions are assertions, this happens to
+behave exactly like a logical or.  So:</p>
+<div class="highlight-python"><div class="highlight"><pre>entry ?TAG_subprogram !AT_declaration
+?(child ?TAG_formal_parameter @AT_type (?TAG_structure_type, ?TAG_class_type))
+</pre></div>
+</div>
+<p>But the applicability is wider.  Since the semantics are
+essentially those of a fork, one can for example ask whether an
+attribute has one of a number of values:</p>
+<div class="highlight-python"><div class="highlight"><pre>$ &#39;entry (@AT_name == (&quot;argc&quot;, &quot;argv&quot;))&#39;
+[8f]    formal_parameter
+        name (strp)     argc;
+        [... more attributes ...]
+[9d]    formal_parameter
+        name (strp)     argv;
+        [... more attributes ...]
+</pre></div>
+</div>
+</div>
+<div class="section" id="expr-expr-or-lists">
+<h2><tt class="docutils literal"><span class="pre">EXPR</span> <span class="pre">||</span> <span class="pre">EXPR</span></tt> &#8212; OR-lists<a class="headerlink" href="#expr-expr-or-lists" title="Permalink to this headline">¶</a></h2>
+<p>An expression like <tt class="docutils literal"><span class="pre">EXPR₁</span> <span class="pre">||</span> <span class="pre">EXPR₂</span> <span class="pre">||</span> <span class="pre">...</span></tt> works differently.  The
+input stack is passed to <em>EXPR₁</em> first, and anything that this yields,
+is sent to output.  But if nothing is yielded, the same input stack is
+passed to <em>EXPR₂</em>.  And so on.  It thus yields whatever is yielded by
+the first expression that actually yields anything.  It therefore
+operates in a manner similar to the operator <tt class="docutils literal"><span class="pre">||</span></tt> in C language.
+The typical use would be in fallbacks.  For example if we prefer
+<tt class="docutils literal"><span class="pre">DW_AT_MIPS_linkage_name</span></tt> to <tt class="docutils literal"><span class="pre">DW_AT_name</span></tt>, but can make do with
+the latter, that would be encoded as follows:</p>
+<div class="highlight-python"><div class="highlight"><pre>entry (@AT_MIPS_linkage_name || @AT_name)
+</pre></div>
+</div>
+<p>For selecting structures and classes, we can use either of these two
+tools interchangeably.</p>
+<p>So this is fine, but it still shows only functions that take
+structure (or class) arguments directly.  But what if they take a
+const argument?  Or if they take a typedef that evaluates to a
+structure?  For these cases we need to keep peeling the fluff until
+we get to the interesting DIE&#8217;s.  Enter iterators:</p>
+</div>
+<div class="section" id="expr-expr-expr-expression-iteration">
+<h2><tt class="docutils literal"><span class="pre">EXPR*</span></tt>, <tt class="docutils literal"><span class="pre">EXPR+</span></tt>, <tt class="docutils literal"><span class="pre">EXPR?</span></tt> &#8212; expression iteration<a class="headerlink" href="#expr-expr-expr-expression-iteration" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">EXPR*</span></tt> yields the incoming stack unchanged, and also passes it to
+<em>EXPR</em>.  It then collects whatever <em>EXPR</em> yields, yields it, and
+sends again to <em>EXPR</em>.  It works similarly to <tt class="docutils literal"><span class="pre">*</span></tt> in regular
+expressions.</li>
+<li><tt class="docutils literal"><span class="pre">EXPR+</span></tt> is exactly like <tt class="docutils literal"><span class="pre">EXPR</span> <span class="pre">EXPR*</span></tt>.</li>
+<li><tt class="docutils literal"><span class="pre">EXPR?</span></tt> is exactly like <tt class="docutils literal"><span class="pre">(,</span> <span class="pre">EXPR)</span></tt> &#8212; it <em>may</em> apply once</li>
+</ul>
+<p>We can use this tool to remove <tt class="docutils literal"><span class="pre">DW_TAG_const_type</span></tt>,
+<tt class="docutils literal"><span class="pre">DW_TAG_volatile_type</span></tt> and <tt class="docutils literal"><span class="pre">DW_TAG_typedef</span></tt> layers from our
+potential structure:</p>
+<div class="highlight-python"><div class="highlight"><pre>entry ?TAG_subprogram !AT_declaration
+?(child ?TAG_formal_parameter
+  @AT_type ((?TAG_const_type, ?TAG_volatile_type, ?TAG_typedef) @AT_type)*
+  (?TAG_structure_type, ?TAG_class_type))
+</pre></div>
+</div>
+<p>Next on, we would like to write a message:</p>
+</div>
+<div class="section" id="literals-strings-formatting">
+<h2>Literals, Strings, Formatting<a class="headerlink" href="#literals-strings-formatting" title="Permalink to this headline">¶</a></h2>
+<p>Zwerg has roughly C-like string literals, using \ as an escape
+character.  Hello world program looks like this in Zwerg:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="s">&quot;Hello, world!&quot;</span>
+</pre></div>
+</div>
+<p>This is an example of a string literal.  Literals in Zwerg add
+themselves to the stack.  There are many types of literals&#8211;apart from
+strings and usual numeric literals, dwrgep knows about all the named
+Dwarf constants&#8211;e.g. <tt class="docutils literal"><span class="pre">DW_AT_name</span></tt>, <tt class="docutils literal"><span class="pre">DW_TAG_array_type</span></tt>,
+<tt class="docutils literal"><span class="pre">DW_FORM_flag</span></tt>, etc. are all valid forms <a class="footnote-reference" href="#dwgrepzwerg" id="id6">[5]</a>.</p>
+<table class="docutils footnote" frame="void" id="dwgrepzwerg" rules="none">
+<colgroup><col class="label" /><col /></colgroup>
+<tbody valign="top">
+<tr><td class="label"><a class="fn-backref" href="#id6">[5]</a></td><td>That dwarf constants are recognized is actually not
+a feature of Zwerg per se.  It&#8217;s the way that <tt class="docutils literal"><span class="pre">dwgrep</span></tt>
+wrapper sets up Zwerg query engine.</td></tr>
+</tbody>
+</table>
+<p>Like C printf, string literals in Zwerg allow formatting directives.
+To write a nice error message for our running example, we could do for
+example this:</p>
+<div class="highlight-python"><div class="highlight"><pre>$ &#39;entry ?TAG_subprogram !AT_declaration
+   ?(child ?TAG_formal_parameter
+     @AT_type ((?TAG_const_type, ?TAG_volatile_type, ?TAG_typedef) @AT_type)*
+     (?TAG_structure_type, ?TAG_class_type))
+   &quot;%s: one of the parameters has non-trivial type.&quot;&#39;
+[35] subprogram: one of the parameters has non-trivial type.
+</pre></div>
+</div>
+<p>It&#8217;s clear that we&#8217;d like to improve on this a bit.  We&#8217;d like to
+mention which parameter it is, and we&#8217;d like to tell the user the name
+of the function, not just a DIE offset.  We&#8217;ll address both&#8211;later.
+But first, a bit of background.</p>
+<p>When dwgrep sees a string with formatting directives, it converts it
+into a function.  That function takes one value for each <tt class="docutils literal"><span class="pre">%s</span></tt>,
+substitutes the <tt class="docutils literal"><span class="pre">%s</span></tt> with values of corresponding stack values, and
+then pushes the result to stack.  Consequently, to convert anything to
+a string in dwgrep, you would just say:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="s">&quot;</span><span class="si">%s</span><span class="s">&quot;</span>
+</pre></div>
+</div>
+<p>E.g.:</p>
+<div class="highlight-python"><div class="highlight"><pre>$ &#39;entry ?TAG_subprogram &quot;%s&quot;&#39;
+[35] subprogram
+[6c] subprogram
+</pre></div>
+</div>
+<p>When there are more formatting directives, each of them takes one
+value from the stack, in order from right to left:</p>
+<div class="highlight-python"><div class="highlight"><pre>$ dwgrep &#39;1 2 &quot;%s %s&quot;&#39;
+1 2
+</pre></div>
+</div>
+<p>We could get the desired format string improvements with these tools
+in our hands already.  But there&#8217;s a bit of syntax that will make our
+job easier still.</p>
+</div>
+<div class="section" id="let-x-expr-name-binding">
+<h2><tt class="docutils literal"><span class="pre">let</span> <span class="pre">X</span> <span class="pre">:=</span> <span class="pre">EXPR;</span></tt> &#8212; name binding<a class="headerlink" href="#let-x-expr-name-binding" title="Permalink to this headline">¶</a></h2>
+<p>Often you need to refer back to a value that was computed earlier.
+Since this is a stack machine, one way to do this is to use stack
+shuffling words&#8211;<tt class="docutils literal"><span class="pre">dup</span></tt>, <tt class="docutils literal"><span class="pre">swap</span></tt>, <tt class="docutils literal"><span class="pre">rot</span></tt>, <tt class="docutils literal"><span class="pre">over</span></tt> and <tt class="docutils literal"><span class="pre">drop</span></tt>&#8211;to
+move stuff around the way you need it.  But keeping track of what is
+where when gets old quickly.  For this reason, Zwerg allows that you
+give value a name.  Later on, when that name is mentioned, it acts as
+a function that pushes the bound value to stack.</p>
+<p>In an expression such as <tt class="docutils literal"><span class="pre">let</span> <span class="pre">X</span> <span class="pre">Y</span> <span class="pre">:=</span> <span class="pre">EXPR;</span></tt>, <em>EXPR</em> is evaluated in
+a sub-expression context.  Top of stack is bound to name <em>Y</em>, and the
+value below that to <em>X</em>, and so on in this fashion if there are more
+names.  E.g.:</p>
+<div class="highlight-python"><div class="highlight"><pre>$ dwgrep &#39;let A := 1;
+          A A add&#39;
+2
+
+$ dwgrep &#39;let A B := 10 2;
+          A B div&#39;
+5
+</pre></div>
+</div>
+<p>Let&#8217;s use this tool to first remember the two values that we care
+about: the subprogram (S) and its naked structure parameter (P):</p>
+<div class="highlight-python"><div class="highlight"><pre>$ dwgrep ./tests/nontrivial-types.o -f /dev/stdin &lt;&lt;EOF
+let S := entry ?TAG_subprogram !AT_declaration;
+let P := S child ?TAG_formal_parameter
+         ?(@AT_type ((?TAG_const_type,
+                      ?TAG_volatile_type, ?TAG_typedef) @AT_type)*
+           (?TAG_structure_type, ?TAG_class_type));
+S P &quot;%s: %s has non-trivial type.&quot;
+EOF
+
+---
+[35] subprogram: [58] formal_parameter has non-trivial type.
+&lt;Dwarf &quot;./tests/nontrivial-types.o&quot;&gt;
+</pre></div>
+</div>
+<p>Which is not too shabby, but having to keep track of which <tt class="docutils literal"><span class="pre">%s</span></tt>
+takes which value is perhaps not too comfortable.  For that reason,
+Zwerg allows splicing of expressions in strings.</p>
+</div>
+<div class="section" id="expr-format-string-splicing">
+<h2><tt class="docutils literal"><span class="pre">%(</span> <span class="pre">EXPR</span> <span class="pre">%)</span></tt> &#8212; format string splicing<a class="headerlink" href="#expr-format-string-splicing" title="Permalink to this headline">¶</a></h2>
+<p>In format strings, code between <tt class="docutils literal"><span class="pre">%(</span></tt> and the matching <tt class="docutils literal"><span class="pre">%)</span></tt> is
+evaluated in plain context, after which TOS of the result is popped
+and inserted in place of the <tt class="docutils literal"><span class="pre">%(...%)</span></tt>.  <tt class="docutils literal"><span class="pre">%s</span></tt> is then exactly
+equivalent to <tt class="docutils literal"><span class="pre">%(%)</span></tt>.</p>
+<p>With this tool, we can make the formatting string clearer:</p>
+<div class="highlight-python"><div class="highlight"><pre>$ dwgrep ./tests/nontrivial-types.o -f /dev/stdin &lt;&lt;EOF
+let S := entry ?TAG_subprogram !AT_declaration;
+let P := S child ?TAG_formal_parameter
+         ?(@AT_type ((?TAG_const_type,
+                      ?TAG_volatile_type, ?TAG_typedef) @AT_type)*
+           (?TAG_structure_type, ?TAG_class_type));
+&quot;%( S %): %( P %) has non-trivial type.&quot;
+EOF
+
+---
+[35] subprogram: [58] formal_parameter has non-trivial type.
+&lt;Dwarf &quot;./tests/nontrivial-types.o&quot;&gt;
+</pre></div>
+</div>
+<p>But the actual output is still not very nice.  Ideally we&#8217;d mention
+names and source code corrdinates instead of Dwarf offsets and tag
+names.  But with splicing, that&#8217;s actually quite easy to achieve:</p>
+<div class="highlight-python"><div class="highlight"><pre>$ dwgrep ./tests/nontrivial-types.o -f /dev/stdin &lt;&lt;&quot;EOF&quot;
+let S := entry ?TAG_subprogram !AT_declaration;
+let P := S child ?TAG_formal_parameter
+         ?(@AT_type ((?TAG_const_type,
+                      ?TAG_volatile_type, ?TAG_typedef) @AT_type)*
+           (?TAG_structure_type, ?TAG_class_type));
+
+&quot;%( S @AT_decl_file %): %( S @AT_decl_line %): note: in function &quot;\
+&quot;`%( S @AT_name %)&#39;, parameter `%( P @AT_name %)&#39; type is not trivial.&quot;
+EOF
+
+---
+/home/petr/proj/dwgrep/x.c: 3: note: in function `blah&#39;, parameter `f&#39; type is not trivial.
+&lt;Dwarf &quot;./tests/nontrivial-types.o&quot;&gt;
+</pre></div>
+</div>
+<p>The message here is already fairly decent, the only thing making it
+ugly is that we actually yield a two-value stack.  We&#8217;ll deal with
+this next.</p>
+<p>One thing to note here though is the string continuation syntax.  Note
+how the formatting string is split into two fragments.  The former one
+then ends with <tt class="docutils literal"><span class="pre">&quot;\</span></tt> instead of the customary <tt class="docutils literal"><span class="pre">&quot;</span></tt>, which is a
+signal to the lexer that it should concatenate the two fragments
+together before handing them further.  For all intents and purposes,
+these two fragments form a single string literal.</p>
+<p>If we are paranoid, we can guard against missing <tt class="docutils literal"><span class="pre">&#64;AT_decl_file</span></tt> and
+<tt class="docutils literal"><span class="pre">&#64;AT_decl_line</span></tt>.  This is actually fairly important, because
+requesting a missing attribute is not an error, but merely causes the
+computation to stop.  If, say, <tt class="docutils literal"><span class="pre">&#64;AT_decl_line</span></tt> weren&#8217;t available,
+the computation would be silently dropped&#8211;right at the point where we
+had an offender and were ready to report them.  So let&#8217;s change the
+formatting string thus:</p>
+<div class="highlight-python"><div class="highlight"><pre>&quot;%( S @AT_decl_file || &quot;???&quot; %): %( S @AT_decl_line || &quot;???&quot; %): &quot;\
+&quot;note: in function `%( S @AT_name %)&#39;, &quot;\
+&quot;parameter `%( P @AT_name %)&#39; type is not trivial.&quot;
+</pre></div>
+</div>
+<p>Note how you can use string literals inside <tt class="docutils literal"><span class="pre">%(</span> <span class="pre">%)</span></tt> inside
+formatting strings.  Not that it would be a good idea to nest layers
+and layers of strings, but in principle it is possible, and for a
+quick default like this, there&#8217;s no harm.</p>
+<p>Now to get rid of the Dwarf value that&#8217;s occupying our bottom stack
+slot.  The simplest approach is to drop the value at the point where
+we don&#8217;t need it anymore:</p>
+<div class="highlight-python"><div class="highlight"><pre>$ dwgrep ./tests/nontrivial-types.o -f /dev/stdin &lt;&lt;&quot;EOF&quot;
+let S := entry ?TAG_subprogram !AT_declaration;
+let P := S child ?TAG_formal_parameter
+         ?(@AT_type ((?TAG_const_type,
+                      ?TAG_volatile_type, ?TAG_typedef) @AT_type)*
+           (?TAG_structure_type, ?TAG_class_type));
+drop
+
+&quot;%( S @AT_decl_file || &quot;???&quot; %): %( S @AT_decl_line || &quot;???&quot; %): &quot;\
+&quot;note: in function `%( S @AT_name %)&#39;, &quot;\
+&quot;parameter `%( P @AT_name %)&#39; type is not trivial.&quot;
+EOF
+/home/petr/proj/dwgrep/x.c: 3: note: in function `blah&#39;, parameter `f&#39; type is not trivial.
+</pre></div>
+</div>
+<p>But there&#8217;s one more way to make this work, and it would allow us to
+introduce another Zwerg feature.</p>
+</div>
+<div class="section" id="x-y-expr-scoped-bindings">
+<h2><tt class="docutils literal"><span class="pre">(|X</span> <span class="pre">Y|</span> <span class="pre">EXPR)</span></tt> &#8212; scoped bindings<a class="headerlink" href="#x-y-expr-scoped-bindings" title="Permalink to this headline">¶</a></h2>
+<p>This expression introduces a function that takes one parameter for
+each name mentioned between the pipes, then passes the remaining stack
+to <em>EXPR</em>, which is evaluated in plain context.  When the bound names
+are mentioned within <em>EXPR</em>, they recall the bound values.  E.g.:</p>
+<div class="highlight-python"><div class="highlight"><pre>$ dwgrep &#39;1 (|A| A A add)&#39;
+2
+
+$ dwgrep &#39;10 2 (|A B| A B div)&#39;
+5
+
+$ dwgrep &#39;1 (|A| A A add (|A| A A add))&#39;
+4
+</pre></div>
+</div>
+<p>If we enclose the whole expression into a scope, we can drop the Dwarf
+from the stack where we don&#8217;t need it, but still keep it around as a
+name:</p>
+<div class="highlight-python"><div class="highlight"><pre>$ dwgrep ./tests/nontrivial-types.o -f /dev/stdin &lt;&lt;&quot;EOF&quot;
+(|D|
+  let S := D entry ?TAG_subprogram !AT_declaration;
+  let P := S child ?TAG_formal_parameter
+           ?(@AT_type ((?TAG_const_type,
+                        ?TAG_volatile_type, ?TAG_typedef) @AT_type)*
+             (?TAG_structure_type, ?TAG_class_type));
+
+  &quot;%( S @AT_decl_file || &quot;???&quot; %): %( S @AT_decl_line || &quot;???&quot; %): &quot;\
+  &quot;note: in function `%( S @AT_name %)&#39;, &quot;\
+  &quot;parameter `%( P @AT_name %)&#39; type is not trivial.&quot;
+)
+EOF
+/home/petr/proj/dwgrep/x.c: 3: note: in function `blah&#39;, parameter `f&#39; type is not trivial.
+</pre></div>
+</div>
+<p>So, that&#8217;s it.  This was a quick tour through the interesting parts of
+<tt class="docutils literal"><span class="pre">dwgrep</span></tt>.  You may now want to check out <a class="reference internal" href="syntax.html#syntax"><em>Syntax</em></a>, and
+<a class="reference internal" href="vocabulary-core.html#zw-vocabulary-core"><em>Core vocabulary</em></a> or <a class="reference internal" href="vocabulary-dwarf.html#zw-vocabulary-dwarf"><em>Dwarf vocabulary</em></a> to learn about
+the actual function words that you can use.</p>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Tutorial</a><ul>
+<li><a class="reference internal" href="#entry-unit-die-iteration"><tt class="docutils literal"><span class="pre">entry</span></tt>, <tt class="docutils literal"><span class="pre">unit</span></tt> &#8212; DIE iteration</a></li>
+<li><a class="reference internal" href="#dw-tag-foo-tag-foo-die-tag-assertion"><tt class="docutils literal"><span class="pre">?DW_TAG_foo</span></tt>, <tt class="docutils literal"><span class="pre">?TAG_foo</span></tt> &#8212; DIE tag assertion</a></li>
+<li><a class="reference internal" href="#dw-at-foo-dw-at-foo-attribute-presence-assertion"><tt class="docutils literal"><span class="pre">?DW_AT_foo</span></tt>, <tt class="docutils literal"><span class="pre">!DW_AT_foo</span></tt> &#8212; attribute presence assertion</a></li>
+<li><a class="reference internal" href="#child-child-traversal"><tt class="docutils literal"><span class="pre">child</span></tt> &#8212; child traversal</a></li>
+<li><a class="reference internal" href="#dw-at-foo-value-of-attribute-dw-at-foo"><tt class="docutils literal"><span class="pre">&#64;DW_AT_foo</span></tt> &#8212; value of attribute <tt class="docutils literal"><span class="pre">DW_AT_foo</span></tt></a></li>
+<li><a class="reference internal" href="#expr-expr-sub-expression-assertions"><tt class="docutils literal"><span class="pre">?(EXPR)</span></tt>, <tt class="docutils literal"><span class="pre">!(EXPR)</span></tt> &#8212; Sub-expression assertions</a></li>
+<li><a class="reference internal" href="#expr-expr-expr-expr-infix-assertions"><tt class="docutils literal"><span class="pre">EXPR</span> <span class="pre">==</span> <span class="pre">EXPR</span></tt>, <tt class="docutils literal"><span class="pre">EXPR</span> <span class="pre">!=</span> <span class="pre">EXPR</span></tt> &#8212; Infix assertions</a></li>
+<li><a class="reference internal" href="#expr-expr-alt-lists"><tt class="docutils literal"><span class="pre">EXPR,</span> <span class="pre">EXPR</span></tt> &#8212; ALT-lists</a></li>
+<li><a class="reference internal" href="#expr-expr-or-lists"><tt class="docutils literal"><span class="pre">EXPR</span> <span class="pre">||</span> <span class="pre">EXPR</span></tt> &#8212; OR-lists</a></li>
+<li><a class="reference internal" href="#expr-expr-expr-expression-iteration"><tt class="docutils literal"><span class="pre">EXPR*</span></tt>, <tt class="docutils literal"><span class="pre">EXPR+</span></tt>, <tt class="docutils literal"><span class="pre">EXPR?</span></tt> &#8212; expression iteration</a></li>
+<li><a class="reference internal" href="#literals-strings-formatting">Literals, Strings, Formatting</a></li>
+<li><a class="reference internal" href="#let-x-expr-name-binding"><tt class="docutils literal"><span class="pre">let</span> <span class="pre">X</span> <span class="pre">:=</span> <span class="pre">EXPR;</span></tt> &#8212; name binding</a></li>
+<li><a class="reference internal" href="#expr-format-string-splicing"><tt class="docutils literal"><span class="pre">%(</span> <span class="pre">EXPR</span> <span class="pre">%)</span></tt> &#8212; format string splicing</a></li>
+<li><a class="reference internal" href="#x-y-expr-scoped-bindings"><tt class="docutils literal"><span class="pre">(|X</span> <span class="pre">Y|</span> <span class="pre">EXPR)</span></tt> &#8212; scoped bindings</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="cli.html"
+                        title="previous chapter">Command line reference</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="examples.html"
+                        title="next chapter">Assorted examples</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/tutorial.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="examples.html" title="Assorted examples"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="cli.html" title="Command line reference"
+             >previous</a> |</li>
+        <li><a href="index.html">dwgrep 0.2 documentation</a> &raquo;</li>
+          <li><a href="fulltoc.html" >Table of contents</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2014, 2015, Petr Machata.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.2.
+    </div>
+  </body>
+</html>
