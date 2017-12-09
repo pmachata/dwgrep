@@ -129,12 +129,14 @@ For example::
 Integer literals
 ----------------
 
-Integer literals are words that start with a decimal digit. For integer literal
-to be valid, it needs to have a certain shape:
-
 Form::
 
 	“-”?(“0x”|“0o”|“0b”|“0”|“”){digits}
+
+Integer literals are words that start with a decimal digit, or by a minus sign
+followed by a decimal digit. For integer literal to be valid, the word needs to
+be composed of a prefix that determines radix of the literal, followed by one or
+more digits from a set specified as follows:
 
 - ``0x`` and ``0X`` are hexadecimal prefixes.  Valid digits are
   ``[0-9a-fA-F]``.
