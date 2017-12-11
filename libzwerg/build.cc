@@ -370,7 +370,8 @@ tree::build_exec (layout &l, std::shared_ptr <op> upstream,
 		  vocabulary &voc) const
 {
   uprefs up;
-  bindings bn {voc};
+  bindings root {voc};
+  bindings bn {root};
   layout::loc no_ll {0xdeadbeef};
   return ::build_exec (*this, l, no_ll, upstream, bn, up);
 }
