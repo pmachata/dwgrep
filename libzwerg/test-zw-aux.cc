@@ -60,3 +60,24 @@ run_query (vocabulary &voc,
 
   return yielded;
 }
+
+std::string
+get_parse_error (vocabulary &voc, std::string q)
+{
+  layout l;
+  auto origin = std::make_shared <op_origin> (l);
+  try
+    {
+      parse_query (voc, q).build_exec (l, origin, voc);
+    }
+  catch (std::runtime_error &err)
+    {
+      return err.what ();
+    }
+  catch (...)
+    {
+      return "???";
+    }
+
+  return "";
+}

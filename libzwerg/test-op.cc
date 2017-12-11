@@ -208,3 +208,38 @@ TEST_F (ZwTest, test_1)
 			    "let X := 1; {{} {}} apply");
   ASSERT_EQ (1, yielded.size ());
 }
+
+TEST_F (ZwTest, test_compilation_errors)
+{
+  for (auto const &entry: std::map <std::string, std::string> {
+	    {"let A := ; let A := ;",
+	     "Name `A' rebound."},
+	    {"(|A| let A := ;)",
+	     "Name `A' rebound."},
+	    {"(|A| (|A|))",
+	     ""},
+	    {"let A := let A := ; ;",
+	     ""},
+	    {"let elem := 1;",
+	     ""},
+	})
+    {
+      auto err = get_parse_error (*builtins, entry.first);
+      ASSERT_EQ (err, entry.second);
+    }
+}
+
+TEST_F (ZwTest, test_let)
+{
+  for (auto const &entry: std::map <size_t, std::string> {
+	    {1, "1 (|A| 2 (|B| let A := A 1 add; A) A) "
+		"[|X Y| X, Y] == [2, 1]"},
+	    {1, "1 (|A| let B := let A := A 1 add; A; B A) "
+		"[|X Y| X, Y] == [2, 1]"},
+	})
+    {
+      auto stk = std::make_unique <stack> ();
+      auto yielded = run_query (*builtins, std::move (stk), entry.second);
+      ASSERT_EQ (entry.first, yielded.size ());
+    }
+}

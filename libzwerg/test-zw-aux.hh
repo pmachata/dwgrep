@@ -1,4 +1,5 @@
 /*
+   Copyright (C) 2017 Petr Machata
    Copyright (C) 2014, 2015 Red Hat, Inc.
    This file is part of dwgrep.
 
@@ -39,5 +40,7 @@ std::unique_ptr <stack> stack_with_value (std::unique_ptr <value> v);
 
 std::vector <std::unique_ptr <stack>>
 run_query (vocabulary &voc, std::unique_ptr <stack> stk, std::string q);
+
+std::string get_parse_error (vocabulary &voc, std::string q);
 
 #endif /* TEST_ZW_AUX_H */
