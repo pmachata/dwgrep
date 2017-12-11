@@ -194,15 +194,11 @@
     {
       std::unique_ptr <tree> ret;
       for (auto const &s: *ids)
-	if (builtins.find (s) == nullptr)
-	  {
-	    std::unique_ptr <tree> t {tree::create_str <tree_type::BIND> (s)};
-	    ret = tree::create_cat <tree_type::CAT>
-	      (std::move (ret), std::move (t));
-	  }
-	else
-	  throw std::runtime_error
-	      (std::string ("Can't rebind a builtin: `") + s + "'");
+	{
+	  std::unique_ptr <tree> t {tree::create_str <tree_type::BIND> (s)};
+	  ret = tree::create_cat <tree_type::CAT>
+	    (std::move (ret), std::move (t));
+	}
 
       return ret;
     }
