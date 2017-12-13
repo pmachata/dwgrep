@@ -213,15 +213,17 @@ TEST_F (ZwTest, test_compilation_errors)
 {
   for (auto const &entry: std::map <std::string, std::string> {
 	    {"let A := ; let A := ;",
-	     "Name `A' rebound."},
+		"Name `A' rebound."},
 	    {"(|A| let A := ;)",
-	     "Name `A' rebound."},
+		"Name `A' rebound."},
+	    {"let A := let A := A 1 add; A 1 add;",
+		"Attempt to read an unbound name `A'"},
+	    {"let A := {A};",
+		"Attempt to read an unbound name `A'"},
 	    {"(|A| (|A|))",
-	     ""},
+		""},
 	    {"let A := let A := ; ;",
-	     ""},
-	    {"let elem := 1;",
-	     ""},
+		""},
 	})
     {
       auto err = get_parse_error (*builtins, entry.first);
@@ -236,6 +238,17 @@ TEST_F (ZwTest, test_let)
 		"[|X Y| X, Y] == [2, 1]"},
 	    {1, "1 (|A| let B := let A := A 1 add; A; B A) "
 		"[|X Y| X, Y] == [2, 1]"},
+	    {1, "let length := {1}; ([] length == 1)"},
+	    {1, "let length := {length 2 add}; "
+		"([] length == 2) "
+		"([1, 2, 3] length == 5)"},
+	    {1, "let length := {length 2 add}; "
+		"1 (|A| let length := {length 3 add}; "
+		"       ([] length == 5)"
+		"       ([1, 2, 3] length == 7))"},
+	    {1, "{length 1 add} (|length| {length 2 add}) let F := ; "
+		"?([] (F == 3) (length == 0)) "
+		"?([1, 2, 3] (F == 6) (length == 3))"},
 	})
     {
       auto stk = std::make_unique <stack> ();
