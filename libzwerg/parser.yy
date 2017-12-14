@@ -189,10 +189,10 @@
     }
 
     std::unique_ptr <tree>
-    tree_for_id_block (std::unique_ptr <std::vector <std::string>> ids)
+    tree_for_id_block (std::vector <std::string> const &ids)
     {
       std::unique_ptr <tree> ret;
-      for (auto const &s: *ids)
+      for (auto const &s: ids)
 	{
 	  std::unique_ptr <tree> t {tree::create_str <tree_type::BIND> (s)};
 	  ret = tree::create_cat <tree_type::CAT>
@@ -200,6 +200,12 @@
 	}
 
       return ret;
+    }
+
+    std::unique_ptr <tree>
+    tree_for_id_block (std::unique_ptr <std::vector <std::string>> ids)
+    {
+      return tree_for_id_block (*ids);
     }
 
     std::unique_ptr <tree>
@@ -224,16 +230,31 @@
     }
 
     std::unique_ptr <tree>
+    parse_op_tmplet (std::string const &name, std::unique_ptr <tree> t)
+    {
+      auto one = constant {1, &dec_constant_dom};
+      auto tt = tree::create_const <tree_type::SUBX_EVAL> (one);
+      tt->take_child (tree::create_scope (maybe_nop (std::move (t))));
+
+      return tree::create_cat <tree_type::CAT> (std::move (tt),
+						tree_for_id_block ({name}));
+    }
+
+    std::unique_ptr <tree>
     parse_op (vocabulary const &builtins,
 	      std::unique_ptr <tree> a,
 	      std::unique_ptr <tree> b,
 	      std::string const &word)
     {
+      auto ta = parse_op_tmplet ("~a~", std::move (a));
+      ta->take_child (parse_op_tmplet ("~b~", std::move (b)));
+      ta->take_child (parse_word ("~a~"));
+      ta->take_child (parse_word ("~b~"));
+      ta->take_child (parse_word (word));
+
       return tree::create_assert
-	(tree::create_ternary <tree_type::PRED_SUBX_CMP>
-	 (maybe_nop (std::move (a)),
-	  maybe_nop (std::move (b)),
-	  tree::create_builtin (builtins.find (word))));
+	(tree::create_unary <tree_type::PRED_SUBX_ANY>
+	 (tree::create_scope (std::move (ta))));
     }
   }
 

@@ -337,9 +337,6 @@ do_tests ()
   test ("!0o77", "(F_BUILTIN<pred_pos>)");
   ftestx ("!-1", "Invalid");
 
-  test ("1 == 1", "(ASSERT (PRED_SUBX_CMP (CONST<1>) (CONST<1>) "
-	                                 "(F_BUILTIN<?eq>)))");
-
   std::cerr << tests << " tests total, " << failed << " failures." << std::endl;
   assert (failed == 0);
 }
