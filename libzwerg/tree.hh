@@ -82,9 +82,6 @@ enum class tree_arity_v
 //
 // PRED_SUBX_ANY -- For holding ?(X).  !() is modeled using PRED_NOT.
 //
-// PRED_SUBX_CMP -- For holding X == Y.  The third operand is the
-// operation predicate.  (E.g. F_BUILTIN<EQ>).
-//
 // CONST -- For holding named constants and integer literals.
 //
 // STR -- For holding string literals.  Actual string literals are
@@ -114,7 +111,6 @@ enum class tree_arity_v
   TREE_TYPE (PRED_OR, BINARY)			\
   TREE_TYPE (PRED_NOT, UNARY)			\
   TREE_TYPE (PRED_SUBX_ANY, UNARY)		\
-  TREE_TYPE (PRED_SUBX_CMP, TERNARY)		\
   TREE_TYPE (CONST, CST)			\
   TREE_TYPE (STR, STR)				\
   TREE_TYPE (FORMAT, NULLARY)			\

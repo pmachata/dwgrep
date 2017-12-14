@@ -1102,37 +1102,6 @@ pred_subx_any::name () const
 
 
 pred_result
-pred_subx_compare::result (scon &sc, stack &stk) const
-{
-  scon_guard sg {sc, *m_op1};
-  m_origin->set_next (sc, std::make_unique <stack> (stk));
-  while (auto stk_1 = m_op1->next (sc))
-    {
-      scon_guard sg {sc, *m_op2};
-      m_origin->set_next (sc, std::make_unique <stack> (stk));
-      while (auto stk_2 = m_op2->next (sc))
-	{
-	  stk_1->push (stk_2->pop ());
-
-	  if (m_pred->result (sc, *stk_1) == pred_result::yes)
-	    return pred_result::yes;
-
-	  stk_1->pop ();
-	}
-    }
-
-  return pred_result::no;
-}
-
-std::string
-pred_subx_compare::name () const
-{
-  return std::string ("pred_subx_compare<") + m_op1->name () + "><"
-    + m_op2->name () + "><" + m_pred->name () + ">";
-}
-
-
-pred_result
 pred_pos::result (scon &sc, stack &stk) const
 {
     auto const &value = stk.top ();

@@ -649,29 +649,6 @@ public:
   std::string name () const override;
 };
 
-class pred_subx_compare
-  : public pred
-{
-  std::shared_ptr <op> m_op1;
-  std::shared_ptr <op> m_op2;
-  std::shared_ptr <op_origin> m_origin;
-  std::unique_ptr <pred> m_pred;
-
-public:
-  pred_subx_compare (std::shared_ptr <op> op1,
-		     std::shared_ptr <op> op2,
-		     std::shared_ptr <op_origin> origin,
-		     std::unique_ptr <pred> pred)
-    : m_op1 {op1}
-    , m_op2 {op2}
-    , m_origin {origin}
-    , m_pred {std::move (pred)}
-  {}
-
-  pred_result result (scon &sc, stack &stk) const override;
-  std::string name () const override;
-};
-
 class pred_pos
   : public pred
 {

@@ -73,17 +73,6 @@ namespace
 	  return std::make_unique <pred_subx_any> (op, origin);
 	}
 
-      case tree_type::PRED_SUBX_CMP:
-	{
-	  assert (t.m_children.size () == 3);
-	  auto origin = std::make_shared <op_origin> (l);
-	  auto op1 = build_exec (t.child (0), l, rdv_ll, origin, bn, up);
-	  auto op2 = build_exec (t.child (1), l, rdv_ll, origin, bn, up);
-	  auto pred = build_pred (t.child (2), l, rdv_ll, bn, up);
-	  return std::make_unique <pred_subx_compare> (op1, op2, origin,
-						       std::move (pred));
-	}
-
       case tree_type::F_BUILTIN:
 	return t.m_builtin->build_pred (l);
 
@@ -356,7 +345,6 @@ namespace
       case tree_type::PRED_OR:
       case tree_type::PRED_NOT:
       case tree_type::PRED_SUBX_ANY:
-      case tree_type::PRED_SUBX_CMP:
 	assert (! "Should never get here.");
 	abort ();
       }
