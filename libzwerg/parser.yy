@@ -162,7 +162,7 @@
     }
 
     std::unique_ptr <tree>
-    parse_word (vocabulary const &builtins, std::string str)
+    parse_word (std::string str)
     {
       return tree::create_str <tree_type::READ> (str);
     }
@@ -579,7 +579,7 @@ Statement:
 
 Word:
   TOK_WORD
-  { $$ = parse_word (builtins, {$1.buf, $1.len}).release (); }
+  { $$ = parse_word ({$1.buf, $1.len}).release (); }
 
   |
   TOK_NUMWORD
