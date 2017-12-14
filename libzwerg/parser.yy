@@ -189,8 +189,7 @@
     }
 
     std::unique_ptr <tree>
-    tree_for_id_block (vocabulary const &builtins,
-		       std::unique_ptr <std::vector <std::string>> ids)
+    tree_for_id_block (std::unique_ptr <std::vector <std::string>> ids)
     {
       std::unique_ptr <tree> ret;
       for (auto const &s: *ids)
@@ -405,7 +404,7 @@ Statement:
     std::unique_ptr <tree> t3 {$3};
 
     auto ret = tree::create_cat <tree_type::CAT>
-      (tree_for_id_block (builtins, std::move (ids)),
+      (tree_for_id_block (std::move (ids)),
        std::move (t3));
 
     if (sz > 0)
@@ -451,7 +450,7 @@ Statement:
 
     auto ret = tree::create_scope
       (tree::create_cat <tree_type::CAT>
-       (tree_for_id_block (builtins, std::move (ids)),
+       (tree_for_id_block (std::move (ids)),
 
 	tree::create_unary <tree_type::CAPTURE>
 	(tree::create_scope (std::move (t3)))));
@@ -467,7 +466,7 @@ Statement:
     auto ret = tree::create_unary <tree_type::BLOCK>
       (tree::create_scope
        (tree::create_cat <tree_type::CAT>
-	(tree_for_id_block (builtins, std::move (ids)),
+	(tree_for_id_block (std::move (ids)),
 	 std::move (t3))));
 
     $$ = ret.release ();
@@ -484,7 +483,7 @@ Statement:
 
     auto ret = tree::create_cat <tree_type::CAT>
       (std::move (tt),
-       tree_for_id_block (builtins, std::move (ids)));
+       tree_for_id_block (std::move (ids)));
 
     $$ = ret.release ();
   }
