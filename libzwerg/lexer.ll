@@ -259,10 +259,7 @@ OCT [0-7]
 (#|[/][/])[^\n]* // Skip # or // comment.
 [/][*]([^*]|[*][^/])*[*][/] // Skip /**/ comment.
 
-[^[:space:][:alnum:]()[\]{}]+ {
-    if (yyextra->find ({yyget_text (yyscanner),
-			(size_t) yyget_leng (yyscanner)}) == nullptr)
-      REJECT;
+[?!]?[$%&.-/:<=>@^_`~\\]+ {
     return pass_string (yyscanner, yylval, TOK_OP);
 }
 
