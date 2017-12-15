@@ -39,8 +39,6 @@
 
 static unsigned tests = 0, failed = 0;
 
-std::unique_ptr <vocabulary> builtins;
-
 void
 fail (std::string parse)
 {
@@ -56,7 +54,7 @@ test (std::string parse, std::string expect,
   tree t;
   try
     {
-      t = parse_query (*builtins, parse);
+      t = parse_query (parse);
       if (full && optimize)
 	  t.simplify ();
     }
@@ -344,11 +342,9 @@ do_tests ()
 int
 main (int argc, char *argv[])
 {
-  builtins = dwgrep_vocabulary_core ();
-
   if (argc > 1)
     {
-      tree t = parse_query (*builtins, argv[1]);
+      tree t = parse_query (argv[1]);
       std::cerr << t << std::endl;
     }
   else

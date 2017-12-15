@@ -44,7 +44,6 @@
 %option noyywrap nounput batch noinput
 
 %option reentrant
-%option extra-type="vocabulary const *"
 
 ALNUM [_a-zA-Z0-9]*
 ID  [_a-zA-Z]{ALNUM}
@@ -166,27 +165,27 @@ OCT [0-7]
 
 <STRING>"%s" {
   yylval->f->flush_str ();
-  yylval->f->t.push_child (parse_subquery (*yyextra, ""));
+  yylval->f->t.push_child (parse_subquery (""));
 }
 
 <STRING>"%x" {
   yylval->f->flush_str ();
-  yylval->f->t.push_child (parse_subquery (*yyextra, "value hex"));
+  yylval->f->t.push_child (parse_subquery ("value hex"));
 }
 
 <STRING>"%o" {
   yylval->f->flush_str ();
-  yylval->f->t.push_child (parse_subquery (*yyextra, "value oct"));
+  yylval->f->t.push_child (parse_subquery ("value oct"));
 }
 
 <STRING>"%b" {
   yylval->f->flush_str ();
-  yylval->f->t.push_child (parse_subquery (*yyextra, "value bin"));
+  yylval->f->t.push_child (parse_subquery ("value bin"));
 }
 
 <STRING>"%d" {
   yylval->f->flush_str ();
-  yylval->f->t.push_child (parse_subquery (*yyextra, "value"));
+  yylval->f->t.push_child (parse_subquery ("value"));
 }
 
 <STRING>(.|[\n]) {
@@ -230,8 +229,7 @@ OCT [0-7]
   yylval->f->in_string = true;
   if (yylval->f->level == 0)
     {
-      yylval->f->t.push_child (parse_subquery (*yyextra,
-					       yylval->f->yank_str ()));
+      yylval->f->t.push_child (parse_subquery (yylval->f->yank_str ()));
       BEGIN STRING;
     }
   else

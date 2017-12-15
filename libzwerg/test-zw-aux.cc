@@ -48,7 +48,7 @@ run_query (vocabulary &voc,
 {
   layout l;
   auto origin = std::make_shared <op_origin> (l);
-  auto op = parse_query (voc, q).build_exec (l, origin, voc);
+  auto op = parse_query (q).build_exec (l, origin, voc);
 
   scon sc {l};
   scon_guard sg {sc, *op};
@@ -68,7 +68,7 @@ get_parse_error (vocabulary &voc, std::string q)
   auto origin = std::make_shared <op_origin> (l);
   try
     {
-      parse_query (voc, q).build_exec (l, origin, voc);
+      parse_query (q).build_exec (l, origin, voc);
     }
   catch (std::runtime_error &err)
     {

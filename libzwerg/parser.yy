@@ -60,14 +60,12 @@
 }
 
 %code provides {
-  tree parse_query (vocabulary const &builtins, std::string str);
-  tree parse_query (vocabulary const &builtins,
-		    char const *begin, char const *end);
+  tree parse_query (std::string str);
+  tree parse_query (char const *begin, char const *end);
 
   // These two are for sub-expression parsing.
-  tree parse_subquery (vocabulary const &builtins, std::string str);
-  tree parse_subquery (vocabulary const &builtins,
-		       char const *begin, char const *end);
+  tree parse_subquery (std::string str);
+  tree parse_subquery (char const *begin, char const *end);
 }
 
 %{
@@ -82,8 +80,7 @@
   namespace
   {
     void
-    yyerror (std::unique_ptr <tree> &t, yyscan_t lex,
-	     vocabulary const &builtins, char const *s)
+    yyerror (std::unique_ptr <tree> &t, yyscan_t lex, char const *s)
     {
       fprintf (stderr, "%s\n", s);
     }
@@ -284,7 +281,6 @@
 %error-verbose
 %parse-param { std::unique_ptr <tree> &ret }
 %parse-param { void *yyscanner }
-%parse-param { vocabulary const &builtins }
 %lex-param { yyscanner }
 
 %token TOK_LPAREN TOK_RPAREN TOK_LBRACKET TOK_RBRACKET TOK_LBRACE TOK_RBRACE
@@ -610,10 +606,9 @@ struct lexer
 {
   yyscan_t m_sc;
 
-  explicit lexer (vocabulary const &builtins,
-		  char const *begin, char const *end)
+  explicit lexer (char const *begin, char const *end)
   {
-    if (yylex_init_extra (&builtins, &m_sc) != 0)
+    if (yylex_init (&m_sc) != 0)
       throw std::runtime_error ("Can't init lexer.");
     yy_scan_bytes (begin, end - begin, m_sc);
   }
@@ -627,33 +622,31 @@ struct lexer
 };
 
 tree
-parse_query (vocabulary const &builtins, std::string str)
+parse_query (std::string str)
 {
   char const *buf = str.c_str ();
-  return parse_query (builtins, buf, buf + str.length ());
+  return parse_query (buf, buf + str.length ());
 }
 
 tree
-parse_subquery (vocabulary const &builtins, std::string str)
+parse_subquery (std::string str)
 {
   char const *buf = str.c_str ();
-  return parse_subquery (builtins, buf, buf + str.length ());
+  return parse_subquery (buf, buf + str.length ());
 }
 
 tree
-parse_query (vocabulary const &builtins,
-	     char const *begin, char const *end)
+parse_query (char const *begin, char const *end)
 {
-  return parse_subquery (builtins, begin, end);
+  return parse_subquery (begin, end);
 }
 
 tree
-parse_subquery (vocabulary const &builtins,
-		char const *begin, char const *end)
+parse_subquery (char const *begin, char const *end)
 {
-  lexer lex {builtins, begin, end};
+  lexer lex {begin, end};
   std::unique_ptr <tree> t;
-  if (yyparse (t, lex.m_sc, builtins) == 0)
+  if (yyparse (t, lex.m_sc) == 0)
     return *t;
   throw std::runtime_error ("syntax error");
 }

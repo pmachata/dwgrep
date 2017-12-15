@@ -155,7 +155,7 @@ zw_query_parse_len (zw_vocabulary const *voc,
 		    zw_error **out_err)
 {
   return capture_errors ([&] () {
-      tree t = parse_query (*voc->m_voc, {query, query_len});
+      tree t = parse_query ({query, query_len});
       t.simplify ();
 
       layout l;
