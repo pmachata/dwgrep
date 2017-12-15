@@ -241,8 +241,7 @@
     }
 
     std::unique_ptr <tree>
-    parse_op (vocabulary const &builtins,
-	      std::unique_ptr <tree> a,
+    parse_op (std::unique_ptr <tree> a,
 	      std::unique_ptr <tree> b,
 	      std::string const &word)
     {
@@ -373,7 +372,7 @@ OpList:
     std::unique_ptr <tree> t3 {$3};
     std::string str {$2.buf, $2.len};
 
-    auto ret = parse_op (builtins, std::move (t1), std::move (t3), str);
+    auto ret = parse_op (std::move (t1), std::move (t3), str);
 
     $$ = ret.release ();
   }
