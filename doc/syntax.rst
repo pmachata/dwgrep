@@ -666,23 +666,26 @@ following constructs comprise a scope:
 - Any sub-expression context has a scope of its own::
 
 	$ dwgrep '?(let A := 1;) A'
-	Error: Unknown identifier `A'.
+	dwgrep: Attempt to read an unbound name `A'
+
+	$ dwgrep '(let A := 1; 1 == 1) A'
+	dwgrep: Attempt to read an unbound name `A'
 
 - Each branch of an OR-list or ALT-list has a scope of its own::
 
 	$ dwgrep '(let A := 1;, let A := 2;) A'
-	Error: Unknown identifier `A'.
+	dwgrep: Attempt to read an unbound name `A'
 
 - Parenthesized expressions with name binding blocks are a scope::
 
 	$ dwgrep '"" (|X| let A := 1;) A'
-	Error: Unknown identifier `A'.
+	dwgrep: Attempt to read an unbound name `A'
 
 - ``then`` and ``else`` branches of an ``if-then-else`` form
   each introduce a scope::
 
 	$ dwgrep 'if ?() then let A := 1; else let A := 2; A'
-	Error: Unknown identifier `A'.
+	dwgrep: Attempt to read an unbound name `A'
 
   Typically these constructs can be rewritten as follows::
 
