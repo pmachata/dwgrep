@@ -19,6 +19,21 @@
    changes (e.g. introduction of a word that could clash with an existing
    variable, change of behavior, removal) would prompt version number bump, and
    one could request the old version explicitly.
+
+*** 5
+   Specify all vocabularies in external libraries, use libzwerg API. The current
+   overload interface looks about right for what is necessary: yield once, maybe
+   and many, and predicates, all keyed to a stack profile.
+
+   Then "argv" can be in a vocabulary of its own, brought in by dwgrep, and
+   primed with the arguments to actually yield.
+
+   The problem with this is how to handle dependencies between vocabularies. E.g
+   Dwarf vocabulary depends on core vocabulary's constant type (for all the
+   builtin constants). How would one express this? Dp the vocabularies that can
+   be built upon need to have a stable C API as well? (Well, they *would* be
+   just libraries...).
+
 ** static analysis tools
 *** overload pegging
     - We could use overload prototype declarations to mention return
@@ -392,6 +407,39 @@
       : let swap_ := {|a b| b a};
       : let rot_ := {|a b c| b c a};
       : let over_ := {|a b| a b a};
+
+*** TODO
+   BTW, it looks as if !{} and ?{} might be a useful syntax sugar for {!()} and
+   {?()}. It also looks like ?() and !() should allow binding blocks: ?(|A B|
+   ...) etc., and of course also ?{|A B| ...}.
+
+   : let ==~ = ?{|A B| (A == B) || (A =~ B)};
+   : let !=~ = !{|A B| (A == B) || (A =~ B)};
+
+*** Infix operator overriding
+   Infix operators are just reads, it would be straightforward to allow
+   overriding them:
+
+   : let ==~ = {?((|A B| ((A == B) || (A =~ B))))};
+   : let !=~ = {!((|A B| ((A == B) || (A =~ B))))};
+
+   The current codebase allows a limited form of this with the following let
+   form:
+
+   : let "===" := {something};
+
+   But extending IdListOpt to allow both words and operators would be simple,
+   and then all binding forms would allow this.
+
+*** Stack profile-sensitive bindings
+
+   : let elem/T_XYZ = {...};
+   : let foo/T_XYZ = 1; # push value depending on TOS type :)
+
+   Since symbol versioning should be built around overloads, and builtins
+   themselves should be derived off that (at least I guess), allowing users to
+   redefine particular overloads seems logical. Old syntax would stay around
+   meaning that the profile selector is composed of 0 TOS slots.
 
 **  (“while” | “until”) EXPR₀ “do” EXPR₁ | “do” EXPR₁ (“while” | “until”) EXPR₀
 
