@@ -252,6 +252,21 @@
 	(tree::create_unary <tree_type::PRED_SUBX_ANY>
 	 (tree::create_scope (std::move (ta))));
     }
+
+    tree *
+    parse_let (std::unique_ptr <std::vector <std::string>> ids,
+	       std::unique_ptr <tree> subx)
+    {
+      auto tt = tree::create_const <tree_type::SUBX_EVAL>
+	(constant {ids->size (), &dec_constant_dom});
+      tt->take_child (tree::create_scope (std::move (subx)));
+
+      auto ret = tree::create_cat <tree_type::CAT>
+	(std::move (tt),
+	 tree_for_id_block (std::move (ids)));
+
+      return ret.release ();
+    }
   }
 
   fmtlit::fmtlit (bool a_raw)
@@ -493,15 +508,24 @@ Statement:
     std::unique_ptr <std::vector <std::string>> ids {$2};
     std::unique_ptr <tree> t4 {$4};
 
-    auto tt = tree::create_const <tree_type::SUBX_EVAL>
-      (constant {ids->size (), &dec_constant_dom});
-    tt->take_child (tree::create_scope (std::move (t4)));
+    $$ = parse_let (std::move (ids), std::move (t4));
+  }
 
-    auto ret = tree::create_cat <tree_type::CAT>
-      (std::move (tt),
-       tree_for_id_block (std::move (ids)));
+  | TOK_LET TOK_LIT_STR TOK_ASSIGN Program TOK_SEMICOLON
+  {
+    std::unique_ptr <tree> str {$2};
+    if (str->tt () != tree_type::FORMAT
+	|| str->m_children.size () != 1
+	|| str->child (0).tt () != tree_type::STR)
+      throw std::runtime_error ("String let requires a simple string");
 
-    $$ = ret.release ();
+    std::string name = str->child (0).str ();
+
+    auto ids = std::make_unique <std::vector <std::string>> ();
+    ids->emplace_back (std::move (name));
+    std::unique_ptr <tree> t4 {$4};
+
+    $$ = parse_let (std::move (ids), std::move (t4));
   }
 
   | Statement TOK_ASTERISK
