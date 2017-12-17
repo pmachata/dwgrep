@@ -711,11 +711,6 @@ way to access the outer ``A`` of ``1``::
 	$ dwgrep 'let A := 1; 2 [|A| A]'
 	[2]
 
-Finally, it's not allowed to rebind existing words::
-
-	$ dwgrep 'let child := 1;'
-	Error: Can't rebind a builtin: `child'
-
 
 Sub-expression assertions (``?()``, ``!()``)
 --------------------------------------------
