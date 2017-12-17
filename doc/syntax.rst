@@ -305,24 +305,18 @@ evaluated as follows::
 	?(let .tmp1 := EXPR₁; let .tmp2 := EXPR₂; .tmp1 .tmp2 OP₂)
 
 In plain English, *EXPR₁* and *EXPR₂* are each evaluated in
-sub-expression context.  The TOS's of the stacks that this produces
-are then put to stack and a certain operator is evaluated.  This shows
-that the two expressions are independent of each other.
+sub-expression context. The TOS's of the stacks that this produces are
+then put to stack and a certain operator *OP₂* is evaluated. This
+shows that the two expressions are independent of each other.
 
-What actual word *OP₂* refers to depends on what operator OP₁ is, but
-it will be an assertion that looks at top two stack slots.  There
-might be no actual word per se, but conceptually this is how the form
-behaves.
+The word *OP₂* is here used as a stand-in to explain the syntax. The
+actual word that is looked up is again *OP₁*--the operators are just
+words with a bit of syntactical support on Zwerg side (and with funny
+names). So which operators are available depends on which vocabularies
+any particular wrapper brings in.
 
-Another thing worth noticing is that the whole form behaves as an
-assertion.  No side effects leak from the constituent *EXPR*'s or from
-the operator itself.
-
-Individual operators are essentially just words, just with a bit of
-syntactical support on Zwerg side.  So which operators are available
-depends on which vocabularies any particular wrapper brings in.  Zwerg
-core defines the following *OP₁*'s with the following associated
-*OP₂*'s::
+Zwerg core defines the following *OP₁*'s, and for each of them there
+is currently an associated *OP₂* as follows::
 
 	EXPR₁ “==” EXPR₂	# ?eq
 	EXPR₁ “!=” EXPR₂	# ?ne
@@ -332,6 +326,13 @@ core defines the following *OP₁*'s with the following associated
 	EXPR₁ “>=” EXPR₂	# ?ge
 	EXPR₁ “=~” EXPR₂	# ?match
 	EXPR₁ “!~” EXPR₂	# !match
+
+(Again, the association to *OP₂* is for explanation only. Overriding
+that symbol has no effect on actual execution.)
+
+Another thing worth noticing is that the whole form behaves as an
+assertion.  No side effects leak from the constituent *EXPR*'s or from
+the operator itself.
 
 See :ref:`?eq <zw_vocabulary_core ?eq>` to learn about comparison
 operators.  See :ref:`?match <zw_vocabulary_core ?match>` to learn
