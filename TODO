@@ -12,6 +12,13 @@
 
 * TODO
 ** libzwerg C API
+** vocabulary versioning
+   Vocabularies need the same care as the C API when it comes to stability. Each
+   vocabulary should actually come as a suite of versions that one can use, with
+   one of them chosen as default (typically the latest one). Incompatible
+   changes (e.g. introduction of a word that could clash with an existing
+   variable, change of behavior, removal) would prompt version number bump, and
+   one could request the old version explicitly.
 ** static analysis tools
 *** overload pegging
     - We could use overload prototype declarations to mention return
