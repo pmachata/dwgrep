@@ -48,7 +48,7 @@ run_query (vocabulary &voc,
 {
   layout l;
   auto origin = std::make_shared <op_origin> (l);
-  auto op = parse_query (voc, q).build_exec (l, origin);
+  auto op = parse_query (voc, q).build_exec (l, origin, voc);
 
   scon sc {l};
   scon_guard sg {sc, *op};

@@ -193,7 +193,7 @@ public:
   // an op_origin if this is the toplevel-most expression, otherwise it
   // should be a valid op that the op produced by this node feeds off.
   std::shared_ptr <op>
-  build_exec (layout &l, std::shared_ptr <op> upstream) const;
+  build_exec (layout &l, std::shared_ptr <op> upstream, vocabulary &voc) const;
 
   // === Parser interface ===
   //

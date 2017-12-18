@@ -51,7 +51,9 @@ struct zw_vocabulary
 
 struct zw_query
 {
-  tree m_query;
+  layout m_l;
+  op_origin &m_origin;
+  std::shared_ptr <op> m_op;
 };
 
 struct zw_result

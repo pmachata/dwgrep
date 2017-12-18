@@ -157,7 +157,12 @@ zw_query_parse_len (zw_vocabulary const *voc,
   return capture_errors ([&] () {
       tree t = parse_query (*voc->m_voc, {query, query_len});
       t.simplify ();
-      return new zw_query { t };
+
+      layout l;
+      auto origin = std::make_shared <op_origin> (l);
+      auto op = t.build_exec (l, origin, *voc->m_voc);
+
+      return new zw_query {l, *origin, op};
     }, nullptr, out_err);
 }
 
@@ -189,10 +194,8 @@ zw_query_execute (zw_query const *query, zw_stack const *input_stack,
       for (auto const &emt: input_stack->m_values)
 	stk->push (emt->clone ());
 
-      layout l;
-      auto origin = std::make_shared <op_origin> (l);
-      auto op = query->m_query.build_exec (l, origin);
-      return new zw_result {l, *origin, op, std::move (stk)};
+      return new zw_result {query->m_l, query->m_origin, query->m_op,
+			    std::move (stk)};
     }, nullptr, out_err);
 }
 

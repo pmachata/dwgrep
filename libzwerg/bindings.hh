@@ -35,10 +35,28 @@
 #include <vector>
 
 struct op_bind;
+struct builtin;
+struct vocabulary;
+
+class binding
+{
+  op_bind *m_bind;
+  builtin const *m_bi;
+
+public:
+  binding (op_bind &bind);
+  binding (builtin const &bi);
+
+  bool is_builtin () const
+  { return m_bi != nullptr; }
+
+  op_bind &get_bind () const;
+  builtin const &get_builtin () const;
+};
 
 class bindings
 {
-  std::map <std::string, std::reference_wrapper <op_bind>> m_bindings;
+  std::map <std::string, binding> m_bindings;
   bindings *m_super;
 
 public:
@@ -50,23 +68,46 @@ public:
     : m_super {&super}
   {}
 
+  explicit bindings (vocabulary const &voc);
+
   void bind (std::string name, op_bind &op);
-  op_bind *find (std::string name);
+  binding const *find (std::string name);
   std::vector <std::string> names () const;
   std::vector <std::string> names_closure () const;
 };
 
+class upref
+{
+  bool m_id_used;
+  unsigned m_id;
+  builtin const *m_bi;
+
+  explicit upref (builtin const *bi);
+
+public:
+  explicit upref (binding const &bn);
+  static upref from (upref const &other);
+
+  bool is_builtin () const
+  { return m_bi != nullptr; }
+
+  void mark_used (unsigned id);
+  bool is_id_used () const;
+  unsigned get_id () const;
+  builtin const &get_builtin () const;
+};
+
 class uprefs
 {
-  std::map <std::string, std::pair <bool, unsigned>> m_ids;
+  std::map <std::string, upref> m_ids;
   unsigned m_nextid;
 
 public:
   uprefs ();
   uprefs (bindings &bns, uprefs &super);
 
-  std::pair <bool, unsigned> find (std::string name);
-  std::map <unsigned, std::string> refd_names () const;
+  upref *find (std::string name);
+  std::map <unsigned, std::string> refd_ids () const;
 };
 
 #endif//_BINDINGS_H_

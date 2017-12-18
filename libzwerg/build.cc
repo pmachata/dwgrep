@@ -113,19 +113,16 @@ namespace
   }
 
   std::shared_ptr <op>
-  build_read (std::string name,
-	      std::shared_ptr <op> upstream,
-	      bindings &bn, uprefs &up, layout::loc rdv_ll)
+  build_builtin (builtin const &bi,
+		 std::shared_ptr <op> upstream,
+		 layout &l)
   {
-    if (op_bind *src = bn.find (name))
-      return std::make_shared <op_read> (upstream, *src);
+    if (auto pred = bi.build_pred (l))
+      return std::make_shared <op_assert> (upstream, std::move (pred));
 
-    auto refid = up.find (name);
-    if (refid.first)
-      return std::make_shared <op_upread> (upstream, refid.second, rdv_ll);
-
-    throw std::runtime_error
-      (std::string () + "Attempt to read an unbound name `" + name + "'");
+    auto op = bi.build_exec (l, upstream);
+    assert (op != nullptr);
+    return op;
   }
 
   std::shared_ptr <op>
@@ -269,17 +266,30 @@ namespace
 	  auto op = build_exec (t.child (0), inner_l, inner_rdv_ll, origin,
 				inner_bn, inner_up);
 
-	  std::map <unsigned, std::string> refd_names = inner_up.refd_names ();
+	  std::map <unsigned, std::string> refd_ids = inner_up.refd_ids ();
 	  // Walk the refd names in backward order of their ID, so that
 	  // op_lex_closure can pop the upvalues from the stack in natural
 	  // order.
-	  for (auto it = refd_names.rbegin (); it != refd_names.rend (); ++it)
-	    upstream = build_read (it->second, upstream, bn, up, rdv_ll);
-
+	  for (auto it = refd_ids.rbegin (); it != refd_ids.rend (); ++it)
+	    if (const binding *b = bn.find (it->second))
+	      {
+		assert (! b->is_builtin ());
+		upstream = std::make_shared <op_read> (upstream,
+						       b->get_bind ());
+	      }
+	    else
+	      {
+		upref *upr = up.find (it->second);
+		assert (upr != nullptr);
+		assert (! upr->is_builtin ());
+		upstream = std::make_shared <op_upread> (upstream,
+							 upr->get_id (),
+							 rdv_ll);
+	      }
 
 	  return std::make_shared <op_lex_closure> (upstream, inner_l,
 						    inner_rdv_ll, origin, op,
-						    refd_names.size ());
+						    refd_ids.size ());
 	}
 
       case tree_type::BIND:
@@ -291,8 +301,28 @@ namespace
 
       case tree_type::READ:
 	{
-	  auto op = build_read (t.str (), upstream, bn, up, rdv_ll);
-	  return std::make_shared <op_apply> (l, op, true);
+	  if (const binding *b = bn.find (t.str ()))
+	    {
+	      if (b->is_builtin ())
+		return build_builtin (b->get_builtin (), upstream, l);
+
+	      auto op = std::make_shared <op_read> (upstream, b->get_bind ());
+	      return std::make_shared <op_apply> (l, op, true);
+	    }
+
+	  if (upref *upr = up.find (t.str ()))
+	    {
+	      if (upr->is_builtin ())
+		return build_builtin (upr->get_builtin (), upstream, l);
+
+	      auto op = std::make_shared <op_upread> (upstream, upr->get_id (),
+						      rdv_ll);
+	      return std::make_shared <op_apply> (l, op, true);
+	    }
+
+	  throw std::runtime_error
+	    (std::string () + "Attempt to read an unbound name `"
+	     + t.str () + "'");
 	}
 
       case tree_type::F_DEBUG:
@@ -336,10 +366,11 @@ namespace
 }
 
 std::shared_ptr <op>
-tree::build_exec (layout &l, std::shared_ptr <op> upstream) const
+tree::build_exec (layout &l, std::shared_ptr <op> upstream,
+		  vocabulary &voc) const
 {
   uprefs up;
-  bindings bn;
+  bindings bn {voc};
   layout::loc no_ll {0xdeadbeef};
   return ::build_exec (*this, l, no_ll, upstream, bn, up);
 }

@@ -164,10 +164,7 @@
     std::unique_ptr <tree>
     parse_word (vocabulary const &builtins, std::string str)
     {
-      if (auto bi = builtins.find (str))
-	return tree::create_builtin (bi);
-      else
-	return tree::create_str <tree_type::READ> (str);
+      return tree::create_str <tree_type::READ> (str);
     }
 
     std::unique_ptr <tree>

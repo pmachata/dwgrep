@@ -30,6 +30,39 @@
 
 #include <set>
 #include <stdexcept>
+#include <cassert>
+#include "builtin.hh"
+
+binding::binding (op_bind &bind)
+  : m_bind {&bind}
+  , m_bi {nullptr}
+{}
+
+binding::binding (builtin const &bi)
+  : m_bind {nullptr}
+  , m_bi {&bi}
+{}
+
+op_bind &
+binding::get_bind () const
+{
+  assert (! is_builtin ());
+  return *m_bind;
+}
+
+builtin const &
+binding::get_builtin () const
+{
+  assert (is_builtin ());
+  return *m_bi;
+}
+
+bindings::bindings (vocabulary const &voc)
+  : m_super {nullptr}
+{
+  for (auto const &entry: voc.get_builtins ())
+    m_bindings.emplace (entry.first, binding {*entry.second});
+}
 
 void
 bindings::bind (std::string name, op_bind &op)
@@ -40,12 +73,12 @@ bindings::bind (std::string name, op_bind &op)
   m_bindings.emplace (std::move (name), std::ref (op));
 }
 
-op_bind *
+binding const *
 bindings::find (std::string name)
 {
   auto it = m_bindings.find (name);
   if (it != m_bindings.end ())
-    return &it->second.get ();
+    return &it->second;
   else if (m_super != nullptr)
     return m_super->find (name);
   else
@@ -74,6 +107,54 @@ bindings::names_closure () const
 }
 
 
+upref::upref (builtin const *bi)
+  : m_id_used {false}
+  , m_bi {bi}
+{}
+
+upref::upref (binding const &bn)
+  : m_id_used {false}
+  , m_bi {bn.is_builtin () ? &bn.get_builtin () : nullptr}
+{}
+
+upref
+upref::from (upref const &other)
+{
+  // N.B. this initializes m_id_used and therefore is not simply a copy
+  // constructor.
+  return upref {other.is_builtin () ? &other.get_builtin () : nullptr};
+}
+
+void
+upref::mark_used (unsigned id)
+{
+  assert (! is_builtin ());
+  m_id_used = true;
+  m_id = id;
+}
+
+bool
+upref::is_id_used () const
+{
+  assert (! is_builtin ());
+  return m_id_used;
+}
+
+unsigned
+upref::get_id () const
+{
+  assert (! is_builtin ());
+  return m_id;
+}
+
+builtin const &
+upref::get_builtin () const
+{
+  assert (is_builtin ());
+  return *m_bi;
+}
+
+
 uprefs::uprefs ()
   : m_nextid {0}
 {}
@@ -82,31 +163,35 @@ uprefs::uprefs (bindings &bns, uprefs &super)
   : m_nextid {0}
 {
   for (auto &nm: bns.names_closure ())
-    m_ids.emplace (std::move (nm), std::make_pair (false, 0));
+    {
+      auto const &bn = *bns.find (nm);
+      m_ids.emplace (std::move (nm), upref {bn});
+    }
   for (auto &el: super.m_ids)
-    m_ids.emplace (el.first, std::make_pair (false, 0));
+    m_ids.emplace (el.first, upref::from (el.second));
 }
 
-std::pair <bool, unsigned>
+upref *
 uprefs::find (std::string name)
 {
   auto it = m_ids.find (name);
   if (it != m_ids.end ())
     {
-      if (! it->second.first)
-	it->second = {true, m_nextid++};
-      return it->second;
+      if (! it->second.is_builtin ()
+	  && ! it->second.is_id_used ())
+	it->second.mark_used (m_nextid++);
+      return &it->second;
     }
   else
-    return std::make_pair (false, -1u);
+    return nullptr;
 }
 
 std::map <unsigned, std::string>
-uprefs::refd_names () const
+uprefs::refd_ids () const
 {
   std::map <unsigned, std::string> ret;
   for (auto &el: m_ids)
-    if (el.second.first)
-      ret[el.second.second] = el.first;
+    if (! el.second.is_builtin () && el.second.is_id_used ())
+      ret[el.second.get_id ()] = el.first;
   return ret;
 }
