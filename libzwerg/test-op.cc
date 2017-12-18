@@ -199,3 +199,12 @@ TEST_F (ZwTest, iterate_lexical_closure_2)
   auto yielded = run_query (*builtins, std::move (stk), "{} (drop {})*");
   ASSERT_EQ (2, yielded.size ());
 }
+
+TEST_F (ZwTest, test_1)
+{
+  // This caused SIGSEGV due to wrong upvalue tracking.
+  auto stk = std::make_unique <stack> ();
+  auto yielded = run_query (*builtins, std::move (stk),
+			    "let X := 1; {{} {}} apply");
+  ASSERT_EQ (1, yielded.size ());
+}
