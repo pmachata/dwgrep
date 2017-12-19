@@ -740,6 +740,11 @@ expression::
 
 	entry ?(@AT_location !(elem))
 
+Like other parenthesized forms, sub-expression assertions allow a binding block
+as well::
+
+	1 2 ?(|A B| A B ?lt)
+
 
 Conditionals (``if-then-else``)
 -------------------------------

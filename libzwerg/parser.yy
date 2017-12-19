@@ -267,6 +267,21 @@
 
       return ret;
     }
+
+    std::unique_ptr <tree>
+    parse_subx (std::unique_ptr <std::vector <std::string>> ids,
+		std::unique_ptr <tree> subx)
+    {
+      size_t sz = ids->size ();
+      auto ret = tree::create_cat <tree_type::CAT>
+	(tree_for_id_block (std::move (ids)),
+	 std::move (subx));
+
+      if (sz > 0)
+	ret = tree::create_scope (std::move (ret));
+
+      return ret;
+    }
   }
 
   fmtlit::fmtlit (bool a_raw)
@@ -431,39 +446,32 @@ Statement:
   TOK_LPAREN IdBlockOpt Program TOK_RPAREN
   {
     std::unique_ptr <std::vector <std::string>> ids {$2};
-    size_t sz = ids->size ();
     std::unique_ptr <tree> t3 {$3};
-
-    auto ret = tree::create_cat <tree_type::CAT>
-      (tree_for_id_block (std::move (ids)),
-       std::move (t3));
-
-    if (sz > 0)
-      ret = tree::create_scope (std::move (ret));
+    auto ret = parse_subx (std::move (ids), std::move (t3));
 
     $$ = ret.release ();
   }
 
-  | TOK_QMARK_LPAREN Program TOK_RPAREN
+  | TOK_QMARK_LPAREN IdBlockOpt Program TOK_RPAREN
   {
-    std::unique_ptr <tree> t2 {$2};
+    std::unique_ptr <std::vector <std::string>> ids {$2};
+    std::unique_ptr <tree> t3 {$3};
+    auto subx = parse_subx (std::move (ids), std::move (t3));
 
     auto ret = tree::create_assert
-      (tree::create_unary <tree_type::PRED_SUBX_ANY>
-       (tree::create_scope (std::move (t2))));
-
+      (tree::create_unary <tree_type::PRED_SUBX_ANY> (std::move (subx)));
     $$ = ret.release ();
   }
 
-  | TOK_BANG_LPAREN Program TOK_RPAREN
+  | TOK_BANG_LPAREN IdBlockOpt Program TOK_RPAREN
   {
-    std::unique_ptr <tree> t2 {$2};
+    std::unique_ptr <std::vector <std::string>> ids {$2};
+    std::unique_ptr <tree> t3 {$3};
+    auto subx = parse_subx (std::move (ids), std::move (t3));
 
     auto ret = tree::create_assert
       (tree::create_neg
-       (tree::create_unary <tree_type::PRED_SUBX_ANY>
-	(tree::create_scope (std::move (t2)))));
-
+       (tree::create_unary <tree_type::PRED_SUBX_ANY> (std::move (subx))));
     $$ = ret.release ();
   }
 

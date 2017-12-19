@@ -256,3 +256,27 @@ TEST_F (ZwTest, test_let)
       ASSERT_EQ (entry.first, yielded.size ());
     }
 }
+
+TEST_F (ZwTest, test_assert_subx)
+{
+  for (auto const &entry: std::map <size_t, std::string> {
+	    {1, "1 ?(|A| A 1 ?eq)"},
+	    {0, "2 ?(|A| A 1 ?eq)"},
+	    {1, "1 !(|A| A 1 !eq)"},
+	    {0, "2 !(|A| A 1 !eq)"},
+
+	    {1, "1 1 ?(|A B| A B ?eq)"},
+	    {0, "2 1 ?(|A B| A B ?eq)"},
+	    {0, "1 2 ?(|A B| A B ?eq)"},
+
+	    {1, "2 1 ?(|A B| A B ?eq)"},
+	    {0, "1 2 ?(|A B| A B ?eq)"},
+	    {0, "2 1 !(|A B| A B ?eq)"},
+	    {1, "1 2 !(|A B| A B ?eq)"},
+	})
+    {
+      auto stk = std::make_unique <stack> ();
+      auto yielded = run_query (*builtins, std::move (stk), entry.second);
+      ASSERT_EQ (entry.first, yielded.size ());
+    }
+}

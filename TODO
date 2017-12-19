@@ -410,8 +410,7 @@
 
 *** TODO
    BTW, it looks as if !{} and ?{} might be a useful syntax sugar for {!()} and
-   {?()}. It also looks like ?() and !() should allow binding blocks: ?(|A B|
-   ...) etc., and of course also ?{|A B| ...}.
+   {?()}.
 
    : let ==~ = ?{|A B| (A == B) || (A =~ B)};
    : let !=~ = !{|A B| (A == B) || (A =~ B)};
