@@ -253,7 +253,7 @@
 	 (tree::create_scope (std::move (ta))));
     }
 
-    tree *
+    std::unique_ptr <tree>
     parse_let (std::unique_ptr <std::vector <std::string>> ids,
 	       std::unique_ptr <tree> subx)
     {
@@ -265,7 +265,7 @@
 	(std::move (tt),
 	 tree_for_id_block (std::move (ids)));
 
-      return ret.release ();
+      return ret;
     }
   }
 
@@ -507,8 +507,8 @@ Statement:
   {
     std::unique_ptr <std::vector <std::string>> ids {$2};
     std::unique_ptr <tree> t4 {$4};
-
-    $$ = parse_let (std::move (ids), std::move (t4));
+    auto ret = parse_let (std::move (ids), std::move (t4));
+    $$ = ret.release ();
   }
 
   | TOK_LET TOK_LIT_STR TOK_ASSIGN Program TOK_SEMICOLON
@@ -524,8 +524,8 @@ Statement:
     auto ids = std::make_unique <std::vector <std::string>> ();
     ids->emplace_back (std::move (name));
     std::unique_ptr <tree> t4 {$4};
-
-    $$ = parse_let (std::move (ids), std::move (t4));
+    auto ret = parse_let (std::move (ids), std::move (t4));
+    $$ = ret.release ();
   }
 
   | Statement TOK_ASTERISK
