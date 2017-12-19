@@ -270,14 +270,15 @@
 
     std::unique_ptr <tree>
     parse_subx (std::unique_ptr <std::vector <std::string>> ids,
-		std::unique_ptr <tree> subx)
+		std::unique_ptr <tree> subx,
+		bool force_scope = false)
     {
       size_t sz = ids->size ();
       auto ret = tree::create_cat <tree_type::CAT>
 	(tree_for_id_block (std::move (ids)),
 	 std::move (subx));
 
-      if (sz > 0)
+      if (force_scope || sz > 0)
 	ret = tree::create_scope (std::move (ret));
 
       return ret;
@@ -502,11 +503,8 @@ Statement:
     std::unique_ptr <std::vector <std::string>> ids {$2};
     std::unique_ptr <tree> t3 {$3};
 
-    auto ret = tree::create_unary <tree_type::BLOCK>
-      (tree::create_scope
-       (tree::create_cat <tree_type::CAT>
-	(tree_for_id_block (std::move (ids)),
-	 std::move (t3))));
+    auto body = parse_subx (std::move (ids), std::move (t3), true);
+    auto ret = tree::create_unary <tree_type::BLOCK> (std::move (body));
 
     $$ = ret.release ();
   }
