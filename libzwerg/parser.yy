@@ -314,8 +314,9 @@
 %parse-param { void *yyscanner }
 %lex-param { yyscanner }
 
-%token TOK_LPAREN TOK_RPAREN TOK_LBRACKET TOK_RBRACKET TOK_LBRACE TOK_RBRACE
-%token TOK_QMARK_LPAREN TOK_BANG_LPAREN
+%token TOK_LPAREN TOK_RPAREN TOK_QMARK_LPAREN TOK_BANG_LPAREN
+%token TOK_LBRACKET TOK_RBRACKET
+%token TOK_LBRACE TOK_RBRACE TOK_QMARK_LBRACE TOK_BANG_LBRACE
 
 %token TOK_ASTERISK TOK_PLUS TOK_QMARK TOK_COMMA TOK_COLON
 %token TOK_SEMICOLON TOK_VBAR TOK_DOUBLE_VBAR TOK_ASSIGN
@@ -505,6 +506,33 @@ Statement:
 
     auto body = parse_subx (std::move (ids), std::move (t3), true);
     auto ret = tree::create_unary <tree_type::BLOCK> (std::move (body));
+
+    $$ = ret.release ();
+  }
+
+  | TOK_QMARK_LBRACE IdBlockOpt Program TOK_RBRACE
+  {
+    std::unique_ptr <std::vector <std::string>> ids {$2};
+    std::unique_ptr <tree> t3 {$3};
+
+    auto body = parse_subx (std::move (ids), std::move (t3), true);
+    auto ret = tree::create_unary <tree_type::BLOCK>
+      (tree::create_assert
+       (tree::create_unary <tree_type::PRED_SUBX_ANY> (std::move (body))));
+
+    $$ = ret.release ();
+  }
+
+  | TOK_BANG_LBRACE IdBlockOpt Program TOK_RBRACE
+  {
+    std::unique_ptr <std::vector <std::string>> ids {$2};
+    std::unique_ptr <tree> t3 {$3};
+
+    auto body = parse_subx (std::move (ids), std::move (t3), true);
+    auto ret = tree::create_unary <tree_type::BLOCK>
+      (tree::create_assert
+       (tree::create_neg
+	(tree::create_unary <tree_type::PRED_SUBX_ANY> (std::move (body)))));
 
     $$ = ret.release ();
   }

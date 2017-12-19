@@ -280,3 +280,19 @@ TEST_F (ZwTest, test_assert_subx)
       ASSERT_EQ (entry.first, yielded.size ());
     }
 }
+
+TEST_F (ZwTest, test_assert_block)
+{
+  for (auto const &entry: std::map <size_t, std::string> {
+	    {1, "let ?F := ?{|A| A == 1}; 1 ?F == 1"},
+	    {0, "let ?F := ?{|A| A == 2}; 1 ?F == 1"},
+	    {1, "let ?F := !{|A| A == 2}; 1 ?F == 1"},
+	    {1, "let ?F := ?{swap}; 1 2 ?F [|A B| A, B] == [1, 2]"},
+	    {0, "let ?F := !{swap}; 1 2 ?F [|A B| A, B] == [1, 2]"},
+	})
+    {
+      auto stk = std::make_unique <stack> ();
+      auto yielded = run_query (*builtins, std::move (stk), entry.second);
+      ASSERT_EQ (entry.first, yielded.size ());
+    }
+}

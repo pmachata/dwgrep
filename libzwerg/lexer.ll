@@ -63,8 +63,11 @@ OCT [0-7]
 
 "[" return TOK_LBRACKET;
 "]" return TOK_RBRACKET;
+
 "{" return TOK_LBRACE;
 "}" return TOK_RBRACE;
+"?{" return TOK_QMARK_LBRACE;
+"!{" return TOK_BANG_LBRACE;
 
 "*" return TOK_ASTERISK;
 "+" return TOK_PLUS;

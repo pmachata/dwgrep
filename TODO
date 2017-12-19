@@ -408,13 +408,6 @@
       : let rot_ := {|a b c| b c a};
       : let over_ := {|a b| a b a};
 
-*** TODO
-   BTW, it looks as if !{} and ?{} might be a useful syntax sugar for {!()} and
-   {?()}.
-
-   : let ==~ = ?{|A B| (A == B) || (A =~ B)};
-   : let !=~ = !{|A B| (A == B) || (A =~ B)};
-
 *** Infix operator overriding
    Infix operators are just reads, it would be straightforward to allow
    overriding them:
