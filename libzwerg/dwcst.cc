@@ -1,4 +1,6 @@
-/* Parts of this file were adapted from eu-readelf.
+/*
+   Copyright (C) 2017 Petr Machata
+   Parts of this file were adapted from eu-readelf.
    Copyright (C) 1999-2014 Red Hat, Inc.
 
    This file is free software; you can redistribute it and/or modify
@@ -20,6 +22,7 @@
 #include <climits>
 
 #include "known-dwarf.h"
+#include "known-dwarf-macro-gnu.h"
 #include "constant.hh"
 #include "flag_saver.hh"
 

@@ -1,4 +1,5 @@
 /*
+   Copyright (C) 2018 Petr Machata
    Copyright (C) 2014 Red Hat, Inc.
    This file is part of dwgrep.
 
@@ -39,6 +40,7 @@
 #include "dwmods.hh"
 #include "dwpp.hh"
 #include "known-dwarf.h"
+#include "known-dwarf-macro-gnu.h"
 #include "op.hh"
 #include "overload.hh"
 #include "value-closure.hh"
