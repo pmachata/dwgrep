@@ -1,4 +1,5 @@
 /*
+   Copyright (C) 2017 Petr Machata
    Copyright (C) 2015 Red Hat, Inc.
    This file is part of dwgrep.
 
@@ -33,6 +34,7 @@
 #include "builtin-symbol.hh"
 #include "dwcst.hh"
 #include "known-dwarf.h"
+#include "known-dwarf-macro-gnu.h"
 #include "known-elf.h"
 
 std::unique_ptr <vocabulary>
