@@ -487,6 +487,19 @@ dumper::dump_value (std::ostream &os, zw_value const &val, format fmt)
     os << ">";
 }
 
+namespace
+{
+  std::ostream &
+  error_message (bool no_messages, int verbosity, bool &errors)
+  {
+    static std::ofstream sink;
+    std::ostream &ret = no_messages ? sink : std::cerr;
+    if (verbosity >= 0)
+      errors = true;
+    return ret;
+  }
+}
+
 int
 main(int argc, char *argv[])
 try
@@ -685,18 +698,16 @@ try
 	}
       catch (std::runtime_error const &e)
 	{
-	  if (! no_messages)
-	    std::cerr << "dwgrep: " << (fn[0] != '\0' ? fn : "<no-file>")
-		      << ": " << e.what () << std::endl;
-
-	  if (verbosity >= 0)
-	    errors = true;
-
+	  error_message (no_messages, verbosity, errors)
+	    << "dwgrep: " << (fn[0] != '\0' ? fn : "<no-file>")
+	    << ": " << e.what () << std::endl;
 	  continue;
 	}
       catch (...)
 	{
-	  std::cout << "blah\n";
+	  error_message (no_messages, verbosity, errors)
+	    << "dwgrep: " << (fn[0] != '\0' ? fn : "<no-file>")
+	    << ": Unknown error" << std::endl;
 	  continue;
 	}
 
