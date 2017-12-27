@@ -655,17 +655,18 @@ try
 	      if (verbosity < 0)
 		return 0;
 
+	      zw_stack &stk = *out.get ();
 	      match = true;
 	      if (! show_count)
 		{
 		  if (with_filename)
 		    std::cout << fn << ":\n";
-		  if (zw_stack_depth (out.get ()) > 1)
+		  if (zw_stack_depth (&stk) > 1)
 		    std::cout << "---\n";
-		  for (size_t i = 0, n = zw_stack_depth (out.get ());
+		  for (size_t i = 0, n = zw_stack_depth (&stk);
 		       i < n; ++i)
 		    {
-		      auto const *val = zw_stack_at (out.get (), i);
+		      auto const *val = zw_stack_at (&stk, i);
 		      assert (val != nullptr);
 		      dump.dump_value (std::cout, *val, dumper::format::full);
 		      std::cout << std::endl;
