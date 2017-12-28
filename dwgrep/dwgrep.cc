@@ -733,7 +733,7 @@ try
 				zw_throw_on_error {});
 	  }
 
-	std::string fn = argc == 0 ? ""
+	std::string fn = argc == 0 ? "<no-file>"
 	  : argv[arg_its[0] - args[0].begin ()];
 	dumper dump {*voc};
 
@@ -783,14 +783,12 @@ try
 	catch (std::runtime_error const &e)
 	  {
 	    error_message (no_messages, verbosity, errors)
-	      << "dwgrep: " << (fn[0] != '\0' ? fn : "<no-file>")
-	      << ": " << e.what () << std::endl;
+	      << "dwgrep: " << fn << ": " << e.what () << std::endl;
 	  }
 	catch (...)
 	  {
 	    error_message (no_messages, verbosity, errors)
-	      << "dwgrep: " << (fn[0] != '\0' ? fn : "<no-file>")
-	      << ": Unknown error" << std::endl;
+	      << "dwgrep: " << fn << ": Unknown error" << std::endl;
 	  }
 
 	// Bump argument list.

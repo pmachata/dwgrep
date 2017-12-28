@@ -1,4 +1,10 @@
 -*-org-*-
+* version 0.4
+
+- Fix file name shown when -H is passed and no files are given on the command
+  line. Before, it was <no-file> somewhere and empty string elsewhere. Now it's
+  <no-file> everywhere.
+
 * version 0.3 [2017-12-09 Sat]
 
 ** Backward-incompatible Changes
