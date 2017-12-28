@@ -125,6 +125,7 @@ public:
       full,
       brief,
       inner_brief,
+      header,
     };
 
   void dump_value (std::ostream &os, zw_value const &val, format fmt);
@@ -218,12 +219,18 @@ dumper::dump_seq (std::ostream &os, zw_value const &val, format)
 }
 
 void
-dumper::dump_dwarf (std::ostream &os, zw_value const &val, format)
+dumper::dump_dwarf (std::ostream &os, zw_value const &val, format fmt)
 {
-  os << "<Dwarf ";
   char const *name = zw_value_dwarf_name (&val);
-  dump_charp (os, name, strlen (name), format::brief);
-  os << '>';
+  if (fmt == format::header)
+    // Full format actually just dumps the file without decoration.
+    dump_charp (os, name, strlen (name), format::full);
+  else
+    {
+      os << "<Dwarf ";
+      dump_charp (os, name, strlen (name), format::brief);
+      os << '>';
+    }
 }
 
 void
@@ -569,8 +576,8 @@ try
     int verbosity = 0;
     bool no_messages = false;
     bool show_count = false;
-    bool with_filename = false;
-    bool no_filename = false;
+    bool with_header = false;
+    bool no_header = false;
 
     std::unique_ptr <zw_vocabulary, zw_deleter> voc
 	{zw_vocabulary_init (zw_throw_on_error {})};
@@ -607,11 +614,11 @@ try
 	    break;
 
 	  case 'H':
-	    with_filename = true;
+	    with_header = true;
 	    break;
 
 	  case 'h':
-	    no_filename = true;
+	    no_header = true;
 	    break;
 
 	  case 'q':
@@ -707,10 +714,14 @@ try
 	args.emplace (args.begin (), std::move (dwvs));
       }
 
-    if (argc > 1)
-      with_filename = true;
-    if (no_filename)
-      with_filename = false;
+    size_t iterations = 1;
+    for (auto const &arg: args)
+      iterations *= arg.size ();
+
+    if (iterations > 1)
+      with_header = true;
+    if (no_header)
+      with_header = false;
 
     std::vector <arg_val_vec_t::const_iterator> arg_its;
     for (auto const &arg: args)
@@ -733,9 +744,30 @@ try
 				zw_throw_on_error {});
 	  }
 
-	std::string fn = argc == 0 ? "<no-file>"
-	  : argv[arg_its[0] - args[0].begin ()];
 	dumper dump {*voc};
+
+	std::string header = [&] ()
+	  {
+	    std::stringstream ss;
+	    bool seen = false;
+	    for (size_t i = 0; i < args.size (); ++i)
+	      {
+		zw_value const &cur = *arg_its[i]->get ();
+
+		// Always show the first argument if it refers to a file name
+		// given on the command line.
+		if ((i == 0 && argc > 0) || args[i].size () > 1)
+		  {
+		    if (seen)
+		      ss << ',';
+		    dump.dump_value (ss, cur, dumper::format::header);
+		    seen = true;
+		  }
+	      }
+	    if (! seen)
+	      ss << "<no-file>";
+	    return ss.str ();
+	  } ();
 
 	try
 	  {
@@ -755,8 +787,8 @@ try
 		match = true;
 		if (! show_count)
 		  {
-		    if (with_filename)
-		      std::cout << fn << ":\n";
+		    if (with_header)
+		      std::cout << header << ":\n";
 		    if (zw_stack_depth (&stk) > 1)
 		      std::cout << "---\n";
 		    for (size_t i = 0, n = zw_stack_depth (&stk);
@@ -775,20 +807,20 @@ try
 
 	    if (show_count)
 	      {
-		if (with_filename)
-		  std::cout << fn << ":";
+		if (with_header)
+		  std::cout << header << ":";
 		std::cout << std::dec << count << std::endl;
 	      }
 	  }
 	catch (std::runtime_error const &e)
 	  {
 	    error_message (no_messages, verbosity, errors)
-	      << "dwgrep: " << fn << ": " << e.what () << std::endl;
+	      << "dwgrep: " << header << ": " << e.what () << std::endl;
 	  }
 	catch (...)
 	  {
 	    error_message (no_messages, verbosity, errors)
-	      << "dwgrep: " << fn << ": Unknown error" << std::endl;
+	      << "dwgrep: " << header << ": Unknown error" << std::endl;
 	  }
 
 	// Bump argument list.
