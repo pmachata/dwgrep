@@ -931,6 +931,103 @@ expect_out '0 breg5 <0>
 	 bitcount.o -e 'entry (offset == 0x91) @AT_location (pos == 1) elem'
 
 
+### Test script arguments.  ###
+
+# Test command line arguments and file names.
+expect_out \
+'["y.o", 1]
+["y.o", 2]
+["y.o", 3]
+["a1.out", 1]
+["a1.out", 2]
+["a1.out", 3]
+["bitcount.o", 1]
+["bitcount.o", 2]
+["bitcount.o", 3]' \
+	   y.o a1.out bitcount.o \
+	   --a 1,2,3 -he '[|Dw N| Dw name, N]'
+
+# Test that reordering file names after --a keeps the Dwarf argument at the
+# bottom of the stack.
+expect_out \
+'["y.o", 1]
+["y.o", 2]
+["y.o", 3]
+["a1.out", 1]
+["a1.out", 2]
+["a1.out", 3]
+["bitcount.o", 1]
+["bitcount.o", 2]
+["bitcount.o", 3]' \
+	   --a 1,2,3 -he '[|Dw N| Dw name, N]' \
+	   y.o a1.out bitcount.o
+
+# Test interplay between file names and argument values, and that file names are
+# deduced correctly for each yielded stack.
+expect_out \
+'y.o,1:
+["y.o", 1]
+y.o,2:
+["y.o", 2]
+y.o,3:
+["y.o", 3]
+a1.out,1:
+["a1.out", 1]
+a1.out,2:
+["a1.out", 2]
+a1.out,3:
+["a1.out", 3]
+bitcount.o,1:
+["bitcount.o", 1]
+bitcount.o,2:
+["bitcount.o", 2]
+bitcount.o,3:
+["bitcount.o", 3]' \
+	   y.o a1.out bitcount.o \
+	   --a 1,2,3 -e '[|Dw N| Dw name, N]'
+
+# Thorough test for ordering arguments.
+expect_out "$(seq 0 63)" \
+	   --a 0,16,32,48 --a 0,4,8,12 --a 0,1,2,3 \
+	   -he '(|A B C| A B C add add)'
+
+# Test passing one argument with --a, and string arguments.
+expect_count 1 --a 1  --a 2 --a 3 -e '[|A B C| A, B, C] == [1, 2, 3]'
+expect_count 1  -a 1   -a 2  -a 3 -e '[|A B C| A, B, C] == ["1", "2", "3"]'
+expect_count 1  -a 1,2 -a 2  -a 3 -e '[|A B C| A, B, C] == ["1,2", "2", "3"]'
+
+# Test that <no-file> is shown when there are no files to process.
+expect_out \
+'<no-file>:
+y.o' \
+    --a '"y.o" dwopen' \
+    -He 'name'
+
+# Test that script arguments that are Dwarf are treated as if they were files
+# given on command line.
+expect_out \
+'y.o:
+y.o
+a1.out:
+a1.out
+bitcount.o:
+bitcount.o' \
+    --a '("y.o","a1.out","bitcount.o") dwopen' \
+    -e 'name'
+
+# Test errors when evaluating arguments.
+expect_error "argument*foo*unbound name" --a foo -e ''
+expect_error "argument*drop*stack overflow" --a drop -e ''
+expect_error 'argument*1\?*empty stack' --a '1?' -e ''
+
+# Test position.
+expect_out "$(yes 1 | head -n 27)" \
+	   --a '[0,1,2] elem' --a '[0,1,2] elem' --a '[0,1,2] elem' \
+	   -che '(|M N O| M, N, O) == dup pos'
+
+# Test arguments that pass more than one stack slot.
+expect_count 1 --a '1 2 3' -e '== 3'
+
 # =============================================================================
 
 echo "$total tests total, $failures failures."
