@@ -5,6 +5,14 @@
   line. Before, it was <no-file> somewhere and empty string elsewhere. Now it's
   <no-file> everywhere.
 
+- Support passing arguments to scripts from the command line. Two new command
+  line flags are available: -a for passing in simple strings, and --a, whose
+  argument is parsed as Zwerg expression, and TOS of the yielded stack is passed
+  to the script. The arguments are pushed to input stack of the query
+  expression, which can bind them using lexical scope, or use arbitrarily.
+  - Fixes #13: Support passing arguments to scripts from command line
+
+
 * version 0.3 [2017-12-09 Sat]
 
 ** Backward-incompatible Changes
