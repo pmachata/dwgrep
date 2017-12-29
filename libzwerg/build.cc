@@ -355,7 +355,7 @@ namespace
 
 std::shared_ptr <op>
 tree::build_exec (layout &l, std::shared_ptr <op> upstream,
-		  vocabulary &voc) const
+		  vocabulary const &voc) const
 {
   uprefs up;
   bindings root {voc};
