@@ -39,6 +39,7 @@
 #include <libintl.h>
 #include <map>
 #include <memory>
+#include <sstream>
 #include <vector>
 
 #include "libzwerg.hh"
@@ -505,6 +506,54 @@ namespace
       errors = true;
     return ret;
   }
+
+  std::vector <std::unique_ptr <zw_value, zw_deleter>>
+  parse_arg_literal (std::string arg)
+  {
+    std::unique_ptr <zw_value, zw_deleter> value
+	{zw_value_init_str_len (arg.c_str (), arg.length (), 0,
+				zw_throw_on_error {})};
+    std::vector <std::unique_ptr <zw_value, zw_deleter>> ret;
+    ret.emplace_back (std::move (value));
+    return ret;
+  }
+
+  std::vector <std::unique_ptr <zw_value, zw_deleter>>
+  parse_arg_eval (zw_vocabulary const &voc, std::string arg)
+  {
+    std::vector <std::unique_ptr <zw_value, zw_deleter>> ret;
+
+    try
+      {
+	std::unique_ptr <zw_query, zw_deleter> query
+	    {zw_query_parse_len (&voc, arg.c_str (), arg.length (),
+				 zw_throw_on_error {})};
+	std::unique_ptr <zw_stack, zw_deleter> empty
+	    {zw_stack_init (zw_throw_on_error {})};
+
+	exec_query_on (*empty, *query,
+		       [&] (zw_stack const &stk) -> void
+		       {
+			 if (zw_stack_depth (&stk) == 0)
+			   throw std::runtime_error ("empty stack yielded");
+
+			 zw_value const &tos = *zw_stack_at (&stk, 0);
+			 size_t pos = zw_value_pos (&tos);
+			 std::unique_ptr <zw_value, zw_deleter> value
+			    {zw_value_clone (&tos, pos, zw_throw_on_error {})};
+			 ret.push_back (std::move (value));
+		       });
+      }
+    catch (std::runtime_error const &e)
+      {
+	std::stringstream ss;
+	ss << "When parsing argument `" << arg << "': "
+	   << e.what ();
+	throw std::runtime_error (ss.str ());
+      }
+
+    return ret;
+  }
 }
 
 int
@@ -598,6 +647,10 @@ try
 	      break;
 	    }
 
+          case 'a':
+	    args.push_back (parse_arg_literal (optarg));
+	    break;
+
 	  default:
 	    if (c == help)
 	      {
@@ -611,6 +664,11 @@ try
 			  << DWGREP_VERSION_MINOR << std::endl;
 		return 0;
 	      }
+            else if (c == longarg)
+              {
+                args.push_back (parse_arg_eval (*voc, optarg));
+		break;
+              }
 
 	    return 2;
 	  }
