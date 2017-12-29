@@ -233,6 +233,16 @@ dumper::dump_cu (std::ostream &os, zw_value const &val, format)
 }
 
 void
+exec_query_on (zw_stack const &stack, zw_query const &q,
+	       std::function <void (zw_stack const &)> cb)
+{
+  for (std::unique_ptr <zw_result, zw_deleter> result
+	{zw_query_execute (&q, &stack, zw_throw_on_error {})};
+       auto out = zw_result_next (*result); )
+    cb (*out);
+}
+
+void
 exec_query_on (zw_value const &val, zw_query const &q,
 	       std::function <void (zw_stack const &)> cb)
 {
@@ -240,10 +250,7 @@ exec_query_on (zw_value const &val, zw_query const &q,
 	{zw_stack_init (zw_throw_on_error {})};
   zw_stack_push (stack.get (), &val, zw_throw_on_error {});
 
-  for (std::unique_ptr <zw_result, zw_deleter> result
-	{zw_query_execute (&q, stack.get (), zw_throw_on_error {})};
-       auto out = zw_result_next (*result); )
-    cb (*out);
+  return exec_query_on (*stack, q, cb);
 }
 
 void
