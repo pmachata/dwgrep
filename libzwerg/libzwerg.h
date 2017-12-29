@@ -1,4 +1,5 @@
 /*
+  Copyright (C) 2017 Petr Machata
   Copyright (C) 2014, 2015 Red Hat, Inc.
 
   This file is free software; you can redistribute it and/or modify
@@ -170,15 +171,16 @@ extern "C" {
   // Like zw_stack_push, but VALUE itself is taken instead of a clone.
   // In that case, VALUE shall have been allocated using one of the
   // libzwerg API interfaces.  Returns false on error, in which case
-  // it sets *OUT_ERR.  OUT_ERR shall be non-NULL.
+  // it sets *OUT_ERR, and *still* takes VALUE. OUT_ERR shall be
+  // non-NULL.
   bool zw_stack_push_take (zw_stack *stack, zw_value *value,
 			   zw_error **out_err);
 
   // Return number of values that STACK holds.
   size_t zw_stack_depth (zw_stack const *stack);
 
-  // Return a pointer to value on STACK in given DEPTH.  TOS has depth
-  // 0.  DEPTH shall be smaller than stack depth.
+  // Return a (non-NULL) pointer to value on STACK in given DEPTH. TOS has
+  // depth 0. DEPTH shall be smaller than stack depth.
   zw_value const *zw_stack_at (zw_stack const *stack, size_t depth);
 
 
