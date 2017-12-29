@@ -1,4 +1,5 @@
 /*
+   Copyright (C) 2017 Petr Machata
    Copyright (C) 2014 Red Hat, Inc.
    This file is part of dwgrep.
 
@@ -156,5 +157,5 @@ struct ext_option
 std::map <int, std::pair <std::vector <std::string>, std::string>>
 merge_options (std::vector <ext_option> const &ext_opts);
 
-extern ext_shopt help, version;
+extern ext_shopt help, version, longarg;
 extern std::vector <ext_option> ext_options;

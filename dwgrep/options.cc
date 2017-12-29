@@ -55,7 +55,7 @@ merge_options (std::vector <ext_option> const &ext_opts)
   return opts;
 }
 
-ext_shopt help, version;
+ext_shopt help, version, longarg;
 
 std::vector <ext_option> ext_options = {
   {'q', "silent", ext_argument::no, ""},
@@ -123,6 +123,51 @@ std::vector <ext_option> ext_options = {
   {version, "version", ext_argument::no, R"docstring(
 
 	Show version in the format MAJOR.MINOR and exit.
+
+)docstring"},
+
+  {longarg, "a", ext_argument::required ("ARG"), R"docstring(
+
+	Pass an evaluated argument to the running script. The argument is parsed
+	as a Zwerg program and interpreted on an empty stack. TOS of each yielded
+	stack is taken and pushed to program stack before query is executed.
+
+        Formally, a command line such as this: ``dwgrep -e PROG --a X --a Y ...``
+	is interpreted like the following Zwerg snippet::
+
+		let .X := *X*;
+		let .Y := *Y*;
+		...
+		.X .Y *PROG*
+
+	In particular this means that if an argument yields more than once, the
+	whole following computation is "forked" and in each branch the
+	argument has a different value.
+
+	ELF files mentioned on the command line are passed as the first command
+	line argument. I.e. a dwgrep invocation such as this::
+
+		dwgrep -e PROG --a X --a Y ... file1 file2 ...
+
+	Is handled as follows::
+
+		dwgrep -e PROG --a '("file1", "file2", ...) dwopen' --a X --a Y ...
+
+	Thus one can bind the explicitly-mentioned command line arguments to
+	named variables and leave the ELF files themselves as implicit argument
+	of the expression itself, as is usual when writing argument-less
+	queries. Consider::
+
+		dwgrep file1 file2 -e 'entry foo bar baz'
+		dwgrep file1 file2 --a A --a B -e '(|A B| entry foo bar baz)'
+
+)docstring"},
+
+  {'a', nullptr, ext_argument::required ("ARG"), R"docstring(
+
+	Pass a string argument to the running script. A command line argument
+	such as ``-a X`` is handled like ``--a '"X"'``, except with appropriate
+	escaping.
 
 )docstring"},
 };
