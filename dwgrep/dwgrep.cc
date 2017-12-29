@@ -724,3 +724,8 @@ catch (std::runtime_error const& e)
     std::cerr << "dwgrep: " << e.what () << std::endl;
     return 2;
   }
+catch (...)
+  {
+    std::cerr << "dwgrep: Unknown error" << std::endl;
+    return 2;
+  }
