@@ -1,6 +1,17 @@
 -*-org-*-
 * version 0.4
 
+** Backward-incompatible Changes
+
+- Position reported at Dwarf values passed in from command line used to be
+  always 0. Now it's the file's position on command line:
+
+	$ dwgrep /bin/true /bin/false -he '[|Dw| Dw name, Dw pos]'
+	["/bin/true", 0]
+	["/bin/false", 1]
+
+** Other Changes
+
 - Fix file name shown when -H is passed and no files are given on the command
   line. Before, it was <no-file> somewhere and empty string elsewhere. Now it's
   <no-file> everywhere.

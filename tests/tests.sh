@@ -1028,6 +1028,22 @@ expect_out "$(yes 1 | head -n 27)" \
 # Test arguments that pass more than one stack slot.
 expect_count 1 --a '1 2 3' -e '== 3'
 
+# Test position of passed-in Dwarfs.
+expect_out '1
+0' \
+	   y.o a1.out \
+	   -che '(pos == 0) (name == "y.o")'
+
+expect_out '0
+1' \
+	   y.o a1.out \
+	   -che '(pos == 1) (name == "a1.out")'
+
+expect_out '0
+0' \
+	   y.o a1.out \
+	   -che 'pos > 1'
+
 # =============================================================================
 
 echo "$total tests total, $failures failures."

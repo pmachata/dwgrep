@@ -707,7 +707,7 @@ try
 	for (int i = 0; i < argc; ++i)
 	  {
 	    std::unique_ptr <zw_value, zw_deleter> dwv
-		{zw_value_init_dwarf (argv[i], 0, zw_throw_on_error {})};
+		{zw_value_init_dwarf (argv[i], i, zw_throw_on_error {})};
 	    dwvs.emplace_back (std::move (dwv));
 	  }
 
