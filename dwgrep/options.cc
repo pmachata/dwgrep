@@ -1,4 +1,5 @@
 /*
+   Copyright (C) 2017 Petr Machata
    Copyright (C) 2014 Red Hat, Inc.
    This file is part of dwgrep.
 
@@ -38,15 +39,16 @@ merge_options (std::vector <ext_option> const &ext_opts)
   for (auto const &opt: ext_opts)
     {
       auto &entry = opts[opt.val];
+      auto arg = ext_argument::help (opt.has_arg, opt.arg_name);
       if (entry.first.empty ())
 	{
 	  std::string sh = ext_shopt::help (opt.val);
 	  if (sh != "")
-	    entry.first.push_back (sh);
+	    entry.first.push_back (sh + (opt.name == nullptr ? arg : ""));
 	}
 
-      auto arg = ext_argument::help (opt.has_arg, opt.arg_name);
-      entry.first.push_back (std::string ("--") + opt.name + arg);
+      if (opt.name != nullptr)
+	entry.first.push_back (std::string ("--") + opt.name + arg);
       entry.second += opt.docstring;
     }
 
