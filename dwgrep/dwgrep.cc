@@ -640,76 +640,79 @@ try
     bool errors = false;
     bool match = false;
     for (auto const &fn: to_process)
-      try
-	{
-	  std::unique_ptr <zw_stack, zw_deleter> stack
-		{zw_stack_init (zw_throw_on_error {})};
+      {
+	std::unique_ptr <zw_stack, zw_deleter> stack
+	    {zw_stack_init (zw_throw_on_error {})};
 
-	  if (fn[0] != '\0')
-	    {
-	      std::unique_ptr <zw_value, zw_deleter> dwv
-			{zw_value_init_dwarf (fn, 0, zw_throw_on_error {})};
+	if (fn[0] != '\0')
+	  {
+	    std::unique_ptr <zw_value, zw_deleter> dwv
+		{zw_value_init_dwarf (fn, 0, zw_throw_on_error {})};
 
-	      zw_stack_push_take (stack.get (), dwv.get (),
-				  zw_throw_on_error {});
-	      dwv.release ();
-	    }
-	  dumper dump {*voc};
+	    zw_stack_push_take (stack.get (), dwv.get (),
+				zw_throw_on_error {});
+	    dwv.release ();
+	  }
+	dumper dump {*voc};
 
-	  std::unique_ptr <zw_result, zw_deleter> result
+	try
+	  {
+	    std::unique_ptr <zw_result, zw_deleter> result
 		{zw_query_execute (query.get (), stack.get (),
 				   zw_throw_on_error {})};
 
-	  uint64_t count = 0;
-	  while (auto out = zw_result_next (*result))
-	    {
-	      // grep: Exit immediately with zero status if any match
-	      // is found, even if an error was detected.
-	      if (verbosity < 0)
-		return 0;
+	    uint64_t count = 0;
+	    while (auto out = zw_result_next (*result))
+	      {
+		// grep: Exit immediately with zero status if any match
+		// is found, even if an error was detected.
+		if (verbosity < 0)
+		  return 0;
 
-	      zw_stack &stk = *out.get ();
-	      match = true;
-	      if (! show_count)
-		{
-		  if (with_filename)
-		    std::cout << fn << ":\n";
-		  if (zw_stack_depth (&stk) > 1)
-		    std::cout << "---\n";
-		  for (size_t i = 0, n = zw_stack_depth (&stk);
-		       i < n; ++i)
-		    {
-		      auto const *val = zw_stack_at (&stk, i);
-		      assert (val != nullptr);
-		      dump.dump_value (std::cout, *val, dumper::format::full);
-		      std::cout << std::endl;
-		    }
-		}
-	      else
-		++count;
-	    }
+		zw_stack &stk = *out.get ();
+		match = true;
+		if (! show_count)
+		  {
+		    if (with_filename)
+		      std::cout << fn << ":\n";
+		    if (zw_stack_depth (&stk) > 1)
+		      std::cout << "---\n";
+		    for (size_t i = 0, n = zw_stack_depth (&stk);
+			 i < n; ++i)
+		      {
+			auto const *val = zw_stack_at (&stk, i);
+			assert (val != nullptr);
+			dump.dump_value (std::cout, *val,
+					 dumper::format::full);
+			std::cout << std::endl;
+		      }
+		  }
+		else
+		  ++count;
+	      }
 
-	  if (show_count)
-	    {
-	      if (with_filename)
-		std::cout << fn << ":";
-	      std::cout << std::dec << count << std::endl;
-	    }
-	}
-      catch (std::runtime_error const &e)
-	{
-	  error_message (no_messages, verbosity, errors)
-	    << "dwgrep: " << (fn[0] != '\0' ? fn : "<no-file>")
-	    << ": " << e.what () << std::endl;
-	  continue;
-	}
-      catch (...)
-	{
-	  error_message (no_messages, verbosity, errors)
-	    << "dwgrep: " << (fn[0] != '\0' ? fn : "<no-file>")
-	    << ": Unknown error" << std::endl;
-	  continue;
-	}
+	    if (show_count)
+	      {
+		if (with_filename)
+		  std::cout << fn << ":";
+		std::cout << std::dec << count << std::endl;
+	      }
+	  }
+	catch (std::runtime_error const &e)
+	  {
+	    error_message (no_messages, verbosity, errors)
+	      << "dwgrep: " << (fn[0] != '\0' ? fn : "<no-file>")
+	      << ": " << e.what () << std::endl;
+	    continue;
+	  }
+	catch (...)
+	  {
+	    error_message (no_messages, verbosity, errors)
+	      << "dwgrep: " << (fn[0] != '\0' ? fn : "<no-file>")
+	      << ": Unknown error" << std::endl;
+	    continue;
+	  }
+      }
 
     if (errors)
 	return 2;
