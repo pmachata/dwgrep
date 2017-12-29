@@ -86,7 +86,7 @@ struct zw_stack
 
 namespace
 {
-  zw_error *
+  __attribute__ ((unused)) zw_error *
   zw_error_new (char const *message)
   {
     return new zw_error {message};
