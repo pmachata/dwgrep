@@ -515,6 +515,82 @@
 ***  rfold1 :: ?T_SEQ ?T_CLOSURE ->* ?()
      - Like fold1, but in reverse order.
 
+**  Command line arguments
+    It might be useful to have a pair of arguments --a[ and ], which would
+    collect several arguments into an array. Consider "dwgrep --a[ *.out ] -e
+    '...'". It would be interesting if the current invocation of dwgrep were a
+    syntax sugar for something more advanced, say --a( *.out ). Maybe -a( )
+    would then pass in strings? And --a[ ] an array of objects and -a[ ] array
+    of strings? (Leaving aside that "-a[" is seen as two arguments by argparse).
+
+    |------------------+-------------------------------------------|
+    | Goal             | Syntax                                    |
+    |------------------+-------------------------------------------|
+    | one string       | -a abc                                    |
+    | several strings  | -( abc def -)                             |
+    | array of strings | -[ abd def -]                             |
+    |------------------+-------------------------------------------|
+    | one value        | --a 123                                   |
+    | several values   | --( 123 '"foo"' --)                       |
+    | list of values   | --[ 123 '"foo"' --]                       |
+    |------------------+-------------------------------------------|
+    | one Dwarf        | --a '"a.out" dwopen'                      |
+    | several Dwarfs   | --( '"a.out" dwopen' '"b.out" dwopen' --) |
+    | array of Dwarfs  | --[ '"a.out" dwopen' '"b.out" dwopen' --] |
+    |------------------+-------------------------------------------|
+
+    If we allow closing element to have an optional value with dwgrep expression
+    to apply at the result:
+
+    |------------------+-------------------------------------|
+    | Goal             | Syntax                              |
+    |------------------+-------------------------------------|
+    | one string       | -a abc                              |
+    | several strings  | -[ abc def -]=elem (or just -(, -)) |
+    | array of strings | -[ abd def -]                       |
+    |------------------+-------------------------------------|
+    | one value        | --a 123                             |
+    | several values   | --( 123 '"foo"' -)                  |
+    | list of values   | --[ 123 '"foo"' -]                  |
+    |------------------+-------------------------------------|
+    | one Dwarf        | --a '"a.out" dwopen'                |
+    | several Dwarfs   | -( a.out b.out -)=dwopen            |
+    | array of Dwarfs  | -[ a.out b.out -]=dwopen            |
+    |------------------+-------------------------------------|
+
+    All of these forms however require that argument parsing is reimplemented by
+    hand (though maybe libc's argp context might be bent inside
+    argument-handling switch to allow this). And it's unfamiliar. What tools
+    usually do is they pass in list of strings and those are interpreted as file
+    names and opened. What sucks about this system is that one can't simply say
+    "dwgrep -f foo.zw *.out" and have foo.zw see a list of files to open and
+    process.
+
+    It's also tempting to have something like -a key=value, with key becoming a
+    variable in outermost stack. But there's no good way to provide a default.
+    Dictionaries would be a natural fit for this:
+
+    : dwgrep -e 'let Offset := argv (key == "offset") value ;
+    :            let Pred := argv (key == "pred") value ;
+    :            entry die (offset == Offset) foo bar Pred' \
+    :        -a offset=0x123 \
+    :        -a pred='{!root}'
+
+    But actually, if the dictionary solution to be adopted is the one with list
+    of associations, then we can simply do non-keyword arguments, and when
+    people want to use the associations, they can, exactly as above:
+
+    : dwgrep -e '... argv (key == "offset") ...' \
+    :        -a '"offset" => 0x123' \
+    :        -a '"pred" => {!root}'
+
+    Of course, even without this, one can do e.g.:
+
+    : dwgrep -d '(|X| let Offset := X elem (elem ?0 == "offset") elem ?1; \
+    :             ...)' \
+    :        -a '[("offset", 0x123'), ("pred", {!root})]'
+
+
 ** ·T_CONST
 ***  int32_t, uint32_t, int64_t, uint64_t :: ?T_CONST -> ?T_CONST
      The idea behind uint32_t et.al. is that a two-complement
@@ -611,6 +687,7 @@
      - Should this resemble DIE's or T_LOCLIST_OP's?  Shouldn't
        T_LOCLIST_OP's actually resemble DIE's as well?  @X as a
        shorthand for (value (pos == X)) seems fairly natural.
+       (Why not elem (pos == X)?)
 
        If X is a name instead of a number, it means:
        : (attribute (label == X))
