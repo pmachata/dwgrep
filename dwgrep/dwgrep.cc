@@ -534,6 +534,11 @@ try
     bool query_specified = false;
     std::string query_str;
 
+    // Outer vector has one element per argument.
+    // Inner vector has one element per value yielded by that argument expr.
+    typedef std::vector <std::unique_ptr <zw_value, zw_deleter>> arg_val_vec_t;
+    std::vector <arg_val_vec_t> args;
+
     while (true)
       {
 	int c = getopt_long (argc, argv, options.c_str (),
@@ -631,35 +636,47 @@ try
 	      }
 	  } ()};
 
-    std::vector <char const *> to_process;
-    if (argc == 0)
-	// No input files.
-	to_process.push_back ("");
-    else
+    if (argc > 0)
+      {
+	std::vector <std::unique_ptr <zw_value, zw_deleter>> dwvs;
 	for (int i = 0; i < argc; ++i)
-	  to_process.push_back (argv[i]);
+	  {
+	    std::unique_ptr <zw_value, zw_deleter> dwv
+		{zw_value_init_dwarf (argv[i], 0, zw_throw_on_error {})};
+	    dwvs.emplace_back (std::move (dwv));
+	  }
 
-    if (to_process.size () > 1)
+	args.emplace (args.begin (), std::move (dwvs));
+      }
+
+    if (argc > 1)
       with_filename = true;
     if (no_filename)
       with_filename = false;
 
+    std::vector <arg_val_vec_t::const_iterator> arg_its;
+    for (auto const &arg: args)
+      arg_its.push_back (arg.begin ());
+
     bool errors = false;
     bool match = false;
-    for (auto const &fn: to_process)
+    while (true)
       {
 	std::unique_ptr <zw_stack, zw_deleter> stack
 	    {zw_stack_init (zw_throw_on_error {})};
 
-	if (fn[0] != '\0')
+	for (auto const &arg_it: arg_its)
 	  {
-	    std::unique_ptr <zw_value, zw_deleter> dwv
-		{zw_value_init_dwarf (fn, 0, zw_throw_on_error {})};
-
-	    zw_stack_push_take (stack.get (), dwv.get (),
+	    zw_value const &cur = *arg_it->get ();
+	    size_t pos = zw_value_pos (&cur);
+	    std::unique_ptr <zw_value, zw_deleter> value
+		{zw_value_clone (&cur, pos, zw_throw_on_error {})};
+	    zw_stack_push_take (stack.get (), value.release (),
 				zw_throw_on_error {});
-	    dwv.release ();
 	  }
+
+	std::string fn = argc == 0 ? ""
+	  : argv[arg_its[0] - args[0].begin ()];
 	dumper dump {*voc};
 
 	try
@@ -710,15 +727,29 @@ try
 	    error_message (no_messages, verbosity, errors)
 	      << "dwgrep: " << (fn[0] != '\0' ? fn : "<no-file>")
 	      << ": " << e.what () << std::endl;
-	    continue;
 	  }
 	catch (...)
 	  {
 	    error_message (no_messages, verbosity, errors)
 	      << "dwgrep: " << (fn[0] != '\0' ? fn : "<no-file>")
 	      << ": Unknown error" << std::endl;
-	    continue;
 	  }
+
+	// Bump argument list.
+	bool next = false;
+	for (size_t ri = 0; ri < args.size (); ++ri)
+	  {
+	    size_t i = args.size () - 1 - ri;
+	    if (++arg_its[i] == args[i].end ())
+	      arg_its[i] = args[i].begin ();
+	    else
+	      {
+		next = true;
+		break;
+	      }
+	  }
+	if (! next)
+	  break;
       }
 
     if (errors)
