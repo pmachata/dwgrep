@@ -121,3 +121,8 @@ LIBZWERG_0.1 {
   local:
 	*;
 };
+
+LIBZWERG_0.4 {
+  global:
+	zw_value_clone;
+} LIBZWERG_0.1;

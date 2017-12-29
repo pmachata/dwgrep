@@ -184,6 +184,16 @@ zw_value_destroy (zw_value *value)
   delete value;
 }
 
+zw_value *
+zw_value_clone (zw_value const *val, size_t pos, zw_error **out_err)
+{
+  return capture_errors ([&] () {
+      auto clone = val->clone ();
+      assert (clone != nullptr);
+      return clone.release ();
+    }, nullptr, out_err);
+}
+
 
 zw_result *
 zw_query_execute (zw_query const *query, zw_stack const *input_stack,

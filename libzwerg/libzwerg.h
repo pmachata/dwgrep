@@ -228,6 +228,11 @@ extern "C" {
   // Release any resources associated with VAL.
   void zw_value_destroy (zw_value *val);
 
+  // Returns a copy of VALUE, with a new position POS. Returns NULL on
+  // error, in which case it sets *OUT_ERR. OUT_ERR shall be non-NULL.
+  zw_value *zw_value_clone (zw_value const *val, size_t pos,
+			    zw_error **out_err);
+
 
   /**
    * Constants.
