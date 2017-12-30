@@ -23,6 +23,11 @@
   expression, which can bind them using lexical scope, or use arbitrarily.
   - Fixes #13: Support passing arguments to scripts from command line
 
+- Allow bindings named the same way as a built-in word. This is important for
+  forward-compatibility: adding built-in words doesn't break existing queries
+  that use that name for a binding.
+  - Fixes #29: Allow naming variables like builtins
+
 
 * version 0.3 [2017-12-09 Sat]
 
