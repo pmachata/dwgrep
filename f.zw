@@ -1,0 +1,14 @@
+let .upto :=
+    {|a upto|
+        if (a > 1) then (
+            (, 1 add (a 1 sub) {upto} upto)
+        ) else ()
+    };
+
+let upto :=
+    {{.upto} .upto};
+
+let seq :=
+    {|a b| [a b a sub upto]};
+
+0 200 seq

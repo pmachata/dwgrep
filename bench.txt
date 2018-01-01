@@ -1,0 +1,306 @@
+$ time ./dwgrep /usr/lib/debug/usr/bin/transmission-qt.debug '?{@name "Qt" ?eq} child ?{@name "ItemFlags" ?eq}' >/dev/null
+
+real	0m1.086s
+user	0m1.044s
+sys	0m0.016s
+
+eef88965 (Apr/18):
+$ time LD_LIBRARY_PATH=$HOME/opt/gcc482/usr/lib64 ./dwgrep /usr/lib/debug/usr/bin/transmission-qt.debug -e '?{@name "Qt" ?eq} child ?{@name "ItemFlags" ?eq}' > /dev/null 
+
+real	0m0.770s
+user	0m0.742s
+sys	0m0.006s
+
+07598bf6 (May/29) (initial winfo now has to be mentioned):
+$ time LD_LIBRARY_PATH=$HOME/opt/gcc482/usr/lib64 ./dwgrep /usr/lib/debug/usr/bin/transmission-qt.debug -e 'winfo ?{@name "Qt" ?eq} child ?{@name "ItemFlags" ?eq}' > /dev/null 
+
+real	0m0.755s
+user	0m0.726s
+sys	0m0.008s
+
+May/30 -- after migration to pure stack operations:
+$ time LD_LIBRARY_PATH=$HOME/opt/gcc482/usr/lib64 ./dwgrep /usr/lib/debug/usr/bin/transmission-qt.debug -e 'winfo ?{@name "Qt" ?eq} child ?{@name "ItemFlags" ?eq}' > /dev/null
+
+real	0m0.597s
+user	0m0.576s
+sys	0m0.010s
+
+I was actually afraid this would be slower, but somehow it wins hands
+down (about 25% boost).  My theory is that not having to store indices
+saves reads, and the amount of stack shuffling for the test query is
+exactly the same with the old code and the new code.  (It would likely
+be different if the query used protect, N/X or similar.)
+
+---
+
+Jun/26 -- after dropping count from struct value, nothing changed
+
+$ time LD_LIBRARY_PATH=$HOME/opt/gcc482/usr/lib64 ./dwgrep /usr/lib/debug/usr/bin/transmission-qt.debug -e 'winfo ?(@name "Qt" ?eq) child ?(@name "ItemFlags" ?eq)' > /dev/null
+
+real	0m0.593s
+user	0m0.577s
+sys	0m0.009s
+
+---
+
+Jul/14 -- After converting many words into builtins, things are pretty
+much as before.  But note that none of the words here is overloaded.
+While @AT_name is now a builtin that expands into something like
+"at<DW_AT_name> value", the value it invokes is the right instance for
+value_attr, instead of the overloaded generic "value".
+
+$ time LD_LIBRARY_PATH=$HOME/opt/gcc49/usr/lib64 ./dwgrep /usr/lib/debug/usr/bin/transmission-qt.debug -e 'winfo ?(@AT_name "Qt" ?eq) child ?(@AT_name "ItemFlags" ?eq)' > /dev/null
+
+real	0m0.600s
+user	0m0.567s
+sys	0m0.011s
+
+---
+
+Aug/1 -- After child became overload.  The slow-down is mild to nil,
+actually we used to be seeing values above 0.600 before as well, and
+after a couple runs, this hits the mark as well.  But 615 is probably
+the more accurate measure.
+
+$ time LD_LIBRARY_PATH=$HOME/opt/gcc49/usr/lib64 ./dwgrep /usr/lib/debug/usr/bin/transmission-qt.debug -e 'winfo ?(@AT_name "Qt" ?eq) child ?(@AT_name "ItemFlags" ?eq)' > /dev/null
+
+real	0m0.615s
+user	0m0.593s
+sys	0m0.009s
+
+---
+
+Aug/6 -- After introducing selectors.  Things got a bit faster again
+(it seems we can consistencly slice about 2.5%).  Not clear why that
+is.  Might be a fluke, though the result is stable and it's the same
+machine with the same load, more or less.  The result is confusing,
+because the selectors are more general, and intuitively should take a
+little bit more time to dispatch.  But we limit ourselves to 4-ary
+functions, store all selectors next to each other, and process them in
+a nice tight loop, so perhaps cache effects are king once again.
+
+$ time LD_LIBRARY_PATH=$HOME/opt/gcc49/usr/lib64 ./dwgrep /usr/lib/debug/usr/bin/transmission-qt.debug -e 'winfo ?(@AT_name "Qt" ?eq) child ?(@AT_name "ItemFlags" ?eq)' > /dev/null
+
+real	0m0.600s
+user	0m0.573s
+sys	0m0.009s
+
+$ time LD_LIBRARY_PATH=$HOME/opt/gcc49/usr/lib64 ./dwgrep -c /usr/lib/debug/usr/bin/transmission-qt.debug -e 'winfo ?(child)'
+200163
+
+real	0m0.537s
+user	0m0.521s
+sys	0m0.008s
+
+---
+
+Aug/13 -- We now keep stack profile alongside the stack, which sped
+things up a bit (see the winfo ?(child) test above and here), but then
+@AT_, ?AT_ and others all became overloads, which made them slower
+again (as seen in Qt::ItemFlags lookup).
+
+$ time LD_LIBRARY_PATH=$HOME/opt/gcc49/usr/lib64 ./dwgrep /usr/lib/debug/usr/bin/transmission-qt.debug -e 'winfo ?(@AT_name "Qt" ?eq) child ?(@AT_name "ItemFlags" ?eq)' > /dev/null
+
+real	0m0.627s
+user	0m0.603s
+sys	0m0.010s
+
+$ time LD_LIBRARY_PATH=$HOME/opt/gcc49/usr/lib64 ./dwgrep -c /usr/lib/debug/usr/bin/transmission-qt.debug -e 'winfo ?(child)'
+200163
+
+real	0m0.510s
+user	0m0.487s
+sys	0m0.011s
+
+$ time LD_LIBRARY_PATH=$HOME/opt/gcc49/usr/lib64 ./dwgrep -c /usr/lib/debug/usr/bin/transmission-qt.debug -e 'winfo label DW_TAG_variable ?eq'
+13616
+
+real	0m0.654s
+user	0m0.639s
+sys	0m0.003s
+
+---
+
+Aug/14 -- Ditched GMP, back to uint64_t, now we keep signedness
+alongside that.  The arithmetic on this is hell, just as before, but
+having each named constant in a heap-allocated arbitrary-precision
+integer was just horrible.  For constant-intensive computation, we now
+gain something like 30% performance.  Other tests are not impacted.
+
+$ time LD_LIBRARY_PATH=$HOME/opt/gcc49/usr/lib64 ./dwgrep -c /usr/lib/debug/usr/bin/transmission-qt.debug -e 'winfo label DW_TAG_variable ?eq'
+13616
+
+real	0m0.451s
+user	0m0.430s
+sys	0m0.008s
+
+---
+
+Oct/31 -- many changes around the cooked/raw duality.  Apparently,
+some of this kills the performance.
+
+$ time LD_LIBRARY_PATH=$HOME/opt/gcc49/usr/lib64:$HOME/proj/elfutils/master/build/libdw:$HOME/proj/elfutils/master/build/libelf:$HOME/proj/elfutils/master/build/backends ./dwgrep -c /usr/lib/debug/usr/bin/transmission-qt.debug -e 'entry ?(@AT_name "Qt" ?eq) child ?(@AT_name "ItemFlags" ?eq)' > /dev/null
+
+real	0m0.743s
+user	0m0.718s
+sys	0m0.007s
+
+$ time LD_LIBRARY_PATH=$HOME/opt/gcc49/usr/lib64:$HOME/proj/elfutils/master/build/libdw:$HOME/proj/elfutils/master/build/libelf:$HOME/proj/elfutils/master/build/backends ./dwgrep -c /usr/lib/debug/usr/bin/transmission-qt.debug -e 'entry ?(child)'
+200163
+
+real	0m0.734s
+user	0m0.709s
+sys	0m0.007s
+
+$ time LD_LIBRARY_PATH=$HOME/opt/gcc49/usr/lib64:$HOME/proj/elfutils/master/build/libdw:$HOME/proj/elfutils/master/build/libelf:$HOME/proj/elfutils/master/build/backends ./dwgrep -c /usr/lib/debug/usr/bin/transmission-qt.debug  -e 'entry label DW_TAG_variable ?eq'
+13616
+
+real	0m0.554s
+user	0m0.527s
+sys	0m0.008s
+
+---
+
+Nov/7 -- libzwerg was introduced.  That means most of actually
+executed code is PIC, which might explain the slight drop in
+performance.  But mostly that's not significant.
+
+$ time LD_LIBRARY_PATH=$HOME/opt/gcc49/usr/lib64:$HOME/proj/elfutils/master/build/libdw:$HOME/proj/elfutils/master/build/libelf:$HOME/proj/elfutils/master/build/backends build/dwgrep/dwgrep -c /usr/lib/debug/usr/bin/transmission-qt.debug -e 'raw entry ?(@AT_name "Qt" ?eq) child ?(@AT_name "ItemFlags" ?eq)' > /dev/null
+
+real	0m0.787s
+user	0m0.759s
+sys	0m0.009s
+
+$ time LD_LIBRARY_PATH=$HOME/opt/gcc49/usr/lib64:$HOME/proj/elfutils/master/build/libdw:$HOME/proj/elfutils/master/build/libelf:$HOME/proj/elfutils/master/build/backends build/dwgrep/dwgrep -c /usr/lib/debug/usr/bin/transmission-qt.debug -e 'entry ?(child)'
+200163
+
+real	0m0.778s
+user	0m0.734s
+sys	0m0.029s
+
+$ time LD_LIBRARY_PATH=$HOME/opt/gcc49/usr/lib64:$HOME/proj/elfutils/master/build/libdw:$HOME/proj/elfutils/master/build/libelf:$HOME/proj/elfutils/master/build/backends build/dwgrep/dwgrep -c /usr/lib/debug/usr/bin/transmission-qt.debug  -e 'entry label DW_TAG_variable ?eq'
+13616
+
+real	0m0.576s
+user	0m0.549s
+sys	0m0.009s
+
+---
+
+Nov/14 -- Re-running some tests, both past and present, and with no
+code changes that should have impact, we it's down to 0.65s.
+
+But what I realized that for cooked queries, we now do much more work
+than we used to, with obvious performance impacts.  So this
+measurement would be more accurate:
+
+$ time LD_LIBRARY_PATH=$HOME/opt/gcc49/usr/lib64:$HOME/proj/elfutils/master/build/libdw:$HOME/proj/elfutils/master/build/libelf:$HOME/proj/elfutils/master/build/backends dwgrep/dwgrep -c /usr/lib/debug/usr/bin/transmission-qt.debug -e 'raw entry ?(@AT_name "Qt" ?eq) child ?(@AT_name "ItemFlags" ?eq)'
+18
+
+real	0m0.619s
+user	0m0.598s
+sys	0m0.008s
+
+$ time LD_LIBRARY_PATH=$HOME/opt/gcc49/usr/lib64:$HOME/proj/elfutils/master/build/libdw:$HOME/proj/elfutils/master/build/libelf:$HOME/proj/elfutils/master/build/backends dwgrep/dwgrep -c /usr/lib/debug/usr/bin/transmission-qt.debug -e 'entry ?(child)'
+200163
+
+real	0m0.665s
+user	0m0.633s
+sys	0m0.021s
+
+$ time LD_LIBRARY_PATH=$HOME/opt/gcc49/usr/lib64:$HOME/proj/elfutils/master/build/libdw:$HOME/proj/elfutils/master/build/libelf:$HOME/proj/elfutils/master/build/backends dwgrep/dwgrep -c /usr/lib/debug/usr/bin/transmission-qt.debug  -e 'entry label DW_TAG_variable ?eq'
+13616
+
+real	0m0.502s
+user	0m0.485s
+sys	0m0.006s
+
+---
+
+Jan/5 -- A new laptop.  Wrote a timing script that should hopefully
+make timings more representative.
+
+$ ../timeit.sh ../transmission-qt.debug 'entry label DW_TAG_variable ?eq'
+13616
+10 runs, best:0.28s, avg:0.30700000000000005s, stddev:0.02983286778035259
+
+
+-------------------
+
+comparing just the iteration (old, new, c++)
+
+$ time ./dwgrep /usr/lib/debug/usr/bin/transmission-qt.debug ''
+(CAT (SEL_UNIVERSE) (NOP))
+713489 results
+
+real	0m0.440s
+user	0m0.426s
+sys	0m0.004s
+
+$ time ./dwgrep /usr/lib/debug/usr/bin/transmission-qt.debug ''
+(CAT (SEL_UNIVERSE) (NOP))
+713489 results
+
+real	0m0.225s
+user	0m0.213s
+sys	0m0.004s
+
+$ time ./cc /usr/lib/debug/usr/bin/transmission-qt.debug 
+713489 results
+
+real	0m0.171s
+user	0m0.160s
+sys	0m0.006s
+
+(about 2.5x and 1.3x overhead)
+
+---
+
+Oct 2017 -- A new laptop, baseline with master.
+
+$ ../timeit.sh ../transmission-qt.debug 'entry label DW_TAG_variable ?eq'
+13616
+10 runs, best:0.43s, avg:0.452s, stddev:0.011352924243950934
+$ ../timeit.sh ../transmission-qt.debug 'entry ?(child)'
+200163
+10 runs, best:0.63s, avg:0.638s, stddev:0.009189365834726822
+$ ../timeit.sh ../transmission-qt.debug 'raw entry ?(@AT_name "Qt" ?eq) child ?(@AT_name "ItemFlags" ?eq)'
+18
+10 runs, best:0.6s, avg:0.635s, stddev:0.029907264074877295
+
+Nov 2017 after the flag day that introduced recursive states etc the numbers for
+the test cases above are exactly the same. Variables end up being net win, the
+pathological case being:
+
+$ ../timeit.sh /bin/false '
+    let A := [0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
+    let B := [A elem 10 mul A elem add];
+    let C := [B elem 100 mul B elem add];
+    C elem'
+10000
+was 10 runs, best:6.15s, avg:6.207s, stddev:0.055186552307202034
+now 10 runs, best:0.01s, avg:0.019s, stddev:0.0031622776601683794
+
+Some closure cases perform better now:
+
+$ ../timeit.sh /bin/false '"1234567890" elem "1234567890" elem "1234567890" elem "1234567890" elem "1234567890" elem "1234567890" elem {{{{{1}}}}} apply apply apply apply apply'
+1000000
+was 10 runs, best:3.65s, avg:3.697s, stddev:0.05056349144063008
+now 10 runs, best:1.81s, avg:1.867s, stddev:0.02983286778035254
+
+Others worse:
+
+../timeit.sh /bin/false '
+    let Fn := {|Fn A|
+        if (A > 0) then (
+	    {Fn} (A 1 sub) Fn
+	    {Fn} (A 1 sub) Fn
+	) else ()
+    };
+    {Fn} 14 Fn'
+1
+was 10 runs, best:1.17s, avg:1.192s, stddev:0.018737959096740277
+now 10 runs, best:1.46s, avg:1.474s, stddev:0.011737877907772684
+
+Which is surprising, because now each recursive instance doesn't imply a build
+run, but just state construction.
