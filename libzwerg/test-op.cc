@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2017 Petr Machata
+   Copyright (C) 2017, 2018 Petr Machata
    Copyright (C) 2015 Red Hat, Inc.
    This file is part of dwgrep.
 
@@ -198,4 +198,16 @@ TEST_F (ZwTest, iterate_lexical_closure_2)
   auto stk = std::make_unique <stack> ();
   auto yielded = run_query (*builtins, std::move (stk), "{} (drop {})*");
   ASSERT_EQ (2, yielded.size ());
+}
+
+TEST_F (ZwTest, test_various)
+{
+  for (auto const &entry: std::map <size_t, std::string> {
+	    {2, "(1, 2) drop [4, 5] [] ?ne"},
+	})
+    {
+      auto stk = std::make_unique <stack> ();
+      auto yielded = run_query (*builtins, std::move (stk), entry.second);
+      ASSERT_EQ (entry.first, yielded.size ());
+    }
 }
