@@ -337,7 +337,6 @@
      thing).  X& would be like X* !(X).
 
 * undocumented functionality
-
 ** •“{” (“|” ID₁ ID₂ … “|”)? EXPR₁ “}” — blocks
 
     - {EXPR₁} -- A block syntax.  A value representing an expression
@@ -702,12 +701,63 @@
        (Why not elem (pos == X)?)
 
        If X is a name instead of a number, it means:
-       : (attribute (label == X))
+       : (attribute (label == X) value)
 
 **  T_MACRO_ATTRIBUTE ???
     - Note that label is explicitly not applicable
 ***  value
 ***  form
+
+**  T_ELF
+    Elf objects would be derived off Dwarf objects (they would wrap the same
+    underlying Dwfl I imagine), and would give access to Elf-related binary
+    artifacts. (N.B. even for binaries compiled without debuginfo, T_DWARF can
+    always be constructed.)
+
+***  elf :: T_DWARF -> T_ELF
+***  @class :: T_ELF -> T_CONST
+***  ELFCLASS32, ELFCLASS64
+***  ?ELFCLASS32, ?ELFCLASS64
+***  @data :; T_ELF -> T_CONST
+***  ELFDATA2LSB, ELFDATA2MSB
+***  ?ELFDATA2LSB, ?ELFDATA2MSB
+***  EV_CURRENT
+***  ?EV_CURRENT
+***  @osabi :: T_ELF -> T_CONST
+***  ELFOSABI_*
+***  ?ELFOSABI_*
+***  @abiversion :: T_ELF -> T_CONST (no domain, just a number)
+***  @type
+***  @machine
+***  version :: T_ELF -> T_CONST
+***  entry :: T_ELF -> T_ASET
+***  phdr :: T_ELF ->* T_PHDR
+***  section :: T_ELF ->* T_SECTION
+***  @flags :: ???
+     XXX there are no bitwise operations to access flag fields. What we could do
+     though is to do a T_ELF ->* T_CONST, and push out a number for each set
+     bit. A word "bit :: T_CONST ->* T_CONST" might do this for any given
+     constant, keeping the domain of source operand. Then @flags would just
+     yield the value and typical usage would be along the lines of
+     : Dw elf (@flags bit == EF_SPARC_LEDATA)
+***  shstr :: T_ELF -> T_SECTION
+     Yield section where section header string table is stored.
+
+**  T_PHDR
+**  T_SECTION
+***  string :: T_SECTION ->* T_STRTAB_ENTRY
+     Accesses the section as a string table. Yields each string in the section.
+
+**  T_STRTAB_ENTRY
+    This is to represent strings in a string table. It's desirable that these
+    behave in all ways as strings, but "offset" is applicable as well.
+
+    XXX not sure this can be currently done, as ?eq just reuses zw_value::cmp
+    and that's used to handle iteration duplicities as well. So we can't
+    specialize ?eq like this.
+
+***  value :: T_STRTAB_ENTRY -> T_STR
+***  offset :: T_STRTAB_ENTRY -> T_CONST
 
 
 * Examples
