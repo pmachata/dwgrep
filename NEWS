@@ -12,6 +12,10 @@
 
 ** Other Changes
 
+- Fix a bug introduced in 0.3 where a captured expression wasn't reset properly,
+  due to which after the first list was produced, the following lists were all
+  empty.
+
 - Fix file name shown when -H is passed and no files are given on the command
   line. Before, it was <no-file> somewhere and empty string elsewhere. Now it's
   <no-file> everywhere.
