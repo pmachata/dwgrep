@@ -33,6 +33,7 @@
 #include "builtin-symbol.hh"
 #include "dwcst.hh"
 #include "known-dwarf.h"
+#include "known-dwarf-macro-gnu.h"
 #include "known-elf.h"
 
 std::unique_ptr <vocabulary>

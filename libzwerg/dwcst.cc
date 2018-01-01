@@ -20,6 +20,7 @@
 #include <climits>
 
 #include "known-dwarf.h"
+#include "known-dwarf-macro-gnu.h"
 #include "constant.hh"
 #include "flag_saver.hh"
 
