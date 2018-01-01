@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2017 Petr Machata
+   Copyright (C) 2017, 2018 Petr Machata
    Copyright (C) 2015 Red Hat, Inc.
    This file is part of dwgrep.
 
@@ -289,6 +289,18 @@ TEST_F (ZwTest, test_assert_block)
 	    {1, "let ?F := !{|A| A == 2}; 1 ?F == 1"},
 	    {1, "let ?F := ?{swap}; 1 2 ?F [|A B| A, B] == [1, 2]"},
 	    {0, "let ?F := !{swap}; 1 2 ?F [|A B| A, B] == [1, 2]"},
+	})
+    {
+      auto stk = std::make_unique <stack> ();
+      auto yielded = run_query (*builtins, std::move (stk), entry.second);
+      ASSERT_EQ (entry.first, yielded.size ());
+    }
+}
+
+TEST_F (ZwTest, test_various)
+{
+  for (auto const &entry: std::map <size_t, std::string> {
+	    {2, "(1, 2) drop [4, 5] [] ?ne"},
 	})
     {
       auto stk = std::make_unique <stack> ();

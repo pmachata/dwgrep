@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2017 Petr Machata
+   Copyright (C) 2017, 2018 Petr Machata
    Copyright (C) 2014, 2015 Red Hat, Inc.
    This file is part of dwgrep.
 
@@ -566,6 +566,8 @@ op_capture::next (scon &sc) const
 	vv.push_back (stk2->pop ());
 
       stk->push (std::make_unique <value_seq> (std::move (vv), 0));
+      m_op->state_des (sc);
+      m_op->state_con (sc);
       return stk;
     }
 
