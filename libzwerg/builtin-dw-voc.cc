@@ -1,4 +1,5 @@
 /*
+   Copyright (C) 2018 Petr Machata
    Copyright (C) 2015 Red Hat, Inc.
    This file is part of dwgrep.
 
@@ -441,11 +442,13 @@ dwgrep_vocabulary_dw ()
       add_builtin_constant (voc, constant (code, &dw_attr_dom ()), lqname + 1);
     };
 
+#define ONE_KNOWN_DW_AT_DESC(NAME, CODE, DESC) ONE_KNOWN_DW_AT(NAME, CODE)
 #define ONE_KNOWN_DW_AT(NAME, CODE)					\
   add_dw_at (CODE, "?AT_" #NAME, "!AT_" #NAME, "@AT_" #NAME,		\
 	     "?" #CODE, "!" #CODE, "@" #CODE);
   ALL_KNOWN_DW_AT;
 #undef ONE_KNOWN_DW_AT
+#undef ONE_KNOWN_DW_AT_DESC
 
   auto add_dw_tag = [&voc] (int code,
 			    char const *qname, char const *bname,

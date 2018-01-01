@@ -1,4 +1,6 @@
-/* Parts of this file were adapted from eu-readelf.
+/*
+   Copyright (C) 2018 Petr Machata
+   Parts of this file were adapted from eu-readelf.
    Copyright (C) 1999-2015 Red Hat, Inc.
 
    This file is free software; you can redistribute it and/or modify
@@ -50,10 +52,12 @@ dwarf_attr_string (int attrnum, brevity brv)
 {
   switch (attrnum)
     {
+#define ONE_KNOWN_DW_AT_DESC(NAME, CODE, DESC) ONE_KNOWN_DW_AT(NAME, CODE)
 #define ONE_KNOWN_DW_AT(NAME, CODE)					\
       case CODE: return abbreviate (#CODE, sizeof "DW_AT", brv);
       ALL_KNOWN_DW_AT
 #undef ONE_KNOWN_DW_AT
+#undef ONE_KNOWN_DW_AT_DESC
     default:
       return nullptr;
     }
