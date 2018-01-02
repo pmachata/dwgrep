@@ -1,4 +1,5 @@
 /*
+  Copyright (C) 2018 Petr Machata
   Copyright (C) 2015 Red Hat, Inc.
 
   This file is free software; you can redistribute it and/or modify
@@ -166,6 +167,12 @@ zw_cdom const *
 zw_cdom_dw_endianity (void)
 {
   return &dw_endianity_dom ();
+}
+
+zw_cdom const *
+zw_cdom_dw_defaulted (void)
+{
+  return &dw_defaulted_dom ();
 }
 
 zw_cdom const *

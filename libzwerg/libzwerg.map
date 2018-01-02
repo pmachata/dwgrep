@@ -125,4 +125,5 @@ LIBZWERG_0.1 {
 LIBZWERG_0.4 {
   global:
 	zw_value_clone;
+	zw_cdom_dw_defaulted;
 } LIBZWERG_0.1;

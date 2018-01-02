@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2017 Petr Machata
+   Copyright (C) 2017, 2018 Petr Machata
    Copyright (C) 2015 Red Hat, Inc.
    This file is part of dwgrep.
 
@@ -622,6 +622,13 @@ dwgrep_vocabulary_dw ()
   }
   DWARF_ALL_KNOWN_DW_END;
 #undef DWARF_ONE_KNOWN_DW_END
+
+#define DWARF_ONE_KNOWN_DW_DEFAULTED(NAME, CODE)			\
+  {									\
+    add_builtin_constant (voc, constant (CODE, &dw_defaulted_dom ()), #CODE); \
+  }
+  DWARF_ALL_KNOWN_DW_DEFAULTED;
+#undef DWARF_ONE_KNOWN_DW_DEFAULTED
 
 
 #define ELF_ONE_KNOWN_STT(NAME, CODE)					\

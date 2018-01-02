@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2017 Petr Machata
+   Copyright (C) 2017, 2018 Petr Machata
    Copyright (C) 2014, 2015 Red Hat, Inc.
    This file is part of dwgrep.
 
@@ -911,4 +911,17 @@ TEST_F (ZwTest, symbol_cmp)
   for (auto prod = op_symbol_dwarf {l, nullptr}.operate (rdw ("enum.o"));
        auto val = prod->next (); )
     EXPECT_EQ (cmp_result::equal, val->cmp (*val));
+}
+
+TEST_F (ZwTest, test_various)
+{
+  for (auto const &entry: std::map <size_t, std::string> {
+	    {3, "DW_DEFAULTED_no, DW_DEFAULTED_in_class, "
+		"DW_DEFAULTED_out_of_class"},
+	})
+    {
+      auto stk = std::make_unique <stack> ();
+      auto yielded = run_query (*builtins, std::move (stk), entry.second);
+      ASSERT_EQ (entry.first, yielded.size ());
+    }
 }

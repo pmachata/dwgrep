@@ -1,4 +1,5 @@
 /*
+  Copyright (C) 2018 Petr Machata
   Copyright (C) 2014, 2015 Red Hat, Inc.
 
   This file is free software; you can redistribute it and/or modify
@@ -109,6 +110,9 @@ extern "C" {
 
   // Return a domain representing a family of DW_END_ constants.
   zw_cdom const *zw_cdom_dw_endianity (void);
+
+  // Return a domain representing a family of DW_DEFAULTED_ constants.
+  zw_cdom const *zw_cdom_dw_defaulted (void);
 
   // Return a domain representing a family of STT_ constants.
   //

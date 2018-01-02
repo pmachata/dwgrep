@@ -1,4 +1,5 @@
 /*
+   Copyright (C) 2018 Petr Machata
    Copyright (C) 2014, 2015 Red Hat, Inc.
    This file is part of dwgrep.
 
@@ -42,6 +43,7 @@ constant_dom const &dw_decimal_sign_dom ();
 constant_dom const &dw_discr_list_dom ();
 constant_dom const &dw_encoding_dom ();
 constant_dom const &dw_endianity_dom ();
+constant_dom const &dw_defaulted_dom ();
 constant_dom const &dw_identifier_case_dom ();
 constant_dom const &dw_inline_dom ();
 constant_dom const &dw_lang_dom ();

@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2017 Petr Machata
+   Copyright (C) 2017, 2018 Petr Machata
    Parts of this file were adapted from eu-readelf.
    Copyright (C) 1999-2015 Red Hat, Inc.
 
@@ -318,6 +318,21 @@ dwarf_endianity_string (int code, brevity brv)
 
 
 static const char *
+dwarf_defaulted_string (int code, brevity brv)
+{
+  switch (code)
+    {
+#define DWARF_ONE_KNOWN_DW_DEFAULTED(NAME, CODE)				\
+      case CODE: return abbreviate (#CODE, sizeof "DW_DEFAULTED", brv);
+      DWARF_ALL_KNOWN_DW_DEFAULTED
+#undef DWARF_ONE_KNOWN_DW_DEFAULTED
+    default:
+      return nullptr;
+    }
+}
+
+
+static const char *
 string_or_unknown (const char *known, const char *prefix, brevity brv,
 		   unsigned int code,
                    unsigned int lo_user, unsigned int hi_user,
@@ -562,6 +577,14 @@ constant_dom const &
 dw_endianity_dom ()
 {
   static dw_simple_dom dom {"DW_END_", dwarf_endianity_string,
+			    0, 0, false};
+  return dom;
+}
+
+constant_dom const &
+dw_defaulted_dom ()
+{
+  static dw_simple_dom dom {"DW_DEFAULTED_", dwarf_defaulted_string,
 			    0, 0, false};
   return dom;
 }
