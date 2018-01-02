@@ -32,6 +32,8 @@
   that use that name for a binding.
   - Fixes #29: Allow naming variables like builtins
 
+- Support DW_DEFAULTED_* suite of constants. Use them to decode DW_AT_defaulted.
+
 
 * version 0.3 [2017-12-09 Sat]
 
