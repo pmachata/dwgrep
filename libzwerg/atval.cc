@@ -1,4 +1,5 @@
 /*
+   Copyright (C) 2018 Petr Machata
    Copyright (C) 2014, 2015 Red Hat, Inc.
    This file is part of dwgrep.
 
@@ -390,6 +391,9 @@ namespace
 
       case DW_AT_endianity:
 	return atval_unsigned_with_domain (attr, dw_endianity_dom ());
+
+      case DW_AT_defaulted:
+	return atval_unsigned_with_domain (attr, dw_defaulted_dom ());
 
       case DW_AT_decl_line:
       case DW_AT_call_line:
