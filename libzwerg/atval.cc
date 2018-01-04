@@ -314,6 +314,19 @@ die_ranges (Dwarf_Die die)
 
 namespace
 {
+  bool
+  is_block (Dwarf_Attribute attr)
+  {
+    switch (dwarf_whatform (&attr))
+    case DW_FORM_block1:
+    case DW_FORM_block2:
+    case DW_FORM_block4:
+    case DW_FORM_block:
+      return true;
+
+    return false;
+  }
+
   std::unique_ptr <value_producer <value>>
   handle_encoding (Dwarf_Attribute attr, Dwarf_Word encoding)
   {
@@ -675,11 +688,7 @@ namespace
 	}
       }
 
-    switch (dwarf_whatform (&attr))
-    case DW_FORM_block1:
-    case DW_FORM_block2:
-    case DW_FORM_block4:
-    case DW_FORM_block:
+    if (is_block (attr))
       {
 	// XXX even for blocks, we need to look at the @type to
 	// figure out whether there's a better way to represent this
