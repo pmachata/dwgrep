@@ -339,8 +339,10 @@ namespace
       case DW_ATE_unsigned:
       case DW_ATE_unsigned_char:
       case DW_ATE_address:
-      case DW_ATE_boolean:
 	return atval_unsigned (attr);
+
+      case DW_ATE_boolean:
+	return atval_unsigned_with_domain (attr, bool_constant_dom);
 
       case DW_ATE_UTF:
 	// XXX We could decode the character that this
