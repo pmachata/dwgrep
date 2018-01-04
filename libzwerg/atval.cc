@@ -344,8 +344,12 @@ namespace
 	return nullptr;
 
       default:
-	assert (! "unknown enumerator encoding");
-	abort ();
+	{
+	  std::stringstream ss;
+	  ss << "Unhandled enumerator encoding: ";
+	  dw_encoding_dom ().show (encoding, ss, brevity::full);
+	  throw std::runtime_error (ss.str ());
+	}
       }
   }
 
@@ -354,7 +358,8 @@ namespace
 			     std::shared_ptr <dwfl_context> dwctx)
   {
     Dwarf_Die die = vd.get_die ();
-    switch (dwarf_whatattr (&attr))
+    int code = dwarf_whatattr (&attr);
+    switch (code)
       {
       case DW_AT_language:
 	return atval_unsigned_with_domain (attr, dw_lang_dom ());
@@ -661,8 +666,13 @@ namespace
 	// ^^^ """The number is signed if the tag type for the
 	// variant part containing this variant is a signed
 	// type."""
-	assert (! "signedness of attribute not implemented yet");
-	abort ();
+	{
+	  std::stringstream ss;
+	  ss << "Signedness of attribute ";
+	  dw_attr_dom ().show (DW_AT_discr_value, ss, brevity::full);
+	  ss << " not handled";
+	  throw std::runtime_error (ss.str ());
+	}
       }
 
     switch (dwarf_whatform (&attr))
@@ -681,9 +691,11 @@ namespace
 	return pass_block (block);
       }
 
-    std::cerr << dwarf_whatattr (&attr) << std::endl << std::flush;
-    assert (! "signedness of attribute unhandled");
-    abort ();
+    std::stringstream ss;
+    ss << "Signedness of attribute ";
+    dw_attr_dom ().show (code, ss, brevity::full);
+    ss << " not handled";
+    throw std::runtime_error (ss.str ());
   }
 }
 
@@ -691,7 +703,8 @@ std::unique_ptr <value_producer <value>>
 at_value (std::shared_ptr <dwfl_context> dwctx,
 	  value_die const &vd, Dwarf_Attribute attr)
 {
-  switch (dwarf_whatform (&attr))
+  int form = dwarf_whatform (&attr);
+  switch (form)
     {
     case DW_FORM_string:
     case DW_FORM_strp:
@@ -764,8 +777,10 @@ at_value (std::shared_ptr <dwfl_context> dwctx,
       abort ();
     }
 
-  assert (! "Unhandled DWARF form type.");
-  abort ();
+  std::stringstream ss;
+  ss << "Unhandled DWARF form ";
+  dw_form_dom ().show (form, ss, brevity::full);
+  throw std::runtime_error (ss.str ());
 }
 
 namespace
