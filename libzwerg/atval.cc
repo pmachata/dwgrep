@@ -328,7 +328,7 @@ namespace
   }
 
   std::unique_ptr <value_producer <value>>
-  handle_encoding (Dwarf_Attribute attr, Dwarf_Word encoding)
+  handle_encoding_data (Dwarf_Attribute attr, Dwarf_Word encoding)
   {
     switch (encoding)
       {
@@ -366,6 +366,49 @@ namespace
 	  throw std::runtime_error (ss.str ());
 	}
       }
+  }
+
+  std::unique_ptr <value_producer <value>>
+  handle_encoding_block (Dwarf_Attribute attr, Dwarf_Word encoding)
+  {
+    Dwarf_Block block;
+    if (dwarf_formblock (&attr, &block) != 0)
+      throw_libdw ();
+
+    // As long as the block is of convenient size, we can pretend the value is
+    // actually a DW_FORM_dataX, and have the above code handle it.
+
+    auto attr_as = [attr, block] (int form)
+      {
+	Dwarf_Attribute ret = attr;
+	ret.form = form;
+	ret.valp = block.data;
+	return ret;
+      };
+
+    switch (block.length)
+      {
+      case 1:
+	return handle_encoding_data (attr_as (DW_FORM_data1), encoding);
+      case 2:
+	return handle_encoding_data (attr_as (DW_FORM_data2), encoding);
+      case 4:
+	return handle_encoding_data (attr_as (DW_FORM_data4), encoding);
+      case 8:
+	return handle_encoding_data (attr_as (DW_FORM_data8), encoding);
+      }
+
+    // Pass as block.
+    return nullptr;
+  }
+
+  std::unique_ptr <value_producer <value>>
+  handle_encoding (Dwarf_Attribute attr, Dwarf_Word encoding)
+  {
+    if (is_block (attr))
+      return handle_encoding_block (attr, encoding);
+    else
+      return handle_encoding_data (attr, encoding);
   }
 
   std::unique_ptr <value_producer <value>>
