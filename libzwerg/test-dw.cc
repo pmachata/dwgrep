@@ -915,36 +915,43 @@ TEST_F (ZwTest, symbol_cmp)
     EXPECT_EQ (cmp_result::equal, val->cmp (*val));
 }
 
+namespace
+{
+  void
+  test_pairs (vocabulary &builtins,
+	      std::string fn, std::string query,
+	      std::vector <std::pair <constant, std::string>> results)
+  {
+    auto yielded = run_dwquery (builtins, fn, query);
+    EXPECT_EQ (results.size (), yielded.size ());
+
+    for (size_t i = 0; i < results.size (); ++i)
+      {
+	auto stk = std::move (yielded[i]);
+	ASSERT_EQ (1, stk->size ());
+	auto tos = stk->pop ();
+	std::shared_ptr <value_seq::seq_t> seq
+	  = value::require_as <value_seq> (&*tos).get_seq ();
+	ASSERT_EQ (2, seq->size ());
+
+	auto v1 = std::move ((*seq)[0]);
+	constant cst = value::require_as <value_cst> (&*v1).get_constant ();
+	EXPECT_EQ (results[i].first, cst);
+
+	auto v2 = std::move ((*seq)[1]);
+	std::string str = value::require_as <value_str> (&*v2).get_string ();
+	EXPECT_EQ (results[i].second, str);
+      }
+  }
+}
+
 TEST_F (ZwTest, test_defaulted)
 {
-  std::vector <std::pair <unsigned, std::string>> results = {
-    {DW_DEFAULTED_in_class, "Foo"},
-    {DW_DEFAULTED_out_of_class, "Bar"},
-  };
-
-  auto yielded = run_dwquery (*builtins, "defaulted.o",
-			      "entry ?(raw ?DW_AT_defaulted)"
-			      "[|A| A @DW_AT_defaulted, A name]");
-
-  EXPECT_EQ (results.size (), yielded.size ());
-  for (size_t i = 0; i < results.size (); ++i)
-    {
-      auto stk = std::move (yielded[i]);
-      ASSERT_EQ (1, stk->size ());
-      auto tos = stk->pop ();
-      std::shared_ptr <value_seq::seq_t> seq
-	= value::require_as <value_seq> (&*tos).get_seq ();
-      ASSERT_EQ (2, seq->size ());
-
-      auto v1 = std::move ((*seq)[0]);
-      constant cst = value::require_as <value_cst> (&*v1).get_constant ();
-      ASSERT_EQ (results[i].first, cst.value ());
-      ASSERT_EQ (&dw_defaulted_dom (), cst.dom ());
-
-      auto v2 = std::move ((*seq)[1]);
-      std::string str = value::require_as <value_str> (&*v2).get_string ();
-      ASSERT_EQ (results[i].second, str);
-    }
+  test_pairs (*builtins, "defaulted.o",
+	      ("entry ?(raw ?DW_AT_defaulted)"
+	       "[|A| A @DW_AT_defaulted, A name]"),
+	{{constant {DW_DEFAULTED_in_class, &dw_defaulted_dom ()}, "Foo"},
+	 {constant {DW_DEFAULTED_out_of_class, &dw_defaulted_dom ()}, "Bar"}});
 }
 
 TEST_F (ZwTest, test_various)
