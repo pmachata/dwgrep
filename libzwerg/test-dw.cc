@@ -966,3 +966,24 @@ TEST_F (ZwTest, test_various)
       ASSERT_EQ (entry.first, yielded.size ());
     }
 }
+
+TEST_F (ZwTest, test_const_value_block)
+{
+  test_pairs (*builtins, "const_value_block.o",
+	      ("entry ?TAG_template_value_parameter "
+	       "[|E| E @DW_AT_const_value, E parent name]"),
+	{{constant {0, &bool_constant_dom}, "aaa<int*, false>"},
+	 {constant {1, &bool_constant_dom}, "aaa<int&, true>"},
+	 {constant {-7, &dec_constant_dom}, "bbb<int*, -7>"},
+	 {constant {21, &dec_constant_dom}, "bbb<int&, 21>"},
+	 {constant {7, &dec_constant_dom}, "ccc<int*, 7>"},
+	 {constant {3000000000, &dec_constant_dom}, "ccc<int&, 3000000000>"},
+	 {constant {-7, &dec_constant_dom}, "ddd<int*, -7>"},
+	 {constant {21, &dec_constant_dom}, "ddd<int&, 21>"},
+	 {constant {7, &dec_constant_dom}, "eee<int*, 7>"},
+	 {constant {254, &dec_constant_dom}, "eee<int&, 254>"},
+	 {constant {-7, &dec_constant_dom}, "fff<int*, -7>"},
+	 {constant {21, &dec_constant_dom}, "fff<int&, 21>"},
+	 {constant {7, &dec_constant_dom}, "ggg<int*, 7>"},
+	 {constant {6000000000, &dec_constant_dom}, "ggg<int&, 6000000000>"}});
+}
