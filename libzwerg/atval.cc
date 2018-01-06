@@ -117,11 +117,40 @@ namespace
     return atval_unsigned_with_domain (attr, dec_constant_dom);
   }
 
+  int
+  fix_dwarf_formsdata (Dwarf_Attribute *attr, Dwarf_Sword *sval)
+  {
+    // In elfutils 0.170 and sooner, dwarf_formsdata is broken and returns an
+    // unsigned value for fixed-width forms (DW_FORM_data8 is correct, because
+    // Dwarf_Sword is 8-byte). Fix the signedness by hand.
+    Dwarf_Sword value;
+    int err = dwarf_formsdata (attr, &value);
+    if (err != 0)
+      return err;
+
+    switch (attr->form)
+      {
+      case DW_FORM_data1:
+	*sval = (int8_t) (uint8_t) value;
+	break;
+      case DW_FORM_data2:
+	*sval = (int16_t) (uint16_t) value;
+	break;
+      case DW_FORM_data4:
+	*sval = (int32_t) (uint32_t) value;
+	break;
+      default:
+	*sval = value;
+	break;
+      }
+    return 0;
+  }
+
   std::unique_ptr <value_producer <value>>
   atval_signed (Dwarf_Attribute attr)
   {
     Dwarf_Sword sval;
-    if (dwarf_formsdata (&attr, &sval) != 0)
+    if (fix_dwarf_formsdata (&attr, &sval) != 0)
       throw_libdw ();
     return pass_single_value
       (std::make_unique <value_cst> (constant {sval, &dec_constant_dom}, 0));
