@@ -717,9 +717,17 @@ namespace
       case DW_AT_start_scope:
       case DW_AT_digit_count:
       case DW_AT_GNU_odr_signature:
+      case DW_AT_string_length_bit_size:
+      case DW_AT_string_length_byte_size:
+      case DW_AT_rank:
+      case DW_AT_alignment:
 	return atval_unsigned (attr);
 
       case DW_AT_stmt_list:
+      case DW_AT_str_offsets_base:
+      case DW_AT_addr_base:
+      case DW_AT_rnglists_base:
+      case DW_AT_loclists_base:
 	return atval_unsigned_with_domain (attr, hex_constant_dom);
 
       case DW_AT_data_member_location:
