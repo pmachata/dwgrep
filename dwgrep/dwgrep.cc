@@ -104,13 +104,6 @@ show_help (std::vector <ext_option> const &ext_opts)
     }
 }
 
-void
-dump_err (zw_error *err)
-{
-  assert (err != nullptr);
-  std::cerr << "Error: " << zw_error_message (err) << std::endl;
-}
-
 class dumper
 {
   zw_vocabulary const &m_voc;
