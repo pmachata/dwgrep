@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2017 Petr Machata
+   Copyright (C) 2017, 2018 Petr Machata
    Copyright (C) 2014, 2015 Red Hat, Inc.
    This file is part of dwgrep.
 
@@ -498,13 +498,19 @@ dumper::dump_value (std::ostream &os, zw_value const &val, format fmt)
 namespace
 {
   std::ostream &
-  error_message (bool no_messages, int verbosity, bool &errors)
+  error_message (bool no_messages)
   {
     static std::ofstream sink;
     std::ostream &ret = no_messages ? sink : std::cerr;
+    return ret;
+  }
+
+  std::ostream &
+  error_message (bool no_messages, int verbosity, bool &errors)
+  {
     if (verbosity >= 0)
       errors = true;
-    return ret;
+    return error_message (no_messages);
   }
 
   std::vector <std::unique_ptr <zw_value, zw_deleter>>
@@ -553,6 +559,28 @@ namespace
       }
 
     return ret;
+  }
+
+  std::unique_ptr <zw_value, zw_deleter>
+  try_open_dwarf (const char *fn, size_t pos, bool no_messages)
+  {
+    try
+      {
+	std::unique_ptr <zw_value, zw_deleter> ret
+	  {zw_value_init_dwarf (fn, pos, zw_throw_on_error {})};
+	return ret;
+      }
+    catch (std::runtime_error const& e)
+      {
+	error_message (no_messages)
+	  << "dwgrep: " << fn << ": " << e.what () << std::endl;
+      }
+    catch (...)
+      {
+	error_message (no_messages)
+	  << "dwgrep: " << fn << ": Unknown error" << std::endl;
+      }
+    return nullptr;
   }
 }
 
@@ -694,15 +722,21 @@ try
 	      }
 	  } ()};
 
+    std::vector <std::string> file_args;
     if (argc > 0)
       {
 	std::vector <std::unique_ptr <zw_value, zw_deleter>> dwvs;
 	for (int i = 0; i < argc; ++i)
-	  {
-	    std::unique_ptr <zw_value, zw_deleter> dwv
-		{zw_value_init_dwarf (argv[i], i, zw_throw_on_error {})};
-	    dwvs.emplace_back (std::move (dwv));
-	  }
+	  if (std::unique_ptr <zw_value, zw_deleter> dwv
+	      = try_open_dwarf (argv[i], dwvs.size (), no_messages))
+	    {
+	      dwvs.emplace_back (std::move (dwv));
+	      file_args.push_back (argv[i]);
+	    }
+
+	// Done before we started.
+	if (dwvs.empty ())
+	  return 1;
 
 	args.emplace (args.begin (), std::move (dwvs));
       }
@@ -749,7 +783,7 @@ try
 
 		// Always show the first argument if it refers to a file name
 		// given on the command line.
-		if ((i == 0 && argc > 0) || args[i].size () > 1)
+		if ((i == 0 && file_args.size () > 0) || args[i].size () > 1)
 		  {
 		    if (seen)
 		      ss << ',';
