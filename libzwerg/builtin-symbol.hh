@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2017 Petr Machata
+   Copyright (C) 2017, 2018 Petr Machata
    Copyright (C) 2014, 2015 Red Hat, Inc.
    This file is part of dwgrep.
 
@@ -26,6 +26,9 @@
    You should have received copies of the GNU General Public License and
    the GNU Lesser General Public License along with this program.  If
    not, see <http://www.gnu.org/licenses/>.  */
+
+#ifndef BUILTIN_SYMBOL_H
+#define BUILTIN_SYMBOL_H
 
 #include "overload.hh"
 #include "value-cst.hh"
@@ -97,3 +100,5 @@ struct op_size_symbol
   value_cst operate (std::unique_ptr <value_symbol> val) const override;
   static std::string docstring ();
 };
+
+#endif /* BUILTIN_SYMBOL_H */

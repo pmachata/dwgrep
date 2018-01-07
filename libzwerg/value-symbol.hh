@@ -1,4 +1,5 @@
 /*
+   Copyright (C) 2018 Petr Machata
    Copyright (C) 2014, 2015 Red Hat, Inc.
    This file is part of dwgrep.
 
@@ -26,8 +27,8 @@
    the GNU Lesser General Public License along with this program.  If
    not, see <http://www.gnu.org/licenses/>.  */
 
-#ifndef BUILTIN_SYMBOL_H
-#define BUILTIN_SYMBOL_H
+#ifndef VALUE_SYMBOL_H
+#define VALUE_SYMBOL_H
 
 #include <gelf.h>
 
@@ -88,4 +89,4 @@ constant_dom const &elfsym_stt_dom (int machine);
 constant_dom const &elfsym_stb_dom (int machine);
 constant_dom const &elfsym_stv_dom ();
 
-#endif /* BUILTIN_SYMBOL_H */
+#endif /* VALUE_SYMBOL_H */
