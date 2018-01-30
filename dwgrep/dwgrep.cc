@@ -136,6 +136,7 @@ private:
   void dump_llop (std::ostream &os, zw_value const &val, format fmt);
   void dump_aset (std::ostream &os, zw_value const &val, format fmt);
   void dump_elfsym (std::ostream &os, zw_value const &val, format fmt);
+  void dump_elf (std::ostream &os, zw_value const &val, format fmt);
   void dump_named_constant (std::ostream &os, unsigned cst, zw_cdom const &dom);
 };
 
@@ -452,6 +453,17 @@ dumper::dump_elfsym (std::ostream &os, zw_value const &val, format fmt)
 }
 
 void
+dumper::dump_elf (std::ostream &os, zw_value const &val, format fmt)
+{
+  zw_value const *dw = zw_value_elf_dwarf (&val, zw_throw_on_error {});
+  char const *name = zw_value_dwarf_name (dw);
+
+  os << "<Elf ";
+  dump_charp (os, name, strlen (name), format::brief);
+  os << '>';
+}
+
+void
 dumper::dump_value (std::ostream &os, zw_value const &val, format fmt)
 {
   bool brackets;
@@ -488,6 +500,8 @@ dumper::dump_value (std::ostream &os, zw_value const &val, format fmt)
     dump_aset (os, val, fmt);
   else if (zw_value_is_elfsym (&val))
     dump_elfsym (os, val, fmt);
+  else if (zw_value_is_elf (&val))
+    dump_elf (os, val, fmt);
   else
     os << (/* assert (false), */"<unknown value type>");
 

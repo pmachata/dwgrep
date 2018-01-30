@@ -82,6 +82,8 @@ ADD_LIBRARY (LibzwergDw OBJECT
   builtin-dw-voc.cc
   value-symbol.cc
   builtin-symbol.cc
+  value-elf.cc
+  builtin-elf.cc
 )
 
 SET_TARGET_PROPERTIES (LibzwergDw PROPERTIES

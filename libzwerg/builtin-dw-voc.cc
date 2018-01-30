@@ -32,6 +32,7 @@
 #include "builtin-dw.hh"
 #include "builtin-dw-abbrev.hh"
 #include "builtin-symbol.hh"
+#include "builtin-elf.hh"
 #include "dwcst.hh"
 #include "known-dwarf.h"
 #include "known-dwarf-macro-gnu.h"
@@ -54,6 +55,7 @@ dwgrep_vocabulary_dw ()
   add_builtin_type_constant <value_loclist_elem> (voc);
   add_builtin_type_constant <value_loclist_op> (voc);
   add_builtin_type_constant <value_symbol> (voc);
+  add_builtin_type_constant <value_elf> (voc);
 
   {
     auto t = std::make_shared <overload_tab> ();
@@ -403,6 +405,14 @@ dwgrep_vocabulary_dw ()
     t->add_op_overload <op_size_symbol> ();
 
     voc.add (std::make_shared <overloaded_op_builtin> ("size", t));
+  }
+
+  {
+    auto t = std::make_shared <overload_tab> ();
+
+    t->add_op_overload <op_elf_dwarf> ();
+
+    voc.add (std::make_shared <overloaded_op_builtin> ("elf", t));
   }
 
   auto add_dw_at = [&voc] (unsigned code,

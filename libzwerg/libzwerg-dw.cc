@@ -34,6 +34,7 @@
 #include "value-aset.hh"
 #include "value-dw.hh"
 #include "value-symbol.hh"
+#include "value-elf.hh"
 #include "dwcst.hh"
 
 zw_machine *
@@ -248,6 +249,12 @@ bool
 zw_value_is_elfsym (zw_value const *val)
 {
   return val->is <value_symbol> ();
+}
+
+bool
+zw_value_is_elf (zw_value const *val)
+{
+  return val->is <value_elf> ();
 }
 
 namespace
@@ -492,5 +499,23 @@ zw_value_elfsym_dwarf (zw_value const *val, zw_error **out_err)
   return capture_errors ([&] () {
       // get_dwarf caches things, so we need to cast away the const.
       return &const_cast <value_symbol &> (elfsym (val)).get_dwarf ();
+    }, nullptr, out_err);
+}
+
+namespace
+{
+  value_elf const &
+  elfval (zw_value const *val)
+  {
+    return value::require_as <value_elf> (val);
+  }
+}
+
+zw_value const *
+zw_value_elf_dwarf (zw_value const *val, zw_error **out_err)
+{
+  return capture_errors ([&] () {
+      // get_dwarf caches things, so we need to cast away the const.
+      return &const_cast <value_elf &> (elfval (val)).get_dwarf ();
     }, nullptr, out_err);
 }

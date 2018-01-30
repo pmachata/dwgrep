@@ -323,6 +323,20 @@ extern "C" {
 
 
   /**
+   * ELF files.
+   */
+
+  // Return whether VAL is an ELF value.
+  bool zw_value_is_elf (zw_value const *val);
+
+  // Return a DWARF (ELF) value referencing the file that ELF, which
+  // shall be an ELF value, comes from. Returns NULL on error, in
+  // which case it sets *OUT_ERR. OUT_ERR shall be non-NULL.
+  zw_value const *zw_value_elf_dwarf (zw_value const *elf,
+				      zw_error **out_err);
+
+
+  /**
    * ELF symbols.
    */
 

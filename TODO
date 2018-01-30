@@ -714,7 +714,10 @@
     artifacts. (N.B. even for binaries compiled without debuginfo, T_DWARF can
     always be constructed.)
 
-***  elf :: T_DWARF -> T_ELF
+*** *elf :: T_DWARF -> T_ELF
+***  symbol :: T_ELF ->* T_ELFSYM
+     Might be the same as symbol::T_DWARF, but it might be reasonable to just
+     emit a subset of symbols.
 ***  @class :: T_ELF -> T_CONST
 ***  ELFCLASS32, ELFCLASS64
 ***  ?ELFCLASS32, ?ELFCLASS64
@@ -747,7 +750,19 @@
 **  T_SECTION
 ***  string :: T_SECTION ->* T_STRTAB_ENTRY
      Accesses the section as a string table. Yields each string in the section.
-
+***  symbol :: T_SECTION ->* T_ELFSYM
+     This needs to look up string table for symbols within this section, so not
+     every section can be treated like this.
+***  dyn :: T_SECTION ->* T_ELFDYN
+***  somerecord :: T_SECTION ->* T_THATRECORD
+     Elf sections often hold some sort of records. Allow reinterpreting the data
+     accordingly. I'm thinking e.g. relocations, dyn, versions, whatever.
+***  something :: T_SECTION ->* T_CONST or T_SEQ
+     Accesses the section as a list of bytes. Or maybe ints. Or maybe it's
+     configurable.
+***  read :: T_SECTION T_CONST -> T_CONST
+     Reads a quantity at a given offset. Unclear how to specify the width of the
+     quantity.
 **  T_STRTAB_ENTRY
     This is to represent strings in a string table. It's desirable that these
     behave in all ways as strings, but "offset" is applicable as well.
@@ -759,6 +774,20 @@
 ***  value :: T_STRTAB_ENTRY -> T_STR
 ***  offset :: T_STRTAB_ENTRY -> T_CONST
 
+**  T_ELFDYN
+    In addition to following, we would also have a suite of ?DT_* and !DT_*
+    words applicable to T_ELFDYN, T_SECTION, T_ELF and possibly T_DWARF as well.
+    The meaning would be:
+    : let ?DT_$X<T_DWARF> := ?{ elf dyn label == $X };
+    : let ?DT_$X<T_ELF> := ?{ dyn label == $X };
+    : let ?DT_$X<T_SECTION> := ?{ dyn label == $X };
+    : let ?DT_$X<T_ELFDYN> := ?{ label == $X };
+    Likewise there would be a suite of @DT_* like this:
+    : let @DT_$X<T_DWARF> := {elf dyn (label == $X) value};
+    : ...etc...
+***  label :: T_ELFDYN -> T_CONST
+***  value :: T_ELFDYN -> T_CONST
+     The domain would be according to tag type.
 
 * Examples
 ** check_die_line_info:

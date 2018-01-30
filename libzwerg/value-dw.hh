@@ -1,4 +1,5 @@
 /*
+   Copyright (C) 2018 Petr Machata
    Copyright (C) 2014, 2015 Red Hat, Inc.
    This file is part of dwgrep.
 
@@ -151,13 +152,20 @@ public:
 
   value_dwarf &
   get_dwarf (std::shared_ptr <dwfl_context> dwctx, size_t pos,
-	     doneness d)
+	     doneness d, std::string fn)
   {
     if (m_dwcache == nullptr)
-      m_dwcache = std::make_unique <value_dwarf> ("???", dwctx, pos, d);
+      m_dwcache = std::make_unique <value_dwarf> (fn, dwctx, pos, d);
 
     assert (m_dwcache != nullptr);
     return *m_dwcache;
+  }
+
+  value_dwarf &
+  get_dwarf (std::shared_ptr <dwfl_context> dwctx, size_t pos,
+	     doneness d)
+  {
+    return get_dwarf (dwctx, pos, d, "???");
   }
 };
 
