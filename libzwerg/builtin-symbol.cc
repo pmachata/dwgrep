@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2017 Petr Machata
+   Copyright (C) 2017, 2018 Petr Machata
    Copyright (C) 2014, 2015 Red Hat, Inc.
    This file is part of dwgrep.
 
@@ -112,6 +112,24 @@ R"docstring(
 
 Takes a Dwarf on TOS and yields every symbol found in any of the
 symbol tables in ELF files that hosts the Dwarf data in question.
+
+)docstring";
+}
+
+
+std::unique_ptr <value_producer <value_symbol>>
+op_symbol_elf::operate (std::unique_ptr <value_elf> val) const
+{
+  std::abort ();
+}
+
+std::string
+op_symbol_elf::docstring ()
+{
+  return
+R"docstring(
+
+xxx document me
 
 )docstring";
 }

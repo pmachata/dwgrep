@@ -32,6 +32,7 @@
 
 #include "overload.hh"
 #include "value-cst.hh"
+#include "value-elf.hh"
 #include "value-dw.hh"
 #include "value-symbol.hh"
 #include "value-str.hh"
@@ -43,6 +44,17 @@ struct op_symbol_dwarf
 
   std::unique_ptr <value_producer <value_symbol>>
   operate (std::unique_ptr <value_dwarf> val) const override;
+
+  static std::string docstring ();
+};
+
+struct op_symbol_elf
+  : public op_yielding_overload <value_symbol, value_elf>
+{
+  using op_yielding_overload::op_yielding_overload;
+
+  std::unique_ptr <value_producer <value_symbol>>
+  operate (std::unique_ptr <value_elf> val) const override;
 
   static std::string docstring ();
 };

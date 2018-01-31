@@ -714,10 +714,15 @@
     artifacts. (N.B. even for binaries compiled without debuginfo, T_DWARF can
     always be constructed.)
 
-*** *elf :: T_DWARF -> T_ELF
+*** *elf :: T_DWARF ->* T_ELF
+     This should yield all constituent ELF files, i.e. either the sole ELF file,
+     or ELF file and separate debuginfo file, or eventually alt files as well.
+     The resulting file should be a view of this single file.
 ***  symbol :: T_ELF ->* T_ELFSYM
      Might be the same as symbol::T_DWARF, but it might be reasonable to just
      emit a subset of symbols.
+***  dynsym :: T_ELF ->* T_ELFSYM || T_DWARF ->* T_ELFSYM
+     Like symbol, but only yields dynamic symbols
 ***  @class :: T_ELF -> T_CONST
 ***  ELFCLASS32, ELFCLASS64
 ***  ?ELFCLASS32, ?ELFCLASS64

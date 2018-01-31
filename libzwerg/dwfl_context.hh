@@ -1,4 +1,5 @@
 /*
+   Copyright (C) 2018 Petr Machata
    Copyright (C) 2014, 2015 Red Hat, Inc.
    This file is part of dwgrep.
 
@@ -50,5 +51,8 @@ public:
   bool is_root (Dwarf_Die die);
   int get_machine () const;
 };
+
+std::shared_ptr <Dwfl> open_dwfl (std::string const &fn,
+				  const Dwfl_Callbacks &callbacks);
 
 #endif /* _DWFL_CONTEXT_H_ */

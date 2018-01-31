@@ -1,4 +1,5 @@
 /*
+   Copyright (C) 2018 Petr Machata
    Copyright (C) 2014, 2015 Red Hat, Inc.
    This file is part of dwgrep.
 
@@ -26,15 +27,8 @@
    the GNU Lesser General Public License along with this program.  If
    not, see <http://www.gnu.org/licenses/>.  */
 
-#include <sys/stat.h>
-#include <sys/types.h>
-#include <fcntl.h>
-#include <unistd.h>
-
 #include <iostream>
 #include <memory>
-#include <system_error>
-#include <cerrno>
 
 #include "atval.hh"
 #include "dwcst.hh"
@@ -75,84 +69,19 @@ Two words are used for switching Dwarf back and forth: ``raw`` and
 
 namespace
 {
-  int
-  prime_dwflmod (Dwfl_Module *dwflmod, void **userdata, const char *name,
-		 Dwarf_Addr base, void *arg)
-  {
-    // Prime the ELF file associated with a Dwfl module.  This is
-    // necessary when later we request a Dwarf.  For dwz files, that
-    // would fail with a message about missing symbol table, but it
-    // doesn't if we first prime the ELF file.
-    GElf_Addr bias;
-    if (dwfl_module_getelf (dwflmod, &bias) == nullptr)
-      throw_libdwfl ();
-
-    return DWARF_CB_OK;
-  }
-
-  struct fd_handle
-  {
-    int fd;
-    operator int () { return fd; }
-
-    fd_handle () : fd {-1} {}
-    fd_handle (int fd) : fd {fd} {}
-
-    int release ()
+  const Dwfl_Callbacks callbacks =
     {
-      int ret = fd;
-      fd = -1;
-      return ret;
-    }
-
-    ~fd_handle ()
-    {
-      if (fd != -1)
-	close (fd);
-    }
-  };
-
-  std::shared_ptr <Dwfl>
-  open_dwfl (std::string const &fn)
-  {
-    fd_handle fd = open (fn.c_str (), O_RDONLY);
-    if (fd == -1)
-      throw std::runtime_error
-	(std::error_code (errno, std::system_category ()).message ());
-
-    const static Dwfl_Callbacks callbacks =
-      {
-	.find_elf = dwfl_build_id_find_elf,
-	.find_debuginfo = dwfl_standard_find_debuginfo,
-	.section_address = dwfl_offline_section_address,
-      };
-
-    elf_version (EV_CURRENT);
-
-    auto dwfl = std::shared_ptr <Dwfl> (dwfl_begin (&callbacks), dwfl_end);
-    if (dwfl == nullptr)
-      throw_libdwfl ();
-
-    if (dwfl_report_offline (&*dwfl, fn.c_str (), fn.c_str (), fd) == nullptr)
-      throw_libdwfl ();
-
-    // At this point the handle was consumed by dwfl_report_offline.
-    fd.release ();
-
-    if (dwfl_report_end (&*dwfl, nullptr, nullptr) != 0)
-      throw_libdwfl ();
-
-    dwfl_getmodules (&*dwfl, &prime_dwflmod, nullptr, 0);
-
-    return dwfl;
-  }
+      .find_elf = dwfl_build_id_find_elf,
+      .find_debuginfo = dwfl_standard_find_debuginfo,
+      .section_address = dwfl_offline_section_address,
+    };
 }
 
 value_dwarf::value_dwarf (std::string const &fn, size_t pos, doneness d)
   : value {vtype, pos}
   , doneness_aspect {d}
   , m_fn {fn}
-  , m_dwctx {std::make_shared <dwfl_context> (open_dwfl (fn))}
+  , m_dwctx {std::make_shared <dwfl_context> (open_dwfl (fn, callbacks))}
 {}
 
 value_dwarf::value_dwarf (std::string const &fn,

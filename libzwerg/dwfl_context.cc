@@ -1,4 +1,5 @@
 /*
+   Copyright (C) 2018 Petr Machata
    Copyright (C) 2014, 2015 Red Hat, Inc.
    This file is part of dwgrep.
 
@@ -26,7 +27,13 @@
    the GNU Lesser General Public License along with this program.  If
    not, see <http://www.gnu.org/licenses/>.  */
 
+#include <cerrno>
+#include <fcntl.h>
+#include <sys/stat.h>
 #include "std-memory.hh"
+#include <system_error>
+#include <unistd.h>
+
 #include "dwfl_context.hh"
 #include "cache.hh"
 #include "dwit.hh"
@@ -90,4 +97,77 @@ dwfl_context::get_machine () const
   // This better be true.  That symbol must have come from somewhere.
   assert (machine != EM_NONE);
   return machine;
+}
+
+namespace
+{
+  int
+  prime_dwflmod (Dwfl_Module *dwflmod, void **userdata, const char *name,
+		 Dwarf_Addr base, void *arg)
+  {
+    // Prime the ELF file associated with a Dwfl module.  This is
+    // necessary when later we request a Dwarf.  For dwz files, that
+    // would fail with a message about missing symbol table, but it
+    // doesn't if we first prime the ELF file.
+    GElf_Addr bias;
+    if (dwfl_module_getelf (dwflmod, &bias) == nullptr)
+      throw_libdwfl ();
+
+    // Prime also DWARF, if any. Necessary so that dwfl_module_info gets the
+    // filename.
+    dwfl_module_getdwarf (dwflmod, &bias);
+
+    return DWARF_CB_OK;
+  }
+
+  struct fd_handle
+  {
+    int fd;
+    operator int () { return fd; }
+
+    fd_handle () : fd {-1} {}
+    fd_handle (int fd) : fd {fd} {}
+
+    int release ()
+    {
+      int ret = fd;
+      fd = -1;
+      return ret;
+    }
+
+    ~fd_handle ()
+    {
+      if (fd != -1)
+	close (fd);
+    }
+  };
+}
+
+std::shared_ptr <Dwfl>
+open_dwfl (std::string const &fn,
+	   const Dwfl_Callbacks &callbacks)
+{
+  fd_handle fd = open (fn.c_str (), O_RDONLY);
+  if (fd == -1)
+    throw std::runtime_error
+      (std::error_code (errno, std::system_category ()).message ());
+
+  elf_version (EV_CURRENT);
+
+  auto dwfl = std::shared_ptr <Dwfl> (dwfl_begin (&callbacks), dwfl_end);
+  if (dwfl == nullptr)
+    throw_libdwfl ();
+
+  if (dwfl_report_offline (&*dwfl, fn.c_str (), fn.c_str (), fd) == nullptr)
+    throw_libdwfl ();
+
+  // At this point the handle was consumed by dwfl_report_offline.
+  fd.release ();
+
+  if (dwfl_report_end (&*dwfl, nullptr, nullptr) != 0)
+    throw_libdwfl ();
+
+  dwfl_getmodules (&*dwfl, &prime_dwflmod, nullptr, 0);
+
+  return dwfl;
 }
