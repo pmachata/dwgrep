@@ -35,7 +35,7 @@
 #include "std-memory.hh"
 
 std::unique_ptr <stack>
-stack_with_value (std::unique_ptr <value> v)
+test::stack_with_value (std::unique_ptr <value> v)
 {
   auto stk = std::make_unique <stack> ();
   stk->push (std::move (v));
@@ -43,7 +43,7 @@ stack_with_value (std::unique_ptr <value> v)
 }
 
 std::vector <std::unique_ptr <stack>>
-run_query (vocabulary &voc,
+test::run_query (vocabulary &voc,
 	   std::unique_ptr <stack> stk, std::string q)
 {
   layout l;
@@ -62,7 +62,7 @@ run_query (vocabulary &voc,
 }
 
 std::string
-get_parse_error (vocabulary &voc, std::string q)
+test::get_parse_error (vocabulary &voc, std::string q)
 {
   layout l;
   auto origin = std::make_shared <op_origin> (l);

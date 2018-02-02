@@ -35,6 +35,8 @@
 #include "value-cst.hh"
 #include "test-zw-aux.hh"
 
+using namespace test;
+
 struct ZwTest
   : public testing::Test
 {
