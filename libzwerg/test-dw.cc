@@ -62,21 +62,6 @@ struct ZwTest
   }
 };
 
-namespace
-{
-  std::unique_ptr <value_dwarf>
-  dw (std::string fn, doneness d)
-  {
-    return std::make_unique <value_dwarf> (test_file (fn), 0, d);
-  }
-
-  std::unique_ptr <value_dwarf>
-  rdw (std::string fn)
-  {
-    return dw (fn, doneness::raw);
-  }
-}
-
 TEST (DwValueTest, dwarf_sanity)
 {
   auto cooked = dw ("empty", doneness::cooked);
@@ -90,13 +75,6 @@ TEST (DwValueTest, dwarf_sanity)
 
 namespace
 {
-  // A query on a stack with sole value, which is a Dwarf.
-  std::vector <std::unique_ptr <stack>>
-  run_dwquery (vocabulary &voc, std::string fn, std::string q)
-  {
-    return run_query (voc, stack_with_value (dw (fn, doneness::cooked)), q);
-  }
-
 #define SOLE_YIELDED_VALUE(TYPE, YIELDED)				\
   ({									\
     std::vector <std::unique_ptr <stack>> &_yielded = (YIELDED);	\

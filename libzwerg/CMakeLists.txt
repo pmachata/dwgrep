@@ -150,9 +150,11 @@ IF (GTEST_FOUND)
 
   ADD_LIBRARY (TestStub OBJECT test-stub.cc)
   ADD_LIBRARY (TestZwAux OBJECT test-zw-aux.cc parser.hh)
+  ADD_LIBRARY (TestDwAux OBJECT test-dw-aux.cc)
 
   ADD_EXECUTABLE (test-dw test-dw.cc
-    $<TARGET_OBJECTS:TestStub> $<TARGET_OBJECTS:TestZwAux> ${LibzwergAll})
+    $<TARGET_OBJECTS:TestStub> $<TARGET_OBJECTS:TestZwAux>
+    $<TARGET_OBJECTS:TestDwAux> ${LibzwergAll})
   TARGET_LINK_LIBRARIES (test-dw
     ${GTEST_LIBRARIES} ${LIBELF_LIBRARY} ${DWARF_LIBRARIES})
   ADD_TEST (TestDw test-dw ${TESTCASE_DIR})
