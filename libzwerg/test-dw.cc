@@ -41,20 +41,13 @@
 #include "op.hh"
 #include "parser.hh"
 #include "stack.hh"
-#include "test-stub.hh"
+#include "test-dw-aux.hh"
 #include "test-zw-aux.hh"
 #include "value-dw.hh"
 #include "value-seq.hh"
 #include "dwcst.hh"
 
 using namespace test;
-
-std::string
-test_file (std::string name)
-{
-  extern std::string g_test_case_directory;
-  return test_case_directory () + "/" + name;
-}
 
 struct ZwTest
   : public testing::Test

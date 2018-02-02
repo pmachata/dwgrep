@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2017 Petr Machata
+   Copyright (C) 2017, 2018 Petr Machata
    Copyright (C) 2014, 2015 Red Hat, Inc.
    This file is part of dwgrep.
 
@@ -27,6 +27,7 @@
    the GNU Lesser General Public License along with this program.  If
    not, see <http://www.gnu.org/licenses/>.  */
 
+#include "test-stub.hh"
 #include "test-zw-aux.hh"
 #include "op.hh"
 #include "parser.hh"
@@ -80,4 +81,10 @@ test::get_parse_error (vocabulary &voc, std::string q)
     }
 
   return "";
+}
+
+std::string
+test::test_file_name (std::string name)
+{
+  return test_case_directory () + "/" + name;
 }

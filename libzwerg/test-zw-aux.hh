@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2017 Petr Machata
+   Copyright (C) 2017, 2018 Petr Machata
    Copyright (C) 2014, 2015 Red Hat, Inc.
    This file is part of dwgrep.
 
@@ -44,6 +44,7 @@ namespace test
   run_query (vocabulary &voc, std::unique_ptr <stack> stk, std::string q);
 
   std::string get_parse_error (vocabulary &voc, std::string q);
+  std::string test_file_name (std::string name);
 }
 
 #endif /* TEST_ZW_AUX_H */
