@@ -1,4 +1,5 @@
 /*
+   Copyright (C) 2018 Petr Machata
    Copyright (C) 2014 Red Hat, Inc.
    This file is part of dwgrep.
 
@@ -26,10 +27,20 @@
    the GNU Lesser General Public License along with this program.  If
    not, see <http://www.gnu.org/licenses/>.  */
 
+#include "test-stub.hh"
 #include <gtest/gtest.h>
 #include <iostream>
 
-std::string g_test_case_directory;
+namespace
+{
+  std::string test_case_directory;
+}
+
+std::string
+test::test_case_directory ()
+{
+  return ::test_case_directory;
+}
 
 struct MinimalistPrinter
   : public testing::EmptyTestEventListener
@@ -54,10 +65,10 @@ main (int argc, char **argv)
       std::string arg = argv[i];
       size_t n = (sizeof "--test-case-directory=") - 1;
       if (arg.substr (0, n) == "--test-case-directory=")
-	g_test_case_directory = arg.substr (n);
+	test_case_directory = arg.substr (n);
     }
 
-  assert (g_test_case_directory != "");
+  assert (test_case_directory != "");
 
   testing::TestEventListeners& listeners =
       testing::UnitTest::GetInstance()->listeners();
