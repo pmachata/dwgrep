@@ -27,7 +27,6 @@
    the GNU Lesser General Public License along with this program.  If
    not, see <http://www.gnu.org/licenses/>.  */
 
-#include <gtest/gtest.h>
 #include <sys/time.h>
 #include <sys/resource.h>
 
@@ -37,7 +36,6 @@
 #include "builtin-symbol.hh"
 #include "builtin.hh"
 #include "dwit.hh"
-#include "init.hh"
 #include "op.hh"
 #include "parser.hh"
 #include "stack.hh"
@@ -48,19 +46,6 @@
 #include "dwcst.hh"
 
 using namespace test;
-
-struct ZwTest
-  : public testing::Test
-{
-  std::unique_ptr <vocabulary> builtins;
-
-  void
-  SetUp () override final
-  {
-    builtins = std::make_unique <vocabulary>
-      (*dwgrep_vocabulary_core (), *dwgrep_vocabulary_dw ());
-  }
-};
 
 TEST (DwValueTest, dwarf_sanity)
 {
@@ -92,7 +77,7 @@ namespace
   })
 }
 
-TEST_F (ZwTest, words_dwarf_raw_cooked)
+TEST_F (DwTest, words_dwarf_raw_cooked)
 {
   {
     auto yielded = run_query
@@ -113,7 +98,7 @@ TEST_F (ZwTest, words_dwarf_raw_cooked)
   }
 }
 
-TEST_F (ZwTest, words_cu_raw_cooked)
+TEST_F (DwTest, words_cu_raw_cooked)
 {
   {
     auto yielded = run_dwquery (*builtins, "empty", "unit");
@@ -146,7 +131,7 @@ TEST_F (ZwTest, words_cu_raw_cooked)
   }
 }
 
-TEST_F (ZwTest, words_die_raw_cooked)
+TEST_F (DwTest, words_die_raw_cooked)
 {
   {
     auto yielded = run_dwquery (*builtins, "empty", "entry");
@@ -197,7 +182,7 @@ TEST_F (ZwTest, words_die_raw_cooked)
   }
 }
 
-TEST_F (ZwTest, words_attr_raw_cooked)
+TEST_F (DwTest, words_attr_raw_cooked)
 {
   {
     auto yielded = run_dwquery (*builtins, "empty",
@@ -235,7 +220,7 @@ TEST_F (ZwTest, words_attr_raw_cooked)
   }
 }
 
-TEST_F (ZwTest, cooked_attribute_assertion_integrates_attributes)
+TEST_F (DwTest, cooked_attribute_assertion_integrates_attributes)
 {
   ASSERT_EQ (1, run_dwquery (*builtins, "nullptr.o",
 			     "entry (offset == 0x6e) ?AT_name").size ());
@@ -259,7 +244,7 @@ TEST_F (ZwTest, cooked_attribute_assertion_integrates_attributes)
 			     "entry (offset == 0x6e) raw @AT_name").size ());
 }
 
-TEST_F (ZwTest, name_on_raw_cooked_die)
+TEST_F (DwTest, name_on_raw_cooked_die)
 {
   ASSERT_EQ (1, run_dwquery (*builtins, "nullptr.o",
 			     "entry (offset == 0x6e) name").size ());
@@ -267,7 +252,7 @@ TEST_F (ZwTest, name_on_raw_cooked_die)
 			     "entry (offset == 0x6e) raw name").size ());
 }
 
-TEST_F (ZwTest, raw_and_cooked_values_compare_equal)
+TEST_F (DwTest, raw_and_cooked_values_compare_equal)
 {
   ASSERT_EQ (1, run_dwquery
 	     (*builtins, "empty",
@@ -287,7 +272,7 @@ TEST_F (ZwTest, raw_and_cooked_values_compare_equal)
 	      "== [A raw unit entry attribute])").size ());
 }
 
-TEST_F (ZwTest, entry_unit_abbrev_iterate_through_alt_file)
+TEST_F (DwTest, entry_unit_abbrev_iterate_through_alt_file)
 {
   // Show root entries in a1.out, which should show a compile unit
   // from the main file and a partial unit entries from the alt file.
@@ -312,7 +297,7 @@ TEST_F (ZwTest, entry_unit_abbrev_iterate_through_alt_file)
 	      ).size ());
 }
 
-TEST_F (ZwTest, root_with_alt_file)
+TEST_F (DwTest, root_with_alt_file)
 {
 #define DOIT(FN)							\
   do									\
@@ -343,7 +328,7 @@ TEST_F (ZwTest, root_with_alt_file)
 #undef DOIT
 }
 
-TEST_F (ZwTest, parent_with_alt_file)
+TEST_F (DwTest, parent_with_alt_file)
 {
   // dwz-partial4-1.o uses dwz-partial4-C as its altlink file.  Both
   // files have DIE's on the same offset, but their structure is
@@ -362,7 +347,7 @@ TEST_F (ZwTest, parent_with_alt_file)
 	      "entry (offset == 0x14) parent").size ());
 }
 
-TEST_F (ZwTest, dies_from_two_files_neq)
+TEST_F (DwTest, dies_from_two_files_neq)
 {
   // Two DIE's with the same offset should not compare equal if one of
   // them comes from alt-file and the other from the main file.
@@ -384,7 +369,7 @@ namespace
   }
 }
 
-TEST_F (ZwTest, no_duplicate_abbrev_units)
+TEST_F (DwTest, no_duplicate_abbrev_units)
 {
   // dwz merges all abbreviations into a single unit that's reused
   // across all CU's.  Because .debug_abbrev has no header
@@ -396,7 +381,7 @@ TEST_F (ZwTest, no_duplicate_abbrev_units)
 			.operate (rdw ("dwz-partial2-1"))));
 }
 
-TEST_F (ZwTest, value_dwarf_doesnt_leak_fd)
+TEST_F (DwTest, value_dwarf_doesnt_leak_fd)
 {
   rlimit orig;
   int rc = getrlimit (RLIMIT_NOFILE, &orig);
@@ -447,7 +432,7 @@ namespace
   }
 }
 
-TEST_F (ZwTest, attribute_die_cooked_no_dup)
+TEST_F (DwTest, attribute_die_cooked_no_dup)
 {
   std::unique_ptr <value_dwarf> vdw;
   Dwarf *dw;
@@ -483,7 +468,7 @@ TEST_F (ZwTest, attribute_die_cooked_no_dup)
   EXPECT_TRUE (seen_abstract_origin);
 }
 
-TEST_F (ZwTest, entry_dwarf_counts_every_unit_anew)
+TEST_F (DwTest, entry_dwarf_counts_every_unit_anew)
 {
   std::unique_ptr <value_dwarf> vdw;
   Dwarf *dw;
@@ -530,17 +515,17 @@ namespace
   }
 }
 
-TEST_F (ZwTest, const_value_on_enum_with_type)
+TEST_F (DwTest, const_value_on_enum_with_type)
 {
   expect_zero_DW_AT_const_value_on ("const_value_on_enum_with_type.o", 0x27);
 }
 
-TEST_F (ZwTest, template_value_parameter_const_value_on_enum_with_type)
+TEST_F (DwTest, template_value_parameter_const_value_on_enum_with_type)
 {
   expect_zero_DW_AT_const_value_on ("const_value_on_enum_with_type.o", 0x3f);
 }
 
-TEST_F (ZwTest, op_length_loclist_elem)
+TEST_F (DwTest, op_length_loclist_elem)
 {
   layout l;
   op_length_loclist_elem lengther {l, nullptr};
@@ -565,7 +550,7 @@ TEST_F (ZwTest, op_length_loclist_elem)
   ASSERT_EQ (it, lengths.end ());
 }
 
-TEST_F (ZwTest, op_length_loclist_elem_word)
+TEST_F (DwTest, op_length_loclist_elem_word)
 {
   // Above, we check op_length_loclist_elem as a C++ entity.  Here, we
   // make sure it operates well as a Zwerg word as well.
@@ -574,7 +559,7 @@ TEST_F (ZwTest, op_length_loclist_elem_word)
 	      "[entry @AT_location length] == [1, 4, 1, 2, 1, 2]").size ());
 }
 
-TEST_F (ZwTest, imported_AT_decl_file)
+TEST_F (DwTest, imported_AT_decl_file)
 {
   std::unique_ptr <value_dwarf> vdw;
   Dwarf *dw;
@@ -626,7 +611,7 @@ namespace
 }
 
 #define ADD_BUILTIN_CONSTANT_TEST(NAME)		\
-  TEST_F (ZwTest, test_builtin_##NAME)		\
+  TEST_F (DwTest, test_builtin_##NAME)		\
   {						\
     test_builtin_constant (*builtins, #NAME);	\
   }
@@ -646,7 +631,7 @@ ADD_BUILTIN_CONSTANT_TEST (T_ELF)
 
 #undef ADD_BUILTIN_CONSTANT_TEST
 
-TEST_F (ZwTest, builtin_symbol_yields_once_per_symbol)
+TEST_F (DwTest, builtin_symbol_yields_once_per_symbol)
 {
   layout l;
   size_t count = 0;
@@ -668,7 +653,7 @@ TEST_F (ZwTest, builtin_symbol_yields_once_per_symbol)
 	      "\"\", \"\", \"\", \"ae\", \"af\"]").size ());
 }
 
-TEST_F (ZwTest, builtin_symbol_label)
+TEST_F (DwTest, builtin_symbol_label)
 {
   layout l;
   std::vector <unsigned> results = {
@@ -726,7 +711,7 @@ TEST_F (ZwTest, builtin_symbol_label)
   ASSERT_TRUE (builtins->find ("STT_ARM_16BIT") != nullptr);
 }
 
-TEST_F (ZwTest, builtin_symbol_binding)
+TEST_F (DwTest, builtin_symbol_binding)
 {
   layout l;
   std::vector <unsigned> results = {
@@ -778,7 +763,7 @@ TEST_F (ZwTest, builtin_symbol_binding)
 			     "symbol (binding == STB_LOCAL)").size ());
 }
 
-TEST_F (ZwTest, builtin_symbol_visibility)
+TEST_F (DwTest, builtin_symbol_visibility)
 {
   layout l;
   op_visibility_symbol op {l, nullptr};
@@ -811,7 +796,7 @@ TEST_F (ZwTest, builtin_symbol_visibility)
 #undef TEST_STV
 }
 
-TEST_F (ZwTest, builtin_symbol_size)
+TEST_F (DwTest, builtin_symbol_size)
 {
   layout l;
   std::vector <size_t> results = {4, 137, 11, 0, 0, 0, 16, 0, 0};
@@ -840,7 +825,7 @@ TEST_F (ZwTest, builtin_symbol_size)
 	     .size ());
 }
 
-TEST_F (ZwTest, builtin_symbol_address_value)
+TEST_F (DwTest, builtin_symbol_address_value)
 {
   layout l;
   std::vector <GElf_Addr> results = {
@@ -881,7 +866,7 @@ TEST_F (ZwTest, builtin_symbol_address_value)
 	     .size ());
 }
 
-TEST_F (ZwTest, symbol_cmp)
+TEST_F (DwTest, symbol_cmp)
 {
   layout l;
   // Test all symbols on equality with itself.
@@ -920,7 +905,7 @@ namespace
   }
 }
 
-TEST_F (ZwTest, test_defaulted)
+TEST_F (DwTest, test_defaulted)
 {
   test_pairs (*builtins, "defaulted.o",
 	      ("entry ?(raw ?DW_AT_defaulted)"
@@ -929,7 +914,7 @@ TEST_F (ZwTest, test_defaulted)
 	 {constant {DW_DEFAULTED_out_of_class, &dw_defaulted_dom ()}, "Bar"}});
 }
 
-TEST_F (ZwTest, test_various)
+TEST_F (DwTest, test_various)
 {
   for (auto const &entry: std::map <size_t, std::string> {
 	    {3, "DW_DEFAULTED_no, DW_DEFAULTED_in_class, "
@@ -942,7 +927,7 @@ TEST_F (ZwTest, test_various)
     }
 }
 
-TEST_F (ZwTest, test_const_value_block)
+TEST_F (DwTest, test_const_value_block)
 {
   test_pairs (*builtins, "const_value_block.o",
 	      ("entry ?TAG_template_value_parameter "

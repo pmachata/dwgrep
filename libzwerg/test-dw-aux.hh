@@ -29,7 +29,10 @@
 #ifndef TEST_DW_AUX_H
 #define TEST_DW_AUX_H
 
+#include <gtest/gtest.h>
 #include "value-dw.hh"
+
+struct vocabulary;
 
 namespace test
 {
@@ -41,6 +44,13 @@ namespace test
   std::vector <std::unique_ptr <stack>> run_dwquery (vocabulary &voc,
 						     std::string fn,
 						     std::string q);
+
+  struct DwTest
+    : public testing::Test
+  {
+    std::unique_ptr <vocabulary> builtins;
+    void SetUp () override final;
+  };
 }
 
 #endif /* TEST_DW_AUX_H */

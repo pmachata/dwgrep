@@ -27,6 +27,8 @@
    the GNU Lesser General Public License along with this program.  If
    not, see <http://www.gnu.org/licenses/>.  */
 
+#include "builtin-dw.hh"
+#include "init.hh"
 #include "test-dw-aux.hh"
 #include "test-zw-aux.hh"
 #include "value-dw.hh"
@@ -47,4 +49,11 @@ std::vector <std::unique_ptr <stack>>
 test::run_dwquery (vocabulary &voc, std::string fn, std::string q)
 {
   return run_query (voc, stack_with_value (dw (fn, doneness::cooked)), q);
+}
+
+void
+test::DwTest::SetUp ()
+{
+  builtins = std::make_unique <vocabulary>
+    (*dwgrep_vocabulary_core (), *dwgrep_vocabulary_dw ());
 }
