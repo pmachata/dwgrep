@@ -40,6 +40,8 @@ TEST_F (DwTest, test_elf)
 	    {2, "twocus-copy", "elf"},
 	    {1, "twocus-copy", "elf \"%s\" =~ \"twocus-copy[^.]\""},
 	    {1, "twocus-copy", "elf \"%s\" =~ \"twocus-copy.dbg\""},
+	    {1, "twocus-copy", "elf name =~ \"twocus-copy$\""},
+	    {1, "twocus-copy", "elf name =~ \"twocus-copy.dbg\""},
 	})
     {
       size_t nresults = std::get <0> (entry);

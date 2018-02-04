@@ -32,6 +32,7 @@
 #include "overload.hh"
 #include "value-dw.hh"
 #include "value-elf.hh"
+#include "value-str.hh"
 
 struct op_elf_dwarf
   : public op_yielding_overload <value_elf, value_dwarf>
@@ -40,6 +41,17 @@ struct op_elf_dwarf
 
   std::unique_ptr <value_producer <value_elf>>
   operate (std::unique_ptr <value_dwarf> val) const override;
+
+  static std::string docstring ();
+};
+
+struct op_name_elf
+  : public op_once_overload <value_str, value_elf>
+{
+  using op_once_overload::op_once_overload;
+
+  value_str
+  operate (std::unique_ptr <value_elf> val) const override;
 
   static std::string docstring ();
 };

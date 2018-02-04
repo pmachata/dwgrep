@@ -138,3 +138,20 @@ xxx document me
 
 )docstring";
 }
+
+value_str
+op_name_elf::operate (std::unique_ptr <value_elf> a) const
+{
+  return value_str {std::string {a->get_fn ()}, 0};
+}
+
+std::string
+op_name_elf::docstring ()
+{
+  return
+R"docstring(
+
+xxx document me
+
+)docstring";
+}

@@ -347,6 +347,7 @@ dwgrep_vocabulary_dw ()
     auto t = std::make_shared <overload_tab> ();
 
     t->add_op_overload <op_name_dwarf> ();
+    t->add_op_overload <op_name_elf> ();
     t->add_op_overload <op_name_die> ();
     t->add_op_overload <op_name_symbol> ();
 
