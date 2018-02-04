@@ -159,6 +159,13 @@ IF (GTEST_FOUND)
     ${GTEST_LIBRARIES} ${LIBELF_LIBRARY} ${DWARF_LIBRARIES})
   ADD_TEST (TestDw test-dw ${TESTCASE_DIR})
 
+  ADD_EXECUTABLE (test-elf test-elf.cc
+    $<TARGET_OBJECTS:TestStub> $<TARGET_OBJECTS:TestZwAux>
+    $<TARGET_OBJECTS:TestDwAux> ${LibzwergAll})
+  TARGET_LINK_LIBRARIES (test-elf
+    ${GTEST_LIBRARIES} ${LIBELF_LIBRARY} ${DWARF_LIBRARIES})
+  ADD_TEST (TestElf test-elf ${TESTCASE_DIR})
+
   ADD_EXECUTABLE (test-op test-op.cc
     $<TARGET_OBJECTS:TestStub> $<TARGET_OBJECTS:TestZwAux>
     $<TARGET_OBJECTS:LibzwergCore>)
