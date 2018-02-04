@@ -120,7 +120,8 @@ symbol tables in ELF files that hosts the Dwarf data in question.
 std::unique_ptr <value_producer <value_symbol>>
 op_symbol_elf::operate (std::unique_ptr <value_elf> val) const
 {
-  std::abort ();
+  return std::make_unique <symbol_producer> (val->get_dwctx (),
+					     val->get_doneness ());
 }
 
 std::string

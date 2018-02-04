@@ -42,6 +42,7 @@ TEST_F (DwTest, test_elf)
 	    {1, "twocus-copy", "elf \"%s\" =~ \"twocus-copy.dbg\""},
 	    {1, "twocus-copy", "elf name =~ \"twocus-copy$\""},
 	    {1, "twocus-copy", "elf name =~ \"twocus-copy.dbg\""},
+	    {1, "twocus", "(|Dw| [Dw symbol name] == [Dw elf symbol name])"},
 	})
     {
       size_t nresults = std::get <0> (entry);
