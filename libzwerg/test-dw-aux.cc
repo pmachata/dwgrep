@@ -32,6 +32,7 @@
 #include "test-dw-aux.hh"
 #include "test-zw-aux.hh"
 #include "value-dw.hh"
+#include "value-seq.hh"
 
 std::unique_ptr <value_dwarf>
 test::dw (std::string fn, doneness d)
@@ -49,6 +50,33 @@ std::vector <std::unique_ptr <stack>>
 test::run_dwquery (vocabulary &voc, std::string fn, std::string q)
 {
   return run_query (voc, stack_with_value (dw (fn, doneness::cooked)), q);
+}
+
+void
+test::test_pairs (vocabulary &builtins,
+		  std::string fn, std::string query,
+		  std::vector <std::pair <constant, std::string>> results)
+{
+  auto yielded = run_dwquery (builtins, fn, query);
+  EXPECT_EQ (results.size (), yielded.size ());
+
+  for (size_t i = 0; i < results.size (); ++i)
+    {
+      auto stk = std::move (yielded[i]);
+      ASSERT_EQ (1, stk->size ());
+      auto tos = stk->pop ();
+      std::shared_ptr <value_seq::seq_t> seq
+	= value::require_as <value_seq> (&*tos).get_seq ();
+      ASSERT_EQ (2, seq->size ());
+
+      auto v1 = std::move ((*seq)[0]);
+      constant cst = value::require_as <value_cst> (&*v1).get_constant ();
+      EXPECT_EQ (results[i].first, cst);
+
+      auto v2 = std::move ((*seq)[1]);
+      std::string str = value::require_as <value_str> (&*v2).get_string ();
+      EXPECT_EQ (results[i].second, str);
+    }
 }
 
 void

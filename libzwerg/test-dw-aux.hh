@@ -45,6 +45,10 @@ namespace test
 						     std::string fn,
 						     std::string q);
 
+  void test_pairs (vocabulary &builtins,
+		   std::string fn, std::string query,
+		   std::vector <std::pair <constant, std::string>> results);
+
   struct DwTest
     : public testing::Test
   {
