@@ -58,25 +58,6 @@ TEST (DwValueTest, dwarf_sanity)
   ASSERT_FALSE (raw->is_cooked ());
 }
 
-namespace
-{
-#define SOLE_YIELDED_VALUE(TYPE, YIELDED)				\
-  ({									\
-    std::vector <std::unique_ptr <stack>> &_yielded = (YIELDED);	\
-    									\
-    ASSERT_EQ (1, _yielded.size ())					\
-      << "One result expected.";					\
-									\
-    ASSERT_EQ (1, _yielded[0]->size ())					\
-      << "Stack with one value expected.";				\
-									\
-    auto produced = value::as <TYPE> (&_yielded[0]->get (0));		\
-    ASSERT_TRUE (produced != nullptr);					\
-									\
-    *produced;								\
-  })
-}
-
 TEST_F (DwTest, words_dwarf_raw_cooked)
 {
   {

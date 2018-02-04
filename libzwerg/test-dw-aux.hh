@@ -53,4 +53,20 @@ namespace test
   };
 }
 
+#define SOLE_YIELDED_VALUE(TYPE, YIELDED)				\
+  ({									\
+    std::vector <std::unique_ptr <stack>> &_yielded = (YIELDED);	\
+    									\
+    ASSERT_EQ (1, _yielded.size ())					\
+      << "One result expected.";					\
+									\
+    ASSERT_EQ (1, _yielded[0]->size ())					\
+      << "Stack with one value expected.";				\
+									\
+    auto produced = value::as <TYPE> (&_yielded[0]->get (0));		\
+    ASSERT_TRUE (produced != nullptr);					\
+									\
+    *produced;								\
+  })
+
 #endif /* TEST_DW_AUX_H */
