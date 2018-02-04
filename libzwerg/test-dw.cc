@@ -865,7 +865,7 @@ TEST_F (DwTest, test_defaulted)
 
 TEST_F (DwTest, test_various)
 {
-  for (auto const &entry: std::map <size_t, std::string> {
+  for (auto const &entry: std::vector <std::pair <size_t, std::string>> {
 	    {3, "DW_DEFAULTED_no, DW_DEFAULTED_in_class, "
 		"DW_DEFAULTED_out_of_class"},
 	})
