@@ -1,20 +1,7 @@
 -*-org-*-
-* version 0.4
+* version 0.4 [2018-04-07 Sat]
 
-** Backward-incompatible Changes
-
-- Position reported at Dwarf values passed in from command line used to be
-  always 0. Now it's the file's position on command line:
-
-	$ dwgrep /bin/true /bin/false -he '[|Dw| Dw name, Dw pos]'
-	["/bin/true", 0]
-	["/bin/false", 1]
-
-** Other Changes
-
-- Fix a bug introduced in 0.3 where a captured expression wasn't reset properly,
-  due to which after the first list was produced, the following lists were all
-  empty.
+** Changes in dwgrep
 
 - Fix file name shown when -H is passed and no files are given on the command
   line. Before, it was <no-file> somewhere and empty string elsewhere. Now it's
@@ -27,13 +14,49 @@
   expression, which can bind them using lexical scope, or use arbitrarily.
   - Fixes #13: Support passing arguments to scripts from command line
 
+  For example:
+  $ ./dwgrep/dwgrep foo --a DW_AT_language \
+        -e '(|At| entry attribute (label == At))'
+  language	C99
+
+- Position reported at Dwarf values passed in from command line used to be
+  always 0. Now it's the file's position on command line:
+
+	$ dwgrep /bin/true /bin/false -he '[|Dw| Dw name, Dw pos]'
+	["/bin/true", 0]
+	["/bin/false", 1]
+
+** Changes in libzwerg
+
+- Fix a bug introduced in 0.3 where a captured expression wasn't reset properly,
+  due to which after the first list was produced, the following lists were all
+  empty.
+
+** Changes in Dwarf support
+
+- Support DW_DEFAULTED_* suite of constants. Use them to decode DW_AT_defaulted.
+
+- Support decoding of DWARF 5 attributes DW_AT_string_length_bit_size,
+  DW_AT_string_length_byte_size, DW_AT_rank, DW_AT_alignment,
+  DW_AT_str_offsets_base, DW_AT_addr_base, DW_AT_rnglists_base, and
+  DW_AT_loclists_base.
+
+- Unhandled attributes in the DW_AT_lo_user .. DW_AT_hi_user area are now
+  decoded implicitly as unsigned.
+
+- Integral attributes with encoding DW_ATE_boolean are now decoded as booleans,
+  not as plain unsigned numbers.
+
+- Attributes with block forms whose length is 1, 2, 4 or 8 bytes, are decoded as
+  if they were integrals. Encoding of the attribute determines how exactly will
+  the integral be decoded.
+
+** Changes in Zwerg language
+
 - Allow bindings named the same way as a built-in word. This is important for
   forward-compatibility: adding built-in words doesn't break existing queries
   that use that name for a binding.
   - Fixes #29: Allow naming variables like builtins
-
-- Support DW_DEFAULTED_* suite of constants. Use them to decode DW_AT_defaulted.
-
 
 * version 0.3 [2017-12-09 Sat]
 
