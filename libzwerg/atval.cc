@@ -782,6 +782,11 @@ namespace
 	return pass_block (block);
       }
 
+    // There can be stuff out there that we have no chance of keeping up with.
+    // Just assume unsigned instead of terminating the evaluation.
+    if (code >= DW_AT_lo_user && code <= DW_AT_hi_user)
+      return atval_unsigned (attr);
+
     std::stringstream ss;
     ss << "Signedness of attribute ";
     dw_attr_dom ().show (code, ss, brevity::full);
