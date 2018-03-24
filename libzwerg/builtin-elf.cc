@@ -42,53 +42,53 @@ namespace
     return -ENOENT;
   }
 
-  struct elf_producer
-    : public value_producer <value_elf>
+  Dwfl_Module *
+  get_sole_module (Dwfl *dwfl)
   {
     struct init_state
     {
-      bool seen_one;
-      elf_producer &prod;
+      Dwfl_Module *mod;
 
-      explicit init_state (elf_producer &prod)
-	: seen_one {false}
-	, prod {prod}
+      init_state ()
+	: mod {nullptr}
       {}
+
+      static int each_module_cb (Dwfl_Module *mod, void **userdata,
+				 char const *fn, Dwarf_Addr addr, void *arg)
+      {
+	auto self = static_cast <init_state *> (arg);
+
+	// For Dwarf contexts that libzwerg currently creates, there ought to be
+	// exactly one module.
+	assert (self->mod == nullptr);
+	self->mod = mod;
+	return DWARF_CB_OK;
+      }
     };
 
+    init_state ist;
+    if (dwfl_getmodules (dwfl, init_state::each_module_cb, &ist, 0) == -1)
+      throw_libdwfl ();
+
+    assert (ist.mod != nullptr);
+    return ist.mod;
+  }
+
+  struct elf_producer
+    : public value_producer <value_elf>
+  {
     std::unique_ptr <value_dwarf> m_dw;
     char const *m_mainfile;
     char const *m_debugfile;
     unsigned m_pos;
 
-    void sole_module (Dwfl_Module *mod)
-    {
-      dwfl_module_info (mod, NULL, NULL, NULL, NULL, NULL,
-			&m_mainfile, &m_debugfile);
-    }
-
-    static int each_module_cb (Dwfl_Module *mod, void **userdata,
-			       char const *fn, Dwarf_Addr addr, void *arg)
-    {
-      auto ist = *static_cast <init_state *> (arg);
-
-      // For Dwarf contexts that libzwerg currently creates, there ought to be
-      // at most one module.
-      assert (! ist.seen_one);
-      ist.seen_one = true;
-
-      ist.prod.sole_module (mod);
-      return DWARF_CB_OK;
-    }
-
     explicit elf_producer (std::unique_ptr <value_dwarf> dw)
       : m_dw {std::move (dw)}
       , m_pos {0}
     {
-      init_state ist {*this};
-      if (dwfl_getmodules (m_dw->get_dwctx ()->get_dwfl (),
-			   elf_producer::each_module_cb, &ist, 0) == -1)
-	throw_libdwfl ();
+      Dwfl_Module *mod = get_sole_module (m_dw->get_dwctx ()->get_dwfl ());
+      dwfl_module_info (mod, NULL, NULL, NULL, NULL, NULL,
+			&m_mainfile, &m_debugfile);
     }
 
     std::unique_ptr <value_elf>
