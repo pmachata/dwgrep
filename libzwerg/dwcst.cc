@@ -429,7 +429,7 @@ value using the word ``value``::
   };
 }
 
-constant_dom const &
+zw_cdom const &
 dw_tag_dom ()
 {
   static dw_simple_dom dom {"DW_TAG_", dwarf_tag_string,
@@ -437,7 +437,7 @@ dw_tag_dom ()
   return dom;
 }
 
-constant_dom const &
+zw_cdom const &
 dw_attr_dom ()
 {
   static dw_simple_dom dom {"DW_AT_", dwarf_attr_string,
@@ -445,7 +445,7 @@ dw_attr_dom ()
   return dom;
 }
 
-constant_dom const &
+zw_cdom const &
 dw_form_dom ()
 {
   static dw_simple_dom dom {"DW_FORM_", dwarf_form_string,
@@ -453,7 +453,7 @@ dw_form_dom ()
   return dom;
 }
 
-constant_dom const &
+zw_cdom const &
 dw_lang_dom ()
 {
   static dw_simple_dom dom {"DW_LANG_", dwarf_lang_string,
@@ -461,7 +461,7 @@ dw_lang_dom ()
   return dom;
 }
 
-constant_dom const &
+zw_cdom const &
 dw_macinfo_dom ()
 {
   static dw_simple_dom dom {"DW_MACINFO_", dwarf_macinfo_string,
@@ -469,7 +469,7 @@ dw_macinfo_dom ()
   return dom;
 }
 
-constant_dom const &
+zw_cdom const &
 dw_macro_dom ()
 {
   static dw_simple_dom dom {"DW_MACRO_", dwarf_macro_string,
@@ -477,7 +477,7 @@ dw_macro_dom ()
   return dom;
 }
 
-constant_dom const &
+zw_cdom const &
 dw_inline_dom ()
 {
   static dw_simple_dom dom {"DW_INL_", dwarf_inline_string,
@@ -485,7 +485,7 @@ dw_inline_dom ()
   return dom;
 }
 
-constant_dom const &
+zw_cdom const &
 dw_encoding_dom ()
 {
   static dw_simple_dom dom {"DW_ATE_", dwarf_encoding_string,
@@ -493,7 +493,7 @@ dw_encoding_dom ()
   return dom;
 }
 
-constant_dom const &
+zw_cdom const &
 dw_access_dom ()
 {
   static dw_simple_dom dom {"DW_ACCESS_", dwarf_access_string,
@@ -501,7 +501,7 @@ dw_access_dom ()
   return dom;
 }
 
-constant_dom const &
+zw_cdom const &
 dw_visibility_dom ()
 {
   static dw_simple_dom dom {"DW_VIS_", dwarf_visibility_string,
@@ -509,7 +509,7 @@ dw_visibility_dom ()
   return dom;
 }
 
-constant_dom const &
+zw_cdom const &
 dw_virtuality_dom ()
 {
   static dw_simple_dom dom {"DW_VIRTUALITY_", dwarf_virtuality_string,
@@ -517,7 +517,7 @@ dw_virtuality_dom ()
   return dom;
 }
 
-constant_dom const &
+zw_cdom const &
 dw_identifier_case_dom ()
 {
   static dw_simple_dom dom {"DW_ID_", dwarf_identifier_case_string,
@@ -525,7 +525,7 @@ dw_identifier_case_dom ()
   return dom;
 }
 
-constant_dom const &
+zw_cdom const &
 dw_calling_convention_dom ()
 {
   static dw_simple_dom dom {"DW_CC_", dwarf_calling_convention_string,
@@ -533,7 +533,7 @@ dw_calling_convention_dom ()
   return dom;
 }
 
-constant_dom const &
+zw_cdom const &
 dw_ordering_dom ()
 {
   static dw_simple_dom dom {"DW_ORD_", dwarf_ordering_string,
@@ -541,7 +541,7 @@ dw_ordering_dom ()
   return dom;
 }
 
-constant_dom const &
+zw_cdom const &
 dw_discr_list_dom ()
 {
   static dw_simple_dom dom {"DW_DSC_", dwarf_discr_list_string,
@@ -549,7 +549,7 @@ dw_discr_list_dom ()
   return dom;
 }
 
-constant_dom const &
+zw_cdom const &
 dw_decimal_sign_dom ()
 {
   static dw_simple_dom dom {"DW_DS_", dwarf_decimal_sign_string,
@@ -557,7 +557,7 @@ dw_decimal_sign_dom ()
   return dom;
 }
 
-constant_dom const &
+zw_cdom const &
 dw_locexpr_opcode_dom ()
 {
   static dw_simple_dom dom {"DW_OP_", dwarf_locexpr_opcode_string,
@@ -565,7 +565,7 @@ dw_locexpr_opcode_dom ()
   return dom;
 }
 
-constant_dom const &
+zw_cdom const &
 dw_address_class_dom ()
 {
   static dw_simple_dom dom {"DW_ADDR_", dwarf_address_class_string,
@@ -573,7 +573,7 @@ dw_address_class_dom ()
   return dom;
 }
 
-constant_dom const &
+zw_cdom const &
 dw_endianity_dom ()
 {
   static dw_simple_dom dom {"DW_END_", dwarf_endianity_string,
@@ -581,7 +581,7 @@ dw_endianity_dom ()
   return dom;
 }
 
-constant_dom const &
+zw_cdom const &
 dw_defaulted_dom ()
 {
   static dw_simple_dom dom {"DW_DEFAULTED_", dwarf_defaulted_string,
@@ -618,21 +618,21 @@ namespace
   };
 }
 
-constant_dom const &
+zw_cdom const &
 dw_address_dom ()
 {
   static dw_hex_constant_dom_t dw_address_dom_obj ("Dwarf_Address");
   return dw_address_dom_obj;
 }
 
-constant_dom const &
+zw_cdom const &
 dw_offset_dom ()
 {
   static dw_hex_constant_dom_t dw_offset_dom_obj ("Dwarf_Off");
   return dw_offset_dom_obj;
 }
 
-constant_dom const &
+zw_cdom const &
 dw_abbrevcode_dom ()
 {
   static dw_dec_constant_dom_t dw_abbrevcode_dom_obj ("Dwarf_Abbrev code");

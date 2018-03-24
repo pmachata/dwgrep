@@ -30,32 +30,32 @@
 #ifndef _DWCST_H_
 #define _DWCST_H_
 
-typedef struct zw_cdom constant_dom;
+#include "constant.hh"
 
-constant_dom const &dw_tag_dom ();
-constant_dom const &dw_attr_dom ();
-constant_dom const &dw_form_dom ();
+zw_cdom const &dw_tag_dom ();
+zw_cdom const &dw_attr_dom ();
+zw_cdom const &dw_form_dom ();
 
-constant_dom const &dw_access_dom ();
-constant_dom const &dw_address_class_dom ();
-constant_dom const &dw_calling_convention_dom ();
-constant_dom const &dw_decimal_sign_dom ();
-constant_dom const &dw_discr_list_dom ();
-constant_dom const &dw_encoding_dom ();
-constant_dom const &dw_endianity_dom ();
-constant_dom const &dw_defaulted_dom ();
-constant_dom const &dw_identifier_case_dom ();
-constant_dom const &dw_inline_dom ();
-constant_dom const &dw_lang_dom ();
-constant_dom const &dw_locexpr_opcode_dom ();
-constant_dom const &dw_macinfo_dom ();
-constant_dom const &dw_macro_dom ();
-constant_dom const &dw_ordering_dom ();
-constant_dom const &dw_virtuality_dom ();
-constant_dom const &dw_visibility_dom ();
+zw_cdom const &dw_access_dom ();
+zw_cdom const &dw_address_class_dom ();
+zw_cdom const &dw_calling_convention_dom ();
+zw_cdom const &dw_decimal_sign_dom ();
+zw_cdom const &dw_discr_list_dom ();
+zw_cdom const &dw_encoding_dom ();
+zw_cdom const &dw_endianity_dom ();
+zw_cdom const &dw_defaulted_dom ();
+zw_cdom const &dw_identifier_case_dom ();
+zw_cdom const &dw_inline_dom ();
+zw_cdom const &dw_lang_dom ();
+zw_cdom const &dw_locexpr_opcode_dom ();
+zw_cdom const &dw_macinfo_dom ();
+zw_cdom const &dw_macro_dom ();
+zw_cdom const &dw_ordering_dom ();
+zw_cdom const &dw_virtuality_dom ();
+zw_cdom const &dw_visibility_dom ();
 
-constant_dom const &dw_address_dom ();	// Dwarf_Addr
-constant_dom const &dw_offset_dom ();	// Dwarf_Off
-constant_dom const &dw_abbrevcode_dom ();
+zw_cdom const &dw_address_dom ();	// Dwarf_Addr
+zw_cdom const &dw_offset_dom ();	// Dwarf_Off
+zw_cdom const &dw_abbrevcode_dom ();
 
 #endif /* _DWCST_H_ */
