@@ -409,14 +409,6 @@ dwgrep_vocabulary_dw ()
     voc.add (std::make_shared <overloaded_op_builtin> ("size", t));
   }
 
-  {
-    auto t = std::make_shared <overload_tab> ();
-
-    t->add_op_overload <op_elf_dwarf> ();
-
-    voc.add (std::make_shared <overloaded_op_builtin> ("elf", t));
-  }
-
   auto add_dw_at = [&voc] (unsigned code,
 			   char const *qname, char const *bname,
 			   char const *atname,
@@ -689,6 +681,14 @@ dwgrep_vocabulary_dw ()
     ELF_ALL_KNOWN_STV
 
 #undef ELF_ONE_KNOWN_STV
+
+  {
+    auto t = std::make_shared <overload_tab> ();
+
+    t->add_op_overload <op_elf_dwarf> ();
+
+    voc.add (std::make_shared <overloaded_op_builtin> ("elf", t));
+  }
 
   return ret;
 }
