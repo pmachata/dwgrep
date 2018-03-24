@@ -321,6 +321,11 @@
      :   (C (yield, break) || )
      :   B
 
+     xxx depth first search--currently there's no way to express depth-first
+     search. It's a query language, not a programming language, so no biggie,
+     but if the above syntax could be rich enough to allow for that, that would
+     be cool.
+
 * weird ideas
 ** more general iteration
    - X* would be syntactic sugar for (X ^).  The ^ would reapply the
@@ -718,12 +723,12 @@
      This should yield all constituent ELF files, i.e. either the sole ELF file,
      or ELF file and separate debuginfo file, or eventually alt files as well.
      The resulting file should be a view of this single file.
-***  symbol :: T_ELF ->* T_ELFSYM
-     Might be the same as symbol::T_DWARF, but it might be reasonable to just
-     emit a subset of symbols.
+*** *symbol :: T_ELF ->* T_ELFSYM
+     Emits a subset of symbols from the given ELF file.
+*** *name :: T_ELF -> T_STR
 ***  dynsym :: T_ELF ->* T_ELFSYM || T_DWARF ->* T_ELFSYM
      Like symbol, but only yields dynamic symbols
-***  @class :: T_ELF -> T_CONST
+*** *@class :: T_ELF -> T_CONST
 ***  ELFCLASS32, ELFCLASS64
 ***  ?ELFCLASS32, ?ELFCLASS64
 ***  @data :; T_ELF -> T_CONST
