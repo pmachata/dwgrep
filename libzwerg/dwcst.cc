@@ -367,45 +367,25 @@ namespace
   }
 }
 
-namespace
+void
+dw_simple_dom::show (mpz_class const &v, std::ostream &o, brevity brv) const
 {
-  struct dw_simple_dom
-    : public constant_dom
-  {
-    char const *m_name;
-    char const *(*m_stringer) (int, brevity);
-    int m_low_user;
-    int m_high_user;
-    bool m_print_unknown;
+  int code = positive_int_from_mpz (v);
+  const char *ret = m_stringer (code, brv);
+  o << string_or_unknown (ret, m_name, brv, code,
+			  m_low_user, m_high_user, m_print_unknown);
+}
 
-    dw_simple_dom (char const *name, char const *(*stringer) (int, brevity),
-		   int low_user, int high_user, bool print_unknown)
-      : m_name {name}
-      , m_stringer {stringer}
-      , m_low_user {low_user}
-      , m_high_user {high_user}
-      , m_print_unknown {print_unknown}
-    {}
+char const *
+dw_simple_dom::name () const
+{
+  return m_name;
+}
 
-    void
-    show (mpz_class const &v, std::ostream &o, brevity brv) const override
-    {
-      int code = positive_int_from_mpz (v);
-      const char *ret = m_stringer (code, brv);
-      o << string_or_unknown (ret, m_name, brv, code,
-			      m_low_user, m_high_user, m_print_unknown);
-    }
-
-    char const *
-    name () const override
-    {
-      return m_name;
-    }
-
-    char const *
-    docstring () const override
-    {
-      return
+char const *
+dw_simple_dom::docstring () const
+{
+  return
 R"docstring(
 
 These words push to the stack the Dwarf constants referenced by their
@@ -421,9 +401,8 @@ value using the word ``value``::
 	1
 
 )docstring";
-    }
-  };
 }
+
 
 zw_cdom const &
 dw_tag_dom ()

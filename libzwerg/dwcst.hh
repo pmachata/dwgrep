@@ -58,4 +58,27 @@ zw_cdom const &dw_address_dom ();	// Dwarf_Addr
 zw_cdom const &dw_offset_dom ();	// Dwarf_Off
 zw_cdom const &dw_abbrevcode_dom ();
 
+struct dw_simple_dom
+  : public constant_dom
+{
+  char const *m_name;
+  char const *(*m_stringer) (int, brevity);
+  int m_low_user;
+  int m_high_user;
+  bool m_print_unknown;
+
+  dw_simple_dom (char const *name, char const *(*stringer) (int, brevity),
+		 int low_user, int high_user, bool print_unknown)
+    : m_name {name}
+    , m_stringer {stringer}
+    , m_low_user {low_user}
+    , m_high_user {high_user}
+    , m_print_unknown {print_unknown}
+  {}
+
+  void show (mpz_class const &v, std::ostream &o, brevity brv) const override;
+  char const *name () const override;
+  char const *docstring () const override;
+};
+
 #endif /* _DWCST_H_ */
