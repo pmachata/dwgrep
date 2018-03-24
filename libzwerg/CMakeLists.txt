@@ -73,6 +73,7 @@ ADD_LIBRARY (LibzwergDw OBJECT
   dwfl_context.cc
   dwit.cc
   dwmods.cc
+  elfcst.cc
   libzwerg-dw.cc
   value-aset.cc
   builtin-aset.cc
