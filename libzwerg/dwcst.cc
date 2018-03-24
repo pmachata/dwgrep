@@ -16,6 +16,8 @@
    You should have received a copy of the GNU General Public License
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
+#include "dwcst.hh"
+
 #include <dwarf.h>
 #include <stdexcept>
 #include <iostream>
@@ -25,12 +27,6 @@
 #include "known-dwarf-macro-gnu.h"
 #include "constant.hh"
 #include "flag_saver.hh"
-
-static const char *
-abbreviate (char const *name, size_t prefix_len, brevity brv)
-{
-  return name + (brv == brevity::full ? 0 : prefix_len);
-}
 
 static const char *
 dwarf_tag_string (int tag, brevity brv)
