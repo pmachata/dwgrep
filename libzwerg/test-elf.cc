@@ -43,6 +43,8 @@ TEST_F (DwTest, test_elf)
 	    {1, "twocus-copy", "elf name =~ \"twocus-copy$\""},
 	    {1, "twocus-copy", "elf name =~ \"twocus-copy.dbg\""},
 	    {1, "twocus", "(|Dw| [Dw symbol name] == [Dw elf symbol name])"},
+	    {1, "y.o", "elf @class == ELFCLASS32"},
+	    {1, "a1.out", "elf @class == ELFCLASS64"},
 	})
     {
       size_t nresults = std::get <0> (entry);

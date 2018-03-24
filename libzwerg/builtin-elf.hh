@@ -56,4 +56,15 @@ struct op_name_elf
   static std::string docstring ();
 };
 
+struct op_atclass_elf
+  : public op_once_overload <value_cst, value_elf>
+{
+  using op_once_overload::op_once_overload;
+
+  value_cst
+  operate (std::unique_ptr <value_elf> val) const override;
+
+  static std::string docstring ();
+};
+
 #endif /* BUILTIN_ELF_H */

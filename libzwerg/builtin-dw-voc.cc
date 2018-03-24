@@ -34,6 +34,7 @@
 #include "builtin-symbol.hh"
 #include "builtin-elf.hh"
 #include "dwcst.hh"
+#include "elfcst.hh"
 #include "known-dwarf.h"
 #include "known-dwarf-macro-gnu.h"
 #include "known-elf.h"
@@ -689,6 +690,23 @@ dwgrep_vocabulary_dw ()
 
     voc.add (std::make_shared <overloaded_op_builtin> ("elf", t));
   }
+
+  {
+    auto t = std::make_shared <overload_tab> ();
+
+    t->add_op_overload <op_atclass_elf> ();
+
+    voc.add (std::make_shared <overloaded_op_builtin> ("@class", t));
+  }
+
+#define ELF_ONE_KNOWN_ELFCLASS(CODE)					\
+  add_builtin_constant (voc, constant (CODE, &elf_class_dom ()), #CODE);
+
+  ELF_ONE_KNOWN_ELFCLASS(ELFCLASSNONE)
+  ELF_ONE_KNOWN_ELFCLASS(ELFCLASS32)
+  ELF_ONE_KNOWN_ELFCLASS(ELFCLASS64)
+
+#undef ELF_ONE_KNOWN_ELFCLASS
 
   return ret;
 }

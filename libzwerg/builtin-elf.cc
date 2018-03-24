@@ -28,6 +28,7 @@
 
 #include "builtin-elf.hh"
 #include "dwpp.hh"
+#include "elfcst.hh"
 
 namespace
 {
@@ -120,6 +121,19 @@ namespace
 	return nullptr;
     }
   };
+
+  std::pair <Elf *, GElf_Addr>
+  get_sole_elf (value_elf &val)
+  {
+    Dwfl *dwfl = val.get_dwctx ()->get_dwfl ();
+    Dwfl_Module *mod = get_sole_module (dwfl);
+
+    GElf_Addr bias;
+    Elf *elf = dwfl_module_getelf (mod, &bias);
+    assert (elf != nullptr);
+
+    return {elf, bias};
+  }
 }
 
 std::unique_ptr <value_producer <value_elf>>
@@ -139,6 +153,7 @@ xxx document me
 )docstring";
 }
 
+
 value_str
 op_name_elf::operate (std::unique_ptr <value_elf> a) const
 {
@@ -147,6 +162,30 @@ op_name_elf::operate (std::unique_ptr <value_elf> a) const
 
 std::string
 op_name_elf::docstring ()
+{
+  return
+R"docstring(
+
+xxx document me
+
+)docstring";
+}
+
+
+value_cst
+op_atclass_elf::operate (std::unique_ptr <value_elf> val) const
+{
+  Elf *elf = get_sole_elf (*val).first; // Note: Bias ignored.
+  GElf_Ehdr ehdr;
+  if (gelf_getehdr (elf, &ehdr) == nullptr)
+    throw_libelf ();
+
+  unsigned char cls = ehdr.e_ident[EI_CLASS];
+  return value_cst {constant {cls, &elf_class_dom ()}, 0};
+}
+
+std::string
+op_atclass_elf::docstring ()
 {
   return
 R"docstring(
