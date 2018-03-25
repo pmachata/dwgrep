@@ -51,10 +51,12 @@ TEST_F (DwTest, test_elf)
 	    {1, "a1.out", "?ELFCLASS64"},
 	    {1, "y.o", "elf ?ELFCLASS32"},
 	    {1, "a1.out", "elf ?ELFCLASS64"},
-	    {1, "y.o", "@class == ELFCLASS32"},
-	    {1, "a1.out", "@class == ELFCLASS64"},
+	    {1, "y.o", "@elfclass == ELFCLASS32"},
+	    {1, "a1.out", "@elfclass == ELFCLASS64"},
 	    {1, "y.o", "elf @class == ELFCLASS32"},
 	    {1, "a1.out", "elf @class == ELFCLASS64"},
+	    {1, "y.o", "elf @elfclass == ELFCLASS32"},
+	    {1, "a1.out", "elf @elfclass == ELFCLASS64"},
 	})
     {
       size_t nresults = std::get <0> (entry);
