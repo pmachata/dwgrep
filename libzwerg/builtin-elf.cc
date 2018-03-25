@@ -173,8 +173,8 @@ xxx document me
 
 namespace
 {
-  unsigned
-  elfclass (Dwfl *dwfl)
+  GElf_Ehdr
+  ehdr (Dwfl *dwfl)
   {
     Elf *elf = get_main_elf (dwfl).first;
     // Note: Bias ignored.
@@ -182,8 +182,20 @@ namespace
     if (gelf_getehdr (elf, &ehdr) == nullptr)
       throw_libelf ();
 
-    return ehdr.e_ident[EI_CLASS];
+    return ehdr;
   }
+
+  unsigned
+  elfclass (Dwfl *dwfl)
+  {
+    return ehdr (dwfl).e_ident[EI_CLASS];
+  }
+
+  unsigned
+  elftype (Dwfl *dwfl)
+  {
+    return ehdr (dwfl).e_type;
+ }
 }
 
 value_cst
@@ -249,6 +261,79 @@ pred_atclass_elf::result (value_elf &a) const
 
 std::string
 pred_atclass_elf::docstring ()
+{
+  return
+R"docstring(
+
+xxx document me
+
+)docstring";
+}
+
+
+value_cst
+op_attype_dwarf::operate (std::unique_ptr <value_dwarf> val) const
+{
+  unsigned type = elftype (val->get_dwctx ()->get_dwfl ());
+  return value_cst {constant {type, &elf_et_dom ()}, 0};
+}
+
+std::string
+op_attype_dwarf::docstring ()
+{
+  return
+R"docstring(
+
+xxx document me
+
+)docstring";
+}
+
+value_cst
+op_attype_elf::operate (std::unique_ptr <value_elf> val) const
+{
+  unsigned type = elftype (val->get_dwctx ()->get_dwfl ());
+  return value_cst {constant {type, &elf_et_dom ()}, 0};
+}
+
+std::string
+op_attype_elf::docstring ()
+{
+  return
+R"docstring(
+
+xxx document me
+
+)docstring";
+}
+
+pred_result
+pred_attype_dwarf::result (value_dwarf &a) const
+{
+  unsigned type = elftype (a.get_dwctx ()->get_dwfl ());
+  return pred_result (type == m_type);
+}
+
+std::string
+pred_attype_dwarf::docstring ()
+{
+  return
+R"docstring(
+
+xxx document me
+
+)docstring";
+}
+
+pred_result
+pred_attype_elf::result (value_elf &a) const
+{
+  unsigned type = elftype (a.get_dwctx ()->get_dwfl ());
+  return pred_result (type == m_type);
+}
+
+std::string
+pred_attype_elf::docstring ()
 {
   return
 R"docstring(

@@ -30,6 +30,8 @@
 #ifndef _DWCST_H_
 #define _DWCST_H_
 
+#include "../extern/optional.hpp"
+
 #include "constant.hh"
 
 zw_cdom const &dw_tag_dom ();
@@ -79,6 +81,23 @@ struct dw_simple_dom
   void show (mpz_class const &v, std::ostream &o, brevity brv) const override;
   char const *name () const override;
   char const *docstring () const override;
+
+  static char const *generic_docstring ();
 };
+
+nonstd::optional <unsigned> uint_from_mpz (mpz_class const &v);
+
+bool
+format_user_range (brevity brv,
+		   unsigned int code,
+                   unsigned int lo, unsigned int hi,
+		   const char *prefix, const char *base,
+		   char *buf, size_t buf_size);
+
+void
+format_unknown (brevity brv,
+		unsigned int code,
+		const char *prefix,
+		char *buf, size_t buf_size);
 
 #endif /* _DWCST_H_ */

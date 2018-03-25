@@ -104,4 +104,53 @@ struct pred_atclass_elf
   static std::string docstring ();
 };
 
+
+struct op_attype_dwarf
+  : public op_once_overload <value_cst, value_dwarf>
+{
+  using op_once_overload::op_once_overload;
+
+  value_cst
+  operate (std::unique_ptr <value_dwarf> val) const override;
+
+  static std::string docstring ();
+};
+
+struct op_attype_elf
+  : public op_once_overload <value_cst, value_elf>
+{
+  using op_once_overload::op_once_overload;
+
+  value_cst
+  operate (std::unique_ptr <value_elf> val) const override;
+
+  static std::string docstring ();
+};
+
+struct pred_attype_dwarf
+  : public pred_overload <value_dwarf>
+{
+  unsigned m_type;
+
+  pred_attype_dwarf (unsigned type)
+    : m_type {type}
+  {}
+
+  pred_result result (value_dwarf &a) const override;
+  static std::string docstring ();
+};
+
+struct pred_attype_elf
+  : public pred_overload <value_elf>
+{
+  unsigned m_type;
+
+  pred_attype_elf (unsigned type)
+    : m_type {type}
+  {}
+
+  pred_result result (value_elf &a) const override;
+  static std::string docstring ();
+};
+
 #endif /* BUILTIN_ELF_H */

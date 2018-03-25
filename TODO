@@ -740,7 +740,7 @@
 ***  ELFOSABI_*
 ***  ?ELFOSABI_*
 ***  @abiversion :: T_ELF -> T_CONST (no domain, just a number)
-***  @type
+*** *@type
 ***  @machine
 ***  version :: T_ELF -> T_CONST
 ***  entry :: T_ELF -> T_ASET

@@ -22,6 +22,7 @@
 #include <stdexcept>
 #include <iostream>
 #include <climits>
+#include <cstring>
 
 #include "known-dwarf.h"
 #include "known-dwarf-macro-gnu.h"
@@ -328,52 +329,69 @@ dwarf_defaulted_string (int code, brevity brv)
 }
 
 
-static const char *
-string_or_unknown (const char *known, const char *prefix, brevity brv,
-		   unsigned int code,
-                   unsigned int lo_user, unsigned int hi_user,
-		   bool print_unknown_num)
+bool
+format_user_range (brevity brv,
+		   unsigned int code, unsigned int lo, unsigned int hi,
+		   const char *prefix, const char *base,
+		   char *buf, size_t buf_size)
 {
-  static char unknown_buf[40];
-
-  if (known != nullptr)
-    return known;
-
-  if (lo_user != 0 && code >= lo_user && code <= hi_user)
+  if (lo != 0 && code >= lo && code <= hi)
     {
-      snprintf (unknown_buf, sizeof unknown_buf, "%slo_user+%#x",
-		prefix, code - lo_user);
-      return unknown_buf;
+      snprintf (buf, buf_size, "%s%s+%#x", prefix, base, code - lo);
+      return true;
     }
-
-  if (print_unknown_num)
-    {
-      snprintf (unknown_buf, sizeof unknown_buf,
-		"%s??? (%#x)", brv == brevity::full ? prefix : "", code);
-      return unknown_buf;
-    }
-
-  return "???";
+  else
+    return false;
 }
 
-namespace
+void
+format_unknown (brevity brv,
+		unsigned int code,
+		const char *prefix,
+		char *buf, size_t buf_size)
 {
-  int
-  positive_int_from_mpz (mpz_class const &v)
-  {
-    if (v < 0 || v.uval () > INT_MAX)
-      return -1;
-    return v.uval ();
-  }
+  snprintf (buf, buf_size, "%s??? (%#x)",
+	    brv == brevity::full ? prefix : "", code);
+}
+
+nonstd::optional <unsigned>
+uint_from_mpz (mpz_class const &v)
+{
+  if (v < 0 || v.uval () > UINT_MAX)
+    return nonstd::nullopt;
+  return v.uval ();
 }
 
 void
 dw_simple_dom::show (mpz_class const &v, std::ostream &o, brevity brv) const
 {
-  int code = positive_int_from_mpz (v);
-  const char *ret = m_stringer (code, brv);
-  o << string_or_unknown (ret, m_name, brv, code,
-			  m_low_user, m_high_user, m_print_unknown);
+  unsigned code;
+  if (auto maybe_code = uint_from_mpz (v))
+    code = *maybe_code;
+  else
+    {
+      o << "<invalid code>";
+      return;
+    }
+
+  char unknown_buf[40];
+  if (const char *known = m_stringer (code, brv))
+    o << known;
+  else
+    {
+      if (! format_user_range (brv, code, m_low_user, m_high_user,
+			       m_name, "lo_user",
+			       unknown_buf, sizeof unknown_buf))
+	{
+	  if (m_print_unknown)
+	    format_unknown (brv, code, m_name,
+			    unknown_buf, sizeof unknown_buf);
+	  else
+	    std::strcpy (unknown_buf, "???");
+	}
+
+      o << unknown_buf;
+    }
 }
 
 char const *
@@ -384,6 +402,12 @@ dw_simple_dom::name () const
 
 char const *
 dw_simple_dom::docstring () const
+{
+  return dw_simple_dom::generic_docstring ();
+}
+
+char const *
+dw_simple_dom::generic_docstring ()
 {
   return
 R"docstring(

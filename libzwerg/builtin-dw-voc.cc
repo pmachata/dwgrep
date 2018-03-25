@@ -708,30 +708,56 @@ dwgrep_vocabulary_dw ()
     voc.add (std::make_shared <overloaded_op_builtin> ("@elfclass", t));
   }
 
+#define ADD_ELF_CONSTANT(CODE, NAME, DOM, DWPRED, ELFPRED)		\
+    {									\
+      add_builtin_constant (voc, constant (CODE, DOM), NAME);		\
+									\
+      auto t = std::make_shared <overload_tab> ();			\
+									\
+      t->add_pred_overload <DWPRED> (CODE);				\
+      t->add_pred_overload <ELFPRED> (CODE);				\
+									\
+      voc.add (std::make_shared <overloaded_pred_builtin>		\
+	       ("?" NAME, t, true));					\
+      voc.add (std::make_shared <overloaded_pred_builtin>		\
+	       ("!" NAME, t, false));					\
+    }
+
 #define ELF_ALL_KNOWN_ELFCLASS			\
   ELF_ONE_KNOWN_ELFCLASS(ELFCLASSNONE)		\
   ELF_ONE_KNOWN_ELFCLASS(ELFCLASS32)		\
   ELF_ONE_KNOWN_ELFCLASS(ELFCLASS64)
 
-#define ELF_ONE_KNOWN_ELFCLASS(CODE)					\
-  add_builtin_constant (voc, constant (CODE, &elf_class_dom ()), #CODE);
+#define ELF_ONE_KNOWN_ELFCLASS(CODE)		   \
+  ADD_ELF_CONSTANT(CODE, #CODE, &elf_class_dom (), \
+		   pred_atclass_dwarf, pred_atclass_elf);
 
   ELF_ALL_KNOWN_ELFCLASS
 #undef ELF_ONE_KNOWN_ELFCLASS
 
-#define ELF_ONE_KNOWN_ELFCLASS(CODE)					\
-  {									\
-    auto t = std::make_shared <overload_tab> ();			\
-									\
-    t->add_pred_overload <pred_atclass_dwarf> (CODE);			\
-    t->add_pred_overload <pred_atclass_elf> (CODE);			\
-									\
-    voc.add (std::make_shared <overloaded_pred_builtin> ("?" #CODE, t, true)); \
-    voc.add (std::make_shared <overloaded_pred_builtin> ("!" #CODE, t, false));	\
+  {
+    auto t = std::make_shared <overload_tab> ();
+
+    t->add_op_overload <op_attype_elf> ();
+
+    voc.add (std::make_shared <overloaded_op_builtin> ("@type", t));
   }
 
-  ELF_ALL_KNOWN_ELFCLASS
-#undef ELF_ONE_KNOWN_ELFCLASS
+  {
+    auto t = std::make_shared <overload_tab> ();
+
+    t->add_op_overload <op_attype_elf> ();
+    t->add_op_overload <op_attype_dwarf> ();
+
+    voc.add (std::make_shared <overloaded_op_builtin> ("@elftype", t));
+  }
+
+#define ELF_ONE_KNOWN_ET(NAME, CODE)			\
+  ADD_ELF_CONSTANT(CODE, #CODE, &elf_et_dom (),		\
+		   pred_attype_dwarf, pred_attype_elf);
+
+ELF_ALL_KNOWN_ET
+#undef ELF_ONE_KNOWN_ET
 
   return ret;
 }

@@ -45,6 +45,7 @@ TEST_F (DwTest, test_elf)
 	    {1, "twocus", "(|Dw| [Dw symbol name] == [Dw elf symbol name])"},
 	    {5, "twocus-copy",
 		"(|Dw| Dw elf ?1 symbol !(name == Dw elf ?0 symbol name))"},
+
 	    {1, "y.o", "!ELFCLASS64"},
 	    {1, "a1.out", "!ELFCLASS32"},
 	    {1, "y.o", "?ELFCLASS32"},
@@ -57,6 +58,17 @@ TEST_F (DwTest, test_elf)
 	    {1, "a1.out", "elf @class == ELFCLASS64"},
 	    {1, "y.o", "elf @elfclass == ELFCLASS32"},
 	    {1, "a1.out", "elf @elfclass == ELFCLASS64"},
+
+	    {1, "y.o", "elf !ET_DYN"},
+	    {1, "a1.out", "elf !ET_DYN"},
+	    {1, "y.o", "elf ?ET_REL"},
+	    {1, "a1.out", "elf ?ET_EXEC"},
+	    {1, "y.o", "elf @type == ET_REL"},
+	    {1, "a1.out", "elf @type == ET_EXEC"},
+	    {1, "y.o", "@elftype == ET_REL"},
+	    {1, "a1.out", "@elftype == ET_EXEC"},
+	    {1, "y.o", "elf @elftype == ET_REL"},
+	    {1, "a1.out", "elf @elftype == ET_EXEC"},
 	})
     {
       size_t nresults = std::get <0> (entry);

@@ -32,5 +32,6 @@
 #include "constant.hh"
 
 zw_cdom const &elf_class_dom ();
+zw_cdom const &elf_et_dom ();
 
 #endif /* _ELFCST_H_ */
