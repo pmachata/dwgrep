@@ -221,3 +221,39 @@ xxx document me
 
 )docstring";
 }
+
+pred_result
+pred_atclass_dwarf::result (value_dwarf &a) const
+{
+  unsigned cls = elfclass (a.get_dwctx ()->get_dwfl ());
+  return pred_result (cls == m_cls);
+}
+
+std::string
+pred_atclass_dwarf::docstring ()
+{
+  return
+R"docstring(
+
+xxx document me
+
+)docstring";
+}
+
+pred_result
+pred_atclass_elf::result (value_elf &a) const
+{
+  unsigned cls = elfclass (a.get_dwctx ()->get_dwfl ());
+  return pred_result (cls == m_cls);
+}
+
+std::string
+pred_atclass_elf::docstring ()
+{
+  return
+R"docstring(
+
+xxx document me
+
+)docstring";
+}

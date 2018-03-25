@@ -700,13 +700,29 @@ dwgrep_vocabulary_dw ()
     voc.add (std::make_shared <overloaded_op_builtin> ("@class", t));
   }
 
+#define ELF_ALL_KNOWN_ELFCLASS			\
+  ELF_ONE_KNOWN_ELFCLASS(ELFCLASSNONE)		\
+  ELF_ONE_KNOWN_ELFCLASS(ELFCLASS32)		\
+  ELF_ONE_KNOWN_ELFCLASS(ELFCLASS64)
+
 #define ELF_ONE_KNOWN_ELFCLASS(CODE)					\
   add_builtin_constant (voc, constant (CODE, &elf_class_dom ()), #CODE);
 
-  ELF_ONE_KNOWN_ELFCLASS(ELFCLASSNONE)
-  ELF_ONE_KNOWN_ELFCLASS(ELFCLASS32)
-  ELF_ONE_KNOWN_ELFCLASS(ELFCLASS64)
+  ELF_ALL_KNOWN_ELFCLASS
+#undef ELF_ONE_KNOWN_ELFCLASS
 
+#define ELF_ONE_KNOWN_ELFCLASS(CODE)					\
+  {									\
+    auto t = std::make_shared <overload_tab> ();			\
+									\
+    t->add_pred_overload <pred_atclass_dwarf> (CODE);			\
+    t->add_pred_overload <pred_atclass_elf> (CODE);			\
+									\
+    voc.add (std::make_shared <overloaded_pred_builtin> ("?" #CODE, t, true)); \
+    voc.add (std::make_shared <overloaded_pred_builtin> ("!" #CODE, t, false));	\
+  }
+
+  ELF_ALL_KNOWN_ELFCLASS
 #undef ELF_ONE_KNOWN_ELFCLASS
 
   return ret;

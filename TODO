@@ -729,8 +729,8 @@
 ***  dynsym :: T_ELF ->* T_ELFSYM || T_DWARF ->* T_ELFSYM
      Like symbol, but only yields dynamic symbols
 *** *@class :: T_ELF -> T_CONST
-***  ELFCLASS32, ELFCLASS64
-***  ?ELFCLASS32, ?ELFCLASS64
+*** *ELFCLASS32, ELFCLASS64
+*** *?ELFCLASS32, ?ELFCLASS64
 ***  @data :; T_ELF -> T_CONST
 ***  ELFDATA2LSB, ELFDATA2MSB
 ***  ?ELFDATA2LSB, ?ELFDATA2MSB

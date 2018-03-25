@@ -78,4 +78,30 @@ struct op_atclass_elf
   static std::string docstring ();
 };
 
+struct pred_atclass_dwarf
+  : public pred_overload <value_dwarf>
+{
+  unsigned m_cls;
+
+  pred_atclass_dwarf (unsigned cls)
+    : m_cls {cls}
+  {}
+
+  pred_result result (value_dwarf &a) const override;
+  static std::string docstring ();
+};
+
+struct pred_atclass_elf
+  : public pred_overload <value_elf>
+{
+  unsigned m_cls;
+
+  pred_atclass_elf (unsigned cls)
+    : m_cls {cls}
+  {}
+
+  pred_result result (value_elf &a) const override;
+  static std::string docstring ();
+};
+
 #endif /* BUILTIN_ELF_H */
