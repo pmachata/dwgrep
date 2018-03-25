@@ -45,6 +45,8 @@ TEST_F (DwTest, test_elf)
 	    {1, "twocus", "(|Dw| [Dw symbol name] == [Dw elf symbol name])"},
 	    {5, "twocus-copy",
 		"(|Dw| Dw elf ?1 symbol !(name == Dw elf ?0 symbol name))"},
+	    {1, "y.o", "@class == ELFCLASS32"},
+	    {1, "a1.out", "@class == ELFCLASS64"},
 	    {1, "y.o", "elf @class == ELFCLASS32"},
 	    {1, "a1.out", "elf @class == ELFCLASS64"},
 	})

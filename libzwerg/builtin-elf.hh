@@ -56,6 +56,17 @@ struct op_name_elf
   static std::string docstring ();
 };
 
+struct op_atclass_dwarf
+  : public op_once_overload <value_cst, value_dwarf>
+{
+  using op_once_overload::op_once_overload;
+
+  value_cst
+  operate (std::unique_ptr <value_dwarf> val) const override;
+
+  static std::string docstring ();
+};
+
 struct op_atclass_elf
   : public op_once_overload <value_cst, value_elf>
 {

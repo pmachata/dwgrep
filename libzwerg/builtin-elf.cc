@@ -123,9 +123,8 @@ namespace
   };
 
   std::pair <Elf *, GElf_Addr>
-  get_sole_elf (value_elf &val)
+  get_main_elf (Dwfl *dwfl)
   {
-    Dwfl *dwfl = val.get_dwctx ()->get_dwfl ();
     Dwfl_Module *mod = get_sole_module (dwfl);
 
     GElf_Addr bias;
@@ -172,15 +171,43 @@ xxx document me
 }
 
 
+namespace
+{
+  unsigned
+  elfclass (Dwfl *dwfl)
+  {
+    Elf *elf = get_main_elf (dwfl).first;
+    // Note: Bias ignored.
+    GElf_Ehdr ehdr;
+    if (gelf_getehdr (elf, &ehdr) == nullptr)
+      throw_libelf ();
+
+    return ehdr.e_ident[EI_CLASS];
+  }
+}
+
+value_cst
+op_atclass_dwarf::operate (std::unique_ptr <value_dwarf> val) const
+{
+  unsigned cls = elfclass (val->get_dwctx ()->get_dwfl ());
+  return value_cst {constant {cls, &elf_class_dom ()}, 0};
+}
+
+std::string
+op_atclass_dwarf::docstring ()
+{
+  return
+R"docstring(
+
+xxx document me
+
+)docstring";
+}
+
 value_cst
 op_atclass_elf::operate (std::unique_ptr <value_elf> val) const
 {
-  Elf *elf = get_sole_elf (*val).first; // Note: Bias ignored.
-  GElf_Ehdr ehdr;
-  if (gelf_getehdr (elf, &ehdr) == nullptr)
-    throw_libelf ();
-
-  unsigned char cls = ehdr.e_ident[EI_CLASS];
+  unsigned cls = elfclass (val->get_dwctx ()->get_dwfl ());
   return value_cst {constant {cls, &elf_class_dom ()}, 0};
 }
 
