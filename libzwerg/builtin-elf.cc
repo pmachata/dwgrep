@@ -196,6 +196,12 @@ namespace
   {
     return ehdr (dwfl).e_type;
  }
+
+  unsigned
+  elfmachine (Dwfl *dwfl)
+  {
+    return ehdr (dwfl).e_machine;
+ }
 }
 
 value_cst
@@ -334,6 +340,79 @@ pred_attype_elf::result (value_elf &a) const
 
 std::string
 pred_attype_elf::docstring ()
+{
+  return
+R"docstring(
+
+xxx document me
+
+)docstring";
+}
+
+
+value_cst
+op_atmachine_dwarf::operate (std::unique_ptr <value_dwarf> val) const
+{
+  unsigned machine = elfmachine (val->get_dwctx ()->get_dwfl ());
+  return value_cst {constant {machine, &elf_em_dom ()}, 0};
+}
+
+std::string
+op_atmachine_dwarf::docstring ()
+{
+  return
+R"docstring(
+
+xxx document me
+
+)docstring";
+}
+
+value_cst
+op_atmachine_elf::operate (std::unique_ptr <value_elf> val) const
+{
+  unsigned machine = elfmachine (val->get_dwctx ()->get_dwfl ());
+  return value_cst {constant {machine, &elf_em_dom ()}, 0};
+}
+
+std::string
+op_atmachine_elf::docstring ()
+{
+  return
+R"docstring(
+
+xxx document me
+
+)docstring";
+}
+
+pred_result
+pred_atmachine_dwarf::result (value_dwarf &a) const
+{
+  unsigned machine = elfmachine (a.get_dwctx ()->get_dwfl ());
+  return pred_result (machine == m_em);
+}
+
+std::string
+pred_atmachine_dwarf::docstring ()
+{
+  return
+R"docstring(
+
+xxx document me
+
+)docstring";
+}
+
+pred_result
+pred_atmachine_elf::result (value_elf &a) const
+{
+  unsigned machine = elfmachine (a.get_dwctx ()->get_dwfl ());
+  return pred_result (machine == m_em);
+}
+
+std::string
+pred_atmachine_elf::docstring ()
 {
   return
 R"docstring(

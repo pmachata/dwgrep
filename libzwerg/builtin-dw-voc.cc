@@ -759,5 +759,29 @@ dwgrep_vocabulary_dw ()
 ELF_ALL_KNOWN_ET
 #undef ELF_ONE_KNOWN_ET
 
+  {
+    auto t = std::make_shared <overload_tab> ();
+
+    t->add_op_overload <op_atmachine_elf> ();
+
+    voc.add (std::make_shared <overloaded_op_builtin> ("@machine", t));
+  }
+
+  {
+    auto t = std::make_shared <overload_tab> ();
+
+    t->add_op_overload <op_atmachine_elf> ();
+    t->add_op_overload <op_atmachine_dwarf> ();
+
+    voc.add (std::make_shared <overloaded_op_builtin> ("@elfmachine", t));
+  }
+
+#define ELF_ONE_KNOWN_EM(NAME, CODE)			\
+  ADD_ELF_CONSTANT(CODE, #CODE, &elf_em_dom (),		\
+		   pred_atmachine_dwarf, pred_atmachine_elf);
+
+ELF_ALL_KNOWN_EM
+#undef ELF_ONE_KNOWN_EM
+
   return ret;
 }

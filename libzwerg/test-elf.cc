@@ -69,6 +69,17 @@ TEST_F (DwTest, test_elf)
 	    {1, "a1.out", "@elftype == ET_EXEC"},
 	    {1, "y.o", "elf @elftype == ET_REL"},
 	    {1, "a1.out", "elf @elftype == ET_EXEC"},
+
+	    {1, "y.o", "elf !EM_MIPS"},
+	    {1, "a1.out", "elf !EM_MIPS"},
+	    {1, "y.o", "elf ?EM_ARM"},
+	    {1, "a1.out", "elf ?EM_X86_64"},
+	    {1, "y.o", "elf @machine == EM_ARM"},
+	    {1, "a1.out", "elf @machine == EM_X86_64"},
+	    {1, "y.o", "@elfmachine == EM_ARM"},
+	    {1, "a1.out", "@elfmachine == EM_X86_64"},
+	    {1, "y.o", "elf @elfmachine == EM_ARM"},
+	    {1, "a1.out", "elf @elfmachine == EM_X86_64"},
 	})
     {
       size_t nresults = std::get <0> (entry);
