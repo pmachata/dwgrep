@@ -184,89 +184,22 @@ namespace
 
     return ehdr;
   }
-
-  unsigned
-  elfclass (Dwfl *dwfl)
-  {
-    return ehdr (dwfl).e_ident[EI_CLASS];
-  }
-
-  unsigned
-  elftype (Dwfl *dwfl)
-  {
-    return ehdr (dwfl).e_type;
- }
-
-  unsigned
-  elfmachine (Dwfl *dwfl)
-  {
-    return ehdr (dwfl).e_machine;
- }
 }
 
-value_cst
-op_atclass_dwarf::operate (std::unique_ptr <value_dwarf> val) const
+unsigned
+elf_atclass_def::value (Dwfl *dwfl)
 {
-  unsigned cls = elfclass (val->get_dwctx ()->get_dwfl ());
-  return value_cst {constant {cls, &elf_class_dom ()}, 0};
+  return ehdr (dwfl).e_ident[EI_CLASS];
+}
+
+zw_cdom const &
+elf_atclass_def::cdom ()
+{
+  return elf_class_dom ();
 }
 
 std::string
-op_atclass_dwarf::docstring ()
-{
-  return
-R"docstring(
-
-xxx document me
-
-)docstring";
-}
-
-value_cst
-op_atclass_elf::operate (std::unique_ptr <value_elf> val) const
-{
-  unsigned cls = elfclass (val->get_dwctx ()->get_dwfl ());
-  return value_cst {constant {cls, &elf_class_dom ()}, 0};
-}
-
-std::string
-op_atclass_elf::docstring ()
-{
-  return
-R"docstring(
-
-xxx document me
-
-)docstring";
-}
-
-pred_result
-pred_atclass_dwarf::result (value_dwarf &a) const
-{
-  unsigned cls = elfclass (a.get_dwctx ()->get_dwfl ());
-  return pred_result (cls == m_cls);
-}
-
-std::string
-pred_atclass_dwarf::docstring ()
-{
-  return
-R"docstring(
-
-xxx document me
-
-)docstring";
-}
-
-pred_result
-pred_atclass_elf::result (value_elf &a) const
-{
-  unsigned cls = elfclass (a.get_dwctx ()->get_dwfl ());
-  return pred_result (cls == m_cls);
-}
-
-std::string
-pred_atclass_elf::docstring ()
+elf_atclass_def::docstring ()
 {
   return
 R"docstring(
@@ -277,69 +210,20 @@ xxx document me
 }
 
 
-value_cst
-op_attype_dwarf::operate (std::unique_ptr <value_dwarf> val) const
+unsigned
+elf_attype_def::value (Dwfl *dwfl)
 {
-  unsigned type = elftype (val->get_dwctx ()->get_dwfl ());
-  return value_cst {constant {type, &elf_et_dom ()}, 0};
+  return ehdr (dwfl).e_type;
+}
+
+zw_cdom const &
+elf_attype_def::cdom ()
+{
+  return elf_et_dom ();
 }
 
 std::string
-op_attype_dwarf::docstring ()
-{
-  return
-R"docstring(
-
-xxx document me
-
-)docstring";
-}
-
-value_cst
-op_attype_elf::operate (std::unique_ptr <value_elf> val) const
-{
-  unsigned type = elftype (val->get_dwctx ()->get_dwfl ());
-  return value_cst {constant {type, &elf_et_dom ()}, 0};
-}
-
-std::string
-op_attype_elf::docstring ()
-{
-  return
-R"docstring(
-
-xxx document me
-
-)docstring";
-}
-
-pred_result
-pred_attype_dwarf::result (value_dwarf &a) const
-{
-  unsigned type = elftype (a.get_dwctx ()->get_dwfl ());
-  return pred_result (type == m_type);
-}
-
-std::string
-pred_attype_dwarf::docstring ()
-{
-  return
-R"docstring(
-
-xxx document me
-
-)docstring";
-}
-
-pred_result
-pred_attype_elf::result (value_elf &a) const
-{
-  unsigned type = elftype (a.get_dwctx ()->get_dwfl ());
-  return pred_result (type == m_type);
-}
-
-std::string
-pred_attype_elf::docstring ()
+elf_attype_def::docstring ()
 {
   return
 R"docstring(
@@ -350,69 +234,20 @@ xxx document me
 }
 
 
-value_cst
-op_atmachine_dwarf::operate (std::unique_ptr <value_dwarf> val) const
+unsigned
+elf_atmachine_def::value (Dwfl *dwfl)
 {
-  unsigned machine = elfmachine (val->get_dwctx ()->get_dwfl ());
-  return value_cst {constant {machine, &elf_em_dom ()}, 0};
+  return ehdr (dwfl).e_machine;
+}
+
+zw_cdom const &
+elf_atmachine_def::cdom ()
+{
+  return elf_em_dom ();
 }
 
 std::string
-op_atmachine_dwarf::docstring ()
-{
-  return
-R"docstring(
-
-xxx document me
-
-)docstring";
-}
-
-value_cst
-op_atmachine_elf::operate (std::unique_ptr <value_elf> val) const
-{
-  unsigned machine = elfmachine (val->get_dwctx ()->get_dwfl ());
-  return value_cst {constant {machine, &elf_em_dom ()}, 0};
-}
-
-std::string
-op_atmachine_elf::docstring ()
-{
-  return
-R"docstring(
-
-xxx document me
-
-)docstring";
-}
-
-pred_result
-pred_atmachine_dwarf::result (value_dwarf &a) const
-{
-  unsigned machine = elfmachine (a.get_dwctx ()->get_dwfl ());
-  return pred_result (machine == m_em);
-}
-
-std::string
-pred_atmachine_dwarf::docstring ()
-{
-  return
-R"docstring(
-
-xxx document me
-
-)docstring";
-}
-
-pred_result
-pred_atmachine_elf::result (value_elf &a) const
-{
-  unsigned machine = elfmachine (a.get_dwctx ()->get_dwfl ());
-  return pred_result (machine == m_em);
-}
-
-std::string
-pred_atmachine_elf::docstring ()
+elf_atmachine_def::docstring ()
 {
   return
 R"docstring(

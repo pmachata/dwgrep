@@ -56,150 +56,116 @@ struct op_name_elf
   static std::string docstring ();
 };
 
-struct op_atclass_dwarf
-  : public op_once_overload <value_cst, value_dwarf>
+
+template <class Def, class ValueType>
+struct pred_elf_simple_value
+  : public pred_overload <ValueType>
+  , protected Def
 {
-  using op_once_overload::op_once_overload;
+  unsigned m_value;
 
-  value_cst
-  operate (std::unique_ptr <value_dwarf> val) const override;
-
-  static std::string docstring ();
-};
-
-struct op_atclass_elf
-  : public op_once_overload <value_cst, value_elf>
-{
-  using op_once_overload::op_once_overload;
-
-  value_cst
-  operate (std::unique_ptr <value_elf> val) const override;
-
-  static std::string docstring ();
-};
-
-struct pred_atclass_dwarf
-  : public pred_overload <value_dwarf>
-{
-  unsigned m_cls;
-
-  pred_atclass_dwarf (unsigned cls)
-    : m_cls {cls}
+  pred_elf_simple_value (unsigned value)
+    : m_value {value}
   {}
 
-  pred_result result (value_dwarf &a) const override;
-  static std::string docstring ();
+  pred_result
+  result (ValueType &a) const override final
+  {
+    unsigned value = Def::value (a.get_dwctx ()->get_dwfl ());
+    return pred_result (value == m_value);
+  }
+
+  using Def::docstring;
 };
 
-struct pred_atclass_elf
-  : public pred_overload <value_elf>
+template <class Def, class ValueType>
+struct op_elf_simple_value
+  : public op_once_overload <value_cst, ValueType>
+  , protected Def
 {
-  unsigned m_cls;
-
-  pred_atclass_elf (unsigned cls)
-    : m_cls {cls}
-  {}
-
-  pred_result result (value_elf &a) const override;
-  static std::string docstring ();
-};
-
-
-struct op_attype_dwarf
-  : public op_once_overload <value_cst, value_dwarf>
-{
-  using op_once_overload::op_once_overload;
+  using op_once_overload <value_cst, ValueType>::op_once_overload;
 
   value_cst
-  operate (std::unique_ptr <value_dwarf> val) const override;
+  operate (std::unique_ptr <ValueType> a) const override
+  {
+    unsigned value = Def::value (a->get_dwctx ()->get_dwfl ());
+    return value_cst {constant {value, &Def::cdom ()}, 0};
+  }
 
-  static std::string docstring ();
-};
-
-struct op_attype_elf
-  : public op_once_overload <value_cst, value_elf>
-{
-  using op_once_overload::op_once_overload;
-
-  value_cst
-  operate (std::unique_ptr <value_elf> val) const override;
-
-  static std::string docstring ();
-};
-
-struct pred_attype_dwarf
-  : public pred_overload <value_dwarf>
-{
-  unsigned m_type;
-
-  pred_attype_dwarf (unsigned type)
-    : m_type {type}
-  {}
-
-  pred_result result (value_dwarf &a) const override;
-  static std::string docstring ();
-};
-
-struct pred_attype_elf
-  : public pred_overload <value_elf>
-{
-  unsigned m_type;
-
-  pred_attype_elf (unsigned type)
-    : m_type {type}
-  {}
-
-  pred_result result (value_elf &a) const override;
-  static std::string docstring ();
+  using Def::docstring;
 };
 
 
-struct op_atmachine_dwarf
-  : public op_once_overload <value_cst, value_dwarf>
+
+struct elf_atclass_def
 {
-  using op_once_overload::op_once_overload;
-
-  value_cst
-  operate (std::unique_ptr <value_dwarf> val) const override;
-
+  static unsigned value (Dwfl *dwfl);
+  static zw_cdom const &cdom ();
   static std::string docstring ();
 };
 
-struct op_atmachine_elf
-  : public op_once_overload <value_cst, value_elf>
+template <class ValueType>
+struct op_elf_atclass
+  : public op_elf_simple_value <elf_atclass_def, ValueType>
 {
-  using op_once_overload::op_once_overload;
+  using op_elf_simple_value <elf_atclass_def, ValueType>
+		::op_elf_simple_value;
+};
 
-  value_cst
-  operate (std::unique_ptr <value_elf> val) const override;
+template <class ValueType>
+struct pred_elf_atclass
+  : public pred_elf_simple_value <elf_atclass_def, ValueType>
+{
+  using pred_elf_simple_value <elf_atclass_def, ValueType>
+		::pred_elf_simple_value;
+};
 
+
+struct elf_attype_def
+{
+  static unsigned value (Dwfl *dwfl);
+  static zw_cdom const &cdom ();
   static std::string docstring ();
 };
 
-struct pred_atmachine_dwarf
-  : public pred_overload <value_dwarf>
+template <class ValueType>
+struct op_elf_attype
+  : public op_elf_simple_value <elf_attype_def, ValueType>
 {
-  unsigned m_em;
+  using op_elf_simple_value <elf_attype_def, ValueType>
+		::op_elf_simple_value;
+};
 
-  pred_atmachine_dwarf (unsigned em)
-    : m_em {em}
-  {}
+template <class ValueType>
+struct pred_elf_attype
+  : public pred_elf_simple_value <elf_attype_def, ValueType>
+{
+  using pred_elf_simple_value <elf_attype_def, ValueType>
+		::pred_elf_simple_value;
+};
 
-  pred_result result (value_dwarf &a) const override;
+
+struct elf_atmachine_def
+{
+  static unsigned value (Dwfl *dwfl);
+  static zw_cdom const &cdom ();
   static std::string docstring ();
 };
 
-struct pred_atmachine_elf
-  : public pred_overload <value_elf>
+template <class ValueType>
+struct op_elf_atmachine
+  : public op_elf_simple_value <elf_atmachine_def, ValueType>
 {
-  unsigned m_em;
+  using op_elf_simple_value <elf_atmachine_def, ValueType>
+		::op_elf_simple_value;
+};
 
-  pred_atmachine_elf (unsigned em)
-    : m_em {em}
-  {}
-
-  pred_result result (value_elf &a) const override;
-  static std::string docstring ();
+template <class ValueType>
+struct pred_elf_atmachine
+  : public pred_elf_simple_value <elf_atmachine_def, ValueType>
+{
+  using pred_elf_simple_value <elf_atmachine_def, ValueType>
+		::pred_elf_simple_value;
 };
 
 #endif /* BUILTIN_ELF_H */
