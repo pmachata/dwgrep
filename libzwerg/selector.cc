@@ -1,4 +1,5 @@
 /*
+   Copyright (C) 2018 Petr Machata
    Copyright (C) 2014 Red Hat, Inc.
    This file is part of dwgrep.
 
@@ -52,13 +53,17 @@ std::ostream &
 operator<< (std::ostream &o, selector const &sel)
 {
   bool seen = false;
-  for (auto const &vt: sel.get_types ())
-    {
-      if (seen)
-	o << " ";
-      seen = true;
-      o << vt.name ();
-    }
+  auto types = sel.get_types ();
+  if (types.empty ())
+    o << "[empty]";
+  else
+    for (auto const &vt: types)
+      {
+	if (seen)
+	  o << " ";
+	seen = true;
+	o << vt.name ();
+      }
 
   return o;
 }
