@@ -30,25 +30,12 @@
 #define LIBZWERG_DW_H_
 
 #include <libzwerg.h>
+#include <libzwerg-mach.h>
 #include <elfutils/libdwfl.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-  // Objects of type zw_machine represent a machine architecture.
-  typedef struct zw_machine zw_machine;
-
-  // Create a new machine architecture descriptor from an ELF EM_*
-  // constant.  Returns NULL on error, in which case it sets *OUT_ERR.
-  // OUT_ERR shall be non-NULL.
-  zw_machine *zw_machine_init (int code, zw_error **out_err);
-
-  // Release any resources associated with MACHINE.
-  void zw_machine_destroy (zw_machine *machine);
-
-  // Return an EM_* code of this MACHINE.
-  int zw_machine_code (zw_machine const *machine);
 
   /**
    * Constant domains.

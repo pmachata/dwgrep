@@ -117,7 +117,7 @@ ADD_CUSTOM_TARGET (LibZwergVersionScript
 # libzwerg DSO
 ADD_LIBRARY (libzwerg SHARED ${LibzwergAll})
 
-SET (libzwerg_HEADERS libzwerg.h libzwerg-dw.h)
+SET (libzwerg_HEADERS libzwerg.h libzwerg-mach.h libzwerg-dw.h)
 
 TARGET_LINK_LIBRARIES (libzwerg ${LIBELF_LIBRARY} ${DWARF_LIBRARIES})
 
