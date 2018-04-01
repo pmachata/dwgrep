@@ -32,6 +32,7 @@
 #include "op.hh"
 #include "parser.hh"
 #include "scon.hh"
+#include "value-cst.hh"
 
 #include "std-memory.hh"
 
@@ -87,4 +88,28 @@ std::string
 test::test_file_name (std::string name)
 {
   return test_case_directory () + "/" + name;
+}
+
+void
+test::test_builtin_constant (vocabulary &builtins, char const *name)
+{
+  layout l;
+  auto bi = builtins.find (name);
+  ASSERT_TRUE (bi != nullptr);
+  auto origin = std::make_shared <op_origin> (l);
+  auto op = bi->build_exec (l, origin);
+  ASSERT_TRUE (op != nullptr);
+
+  scon sc {l};
+  scon_guard sg {sc, *op};
+
+  origin->set_next (sc, std::make_unique <stack> ());
+  auto stk = op->next (sc);
+  ASSERT_TRUE (stk != nullptr);
+  ASSERT_EQ (1, stk->size ());
+  auto val = stk->pop ();
+  ASSERT_TRUE (val->is <value_cst> ());
+  ASSERT_EQ (&slot_type_dom,
+	     value::as <value_cst> (val.get ())->get_constant ().dom ());
+  ASSERT_TRUE (op->next (sc) == nullptr);
 }
