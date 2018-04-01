@@ -65,7 +65,6 @@ SET_TARGET_PROPERTIES (LibzwergCore PROPERTIES
 ADD_LIBRARY (LibzwergDw OBJECT
 
   known-dwarf.h
-  known-elf.h
   atval.cc
   cache.cc
   coverage.cc
@@ -73,7 +72,6 @@ ADD_LIBRARY (LibzwergDw OBJECT
   dwfl_context.cc
   dwit.cc
   dwmods.cc
-  elfcst.cc
   libzwerg-dw.cc
   value-aset.cc
   builtin-aset.cc
@@ -81,13 +79,26 @@ ADD_LIBRARY (LibzwergDw OBJECT
   builtin-dw.cc
   builtin-dw-abbrev.cc
   builtin-dw-voc.cc
+)
+
+SET_TARGET_PROPERTIES (LibzwergDw PROPERTIES
+  COMPILE_FLAGS "-fPIC"
+)
+
+# Elf pseudo-library.
+ADD_LIBRARY (LibzwergElf OBJECT
+
+  known-elf.h
+  elfcst.cc
   value-symbol.cc
   builtin-symbol.cc
   value-elf.cc
   builtin-elf.cc
+  builtin-elf-voc.cc
+  libzwerg-elf.cc
 )
 
-SET_TARGET_PROPERTIES (LibzwergDw PROPERTIES
+SET_TARGET_PROPERTIES (LibzwergElf PROPERTIES
   COMPILE_FLAGS "-fPIC"
 )
 
@@ -95,6 +106,7 @@ SET (LibzwergAll
 
   $<TARGET_OBJECTS:LibzwergCore>
   $<TARGET_OBJECTS:LibzwergDw>
+  $<TARGET_OBJECTS:LibzwergElf>
 )
 
 # libzwerg version script
@@ -117,7 +129,7 @@ ADD_CUSTOM_TARGET (LibZwergVersionScript
 # libzwerg DSO
 ADD_LIBRARY (libzwerg SHARED ${LibzwergAll})
 
-SET (libzwerg_HEADERS libzwerg.h libzwerg-mach.h libzwerg-dw.h)
+SET (libzwerg_HEADERS libzwerg.h libzwerg-mach.h libzwerg-dw.h libzwerg-elf.h)
 
 TARGET_LINK_LIBRARIES (libzwerg ${LIBELF_LIBRARY} ${DWARF_LIBRARIES})
 

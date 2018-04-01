@@ -28,6 +28,7 @@
    not, see <http://www.gnu.org/licenses/>.  */
 
 #include "builtin-dw.hh"
+#include "builtin-elf.hh"
 #include "init.hh"
 #include "test-dw-aux.hh"
 #include "test-zw-aux.hh"
@@ -82,6 +83,17 @@ test::test_pairs (vocabulary &builtins,
 void
 test::DwTest::SetUp ()
 {
-  builtins = std::make_unique <vocabulary>
-    (*dwgrep_vocabulary_core (), *dwgrep_vocabulary_dw ());
+  auto core = dwgrep_vocabulary_core ();
+  auto dw = dwgrep_vocabulary_dw ();
+
+  builtins = std::make_unique <vocabulary> (*core, *dw);
+}
+
+void
+test::ElfTest::SetUp ()
+{
+  auto core = dwgrep_vocabulary_core ();
+  auto elf = dwgrep_vocabulary_elf ();
+
+  builtins = std::make_unique <vocabulary> (*core, *elf);
 }

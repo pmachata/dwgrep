@@ -44,6 +44,7 @@
 
 #include "libzwerg.hh"
 #include "libzwerg-dw.h"
+#include "libzwerg-elf.h"
 #include "options.hh"
 #include "libzwerg/std-memory.hh"
 #include "libzwerg/strip.hh"
@@ -620,6 +621,8 @@ try
     zw_vocabulary_add (voc.get (), zw_vocabulary_core (zw_throw_on_error {}),
 		       zw_throw_on_error {});
     zw_vocabulary_add (voc.get (), zw_vocabulary_dwarf (zw_throw_on_error {}),
+		       zw_throw_on_error {});
+    zw_vocabulary_add (voc.get (), zw_vocabulary_elf (zw_throw_on_error {}),
 		       zw_throw_on_error {});
 
     bool query_specified = false;

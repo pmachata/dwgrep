@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2017 Petr Machata
+  Copyright (C) 2017, 2018 Petr Machata
   Copyright (C) 2014, 2015 Red Hat, Inc.
 
   This file is free software; you can redistribute it and/or modify
@@ -127,6 +127,10 @@ extern "C" {
   // Get DWARF vocabulary.  Returns NULL on error, in which case it
   // sets *OUT_ERR.  OUT_ERR shall be non-NULL.
   zw_vocabulary const *zw_vocabulary_dwarf (zw_error **out_err);
+
+  // Get ELF vocabulary.  Returns NULL on error, in which case it
+  // sets *OUT_ERR.  OUT_ERR shall be non-NULL.
+  zw_vocabulary const *zw_vocabulary_elf (zw_error **out_err);
 
   // Add contents of vocabulary TO_ADD to vocabulary VOC.  Returns
   // false on error, in which case it sets *OUT_ERR.  OUT_ERR shall be

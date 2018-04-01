@@ -129,3 +129,8 @@ LIBZWERG_0.4 {
 	zw_value_is_elf;
 	zw_value_elf_dwarf;
 } LIBZWERG_0.1;
+
+LIBZWERG_0.5 {
+  global:
+	zw_vocabulary_elf;
+} LIBZWERG_0.1;

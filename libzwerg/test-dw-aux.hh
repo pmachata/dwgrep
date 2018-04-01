@@ -55,6 +55,13 @@ namespace test
     std::unique_ptr <vocabulary> builtins;
     void SetUp () override final;
   };
+
+  struct ElfTest
+    : public testing::Test
+  {
+    std::unique_ptr <vocabulary> builtins;
+    void SetUp () override final;
+  };
 }
 
 #define SOLE_YIELDED_VALUE(TYPE, YIELDED)				\
