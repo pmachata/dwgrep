@@ -27,11 +27,13 @@
    the GNU Lesser General Public License along with this program.  If
    not, see <http://www.gnu.org/licenses/>.  */
 
-#include "test-stub.hh"
-#include "test-zw-aux.hh"
+#include <gtest/gtest.h>
+
 #include "op.hh"
 #include "parser.hh"
 #include "scon.hh"
+#include "test-stub.hh"
+#include "test-zw-aux.hh"
 #include "value-cst.hh"
 
 #include "std-memory.hh"
@@ -44,13 +46,39 @@ test::stack_with_value (std::unique_ptr <value> v)
   return stk;
 }
 
+namespace
+{
+  std::shared_ptr <op>
+  build_exec (layout &l, std::shared_ptr <op_origin> &origin, vocabulary &voc,
+	      std::string q)
+  {
+    try
+      {
+	return parse_query (q).build_exec (l, origin, voc);
+      }
+    catch (std::exception &err)
+      {
+	ADD_FAILURE () << "Couldn't build the query '" << q << "': "
+		       << err.what () << ".";
+	return nullptr;
+      }
+    catch (...)
+      {
+	ADD_FAILURE () << "Couldn't build the query '" << q << "'.";
+	return nullptr;
+      }
+  }
+}
+
 std::vector <std::unique_ptr <stack>>
 test::run_query (vocabulary &voc,
 	   std::unique_ptr <stack> stk, std::string q)
 {
   layout l;
   auto origin = std::make_shared <op_origin> (l);
-  auto op = parse_query (q).build_exec (l, origin, voc);
+  auto op = build_exec (l, origin, voc, q);
+  if (op == nullptr)
+    return {};
 
   scon sc {l};
   scon_guard sg {sc, *op};
