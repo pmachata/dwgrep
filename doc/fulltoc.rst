@@ -12,3 +12,4 @@ Table of contents
    syntax
    vocabulary-core
    vocabulary-dwarf
+   vocabulary-elf

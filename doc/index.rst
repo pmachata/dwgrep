@@ -12,6 +12,7 @@ Welcome to dwgrep's documentation!
    syntax
    vocabulary-core
    vocabulary-dwarf
+   vocabulary-elf
    fulltoc
 
 

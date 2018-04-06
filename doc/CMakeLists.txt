@@ -8,6 +8,7 @@ SET (DocSources
   examples.rst
   zw_vocabulary_core-blurb.txt
   zw_vocabulary_dwarf-blurb.txt
+  zw_vocabulary_elf-blurb.txt
 )
 
 IF (NOT DEFINED SPHINX_THEME)
@@ -40,6 +41,10 @@ ADD_CUSTOM_TARGET (GenerateDocs
   COMMAND ../libzwerg/dwgrep-gendoc
 	zw_vocabulary_dwarf "Dwarf vocabulary"
 	> "${AUX_SOURCE_DIR}/vocabulary-dwarf.rst"
+
+  COMMAND ../libzwerg/dwgrep-gendoc
+	zw_vocabulary_elf "Elf vocabulary"
+	> "${AUX_SOURCE_DIR}/vocabulary-elf.rst"
 
   DEPENDS ../libzwerg/dwgrep-gendoc
   COMMENT "Building vocabulary reference")
