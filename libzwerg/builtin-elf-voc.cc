@@ -166,18 +166,10 @@ dwgrep_vocabulary_elf ()
   {
     auto t = std::make_shared <overload_tab> ();
 
-    t->add_op_overload <op_elf_atclass <value_elf>> ();
-
-    voc.add (std::make_shared <overloaded_op_builtin> ("@class", t));
-  }
-
-  {
-    auto t = std::make_shared <overload_tab> ();
-
     t->add_op_overload <op_elf_atclass <value_dwarf>> ();
     t->add_op_overload <op_elf_atclass <value_elf>> ();
 
-    voc.add (std::make_shared <overloaded_op_builtin> ("@elfclass", t));
+    voc.add (std::make_shared <overloaded_op_builtin> ("eclass", t));
   }
 
 #define ADD_ELF_CONSTANT(CODE, NAME, DOM, PRED)				\
@@ -210,17 +202,9 @@ dwgrep_vocabulary_elf ()
     auto t = std::make_shared <overload_tab> ();
 
     t->add_op_overload <op_elf_attype <value_elf>> ();
-
-    voc.add (std::make_shared <overloaded_op_builtin> ("@type", t));
-  }
-
-  {
-    auto t = std::make_shared <overload_tab> ();
-
-    t->add_op_overload <op_elf_attype <value_elf>> ();
     t->add_op_overload <op_elf_attype <value_dwarf>> ();
 
-    voc.add (std::make_shared <overloaded_op_builtin> ("@elftype", t));
+    voc.add (std::make_shared <overloaded_op_builtin> ("etype", t));
   }
 
 #define ELF_ONE_KNOWN_ET(NAME, CODE)			\
@@ -233,17 +217,9 @@ ELF_ALL_KNOWN_ET
     auto t = std::make_shared <overload_tab> ();
 
     t->add_op_overload <op_elf_atmachine <value_elf>> ();
-
-    voc.add (std::make_shared <overloaded_op_builtin> ("@machine", t));
-  }
-
-  {
-    auto t = std::make_shared <overload_tab> ();
-
-    t->add_op_overload <op_elf_atmachine <value_elf>> ();
     t->add_op_overload <op_elf_atmachine <value_dwarf>> ();
 
-    voc.add (std::make_shared <overloaded_op_builtin> ("@elfmachine", t));
+    voc.add (std::make_shared <overloaded_op_builtin> ("emachine", t));
   }
 
 #define ELF_ONE_KNOWN_EM(NAME, CODE)			\
