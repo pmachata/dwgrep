@@ -33,7 +33,7 @@
 #include <sstream>
 
 #include "tree.hh"
-#include "builtin-core.hh"
+#include "builtin-core-voc.hh"
 #include "parser.hh"
 #include "lexer.hh"
 

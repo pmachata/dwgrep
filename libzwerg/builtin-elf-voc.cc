@@ -29,9 +29,10 @@
 #include <elf.h>
 
 #include "builtin-elf.hh"
+#include "builtin-elf-voc.hh"
+#include "builtin-symbol.hh"
 #include "elfcst.hh"
 #include "known-elf.h"
-#include "builtin-symbol.hh"
 
 std::unique_ptr <vocabulary>
 dwgrep_vocabulary_elf ()

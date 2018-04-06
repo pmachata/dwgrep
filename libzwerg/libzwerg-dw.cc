@@ -30,7 +30,7 @@
 #include "libzwerg-dw.h"
 #include "libzwerg.hh"
 
-#include "builtin-dw.hh"
+#include "builtin-dw-voc.hh"
 #include "value-aset.hh"
 #include "value-dw.hh"
 #include "dwcst.hh"

@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2014 Red Hat, Inc.
+   Copyright (C) 2018 Petr Machata
    This file is part of dwgrep.
 
    This file is free software; you can redistribute it and/or modify
@@ -26,12 +26,10 @@
    the GNU Lesser General Public License along with this program.  If
    not, see <http://www.gnu.org/licenses/>.  */
 
-#ifndef _INIT_HH_
-#define _INIT_HH_
-
-#include <memory>
+#ifndef _BUILTIN_DW_VOC_H_
+#define _BUILTIN_DW_VOC_H_
 
 struct vocabulary;
-std::unique_ptr <vocabulary> dwgrep_vocabulary_core ();
+std::unique_ptr <vocabulary> dwgrep_vocabulary_dw ();
 
-#endif /* _INIT_HH_ */
+#endif /* _BUILTIN_DW_VOC_H_ */

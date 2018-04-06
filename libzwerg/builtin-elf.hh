@@ -34,9 +34,6 @@
 #include "value-elf.hh"
 #include "value-str.hh"
 
-struct vocabulary;
-std::unique_ptr <vocabulary> dwgrep_vocabulary_elf ();
-
 struct op_elf_dwarf
   : public op_yielding_overload <value_elf, value_dwarf>
 {

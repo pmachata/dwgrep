@@ -36,6 +36,7 @@
 #include "value-seq.hh"
 #include "value-str.hh"
 
+#include "builtin-core-voc.hh"
 #include "builtin-closure.hh"
 #include "builtin-cmp.hh"
 #include "builtin-cst.hh"

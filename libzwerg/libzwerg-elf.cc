@@ -29,7 +29,7 @@
 #include "libzwerg-elf.h"
 #include "libzwerg.hh"
 
-#include "builtin-elf.hh"
+#include "builtin-elf-voc.hh"
 #include "value-elf.hh"
 #include "value-symbol.hh"
 

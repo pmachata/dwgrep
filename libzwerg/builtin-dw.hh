@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2017 Petr Machata
+   Copyright (C) 2017, 2018 Petr Machata
    Copyright (C) 2014, 2015 Red Hat, Inc.
    This file is part of dwgrep.
 
@@ -36,9 +36,6 @@
 #include "value-dw.hh"
 #include "value-str.hh"
 #include "value-aset.hh"
-
-struct vocabulary;
-std::unique_ptr <vocabulary> dwgrep_vocabulary_dw ();
 
 struct op_dwopen_str
   : public op_once_overload <value_dwarf, value_str>

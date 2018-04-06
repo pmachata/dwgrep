@@ -37,10 +37,10 @@
 #include "libzwergP.hh"
 #include "libzwerg.hh"
 #include "builtin.hh"
-#include "builtin-core.hh"
-#include "builtin-dw.hh"
+#include "builtin-core-voc.hh"
 #include "docstring.hh"
 #include "flag_saver.hh"
+#include "overload.hh"
 
 static std::map <std::string, std::vector <std::string>>
 split_pfx_recursively (std::map <std::string, std::vector <std::string>> d,

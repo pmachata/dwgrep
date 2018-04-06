@@ -30,6 +30,8 @@
 #define TEST_DW_AUX_H
 
 #include <gtest/gtest.h>
+
+#include "stack.hh"
 #include "value-dw.hh"
 
 struct vocabulary;

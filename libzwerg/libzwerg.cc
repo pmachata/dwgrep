@@ -34,7 +34,7 @@
 #include <string>
 
 #include "builtin.hh"
-#include "builtin-core.hh"
+#include "builtin-core-voc.hh"
 #include "op.hh"
 #include "parser.hh"
 #include "stack.hh"

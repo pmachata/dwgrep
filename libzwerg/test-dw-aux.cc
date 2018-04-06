@@ -27,13 +27,14 @@
    the GNU Lesser General Public License along with this program.  If
    not, see <http://www.gnu.org/licenses/>.  */
 
-#include "builtin-core.hh"
-#include "builtin-dw.hh"
-#include "builtin-elf.hh"
+#include "builtin-core-voc.hh"
+#include "builtin-dw-voc.hh"
+#include "builtin-elf-voc.hh"
 #include "test-dw-aux.hh"
 #include "test-zw-aux.hh"
 #include "value-dw.hh"
 #include "value-seq.hh"
+#include "value-str.hh"
 
 std::unique_ptr <value_dwarf>
 test::dw (std::string fn, doneness d)
