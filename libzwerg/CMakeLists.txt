@@ -38,7 +38,7 @@ ADD_LIBRARY (LibzwergCore OBJECT
   builtin.cc
   constant.cc
   docstring.cc
-  init.cc
+  builtin-core-voc.cc
   int.cc
   layout.cc
   libzwerg.cc

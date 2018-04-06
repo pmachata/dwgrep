@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2017 Petr Machata
+   Copyright (C) 2017, 2018 Petr Machata
    Copyright (C) 2014, 2015 Red Hat, Inc.
    This file is part of dwgrep.
 
@@ -33,9 +33,9 @@
 #include <sstream>
 
 #include "tree.hh"
+#include "builtin-core.hh"
 #include "parser.hh"
 #include "lexer.hh"
-#include "init.hh"
 
 static unsigned tests = 0, failed = 0;
 

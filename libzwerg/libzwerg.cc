@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2017 Petr Machata
+  Copyright (C) 2017, 2018 Petr Machata
   Copyright (C) 2014, 2015 Red Hat, Inc.
 
   This file is free software; you can redistribute it and/or modify
@@ -34,7 +34,7 @@
 #include <string>
 
 #include "builtin.hh"
-#include "init.hh"
+#include "builtin-core.hh"
 #include "op.hh"
 #include "parser.hh"
 #include "stack.hh"

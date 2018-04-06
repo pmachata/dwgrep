@@ -1,4 +1,5 @@
 /*
+   Copyright (C) 2018 Petr Machata
    Copyright (C) 2014, 2015 Red Hat, Inc.
    This file is part of dwgrep.
 
@@ -36,7 +37,7 @@
 #include "libzwergP.hh"
 #include "libzwerg.hh"
 #include "builtin.hh"
-#include "init.hh"
+#include "builtin-core.hh"
 #include "builtin-dw.hh"
 #include "docstring.hh"
 #include "flag_saver.hh"

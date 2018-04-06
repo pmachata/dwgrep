@@ -30,8 +30,8 @@
 #include <gtest/gtest.h>
 #include "std-memory.hh"
 
+#include "builtin-core.hh"
 #include "op.hh"
-#include "init.hh"
 #include "value-cst.hh"
 #include "test-zw-aux.hh"
 

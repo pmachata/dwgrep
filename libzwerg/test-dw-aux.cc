@@ -27,9 +27,9 @@
    the GNU Lesser General Public License along with this program.  If
    not, see <http://www.gnu.org/licenses/>.  */
 
+#include "builtin-core.hh"
 #include "builtin-dw.hh"
 #include "builtin-elf.hh"
-#include "init.hh"
 #include "test-dw-aux.hh"
 #include "test-zw-aux.hh"
 #include "value-dw.hh"
