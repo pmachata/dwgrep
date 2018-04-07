@@ -29,6 +29,7 @@
 
 #include <gtest/gtest.h>
 
+#include "builtin-core-voc.hh"
 #include "op.hh"
 #include "parser.hh"
 #include "scon.hh"
@@ -140,4 +141,10 @@ test::test_builtin_constant (vocabulary &builtins, char const *name)
   ASSERT_EQ (&slot_type_dom,
 	     value::as <value_cst> (val.get ())->get_constant ().dom ());
   ASSERT_TRUE (op->next (sc) == nullptr);
+}
+
+void
+test::CoreTest::SetUp ()
+{
+  builtins = dwgrep_vocabulary_core ();
 }

@@ -46,6 +46,13 @@ namespace test
   std::string get_parse_error (vocabulary &voc, std::string q);
   std::string test_file_name (std::string name);
   void test_builtin_constant (vocabulary &builtins, char const *name);
+
+  struct CoreTest
+    : public testing::Test
+  {
+    std::unique_ptr <vocabulary> builtins;
+    void SetUp () override final;
+  };
 }
 
 #endif /* TEST_ZW_AUX_H */
