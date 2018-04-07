@@ -145,6 +145,20 @@ dwgrep_vocabulary_core ()
     voc->add (std::make_shared <overloaded_op_builtin> ("mod", t));
   }
 
+  // "and"
+  {
+    auto t = std::make_shared <overload_tab> ();
+    t->add_op_overload <op_and_cst> ();
+    voc->add (std::make_shared <overloaded_op_builtin> ("and", t));
+  }
+
+  // "or"
+  {
+    auto t = std::make_shared <overload_tab> ();
+    t->add_op_overload <op_or_cst> ();
+    voc->add (std::make_shared <overloaded_op_builtin> ("or", t));
+  }
+
   // "neg"
   {
     auto t = std::make_shared <overload_tab> ();

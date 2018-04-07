@@ -75,6 +75,20 @@ TEST_F (CoreTest, test_value_cst)
 	    {1, "0xffffffffffffffff neg == 0"},
 	    {1, "0xfffffffffffffff neg == -0x1000000000000000"},
 	    {1, "-0xfffffffffffffff neg == 0xffffffffffffffe"},
+
+	    {1, "3 6 and == 2"},
+	    {1, "2 -2 and == 2"},
+	    {1, "3 -3 and == 1"},
+	    {1, "-3 -2 and == -4"},
+	    {1, "0xfffffffffffffff0 0x0fffffffffffffff and == 0x0ffffffffffffff0"},
+	    {1, "0xffffffffffffffff -1 and == 0xffffffffffffffff"},
+
+	    {1, "3 6 or == 7"},
+	    {1, "2 -2 or == -2"},
+	    {1, "3 -3 or == -1"},
+	    {1, "-4 -6 or == -2"},
+	    {1, "0xfffffffffffffff0 0x0fffffffffffffff or == 0xffffffffffffffff"},
+	    {1, "0xffffffffffffffff -1 or == -1"},
 	})
     {
       size_t nresults = std::get <0> (entry);
