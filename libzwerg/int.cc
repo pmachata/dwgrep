@@ -338,3 +338,24 @@ operator~ (mpz_class v)
   // small positive numbers we force signed number.
   return mpz_class {~v.m_u, signedness::sign};
 }
+
+mpz_class
+operator& (mpz_class v1, mpz_class v2)
+{
+  // It's not clear what signedness to use when a large positive number is and'd
+  // with a negative number. The two numbers may be bit-for-bit equal and the
+  // only thing that differs is their signedness. Python chooses to keep the
+  // result signed if both operands are signed for and'ing, and if either
+  // operand is signed when or'ing. Do likewise.
+  auto sig = v1.m_sign == signedness::sign && v2.m_sign == signedness::sign
+    ? signedness::sign : signedness::unsign;
+  return mpz_class {v1.m_u & v2.m_u, sig};
+}
+
+mpz_class
+operator| (mpz_class v1, mpz_class v2)
+{
+  auto sig = v1.m_sign == signedness::sign || v2.m_sign == signedness::sign
+    ? signedness::sign : signedness::unsign;
+  return mpz_class {v1.m_u | v2.m_u, sig};
+}
