@@ -337,6 +337,7 @@ TEST_F (ElfTest, test_elf)
       auto const &q = std::get <2> (entry);
 
       auto yielded = run_dwquery (*builtins, fn, q);
-      ASSERT_EQ (nresults, yielded.size ());
+      ASSERT_EQ (nresults, yielded.size ())
+	<< "In '" << q << "'";
     }
 }

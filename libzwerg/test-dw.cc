@@ -599,7 +599,8 @@ TEST_F (DwTest, test_various)
     {
       auto stk = std::make_unique <stack> ();
       auto yielded = run_query (*builtins, std::move (stk), entry.second);
-      ASSERT_EQ (entry.first, yielded.size ());
+      ASSERT_EQ (entry.first, yielded.size ())
+	<< "In '" << entry.second << "'";
     }
 }
 

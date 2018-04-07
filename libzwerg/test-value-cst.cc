@@ -82,7 +82,8 @@ TEST_F (CoreTest, test_value_cst)
       auto stk = std::make_unique <stack> ();
 
       auto yielded = run_query (*builtins, std::move (stk), q);
-      ASSERT_EQ (nresults, yielded.size ());
+      ASSERT_EQ (nresults, yielded.size ())
+	<< "In '" << q << "'";
     }
 }
 
