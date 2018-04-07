@@ -359,3 +359,11 @@ operator| (mpz_class v1, mpz_class v2)
     ? signedness::sign : signedness::unsign;
   return mpz_class {v1.m_u | v2.m_u, sig};
 }
+
+mpz_class
+operator^ (mpz_class v1, mpz_class v2)
+{
+  auto sig = v1.m_sign != v2.m_sign
+    ? signedness::sign : signedness::unsign;
+  return mpz_class {v1.m_u ^ v2.m_u, sig};
+}
