@@ -158,6 +158,7 @@ public:
 std::ostream &operator<< (std::ostream &o, constant cst);
 
 void check_arith (constant const &cst_a, constant const &cst_b);
+void check_arith (constant const &cst_a);
 
 inline const char *
 abbreviate (char const *name, size_t prefix_len, brevity brv)

@@ -69,6 +69,12 @@ TEST_F (CoreTest, test_value_cst)
 	    {1, "[-3 bit] == [-0x1, -0x2]"},
 	    {1, "[0x1234 bit] == [0x4, 0x10, 0x20, 0x200, 0x1000]"},
 	    {1, "[4660 bit] == [0x4, 0x10, 0x20, 0x200, 0x1000]"},
+
+	    {1, "7 neg == -8"},
+	    {1, "-7 neg == 6"},
+	    {1, "0xffffffffffffffff neg == 0"},
+	    {1, "0xfffffffffffffff neg == -0x1000000000000000"},
+	    {1, "-0xfffffffffffffff neg == 0xffffffffffffffe"},
 	})
     {
       size_t nresults = std::get <0> (entry);

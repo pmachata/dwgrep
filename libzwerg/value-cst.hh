@@ -136,4 +136,14 @@ struct op_mod_cst
   static std::string docstring ();
 };
 
+struct op_neg_cst
+  : public op_overload <value_cst, value_cst>
+{
+  using op_overload::op_overload;
+
+  std::unique_ptr <value_cst>
+  operate (std::unique_ptr <value_cst> a) const override;
+  static std::string docstring ();
+};
+
 #endif /* _VALUE_CST_H_ */

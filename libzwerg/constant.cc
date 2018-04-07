@@ -1,4 +1,5 @@
 /*
+   Copyright (C) 2018 Petr Machata
    Copyright (C) 2014, 2015 Red Hat, Inc.
    This file is part of dwgrep.
 
@@ -244,4 +245,13 @@ check_arith (constant const &cst_a, constant const &cst_b)
   if (! cst_a.dom ()->safe_arith () || ! cst_b.dom ()->safe_arith ())
     std::cerr << "Warning: doing arithmetic with " << cst_a << " and "
 	      << cst_b << " is probably not meaningful.\n";
+}
+
+void
+check_arith (constant const &cst_a)
+{
+  // If a named constant partakes, warn.
+  if (! cst_a.dom ()->safe_arith ())
+    std::cerr << "Warning: doing arithmetic on " << cst_a
+	      << " is probably not meaningful.\n";
 }

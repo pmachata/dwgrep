@@ -212,6 +212,24 @@ namespace
       }
   }
 
+  template <class F>
+  std::unique_ptr <value_cst>
+  simple_arith_op (value_cst const &a, F f)
+  {
+    constant const &cst_a = a.get_constant ();
+    check_arith (cst_a);
+
+    try
+      {
+	return f (cst_a, cst_a.dom ());
+      }
+    catch (std::domain_error &e)
+      {
+	std::cerr << "Error: " << e.what () << std::endl;
+	return nullptr;
+      }
+  }
+
   char const *const arith_docstring =
 R"docstring(
 
@@ -235,6 +253,14 @@ denoted with ``->?`` relation::
 	1
 
 )docstring";
+
+  char const *const bitwise_docstring =
+R"docstring(
+
+XXX document me!
+
+)docstring";
+
 }
 
 std::unique_ptr <value_cst>
@@ -339,4 +365,23 @@ std::string
 op_mod_cst::docstring ()
 {
   return arith_docstring;
+}
+
+
+std::unique_ptr <value_cst>
+op_neg_cst::operate (std::unique_ptr <value_cst> a) const
+{
+  return simple_arith_op
+    (*a, [] (constant const &cst_a,
+	     constant_dom const *d) -> std::unique_ptr <value_cst>
+	 {
+	   constant r {~cst_a.value (), d};
+	   return std::make_unique <value_cst> (r, 0);
+	 });
+}
+
+std::string
+op_neg_cst::docstring ()
+{
+  return bitwise_docstring;
 }
