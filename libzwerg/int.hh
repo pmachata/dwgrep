@@ -1,4 +1,5 @@
 /*
+   Copyright (C) 2018 Petr Machata
    Copyright (C) 2014, 2015 Red Hat, Inc.
    This file is part of dwgrep.
 
@@ -29,6 +30,7 @@
 #ifndef _INT_H_
 #define _INT_H_
 
+#include <cassert>
 #include <cstdint>
 #include <iosfwd>
 
