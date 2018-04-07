@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2017 Petr Machata
+   Copyright (C) 2017, 2018 Petr Machata
    Copyright (C) 2014, 2015 Red Hat, Inc.
    This file is part of dwgrep.
 
@@ -29,6 +29,8 @@
 
 #include <iostream>
 #include <memory>
+
+#include <string.h>
 
 #include "value-cst.hh"
 
@@ -102,6 +104,84 @@ example::
 
 	$ dwgrep '0xc value'
 	12
+
+)docstring";
+}
+
+
+// bit
+
+namespace
+{
+  struct bit_producer
+    : public value_producer <value_cst>
+  {
+    size_t m_pos;
+    uint64_t m_value;
+    signedness m_sign;
+
+    bit_producer (uint64_t value, signedness sign)
+      : m_pos {0}
+      , m_value {value}
+      , m_sign {sign}
+    {}
+
+    std::unique_ptr <value_cst>
+    next () override
+    {
+      if (unsigned bit = static_cast <unsigned> (ffsll (m_value)))
+	{
+	  auto ret = uint64_t (1) << (bit - 1);
+	  m_value &= ~ret;
+	  auto m = m_sign == signedness::unsign
+	    ? mpz_class {ret, m_sign}
+	    : mpz_class {-ret, m_sign};
+	  constant cst {m, &hex_constant_dom};
+	  return std::make_unique <value_cst> (cst, m_pos++);
+	}
+      return nullptr;
+    }
+  };
+}
+
+std::unique_ptr <value_producer <value_cst>>
+op_bit_cst::operate (std::unique_ptr <value_cst> a) const
+{
+  auto const &cst = a->get_constant ();
+  if (! cst.dom ()->safe_arith ())
+    throw std::runtime_error
+		("`bit' applied to a non-arithmetic constant value");
+
+  if (cst.value () >= 0)
+    return std::make_unique <bit_producer> (cst.value ().uval (),
+					    signedness::unsign);
+  else
+    return std::make_unique <bit_producer> (std::abs (cst.value ().sval ()),
+					    signedness::sign);
+}
+
+std::string
+op_bit_cst::docstring ()
+{
+  return
+R"docstring(
+
+Returns bits of the value on TOS, which shall be a T_CONST with an arithmetic
+domain (i.e. not a named constant). If the value is negative, the yielded bits
+will be negative as well.
+
+For example::
+
+	$ dwgrep -e '0x37 bit'
+	0x1
+	0x2
+	0x4
+	0x10
+	0x20
+
+	$ dwgrep -e '-0x3 bit'
+	-0x1
+	-0x2
 
 )docstring";
 }

@@ -747,7 +747,14 @@
 ***  phdr :: T_ELF ->* T_PHDR
 ***  section :: T_ELF ->* T_SECTION
 ***  @flags :: T_ELF -> T_CONST
-***  bit :: T_CONST ->* T_CONST
+     Add the following example to value-cst.cc when "eflags" is done:
+
+A typical use would be in testing whether a bit is set, as in::
+
+	$ ./dwgrep/dwgrep foo.o -e '(eflags bit == EF_SPARC_LEDATA)'
+	<Dwarf "foo.o">
+
+*** *bit :: T_CONST ->* T_CONST
      Yield a constant for each set bit. The yielded constants have the same
      domain as the source operand.
      : Dw elf (@flags bit == EF_SPARC_LEDATA)
@@ -779,6 +786,9 @@
     duplicities as well. So we can't specialize ?eq like this. I think
     T_STRTAB_ENTRY will actually have to be a distinct type and comparison to a
     string will be done like (foo section string value == "bar").
+
+    (XXX or we could allow overriding ?eq and use zw_value::cmp as a last
+    resort.)
 
 ***  value :: T_STRTAB_ENTRY -> T_STR
 ***  offset :: T_STRTAB_ENTRY -> T_CONST

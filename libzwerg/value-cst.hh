@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2017 Petr Machata
+   Copyright (C) 2017, 2018 Petr Machata
    Copyright (C) 2014, 2015 Red Hat, Inc.
    This file is part of dwgrep.
 
@@ -63,6 +63,17 @@ struct op_value_cst
   using op_once_overload::op_once_overload;
 
   value_cst operate (std::unique_ptr <value_cst> a) const override;
+
+  static std::string docstring ();
+};
+
+struct op_bit_cst
+  : public op_yielding_overload <value_cst, value_cst>
+{
+  using op_yielding_overload::op_yielding_overload;
+
+  std::unique_ptr <value_producer <value_cst>>
+  operate (std::unique_ptr <value_cst> a) const override;
 
   static std::string docstring ();
 };

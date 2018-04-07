@@ -186,7 +186,8 @@ IF (GTEST_FOUND)
   ADD_TEST (TestOp test-op ${TESTCASE_DIR})
 
   ADD_EXECUTABLE (test-value-cst test-value-cst.cc
-    $<TARGET_OBJECTS:TestStub> $<TARGET_OBJECTS:LibzwergCore>)
+    $<TARGET_OBJECTS:TestStub> $<TARGET_OBJECTS:TestZwAux>
+    $<TARGET_OBJECTS:LibzwergCore>)
   TARGET_LINK_LIBRARIES (test-value-cst ${GTEST_LIBRARIES})
   ADD_TEST (TestValueCst test-value-cst ${TESTCASE_DIR})
 

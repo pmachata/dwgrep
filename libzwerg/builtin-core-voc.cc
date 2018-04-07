@@ -243,5 +243,12 @@ dwgrep_vocabulary_core ()
     voc->add (std::make_shared <overloaded_op_builtin> ("value", t));
   }
 
+  // "bit"
+  {
+    auto t = std::make_shared <overload_tab> ();
+    t->add_op_overload <op_bit_cst> ();
+    voc->add (std::make_shared <overloaded_op_builtin> ("bit", t));
+  }
+
   return voc;
 }
