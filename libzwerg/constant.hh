@@ -71,7 +71,7 @@ public:
   //
   // most_enclosing returns either itself, or a domain that best fits
   // the constant in question.  E.g.
-  //    domain$STT_ARM>->most_enclosing (STT_FUNC)
+  //    domain$STT_ARM->most_enclosing (STT_FUNC)
   // would return domain$STT, because there's nothing ARM-specific on
   // that constant.
   virtual constant_dom const *most_enclosing (mpz_class const &c) const
@@ -108,7 +108,7 @@ extern constant_dom const &hex_constant_dom;
 extern constant_dom const &oct_constant_dom;
 extern constant_dom const &bin_constant_dom;
 
-// A domain for boolean-formated unsigned values.
+// A domain for boolean-formatted unsigned values.
 extern constant_dom const &bool_constant_dom;
 
 extern constant_dom const &column_number_dom;
