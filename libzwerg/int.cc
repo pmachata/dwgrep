@@ -1,4 +1,5 @@
 /*
+   Copyright (C) 2018 Petr Machata
    Copyright (C) 2014 Red Hat, Inc.
    This file is part of dwgrep.
 
@@ -312,4 +313,28 @@ operator% (mpz_class v1, mpz_class v2)
 
   mpz_class d = v1 / v2;
   return v1 - v2 * d;
+}
+
+mpz_class
+operator~ (mpz_class v)
+{
+  // There are really three cases: negative numbers, small positive numbers (up
+  // to the value of INT64_MAX) and large positive numbers. Negation of a large
+  // positive number or a negative number ends up being a small positive number.
+  // The only concern is what to do with negation of small positive numbers.
+  //
+  // We could take the signedness of the operand and decide based on
+  // that--negation of signed small positive number would be a negative number,
+  // whereas negation of unsigned small positive number would be a large
+  // positive number.
+  //
+  // But that would betray number of bits that we operate with, and the whole
+  // arithmetic package is built around the theory that you are not supposed to
+  // care (mpz_class used to be an actual GNU MP arbitrary-precision class).
+  //
+  // So instead we simply pretend all negated numbers are signed. That's
+  // actually a correct answer for negation of large positive numbers, negative
+  // numbers, and signed small positive numbers, and for negation of unsigned
+  // small positive numbers we force signed number.
+  return mpz_class {~v.m_u, signedness::sign};
 }
