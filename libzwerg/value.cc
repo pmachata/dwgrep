@@ -1,4 +1,5 @@
 /*
+   Copyright (C) 2018 Petr Machata
    Copyright (C) 2014, 2015 Red Hat, Inc.
    This file is part of dwgrep.
 
@@ -119,24 +120,29 @@ static struct
   : public constant_dom
 {
   void
+  show_invalid (mpz_class const &v, std::ostream &o) const
+  {
+    o << "T_<invalid type code " << v << ">";
+  }
+
+  void
   show (mpz_class const &v, std::ostream &o, brevity brv) const override
   {
-    assert (v >= 0);
+    if (v < 0)
+      return show_invalid (v, o);
 
     uint64_t ui = v.uval ();
     static_assert (sizeof (value_type) == 1,
 		   "assuming value_type is 8 bits large");
-    if (ui <= 0xff)
-      {
-	char const *name = find_vtype_name (ui);
-	assert (name != nullptr);
-	assert (name[0] == 'T' && name[1] == '_');
-	o << (&name[brv == brevity::full ? 0 : 2]);
-	return;
-      }
+    if (ui > 0xff)
+      return show_invalid (v, o);
 
-    assert (! "Invalid slot type constant value.");
-    abort ();
+    char const *name = find_vtype_name (ui);
+    if (name == nullptr)
+      return show_invalid (v, o);
+
+    assert (name[0] == 'T' && name[1] == '_');
+    o << (&name[brv == brevity::full ? 0 : 2]);
   }
 
   char const *name () const override
