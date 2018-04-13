@@ -367,3 +367,44 @@ operator^ (mpz_class v1, mpz_class v2)
     ? signedness::sign : signedness::unsign;
   return mpz_class {v1.m_u ^ v2.m_u, sig};
 }
+
+mpz_class
+operator<< (mpz_class v1, mpz_class v2)
+{
+  if (v2 < 0)
+    int_error (describe_error ("negative shift", v1, v2, "<<"));
+
+  // Guard agains shifts >= width, that's UB.
+  unsigned max = 8 * sizeof v2.m_u;
+  if (v2 >= max)
+    return mpz_class {0, v1.m_sign};
+
+  return mpz_class {v1.m_u << v2.m_u, v1.m_sign};
+}
+
+mpz_class
+operator>> (mpz_class v1, mpz_class v2)
+{
+  if (v2 < 0)
+    int_error (describe_error ("negative shift", v1, v2, "<<"));
+
+  // Guard agains shifts >= width, that's UB.
+  unsigned max = 8 * sizeof v2.m_u;
+
+  switch (v1.m_sign) {
+  case signedness::sign:
+    if (v2 >= max)
+      return mpz_class {-1ull, v1.m_sign};
+    else
+      return mpz_class {static_cast <decltype (v1.m_u)> (v1.m_i >> v2.m_u),
+			v1.m_sign};
+
+  case signedness::unsign:
+    if (v2 >= max)
+      return mpz_class {0, v1.m_sign};
+    else
+      return mpz_class {v1.m_u >> v2.m_u, v1.m_sign};
+  }
+
+  __builtin_unreachable ();
+}

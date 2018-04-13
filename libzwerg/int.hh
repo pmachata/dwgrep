@@ -119,6 +119,9 @@ mpz_class operator& (mpz_class v1, mpz_class v2);
 mpz_class operator^ (mpz_class v1, mpz_class v2);
 mpz_class operator| (mpz_class v1, mpz_class v2);
 
+mpz_class operator<< (mpz_class v1, mpz_class v2);
+mpz_class operator>> (mpz_class v1, mpz_class v2);
+
 inline uint64_t
 mpz_class::uval () const
 {
