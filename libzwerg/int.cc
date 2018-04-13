@@ -38,7 +38,7 @@
 namespace
 {
   std::string
-  describe_error (char const *what, mpz_class a, mpz_class b, char op)
+  describe_error (char const *what, mpz_class a, mpz_class b, char const *op)
   {
     std::stringstream ss;
     ss << what << " occured when computing " << a << op << b;
@@ -46,13 +46,13 @@ namespace
   }
 
   std::string
-  describe_overflow (mpz_class a, mpz_class b, char op)
+  describe_overflow (mpz_class a, mpz_class b, char const *op)
   {
     return describe_error ("overflow", a, b, op);
   }
 
   std::string
-  describe_overflow (mpz_class a, char op)
+  describe_overflow (mpz_class a, char const *op)
   {
     std::stringstream ss;
     ss << "overflow occured when computing " << op << a;
@@ -60,7 +60,7 @@ namespace
   }
 
   std::string
-  describe_div_0 (mpz_class a, mpz_class b, char op)
+  describe_div_0 (mpz_class a, mpz_class b, char const *op)
   {
     return describe_error ("division by zero", a, b, op);
   }
@@ -156,7 +156,7 @@ operator- (mpz_class v)
 
     case signedness::unsign:
       if (v.m_u > (uint64_t) INT64_MAX + 1)
-	int_error (describe_overflow (v, '-'));
+	int_error (describe_overflow (v, "-"));
       return mpz_class {-v.m_u, signedness::sign};
     }
 
@@ -188,13 +188,13 @@ operator+ (mpz_class v1, mpz_class v2)
 	    // At least one of them is minimum value and we know
 	    // that the other is not zero, because we check for that
 	    // up there.  Thus this has to be overflow.
-	    int_error (describe_overflow (v1, v2, '+'));
+	    int_error (describe_overflow (v1, v2, "+"));
 
 	  uint64_t ua = -a;
 	  uint64_t ub = -b;
 	  uint64_t ur = ua + ub;
 	  if (ur < ua || ur > (uint64_t) INT64_MAX + 1)
-	    int_error (describe_overflow (v1, v2, '+'));
+	    int_error (describe_overflow (v1, v2, "+"));
 	  return mpz_class {-ur, signedness::sign};
 	}
       }
@@ -212,7 +212,7 @@ operator+ (mpz_class v1, mpz_class v2)
  uns:
   auto result = v1.m_u + v2.m_u;
   if (result < v1.m_u)
-    int_error (describe_overflow (v1, v2, '+'));
+    int_error (describe_overflow (v1, v2, "+"));
   return mpz_class {result, signedness::unsign};
 }
 
@@ -227,7 +227,7 @@ operator- (mpz_class v1, mpz_class v2)
 	return mpz_class {v1.m_u - v2.m_u};
       uint64_t r = v2.m_u - v1.m_u;
       if (r > (uint64_t) INT64_MAX + 1)
-	int_error (describe_overflow (v1, v2, '-'));
+	int_error (describe_overflow (v1, v2, "-"));
       return mpz_class {-r, signedness::sign};
     }
 
@@ -238,7 +238,7 @@ operator- (mpz_class v1, mpz_class v2)
   assert (!(v2 < 0));
   assert (v1 < 0);
   if (v2.m_u > v1.m_u - INT64_MIN)
-    int_error (describe_overflow (v1, v2, '-'));
+    int_error (describe_overflow (v1, v2, "-"));
   return mpz_class {(uint64_t) (v1.m_i - v2.m_i),
 		    signedness::sign};
 }
@@ -260,7 +260,7 @@ operator* (mpz_class v1, mpz_class v2)
     {
       uint64_t r = v1.m_u * v2.m_u;
       if (v1.m_u != 0 && r / v1.m_u != v2.m_u)
-	int_error (describe_overflow (v1, v2, '*'));
+	int_error (describe_overflow (v1, v2, "*"));
       return mpz_class {r, signedness::unsign};
     }
 
@@ -271,9 +271,9 @@ operator* (mpz_class v1, mpz_class v2)
   uint64_t a = (-v2).m_u;
   uint64_t r = a * v1.m_u;
   if (a != 0 && r / a != v1.m_u)
-    int_error (describe_overflow (v1, v2, '*'));
+    int_error (describe_overflow (v1, v2, "*"));
   if (r > (uint64_t) INT64_MAX + 1)
-    int_error (describe_overflow (v1, v2, '*'));
+    int_error (describe_overflow (v1, v2, "*"));
   return mpz_class {-r, signedness::sign};
 }
 
@@ -281,7 +281,7 @@ mpz_class
 operator/ (mpz_class v1, mpz_class v2)
 {
   if (v2.m_u == 0)
-    int_error (describe_div_0 (v1, v2, '/'));
+    int_error (describe_div_0 (v1, v2, "/"));
 
   bool neg = false;
   if (v1 < 0)
@@ -309,7 +309,7 @@ mpz_class
 operator% (mpz_class v1, mpz_class v2)
 {
   if (v2.m_u == 0)
-    int_error (describe_div_0 (v1, v2, '%'));
+    int_error (describe_div_0 (v1, v2, "%"));
 
   mpz_class d = v1 / v2;
   return v1 - v2 * d;
