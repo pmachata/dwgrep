@@ -97,6 +97,17 @@ TEST_F (CoreTest, test_value_cst)
 	    {1, "0xfffffffffffffff0 0x0fffffffffffffff xor == 0xf00000000000000f"},
 	    {1, "0xffffffffffffffff -1 xor == 0"},
 	    {1, "0xffffffffffffffff -2 xor == 1"},
+
+	    {1, "7 2 shl == 28"},
+	    {1, "-2 1 shl == -4"},
+	    {1, "3 0 shl == 3"},
+	    {1, "3 100 shl == 0"},
+
+	    {1, "7 1 shr == 3"},
+	    {1, "-7 1 shr == -4"},
+	    {1, "3 0 shr == 3"},
+	    {1, "3 100 shr == 0"},
+	    {1, "-7 100 shr == -1"},
 	})
     {
       size_t nresults = std::get <0> (entry);

@@ -267,6 +267,13 @@ is pushed again.
 
 )docstring";
 
+  char const *const shift_docstring =
+R"docstring(
+
+The two words ``shl`` and ``shr`` are used for logical shifts. ``shl`` shifts
+left by a given number of bits, ``shr`` shifts right. It is an error to invoke
+thse functions when the second operand (i.e. the shift distance) is negative.
+
 )docstring";
 
 }
@@ -455,4 +462,46 @@ std::string
 op_neg_cst::docstring ()
 {
   return bitwise_docstring;
+}
+
+
+std::unique_ptr <value_cst>
+op_shl_cst::operate (std::unique_ptr <value_cst> a,
+		     std::unique_ptr <value_cst> b) const
+{
+  return simple_arith_op
+    (*a, *b,
+     [] (constant const &cst_a, constant const &cst_b,
+	 constant_dom const *d) -> std::unique_ptr <value_cst>
+     {
+       constant r {cst_a.value () << cst_b.value (), d};
+       return std::make_unique <value_cst> (r, 0);
+     });
+}
+
+std::string
+op_shl_cst::docstring ()
+{
+  return shift_docstring;
+}
+
+
+std::unique_ptr <value_cst>
+op_shr_cst::operate (std::unique_ptr <value_cst> a,
+		     std::unique_ptr <value_cst> b) const
+{
+  return simple_arith_op
+    (*a, *b,
+     [] (constant const &cst_a, constant const &cst_b,
+	 constant_dom const *d) -> std::unique_ptr <value_cst>
+     {
+       constant r {cst_a.value () >> cst_b.value (), d};
+       return std::make_unique <value_cst> (r, 0);
+     });
+}
+
+std::string
+op_shr_cst::docstring ()
+{
+  return shift_docstring;
 }

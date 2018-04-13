@@ -173,6 +173,20 @@ dwgrep_vocabulary_core ()
     voc->add (std::make_shared <overloaded_op_builtin> ("neg", t));
   }
 
+  // "shl"
+  {
+    auto t = std::make_shared <overload_tab> ();
+    t->add_op_overload <op_shl_cst> ();
+    voc->add (std::make_shared <overloaded_op_builtin> ("shl", t));
+  }
+
+  // "shr"
+  {
+    auto t = std::make_shared <overload_tab> ();
+    t->add_op_overload <op_shr_cst> ();
+    voc->add (std::make_shared <overloaded_op_builtin> ("shr", t));
+  }
+
   // "elem"
   {
     auto t = std::make_shared <overload_tab> ();
