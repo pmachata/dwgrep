@@ -257,7 +257,15 @@ denoted with ``->?`` relation::
   char const *const bitwise_docstring =
 R"docstring(
 
-XXX document me!
+Zwerg provides all basic bitwise operators: ``and``, ``or``, ``xor`` and
+``neg``. For the first three, two elements are popped: A and B, with B the
+original TOS, and ``A OP B`` is pushed again. *OP* is an operation suggested by
+the operator name.
+
+In case of ``neg``, one element is popped, and its bitwise negation (inversion)
+is pushed again.
+
+)docstring";
 
 )docstring";
 
