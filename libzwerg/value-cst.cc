@@ -203,7 +203,7 @@ namespace
 
     try
       {
-	return f (cst_a, cst_b, d);
+	return std::make_unique <value_cst> (simple_arith_op_once (a, b, f));
       }
     catch (std::domain_error &e)
       {
@@ -221,7 +221,7 @@ namespace
 
     try
       {
-	return f (cst_a, cst_a.dom ());
+	return std::make_unique <value_cst> (simple_arith_op_once (a, f));
       }
     catch (std::domain_error &e)
       {
@@ -287,8 +287,7 @@ op_add_cst::operate (std::unique_ptr <value_cst> a,
      [] (constant const &cst_a, constant const &cst_b,
 	 constant_dom const *d)
      {
-       constant r {cst_a.value () + cst_b.value (), d};
-       return std::make_unique <value_cst> (r, 0);
+       return constant {cst_a.value () + cst_b.value (), d};
      });
 }
 
@@ -308,8 +307,7 @@ op_sub_cst::operate (std::unique_ptr <value_cst> a,
      [] (constant const &cst_a, constant const &cst_b,
 	 constant_dom const *d)
      {
-       constant r {cst_a.value () - cst_b.value (), d};
-       return std::make_unique <value_cst> (r, 0);
+       return constant {cst_a.value () - cst_b.value (), d};
      });
 }
 
@@ -327,10 +325,9 @@ op_mul_cst::operate (std::unique_ptr <value_cst> a,
   return simple_arith_op
     (*a, *b,
      [] (constant const &cst_a, constant const &cst_b,
-	 constant_dom const *d) -> std::unique_ptr <value_cst>
+	 constant_dom const *d)
      {
-       constant r {cst_a.value () * cst_b.value (), d};
-       return std::make_unique <value_cst> (r, 0);
+       return constant {cst_a.value () * cst_b.value (), d};
      });
 }
 
@@ -348,10 +345,9 @@ op_div_cst::operate (std::unique_ptr <value_cst> a,
   return simple_arith_op
     (*a, *b,
      [] (constant const &cst_a, constant const &cst_b,
-	 constant_dom const *d) -> std::unique_ptr <value_cst>
+	 constant_dom const *d)
      {
-       constant r {cst_a.value () / cst_b.value (), d};
-       return std::make_unique <value_cst> (r, 0);
+       return constant {cst_a.value () / cst_b.value (), d};
      });
 }
 
@@ -369,10 +365,9 @@ op_mod_cst::operate (std::unique_ptr <value_cst> a,
   return simple_arith_op
     (*a, *b,
      [] (constant const &cst_a, constant const &cst_b,
-	 constant_dom const *d) -> std::unique_ptr <value_cst>
+	 constant_dom const *d)
      {
-       constant r {cst_a.value () % cst_b.value (), d};
-       return std::make_unique <value_cst> (r, 0);
+       return constant {cst_a.value () % cst_b.value (), d};
      });
 }
 
@@ -390,10 +385,9 @@ op_and_cst::operate (std::unique_ptr <value_cst> a,
   return simple_arith_op
     (*a, *b,
      [] (constant const &cst_a, constant const &cst_b,
-	 constant_dom const *d) -> std::unique_ptr <value_cst>
+	 constant_dom const *d)
      {
-       constant r {cst_a.value () & cst_b.value (), d};
-       return std::make_unique <value_cst> (r, 0);
+       return constant {cst_a.value () & cst_b.value (), d};
      });
 }
 
@@ -411,10 +405,9 @@ op_or_cst::operate (std::unique_ptr <value_cst> a,
   return simple_arith_op
     (*a, *b,
      [] (constant const &cst_a, constant const &cst_b,
-	 constant_dom const *d) -> std::unique_ptr <value_cst>
+	 constant_dom const *d)
      {
-       constant r {cst_a.value () | cst_b.value (), d};
-       return std::make_unique <value_cst> (r, 0);
+       return constant {cst_a.value () | cst_b.value (), d};
      });
 }
 
@@ -432,10 +425,9 @@ op_xor_cst::operate (std::unique_ptr <value_cst> a,
   return simple_arith_op
     (*a, *b,
      [] (constant const &cst_a, constant const &cst_b,
-	 constant_dom const *d) -> std::unique_ptr <value_cst>
+	 constant_dom const *d)
      {
-       constant r {cst_a.value () ^ cst_b.value (), d};
-       return std::make_unique <value_cst> (r, 0);
+       return constant {cst_a.value () ^ cst_b.value (), d};
      });
 }
 
@@ -451,10 +443,9 @@ op_neg_cst::operate (std::unique_ptr <value_cst> a) const
 {
   return simple_arith_op
     (*a, [] (constant const &cst_a,
-	     constant_dom const *d) -> std::unique_ptr <value_cst>
+	     constant_dom const *d)
 	 {
-	   constant r {~cst_a.value (), d};
-	   return std::make_unique <value_cst> (r, 0);
+	   return constant {~cst_a.value (), d};
 	 });
 }
 
@@ -472,10 +463,9 @@ op_shl_cst::operate (std::unique_ptr <value_cst> a,
   return simple_arith_op
     (*a, *b,
      [] (constant const &cst_a, constant const &cst_b,
-	 constant_dom const *d) -> std::unique_ptr <value_cst>
+	 constant_dom const *d)
      {
-       constant r {cst_a.value () << cst_b.value (), d};
-       return std::make_unique <value_cst> (r, 0);
+       return constant {cst_a.value () << cst_b.value (), d};
      });
 }
 
@@ -493,10 +483,9 @@ op_shr_cst::operate (std::unique_ptr <value_cst> a,
   return simple_arith_op
     (*a, *b,
      [] (constant const &cst_a, constant const &cst_b,
-	 constant_dom const *d) -> std::unique_ptr <value_cst>
+	 constant_dom const *d)
      {
-       constant r {cst_a.value () >> cst_b.value (), d};
-       return std::make_unique <value_cst> (r, 0);
+       return constant {cst_a.value () >> cst_b.value (), d};
      });
 }
 
