@@ -106,7 +106,6 @@ dwgrep_vocabulary_core ()
   voc->add (std::make_shared <simple_exec_builtin <op_over>> ("over"));
   voc->add (std::make_shared <simple_exec_builtin <op_rot>> ("rot"));
 
-  // "add"
   {
     auto t = std::make_shared <overload_tab> ();
 
@@ -117,77 +116,66 @@ dwgrep_vocabulary_core ()
     voc->add (std::make_shared <overloaded_op_builtin> ("add", t));
   }
 
-  // "sub"
   {
     auto t = std::make_shared <overload_tab> ();
     t->add_op_overload <op_sub_cst> ();
     voc->add (std::make_shared <overloaded_op_builtin> ("sub", t));
   }
 
-  // "mul"
   {
     auto t = std::make_shared <overload_tab> ();
     t->add_op_overload <op_mul_cst> ();
     voc->add (std::make_shared <overloaded_op_builtin> ("mul", t));
   }
 
-  // "div"
   {
     auto t = std::make_shared <overload_tab> ();
     t->add_op_overload <op_div_cst> ();
     voc->add (std::make_shared <overloaded_op_builtin> ("div", t));
   }
 
-  // "mod"
   {
     auto t = std::make_shared <overload_tab> ();
     t->add_op_overload <op_mod_cst> ();
     voc->add (std::make_shared <overloaded_op_builtin> ("mod", t));
   }
 
-  // "and"
   {
     auto t = std::make_shared <overload_tab> ();
     t->add_op_overload <op_and_cst> ();
     voc->add (std::make_shared <overloaded_op_builtin> ("and", t));
   }
 
-  // "or"
   {
     auto t = std::make_shared <overload_tab> ();
     t->add_op_overload <op_or_cst> ();
     voc->add (std::make_shared <overloaded_op_builtin> ("or", t));
   }
 
-  // "xor"
   {
     auto t = std::make_shared <overload_tab> ();
     t->add_op_overload <op_xor_cst> ();
     voc->add (std::make_shared <overloaded_op_builtin> ("xor", t));
   }
 
-  // "neg"
   {
     auto t = std::make_shared <overload_tab> ();
     t->add_op_overload <op_neg_cst> ();
     voc->add (std::make_shared <overloaded_op_builtin> ("neg", t));
   }
 
-  // "shl"
   {
     auto t = std::make_shared <overload_tab> ();
     t->add_op_overload <op_shl_cst> ();
     voc->add (std::make_shared <overloaded_op_builtin> ("shl", t));
   }
 
-  // "shr"
   {
     auto t = std::make_shared <overload_tab> ();
     t->add_op_overload <op_shr_cst> ();
     voc->add (std::make_shared <overloaded_op_builtin> ("shr", t));
   }
 
-  // "elem"
   {
     auto t = std::make_shared <overload_tab> ();
 
@@ -197,7 +185,6 @@ dwgrep_vocabulary_core ()
     voc->add (std::make_shared <overloaded_op_builtin> ("elem", t));
   }
 
-  // "relem"
   {
     auto t = std::make_shared <overload_tab> ();
 
@@ -207,7 +194,6 @@ dwgrep_vocabulary_core ()
     voc->add (std::make_shared <overloaded_op_builtin> ("relem", t));
   }
 
-  // "empty"
   {
     auto t = std::make_shared <overload_tab> ();
 
@@ -220,7 +206,6 @@ dwgrep_vocabulary_core ()
       (std::make_shared <overloaded_pred_builtin> ("!empty", t, false));
   }
 
-  // "find"
   {
     auto t = std::make_shared <overload_tab> ();
 
@@ -231,7 +216,6 @@ dwgrep_vocabulary_core ()
     voc->add (std::make_shared <overloaded_pred_builtin> ("!find", t, false));
   }
 
-  // "starts"
   {
     auto t = std::make_shared <overload_tab> ();
 
@@ -242,7 +226,6 @@ dwgrep_vocabulary_core ()
     voc->add (std::make_shared <overloaded_pred_builtin> ("!starts", t, false));
   }
 
-  // "ends"
   {
     auto t = std::make_shared <overload_tab> ();
 
@@ -253,7 +236,6 @@ dwgrep_vocabulary_core ()
     voc->add (std::make_shared <overloaded_pred_builtin> ("!ends", t, false));
   }
 
-  // "match"
   {
     auto t = std::make_shared <overload_tab> ();
 
@@ -268,7 +250,6 @@ dwgrep_vocabulary_core ()
     voc->add (std::make_shared <overloaded_pred_builtin> ("!~", t, false));
   }
 
-  // "length"
   {
     auto t = std::make_shared <overload_tab> ();
 
@@ -278,14 +259,12 @@ dwgrep_vocabulary_core ()
     voc->add (std::make_shared <overloaded_op_builtin> ("length", t));
   }
 
-  // "value"
   {
     auto t = std::make_shared <overload_tab> ();
     t->add_op_overload <op_value_cst> ();
     voc->add (std::make_shared <overloaded_op_builtin> ("value", t));
   }
 
-  // "bit"
   {
     auto t = std::make_shared <overload_tab> ();
     t->add_op_overload <op_bit_cst> ();
