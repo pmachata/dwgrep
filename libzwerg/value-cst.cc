@@ -507,3 +507,70 @@ op_shr_cst::docstring ()
 {
   return shift_docstring;
 }
+
+
+namespace
+{
+  uint64_t
+  cast (uint64_t v, op_cast_cst::width w, signedness sign)
+  {
+    switch (w)
+      {
+      case op_cast_cst::w8:
+	if (sign == signedness::unsign)
+	  return static_cast <uint8_t> (v);
+	else
+	  return static_cast <uint64_t> (static_cast <int8_t> (v));
+
+      case op_cast_cst::w16:
+	if (sign == signedness::unsign)
+	  return static_cast <uint16_t> (v);
+	else
+	  return static_cast <uint64_t> (static_cast <int16_t> (v));
+
+      case op_cast_cst::w32:
+	if (sign == signedness::unsign)
+	  return static_cast <uint32_t> (v);
+	else
+	  return static_cast <uint64_t> (static_cast <int32_t> (v));
+	break;
+
+      case op_cast_cst::w64:
+	return v;
+      }
+
+    __builtin_unreachable ();
+  }
+}
+
+value_cst
+op_cast_cst::operate (std::unique_ptr <value_cst> a) const
+{
+  return simple_arith_op_once
+    (*a, [this] (constant const &cst_a,
+		 constant_dom const *d)
+	 {
+	   uint64_t v = cast (cst_a.value ().m_u, this->m_width, this->m_sign);
+	   return constant {mpz_class {v, this->m_sign}, d};
+	 });
+}
+
+std::string
+op_cast_cst::docstring ()
+{
+  return
+R"docstring(
+
+Cast operators allow one to reinterpret a given value as if it were represented
+on a fixed number of bits or had a given signedness. The take the value on TOS,
+reinterpret it, and push the result back. E.g.::
+
+	$ dwgrep '-1 u8'
+	255
+
+For each cast operator, the prefix "u" or "i" determines that the cast is
+to, respectively, unsigned or signed integer. The number after that determines
+number of bits that the resulting value should have.
+
+)docstring";
+}

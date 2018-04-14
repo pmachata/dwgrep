@@ -271,5 +271,23 @@ dwgrep_vocabulary_core ()
     voc->add (std::make_shared <overloaded_op_builtin> ("bit", t));
   }
 
+#define ADD_CAST_OP(N, W, S)						\
+  {									\
+    auto t = std::make_shared <overload_tab> ();			\
+    t->add_op_overload <op_cast_cst> (op_cast_cst::W, signedness::S);	\
+    voc->add (std::make_shared <overloaded_op_builtin> (N, t));		\
+  }
+
+  ADD_CAST_OP("u8", w8, unsign)
+  ADD_CAST_OP("i8", w8, sign)
+  ADD_CAST_OP("u16", w16, unsign)
+  ADD_CAST_OP("i16", w16, sign)
+  ADD_CAST_OP("u32", w32, unsign)
+  ADD_CAST_OP("i32", w32, sign)
+  ADD_CAST_OP("u64", w64, unsign)
+  ADD_CAST_OP("i64", w64, sign)
+
+#undef ADD_CAST_OP
+
   return voc;
 }

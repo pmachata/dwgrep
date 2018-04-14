@@ -608,7 +608,7 @@
 
 
 ** ·T_CONST
-***  int32_t, uint32_t, int64_t, uint64_t :: ?T_CONST -> ?T_CONST
+*** *i8, u8, i16, u16, i32, u32, i64, u64 :: ?T_CONST -> ?T_CONST
      The idea behind uint32_t et.al. is that a two-complement
      representation of a given constant is taken, if necessary, it's
      sign-extended, and then a 32-bit or 64-bit slice of that is
@@ -625,10 +625,9 @@
      Maybe what we want instead is "32 uint", "64 int" etc., such that
      bit length is configurable.
 
-***  intptr_t, uintptr_t :: ?T_CONST -> ?T_CONST
-     {,u}intptr_t then expands to either of {,u}int{64,32}_t depending
-     on address size of CU.  XXX how to get to that size?  What
-     should, say, "17 uintptr_t" do?  There's no CU in sight...
+***  intptr_t, uintptr_t :: ?T_CONST ?T_CU -> ?T_CONST
+     The idea is that {,u}intptr_t then expands to either of {,u}int{64,32}_t
+     depending on address size of CU.
 
 ** ·T_STR
 ***  match :: ?T_STR ?T_STR ->* ?T_STR

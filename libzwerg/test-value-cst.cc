@@ -108,6 +108,31 @@ TEST_F (CoreTest, test_value_cst)
 	    {1, "3 0 shr == 3"},
 	    {1, "3 100 shr == 0"},
 	    {1, "-7 100 shr == -1"},
+
+	    {1, "-1 u8 == 0xff"},
+	    {1, "-1 u16 == 0xffff"},
+	    {1, "-1 u32 == 0xffffffff"},
+	    {1, "-1 u64 == 0xffffffffffffffff"},
+
+	    {1, "0xff i8 == -1"},
+	    {1, "0xffff i16 == -1"},
+	    {1, "0xffffffff i32 == -1"},
+	    {1, "0xffffffffffffffff i64 == -1"},
+
+	    {1, "0xffff u8 == 0xff"},
+	    {1, "0xffffffff u8 == 0xff"},
+	    {1, "0xffffffff u16 == 0xffff"},
+	    {1, "0xffffffffffffffff u8 == 0xff"},
+	    {1, "0xffffffffffffffff u16 == 0xffff"},
+	    {1, "0xffffffffffffffff u32 == 0xffffffff"},
+
+	    {1, "-0x81 i8 == 0x7f"},
+	    {1, "-0x8001 i16 == 0x7fff"},
+	    {1, "-0x80000001 i32 == 0x7fffffff"},
+
+	    {1, "1000 u8 == 232"},
+	    {1, "100000 u16 == 34464"},
+	    {1, "10000000000 u32 == 1410065408"},
 	})
     {
       size_t nresults = std::get <0> (entry);

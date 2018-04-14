@@ -201,4 +201,29 @@ struct op_shr_cst
   static std::string docstring ();
 };
 
+struct op_cast_cst
+  : public op_once_overload <value_cst, value_cst>
+{
+  enum width {
+    w8,
+    w16,
+    w32,
+    w64,
+  };
+
+  width m_width;
+  signedness m_sign;
+
+  op_cast_cst (layout &l, std::shared_ptr <op> upstream,
+	       width width, signedness sign)
+    : op_once_overload {l, std::move (upstream)}
+    , m_width {width}
+    , m_sign {sign}
+  {}
+
+  value_cst
+  operate (std::unique_ptr <value_cst> a) const override;
+  static std::string docstring ();
+};
+
 #endif /* _VALUE_CST_H_ */
