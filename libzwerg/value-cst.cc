@@ -190,8 +190,8 @@ For example::
 namespace
 {
   template <class F>
-  std::unique_ptr <value_cst>
-  simple_arith_op (value_cst const &a, value_cst const &b, F f)
+  value_cst
+  simple_arith_op_once (value_cst const &a, value_cst const &b, F f)
   {
     constant const &cst_a = a.get_constant ();
     constant const &cst_b = b.get_constant ();
@@ -201,6 +201,13 @@ namespace
     constant_dom const *d = cst_a.dom ()->plain ()
       ? cst_b.dom () : cst_a.dom ();
 
+    return value_cst {f (cst_a, cst_b, d), 0};
+  }
+
+  template <class F>
+  std::unique_ptr <value_cst>
+  simple_arith_op (value_cst const &a, value_cst const &b, F f)
+  {
     try
       {
 	return std::make_unique <value_cst> (simple_arith_op_once (a, b, f));
@@ -213,12 +220,18 @@ namespace
   }
 
   template <class F>
-  std::unique_ptr <value_cst>
-  simple_arith_op (value_cst const &a, F f)
+  value_cst
+  simple_arith_op_once (value_cst const &a, F f)
   {
     constant const &cst_a = a.get_constant ();
     check_arith (cst_a);
+    return value_cst {f (cst_a, cst_a.dom ()), 0};
+  }
 
+  template <class F>
+  std::unique_ptr <value_cst>
+  simple_arith_op (value_cst const &a, F f)
+  {
     try
       {
 	return std::make_unique <value_cst> (simple_arith_op_once (a, f));
@@ -378,11 +391,11 @@ op_mod_cst::docstring ()
 }
 
 
-std::unique_ptr <value_cst>
+value_cst
 op_and_cst::operate (std::unique_ptr <value_cst> a,
 		     std::unique_ptr <value_cst> b) const
 {
-  return simple_arith_op
+  return simple_arith_op_once
     (*a, *b,
      [] (constant const &cst_a, constant const &cst_b,
 	 constant_dom const *d)
@@ -398,11 +411,11 @@ op_and_cst::docstring ()
 }
 
 
-std::unique_ptr <value_cst>
+value_cst
 op_or_cst::operate (std::unique_ptr <value_cst> a,
 		    std::unique_ptr <value_cst> b) const
 {
-  return simple_arith_op
+  return simple_arith_op_once
     (*a, *b,
      [] (constant const &cst_a, constant const &cst_b,
 	 constant_dom const *d)
@@ -418,11 +431,11 @@ op_or_cst::docstring ()
 }
 
 
-std::unique_ptr <value_cst>
+value_cst
 op_xor_cst::operate (std::unique_ptr <value_cst> a,
 		     std::unique_ptr <value_cst> b) const
 {
-  return simple_arith_op
+  return simple_arith_op_once
     (*a, *b,
      [] (constant const &cst_a, constant const &cst_b,
 	 constant_dom const *d)
@@ -438,10 +451,10 @@ op_xor_cst::docstring ()
 }
 
 
-std::unique_ptr <value_cst>
+value_cst
 op_neg_cst::operate (std::unique_ptr <value_cst> a) const
 {
-  return simple_arith_op
+  return simple_arith_op_once
     (*a, [] (constant const &cst_a,
 	     constant_dom const *d)
 	 {
