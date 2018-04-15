@@ -166,9 +166,9 @@ op_bit_cst::docstring ()
   return
 R"docstring(
 
-Returns bits of the value on TOS, which shall be a T_CONST with an arithmetic
-domain (i.e. not a named constant). If the value is negative, the yielded bits
-will be negative as well.
+Returns bits of the value on TOS, which shall be a ``T_CONST`` with an
+arithmetic domain (i.e. not a named constant). If the value is negative, the
+yielded bits will be negative as well.
 
 For example::
 
@@ -182,6 +182,16 @@ For example::
 	$ dwgrep -e '-0x3 bit'
 	-0x1
 	-0x2
+
+A typical use would be in testing whether a bit is set, as in::
+
+	$ ./dwgrep/dwgrep foo.o -e '(eflags bit == EF_SPARC_LEDATA)'
+	<Dwarf "foo.o">
+
+Make sure the tested value is actually meant as a single-bit value, not as an
+integral value of a masked part of the flags field, such as here::
+
+	$ ./dwgrep/dwgrep foo.o -e '(eflags EF_ARM_EABIMASK and == EF_ARM_EABI_VER5)'
 
 )docstring";
 }
@@ -562,7 +572,7 @@ op_cast_cst::docstring ()
 R"docstring(
 
 Cast operators allow one to reinterpret a given value as if it were represented
-on a fixed number of bits or had a given signedness. The take the value on TOS,
+on a fixed number of bits or had a given signedness. They take the value on TOS,
 reinterpret it, and push the result back. E.g.::
 
 	$ dwgrep '-1 u8'

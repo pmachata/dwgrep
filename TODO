@@ -745,7 +745,7 @@
 ***  entry :: T_ELF -> T_ASET
 ***  phdr :: T_ELF ->* T_PHDR
 ***  section :: T_ELF ->* T_SECTION
-***  @flags :: T_ELF -> T_CONST
+*** *@flags :: T_ELF -> T_CONST
      Add the following example to value-cst.cc when "eflags" is done:
 
 A typical use would be in testing whether a bit is set, as in::
