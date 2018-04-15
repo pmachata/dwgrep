@@ -97,7 +97,7 @@ struct op_elf_simple_value
 
 
 
-struct elf_atclass_def
+struct elf_eclass_def
 {
   static unsigned value (Dwfl *dwfl);
   static zw_cdom const &cdom ();
@@ -105,23 +105,23 @@ struct elf_atclass_def
 };
 
 template <class ValueType>
-struct op_elf_atclass
-  : public op_elf_simple_value <elf_atclass_def, ValueType>
+struct op_elf_eclass
+  : public op_elf_simple_value <elf_eclass_def, ValueType>
 {
-  using op_elf_simple_value <elf_atclass_def, ValueType>
+  using op_elf_simple_value <elf_eclass_def, ValueType>
 		::op_elf_simple_value;
 };
 
 template <class ValueType>
-struct pred_elf_atclass
-  : public pred_elf_simple_value <elf_atclass_def, ValueType>
+struct pred_elf_eclass
+  : public pred_elf_simple_value <elf_eclass_def, ValueType>
 {
-  using pred_elf_simple_value <elf_atclass_def, ValueType>
+  using pred_elf_simple_value <elf_eclass_def, ValueType>
 		::pred_elf_simple_value;
 };
 
 
-struct elf_attype_def
+struct elf_etype_def
 {
   static unsigned value (Dwfl *dwfl);
   static zw_cdom const &cdom ();
@@ -129,23 +129,23 @@ struct elf_attype_def
 };
 
 template <class ValueType>
-struct op_elf_attype
-  : public op_elf_simple_value <elf_attype_def, ValueType>
+struct op_elf_etype
+  : public op_elf_simple_value <elf_etype_def, ValueType>
 {
-  using op_elf_simple_value <elf_attype_def, ValueType>
+  using op_elf_simple_value <elf_etype_def, ValueType>
 		::op_elf_simple_value;
 };
 
 template <class ValueType>
-struct pred_elf_attype
-  : public pred_elf_simple_value <elf_attype_def, ValueType>
+struct pred_elf_etype
+  : public pred_elf_simple_value <elf_etype_def, ValueType>
 {
-  using pred_elf_simple_value <elf_attype_def, ValueType>
+  using pred_elf_simple_value <elf_etype_def, ValueType>
 		::pred_elf_simple_value;
 };
 
 
-struct elf_atmachine_def
+struct elf_emachine_def
 {
   static unsigned value (Dwfl *dwfl);
   static zw_cdom const &cdom ();
@@ -153,23 +153,23 @@ struct elf_atmachine_def
 };
 
 template <class ValueType>
-struct op_elf_atmachine
-  : public op_elf_simple_value <elf_atmachine_def, ValueType>
+struct op_elf_emachine
+  : public op_elf_simple_value <elf_emachine_def, ValueType>
 {
-  using op_elf_simple_value <elf_atmachine_def, ValueType>
+  using op_elf_simple_value <elf_emachine_def, ValueType>
 		::op_elf_simple_value;
 };
 
 template <class ValueType>
-struct pred_elf_atmachine
-  : public pred_elf_simple_value <elf_atmachine_def, ValueType>
+struct pred_elf_emachine
+  : public pred_elf_simple_value <elf_emachine_def, ValueType>
 {
-  using pred_elf_simple_value <elf_atmachine_def, ValueType>
+  using pred_elf_simple_value <elf_emachine_def, ValueType>
 		::pred_elf_simple_value;
 };
 
 
-struct elf_atflags_def
+struct elf_eflags_def
 {
   static unsigned value (Dwfl *dwfl);
   static zw_cdom const &cdom ();
@@ -177,10 +177,10 @@ struct elf_atflags_def
 };
 
 template <class ValueType>
-struct op_elf_atflags
-  : public op_elf_simple_value <elf_atflags_def, ValueType>
+struct op_elf_eflags
+  : public op_elf_simple_value <elf_eflags_def, ValueType>
 {
-  using op_elf_simple_value <elf_atflags_def, ValueType>
+  using op_elf_simple_value <elf_eflags_def, ValueType>
 		::op_elf_simple_value;
 };
 

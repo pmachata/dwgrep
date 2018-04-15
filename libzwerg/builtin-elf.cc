@@ -187,19 +187,19 @@ namespace
 }
 
 unsigned
-elf_atclass_def::value (Dwfl *dwfl)
+elf_eclass_def::value (Dwfl *dwfl)
 {
   return ehdr (dwfl).e_ident[EI_CLASS];
 }
 
 zw_cdom const &
-elf_atclass_def::cdom ()
+elf_eclass_def::cdom ()
 {
   return elf_class_dom ();
 }
 
 std::string
-elf_atclass_def::docstring ()
+elf_eclass_def::docstring ()
 {
   return
 R"docstring(
@@ -211,19 +211,19 @@ xxx document me
 
 
 unsigned
-elf_attype_def::value (Dwfl *dwfl)
+elf_etype_def::value (Dwfl *dwfl)
 {
   return ehdr (dwfl).e_type;
 }
 
 zw_cdom const &
-elf_attype_def::cdom ()
+elf_etype_def::cdom ()
 {
   return elf_et_dom ();
 }
 
 std::string
-elf_attype_def::docstring ()
+elf_etype_def::docstring ()
 {
   return
 R"docstring(
@@ -235,19 +235,19 @@ xxx document me
 
 
 unsigned
-elf_atmachine_def::value (Dwfl *dwfl)
+elf_emachine_def::value (Dwfl *dwfl)
 {
   return ehdr (dwfl).e_machine;
 }
 
 zw_cdom const &
-elf_atmachine_def::cdom ()
+elf_emachine_def::cdom ()
 {
   return elf_em_dom ();
 }
 
 std::string
-elf_atmachine_def::docstring ()
+elf_emachine_def::docstring ()
 {
   return
 R"docstring(
@@ -259,13 +259,13 @@ xxx document me
 
 
 unsigned
-elf_atflags_def::value (Dwfl *dwfl)
+elf_eflags_def::value (Dwfl *dwfl)
 {
   return ehdr (dwfl).e_flags;
 }
 
 zw_cdom const &
-elf_atflags_def::cdom ()
+elf_eflags_def::cdom ()
 {
   // Since it's not clear how the bit set in e_flags breaks down to individual
   // flags (there are various arch-specific bit subfields in there), present the
@@ -274,7 +274,7 @@ elf_atflags_def::cdom ()
 }
 
 std::string
-elf_atflags_def::docstring ()
+elf_eflags_def::docstring ()
 {
   return
 R"docstring(

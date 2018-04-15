@@ -167,8 +167,8 @@ dwgrep_vocabulary_elf ()
   {
     auto t = std::make_shared <overload_tab> ();
 
-    t->add_op_overload <op_elf_atclass <value_dwarf>> ();
-    t->add_op_overload <op_elf_atclass <value_elf>> ();
+    t->add_op_overload <op_elf_eclass <value_dwarf>> ();
+    t->add_op_overload <op_elf_eclass <value_elf>> ();
 
     voc.add (std::make_shared <overloaded_op_builtin> ("eclass", t));
   }
@@ -194,7 +194,7 @@ dwgrep_vocabulary_elf ()
   ELF_ONE_KNOWN_ELFCLASS(ELFCLASS64)
 
 #define ELF_ONE_KNOWN_ELFCLASS(CODE)		   \
-  ADD_ELF_CONSTANT(CODE, #CODE, &elf_class_dom (), pred_elf_atclass);
+  ADD_ELF_CONSTANT(CODE, #CODE, &elf_class_dom (), pred_elf_eclass);
 
   ELF_ALL_KNOWN_ELFCLASS
 #undef ELF_ONE_KNOWN_ELFCLASS
@@ -202,14 +202,14 @@ dwgrep_vocabulary_elf ()
   {
     auto t = std::make_shared <overload_tab> ();
 
-    t->add_op_overload <op_elf_attype <value_elf>> ();
-    t->add_op_overload <op_elf_attype <value_dwarf>> ();
+    t->add_op_overload <op_elf_etype <value_elf>> ();
+    t->add_op_overload <op_elf_etype <value_dwarf>> ();
 
     voc.add (std::make_shared <overloaded_op_builtin> ("etype", t));
   }
 
 #define ELF_ONE_KNOWN_ET(NAME, CODE)			\
-  ADD_ELF_CONSTANT(CODE, #CODE, &elf_et_dom (), pred_elf_attype);
+  ADD_ELF_CONSTANT(CODE, #CODE, &elf_et_dom (), pred_elf_etype);
 
 ELF_ALL_KNOWN_ET
 #undef ELF_ONE_KNOWN_ET
@@ -217,14 +217,14 @@ ELF_ALL_KNOWN_ET
   {
     auto t = std::make_shared <overload_tab> ();
 
-    t->add_op_overload <op_elf_atmachine <value_elf>> ();
-    t->add_op_overload <op_elf_atmachine <value_dwarf>> ();
+    t->add_op_overload <op_elf_emachine <value_elf>> ();
+    t->add_op_overload <op_elf_emachine <value_dwarf>> ();
 
     voc.add (std::make_shared <overloaded_op_builtin> ("emachine", t));
   }
 
 #define ELF_ONE_KNOWN_EM(NAME, CODE)			\
-  ADD_ELF_CONSTANT(CODE, #CODE, &elf_em_dom (), pred_elf_atmachine);
+  ADD_ELF_CONSTANT(CODE, #CODE, &elf_em_dom (), pred_elf_emachine);
 
 ELF_ALL_KNOWN_EM
 #undef ELF_ONE_KNOWN_EM
@@ -250,8 +250,8 @@ ELF_ALL_KNOWN_EM
   {
     auto t = std::make_shared <overload_tab> ();
 
-    t->add_op_overload <op_elf_atflags <value_elf>> ();
-    t->add_op_overload <op_elf_atflags <value_dwarf>> ();
+    t->add_op_overload <op_elf_eflags <value_elf>> ();
+    t->add_op_overload <op_elf_eflags <value_dwarf>> ();
 
     voc.add (std::make_shared <overloaded_op_builtin> ("eflags", t));
   }
