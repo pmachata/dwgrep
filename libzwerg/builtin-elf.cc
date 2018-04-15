@@ -28,6 +28,7 @@
 
 #include "builtin-elf.hh"
 #include "dwpp.hh"
+#include "dwcst.hh"
 #include "elfcst.hh"
 
 namespace
@@ -283,3 +284,28 @@ xxx document me
 
 )docstring";
 }
+
+
+template <class ValueType>
+value_cst
+op_elf_eentry <ValueType>::operate (std::unique_ptr <ValueType> a) const
+{
+  auto ee = ehdr (a->get_dwctx ()->get_dwfl ()).e_entry;
+  return value_cst {constant {ee, &dw_address_dom ()}, 0};
+}
+
+template <class ValueType>
+std::string
+op_elf_eentry <ValueType>::docstring ()
+{
+  return
+R"docstring(
+
+This word takes the ``T_DWARF`` or ``T_ELF`` value on TOS and yields an ELF
+entry point address.
+
+)docstring";
+}
+
+template class op_elf_eentry <value_elf>;
+template class op_elf_eentry <value_dwarf>;

@@ -333,6 +333,8 @@ TEST_F (ElfTest, test_elf)
 
 	    {1, "y.o", "eflags EF_ARM_EABIMASK and == EF_ARM_EABI_VER5"},
 	    {0, "y.o", "eflags EF_ARM_EABIMASK and == EF_ARM_EABI_VER4"},
+
+	    {1, "a1.out", "eentry == 0x4003d0"},
 	})
     {
       size_t nresults = std::get <0> (entry);

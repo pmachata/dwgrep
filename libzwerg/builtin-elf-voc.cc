@@ -256,5 +256,14 @@ ELF_ALL_KNOWN_EM
     voc.add (std::make_shared <overloaded_op_builtin> ("eflags", t));
   }
 
+  {
+    auto t = std::make_shared <overload_tab> ();
+
+    t->add_op_overload <op_elf_eentry <value_elf>> ();
+    t->add_op_overload <op_elf_eentry <value_dwarf>> ();
+
+    voc.add (std::make_shared <overloaded_op_builtin> ("eentry", t));
+  }
+
   return ret;
 }
