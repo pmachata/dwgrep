@@ -202,3 +202,105 @@ elf_em_dom ()
   static dw_simple_dom dom {"EM", elf_em_string, 0, 0, false};
   return dom;
 }
+
+
+// Elf flags shouldn't have any common constant block. Make sure it's so.
+#define ELF_ONE_KNOWN_EF(SHORT, LONG)		\
+  static_assert (false, "Unexpected CPU-unspecific EF_ constant.");
+ELF_ALL_KNOWN_EF
+#undef ELF_ONE_KNOWN_EF
+
+// A dictionary of words for each machine. Since there are aliases, we need to
+// use the linear map.
+#define ELF_ONE_KNOWN_EF(NAME, CODE)		\
+  ret[CODE] = #CODE;
+
+#define ELF_ONE_KNOWN_EF_ARCH(ARCH)				\
+  struct elf_ef_##ARCH##_strings				\
+    : public linear_map						\
+  {								\
+    std::map <unsigned, char const *>				\
+    all () const						\
+    {								\
+      std::map <unsigned, char const *> ret;			\
+      ELF_ALL_KNOWN_EF_##ARCH					\
+      return ret;						\
+    }								\
+								\
+    elf_ef_##ARCH##_strings ()					\
+      : linear_map {all ()}					\
+    {}								\
+  };								\
+								\
+  static const char *						\
+  elf_ef_##ARCH##_string (unsigned em, brevity brv)		\
+  {								\
+    static elf_ef_##ARCH##_strings ss;				\
+    return abbreviate (ss.find (em), sizeof "EF", brv);		\
+  }
+
+ELF_ALL_KNOWN_EF_ARCHES
+
+#undef ELF_ONE_KNOWN_EF_ARCH
+#undef ELF_ONE_KNOWN_EF
+
+// Domain for each EF arch.
+#define ELF_ONE_KNOWN_EF_ARCH(ARCH)					\
+  struct elfsym_ef_##ARCH##_dom_t					\
+    : public constant_dom						\
+  {									\
+    void								\
+    show (mpz_class const &v, std::ostream &o, brevity brv) const override \
+    {									\
+      if (auto maybe_code = uint_from_mpz (v))				\
+	{								\
+	  if (auto s = elf_ef_##ARCH##_string (*maybe_code, brv))	\
+	    o << s;							\
+	  else								\
+	    {								\
+	      char unknown_buf[40];					\
+	      format_unknown (brv, *maybe_code, "EF_",			\
+			      unknown_buf, sizeof unknown_buf);		\
+	      o << unknown_buf;						\
+	    }								\
+	}								\
+      else								\
+	o << "<invalid code>";						\
+    }									\
+									\
+    char const *							\
+    name () const override						\
+    {									\
+      return "EF_" #ARCH;						\
+    }									\
+  };
+
+ELF_ALL_KNOWN_EF_ARCHES
+
+#undef ELF_ONE_KNOWN_EF_ARCH
+
+static char const *
+fallback_dom_stringer (int ef, brevity brv)
+{
+  // EF domain doesn't have any generic block at all.
+  return nullptr;
+}
+
+zw_cdom const &
+elf_ef_dom (int machine)
+{
+  switch (machine)
+    {
+#define ELF_ONE_KNOWN_EF_ARCH(ARCH)		\
+      case EM_##ARCH:				\
+	{					\
+	  static elfsym_ef_##ARCH##_dom_t dom;	\
+	  return dom;				\
+	}
+      ELF_ALL_KNOWN_EF_ARCHES
+#undef ELF_ONE_KNOWN_EF_ARCH
+    }
+
+  static dw_simple_dom dom {"EF", fallback_dom_stringer, 0, 0, true};
+  return dom;
+}

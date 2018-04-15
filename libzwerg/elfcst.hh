@@ -34,5 +34,6 @@
 zw_cdom const &elf_class_dom ();
 zw_cdom const &elf_et_dom ();
 zw_cdom const &elf_em_dom ();
+zw_cdom const &elf_ef_dom (int machine);
 
 #endif /* _ELFCST_H_ */

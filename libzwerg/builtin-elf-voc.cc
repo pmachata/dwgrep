@@ -229,5 +229,20 @@ ELF_ALL_KNOWN_ET
 ELF_ALL_KNOWN_EM
 #undef ELF_ONE_KNOWN_EM
 
+
+#define ELF_ONE_KNOWN_EF(NAME, CODE)					\
+  add_builtin_constant (voc,						\
+			constant (CODE, &elf_ef_dom (machine)), #CODE);
+
+#define ELF_ONE_KNOWN_EF_ARCH(ARCH)		\
+    {						\
+      constexpr int machine = EM_##ARCH;	\
+      ELF_ALL_KNOWN_EF_##ARCH			\
+    }
+  ELF_ALL_KNOWN_EF_ARCHES
+
+#undef ELF_ONE_KNOWN_EF_ARCH
+#undef ELF_ONE_KNOWN_EF
+
   return ret;
 }
