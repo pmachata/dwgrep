@@ -168,4 +168,20 @@ struct pred_elf_atmachine
 		::pred_elf_simple_value;
 };
 
+
+struct elf_atflags_def
+{
+  static unsigned value (Dwfl *dwfl);
+  static zw_cdom const &cdom ();
+  static std::string docstring ();
+};
+
+template <class ValueType>
+struct op_elf_atflags
+  : public op_elf_simple_value <elf_atflags_def, ValueType>
+{
+  using op_elf_simple_value <elf_atflags_def, ValueType>
+		::op_elf_simple_value;
+};
+
 #endif /* BUILTIN_ELF_H */

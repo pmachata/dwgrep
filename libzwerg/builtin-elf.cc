@@ -256,3 +256,30 @@ xxx document me
 
 )docstring";
 }
+
+
+unsigned
+elf_atflags_def::value (Dwfl *dwfl)
+{
+  return ehdr (dwfl).e_flags;
+}
+
+zw_cdom const &
+elf_atflags_def::cdom ()
+{
+  // Since it's not clear how the bit set in e_flags breaks down to individual
+  // flags (there are various arch-specific bit subfields in there), present the
+  // flags simply as a hex number.
+  return hex_constant_dom;
+}
+
+std::string
+elf_atflags_def::docstring ()
+{
+  return
+R"docstring(
+
+xxx document me
+
+)docstring";
+}

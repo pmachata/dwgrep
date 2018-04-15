@@ -230,6 +230,9 @@ ELF_ALL_KNOWN_EM
 #undef ELF_ONE_KNOWN_EM
 
 
+  // N.B.: There are no ?EF_ and !EF_ words. Flags need to be tested explicitly,
+  // because the field often includes various bitfields and it's not a priori
+  // clear how the flag should be tested.
 #define ELF_ONE_KNOWN_EF(NAME, CODE)					\
   add_builtin_constant (voc,						\
 			constant (CODE, &elf_ef_dom (machine)), #CODE);
@@ -243,6 +246,15 @@ ELF_ALL_KNOWN_EM
 
 #undef ELF_ONE_KNOWN_EF_ARCH
 #undef ELF_ONE_KNOWN_EF
+
+  {
+    auto t = std::make_shared <overload_tab> ();
+
+    t->add_op_overload <op_elf_atflags <value_elf>> ();
+    t->add_op_overload <op_elf_atflags <value_dwarf>> ();
+
+    voc.add (std::make_shared <overloaded_op_builtin> ("eflags", t));
+  }
 
   return ret;
 }
