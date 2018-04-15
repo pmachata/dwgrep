@@ -163,7 +163,10 @@ void check_arith (constant const &cst_a);
 inline const char *
 abbreviate (char const *name, size_t prefix_len, brevity brv)
 {
-  return name + (brv == brevity::full ? 0 : prefix_len);
+  if (name != nullptr)
+    return name + (brv == brevity::full ? 0 : prefix_len);
+  else
+    return nullptr;
 }
 
 #endif /* _CONSTANT_H_ */
