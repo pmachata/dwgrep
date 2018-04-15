@@ -273,6 +273,12 @@ ELF_ALL_KNOWN_EF_ARCHES
     {									\
       return "EF_" #ARCH;						\
     }									\
+									\
+    bool								\
+    safe_arith () const override					\
+    {									\
+      return true;							\
+    }									\
   };
 
 ELF_ALL_KNOWN_EF_ARCHES
