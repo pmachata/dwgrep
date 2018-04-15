@@ -18,7 +18,7 @@
 ## along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 $1 == "#define" {
-  if (match($2, "^(ELFOSABI|ET|EM|SHN|SHT|STB|STT" \
+  if (match($2, "^(ELFOSABI|ET|EM|SHN|SHT|STB|STT|EF" \
 	        "|STV|PT|DT|AT|ELF_NOTE_OS|R)_([A-Z0-9_]*)$", fields) \
       && ! match($2, "(_NUM|(LO|HI)(OS|PROC|RESERVE)|RNG(LO|HI))$") \
       && ! match($2, "^(DT_ENCODING|DT_(PROC|VAL|ADDR|VERSIONTAG|EXTRA)NUM)$"))
@@ -74,7 +74,14 @@ END {
 	} else if (set "_" elt ~ "^R_IA64_") {
 	  found = 1;
 	  arch = "IA_64";
-
+	# Likewise EF_, where SH arch is split into subvariants.
+	# Lump them all under one overarching SH group.
+	} else if (set "_" elt ~ "^EF_SH") {
+	  found = 1;
+	  arch = "SH";
+	} else if (set "_" elt ~ "^EF_CPU32") {
+	  found = 1;
+	  arch = "68K";
 	} else {
 	  for (k = 1; k <= a; ++k) {
 	    arch = arches[k];
