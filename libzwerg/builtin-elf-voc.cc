@@ -198,6 +198,21 @@ dwgrep_vocabulary_elf ()
   {
     auto t = std::make_shared <overload_tab> ();
 
+    t->add_op_overload <op_elf_edata <value_dwarf>> ();
+    t->add_op_overload <op_elf_edata <value_elf>> ();
+
+    voc.add (std::make_shared <overloaded_op_builtin> ("edata", t));
+  }
+
+#define ELF_ONE_KNOWN_ELFDATA(CODE)		   \
+  ADD_ELF_CONSTANT(CODE, #CODE, &elf_data_dom (), pred_elf_edata);
+
+  ELF_ALL_KNOWN_ELFDATA
+#undef ELF_ONE_KNOWN_ELFDATA
+
+  {
+    auto t = std::make_shared <overload_tab> ();
+
     t->add_op_overload <op_elf_etype <value_elf>> ();
     t->add_op_overload <op_elf_etype <value_dwarf>> ();
 

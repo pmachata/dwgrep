@@ -313,6 +313,17 @@ TEST_F (ElfTest, test_elf)
 	    {1, "y.o", "elf eclass == ELFCLASS32"},
 	    {1, "a1.out", "elf eclass == ELFCLASS64"},
 
+	    {1, "float_const_value.o-ppc64", "!ELFDATA2LSB"},
+	    {1, "float_const_value.o-armv7hl", "!ELFDATA2MSB"},
+	    {1, "float_const_value.o-ppc64", "?ELFDATA2MSB"},
+	    {1, "float_const_value.o-armv7hl", "?ELFDATA2LSB"},
+	    {1, "float_const_value.o-ppc64", "elf ?ELFDATA2MSB"},
+	    {1, "float_const_value.o-armv7hl", "elf ?ELFDATA2LSB"},
+	    {1, "float_const_value.o-ppc64", "edata == ELFDATA2MSB"},
+	    {1, "float_const_value.o-armv7hl", "edata == ELFDATA2LSB"},
+	    {1, "float_const_value.o-ppc64", "elf edata == ELFDATA2MSB"},
+	    {1, "float_const_value.o-armv7hl", "elf edata == ELFDATA2LSB"},
+
 	    {1, "y.o", "elf !ET_DYN"},
 	    {1, "a1.out", "elf !ET_DYN"},
 	    {1, "y.o", "elf ?ET_REL"},

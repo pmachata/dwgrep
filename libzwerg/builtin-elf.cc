@@ -171,7 +171,6 @@ xxx document me
 )docstring";
 }
 
-
 namespace
 {
   GElf_Ehdr
@@ -201,6 +200,30 @@ elf_eclass_def::cdom ()
 
 std::string
 elf_eclass_def::docstring ()
+{
+  return
+R"docstring(
+
+xxx document me
+
+)docstring";
+}
+
+
+unsigned
+elf_edata_def::value (Dwfl *dwfl)
+{
+  return ehdr (dwfl).e_ident[EI_DATA];
+}
+
+zw_cdom const &
+elf_edata_def::cdom ()
+{
+  return elf_data_dom ();
+}
+
+std::string
+elf_edata_def::docstring ()
 {
   return
 R"docstring(

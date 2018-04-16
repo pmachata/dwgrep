@@ -39,6 +39,20 @@ elf_class_string (int cls, brevity brv)
 }
 
 static const char *
+elf_data_string (int cls, brevity brv)
+{
+  switch (cls)
+    {
+#define ELF_ONE_KNOWN_ELFDATA(CODE)				\
+      case CODE: return abbreviate (#CODE, 3 /*ELF*/, brv);
+      ELF_ALL_KNOWN_ELFDATA
+#undef ELF_ONE_KNOWN_ELFDATA
+    default:
+      return nullptr;
+    }
+}
+
+static const char *
 elf_et_string (int et, brevity brv)
 {
   switch (et)
@@ -140,6 +154,13 @@ zw_cdom const &
 elf_class_dom ()
 {
   static dw_simple_dom dom {"ELFCLASS", elf_class_string, 0, 0, false};
+  return dom;
+}
+
+zw_cdom const &
+elf_data_dom ()
+{
+  static dw_simple_dom dom {"ELFDATA", elf_data_string, 0, 0, false};
   return dom;
 }
 

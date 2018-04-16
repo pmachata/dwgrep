@@ -121,6 +121,30 @@ struct pred_elf_eclass
 };
 
 
+struct elf_edata_def
+{
+  static unsigned value (Dwfl *dwfl);
+  static zw_cdom const &cdom ();
+  static std::string docstring ();
+};
+
+template <class ValueType>
+struct op_elf_edata
+  : public op_elf_simple_value <elf_edata_def, ValueType>
+{
+  using op_elf_simple_value <elf_edata_def, ValueType>
+		::op_elf_simple_value;
+};
+
+template <class ValueType>
+struct pred_elf_edata
+  : public pred_elf_simple_value <elf_edata_def, ValueType>
+{
+  using pred_elf_simple_value <elf_edata_def, ValueType>
+		::pred_elf_simple_value;
+};
+
+
 struct elf_etype_def
 {
   static unsigned value (Dwfl *dwfl);
