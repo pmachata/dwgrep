@@ -22,18 +22,17 @@
 #include "constant.hh"
 #include "dwcst.hh"
 #include "known-elf.h"
+#include "known-elf-extra.h"
 
 static const char *
 elf_class_string (int cls, brevity brv)
 {
   switch (cls)
     {
-    case ELFCLASSNONE:
-      return abbreviate ("ELFCLASSNONE", 8, brv);
-    case ELFCLASS32:
-      return abbreviate ("ELFCLASS32", 8, brv);
-    case ELFCLASS64:
-      return abbreviate ("ELFCLASS64", 8, brv);
+#define ELF_ONE_KNOWN_ELFCLASS(CODE)				\
+      case CODE: return abbreviate (#CODE, 3 /*ELF*/, brv);
+      ELF_ALL_KNOWN_ELFCLASS
+#undef ELF_ONE_KNOWN_ELFCLASS
     default:
       return nullptr;
     }

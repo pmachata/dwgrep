@@ -33,6 +33,7 @@
 #include "builtin-symbol.hh"
 #include "elfcst.hh"
 #include "known-elf.h"
+#include "known-elf-extra.h"
 
 std::unique_ptr <vocabulary>
 dwgrep_vocabulary_elf ()
@@ -187,11 +188,6 @@ dwgrep_vocabulary_elf ()
       voc.add (std::make_shared <overloaded_pred_builtin>		\
 	       ("!" NAME, t, false));					\
     }
-
-#define ELF_ALL_KNOWN_ELFCLASS			\
-  ELF_ONE_KNOWN_ELFCLASS(ELFCLASSNONE)		\
-  ELF_ONE_KNOWN_ELFCLASS(ELFCLASS32)		\
-  ELF_ONE_KNOWN_ELFCLASS(ELFCLASS64)
 
 #define ELF_ONE_KNOWN_ELFCLASS(CODE)		   \
   ADD_ELF_CONSTANT(CODE, #CODE, &elf_class_dom (), pred_elf_eclass);
