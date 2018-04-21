@@ -738,7 +738,7 @@
 *** *osabi :: T_ELF -> T_CONST
 *** *ELFOSABI_*
 *** *?ELFOSABI_*
-***  eabiversion :: T_ELF -> T_CONST (no domain, just a number)
+*** *abiversion :: T_ELF -> T_CONST (no domain, just a number)
 *** *etype
 *** *emachine
 *** *version :: T_ELF -> T_CONST

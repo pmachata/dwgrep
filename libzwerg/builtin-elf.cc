@@ -380,3 +380,28 @@ entry point address.
 
 template class op_elf_eentry <value_elf>;
 template class op_elf_eentry <value_dwarf>;
+
+
+template <class ValueType>
+value_cst
+op_elf_abiversion <ValueType>::operate (std::unique_ptr <ValueType> a) const
+{
+  auto ee = ehdr (a->get_dwctx ()->get_dwfl ()).e_ident[EI_ABIVERSION];
+  return value_cst {constant {ee, &dec_constant_dom}, 0};
+}
+
+template <class ValueType>
+std::string
+op_elf_abiversion <ValueType>::docstring ()
+{
+  return
+R"docstring(
+
+This word takes the ``T_DWARF`` or ``T_ELF`` value on TOS and yields an ABI
+version, as stored on index ``EI_ABIVERSION`` of ELF identification bytes.
+
+)docstring";
+}
+
+template class op_elf_abiversion <value_elf>;
+template class op_elf_abiversion <value_dwarf>;

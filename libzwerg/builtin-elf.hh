@@ -267,4 +267,14 @@ struct op_elf_eentry
   static std::string docstring ();
 };
 
+template <class ValueType>
+struct op_elf_abiversion
+  : public op_once_overload <value_cst, ValueType>
+{
+  using op_once_overload <value_cst, ValueType>::op_once_overload;
+
+  value_cst operate (std::unique_ptr <ValueType> a) const override;
+  static std::string docstring ();
+};
+
 #endif /* BUILTIN_ELF_H */

@@ -306,5 +306,14 @@ ELF_ALL_KNOWN_ELFOSABI
     voc.add (std::make_shared <overloaded_op_builtin> ("eentry", t));
   }
 
+  {
+    auto t = std::make_shared <overload_tab> ();
+
+    t->add_op_overload <op_elf_abiversion <value_elf>> ();
+    t->add_op_overload <op_elf_abiversion <value_dwarf>> ();
+
+    voc.add (std::make_shared <overloaded_op_builtin> ("abiversion", t));
+  }
+
   return ret;
 }
