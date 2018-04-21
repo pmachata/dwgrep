@@ -149,6 +149,20 @@ elf_em_string (int em, brevity brv)
   return abbreviate (ss.find (em), sizeof "EM", brv);
 }
 
+static const char *
+elf_ev_string (int ev, brevity brv)
+{
+  switch (ev)
+    {
+#define ELF_ONE_KNOWN_EV(CODE)			\
+      case CODE: return abbreviate (#CODE, sizeof "EV", brv);
+      ELF_ALL_KNOWN_EV
+#undef ELF_ONE_KNOWN_EV
+    default:
+      return nullptr;
+    }
+}
+
 
 zw_cdom const &
 elf_class_dom ()
@@ -220,6 +234,13 @@ zw_cdom const &
 elf_em_dom ()
 {
   static dw_simple_dom dom {"EM", elf_em_string, 0, 0, false};
+  return dom;
+}
+
+zw_cdom const &
+elf_ev_dom ()
+{
+  static dw_simple_dom dom {"EV", elf_ev_string, 0, 0, false};
   return dom;
 }
 

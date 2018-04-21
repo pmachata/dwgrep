@@ -283,6 +283,30 @@ xxx document me
 
 
 unsigned
+elf_version_def::value (Dwfl *dwfl)
+{
+  return ehdr (dwfl).e_ident[EI_VERSION];
+}
+
+zw_cdom const &
+elf_version_def::cdom ()
+{
+  return elf_ev_dom ();
+}
+
+std::string
+elf_version_def::docstring ()
+{
+  return
+R"docstring(
+
+xxx document me
+
+)docstring";
+}
+
+
+unsigned
 elf_eflags_def::value (Dwfl *dwfl)
 {
   return ehdr (dwfl).e_flags;

@@ -240,6 +240,21 @@ ELF_ALL_KNOWN_ET
 ELF_ALL_KNOWN_EM
 #undef ELF_ONE_KNOWN_EM
 
+  {
+    auto t = std::make_shared <overload_tab> ();
+
+    t->add_op_overload <op_elf_version <value_elf>> ();
+    t->add_op_overload <op_elf_version <value_dwarf>> ();
+
+    voc.add (std::make_shared <overloaded_op_builtin> ("version", t));
+  }
+
+#define ELF_ONE_KNOWN_EV(CODE)						\
+  ADD_ELF_CONSTANT(CODE, #CODE, &elf_ev_dom (), pred_elf_version);
+
+ELF_ALL_KNOWN_EV
+#undef ELF_ONE_KNOWN_EV
+
 
   // N.B.: There are no ?EF_ and !EF_ words. Flags need to be tested explicitly,
   // because the field often includes various bitfields and it's not a priori
