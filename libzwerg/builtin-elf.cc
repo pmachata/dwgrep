@@ -283,30 +283,6 @@ xxx document me
 
 
 unsigned
-elf_version_def::value (Dwfl *dwfl)
-{
-  return ehdr (dwfl).e_ident[EI_VERSION];
-}
-
-zw_cdom const &
-elf_version_def::cdom ()
-{
-  return elf_ev_dom ();
-}
-
-std::string
-elf_version_def::docstring ()
-{
-  return
-R"docstring(
-
-xxx document me
-
-)docstring";
-}
-
-
-unsigned
 elf_eflags_def::value (Dwfl *dwfl)
 {
   return ehdr (dwfl).e_flags;
@@ -355,6 +331,56 @@ xxx document me
 
 )docstring";
 }
+
+
+template <class ValueType>
+value_cst
+op_elf_version <ValueType>::operate (std::unique_ptr <ValueType> a) const
+{
+  auto ee = ehdr (a->get_dwctx ()->get_dwfl ()).e_ident[EI_VERSION];
+  return value_cst {constant {ee, &elf_ev_dom ()}, 0};
+}
+
+template <class ValueType>
+std::string
+op_elf_version <ValueType>::docstring ()
+{
+  return
+R"docstring(
+
+This word takes the ``T_DWARF`` or ``T_ELF`` value on TOS and yields an ELF
+header version number from the ELF identifier.
+
+)docstring";
+}
+
+template class op_elf_version <value_elf>;
+template class op_elf_version <value_dwarf>;
+
+
+template <class ValueType>
+value_cst
+op_elf_eversion <ValueType>::operate (std::unique_ptr <ValueType> a) const
+{
+  auto ee = ehdr (a->get_dwctx ()->get_dwfl ()).e_version;
+  return value_cst {constant {ee, &elf_ev_dom ()}, 0};
+}
+
+template <class ValueType>
+std::string
+op_elf_eversion <ValueType>::docstring ()
+{
+  return
+R"docstring(
+
+This word takes the ``T_DWARF`` or ``T_ELF`` value on TOS and yields an object
+file version. This is unlike ``version``, which yields ELF header version.
+
+)docstring";
+}
+
+template class op_elf_eversion <value_elf>;
+template class op_elf_eversion <value_dwarf>;
 
 
 template <class ValueType>

@@ -249,8 +249,21 @@ ELF_ALL_KNOWN_EM
     voc.add (std::make_shared <overloaded_op_builtin> ("version", t));
   }
 
+  {
+    auto t = std::make_shared <overload_tab> ();
+
+    t->add_op_overload <op_elf_eversion <value_elf>> ();
+    t->add_op_overload <op_elf_eversion <value_dwarf>> ();
+
+    voc.add (std::make_shared <overloaded_op_builtin> ("eversion", t));
+  }
+
+  // N.B.: There are no ?EV_ and !EV_ words. It's not clear whether the version
+  // should be tested against EI_VERSION or e_version. Not that it matters much,
+  // since both are just "1", but since it doesn't, it's no problem to omit
+  // these.
 #define ELF_ONE_KNOWN_EV(CODE)						\
-  ADD_ELF_CONSTANT(CODE, #CODE, &elf_ev_dom (), pred_elf_version);
+  add_builtin_constant (voc, constant (CODE, &elf_ev_dom ()), #CODE);
 
 ELF_ALL_KNOWN_EV
 #undef ELF_ONE_KNOWN_EV
