@@ -247,7 +247,7 @@ elf_ev_dom ()
 
 // Elf flags shouldn't have any common constant block. Make sure it's so.
 #define ELF_ONE_KNOWN_EF(SHORT, LONG)		\
-  static_assert (false, "Unexpected CPU-unspecific EF_ constant.");
+  static_assert (false, "Unexpected non-CPU-specific EF_ constant.");
 ELF_ALL_KNOWN_EF
 #undef ELF_ONE_KNOWN_EF
 
