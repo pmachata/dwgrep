@@ -357,6 +357,9 @@ TEST_F (ElfTest, test_elf)
 	    {1, "a1.out", "?ELFOSABI_SYSV"},
 	    {1, "a1.out", "!ELFOSABI_HPUX"},
 	    {1, "a1.out", "osabi == ELFOSABI_SYSV"},
+
+	    {1, "a1.out", "[eident elem (pos == (EI_MAG1, EI_MAG2, EI_MAG3))]"
+			  " == [69, 76, 70]"},
 	})
     {
       size_t nresults = std::get <0> (entry);

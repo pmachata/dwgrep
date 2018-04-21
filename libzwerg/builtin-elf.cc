@@ -431,3 +431,46 @@ version, as stored on index ``EI_ABIVERSION`` of ELF identification bytes.
 
 template class op_elf_abiversion <value_elf>;
 template class op_elf_abiversion <value_dwarf>;
+
+
+template <class ValueType>
+value_seq
+op_elf_eident <ValueType>::operate (std::unique_ptr <ValueType> a) const
+{
+  auto const &eh = ehdr (a->get_dwctx ()->get_dwfl ());
+  std::vector <std::unique_ptr <value>> seq;
+
+  for (unsigned i = 0; i < EI_NIDENT; ++i)
+    {
+      auto e = eh.e_ident[i];
+      auto c = constant {e, &dec_constant_dom};
+      auto v = std::make_unique <value_cst> (c, i);
+      seq.push_back (std::move (v));
+    }
+
+  return {std::move (seq), 0};
+}
+
+template <class ValueType>
+std::string
+op_elf_eident <ValueType>::docstring ()
+{
+  return
+R"docstring(
+
+This word takes the ``T_DWARF`` or ``T_ELF`` value on TOS and yields an ELF
+identification array. A suite of constants ``EI_*`` can be used to match
+individual elements in the identification sequence::
+
+	$ dwgrep foo.o -e 'eident elem (pos == EI_VERSION)'
+	1
+
+Note that you can access some fields of the ELF identifier using the words
+``eclass``, ``edata``, ``version``, ``osabi`` and ``abiversion``, instead of
+inspecting the identification array explicitly.
+
+)docstring";
+}
+
+template class op_elf_eident <value_elf>;
+template class op_elf_eident <value_dwarf>;

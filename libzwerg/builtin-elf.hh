@@ -32,6 +32,7 @@
 #include "overload.hh"
 #include "value-dw.hh"
 #include "value-elf.hh"
+#include "value-seq.hh"
 #include "value-str.hh"
 
 struct op_elf_dwarf
@@ -270,6 +271,16 @@ struct op_elf_abiversion
   using op_once_overload <value_cst, ValueType>::op_once_overload;
 
   value_cst operate (std::unique_ptr <ValueType> a) const override;
+  static std::string docstring ();
+};
+
+template <class ValueType>
+struct op_elf_eident
+  : public op_once_overload <value_seq, ValueType>
+{
+  using op_once_overload <value_seq, ValueType>::op_once_overload;
+
+  value_seq operate (std::unique_ptr <ValueType> a) const override;
   static std::string docstring ();
 };
 

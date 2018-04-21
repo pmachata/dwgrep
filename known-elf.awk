@@ -18,7 +18,7 @@
 ## along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 $1 == "#define" {
-  if (match($2, "^(ELFOSABI|ET|EM|SHN|SHT|STB|STT|EF" \
+  if (match($2, "^(ELFOSABI|ET|EM|SHN|SHT|STB|STT|EF|EI" \
 	        "|STV|PT|DT|AT|ELF_NOTE_OS|R)_([A-Z0-9_]*)$", fields) \
       && ! match($2, "(_NUM|(LO|HI)(OS|PROC|RESERVE)|RNG(LO|HI))$") \
       && ! match($2, "^(DT_ENCODING|DT_(PROC|VAL|ADDR|VERSIONTAG|EXTRA)NUM)$"))

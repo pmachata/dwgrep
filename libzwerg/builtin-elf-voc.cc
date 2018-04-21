@@ -111,8 +111,7 @@ dwgrep_vocabulary_elf ()
   }
 
 #define ELF_ONE_KNOWN_STT(NAME, CODE)					\
-  add_builtin_constant (voc,						\
-			constant (CODE, &elfsym_stt_dom (machine)), #CODE);
+  add_builtin_constant (voc, constant (CODE, &elfsym_stt_dom (machine)), #CODE);
 
   {
     constexpr int machine = EM_NONE;
@@ -131,8 +130,7 @@ dwgrep_vocabulary_elf ()
 
 
 #define ELF_ONE_KNOWN_STB(NAME, CODE)					\
-  add_builtin_constant (voc,						\
-			constant (CODE, &elfsym_stb_dom (machine)), #CODE);
+  add_builtin_constant (voc, constant (CODE, &elfsym_stb_dom (machine)), #CODE);
 
   {
     constexpr int machine = EM_NONE;
@@ -273,8 +271,7 @@ ELF_ALL_KNOWN_EV
   // because the field often includes various bitfields and it's not a priori
   // clear how the flag should be tested.
 #define ELF_ONE_KNOWN_EF(NAME, CODE)					\
-  add_builtin_constant (voc,						\
-			constant (CODE, &elf_ef_dom (machine)), #CODE);
+  add_builtin_constant (voc, constant (CODE, &elf_ef_dom (machine)), #CODE);
 
 #define ELF_ONE_KNOWN_EF_ARCH(ARCH)		\
     {						\
@@ -327,6 +324,21 @@ ELF_ALL_KNOWN_ELFOSABI
 
     voc.add (std::make_shared <overloaded_op_builtin> ("abiversion", t));
   }
+
+  {
+    auto t = std::make_shared <overload_tab> ();
+
+    t->add_op_overload <op_elf_eident <value_elf>> ();
+    t->add_op_overload <op_elf_eident <value_dwarf>> ();
+
+    voc.add (std::make_shared <overloaded_op_builtin> ("eident", t));
+  }
+
+#define ELF_ONE_KNOWN_EI(NAME, CODE)				\
+  add_builtin_constant (voc, constant (CODE, &dec_constant_dom), #CODE);
+
+ELF_ALL_KNOWN_EI
+#undef ELF_ONE_KNOWN_EI
 
   return ret;
 }
