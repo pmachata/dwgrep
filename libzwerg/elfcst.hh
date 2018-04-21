@@ -37,5 +37,6 @@ zw_cdom const &elf_et_dom ();
 zw_cdom const &elf_em_dom ();
 zw_cdom const &elf_ev_dom ();
 zw_cdom const &elf_ef_dom (int machine);
+zw_cdom const &elf_osabi_dom ();
 
 #endif /* _ELFCST_H_ */

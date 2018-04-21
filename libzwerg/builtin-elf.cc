@@ -333,6 +333,30 @@ xxx document me
 }
 
 
+unsigned
+elf_osabi_def::value (Dwfl *dwfl)
+{
+  return ehdr (dwfl).e_ident[EI_OSABI];
+}
+
+zw_cdom const &
+elf_osabi_def::cdom ()
+{
+  return elf_osabi_dom ();
+}
+
+std::string
+elf_osabi_def::docstring ()
+{
+  return
+R"docstring(
+
+xxx document me
+
+)docstring";
+}
+
+
 template <class ValueType>
 value_cst
 op_elf_eentry <ValueType>::operate (std::unique_ptr <ValueType> a) const

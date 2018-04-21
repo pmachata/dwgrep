@@ -350,6 +350,11 @@ TEST_F (ElfTest, test_elf)
 	    {1, "a1.out", "?EV_CURRENT"},
 	    {1, "a1.out", "version == EV_CURRENT"},
 	    {0, "a1.out", "?EV_NONE"},
+
+	    {1, "a1.out", "?ELFOSABI_NONE"},
+	    {1, "a1.out", "?ELFOSABI_SYSV"},
+	    {1, "a1.out", "!ELFOSABI_HPUX"},
+	    {1, "a1.out", "osabi == ELFOSABI_SYSV"},
 	})
     {
       size_t nresults = std::get <0> (entry);

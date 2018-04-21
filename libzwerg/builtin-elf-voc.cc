@@ -285,6 +285,21 @@ ELF_ALL_KNOWN_EV
   {
     auto t = std::make_shared <overload_tab> ();
 
+    t->add_op_overload <op_elf_osabi <value_elf>> ();
+    t->add_op_overload <op_elf_osabi <value_dwarf>> ();
+
+    voc.add (std::make_shared <overloaded_op_builtin> ("osabi", t));
+  }
+
+#define ELF_ONE_KNOWN_ELFOSABI(NAME, CODE)				\
+  ADD_ELF_CONSTANT(CODE, #CODE, &elf_osabi_dom (), pred_elf_osabi);
+
+ELF_ALL_KNOWN_ELFOSABI
+#undef ELF_ONE_KNOWN_ELFOSABI
+
+  {
+    auto t = std::make_shared <overload_tab> ();
+
     t->add_op_overload <op_elf_eentry <value_elf>> ();
     t->add_op_overload <op_elf_eentry <value_dwarf>> ();
 

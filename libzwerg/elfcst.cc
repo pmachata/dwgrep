@@ -149,6 +149,7 @@ elf_em_string (int em, brevity brv)
   return abbreviate (ss.find (em), sizeof "EM", brv);
 }
 
+
 static const char *
 elf_ev_string (int ev, brevity brv)
 {
@@ -349,5 +350,38 @@ elf_ef_dom (int machine)
     }
 
   static dw_simple_dom dom {"EF", fallback_dom_stringer, 0, 0, true};
+  return dom;
+}
+
+
+struct elf_osabi_strings
+  : public linear_map
+{
+  std::map <unsigned, char const *>
+  all () const
+  {
+    std::map <unsigned, char const *> ret;
+#define ELF_ONE_KNOWN_ELFOSABI(NAME, CODE) ret[CODE] = #CODE;
+    ELF_ALL_KNOWN_ELFOSABI
+#undef ELF_ONE_KNOWN_ELFOSABI
+    return ret;
+  }
+
+  elf_osabi_strings ()
+    : linear_map {all ()}
+  {}
+};
+
+static const char *
+elf_osabi_string (int osabi, brevity brv)
+{
+  static elf_osabi_strings ss;
+  return abbreviate (ss.find (osabi), sizeof "ELFOSABI", brv);
+}
+
+zw_cdom const &
+elf_osabi_dom ()
+{
+  static dw_simple_dom dom {"ELFOSABI", elf_osabi_string, 0, 0, true};
   return dom;
 }

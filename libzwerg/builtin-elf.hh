@@ -233,6 +233,30 @@ struct op_elf_eflags
 };
 
 
+struct elf_osabi_def
+{
+  static unsigned value (Dwfl *dwfl);
+  static zw_cdom const &cdom ();
+  static std::string docstring ();
+};
+
+template <class ValueType>
+struct op_elf_osabi
+  : public op_elf_simple_value <elf_osabi_def, ValueType>
+{
+  using op_elf_simple_value <elf_osabi_def, ValueType>
+		::op_elf_simple_value;
+};
+
+template <class ValueType>
+struct pred_elf_osabi
+  : public pred_elf_simple_value <elf_osabi_def, ValueType>
+{
+  using pred_elf_simple_value <elf_osabi_def, ValueType>
+		::pred_elf_simple_value;
+};
+
+
 template <class ValueType>
 struct op_elf_eentry
   : public op_once_overload <value_cst, ValueType>

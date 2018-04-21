@@ -733,15 +733,15 @@
 *** *@data :; T_ELF -> T_CONST
 *** *ELFDATA2LSB, ELFDATA2MSB
 *** *?ELFDATA2LSB, ?ELFDATA2MSB
-***  EV_CURRENT
-***  ?EV_CURRENT
-***  eosabi :: T_ELF -> T_CONST
-***  ELFOSABI_*
-***  ?ELFOSABI_*
+*** *EV_CURRENT
+*** *?EV_CURRENT
+*** *osabi :: T_ELF -> T_CONST
+*** *ELFOSABI_*
+*** *?ELFOSABI_*
 ***  eabiversion :: T_ELF -> T_CONST (no domain, just a number)
 *** *etype
 *** *emachine
-***  version :: T_ELF -> T_CONST
+*** *version :: T_ELF -> T_CONST
 *** *eentry :: T_ELF -> T_ASET
 ***  phdr :: T_ELF ->* T_PHDR
 ***  section :: T_ELF ->* T_SECTION
