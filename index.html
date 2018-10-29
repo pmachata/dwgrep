@@ -1,34 +1,22 @@
+
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
-
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    
-    <title>Welcome to dwgrep’s documentation! &#8212; dwgrep 0.3 documentation</title>
-    
+    <title>Welcome to dwgrep&#39;s documentation! &#8212; dwgrep 0.4 documentation</title>
     <link rel="stylesheet" href="_static/classic.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
-    
-    <script type="text/javascript">
-      var DOCUMENTATION_OPTIONS = {
-        URL_ROOT:    './',
-        VERSION:     '0.3',
-        COLLAPSE_INDEX: false,
-        FILE_SUFFIX: '.html',
-        HAS_SOURCE:  true
-      };
-    </script>
+    <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="top" title="dwgrep 0.3 documentation" href="#" />
     <link rel="next" title="Command line reference" href="cli.html" /> 
-  </head>
-  <body role="document">
+  </head><body>
     <div class="related" role="navigation" aria-label="related navigation">
       <h3>Navigation</h3>
       <ul>
@@ -38,7 +26,7 @@
         <li class="right" >
           <a href="cli.html" title="Command line reference"
              accesskey="N">next</a> |</li>
-        <li class="nav-item nav-item-0"><a href="#">dwgrep 0.3 documentation</a> &#187;</li> 
+        <li class="nav-item nav-item-0"><a href="#">dwgrep 0.4 documentation</a> &#187;</li> 
       </ul>
     </div>  
 
@@ -48,7 +36,7 @@
           <div class="body" role="main">
             
   <div class="section" id="welcome-to-dwgrep-s-documentation">
-<span id="index"></span><h1>Welcome to dwgrep&#8217;s documentation!<a class="headerlink" href="#welcome-to-dwgrep-s-documentation" title="Permalink to this headline">¶</a></h1>
+<span id="index"></span><h1>Welcome to dwgrep's documentation!<a class="headerlink" href="#welcome-to-dwgrep-s-documentation" title="Permalink to this headline">¶</a></h1>
 <div class="toctree-wrapper compound">
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="cli.html">Command line reference</a></li>
@@ -67,40 +55,40 @@
 (libzwerg) for querying Dwarf (debuginfo) graphs.  If you want to find
 out more about Dwarf, check out an <a class="reference external" href="http://www.dwarfstd.org/doc/Debugging%20using%20DWARF.pdf">introduction to the DWARF
 Debugging Format</a> or download the <a class="reference external" href="http://dwarfstd.org/Download.php">Dwarf standard</a>.  But you can
-also pretend that Dwarf is like XML, except nodes are called DIE&#8217;s.
-That, and perusing the output of <code class="docutils literal"><span class="pre">eu-readelf</span> <span class="pre">-winfo</span></code>, should be
+also pretend that Dwarf is like XML, except nodes are called DIE's.
+That, and perusing the output of <code class="docutils literal notranslate"><span class="pre">eu-readelf</span> <span class="pre">-winfo</span></code>, should be
 enough to get you started.</p>
 <p>You can think of dwgrep expressions as instructions describing a
 path through a graph, with assertions about the type of nodes along
 the way: that a node is of given type, that it has a given
 attribute, etc.  There are also means of expressing sub-conditions,
 i.e. assertions that a given node is acceptable if a separate
-expression matches (or doesn&#8217;t match) a different path through the
+expression matches (or doesn't match) a different path through the
 graph.</p>
-<p>Apart from Dwarf objects (DIE&#8217;s, Attributes and others), Zwerg
+<p>Apart from Dwarf objects (DIE's, Attributes and others), Zwerg
 expressions can work with integers, strings, and sequences of other
 objects.</p>
 <p>In particular, a simple expression in dwgrep might look like this:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span>entry ?DW_TAG_subprogram child ?DW_TAG_formal_parameter @DW_AT_name
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>entry ?DW_TAG_subprogram child ?DW_TAG_formal_parameter @DW_AT_name
 </pre></div>
 </div>
 <p>On a <a class="reference internal" href="cli.html#cli"><span class="std std-ref">command line</span></a>, you would issue it like this:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span>$ dwgrep /some/file/somewhere -e &#39;entry ?DW_TAG_subprogram ...etc....&#39;
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ dwgrep /some/file/somewhere -e &#39;entry ?DW_TAG_subprogram ...etc....&#39;
 </pre></div>
 </div>
-<p>The query itself says: show me values of attribute <code class="docutils literal"><span class="pre">DW_AT_name</span></code> of
-<code class="docutils literal"><span class="pre">DW_TAG_formal_parameter</span></code> nodes that are children of
-<code class="docutils literal"><span class="pre">DW_TAG_subprogram</span></code> entries (which here means debug information
-entries, or DIE&#8217;s).  Reading forward, you get list of instructions to
-a matcher: take DIE&#8217;s, accept all <code class="docutils literal"><span class="pre">DW_TAG_subprogram</span></code>&#8216;s, look at
-their children, accept those that are <code class="docutils literal"><span class="pre">DW_TAG_formal_parameter</span></code>,
-take value of attribute <code class="docutils literal"><span class="pre">DW_AT_name</span></code>.</p>
-<p>Another example comes from <code class="docutils literal"><span class="pre">dwarflint</span></code>:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span>entry ?DW_AT_decl_column !DW_AT_decl_line
+<p>The query itself says: show me values of attribute <code class="docutils literal notranslate"><span class="pre">DW_AT_name</span></code> of
+<code class="docutils literal notranslate"><span class="pre">DW_TAG_formal_parameter</span></code> nodes that are children of
+<code class="docutils literal notranslate"><span class="pre">DW_TAG_subprogram</span></code> entries (which here means debug information
+entries, or DIE's).  Reading forward, you get list of instructions to
+a matcher: take DIE's, accept all <code class="docutils literal notranslate"><span class="pre">DW_TAG_subprogram</span></code>'s, look at
+their children, accept those that are <code class="docutils literal notranslate"><span class="pre">DW_TAG_formal_parameter</span></code>,
+take value of attribute <code class="docutils literal notranslate"><span class="pre">DW_AT_name</span></code>.</p>
+<p>Another example comes from <code class="docutils literal notranslate"><span class="pre">dwarflint</span></code>:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>entry ?DW_AT_decl_column !DW_AT_decl_line
 </pre></div>
 </div>
-<p>This looks for DIE&#8217;s that have <code class="docutils literal"><span class="pre">DW_AT_decl_column</span></code>, but don&#8217;t have
-<code class="docutils literal"><span class="pre">DW_AT_decl_line</span></code>&#8211;a semantic violation that is worth reporting.</p>
+<p>This looks for DIE's that have <code class="docutils literal notranslate"><span class="pre">DW_AT_decl_column</span></code>, but don't have
+<code class="docutils literal notranslate"><span class="pre">DW_AT_decl_line</span></code>--a semantic violation that is worth reporting.</p>
 </div>
 <div class="section" id="computation">
 <h1>Computation<a class="headerlink" href="#computation" title="Permalink to this headline">¶</a></h1>
@@ -114,37 +102,37 @@ and in fact operate on stacks of these values.</p>
 produces zero or more stacks on the output.  Note that producing
 several stacks is different from producing a stack that holds a
 sequence.  You can think of it as if any function could in theory fork
-(if it returns more than one stack), or terminate (if it doesn&#8217;t
+(if it returns more than one stack), or terminate (if it doesn't
 return anything).</p>
 <p>This may be best illustrated with an example.  Among the most trivial
-Zwerg functions are literals, such as <code class="docutils literal"><span class="pre">5</span></code> or <code class="docutils literal"><span class="pre">&quot;Blah&quot;</span></code>.  For a
+Zwerg functions are literals, such as <code class="docutils literal notranslate"><span class="pre">5</span></code> or <code class="docutils literal notranslate"><span class="pre">&quot;Blah&quot;</span></code>.  For a
 stack given on input, they produce one stack on output, with the
 indicated value pushed to top:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span>$ dwgrep &#39;&quot;Hello, world!&quot;&#39;
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ dwgrep &#39;&quot;Hello, world!&quot;&#39;
 Hello, world!
 </pre></div>
 </div>
-<p>Another very simple function is <code class="docutils literal"><span class="pre">length</span></code>, which returns the input
+<p>Another very simple function is <code class="docutils literal notranslate"><span class="pre">length</span></code>, which returns the input
 stack with top value replaced with its length:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span>$ dwgrep &#39;&quot;Hello, world!&quot; length&#39;
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ dwgrep &#39;&quot;Hello, world!&quot; length&#39;
 13
 </pre></div>
 </div>
-<p>Both the literal and <code class="docutils literal"><span class="pre">length</span></code> yield a single stack of output for
+<p>Both the literal and <code class="docutils literal notranslate"><span class="pre">length</span></code> yield a single stack of output for
 every stack of input.  There are words that yield more than once
-however.  An example is <code class="docutils literal"><span class="pre">elem</span></code>, which inspects elements of a
+however.  An example is <code class="docutils literal notranslate"><span class="pre">elem</span></code>, which inspects elements of a
 sequence or a string:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span>$ dwgrep &#39;&quot;Hi!&quot; elem&#39;
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ dwgrep &#39;&quot;Hi!&quot; elem&#39;
 H
 i
 !
 </pre></div>
 </div>
-<p><code class="docutils literal"><span class="pre">dwgrep</span></code> returned three results, and shows each of them on a single
-line.  That&#8217;s because they are one-slot stacks, and this way of
+<p><code class="docutils literal notranslate"><span class="pre">dwgrep</span></code> returned three results, and shows each of them on a single
+line.  That's because they are one-slot stacks, and this way of
 formatting allows the output to be further processed by shell.  This
 is how it looks for deeper stacks:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span>$ dwgrep &#39;&quot;Hi!&quot; elem 5&#39;
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ dwgrep &#39;&quot;Hi!&quot; elem 5&#39;
 ---
 5
 H
@@ -156,9 +144,9 @@ i
 !
 </pre></div>
 </div>
-<p>When using <code class="docutils literal"><span class="pre">dwgrep</span></code> on command line, it is typically most useful to
+<p>When using <code class="docutils literal notranslate"><span class="pre">dwgrep</span></code> on command line, it is typically most useful to
 aim for single-slot stacks.  Producing deeper stacks may be useful if
-you use <code class="docutils literal"><span class="pre">libzwerg</span></code> programmatically.  That way the query can return
+you use <code class="docutils literal notranslate"><span class="pre">libzwerg</span></code> programmatically.  That way the query can return
 not only the primary result, but also some context.</p>
 <p>Now would be a good time to read through the <a class="reference internal" href="tutorial.html#tutorial"><span class="std std-ref">Tutorial</span></a>, which
 gives a step-by-step account of fundamental tools of Zwerg language.
@@ -184,7 +172,7 @@ available:</p>
 </li>
 </ul>
 <p>To build dwgrep:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span>$ cmake .
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ cmake .
 $ make
 $ make test     # optional, if you want to run the test suite
 $ make doc      # optional, if you want to build the documentation
@@ -198,7 +186,7 @@ $ make install
 GitHub also hosts a ticketing system.  Other than that, if you wish to
 contact the author, send an e-mail to &lt;<a class="reference external" href="mailto:pmachata&#37;&#52;&#48;gmail&#46;com">pmachata<span>&#64;</span>gmail<span>&#46;</span>com</a>&gt;.</p>
 <p>The source code is tracked in a GIT repository.  Check it out with:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">git</span> <span class="n">clone</span> <span class="n">https</span><span class="p">:</span><span class="o">//</span><span class="n">github</span><span class="o">.</span><span class="n">com</span><span class="o">/</span><span class="n">pmachata</span><span class="o">/</span><span class="n">dwgrep</span><span class="o">.</span><span class="n">git</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">git</span> <span class="n">clone</span> <span class="n">https</span><span class="p">:</span><span class="o">//</span><span class="n">github</span><span class="o">.</span><span class="n">com</span><span class="o">/</span><span class="n">pmachata</span><span class="o">/</span><span class="n">dwgrep</span><span class="o">.</span><span class="n">git</span>
 </pre></div>
 </div>
 <p>The best way to get the patches across is to create a GitHub merge
@@ -219,7 +207,7 @@ your option.</p>
         <div class="sphinxsidebarwrapper">
   <h3><a href="#">Table Of Contents</a></h3>
   <ul>
-<li><a class="reference internal" href="#">Welcome to dwgrep&#8217;s documentation!</a></li>
+<li><a class="reference internal" href="#">Welcome to dwgrep's documentation!</a></li>
 <li><a class="reference internal" href="#introduction">Introduction</a></li>
 <li><a class="reference internal" href="#computation">Computation</a></li>
 <li><a class="reference internal" href="#installation">Installation</a></li>
@@ -233,18 +221,20 @@ your option.</p>
   <div role="note" aria-label="source link">
     <h3>This Page</h3>
     <ul class="this-page-menu">
-      <li><a href="_sources/index.txt"
+      <li><a href="_sources/index.rst.txt"
             rel="nofollow">Show Source</a></li>
     </ul>
    </div>
 <div id="searchbox" style="display: none" role="search">
   <h3>Quick search</h3>
+    <div class="searchformwrapper">
     <form class="search" action="search.html" method="get">
-      <div><input type="text" name="q" /></div>
-      <div><input type="submit" value="Go" /></div>
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
       <input type="hidden" name="check_keywords" value="yes" />
       <input type="hidden" name="area" value="default" />
     </form>
+    </div>
 </div>
 <script type="text/javascript">$('#searchbox').show(0);</script>
         </div>
@@ -260,12 +250,12 @@ your option.</p>
         <li class="right" >
           <a href="cli.html" title="Command line reference"
              >next</a> |</li>
-        <li class="nav-item nav-item-0"><a href="#">dwgrep 0.3 documentation</a> &#187;</li> 
+        <li class="nav-item nav-item-0"><a href="#">dwgrep 0.4 documentation</a> &#187;</li> 
       </ul>
     </div>
     <div class="footer" role="contentinfo">
-        &#169; Copyright 2014, 2015, 2017, Petr Machata.
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.4.8.
+        &#169; Copyright 2014, 2015, 2017, 2018, Petr Machata.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.7.6.
     </div>
   </body>
 </html>

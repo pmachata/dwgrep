@@ -1,35 +1,23 @@
+
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
-
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    
-    <title>Tutorial &#8212; dwgrep 0.3 documentation</title>
-    
+    <title>Tutorial &#8212; dwgrep 0.4 documentation</title>
     <link rel="stylesheet" href="_static/classic.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
-    
-    <script type="text/javascript">
-      var DOCUMENTATION_OPTIONS = {
-        URL_ROOT:    './',
-        VERSION:     '0.3',
-        COLLAPSE_INDEX: false,
-        FILE_SUFFIX: '.html',
-        HAS_SOURCE:  true
-      };
-    </script>
+    <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="top" title="dwgrep 0.3 documentation" href="index.html" />
     <link rel="next" title="Assorted examples" href="examples.html" />
     <link rel="prev" title="Command line reference" href="cli.html" /> 
-  </head>
-  <body role="document">
+  </head><body>
     <div class="related" role="navigation" aria-label="related navigation">
       <h3>Navigation</h3>
       <ul>
@@ -42,7 +30,7 @@
         <li class="right" >
           <a href="cli.html" title="Command line reference"
              accesskey="P">previous</a> |</li>
-        <li class="nav-item nav-item-0"><a href="index.html">dwgrep 0.3 documentation</a> &#187;</li> 
+        <li class="nav-item nav-item-0"><a href="index.html">dwgrep 0.4 documentation</a> &#187;</li> 
       </ul>
     </div>  
 
@@ -56,12 +44,12 @@
 <p>To get our feet wet, we will develop a query to find functions the
 arguments of which are directly of structure or class types.  Passing
 such values in parameters may incur a potentially expensive copy, and
-it might be desirable to audit these uses.  If you have a <code class="docutils literal"><span class="pre">dwgrep</span></code>
-distribution tarball handy, there&#8217;s a file
-<code class="docutils literal"><span class="pre">tests/nontrivial-types.o</span></code>, which you can use to play along with the
+it might be desirable to audit these uses.  If you have a <code class="docutils literal notranslate"><span class="pre">dwgrep</span></code>
+distribution tarball handy, there's a file
+<code class="docutils literal notranslate"><span class="pre">tests/nontrivial-types.o</span></code>, which you can use to play along with the
 tutorial.  Or your can compile one yourself, this is the source that
 we are using:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">struct</span> <span class="n">foo</span> <span class="p">{};</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">struct</span> <span class="n">foo</span> <span class="p">{};</span>
 
 <span class="nb">int</span> <span class="n">blah</span> <span class="p">(</span><span class="n">struct</span> <span class="n">foo</span> <span class="n">f</span><span class="p">)</span> <span class="p">{</span>
   <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
@@ -74,34 +62,34 @@ we are using:</p>
 </pre></div>
 </div>
 <p>First and foremost, a quick word about the <a class="reference internal" href="cli.html#cli"><span class="std std-ref">command line
-interface</span></a>.  <code class="docutils literal"><span class="pre">dwgrep</span></code> is to some extent modeled after <code class="docutils literal"><span class="pre">grep</span></code>
-utility.  The following invokes <code class="docutils literal"><span class="pre">dwgrep</span></code> with an empty query on
+interface</span></a>.  <code class="docutils literal notranslate"><span class="pre">dwgrep</span></code> is to some extent modeled after <code class="docutils literal notranslate"><span class="pre">grep</span></code>
+utility.  The following invokes <code class="docutils literal notranslate"><span class="pre">dwgrep</span></code> with an empty query on
 aforementioned file:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span>$ dwgrep &#39;&#39; ./tests/nontrivial-types.o
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ dwgrep &#39;&#39; ./tests/nontrivial-types.o
 &lt;Dwarf &quot;./tests/nontrivial-types.o&quot;&gt;
 </pre></div>
 </div>
-<p>Much like with <code class="docutils literal"><span class="pre">grep</span></code>, you can change the order of arguments if you
+<p>Much like with <code class="docutils literal notranslate"><span class="pre">grep</span></code>, you can change the order of arguments if you
 denote which of them is query:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span>$ dwgrep ./tests/nontrivial-types.o -e &#39;&#39;
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ dwgrep ./tests/nontrivial-types.o -e &#39;&#39;
 &lt;Dwarf &quot;./tests/nontrivial-types.o&quot;&gt;
 </pre></div>
 </div>
-<p>You can also use <code class="docutils literal"><span class="pre">-c</span></code> if you only care about the number of results,
+<p>You can also use <code class="docutils literal notranslate"><span class="pre">-c</span></code> if you only care about the number of results,
 not the results themselves:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span>$ dwgrep -c ./tests/nontrivial-types.o -e &#39;&#39;
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ dwgrep -c ./tests/nontrivial-types.o -e &#39;&#39;
 1
 </pre></div>
 </div>
 <p>The empty query is not very interesting, but it shows us that the
 input stack actually contains one value: the Dwarf file that we gave
-on the command line.  So let&#8217;s look inside!</p>
+on the command line.  So let's look inside!</p>
 <div class="section" id="entry-unit-die-iteration">
-<h2><code class="docutils literal"><span class="pre">entry</span></code>, <code class="docutils literal"><span class="pre">unit</span></code> &#8212; DIE iteration<a class="headerlink" href="#entry-unit-die-iteration" title="Permalink to this headline">¶</a></h2>
+<h2><code class="docutils literal notranslate"><span class="pre">entry</span></code>, <code class="docutils literal notranslate"><span class="pre">unit</span></code> --- DIE iteration<a class="headerlink" href="#entry-unit-die-iteration" title="Permalink to this headline">¶</a></h2>
 <p>There are several functions for entering the graph, the most useful
-one is likely <code class="docutils literal"><span class="pre">entry</span></code>.  This takes <a class="footnote-reference" href="#takes" id="id2">[1]</a> a Dwarf, and yields
-<a class="footnote-reference" href="#yields" id="id3">[2]</a> all DIE&#8217;s in that Dwarf:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span>$ dwgrep ./tests/nontrivial-types.o -e &#39;entry&#39;
+one is likely <code class="docutils literal notranslate"><span class="pre">entry</span></code>.  This takes <a class="footnote-reference" href="#takes" id="id2">[1]</a> a Dwarf, and yields
+<a class="footnote-reference" href="#yields" id="id3">[2]</a> all DIE's in that Dwarf:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ dwgrep ./tests/nontrivial-types.o -e &#39;entry&#39;
 [b]     compile_unit
         producer (strp) GNU C 4.6.3 20120306 (Red Hat 4.6.3-2);
         [... more attributes ...]
@@ -113,9 +101,9 @@ one is likely <code class="docutils literal"><span class="pre">entry</span></cod
 <table class="docutils footnote" frame="void" id="takes" rules="none">
 <colgroup><col class="label" /><col /></colgroup>
 <tbody valign="top">
-<tr><td class="label"><a class="fn-backref" href="#id2">[1]</a></td><td><p class="first">The word &#8220;takes&#8221; is generally used to mean that the
+<tr><td class="label"><a class="fn-backref" href="#id2">[1]</a></td><td><p class="first">The word &quot;takes&quot; is generally used to mean that the
 function expects a stack, whose top value(s) fits the given
-description.  E.g. <code class="docutils literal"><span class="pre">length</span></code> takes a string or a sequence, <code class="docutils literal"><span class="pre">add</span></code>
+description.  E.g. <code class="docutils literal notranslate"><span class="pre">length</span></code> takes a string or a sequence, <code class="docutils literal notranslate"><span class="pre">add</span></code>
 takes two integers, strings or sequences, etc.</p>
 <p class="last">Taken values are discarded from the stack, though typically the
 function in question pushes some other value(s) in their stead.</p>
@@ -126,34 +114,34 @@ function in question pushes some other value(s) in their stead.</p>
 <colgroup><col class="label" /><col /></colgroup>
 <tbody valign="top">
 <tr><td class="label"><a class="fn-backref" href="#id3">[2]</a></td><td>This word is used to mean that the function produces
-stack(s) with the outlined property.  E.g. if <code class="docutils literal"><span class="pre">length</span></code> takes a
+stack(s) with the outlined property.  E.g. if <code class="docutils literal notranslate"><span class="pre">length</span></code> takes a
 string or a sequence, and yields their length, that means that the
 top value is popped, its length is determined, and a value
 corresponding to that length is pushed back.  Such stack is then
 sent to output.</td></tr>
 </tbody>
 </table>
-<p>Other words include <code class="docutils literal"><span class="pre">unit</span></code>, which selects compilation and type
-units, and <code class="docutils literal"><span class="pre">abbrev</span></code> which selects abbreviation units.</p>
-<p>It is impractical to have to repeat the whole <code class="docutils literal"><span class="pre">dwgrep</span></code> command line
+<p>Other words include <code class="docutils literal notranslate"><span class="pre">unit</span></code>, which selects compilation and type
+units, and <code class="docutils literal notranslate"><span class="pre">abbrev</span></code> which selects abbreviation units.</p>
+<p>It is impractical to have to repeat the whole <code class="docutils literal notranslate"><span class="pre">dwgrep</span></code> command line
 every time a code snippet needs to be shown.  In the following we will
 use the following notation:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span>$ &#39;unit&#39;
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ &#39;unit&#39;
 CU 0
 </pre></div>
 </div>
 <p>The dollar at the beginning represents the command line prompt, and
 then the query itself is given in single quotes.</p>
-<p>If we don&#8217;t care about query output (e.g. if it is trivial,
+<p>If we don't care about query output (e.g. if it is trivial,
 predictable or uninteresting), we will just list the query itself:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">entry</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">entry</span>
 </pre></div>
 </div>
 </div>
 <div class="section" id="dw-tag-foo-tag-foo-die-tag-assertion">
-<h2><code class="docutils literal"><span class="pre">?DW_TAG_foo</span></code>, <code class="docutils literal"><span class="pre">?TAG_foo</span></code> &#8212; DIE tag assertion<a class="headerlink" href="#dw-tag-foo-tag-foo-die-tag-assertion" title="Permalink to this headline">¶</a></h2>
-<p>The assertion <code class="docutils literal"><span class="pre">?DW_TAG_foo</span></code> holds <a class="footnote-reference" href="#holds" id="id4">[3]</a> for DIE&#8217;s the tag of
-which is <code class="docutils literal"><span class="pre">DW_TAG_foo</span></code>.</p>
+<h2><code class="docutils literal notranslate"><span class="pre">?DW_TAG_foo</span></code>, <code class="docutils literal notranslate"><span class="pre">?TAG_foo</span></code> --- DIE tag assertion<a class="headerlink" href="#dw-tag-foo-tag-foo-die-tag-assertion" title="Permalink to this headline">¶</a></h2>
+<p>The assertion <code class="docutils literal notranslate"><span class="pre">?DW_TAG_foo</span></code> holds <a class="footnote-reference" href="#holds" id="id4">[3]</a> for DIE's the tag of
+which is <code class="docutils literal notranslate"><span class="pre">DW_TAG_foo</span></code>.</p>
 <table class="docutils footnote" frame="void" id="holds" rules="none">
 <colgroup><col class="label" /><col /></colgroup>
 <tbody valign="top">
@@ -161,18 +149,18 @@ which is <code class="docutils literal"><span class="pre">DW_TAG_foo</span></cod
 nothing at all are called assertions, and are very common in Zwerg
 expressions.  We say that assertion holds if the values on top of
 stack (TOS) satisfy some property.  If the assertion holds, it
-yields an unchanged incoming stack.  If it doesn&#8217;t hold, it yields
+yields an unchanged incoming stack.  If it doesn't hold, it yields
 nothing at all.  Assertions never modify the stack.</td></tr>
 </tbody>
 </table>
-<p>You can write <code class="docutils literal"><span class="pre">?DW_TAG_foo</span></code> also as <code class="docutils literal"><span class="pre">?TAG_foo</span></code>, they do the same
-thing.  In the following, that&#8217;s how we will refer to this assertion.</p>
+<p>You can write <code class="docutils literal notranslate"><span class="pre">?DW_TAG_foo</span></code> also as <code class="docutils literal notranslate"><span class="pre">?TAG_foo</span></code>, they do the same
+thing.  In the following, that's how we will refer to this assertion.</p>
 <p>In Zwerg, function pipelines are formed by simply placing functions
 next to each other.  The stacks that the left function produces
 becomes an input of the right function.</p>
 <p>For example, to list all subprograms, one would use the following
 expression:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span>$ &#39;entry ?TAG_subprogram&#39;
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ &#39;entry ?TAG_subprogram&#39;
 [35]    subprogram
         external (flag) true;
         name (strp)     blah;
@@ -185,33 +173,33 @@ expression:</p>
 </div>
 </div>
 <div class="section" id="dw-at-foo-dw-at-foo-attribute-presence-assertion">
-<h2><code class="docutils literal"><span class="pre">?DW_AT_foo</span></code>, <code class="docutils literal"><span class="pre">!DW_AT_foo</span></code> &#8212; attribute presence assertion<a class="headerlink" href="#dw-at-foo-dw-at-foo-attribute-presence-assertion" title="Permalink to this headline">¶</a></h2>
-<p><code class="docutils literal"><span class="pre">?DW_AT_foo</span></code> holds on DIE&#8217;s that have an attribute <code class="docutils literal"><span class="pre">DW_AT_foo</span></code>,
-and on attributes that are <code class="docutils literal"><span class="pre">DW_AT_foo</span></code>.  As with tags (and any
-Dwarf-related assertions at all), you can shorten this to <code class="docutils literal"><span class="pre">?AT_foo</span></code>.</p>
-<p><code class="docutils literal"><span class="pre">!DW_AT_foo</span></code> similarly holds on DIE&#8217;s that do NOT have an attribute
-<code class="docutils literal"><span class="pre">DW_AT_foo</span></code>, or on attributes that are NOT <code class="docutils literal"><span class="pre">DW_AT_foo</span></code>.</p>
+<h2><code class="docutils literal notranslate"><span class="pre">?DW_AT_foo</span></code>, <code class="docutils literal notranslate"><span class="pre">!DW_AT_foo</span></code> --- attribute presence assertion<a class="headerlink" href="#dw-at-foo-dw-at-foo-attribute-presence-assertion" title="Permalink to this headline">¶</a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">?DW_AT_foo</span></code> holds on DIE's that have an attribute <code class="docutils literal notranslate"><span class="pre">DW_AT_foo</span></code>,
+and on attributes that are <code class="docutils literal notranslate"><span class="pre">DW_AT_foo</span></code>.  As with tags (and any
+Dwarf-related assertions at all), you can shorten this to <code class="docutils literal notranslate"><span class="pre">?AT_foo</span></code>.</p>
+<p><code class="docutils literal notranslate"><span class="pre">!DW_AT_foo</span></code> similarly holds on DIE's that do NOT have an attribute
+<code class="docutils literal notranslate"><span class="pre">DW_AT_foo</span></code>, or on attributes that are NOT <code class="docutils literal notranslate"><span class="pre">DW_AT_foo</span></code>.</p>
 <p>For assertions, concatenation happens to work as a logical and, so
 for example, this is how we can get a list of all subprograms that
 have a declaration attribute:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span>entry ?TAG_subprogram ?AT_declaration
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>entry ?TAG_subprogram ?AT_declaration
 </pre></div>
 </div>
 <p>Similarly, to get subprograms that do not have declaration attribute,
 we say:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span>entry ?TAG_subprogram !AT_declaration
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>entry ?TAG_subprogram !AT_declaration
 </pre></div>
 </div>
 </div>
 <div class="section" id="child-child-traversal">
-<h2><code class="docutils literal"><span class="pre">child</span></code> &#8212; child traversal<a class="headerlink" href="#child-child-traversal" title="Permalink to this headline">¶</a></h2>
-<p><code class="docutils literal"><span class="pre">child</span></code> takes a DIE and yields each of its children.  (Which is to
-say: it yields nothing for child-less DIE&#8217;s, or it can actually yield
-a number of stacks if there are many DIE&#8217;s.  Each of them will have
+<h2><code class="docutils literal notranslate"><span class="pre">child</span></code> --- child traversal<a class="headerlink" href="#child-child-traversal" title="Permalink to this headline">¶</a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">child</span></code> takes a DIE and yields each of its children.  (Which is to
+say: it yields nothing for child-less DIE's, or it can actually yield
+a number of stacks if there are many DIE's.  Each of them will have
 one of the children on TOS.)</p>
-<p>Applied to DIE&#8217;s in our running example, this will get us to formal
+<p>Applied to DIE's in our running example, this will get us to formal
 arguments of the selected subprograms:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span>$ &#39;entry ?TAG_subprogram !AT_declaration child&#39;
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ &#39;entry ?TAG_subprogram !AT_declaration child&#39;
 [58]    formal_parameter
         name (string)   f;
         [... more attributes ...]
@@ -225,12 +213,12 @@ arguments of the selected subprograms:</p>
 </div>
 <p>If we want to make sure these children are actually formal
 parameters:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span>entry ?TAG_subprogram !AT_declaration child ?TAG_formal_parameter
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>entry ?TAG_subprogram !AT_declaration child ?TAG_formal_parameter
 </pre></div>
 </div>
 </div>
 <div class="section" id="dw-at-foo-value-of-attribute-dw-at-foo">
-<h2><code class="docutils literal"><span class="pre">&#64;DW_AT_foo</span></code> &#8212; value of attribute <code class="docutils literal"><span class="pre">DW_AT_foo</span></code><a class="headerlink" href="#dw-at-foo-value-of-attribute-dw-at-foo" title="Permalink to this headline">¶</a></h2>
+<h2><code class="docutils literal notranslate"><span class="pre">&#64;DW_AT_foo</span></code> --- value of attribute <code class="docutils literal notranslate"><span class="pre">DW_AT_foo</span></code><a class="headerlink" href="#dw-at-foo-value-of-attribute-dw-at-foo" title="Permalink to this headline">¶</a></h2>
 <p>This word is used for accessing values of attributes.  It always takes
 a DIE, but what it yields varies by the attribute type.  It could be
 another DIE, a string or a number, a sequence of other values, or
@@ -238,24 +226,24 @@ whatever value type is deemed best for representing a given piece of
 Dwarf.</p>
 <p>We could for example obtain names of the formal parameters selected
 above:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span>$ &#39;entry ?TAG_subprogram !AT_declaration child ?TAG_formal_parameter @AT_name&#39;
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ &#39;entry ?TAG_subprogram !AT_declaration child ?TAG_formal_parameter @AT_name&#39;
 f
 argc
 argv
 </pre></div>
 </div>
-<p>This could be used e.g. to select a particular attribute&#8211;we&#8217;ll see
+<p>This could be used e.g. to select a particular attribute--we'll see
 later how to do this.</p>
-<p>In is not an error to request value of attribute that a DIE doesn&#8217;t
-have.  In such case, <code class="docutils literal"><span class="pre">&#64;AT_*</span></code> would simply not yield at all:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span>$ dwgrep ./tests/aranges.o -c -e &#39;entry @AT_data_member_location&#39;
+<p>In is not an error to request value of attribute that a DIE doesn't
+have.  In such case, <code class="docutils literal notranslate"><span class="pre">&#64;AT_*</span></code> would simply not yield at all:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ dwgrep ./tests/aranges.o -c -e &#39;entry @AT_data_member_location&#39;
 0
 </pre></div>
 </div>
-<p><code class="docutils literal"><span class="pre">&#64;AT_*</span></code> forms could actually also yield more than once.  For example
+<p><code class="docutils literal notranslate"><span class="pre">&#64;AT_*</span></code> forms could actually also yield more than once.  For example
 attributes of location expression types yield once for every covered
 address range:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span>$ dwgrep ./tests/aranges.o -c -e &#39;entry ?AT_location&#39;
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ dwgrep ./tests/aranges.o -c -e &#39;entry ?AT_location&#39;
 1
 
 $ dwgrep ./tests/aranges.o -e &#39;entry @AT_location&#39;
@@ -263,11 +251,11 @@ $ dwgrep ./tests/aranges.o -e &#39;entry @AT_location&#39;
 0x10010..0x1001a:[0:fbreg&lt;-24&gt;]
 </pre></div>
 </div>
-<p>There&#8217;s another use of this same feature: for attributes with
+<p>There's another use of this same feature: for attributes with
 reference form, we get the effect of traversing over the edge rooted
 at given attribute.  For example, we could get types of formal
 parameters:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span>$ &#39;entry ?TAG_subprogram !AT_declaration child ?TAG_formal_parameter @AT_type&#39;
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ &#39;entry ?TAG_subprogram !AT_declaration child ?TAG_formal_parameter @AT_type&#39;
 [2d]    structure_type
         name (string)   foo;
         [... more attributes ...]
@@ -280,9 +268,9 @@ parameters:</p>
         type (ref4)     [b2];
 </pre></div>
 </div>
-<p>That&#8217;s quite a bit more useful&#8211;we could find out whether the formal
+<p>That's quite a bit more useful--we could find out whether the formal
 parameters have structure types:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span>$ &#39;entry ?TAG_subprogram !AT_declaration child ?TAG_formal_parameter
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ &#39;entry ?TAG_subprogram !AT_declaration child ?TAG_formal_parameter
    @AT_type ?TAG_structure_type&#39;
 [2d]    structure_type
         name (string)   foo;
@@ -290,20 +278,20 @@ parameters have structure types:</p>
 </pre></div>
 </div>
 <p>So that will let us know whether there are any offenders like that.
-That&#8217;s closer to being interesting, but not quite what we need either.
+That's closer to being interesting, but not quite what we need either.
 We would like to know about the subprograms themselves, that have this
 property!</p>
 </div>
 <div class="section" id="expr-expr-sub-expression-assertions">
-<h2><code class="docutils literal"><span class="pre">?(EXPR)</span></code>, <code class="docutils literal"><span class="pre">!(EXPR)</span></code> &#8212; Sub-expression assertions<a class="headerlink" href="#expr-expr-sub-expression-assertions" title="Permalink to this headline">¶</a></h2>
+<h2><code class="docutils literal notranslate"><span class="pre">?(EXPR)</span></code>, <code class="docutils literal notranslate"><span class="pre">!(EXPR)</span></code> --- Sub-expression assertions<a class="headerlink" href="#expr-expr-sub-expression-assertions" title="Permalink to this headline">¶</a></h2>
 <p>Some Zwerg expressions are evaluated in what we call a sub-expression
-context.  What happens in sub-expression context, stays there&#8211;the
+context.  What happens in sub-expression context, stays there--the
 stack effects of sub-expression computation never leak back to the
 surrounding expression.</p>
-<p><code class="docutils literal"><span class="pre">?(EXPR)</span></code> expression is one such case.  It asserts that <em>EXPR</em>
-produces at least one element.  We can use it to get to DIE&#8217;s that
+<p><code class="docutils literal notranslate"><span class="pre">?(EXPR)</span></code> expression is one such case.  It asserts that <em>EXPR</em>
+produces at least one element.  We can use it to get to DIE's that
 have arguments that are structures:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span>$ &#39;entry ?TAG_subprogram !AT_declaration
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ &#39;entry ?TAG_subprogram !AT_declaration
    ?(child ?TAG_formal_parameter @AT_type ?TAG_structure_type)&#39;
 [35]    subprogram
         external (flag) true;
@@ -321,30 +309,30 @@ have arguments that are structures:</p>
 <p>This asks whether, after going to types of children that are formal
 parameters, we get a structure.  Because the initial two assertions
 have no stack effects anyway, we might say the same thing thus:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span>entry ?(?TAG_subprogram !AT_declaration
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>entry ?(?TAG_subprogram !AT_declaration
         child ?TAG_formal_parameter @AT_type ?TAG_structure_type)&#39;
 </pre></div>
 </div>
-<p>The other sub-expression assertion, <code class="docutils literal"><span class="pre">!(EXPR)</span></code>, holds if <em>EXPR</em>
-produces no values at all.  E.g. to select child-less DIE&#8217;s in some
+<p>The other sub-expression assertion, <code class="docutils literal notranslate"><span class="pre">!(EXPR)</span></code>, holds if <em>EXPR</em>
+produces no values at all.  E.g. to select child-less DIE's in some
 query, we would say:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span>some other query !(child)
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>some other query !(child)
 </pre></div>
 </div>
 </div>
 <div class="section" id="expr-expr-expr-expr-infix-assertions">
-<h2><code class="docutils literal"><span class="pre">EXPR</span> <span class="pre">==</span> <span class="pre">EXPR</span></code>, <code class="docutils literal"><span class="pre">EXPR</span> <span class="pre">!=</span> <span class="pre">EXPR</span></code> &#8212; Infix assertions<a class="headerlink" href="#expr-expr-expr-expr-infix-assertions" title="Permalink to this headline">¶</a></h2>
-<p>As you might well know, mere presence of <code class="docutils literal"><span class="pre">DW_AT_declaration</span></code>
-attribute doesn&#8217;t tell use whether a DIE is a pure declaration.  We
+<h2><code class="docutils literal notranslate"><span class="pre">EXPR</span> <span class="pre">==</span> <span class="pre">EXPR</span></code>, <code class="docutils literal notranslate"><span class="pre">EXPR</span> <span class="pre">!=</span> <span class="pre">EXPR</span></code> --- Infix assertions<a class="headerlink" href="#expr-expr-expr-expr-infix-assertions" title="Permalink to this headline">¶</a></h2>
+<p>As you might well know, mere presence of <code class="docutils literal notranslate"><span class="pre">DW_AT_declaration</span></code>
+attribute doesn't tell use whether a DIE is a pure declaration.  We
 can probably safely assume that when a compiler produces that
 attribute, it will have a value of true (and a form of
-<code class="docutils literal"><span class="pre">DW_FORM_flag_present</span></code>), so most of the time <code class="docutils literal"><span class="pre">?AT_declaration</span></code>
-(and <code class="docutils literal"><span class="pre">!AT_declaration</span></code>) is all you need to write.  But if there are
+<code class="docutils literal notranslate"><span class="pre">DW_FORM_flag_present</span></code>), so most of the time <code class="docutils literal notranslate"><span class="pre">?AT_declaration</span></code>
+(and <code class="docutils literal notranslate"><span class="pre">!AT_declaration</span></code>) is all you need to write.  But if there are
 grounds for suspicion that this is not so, or if we simply want to
 shield ourselves from the possibility, we need to actually look at
-<code class="docutils literal"><span class="pre">DW_AT_declaration</span></code>&#8216;s value.  So instead of ?AT_declaration, we
+<code class="docutils literal notranslate"><span class="pre">DW_AT_declaration</span></code>'s value.  So instead of ?AT_declaration, we
 should be writing this:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="p">(</span><span class="nd">@AT_declaration</span> <span class="o">==</span> <span class="n">true</span><span class="p">)</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">(</span><span class="nd">@AT_declaration</span> <span class="o">==</span> <span class="n">true</span><span class="p">)</span>
 </pre></div>
 </div>
 <p>This intuitively-looking construct actually deserves a closer
@@ -352,75 +340,75 @@ attention.  Infix assertions are always evaluated in sub-expression
 context.  The mode of operation is that each side is evaluated
 separately with the same incoming stack.  Then if the assertion holds
 for any pair of stacks that the two sides yield, the overall assertion
-holds.  Zwerg has a full suite of these operators&#8211;<code class="docutils literal"><span class="pre">!=</span></code>, <code class="docutils literal"><span class="pre">&lt;</span></code>,
-<code class="docutils literal"><span class="pre">&lt;=</span></code>, etc.  There&#8217;s also <code class="docutils literal"><span class="pre">=~</span></code> and <code class="docutils literal"><span class="pre">!~</span></code> for matching regular
+holds.  Zwerg has a full suite of these operators--<code class="docutils literal notranslate"><span class="pre">!=</span></code>, <code class="docutils literal notranslate"><span class="pre">&lt;</span></code>,
+<code class="docutils literal notranslate"><span class="pre">&lt;=</span></code>, etc.  There's also <code class="docutils literal notranslate"><span class="pre">=~</span></code> and <code class="docutils literal notranslate"><span class="pre">!~</span></code> for matching regular
 expressions.</p>
 <p>Importantly, infix assertions really are assertions.  If they hold,
 they produce unchanged incoming stack, otherwise they produce nothing
-at all.  Thus expressions such as <code class="docutils literal"><span class="pre">((A</span> <span class="pre">&gt;</span> <span class="pre">B)</span> <span class="pre">==</span> <span class="pre">(C</span> <span class="pre">&gt;</span> <span class="pre">D))</span></code> don&#8217;t mean
-what they seem to.  This one for example is just <code class="docutils literal"><span class="pre">((A</span> <span class="pre">&gt;</span> <span class="pre">B)</span> <span class="pre">(C</span> <span class="pre">&gt;</span>
-<span class="pre">D))</span></code>&#8211;i.e. two independent conditions.  But consider for example this
+at all.  Thus expressions such as <code class="docutils literal notranslate"><span class="pre">((A</span> <span class="pre">&gt;</span> <span class="pre">B)</span> <span class="pre">==</span> <span class="pre">(C</span> <span class="pre">&gt;</span> <span class="pre">D))</span></code> don't mean
+what they seem to.  This one for example is just <code class="docutils literal notranslate"><span class="pre">((A</span> <span class="pre">&gt;</span> <span class="pre">B)</span> <span class="pre">(C</span> <span class="pre">&gt;</span>
+<span class="pre">D))</span></code>--i.e. two independent conditions.  But consider for example this
 snippet:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="p">((</span><span class="n">A</span> <span class="o">&gt;</span> <span class="n">B</span><span class="p">)</span> <span class="o">!=</span> <span class="p">(</span><span class="n">C</span> <span class="o">&gt;</span> <span class="n">D</span><span class="p">))</span>    <span class="c1"># WRONG!</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">((</span><span class="n">A</span> <span class="o">&gt;</span> <span class="n">B</span><span class="p">)</span> <span class="o">!=</span> <span class="p">(</span><span class="n">C</span> <span class="o">&gt;</span> <span class="n">D</span><span class="p">))</span>    <span class="c1"># WRONG!</span>
 </pre></div>
 </div>
-<p>If the two <code class="docutils literal"><span class="pre">&gt;</span></code>&#8216;s hold, the expression reduces to <code class="docutils literal"><span class="pre">!=</span></code>, or
+<p>If the two <code class="docutils literal notranslate"><span class="pre">&gt;</span></code>'s hold, the expression reduces to <code class="docutils literal notranslate"><span class="pre">!=</span></code>, or
 inequality of two nops.  Such assertion thus simply never holds
 <a class="footnote-reference" href="#alwaysfail" id="id5">[4]</a>.</p>
 <table class="docutils footnote" frame="void" id="alwaysfail" rules="none">
 <colgroup><col class="label" /><col /></colgroup>
 <tbody valign="top">
 <tr><td class="label"><a class="fn-backref" href="#id5">[4]</a></td><td>If for whatever reason you actually do need an
-assertion that never holds, a simple one is <code class="docutils literal"><span class="pre">!()</span></code>.</td></tr>
+assertion that never holds, a simple one is <code class="docutils literal notranslate"><span class="pre">!()</span></code>.</td></tr>
 </tbody>
 </table>
 <p>Precedence of comparison operators is lower than that of
 concatenation, so you can write a couple words on each side of the
-operator.  For example, to look for DIE&#8217;s where one of the location
-expression opcodes is <code class="docutils literal"><span class="pre">DW_OP_addr</span></code>, you could say:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">entry</span> <span class="p">(</span><span class="nd">@AT_location</span> <span class="n">elem</span> <span class="n">label</span> <span class="o">==</span> <span class="n">DW_OP_addr</span><span class="p">)</span>
+operator.  For example, to look for DIE's where one of the location
+expression opcodes is <code class="docutils literal notranslate"><span class="pre">DW_OP_addr</span></code>, you could say:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">entry</span> <span class="p">(</span><span class="nd">@AT_location</span> <span class="n">elem</span> <span class="n">label</span> <span class="o">==</span> <span class="n">DW_OP_addr</span><span class="p">)</span>
 </pre></div>
 </div>
 <p>Due to this precedence setting, comparisons are typically enclosed in
-parens (as in the example), so that they don&#8217;t force too much of your
+parens (as in the example), so that they don't force too much of your
 computation into sub-expression context.  The precedence is however
-above <code class="docutils literal"><span class="pre">,</span></code> and <code class="docutils literal"><span class="pre">||</span></code> that are introduced further, so those need to
+above <code class="docutils literal notranslate"><span class="pre">,</span></code> and <code class="docutils literal notranslate"><span class="pre">||</span></code> that are introduced further, so those need to
 be parenthesized further if they should be a comparison operand.</p>
 <p>For completeness sake, to check that a flag is false, you would use
 the following form:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span>!(@AT_declaration == true)
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>!(@AT_declaration == true)
 </pre></div>
 </div>
-<p>If there&#8217;s no <code class="docutils literal"><span class="pre">DW_AT_declaration</span></code> at a given DIE, the left hand side
-of the inner expression doesn&#8217;t yield anything, and the outer <code class="docutils literal"><span class="pre">!()</span></code>
-succeeds&#8211;which is what we want, because flag absence is an implicit
-false value.  If the attribute is present, then the <code class="docutils literal"><span class="pre">!()</span></code>
+<p>If there's no <code class="docutils literal notranslate"><span class="pre">DW_AT_declaration</span></code> at a given DIE, the left hand side
+of the inner expression doesn't yield anything, and the outer <code class="docutils literal notranslate"><span class="pre">!()</span></code>
+succeeds--which is what we want, because flag absence is an implicit
+false value.  If the attribute is present, then the <code class="docutils literal notranslate"><span class="pre">!()</span></code>
 effectively works as a logical negation.  Contrast this with the
 following:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="p">(</span><span class="nd">@AT_declaration</span> <span class="o">==</span> <span class="n">false</span><span class="p">)</span>      <span class="c1"># WRONG!</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">(</span><span class="nd">@AT_declaration</span> <span class="o">==</span> <span class="n">false</span><span class="p">)</span>      <span class="c1"># WRONG!</span>
 </pre></div>
 </div>
 <p>You would be probably hard pressed to even find a Dwarf file that
 actually encodes false flags like this, so the above is useless.</p>
-<p>Back to the problem at hand&#8211;besides DW_TAG_structure_type, we care
-about <code class="docutils literal"><span class="pre">DW_TAG_class_type</span></code> as well!  We can express &#8220;and&#8221; easily
+<p>Back to the problem at hand--besides DW_TAG_structure_type, we care
+about <code class="docutils literal notranslate"><span class="pre">DW_TAG_class_type</span></code> as well!  We can express &quot;and&quot; easily
 simply by juxtaposing the assertions, but we would like a way of
-expressing &#8220;or&#8221; as well.</p>
+expressing &quot;or&quot; as well.</p>
 </div>
 <div class="section" id="expr-expr-alt-lists">
-<h2><code class="docutils literal"><span class="pre">EXPR,</span> <span class="pre">EXPR</span></code> &#8212; ALT-lists<a class="headerlink" href="#expr-expr-alt-lists" title="Permalink to this headline">¶</a></h2>
-<p>An expression like <code class="docutils literal"><span class="pre">EXPR₁,</span> <span class="pre">EXPR₂,</span> <span class="pre">...</span></code> evaluates all constituent
-<em>EXPRₙ</em>&#8216;s with the same input, and then yields all values that each
+<h2><code class="docutils literal notranslate"><span class="pre">EXPR,</span> <span class="pre">EXPR</span></code> --- ALT-lists<a class="headerlink" href="#expr-expr-alt-lists" title="Permalink to this headline">¶</a></h2>
+<p>An expression like <code class="docutils literal notranslate"><span class="pre">EXPR₁,</span> <span class="pre">EXPR₂,</span> <span class="pre">...</span></code> evaluates all constituent
+<em>EXPRₙ</em>'s with the same input, and then yields all values that each
 <em>EXPRₙ</em> yields.  If the expressions are assertions, this happens to
 behave exactly like a logical or.  So:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span>entry ?TAG_subprogram !AT_declaration
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>entry ?TAG_subprogram !AT_declaration
 ?(child ?TAG_formal_parameter @AT_type (?TAG_structure_type, ?TAG_class_type))
 </pre></div>
 </div>
 <p>But the applicability is wider.  Since the semantics are
 essentially those of a fork, one can for example ask whether an
 attribute has one of a number of values:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span>$ &#39;entry (@AT_name == (&quot;argc&quot;, &quot;argv&quot;))&#39;
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ &#39;entry (@AT_name == (&quot;argc&quot;, &quot;argv&quot;))&#39;
 [8f]    formal_parameter
         name (strp)     argc;
         [... more attributes ...]
@@ -431,17 +419,17 @@ attribute has one of a number of values:</p>
 </div>
 </div>
 <div class="section" id="expr-expr-or-lists">
-<h2><code class="docutils literal"><span class="pre">EXPR</span> <span class="pre">||</span> <span class="pre">EXPR</span></code> &#8212; OR-lists<a class="headerlink" href="#expr-expr-or-lists" title="Permalink to this headline">¶</a></h2>
-<p>An expression like <code class="docutils literal"><span class="pre">EXPR₁</span> <span class="pre">||</span> <span class="pre">EXPR₂</span> <span class="pre">||</span> <span class="pre">...</span></code> works differently.  The
+<h2><code class="docutils literal notranslate"><span class="pre">EXPR</span> <span class="pre">||</span> <span class="pre">EXPR</span></code> --- OR-lists<a class="headerlink" href="#expr-expr-or-lists" title="Permalink to this headline">¶</a></h2>
+<p>An expression like <code class="docutils literal notranslate"><span class="pre">EXPR₁</span> <span class="pre">||</span> <span class="pre">EXPR₂</span> <span class="pre">||</span> <span class="pre">...</span></code> works differently.  The
 input stack is passed to <em>EXPR₁</em> first, and anything that this yields,
 is sent to output.  But if nothing is yielded, the same input stack is
 passed to <em>EXPR₂</em>.  And so on.  It thus yields whatever is yielded by
 the first expression that actually yields anything.  It therefore
-operates in a manner similar to the operator <code class="docutils literal"><span class="pre">||</span></code> in C language.
+operates in a manner similar to the operator <code class="docutils literal notranslate"><span class="pre">||</span></code> in C language.
 The typical use would be in fallbacks.  For example if we prefer
-<code class="docutils literal"><span class="pre">DW_AT_MIPS_linkage_name</span></code> to <code class="docutils literal"><span class="pre">DW_AT_name</span></code>, but can make do with
+<code class="docutils literal notranslate"><span class="pre">DW_AT_MIPS_linkage_name</span></code> to <code class="docutils literal notranslate"><span class="pre">DW_AT_name</span></code>, but can make do with
 the latter, that would be encoded as follows:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">entry</span> <span class="p">(</span><span class="nd">@AT_MIPS_linkage_name</span> <span class="o">||</span> <span class="nd">@AT_name</span><span class="p">)</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">entry</span> <span class="p">(</span><span class="nd">@AT_MIPS_linkage_name</span> <span class="o">||</span> <span class="nd">@AT_name</span><span class="p">)</span>
 </pre></div>
 </div>
 <p>For selecting structures and classes, we can use either of these two
@@ -450,22 +438,22 @@ tools interchangeably.</p>
 structure (or class) arguments directly.  But what if they take a
 const argument?  Or if they take a typedef that evaluates to a
 structure?  For these cases we need to keep peeling the fluff until
-we get to the interesting DIE&#8217;s.  Enter iterators:</p>
+we get to the interesting DIE's.  Enter iterators:</p>
 </div>
 <div class="section" id="expr-expr-expr-expression-iteration">
-<h2><code class="docutils literal"><span class="pre">EXPR*</span></code>, <code class="docutils literal"><span class="pre">EXPR+</span></code>, <code class="docutils literal"><span class="pre">EXPR?</span></code> &#8212; expression iteration<a class="headerlink" href="#expr-expr-expr-expression-iteration" title="Permalink to this headline">¶</a></h2>
+<h2><code class="docutils literal notranslate"><span class="pre">EXPR*</span></code>, <code class="docutils literal notranslate"><span class="pre">EXPR+</span></code>, <code class="docutils literal notranslate"><span class="pre">EXPR?</span></code> --- expression iteration<a class="headerlink" href="#expr-expr-expr-expression-iteration" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
-<li><code class="docutils literal"><span class="pre">EXPR*</span></code> yields the incoming stack unchanged, and also passes it to
+<li><code class="docutils literal notranslate"><span class="pre">EXPR*</span></code> yields the incoming stack unchanged, and also passes it to
 <em>EXPR</em>.  It then collects whatever <em>EXPR</em> yields, yields it, and
-sends again to <em>EXPR</em>.  It works similarly to <code class="docutils literal"><span class="pre">*</span></code> in regular
+sends again to <em>EXPR</em>.  It works similarly to <code class="docutils literal notranslate"><span class="pre">*</span></code> in regular
 expressions.</li>
-<li><code class="docutils literal"><span class="pre">EXPR+</span></code> is exactly like <code class="docutils literal"><span class="pre">EXPR</span> <span class="pre">EXPR*</span></code>.</li>
-<li><code class="docutils literal"><span class="pre">EXPR?</span></code> is exactly like <code class="docutils literal"><span class="pre">(,</span> <span class="pre">EXPR)</span></code> &#8212; it <em>may</em> apply once</li>
+<li><code class="docutils literal notranslate"><span class="pre">EXPR+</span></code> is exactly like <code class="docutils literal notranslate"><span class="pre">EXPR</span> <span class="pre">EXPR*</span></code>.</li>
+<li><code class="docutils literal notranslate"><span class="pre">EXPR?</span></code> is exactly like <code class="docutils literal notranslate"><span class="pre">(,</span> <span class="pre">EXPR)</span></code> --- it <em>may</em> apply once</li>
 </ul>
-<p>We can use this tool to remove <code class="docutils literal"><span class="pre">DW_TAG_const_type</span></code>,
-<code class="docutils literal"><span class="pre">DW_TAG_volatile_type</span></code> and <code class="docutils literal"><span class="pre">DW_TAG_typedef</span></code> layers from our
+<p>We can use this tool to remove <code class="docutils literal notranslate"><span class="pre">DW_TAG_const_type</span></code>,
+<code class="docutils literal notranslate"><span class="pre">DW_TAG_volatile_type</span></code> and <code class="docutils literal notranslate"><span class="pre">DW_TAG_typedef</span></code> layers from our
 potential structure:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span>entry ?TAG_subprogram !AT_declaration
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>entry ?TAG_subprogram !AT_declaration
 ?(child ?TAG_formal_parameter
   @AT_type ((?TAG_const_type, ?TAG_volatile_type, ?TAG_typedef) @AT_type)*
   (?TAG_structure_type, ?TAG_class_type))
@@ -477,26 +465,26 @@ potential structure:</p>
 <h2>Literals, Strings, Formatting<a class="headerlink" href="#literals-strings-formatting" title="Permalink to this headline">¶</a></h2>
 <p>Zwerg has roughly C-like string literals, using \ as an escape
 character.  Hello world program looks like this in Zwerg:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="s2">&quot;Hello, world!&quot;</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="s2">&quot;Hello, world!&quot;</span>
 </pre></div>
 </div>
 <p>This is an example of a string literal.  Literals in Zwerg add
-themselves to the stack.  There are many types of literals&#8211;apart from
+themselves to the stack.  There are many types of literals--apart from
 strings and usual numeric literals, dwrgep knows about all the named
-Dwarf constants&#8211;e.g. <code class="docutils literal"><span class="pre">DW_AT_name</span></code>, <code class="docutils literal"><span class="pre">DW_TAG_array_type</span></code>,
-<code class="docutils literal"><span class="pre">DW_FORM_flag</span></code>, etc. are all valid forms <a class="footnote-reference" href="#dwgrepzwerg" id="id6">[5]</a>.</p>
+Dwarf constants--e.g. <code class="docutils literal notranslate"><span class="pre">DW_AT_name</span></code>, <code class="docutils literal notranslate"><span class="pre">DW_TAG_array_type</span></code>,
+<code class="docutils literal notranslate"><span class="pre">DW_FORM_flag</span></code>, etc. are all valid forms <a class="footnote-reference" href="#dwgrepzwerg" id="id6">[5]</a>.</p>
 <table class="docutils footnote" frame="void" id="dwgrepzwerg" rules="none">
 <colgroup><col class="label" /><col /></colgroup>
 <tbody valign="top">
 <tr><td class="label"><a class="fn-backref" href="#id6">[5]</a></td><td>That dwarf constants are recognized is actually not
-a feature of Zwerg per se.  It&#8217;s the way that <code class="docutils literal"><span class="pre">dwgrep</span></code>
+a feature of Zwerg per se.  It's the way that <code class="docutils literal notranslate"><span class="pre">dwgrep</span></code>
 wrapper sets up Zwerg query engine.</td></tr>
 </tbody>
 </table>
 <p>Like C printf, string literals in Zwerg allow formatting directives.
 To write a nice error message for our running example, we could do for
 example this:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span>$ &#39;entry ?TAG_subprogram !AT_declaration
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ &#39;entry ?TAG_subprogram !AT_declaration
    ?(child ?TAG_formal_parameter
      @AT_type ((?TAG_const_type, ?TAG_volatile_type, ?TAG_typedef) @AT_type)*
      (?TAG_structure_type, ?TAG_class_type))
@@ -504,48 +492,48 @@ example this:</p>
 [35] subprogram: one of the parameters has non-trivial type.
 </pre></div>
 </div>
-<p>It&#8217;s clear that we&#8217;d like to improve on this a bit.  We&#8217;d like to
-mention which parameter it is, and we&#8217;d like to tell the user the name
-of the function, not just a DIE offset.  We&#8217;ll address both&#8211;later.
+<p>It's clear that we'd like to improve on this a bit.  We'd like to
+mention which parameter it is, and we'd like to tell the user the name
+of the function, not just a DIE offset.  We'll address both--later.
 But first, a bit of background.</p>
 <p>When dwgrep sees a string with formatting directives, it converts it
-into a function.  That function takes one value for each <code class="docutils literal"><span class="pre">%s</span></code>,
-substitutes the <code class="docutils literal"><span class="pre">%s</span></code> with values of corresponding stack values, and
+into a function.  That function takes one value for each <code class="docutils literal notranslate"><span class="pre">%s</span></code>,
+substitutes the <code class="docutils literal notranslate"><span class="pre">%s</span></code> with values of corresponding stack values, and
 then pushes the result to stack.  Consequently, to convert anything to
 a string in dwgrep, you would just say:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="s2">&quot;</span><span class="si">%s</span><span class="s2">&quot;</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="s2">&quot;</span><span class="si">%s</span><span class="s2">&quot;</span>
 </pre></div>
 </div>
 <p>E.g.:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span>$ &#39;entry ?TAG_subprogram &quot;%s&quot;&#39;
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ &#39;entry ?TAG_subprogram &quot;%s&quot;&#39;
 [35] subprogram
 [6c] subprogram
 </pre></div>
 </div>
 <p>When there are more formatting directives, each of them takes one
 value from the stack, in order from right to left:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span>$ dwgrep &#39;1 2 &quot;%s %s&quot;&#39;
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ dwgrep &#39;1 2 &quot;%s %s&quot;&#39;
 1 2
 </pre></div>
 </div>
 <p>We could get the desired format string improvements with these tools
-in our hands already.  But there&#8217;s a bit of syntax that will make our
+in our hands already.  But there's a bit of syntax that will make our
 job easier still.</p>
 </div>
 <div class="section" id="let-x-expr-name-binding">
-<h2><code class="docutils literal"><span class="pre">let</span> <span class="pre">X</span> <span class="pre">:=</span> <span class="pre">EXPR;</span></code> &#8212; name binding<a class="headerlink" href="#let-x-expr-name-binding" title="Permalink to this headline">¶</a></h2>
+<h2><code class="docutils literal notranslate"><span class="pre">let</span> <span class="pre">X</span> <span class="pre">:=</span> <span class="pre">EXPR;</span></code> --- name binding<a class="headerlink" href="#let-x-expr-name-binding" title="Permalink to this headline">¶</a></h2>
 <p>Often you need to refer back to a value that was computed earlier.
 Since this is a stack machine, one way to do this is to use stack
-shuffling words&#8211;<code class="docutils literal"><span class="pre">dup</span></code>, <code class="docutils literal"><span class="pre">swap</span></code>, <code class="docutils literal"><span class="pre">rot</span></code>, <code class="docutils literal"><span class="pre">over</span></code> and <code class="docutils literal"><span class="pre">drop</span></code>&#8211;to
+shuffling words--<code class="docutils literal notranslate"><span class="pre">dup</span></code>, <code class="docutils literal notranslate"><span class="pre">swap</span></code>, <code class="docutils literal notranslate"><span class="pre">rot</span></code>, <code class="docutils literal notranslate"><span class="pre">over</span></code> and <code class="docutils literal notranslate"><span class="pre">drop</span></code>--to
 move stuff around the way you need it.  But keeping track of what is
 where when gets old quickly.  For this reason, Zwerg allows that you
 give value a name.  Later on, when that name is mentioned, it acts as
 a function that pushes the bound value to stack.</p>
-<p>In an expression such as <code class="docutils literal"><span class="pre">let</span> <span class="pre">X</span> <span class="pre">Y</span> <span class="pre">:=</span> <span class="pre">EXPR;</span></code>, <em>EXPR</em> is evaluated in
+<p>In an expression such as <code class="docutils literal notranslate"><span class="pre">let</span> <span class="pre">X</span> <span class="pre">Y</span> <span class="pre">:=</span> <span class="pre">EXPR;</span></code>, <em>EXPR</em> is evaluated in
 a sub-expression context.  Top of stack is bound to name <em>Y</em>, and the
 value below that to <em>X</em>, and so on in this fashion if there are more
 names.  E.g.:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span>$ dwgrep &#39;let A := 1;
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ dwgrep &#39;let A := 1;
           A A add&#39;
 2
 
@@ -554,9 +542,9 @@ $ dwgrep &#39;let A B := 10 2;
 5
 </pre></div>
 </div>
-<p>Let&#8217;s use this tool to first remember the two values that we care
+<p>Let's use this tool to first remember the two values that we care
 about: the subprogram (S) and its naked structure parameter (P):</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span>$ dwgrep ./tests/nontrivial-types.o -f /dev/stdin &lt;&lt;EOF
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ dwgrep ./tests/nontrivial-types.o -f /dev/stdin &lt;&lt;EOF
 let S := entry ?TAG_subprogram !AT_declaration;
 let P := S child ?TAG_formal_parameter
          ?(@AT_type ((?TAG_const_type,
@@ -570,18 +558,18 @@ EOF
 &lt;Dwarf &quot;./tests/nontrivial-types.o&quot;&gt;
 </pre></div>
 </div>
-<p>Which is not too shabby, but having to keep track of which <code class="docutils literal"><span class="pre">%s</span></code>
+<p>Which is not too shabby, but having to keep track of which <code class="docutils literal notranslate"><span class="pre">%s</span></code>
 takes which value is perhaps not too comfortable.  For that reason,
 Zwerg allows splicing of expressions in strings.</p>
 </div>
 <div class="section" id="expr-format-string-splicing">
-<h2><code class="docutils literal"><span class="pre">%(</span> <span class="pre">EXPR</span> <span class="pre">%)</span></code> &#8212; format string splicing<a class="headerlink" href="#expr-format-string-splicing" title="Permalink to this headline">¶</a></h2>
-<p>In format strings, code between <code class="docutils literal"><span class="pre">%(</span></code> and the matching <code class="docutils literal"><span class="pre">%)</span></code> is
+<h2><code class="docutils literal notranslate"><span class="pre">%(</span> <span class="pre">EXPR</span> <span class="pre">%)</span></code> --- format string splicing<a class="headerlink" href="#expr-format-string-splicing" title="Permalink to this headline">¶</a></h2>
+<p>In format strings, code between <code class="docutils literal notranslate"><span class="pre">%(</span></code> and the matching <code class="docutils literal notranslate"><span class="pre">%)</span></code> is
 evaluated in plain context, after which TOS of the result is popped
-and inserted in place of the <code class="docutils literal"><span class="pre">%(...%)</span></code>.  <code class="docutils literal"><span class="pre">%s</span></code> is then exactly
-equivalent to <code class="docutils literal"><span class="pre">%(%)</span></code>.</p>
+and inserted in place of the <code class="docutils literal notranslate"><span class="pre">%(...%)</span></code>.  <code class="docutils literal notranslate"><span class="pre">%s</span></code> is then exactly
+equivalent to <code class="docutils literal notranslate"><span class="pre">%(%)</span></code>.</p>
 <p>With this tool, we can make the formatting string clearer:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span>$ dwgrep ./tests/nontrivial-types.o -f /dev/stdin &lt;&lt;EOF
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ dwgrep ./tests/nontrivial-types.o -f /dev/stdin &lt;&lt;EOF
 let S := entry ?TAG_subprogram !AT_declaration;
 let P := S child ?TAG_formal_parameter
          ?(@AT_type ((?TAG_const_type,
@@ -595,10 +583,10 @@ EOF
 &lt;Dwarf &quot;./tests/nontrivial-types.o&quot;&gt;
 </pre></div>
 </div>
-<p>But the actual output is still not very nice.  Ideally we&#8217;d mention
+<p>But the actual output is still not very nice.  Ideally we'd mention
 names and source code coordinates instead of Dwarf offsets and tag
-names.  But with splicing, that&#8217;s actually quite easy to achieve:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span>$ dwgrep ./tests/nontrivial-types.o -f /dev/stdin &lt;&lt;&quot;EOF&quot;
+names.  But with splicing, that's actually quite easy to achieve:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ dwgrep ./tests/nontrivial-types.o -f /dev/stdin &lt;&lt;&quot;EOF&quot;
 let S := entry ?TAG_subprogram !AT_declaration;
 let P := S child ?TAG_formal_parameter
          ?(@AT_type ((?TAG_const_type,
@@ -615,34 +603,34 @@ EOF
 </pre></div>
 </div>
 <p>The message here is already fairly decent, the only thing making it
-ugly is that we actually yield a two-value stack.  We&#8217;ll deal with
+ugly is that we actually yield a two-value stack.  We'll deal with
 this next.</p>
 <p>One thing to note here though is the string continuation syntax.  Note
 how the formatting string is split into two fragments.  The former one
-then ends with <code class="docutils literal"><span class="pre">&quot;\</span></code> instead of the customary <code class="docutils literal"><span class="pre">&quot;</span></code>, which is a
+then ends with <code class="docutils literal notranslate"><span class="pre">&quot;\</span></code> instead of the customary <code class="docutils literal notranslate"><span class="pre">&quot;</span></code>, which is a
 signal to the lexer that it should concatenate the two fragments
 together before handing them further.  For all intents and purposes,
 these two fragments form a single string literal.</p>
-<p>If we are paranoid, we can guard against missing <code class="docutils literal"><span class="pre">&#64;AT_decl_file</span></code> and
-<code class="docutils literal"><span class="pre">&#64;AT_decl_line</span></code>.  This is actually fairly important, because
+<p>If we are paranoid, we can guard against missing <code class="docutils literal notranslate"><span class="pre">&#64;AT_decl_file</span></code> and
+<code class="docutils literal notranslate"><span class="pre">&#64;AT_decl_line</span></code>.  This is actually fairly important, because
 requesting a missing attribute is not an error, but merely causes the
-computation to stop.  If, say, <code class="docutils literal"><span class="pre">&#64;AT_decl_line</span></code> weren&#8217;t available,
-the computation would be silently dropped&#8211;right at the point where we
-had an offender and were ready to report them.  So let&#8217;s change the
+computation to stop.  If, say, <code class="docutils literal notranslate"><span class="pre">&#64;AT_decl_line</span></code> weren't available,
+the computation would be silently dropped--right at the point where we
+had an offender and were ready to report them.  So let's change the
 formatting string thus:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span>&quot;%( S @AT_decl_file || &quot;???&quot; %): %( S @AT_decl_line || &quot;???&quot; %): &quot;\
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>&quot;%( S @AT_decl_file || &quot;???&quot; %): %( S @AT_decl_line || &quot;???&quot; %): &quot;\
 &quot;note: in function `%( S @AT_name %)&#39;, &quot;\
 &quot;parameter `%( P @AT_name %)&#39; type is not trivial.&quot;
 </pre></div>
 </div>
-<p>Note how you can use string literals inside <code class="docutils literal"><span class="pre">%(</span> <span class="pre">%)</span></code> inside
+<p>Note how you can use string literals inside <code class="docutils literal notranslate"><span class="pre">%(</span> <span class="pre">%)</span></code> inside
 formatting strings.  Not that it would be a good idea to nest layers
 and layers of strings, but in principle it is possible, and for a
-quick default like this, there&#8217;s no harm.</p>
-<p>Now to get rid of the Dwarf value that&#8217;s occupying our bottom stack
+quick default like this, there's no harm.</p>
+<p>Now to get rid of the Dwarf value that's occupying our bottom stack
 slot.  The simplest approach is to drop the value at the point where
-we don&#8217;t need it anymore:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span>$ dwgrep ./tests/nontrivial-types.o -f /dev/stdin &lt;&lt;&quot;EOF&quot;
+we don't need it anymore:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ dwgrep ./tests/nontrivial-types.o -f /dev/stdin &lt;&lt;&quot;EOF&quot;
 let S := entry ?TAG_subprogram !AT_declaration;
 let P := S child ?TAG_formal_parameter
          ?(@AT_type ((?TAG_const_type,
@@ -657,16 +645,16 @@ EOF
 /home/petr/proj/dwgrep/x.c: 3: note: in function `blah&#39;, parameter `f&#39; type is not trivial.
 </pre></div>
 </div>
-<p>But there&#8217;s one more way to make this work, and it would allow us to
+<p>But there's one more way to make this work, and it would allow us to
 introduce another Zwerg feature.</p>
 </div>
 <div class="section" id="x-y-expr-scoped-bindings">
-<h2><code class="docutils literal"><span class="pre">(|X</span> <span class="pre">Y|</span> <span class="pre">EXPR)</span></code> &#8212; scoped bindings<a class="headerlink" href="#x-y-expr-scoped-bindings" title="Permalink to this headline">¶</a></h2>
+<h2><code class="docutils literal notranslate"><span class="pre">(|X</span> <span class="pre">Y|</span> <span class="pre">EXPR)</span></code> --- scoped bindings<a class="headerlink" href="#x-y-expr-scoped-bindings" title="Permalink to this headline">¶</a></h2>
 <p>This expression introduces a function that takes one parameter for
 each name mentioned between the pipes, then passes the remaining stack
 to <em>EXPR</em>, which is evaluated in plain context.  When the bound names
 are mentioned within <em>EXPR</em>, they recall the bound values.  E.g.:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span>$ dwgrep &#39;1 (|A| A A add)&#39;
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ dwgrep &#39;1 (|A| A A add)&#39;
 2
 
 $ dwgrep &#39;10 2 (|A B| A B div)&#39;
@@ -677,9 +665,9 @@ $ dwgrep &#39;1 (|A| A A add (|A| A A add))&#39;
 </pre></div>
 </div>
 <p>If we enclose the whole expression into a scope, we can drop the Dwarf
-from the stack where we don&#8217;t need it, but still keep it around as a
+from the stack where we don't need it, but still keep it around as a
 name:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span>$ dwgrep ./tests/nontrivial-types.o -f /dev/stdin &lt;&lt;&quot;EOF&quot;
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ dwgrep ./tests/nontrivial-types.o -f /dev/stdin &lt;&lt;&quot;EOF&quot;
 (|D|
   let S := D entry ?TAG_subprogram !AT_declaration;
   let P := S child ?TAG_formal_parameter
@@ -695,8 +683,8 @@ EOF
 /home/petr/proj/dwgrep/x.c: 3: note: in function `blah&#39;, parameter `f&#39; type is not trivial.
 </pre></div>
 </div>
-<p>So, that&#8217;s it.  This was a quick tour through the interesting parts of
-<code class="docutils literal"><span class="pre">dwgrep</span></code>.  You may now want to check out <a class="reference internal" href="syntax.html#syntax"><span class="std std-ref">Syntax</span></a>, and
+<p>So, that's it.  This was a quick tour through the interesting parts of
+<code class="docutils literal notranslate"><span class="pre">dwgrep</span></code>.  You may now want to check out <a class="reference internal" href="syntax.html#syntax"><span class="std std-ref">Syntax</span></a>, and
 <a class="reference internal" href="vocabulary-core.html#zw-vocabulary-core"><span class="std std-ref">Core vocabulary</span></a> or <a class="reference internal" href="vocabulary-dwarf.html#zw-vocabulary-dwarf"><span class="std std-ref">Dwarf vocabulary</span></a> to learn about
 the actual function words that you can use.</p>
 </div>
@@ -711,20 +699,20 @@ the actual function words that you can use.</p>
   <h3><a href="index.html">Table Of Contents</a></h3>
   <ul>
 <li><a class="reference internal" href="#">Tutorial</a><ul>
-<li><a class="reference internal" href="#entry-unit-die-iteration"><code class="docutils literal"><span class="pre">entry</span></code>, <code class="docutils literal"><span class="pre">unit</span></code> &#8212; DIE iteration</a></li>
-<li><a class="reference internal" href="#dw-tag-foo-tag-foo-die-tag-assertion"><code class="docutils literal"><span class="pre">?DW_TAG_foo</span></code>, <code class="docutils literal"><span class="pre">?TAG_foo</span></code> &#8212; DIE tag assertion</a></li>
-<li><a class="reference internal" href="#dw-at-foo-dw-at-foo-attribute-presence-assertion"><code class="docutils literal"><span class="pre">?DW_AT_foo</span></code>, <code class="docutils literal"><span class="pre">!DW_AT_foo</span></code> &#8212; attribute presence assertion</a></li>
-<li><a class="reference internal" href="#child-child-traversal"><code class="docutils literal"><span class="pre">child</span></code> &#8212; child traversal</a></li>
-<li><a class="reference internal" href="#dw-at-foo-value-of-attribute-dw-at-foo"><code class="docutils literal"><span class="pre">&#64;DW_AT_foo</span></code> &#8212; value of attribute <code class="docutils literal"><span class="pre">DW_AT_foo</span></code></a></li>
-<li><a class="reference internal" href="#expr-expr-sub-expression-assertions"><code class="docutils literal"><span class="pre">?(EXPR)</span></code>, <code class="docutils literal"><span class="pre">!(EXPR)</span></code> &#8212; Sub-expression assertions</a></li>
-<li><a class="reference internal" href="#expr-expr-expr-expr-infix-assertions"><code class="docutils literal"><span class="pre">EXPR</span> <span class="pre">==</span> <span class="pre">EXPR</span></code>, <code class="docutils literal"><span class="pre">EXPR</span> <span class="pre">!=</span> <span class="pre">EXPR</span></code> &#8212; Infix assertions</a></li>
-<li><a class="reference internal" href="#expr-expr-alt-lists"><code class="docutils literal"><span class="pre">EXPR,</span> <span class="pre">EXPR</span></code> &#8212; ALT-lists</a></li>
-<li><a class="reference internal" href="#expr-expr-or-lists"><code class="docutils literal"><span class="pre">EXPR</span> <span class="pre">||</span> <span class="pre">EXPR</span></code> &#8212; OR-lists</a></li>
-<li><a class="reference internal" href="#expr-expr-expr-expression-iteration"><code class="docutils literal"><span class="pre">EXPR*</span></code>, <code class="docutils literal"><span class="pre">EXPR+</span></code>, <code class="docutils literal"><span class="pre">EXPR?</span></code> &#8212; expression iteration</a></li>
+<li><a class="reference internal" href="#entry-unit-die-iteration"><code class="docutils literal notranslate"><span class="pre">entry</span></code>, <code class="docutils literal notranslate"><span class="pre">unit</span></code> --- DIE iteration</a></li>
+<li><a class="reference internal" href="#dw-tag-foo-tag-foo-die-tag-assertion"><code class="docutils literal notranslate"><span class="pre">?DW_TAG_foo</span></code>, <code class="docutils literal notranslate"><span class="pre">?TAG_foo</span></code> --- DIE tag assertion</a></li>
+<li><a class="reference internal" href="#dw-at-foo-dw-at-foo-attribute-presence-assertion"><code class="docutils literal notranslate"><span class="pre">?DW_AT_foo</span></code>, <code class="docutils literal notranslate"><span class="pre">!DW_AT_foo</span></code> --- attribute presence assertion</a></li>
+<li><a class="reference internal" href="#child-child-traversal"><code class="docutils literal notranslate"><span class="pre">child</span></code> --- child traversal</a></li>
+<li><a class="reference internal" href="#dw-at-foo-value-of-attribute-dw-at-foo"><code class="docutils literal notranslate"><span class="pre">&#64;DW_AT_foo</span></code> --- value of attribute <code class="docutils literal notranslate"><span class="pre">DW_AT_foo</span></code></a></li>
+<li><a class="reference internal" href="#expr-expr-sub-expression-assertions"><code class="docutils literal notranslate"><span class="pre">?(EXPR)</span></code>, <code class="docutils literal notranslate"><span class="pre">!(EXPR)</span></code> --- Sub-expression assertions</a></li>
+<li><a class="reference internal" href="#expr-expr-expr-expr-infix-assertions"><code class="docutils literal notranslate"><span class="pre">EXPR</span> <span class="pre">==</span> <span class="pre">EXPR</span></code>, <code class="docutils literal notranslate"><span class="pre">EXPR</span> <span class="pre">!=</span> <span class="pre">EXPR</span></code> --- Infix assertions</a></li>
+<li><a class="reference internal" href="#expr-expr-alt-lists"><code class="docutils literal notranslate"><span class="pre">EXPR,</span> <span class="pre">EXPR</span></code> --- ALT-lists</a></li>
+<li><a class="reference internal" href="#expr-expr-or-lists"><code class="docutils literal notranslate"><span class="pre">EXPR</span> <span class="pre">||</span> <span class="pre">EXPR</span></code> --- OR-lists</a></li>
+<li><a class="reference internal" href="#expr-expr-expr-expression-iteration"><code class="docutils literal notranslate"><span class="pre">EXPR*</span></code>, <code class="docutils literal notranslate"><span class="pre">EXPR+</span></code>, <code class="docutils literal notranslate"><span class="pre">EXPR?</span></code> --- expression iteration</a></li>
 <li><a class="reference internal" href="#literals-strings-formatting">Literals, Strings, Formatting</a></li>
-<li><a class="reference internal" href="#let-x-expr-name-binding"><code class="docutils literal"><span class="pre">let</span> <span class="pre">X</span> <span class="pre">:=</span> <span class="pre">EXPR;</span></code> &#8212; name binding</a></li>
-<li><a class="reference internal" href="#expr-format-string-splicing"><code class="docutils literal"><span class="pre">%(</span> <span class="pre">EXPR</span> <span class="pre">%)</span></code> &#8212; format string splicing</a></li>
-<li><a class="reference internal" href="#x-y-expr-scoped-bindings"><code class="docutils literal"><span class="pre">(|X</span> <span class="pre">Y|</span> <span class="pre">EXPR)</span></code> &#8212; scoped bindings</a></li>
+<li><a class="reference internal" href="#let-x-expr-name-binding"><code class="docutils literal notranslate"><span class="pre">let</span> <span class="pre">X</span> <span class="pre">:=</span> <span class="pre">EXPR;</span></code> --- name binding</a></li>
+<li><a class="reference internal" href="#expr-format-string-splicing"><code class="docutils literal notranslate"><span class="pre">%(</span> <span class="pre">EXPR</span> <span class="pre">%)</span></code> --- format string splicing</a></li>
+<li><a class="reference internal" href="#x-y-expr-scoped-bindings"><code class="docutils literal notranslate"><span class="pre">(|X</span> <span class="pre">Y|</span> <span class="pre">EXPR)</span></code> --- scoped bindings</a></li>
 </ul>
 </li>
 </ul>
@@ -738,18 +726,20 @@ the actual function words that you can use.</p>
   <div role="note" aria-label="source link">
     <h3>This Page</h3>
     <ul class="this-page-menu">
-      <li><a href="_sources/tutorial.txt"
+      <li><a href="_sources/tutorial.rst.txt"
             rel="nofollow">Show Source</a></li>
     </ul>
    </div>
 <div id="searchbox" style="display: none" role="search">
   <h3>Quick search</h3>
+    <div class="searchformwrapper">
     <form class="search" action="search.html" method="get">
-      <div><input type="text" name="q" /></div>
-      <div><input type="submit" value="Go" /></div>
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
       <input type="hidden" name="check_keywords" value="yes" />
       <input type="hidden" name="area" value="default" />
     </form>
+    </div>
 </div>
 <script type="text/javascript">$('#searchbox').show(0);</script>
         </div>
@@ -768,12 +758,12 @@ the actual function words that you can use.</p>
         <li class="right" >
           <a href="cli.html" title="Command line reference"
              >previous</a> |</li>
-        <li class="nav-item nav-item-0"><a href="index.html">dwgrep 0.3 documentation</a> &#187;</li> 
+        <li class="nav-item nav-item-0"><a href="index.html">dwgrep 0.4 documentation</a> &#187;</li> 
       </ul>
     </div>
     <div class="footer" role="contentinfo">
-        &#169; Copyright 2014, 2015, 2017, Petr Machata.
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.4.8.
+        &#169; Copyright 2014, 2015, 2017, 2018, Petr Machata.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.7.6.
     </div>
   </body>
 </html>

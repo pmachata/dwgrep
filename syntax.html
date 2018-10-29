@@ -1,35 +1,23 @@
+
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
-
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    
-    <title>Syntax &#8212; dwgrep 0.3 documentation</title>
-    
+    <title>Syntax &#8212; dwgrep 0.4 documentation</title>
     <link rel="stylesheet" href="_static/classic.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
-    
-    <script type="text/javascript">
-      var DOCUMENTATION_OPTIONS = {
-        URL_ROOT:    './',
-        VERSION:     '0.3',
-        COLLAPSE_INDEX: false,
-        FILE_SUFFIX: '.html',
-        HAS_SOURCE:  true
-      };
-    </script>
+    <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="top" title="dwgrep 0.3 documentation" href="index.html" />
     <link rel="next" title="Core vocabulary" href="vocabulary-core.html" />
     <link rel="prev" title="Assorted examples" href="examples.html" /> 
-  </head>
-  <body role="document">
+  </head><body>
     <div class="related" role="navigation" aria-label="related navigation">
       <h3>Navigation</h3>
       <ul>
@@ -42,7 +30,7 @@
         <li class="right" >
           <a href="examples.html" title="Assorted examples"
              accesskey="P">previous</a> |</li>
-        <li class="nav-item nav-item-0"><a href="index.html">dwgrep 0.3 documentation</a> &#187;</li> 
+        <li class="nav-item nav-item-0"><a href="index.html">dwgrep 0.4 documentation</a> &#187;</li> 
       </ul>
     </div>  
 
@@ -61,7 +49,7 @@ the actual function words that you can use.</p>
 <div class="section" id="comments">
 <h2>Comments<a class="headerlink" href="#comments" title="Permalink to this headline">¶</a></h2>
 <p>Form:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="o">//</span> <span class="n">Ignored</span> <span class="n">until</span> <span class="n">the</span> <span class="n">end</span> <span class="n">of</span> <span class="n">the</span> <span class="n">line</span><span class="o">.</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">//</span> <span class="n">Ignored</span> <span class="n">until</span> <span class="n">the</span> <span class="n">end</span> <span class="n">of</span> <span class="n">the</span> <span class="n">line</span><span class="o">.</span>
 <span class="c1"># This one as well.</span>
 <span class="o">/*</span> <span class="n">C</span><span class="o">-</span><span class="n">like</span> <span class="n">comments</span> <span class="n">work</span> <span class="k">as</span> <span class="n">well</span><span class="o">.</span>  <span class="o">*/</span>
 </pre></div>
@@ -73,20 +61,20 @@ the actual function words that you can use.</p>
 <p>Empty expression yields exactly the stacks that get to its input.</p>
 <p>For example, the following is an empty expression within negative
 sub-expression assertion.  This expression never yields anything:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span>!()     # An expression that never yields.
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>!()     # An expression that never yields.
 </pre></div>
 </div>
 <p>As another example, it may be useful to bind the initial Dwarf value
 to a name, typically in cases when one needs to refer to it several
 times.  One way to do this is this:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">let</span> <span class="n">Dw</span> <span class="p">:</span><span class="o">=</span> <span class="p">;</span>     <span class="c1"># There&#39;s an empty expression between := and ;.</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">let</span> <span class="n">Dw</span> <span class="p">:</span><span class="o">=</span> <span class="p">;</span>     <span class="c1"># There&#39;s an empty expression between := and ;.</span>
 </pre></div>
 </div>
 </div>
 <div class="section" id="words">
 <h2>Words<a class="headerlink" href="#words" title="Permalink to this headline">¶</a></h2>
 <p>Form:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span>foo
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>foo
 ?foo
 !foo
 @foo    # and more.
@@ -98,11 +86,11 @@ arbitrary composition.  A typical word would inspect or pop one or
 more words on each incoming stack, carry out some computation, and
 produce zero or more stacks with the results of computation pushed to
 them.</p>
-<p>For example, the word <code class="docutils literal"><span class="pre">entry</span></code> expects a stack with a Dwarf value on
+<p>For example, the word <code class="docutils literal notranslate"><span class="pre">entry</span></code> expects a stack with a Dwarf value on
 top.  It then examines the Dwarf data, and for each debug info entry
 (DIE), it produces a stack with that DIE pushed on top (instead of the
 consumed Dwarf value).  E.g.:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span>$ dwgrep ./tests/nontrivial-types.o -e &#39;&#39;
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ dwgrep ./tests/nontrivial-types.o -e &#39;&#39;
 &lt;Dwarf &quot;./tests/nontrivial-types.o&quot;&gt;
 
 $ dwgrep ./tests/nontrivial-types.o -e &#39;entry&#39;
@@ -120,23 +108,23 @@ $ dwgrep ./tests/nontrivial-types.o -e &#39;entry&#39;
 </pre></div>
 </div>
 <p>Some words (actually quite a few of them) will change their behavior
-depending on what values are on the stack.  E.g. <code class="docutils literal"><span class="pre">entry</span></code> is besides
+depending on what values are on the stack.  E.g. <code class="docutils literal notranslate"><span class="pre">entry</span></code> is besides
 Dwarfs applicable to, as of this writing, compilation units and
 abbreviation units.</p>
-<p>The words that start with <code class="docutils literal"><span class="pre">?</span></code> and <code class="docutils literal"><span class="pre">!</span></code> are assertions.  While what
+<p>The words that start with <code class="docutils literal notranslate"><span class="pre">?</span></code> and <code class="docutils literal notranslate"><span class="pre">!</span></code> are assertions.  While what
 was written about words in general applies to assertions as well,
 their mode of operation is more restricted.  Assertions either yield
 the incoming stack unchanged, or yield nothing at all.</p>
-<p>The assertions come in pairs, where the <code class="docutils literal"><span class="pre">?</span></code>-flavored one tests the
-positive condition (e.g. <code class="docutils literal"><span class="pre">?root</span></code> tests whether a DIE on top of stack
-is a root DIE), and the <code class="docutils literal"><span class="pre">!</span></code>-flavored one tests the opposite
-condition (e.g. <code class="docutils literal"><span class="pre">!root</span></code> tests whether a DIE on top of stack is not a
+<p>The assertions come in pairs, where the <code class="docutils literal notranslate"><span class="pre">?</span></code>-flavored one tests the
+positive condition (e.g. <code class="docutils literal notranslate"><span class="pre">?root</span></code> tests whether a DIE on top of stack
+is a root DIE), and the <code class="docutils literal notranslate"><span class="pre">!</span></code>-flavored one tests the opposite
+condition (e.g. <code class="docutils literal notranslate"><span class="pre">!root</span></code> tests whether a DIE on top of stack is not a
 root DIE).</p>
 </div>
 <div class="section" id="concatenation">
 <h2>Concatenation<a class="headerlink" href="#concatenation" title="Permalink to this headline">¶</a></h2>
 <p>Form:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span>EXPR₁ EXPR₂ …
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>EXPR₁ EXPR₂ …
 </pre></div>
 </div>
 <p>The resulting expression passes all input stacks to <em>EXPR₁</em>, takes the
@@ -147,7 +135,7 @@ concatenation is then whatever the last constituent expression yields.</p>
 <div class="section" id="parenthesizing">
 <h2>Parenthesizing<a class="headerlink" href="#parenthesizing" title="Permalink to this headline">¶</a></h2>
 <p>Form:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span>(EXPR₁)
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>(EXPR₁)
 </pre></div>
 </div>
 <p>Concatenation has a high precedence, so parentheses can be used
@@ -155,7 +143,7 @@ liberally to adjust how an expression should be chopped into
 sub-expression.  The parenthesized expression is evaluated in plain
 context.</p>
 <p>For example:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">foo</span> <span class="n">bar</span><span class="p">,</span> <span class="n">baz</span>    <span class="c1"># these two ...</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">foo</span> <span class="n">bar</span><span class="p">,</span> <span class="n">baz</span>    <span class="c1"># these two ...</span>
 <span class="p">(</span><span class="n">foo</span> <span class="n">bar</span><span class="p">),</span> <span class="n">baz</span>  <span class="c1"># ... mean the same thing</span>
 <span class="n">foo</span> <span class="p">(</span><span class="n">bar</span><span class="p">,</span> <span class="n">baz</span><span class="p">)</span>  <span class="c1"># this one is different</span>
 </pre></div>
@@ -164,7 +152,7 @@ context.</p>
 <div class="section" id="integer-literals">
 <h2>Integer literals<a class="headerlink" href="#integer-literals" title="Permalink to this headline">¶</a></h2>
 <p>Form:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span>“-”?(“0x”|“0o”|“0b”|“0”|“”){digits}
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>“-”?(“0x”|“0o”|“0b”|“0”|“”){digits}
 </pre></div>
 </div>
 <p>Integer literals are words that start with a decimal digit, or by a minus sign
@@ -172,22 +160,22 @@ followed by a decimal digit. For integer literal to be valid, the word needs to
 be composed of a prefix that determines radix of the literal, followed by one or
 more digits from a set specified as follows:</p>
 <ul class="simple">
-<li><code class="docutils literal"><span class="pre">0x</span></code> and <code class="docutils literal"><span class="pre">0X</span></code> are hexadecimal prefixes.  Valid digits are
-<code class="docutils literal"><span class="pre">[0-9a-fA-F]</span></code>.</li>
-<li><code class="docutils literal"><span class="pre">0o</span></code>, <code class="docutils literal"><span class="pre">0O</span></code> and <code class="docutils literal"><span class="pre">0</span></code> are octal prefixes.  Valid digits are
-<code class="docutils literal"><span class="pre">[0-7]</span></code>.</li>
-<li><code class="docutils literal"><span class="pre">0b</span></code> and <code class="docutils literal"><span class="pre">0B</span></code> are binary prefixes.  Valid digits are <code class="docutils literal"><span class="pre">[0-1]</span></code>.</li>
+<li><code class="docutils literal notranslate"><span class="pre">0x</span></code> and <code class="docutils literal notranslate"><span class="pre">0X</span></code> are hexadecimal prefixes.  Valid digits are
+<code class="docutils literal notranslate"><span class="pre">[0-9a-fA-F]</span></code>.</li>
+<li><code class="docutils literal notranslate"><span class="pre">0o</span></code>, <code class="docutils literal notranslate"><span class="pre">0O</span></code> and <code class="docutils literal notranslate"><span class="pre">0</span></code> are octal prefixes.  Valid digits are
+<code class="docutils literal notranslate"><span class="pre">[0-7]</span></code>.</li>
+<li><code class="docutils literal notranslate"><span class="pre">0b</span></code> and <code class="docutils literal notranslate"><span class="pre">0B</span></code> are binary prefixes.  Valid digits are <code class="docutils literal notranslate"><span class="pre">[0-1]</span></code>.</li>
 <li>Without prefix, decimal base is assumed.  Valid digits are
-<code class="docutils literal"><span class="pre">[0-9]</span></code>.</li>
-<li>An initial <code class="docutils literal"><span class="pre">-</span></code> means the number is negative.</li>
+<code class="docutils literal notranslate"><span class="pre">[0-9]</span></code>.</li>
+<li>An initial <code class="docutils literal notranslate"><span class="pre">-</span></code> means the number is negative.</li>
 </ul>
 <p>Zwerg integers can hold any 64-bit signed or unsigned number:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span>$ dwgrep &#39;0xffffffffffffffff -0x7fffffffffffffff add&#39;
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ dwgrep &#39;0xffffffffffffffff -0x7fffffffffffffff add&#39;
 0x8000000000000000
 </pre></div>
 </div>
 <p>Invalid integer literals are diagnosed at query compilation time:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span>$ dwgrep &#39;123foo&#39;
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ dwgrep &#39;123foo&#39;
 dwgrep: Invalid integer literal: `123foo&#39;
 </pre></div>
 </div>
@@ -195,17 +183,17 @@ dwgrep: Invalid integer literal: `123foo&#39;
 <div class="section" id="named-constants">
 <h2>Named constants<a class="headerlink" href="#named-constants" title="Permalink to this headline">¶</a></h2>
 <p>Form:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">DW_AT_name</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">DW_AT_name</span>
 <span class="n">DW_TAG_base_type</span>
 <span class="n">DW_FORM_strp</span>
 <span class="n">DW_LANG_C</span>
 </pre></div>
 </div>
-<p>Zwerg has support for named constants.  They aren&#8217;t merely aliases for
-numbers&#8211;Zwerg remembers their domain and uses it when the value needs
+<p>Zwerg has support for named constants.  They aren't merely aliases for
+numbers--Zwerg remembers their domain and uses it when the value needs
 to be displayed or converted to a string.  It is still possible to
 extract the underlying numerical value:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span>$ dwgrep &#39;DW_TAG_base_type value&#39;
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ dwgrep &#39;DW_TAG_base_type value&#39;
 36
 $ dwgrep &#39;DW_TAG_base_type hex&#39;
 0x24
@@ -214,7 +202,7 @@ $ dwgrep &#39;DW_TAG_base_type hex&#39;
 <p>Numbers in non-decimal bases use the same trick, so if you use a
 hexadecimal number, it will keep its hexadecimal-ness throughout the
 script:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span>$ dwgrep &#39;10 0x10 0o10 0b10&#39;
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ dwgrep &#39;10 0x10 0o10 0b10&#39;
 ---
 0b10
 010
@@ -223,9 +211,9 @@ script:</p>
 </pre></div>
 </div>
 <p>Similarly values decoded from attribute will have the
-appropriate &#8220;skin&#8221;&#8211;they will be named constants, hexadecimal or
+appropriate &quot;skin&quot;--they will be named constants, hexadecimal or
 decimal numbers, depending on what is deemed the best fit:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span>$ dwgrep ... -e &#39;entry @AT_language&#39;
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ dwgrep ... -e &#39;entry @AT_language&#39;
 DW_LANG_C89
 
 $ dwgrep ... -e &#39;entry @AT_decl_line&#39;
@@ -240,33 +228,33 @@ $ dwgrep ... -e &#39;entry @AT_low_pc&#39;
 </div>
 </div>
 <div class="section" id="lexical-scopes-a">
-<h2>Lexical scopes (<code class="docutils literal"><span class="pre">(|A|…)</span></code>)<a class="headerlink" href="#lexical-scopes-a" title="Permalink to this headline">¶</a></h2>
+<h2>Lexical scopes (<code class="docutils literal notranslate"><span class="pre">(|A|…)</span></code>)<a class="headerlink" href="#lexical-scopes-a" title="Permalink to this headline">¶</a></h2>
 <p>Form:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span>(|ID₁ ID₂ …| EXPR₁)
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>(|ID₁ ID₂ …| EXPR₁)
 </pre></div>
 </div>
 <p>A presence of binding block in a parenthesized construct converts the
 whole form into a function that pops as many arguments as there are
 identifiers in the binding block, and binds them to these identifiers
 such that the rightmost one gets the value on TOS and then
-progressively lefter <em>ID</em>&#8216;s get progressively deeper stack values.
+progressively lefter <em>ID</em>'s get progressively deeper stack values.
 The expression is then evaluated as usual, except one can use the
 bound names.</p>
-<p>Sometimes it&#8217;s useful to enclose the whole expression into a scope and
+<p>Sometimes it's useful to enclose the whole expression into a scope and
 pop and bound the initial Dwarf value:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="p">(</span><span class="o">|</span><span class="n">Dw</span><span class="o">|</span> <span class="n">Dw</span> <span class="n">entry</span> <span class="p">(</span><span class="n">name</span> <span class="o">==</span> <span class="n">Dw</span> <span class="n">symtab</span> <span class="n">name</span><span class="p">))</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">(</span><span class="o">|</span><span class="n">Dw</span><span class="o">|</span> <span class="n">Dw</span> <span class="n">entry</span> <span class="p">(</span><span class="n">name</span> <span class="o">==</span> <span class="n">Dw</span> <span class="n">symtab</span> <span class="n">name</span><span class="p">))</span>
 </pre></div>
 </div>
 <p>Another example shows how to implement set union even without
 first-class Zwerg support:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span>[foo] [bar] (|A B| A [B elem !(== A elem)] add)
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>[foo] [bar] (|A B| A [B elem !(== A elem)] add)
 </pre></div>
 </div>
 </div>
 <div class="section" id="alt-lists">
-<h2>ALT-lists (<code class="docutils literal"><span class="pre">,</span></code>)<a class="headerlink" href="#alt-lists" title="Permalink to this headline">¶</a></h2>
+<h2>ALT-lists (<code class="docutils literal notranslate"><span class="pre">,</span></code>)<a class="headerlink" href="#alt-lists" title="Permalink to this headline">¶</a></h2>
 <p>Form:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span>EXPR₁ “,” EXPR₂ …
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>EXPR₁ “,” EXPR₂ …
 </pre></div>
 </div>
 <p>The resulting expression passes all input stacks to all of <em>EXPR₁</em>,
@@ -278,25 +266,25 @@ same for each branch).</p>
 <p>The constituent expressions are evaluated in plain context.</p>
 <p>E.g. to compare a TOS value to one of the fixed list of values, you
 would do:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="p">(</span><span class="o">==</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">))</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">(</span><span class="o">==</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">))</span>
 </pre></div>
 </div>
 <p>You would also use ALT-lists to create a sequence value:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">]</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">]</span>
 </pre></div>
 </div>
 </div>
 <div class="section" id="or-lists">
-<h2>OR-lists (<code class="docutils literal"><span class="pre">||</span></code>)<a class="headerlink" href="#or-lists" title="Permalink to this headline">¶</a></h2>
+<h2>OR-lists (<code class="docutils literal notranslate"><span class="pre">||</span></code>)<a class="headerlink" href="#or-lists" title="Permalink to this headline">¶</a></h2>
 <p>Form:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span>EXPR₁ “||” EXPR₂ …
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>EXPR₁ “||” EXPR₂ …
 </pre></div>
 </div>
 <p>Each input stack is passed first to <em>EXPR₁</em>.  If that yields anything,
-that&#8217;s what the overall expression yields.  Otherwise the same
+that's what the overall expression yields.  Otherwise the same
 original input stack is passed to <em>EXPR₂</em>, and so in this fashion.  If
 neither constituent expression yields anything, the overall expression
-doesn&#8217;t yield anything either.  The mode of operation is very similar
+doesn't yield anything either.  The mode of operation is very similar
 to shell-like OR lists, hence the name.</p>
 <p>All constituent expressions shall have the same overall stack effect
 (the number of slots pushed minus number of slots popped will be the
@@ -304,7 +292,7 @@ same for each branch).</p>
 <p>The constituent expressions are evaluated in plain context.</p>
 <p>An important use of an OR list is to implement case-like conditions
 and fallback cases:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span>let name := (@DW_AT_linkage_name || @DW_AT_MIPS_linkage_name
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>let name := (@DW_AT_linkage_name || @DW_AT_MIPS_linkage_name
              || @DW_AT_name || &quot;???&quot;);
 
 let has_loc := (?(@DW_AT_location) true || false);
@@ -312,33 +300,28 @@ let has_loc := (?(@DW_AT_location) true || false);
 </div>
 </div>
 <div class="section" id="infix-assertions">
-<h2>Infix assertions (<code class="docutils literal"><span class="pre">==</span></code>)<a class="headerlink" href="#infix-assertions" title="Permalink to this headline">¶</a></h2>
+<h2>Infix assertions (<code class="docutils literal notranslate"><span class="pre">==</span></code>)<a class="headerlink" href="#infix-assertions" title="Permalink to this headline">¶</a></h2>
 <p>Form:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span>EXPR₁ OP₁ EXPR₂
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>EXPR₁ OP₁ EXPR₂
 </pre></div>
 </div>
 <p>Zwerg has support for infix binary assertions.  These forms are
 evaluated as follows:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span>?(let .tmp1 := EXPR₁; let .tmp2 := EXPR₂; .tmp1 .tmp2 OP₂)
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>?(let .tmp1 := EXPR₁; let .tmp2 := EXPR₂; .tmp1 .tmp2 OP₂)
 </pre></div>
 </div>
 <p>In plain English, <em>EXPR₁</em> and <em>EXPR₂</em> are each evaluated in
-sub-expression context.  The TOS&#8217;s of the stacks that this produces
-are then put to stack and a certain operator is evaluated.  This shows
-that the two expressions are independent of each other.</p>
-<p>What actual word <em>OP₂</em> refers to depends on what operator OP₁ is, but
-it will be an assertion that looks at top two stack slots.  There
-might be no actual word per se, but conceptually this is how the form
-behaves.</p>
-<p>Another thing worth noticing is that the whole form behaves as an
-assertion.  No side effects leak from the constituent <em>EXPR</em>&#8216;s or from
-the operator itself.</p>
-<p>Individual operators are essentially just words, just with a bit of
-syntactical support on Zwerg side.  So which operators are available
-depends on which vocabularies any particular wrapper brings in.  Zwerg
-core defines the following <em>OP₁</em>&#8216;s with the following associated
-<em>OP₂</em>&#8216;s:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span>EXPR₁ “==” EXPR₂        # ?eq
+sub-expression context. The TOS's of the stacks that this produces are
+then put to stack and a certain operator <em>OP₂</em> is evaluated. This
+shows that the two expressions are independent of each other.</p>
+<p>The word <em>OP₂</em> is here used as a stand-in to explain the syntax. The
+actual word that is looked up is again <em>OP₁</em>--the operators are just
+words with a bit of syntactical support on Zwerg side (and with funny
+names). So which operators are available depends on which vocabularies
+any particular wrapper brings in.</p>
+<p>Zwerg core defines the following <em>OP₁</em>'s, and for each of them there
+is currently an associated <em>OP₂</em> as follows:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>EXPR₁ “==” EXPR₂        # ?eq
 EXPR₁ “!=” EXPR₂        # ?ne
 EXPR₁ “&lt;” EXPR₂         # ?lt
 EXPR₁ “&lt;=” EXPR₂        # ?le
@@ -348,11 +331,16 @@ EXPR₁ “=~” EXPR₂        # ?match
 EXPR₁ “!~” EXPR₂        # !match
 </pre></div>
 </div>
+<p>(Again, the association to <em>OP₂</em> is for explanation only. Overriding
+that symbol has no effect on actual execution.)</p>
+<p>Another thing worth noticing is that the whole form behaves as an
+assertion.  No side effects leak from the constituent <em>EXPR</em>'s or from
+the operator itself.</p>
 <p>See <a class="reference internal" href="vocabulary-core.html#id9"><span class="std std-ref">?eq</span></a> to learn about comparison
 operators.  See <a class="reference internal" href="vocabulary-core.html#id23"><span class="std std-ref">?match</span></a> to learn
 about regular expression matching.</p>
 <p>For example:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span>$ dwgrep ./tests/typedef.o -e &#39;entry (offset == 0x1d)&#39;
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ dwgrep ./tests/typedef.o -e &#39;entry (offset == 0x1d)&#39;
 [1d]    typedef
         name (strp)     int_t;
         decl_file (data1)       /home/petr/proj/dwgrep/typedef.c;
@@ -362,31 +350,31 @@ about regular expression matching.</p>
 </div>
 </div>
 <div class="section" id="iteration">
-<h2>Iteration (<code class="docutils literal"><span class="pre">*</span></code>)<a class="headerlink" href="#iteration" title="Permalink to this headline">¶</a></h2>
+<h2>Iteration (<code class="docutils literal notranslate"><span class="pre">*</span></code>)<a class="headerlink" href="#iteration" title="Permalink to this headline">¶</a></h2>
 <p>Form:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span>EXPR₁ “*”
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>EXPR₁ “*”
 EXPR₁ “+”
 EXPR₁ “?”
 </pre></div>
 </div>
-<p>The effect of expressions <code class="docutils literal"><span class="pre">EXPR₁*</span></code> is that the input stack is
+<p>The effect of expressions <code class="docutils literal notranslate"><span class="pre">EXPR₁*</span></code> is that the input stack is
 yielded unchanged, and also passed to <em>EXPR₁</em>.  The output is
 collected and yielded, and then passed back to <em>EXPR₁</em>.  This process
 is repeated until <em>EXPR₁</em> stops yielding more stacks.</p>
-<p>This is typically used for forming closures&#8211;peeling uninteresting
+<p>This is typically used for forming closures--peeling uninteresting
 types, forming sets of nodes, etc.  E.g.:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">child</span><span class="o">*</span>  <span class="c1"># nodes of tree rooted in node that&#39;s on TOS</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">child</span><span class="o">*</span>  <span class="c1"># nodes of tree rooted in node that&#39;s on TOS</span>
 </pre></div>
 </div>
 <p>One can also (ab)use this to create an explicit for loop:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span>0 (1 add ?(10 ?lt))*
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>0 (1 add ?(10 ?lt))*
 </pre></div>
 </div>
 <p><em>EXPR₁</em> shall push exactly the same number of stack slots as it pops.</p>
-<p>The effect of <code class="docutils literal"><span class="pre">EXPR₁+</span></code> is the same as that of <code class="docutils literal"><span class="pre">EXPR₁</span> <span class="pre">EXPR₁*</span></code>.</p>
-<p>The effect of <code class="docutils literal"><span class="pre">EXPR₁?</span></code> is the same as that of <code class="docutils literal"><span class="pre">(,</span> <span class="pre">EXPR₁)</span></code>.</p>
+<p>The effect of <code class="docutils literal notranslate"><span class="pre">EXPR₁+</span></code> is the same as that of <code class="docutils literal notranslate"><span class="pre">EXPR₁</span> <span class="pre">EXPR₁*</span></code>.</p>
+<p>The effect of <code class="docutils literal notranslate"><span class="pre">EXPR₁?</span></code> is the same as that of <code class="docutils literal notranslate"><span class="pre">(,</span> <span class="pre">EXPR₁)</span></code>.</p>
 <p>For example:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span>A B swap? ?gt drop    # &quot;max&quot; -- keep the greater number on stack
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>A B swap? ?gt drop    # &quot;max&quot; -- keep the greater number on stack
 A B swap? ?lt drop    # &quot;min&quot;
 </pre></div>
 </div>
@@ -394,16 +382,16 @@ A B swap? ?lt drop    # &quot;min&quot;
 <div class="section" id="formatting-strings">
 <h2>Formatting strings<a class="headerlink" href="#formatting-strings" title="Permalink to this headline">¶</a></h2>
 <p>Form:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span>“r”? “&quot;” (formatting string) “&quot;” “\”?
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>“r”? “&quot;” (formatting string) “&quot;” “\”?
 </pre></div>
 </div>
 <p>Zwerg string literals are functions that push themselves to an
 incoming stack, which they then yield.  The literal is enclosed in
 quotes and if a quote itself should be part of the string, it should
-be escaped with a backslash (<code class="docutils literal"><span class="pre">\</span></code>).  Should a backslash be part of
+be escaped with a backslash (<code class="docutils literal notranslate"><span class="pre">\</span></code>).  Should a backslash be part of
 the string and not considered an escape character, it should be
 escaped by another backslash:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="s2">&quot;a simple string&quot;</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="s2">&quot;a simple string&quot;</span>
 <span class="s2">&quot;a string </span><span class="se">\&quot;</span><span class="s2">with</span><span class="se">\&quot;</span><span class="s2"> quotes&quot;</span>
 <span class="s2">&quot;a string with backslash: </span><span class="se">\\</span><span class="s2">&quot;</span>
 </pre></div>
@@ -420,42 +408,42 @@ escaped by another backslash:</p>
 </tr>
 </thead>
 <tbody valign="top">
-<tr class="row-even"><td><code class="docutils literal"><span class="pre">\\</span></code></td>
+<tr class="row-even"><td><code class="docutils literal notranslate"><span class="pre">\\</span></code></td>
 <td><p class="first">Escaped backslash stands for a backslash:</p>
-<div class="last highlight-default"><div class="highlight"><pre><span></span>$ dwgrep &#39;&quot;\\a\\&quot;&#39;
+<div class="last highlight-default notranslate"><div class="highlight"><pre><span></span>$ dwgrep &#39;&quot;\\a\\&quot;&#39;
 \a\
 </pre></div>
 </div>
 </td>
 </tr>
-<tr class="row-odd"><td><code class="docutils literal"><span class="pre">\123</span></code></td>
+<tr class="row-odd"><td><code class="docutils literal notranslate"><span class="pre">\123</span></code></td>
 <td><p class="first"><em>123</em> stands for octal number.  The escape is replaced
 with an ASCII character the code of which is the octal
 number:</p>
-<div class="last highlight-default"><div class="highlight"><pre><span></span>$ dwgrep &#39;&quot;\110\145\154\154\157&quot;&#39;
+<div class="last highlight-default notranslate"><div class="highlight"><pre><span></span>$ dwgrep &#39;&quot;\110\145\154\154\157&quot;&#39;
 Hello
 </pre></div>
 </div>
 </td>
 </tr>
-<tr class="row-even"><td><code class="docutils literal"><span class="pre">\xab</span></code></td>
+<tr class="row-even"><td><code class="docutils literal notranslate"><span class="pre">\xab</span></code></td>
 <td><p class="first"><em>ab</em> stands for hexadecimal number.  The meaning is
 analogous to that of \123:</p>
-<div class="last highlight-default"><div class="highlight"><pre><span></span>$ dwgrep &#39;&quot;\x77\x6f\x72\x6c\x64\x21&quot;&#39;
+<div class="last highlight-default notranslate"><div class="highlight"><pre><span></span>$ dwgrep &#39;&quot;\x77\x6f\x72\x6c\x64\x21&quot;&#39;
 world!
 </pre></div>
 </div>
 </td>
 </tr>
-<tr class="row-odd"><td><code class="docutils literal"><span class="pre">\t</span></code></td>
+<tr class="row-odd"><td><code class="docutils literal notranslate"><span class="pre">\t</span></code></td>
 <td>Stands for the tab character.</td>
 </tr>
-<tr class="row-even"><td><p class="first"><code class="docutils literal"><span class="pre">\n</span></code></p>
-<p class="last"><code class="docutils literal"><span class="pre">&lt;EOL&gt;</span></code></p>
+<tr class="row-even"><td><p class="first"><code class="docutils literal notranslate"><span class="pre">\n</span></code></p>
+<p class="last"><code class="docutils literal notranslate"><span class="pre">&lt;EOL&gt;</span></code></p>
 </td>
 <td><p class="first">Both a literal end-of-line character, as well as the
-<code class="docutils literal"><span class="pre">\n</span></code> escape stand for new line:</p>
-<div class="last highlight-default"><div class="highlight"><pre><span></span>$ dwgrep &#39;&quot;foo\nbar&quot;&#39;
+<code class="docutils literal notranslate"><span class="pre">\n</span></code> escape stand for new line:</p>
+<div class="last highlight-default notranslate"><div class="highlight"><pre><span></span>$ dwgrep &#39;&quot;foo\nbar&quot;&#39;
 foo
 bar
 
@@ -467,9 +455,9 @@ bar
 </div>
 </td>
 </tr>
-<tr class="row-odd"><td><code class="docutils literal"><span class="pre">\&lt;EOL&gt;</span></code></td>
+<tr class="row-odd"><td><code class="docutils literal notranslate"><span class="pre">\&lt;EOL&gt;</span></code></td>
 <td><p class="first">Escaped newline is ignored:</p>
-<div class="last highlight-default"><div class="highlight"><pre><span></span>$ dwgrep &#39;&quot;foo\
+<div class="last highlight-default notranslate"><div class="highlight"><pre><span></span>$ dwgrep &#39;&quot;foo\
 bar&quot;&#39;
 foobar
 </pre></div>
@@ -478,12 +466,12 @@ foobar
 </tr>
 </tbody>
 </table>
-<p>There are more escape sequences (essentially those mentioned in <code class="docutils literal"><span class="pre">man</span>
+<p>There are more escape sequences (essentially those mentioned in <code class="docutils literal notranslate"><span class="pre">man</span>
 <span class="pre">ascii</span></code> are supported as well).</p>
-<p>If a string literal is prefixed by <code class="docutils literal"><span class="pre">r</span></code>, it&#8217;s actually a raw string
+<p>If a string literal is prefixed by <code class="docutils literal notranslate"><span class="pre">r</span></code>, it's actually a raw string
 literal.  These work the same as normal formatting strings, but escape
 sequences are left intact in the string:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span>$ dwgrep &#39;&quot;foo \&quot;bar\\\&quot;&quot;&#39;
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ dwgrep &#39;&quot;foo \&quot;bar\\\&quot;&quot;&#39;
 foo &quot;bar\&quot;
 
 $ dwgrep &#39;r&quot;foo \&quot;bar\\\&quot;&quot;&#39;
@@ -491,24 +479,24 @@ foo \&quot;bar\\\&quot;
 </pre></div>
 </div>
 <p>String literals can be split, provided that all but the last segment
-end not with a mere quote, but <code class="docutils literal"><span class="pre">&quot;\</span></code>.  The following two examples
+end not with a mere quote, but <code class="docutils literal notranslate"><span class="pre">&quot;\</span></code>.  The following two examples
 produce equivalent programs:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="s2">&quot;a long string &quot;</span>\ <span class="s2">&quot;that continues here&quot;</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="s2">&quot;a long string &quot;</span>\ <span class="s2">&quot;that continues here&quot;</span>
 <span class="s2">&quot;a long string that continues here&quot;</span>
 </pre></div>
 </div>
-<p>Any whitespace (but only whitespace) is allowed between <code class="docutils literal"><span class="pre">&quot;\</span></code> and the
-following <code class="docutils literal"><span class="pre">&quot;</span></code>.</p>
+<p>Any whitespace (but only whitespace) is allowed between <code class="docutils literal notranslate"><span class="pre">&quot;\</span></code> and the
+following <code class="docutils literal notranslate"><span class="pre">&quot;</span></code>.</p>
 <p>String literals can contain formatting directives.  Formatting
 directive are two-character sequences whose first character is a
-<code class="docutils literal"><span class="pre">%</span></code>.  Such strings are not merely literals anymore, they behave more
+<code class="docutils literal notranslate"><span class="pre">%</span></code>.  Such strings are not merely literals anymore, they behave more
 as template strings.  They are functions that take values from the
 stack and splice their string representation together with the
 non-formatting-directive parts of the string.</p>
-<p>A pseudo-directive <code class="docutils literal"><span class="pre">%%</span></code> is not really a directive at all, it&#8217;s an
+<p>A pseudo-directive <code class="docutils literal notranslate"><span class="pre">%%</span></code> is not really a directive at all, it's an
 escape that stands for a single percent character.</p>
-<p>The simplest formatting directive is <code class="docutils literal"><span class="pre">%s</span></code>:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span>$ dwgrep ... -e &#39;entry ?AT_decl_column !AT_decl_line
+<p>The simplest formatting directive is <code class="docutils literal notranslate"><span class="pre">%s</span></code>:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ dwgrep ... -e &#39;entry ?AT_decl_column !AT_decl_line
                  &quot;%s has DW_AT_decl_column, but NOT DW_AT_decl_line&quot;&#39;
 [58] formal_parameter has DW_AT_decl_column, but NOT DW_AT_decl_line
 
@@ -519,12 +507,12 @@ type (ref4)     [2d];
 [... etc ...]
 </pre></div>
 </div>
-<p>The most general formatting directive is a pair of <code class="docutils literal"><span class="pre">%(</span></code> and <code class="docutils literal"><span class="pre">%)</span></code>,
+<p>The most general formatting directive is a pair of <code class="docutils literal notranslate"><span class="pre">%(</span></code> and <code class="docutils literal notranslate"><span class="pre">%)</span></code>,
 which encloses an expression.  The formatting string passes input
 stacks to that expression, which is evaluated in plain context.  TOS
 of yielded stacks is then popped, converted to a string, spliced, and
 the resulting string is pushed to stack.  For example:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span>$ dwgrep ... -f /dev/stdin &lt;&lt;&quot;EOF&quot;
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ dwgrep ... -f /dev/stdin &lt;&lt;&quot;EOF&quot;
 (|Dw|
  let T := Dw entry ?TAG_typedef ;
  let U := T @AT_type (?TAG_typedef @AT_type)* !TAG_typedef ;
@@ -538,10 +526,10 @@ EOF
 [0x3a] typedef int_t_t_t int (DW_ATE_signed, 4 bytes)
 </pre></div>
 </div>
-<p>If there&#8217;s more than one formatting directive in a given string, they
+<p>If there's more than one formatting directive in a given string, they
 are resolved in the order from right to left (sic!): rightmost
 formatting directive gets TOS value:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span>$ dwgrep &#39;dwgrep &#39;1 2 3 &quot;{%s [%s (%s)]}&quot;&#39;
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ dwgrep &#39;dwgrep &#39;1 2 3 &quot;{%s [%s (%s)]}&quot;&#39;
 {1 [2 (3)]}
 </pre></div>
 </div>
@@ -550,20 +538,20 @@ contains several names the rightmost name is bound to value on TOS.
 The reason should be apparent from the above example: because the
 strings are parsed from left to right, rightmost word produces the
 topmost stack value.</p>
-<p>Now that we have introduced <code class="docutils literal"><span class="pre">%(</span> <span class="pre">%)</span></code>, it is easy to use it to define
+<p>Now that we have introduced <code class="docutils literal notranslate"><span class="pre">%(</span> <span class="pre">%)</span></code>, it is easy to use it to define
 the others:</p>
 <ul class="simple">
-<li><code class="docutils literal"><span class="pre">%s</span></code> stands for <code class="docutils literal"><span class="pre">%(</span> <span class="pre">%)</span></code></li>
-<li><code class="docutils literal"><span class="pre">%d</span></code> stands for <code class="docutils literal"><span class="pre">%(</span> <span class="pre">value</span> <span class="pre">%)</span></code></li>
-<li><code class="docutils literal"><span class="pre">%x</span></code> stands for <code class="docutils literal"><span class="pre">%(</span> <span class="pre">value</span> <span class="pre">hex</span> <span class="pre">%)</span></code></li>
-<li><code class="docutils literal"><span class="pre">%o</span></code> stands for <code class="docutils literal"><span class="pre">%(</span> <span class="pre">value</span> <span class="pre">oct</span> <span class="pre">%)</span></code></li>
-<li><code class="docutils literal"><span class="pre">%b</span></code> stands for <code class="docutils literal"><span class="pre">%(</span> <span class="pre">value</span> <span class="pre">bin</span> <span class="pre">%)</span></code></li>
+<li><code class="docutils literal notranslate"><span class="pre">%s</span></code> stands for <code class="docutils literal notranslate"><span class="pre">%(</span> <span class="pre">%)</span></code></li>
+<li><code class="docutils literal notranslate"><span class="pre">%d</span></code> stands for <code class="docutils literal notranslate"><span class="pre">%(</span> <span class="pre">value</span> <span class="pre">%)</span></code></li>
+<li><code class="docutils literal notranslate"><span class="pre">%x</span></code> stands for <code class="docutils literal notranslate"><span class="pre">%(</span> <span class="pre">value</span> <span class="pre">hex</span> <span class="pre">%)</span></code></li>
+<li><code class="docutils literal notranslate"><span class="pre">%o</span></code> stands for <code class="docutils literal notranslate"><span class="pre">%(</span> <span class="pre">value</span> <span class="pre">oct</span> <span class="pre">%)</span></code></li>
+<li><code class="docutils literal notranslate"><span class="pre">%b</span></code> stands for <code class="docutils literal notranslate"><span class="pre">%(</span> <span class="pre">value</span> <span class="pre">bin</span> <span class="pre">%)</span></code></li>
 </ul>
 </div>
 <div class="section" id="sequence-capture">
-<h2>Sequence capture (<code class="docutils literal"><span class="pre">[]</span></code>)<a class="headerlink" href="#sequence-capture" title="Permalink to this headline">¶</a></h2>
+<h2>Sequence capture (<code class="docutils literal notranslate"><span class="pre">[]</span></code>)<a class="headerlink" href="#sequence-capture" title="Permalink to this headline">¶</a></h2>
 <p>Form:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span>“[” EXPR₁ “]”
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>“[” EXPR₁ “]”
 </pre></div>
 </div>
 <p>Sequences offer a way to gather values yielded by another expression.
@@ -574,17 +562,17 @@ value off each of them, and collects these values in a sequence.  This
 sequence it then pushes to TOS.</p>
 <p><em>EXPR₁</em> is evaluated in sub-expression context.  That means that the
 sequence is pushed to TOS <em>in addition</em> to whatever was already
-there&#8211;nothing is removed.</p>
+there--nothing is removed.</p>
 <p>Of particular interest is interplay between ALT-list and capture,
 which allows easy and syntactically familiar construction of sequence
 literals:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span>$ dwgrep &#39;[1, 2, 3]&#39;
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ dwgrep &#39;[1, 2, 3]&#39;
 [1, 2, 3]
 </pre></div>
 </div>
 <p>Or you can use this construct to e.g. collect children of a node on
 TOS:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span>$ dwgrep ./tests/typedef.o -e &#39;entry ?root [child]&#39;
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ dwgrep ./tests/typedef.o -e &#39;entry ?root [child]&#39;
 ---
 [[1d] typedef, [28] base_type, [2f] typedef, [3a] typedef, [45] variable]
 [b]     compile_unit
@@ -596,7 +584,7 @@ TOS:</p>
 </pre></div>
 </div>
 <p>Or the whole tree rooted at node on TOS:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">dwgrep</span> <span class="o">./</span><span class="n">tests</span><span class="o">/</span><span class="n">typedef</span><span class="o">.</span><span class="n">o</span> <span class="o">-</span><span class="n">e</span> <span class="s1">&#39;entry ?root [child*]&#39;</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">dwgrep</span> <span class="o">./</span><span class="n">tests</span><span class="o">/</span><span class="n">typedef</span><span class="o">.</span><span class="n">o</span> <span class="o">-</span><span class="n">e</span> <span class="s1">&#39;entry ?root [child*]&#39;</span>
 <span class="o">---</span>
 <span class="p">[[</span><span class="n">b</span><span class="p">]</span> <span class="n">compile_unit</span><span class="p">,</span> <span class="p">[</span><span class="mi">45</span><span class="p">]</span> <span class="n">variable</span><span class="p">,</span> <span class="p">[</span><span class="mi">3</span><span class="n">a</span><span class="p">]</span> <span class="n">typedef</span><span class="p">,</span> <span class="p">[</span><span class="mi">2</span><span class="n">f</span><span class="p">]</span> <span class="n">typedef</span><span class="p">,</span> <span class="p">[</span><span class="mi">28</span><span class="p">]</span> <span class="n">base_type</span><span class="p">,</span> <span class="p">[</span><span class="mi">1</span><span class="n">d</span><span class="p">]</span> <span class="n">typedef</span><span class="p">]</span>
 <span class="p">[</span><span class="n">b</span><span class="p">]</span>     <span class="n">compile_unit</span>
@@ -608,17 +596,17 @@ TOS:</p>
 </pre></div>
 </div>
 <p>Form:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span>“[” “]”
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>“[” “]”
 </pre></div>
 </div>
 <p>This produces an empty list.  Alternatively, one could also do:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span>[!()]
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>[!()]
 </pre></div>
 </div>
-<p>But that&#8217;s somewhat awkward.</p>
+<p>But that's somewhat awkward.</p>
 <p>To capture an empty expression, one would need to explicitly
 parenthesize it:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span>$ dwgrep &#39;1 [()]&#39;
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ dwgrep &#39;1 [()]&#39;
 ---
 [1]
 1
@@ -626,19 +614,19 @@ parenthesize it:</p>
 </div>
 </div>
 <div class="section" id="capture-with-binding-a">
-<h2>Capture with binding (<code class="docutils literal"><span class="pre">[|A|…]</span></code>)<a class="headerlink" href="#capture-with-binding-a" title="Permalink to this headline">¶</a></h2>
+<h2>Capture with binding (<code class="docutils literal notranslate"><span class="pre">[|A|…]</span></code>)<a class="headerlink" href="#capture-with-binding-a" title="Permalink to this headline">¶</a></h2>
 <p>Form:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span>“[” “|” ID₁ ID₂ … “|” EXPR₁ “]”
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>“[” “|” ID₁ ID₂ … “|” EXPR₁ “]”
 </pre></div>
 </div>
 <p>Sub-expression capture allows a binding block.  A presence of such
 block converts the whole form into a function that pops as many
 arguments as there are identifiers in the binding block, and binds
 them to these identifiers such that the rightmost one get the value on
-TOS and then progressively lefter <em>ID</em>&#8216;s get progressively deeper
+TOS and then progressively lefter <em>ID</em>'s get progressively deeper
 stack values.  The expression is then evaluated as usual, except one
 can use the bound names:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span>$ dwgrep ./tests/typedef.o -e &#39;entry ?root [|A| A child]&#39;
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ dwgrep ./tests/typedef.o -e &#39;entry ?root [|A| A child]&#39;
 [[1d] typedef, [28] base_type, [2f] typedef, [3a] typedef, [45] variable]
 
 $ dwgrep &#39;1 [|A| A]&#39;    # or you could just write &#39;[1]&#39; ;)
@@ -647,9 +635,9 @@ $ dwgrep &#39;1 [|A| A]&#39;    # or you could just write &#39;[1]&#39; ;)
 </div>
 </div>
 <div class="section" id="name-binding-let">
-<h2>Name binding (<code class="docutils literal"><span class="pre">let</span></code>)<a class="headerlink" href="#name-binding-let" title="Permalink to this headline">¶</a></h2>
+<h2>Name binding (<code class="docutils literal notranslate"><span class="pre">let</span></code>)<a class="headerlink" href="#name-binding-let" title="Permalink to this headline">¶</a></h2>
 <p>Form:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span>“let” ID₁ ID₂ … “:=” EXPR₁ “;”
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>“let” ID₁ ID₂ … “:=” EXPR₁ “;”
 </pre></div>
 </div>
 <p>This form introduces a new name into the current scope.  It passes the
@@ -660,7 +648,7 @@ as <em>EXPR₁</em> yields, each time with a possibly different set of
 bindings.  Bound names may be mentioned later, and they push the bound
 value to the stack.</p>
 <p>Consider the following examples:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span>$ dwgrep &#39;let X := 1; X&#39;
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ dwgrep &#39;let X := 1; X&#39;
 1
 
 $ dwgrep &#39;let X := 1, 2; X&#39;
@@ -668,11 +656,11 @@ $ dwgrep &#39;let X := 1, 2; X&#39;
 2
 </pre></div>
 </div>
-<p>Ordering of ID&#8217;s is such that the rightmost is bound to TOS, the next
+<p>Ordering of ID's is such that the rightmost is bound to TOS, the next
 one to the left to one below TOS, etc.  The mnemonic for this is that
 the list of variables describes stack layout, with TOS being on the
 right.  E.g.:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span>$ dwgrep &#39;let A B := 1 2, 3 4; A B&#39;
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ dwgrep &#39;let A B := 1 2, 3 4; A B&#39;
 ---
 2
 1
@@ -685,91 +673,94 @@ right.  E.g.:</p>
 following constructs comprise a scope:</p>
 <ul>
 <li><p class="first">Any sub-expression context has a scope of its own:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span>$ dwgrep &#39;?(let A := 1;) A&#39;
-Error: Unknown identifier `A&#39;.
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ dwgrep &#39;?(let A := 1;) A&#39;
+dwgrep: Attempt to read an unbound name `A&#39;
+
+$ dwgrep &#39;(let A := 1; 1 == 1) A&#39;
+dwgrep: Attempt to read an unbound name `A&#39;
 </pre></div>
 </div>
 </li>
 <li><p class="first">Each branch of an OR-list or ALT-list has a scope of its own:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span>$ dwgrep &#39;(let A := 1;, let A := 2;) A&#39;
-Error: Unknown identifier `A&#39;.
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ dwgrep &#39;(let A := 1;, let A := 2;) A&#39;
+dwgrep: Attempt to read an unbound name `A&#39;
 </pre></div>
 </div>
 </li>
 <li><p class="first">Parenthesized expressions with name binding blocks are a scope:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span>$ dwgrep &#39;&quot;&quot; (|X| let A := 1;) A&#39;
-Error: Unknown identifier `A&#39;.
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ dwgrep &#39;&quot;&quot; (|X| let A := 1;) A&#39;
+dwgrep: Attempt to read an unbound name `A&#39;
 </pre></div>
 </div>
 </li>
-<li><p class="first"><code class="docutils literal"><span class="pre">then</span></code> and <code class="docutils literal"><span class="pre">else</span></code> branches of an <code class="docutils literal"><span class="pre">if-then-else</span></code> form
+<li><p class="first"><code class="docutils literal notranslate"><span class="pre">then</span></code> and <code class="docutils literal notranslate"><span class="pre">else</span></code> branches of an <code class="docutils literal notranslate"><span class="pre">if-then-else</span></code> form
 each introduce a scope:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span>$ dwgrep &#39;if ?() then let A := 1; else let A := 2; A&#39;
-Error: Unknown identifier `A&#39;.
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ dwgrep &#39;if ?() then let A := 1; else let A := 2; A&#39;
+dwgrep: Attempt to read an unbound name `A&#39;
 </pre></div>
 </div>
 <p>Typically these constructs can be rewritten as follows:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span>$ dwgrep &#39;let A := if ?() then 1 else 2; A&#39;
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ dwgrep &#39;let A := if ?() then 1 else 2; A&#39;
 1
 </pre></div>
 </div>
 </li>
 </ul>
 <p>On the other hand, simple parenthesizing does not introduce a scope:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span>$ dwgrep &#39;(let A := 1;) A&#39;
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ dwgrep &#39;(let A := 1;) A&#39;
 1
 </pre></div>
 </div>
 <p>It is not allowed to rebind an once-bound name within the same scope:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span>$ dwgrep &#39;let A := 1; let A := 1;&#39;
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ dwgrep &#39;let A := 1; let A := 1;&#39;
 Error: Name `A&#39; rebound.
 </pre></div>
 </div>
 <p>It is also not possible to access names from outer scopes if they are
 shadowed by the same name in an inner scope.  In the following, the
-inner reference to <code class="docutils literal"><span class="pre">A</span></code> will always resolve to <code class="docutils literal"><span class="pre">2</span></code>, and there is no
-way to access the outer <code class="docutils literal"><span class="pre">A</span></code> of <code class="docutils literal"><span class="pre">1</span></code>:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span>$ dwgrep &#39;let A := 1; 2 [|A| A]&#39;
+inner reference to <code class="docutils literal notranslate"><span class="pre">A</span></code> will always resolve to <code class="docutils literal notranslate"><span class="pre">2</span></code>, and there is no
+way to access the outer <code class="docutils literal notranslate"><span class="pre">A</span></code> of <code class="docutils literal notranslate"><span class="pre">1</span></code>:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ dwgrep &#39;let A := 1; 2 [|A| A]&#39;
 [2]
-</pre></div>
-</div>
-<p>Finally, it&#8217;s not allowed to rebind existing words:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span>$ dwgrep &#39;let child := 1;&#39;
-Error: Can&#39;t rebind a builtin: `child&#39;
 </pre></div>
 </div>
 </div>
 <div class="section" id="sub-expression-assertions">
-<h2>Sub-expression assertions (<code class="docutils literal"><span class="pre">?()</span></code>, <code class="docutils literal"><span class="pre">!()</span></code>)<a class="headerlink" href="#sub-expression-assertions" title="Permalink to this headline">¶</a></h2>
+<h2>Sub-expression assertions (<code class="docutils literal notranslate"><span class="pre">?()</span></code>, <code class="docutils literal notranslate"><span class="pre">!()</span></code>)<a class="headerlink" href="#sub-expression-assertions" title="Permalink to this headline">¶</a></h2>
 <p>Form:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span>“?(” EXPR₁ “)”
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>“?(” EXPR₁ “)”
 “!(” EXPR₁ “)”
 </pre></div>
 </div>
-<p>The form <code class="docutils literal"><span class="pre">?(...)</span></code> sends an input stack to <em>EXPR₁</em>, which is then
+<p>The form <code class="docutils literal notranslate"><span class="pre">?(...)</span></code> sends an input stack to <em>EXPR₁</em>, which is then
 evaluated in sub-expression context.  If it yields anything, the
 overall assertion succeeds and yields the original stack.  The form
-<code class="docutils literal"><span class="pre">!(...)</span></code> has the inverse semantics: it succeeds when <em>EXPR₁</em> yields
+<code class="docutils literal notranslate"><span class="pre">!(...)</span></code> has the inverse semantics: it succeeds when <em>EXPR₁</em> yields
 nothing.</p>
 <p>The behavior of these two forms is equivalent to the following:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span>([ EXPR₁ ] != [])       # ?( EXPR₁ )
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>([ EXPR₁ ] != [])       # ?( EXPR₁ )
 ([ EXPR₁ ] == [])       # !( EXPR₁ )
 </pre></div>
 </div>
-<p>For example, to select leaf DIE&#8217;s of a Dwarf graph:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span>!(child)
+<p>For example, to select leaf DIE's of a Dwarf graph:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>!(child)
 </pre></div>
 </div>
-<p>To test whether one of the DIE&#8217;s contains an empty location
+<p>To test whether one of the DIE's contains an empty location
 expression:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span>entry ?(@AT_location !(elem))
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>entry ?(@AT_location !(elem))
+</pre></div>
+</div>
+<p>Like other parenthesized forms, sub-expression assertions allow a binding block
+as well:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>1 2 ?(|A B| A B ?lt)
 </pre></div>
 </div>
 </div>
 <div class="section" id="conditionals-if-then-else">
-<h2>Conditionals (<code class="docutils literal"><span class="pre">if-then-else</span></code>)<a class="headerlink" href="#conditionals-if-then-else" title="Permalink to this headline">¶</a></h2>
+<h2>Conditionals (<code class="docutils literal notranslate"><span class="pre">if-then-else</span></code>)<a class="headerlink" href="#conditionals-if-then-else" title="Permalink to this headline">¶</a></h2>
 <p>Form:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span>“if” EXPR₀ “then” EXPR₁ “else” EXPR₂
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>“if” EXPR₀ “then” EXPR₁ “else” EXPR₂
 </pre></div>
 </div>
 <p>Input stack is passed to <em>EXPR₀</em>, which is evaluated in sub-expression
@@ -783,11 +774,11 @@ that the body expression yields.</p>
 number of slots pushed minus number of slots popped will be the same
 for each branch).</p>
 <p>This form could be circumscribed by the following snippet:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span>(?(EXPR₀) (EXPR₁), !(EXPR₀) (EXPR₂))
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>(?(EXPR₀) (EXPR₁), !(EXPR₀) (EXPR₂))
 </pre></div>
 </div>
 <p>As an example, consider the following snippet from a script:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span>if ?DW_TAG_formal_parameter then (
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>if ?DW_TAG_formal_parameter then (
   // Of formal parameters we ignore those that are children of
   // subprograms that are themselves declarations.
   ?(parent !DW_TAG_subroutine_type !(@DW_AT_declaration == true))
@@ -797,14 +788,14 @@ for each branch).</p>
 </pre></div>
 </div>
 <p>In particular, note the following surprising example:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span>$ dwgrep &#39;if false then &quot;yes&quot; else &quot;no&quot;&#39;        # WARNING!
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ dwgrep &#39;if false then &quot;yes&quot; else &quot;no&quot;&#39;        # WARNING!
 yes
 </pre></div>
 </div>
-<p>The reason is that <code class="docutils literal"><span class="pre">false</span></code> is a named constant, which means the
-tested expression always yields a stack: namely a stack with <code class="docutils literal"><span class="pre">false</span></code>
+<p>The reason is that <code class="docutils literal notranslate"><span class="pre">false</span></code> is a named constant, which means the
+tested expression always yields a stack: namely a stack with <code class="docutils literal notranslate"><span class="pre">false</span></code>
 on top.  This is how Booleans should be tested in Zwerg:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span>if (@AT_declaration == true) then … else …
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>if (@AT_declaration == true) then … else …
 </pre></div>
 </div>
 </div>
@@ -826,17 +817,17 @@ on top.  This is how Booleans should be tested in Zwerg:</p>
 <li><a class="reference internal" href="#parenthesizing">Parenthesizing</a></li>
 <li><a class="reference internal" href="#integer-literals">Integer literals</a></li>
 <li><a class="reference internal" href="#named-constants">Named constants</a></li>
-<li><a class="reference internal" href="#lexical-scopes-a">Lexical scopes (<code class="docutils literal"><span class="pre">(|A|…)</span></code>)</a></li>
-<li><a class="reference internal" href="#alt-lists">ALT-lists (<code class="docutils literal"><span class="pre">,</span></code>)</a></li>
-<li><a class="reference internal" href="#or-lists">OR-lists (<code class="docutils literal"><span class="pre">||</span></code>)</a></li>
-<li><a class="reference internal" href="#infix-assertions">Infix assertions (<code class="docutils literal"><span class="pre">==</span></code>)</a></li>
-<li><a class="reference internal" href="#iteration">Iteration (<code class="docutils literal"><span class="pre">*</span></code>)</a></li>
+<li><a class="reference internal" href="#lexical-scopes-a">Lexical scopes (<code class="docutils literal notranslate"><span class="pre">(|A|…)</span></code>)</a></li>
+<li><a class="reference internal" href="#alt-lists">ALT-lists (<code class="docutils literal notranslate"><span class="pre">,</span></code>)</a></li>
+<li><a class="reference internal" href="#or-lists">OR-lists (<code class="docutils literal notranslate"><span class="pre">||</span></code>)</a></li>
+<li><a class="reference internal" href="#infix-assertions">Infix assertions (<code class="docutils literal notranslate"><span class="pre">==</span></code>)</a></li>
+<li><a class="reference internal" href="#iteration">Iteration (<code class="docutils literal notranslate"><span class="pre">*</span></code>)</a></li>
 <li><a class="reference internal" href="#formatting-strings">Formatting strings</a></li>
-<li><a class="reference internal" href="#sequence-capture">Sequence capture (<code class="docutils literal"><span class="pre">[]</span></code>)</a></li>
-<li><a class="reference internal" href="#capture-with-binding-a">Capture with binding (<code class="docutils literal"><span class="pre">[|A|…]</span></code>)</a></li>
-<li><a class="reference internal" href="#name-binding-let">Name binding (<code class="docutils literal"><span class="pre">let</span></code>)</a></li>
-<li><a class="reference internal" href="#sub-expression-assertions">Sub-expression assertions (<code class="docutils literal"><span class="pre">?()</span></code>, <code class="docutils literal"><span class="pre">!()</span></code>)</a></li>
-<li><a class="reference internal" href="#conditionals-if-then-else">Conditionals (<code class="docutils literal"><span class="pre">if-then-else</span></code>)</a></li>
+<li><a class="reference internal" href="#sequence-capture">Sequence capture (<code class="docutils literal notranslate"><span class="pre">[]</span></code>)</a></li>
+<li><a class="reference internal" href="#capture-with-binding-a">Capture with binding (<code class="docutils literal notranslate"><span class="pre">[|A|…]</span></code>)</a></li>
+<li><a class="reference internal" href="#name-binding-let">Name binding (<code class="docutils literal notranslate"><span class="pre">let</span></code>)</a></li>
+<li><a class="reference internal" href="#sub-expression-assertions">Sub-expression assertions (<code class="docutils literal notranslate"><span class="pre">?()</span></code>, <code class="docutils literal notranslate"><span class="pre">!()</span></code>)</a></li>
+<li><a class="reference internal" href="#conditionals-if-then-else">Conditionals (<code class="docutils literal notranslate"><span class="pre">if-then-else</span></code>)</a></li>
 </ul>
 </li>
 </ul>
@@ -850,18 +841,20 @@ on top.  This is how Booleans should be tested in Zwerg:</p>
   <div role="note" aria-label="source link">
     <h3>This Page</h3>
     <ul class="this-page-menu">
-      <li><a href="_sources/syntax.txt"
+      <li><a href="_sources/syntax.rst.txt"
             rel="nofollow">Show Source</a></li>
     </ul>
    </div>
 <div id="searchbox" style="display: none" role="search">
   <h3>Quick search</h3>
+    <div class="searchformwrapper">
     <form class="search" action="search.html" method="get">
-      <div><input type="text" name="q" /></div>
-      <div><input type="submit" value="Go" /></div>
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
       <input type="hidden" name="check_keywords" value="yes" />
       <input type="hidden" name="area" value="default" />
     </form>
+    </div>
 </div>
 <script type="text/javascript">$('#searchbox').show(0);</script>
         </div>
@@ -880,12 +873,12 @@ on top.  This is how Booleans should be tested in Zwerg:</p>
         <li class="right" >
           <a href="examples.html" title="Assorted examples"
              >previous</a> |</li>
-        <li class="nav-item nav-item-0"><a href="index.html">dwgrep 0.3 documentation</a> &#187;</li> 
+        <li class="nav-item nav-item-0"><a href="index.html">dwgrep 0.4 documentation</a> &#187;</li> 
       </ul>
     </div>
     <div class="footer" role="contentinfo">
-        &#169; Copyright 2014, 2015, 2017, Petr Machata.
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.4.8.
+        &#169; Copyright 2014, 2015, 2017, 2018, Petr Machata.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.7.6.
     </div>
   </body>
 </html>

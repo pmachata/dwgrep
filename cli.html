@@ -1,35 +1,23 @@
+
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
-
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    
-    <title>Command line reference &#8212; dwgrep 0.3 documentation</title>
-    
+    <title>Command line reference &#8212; dwgrep 0.4 documentation</title>
     <link rel="stylesheet" href="_static/classic.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
-    
-    <script type="text/javascript">
-      var DOCUMENTATION_OPTIONS = {
-        URL_ROOT:    './',
-        VERSION:     '0.3',
-        COLLAPSE_INDEX: false,
-        FILE_SUFFIX: '.html',
-        HAS_SOURCE:  true
-      };
-    </script>
+    <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="top" title="dwgrep 0.3 documentation" href="index.html" />
     <link rel="next" title="Tutorial" href="tutorial.html" />
-    <link rel="prev" title="Welcome to dwgrep’s documentation!" href="index.html" /> 
-  </head>
-  <body role="document">
+    <link rel="prev" title="Welcome to dwgrep&#39;s documentation!" href="index.html" /> 
+  </head><body>
     <div class="related" role="navigation" aria-label="related navigation">
       <h3>Navigation</h3>
       <ul>
@@ -40,9 +28,9 @@
           <a href="tutorial.html" title="Tutorial"
              accesskey="N">next</a> |</li>
         <li class="right" >
-          <a href="index.html" title="Welcome to dwgrep’s documentation!"
+          <a href="index.html" title="Welcome to dwgrep&#39;s documentation!"
              accesskey="P">previous</a> |</li>
-        <li class="nav-item nav-item-0"><a href="index.html">dwgrep 0.3 documentation</a> &#187;</li> 
+        <li class="nav-item nav-item-0"><a href="index.html">dwgrep 0.4 documentation</a> &#187;</li> 
       </ul>
     </div>  
 
@@ -55,7 +43,7 @@
 <span id="cli"></span><h1>Command line reference<a class="headerlink" href="#command-line-reference" title="Permalink to this headline">¶</a></h1>
 <div class="section" id="synopsis">
 <h2>Synopsis<a class="headerlink" href="#synopsis" title="Permalink to this headline">¶</a></h2>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">dwgrep</span> <span class="p">[</span><span class="n">OPTIONS</span><span class="p">]</span> <span class="n">PATTERN</span> <span class="p">[</span><span class="n">FILE</span><span class="o">...</span><span class="p">]</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">dwgrep</span> <span class="p">[</span><span class="n">OPTIONS</span><span class="p">]</span> <span class="n">PATTERN</span> <span class="p">[</span><span class="n">FILE</span><span class="o">...</span><span class="p">]</span>
 <span class="n">dwgrep</span> <span class="p">[</span><span class="n">OPTIONS</span><span class="p">]</span> <span class="p">[</span><span class="o">-</span><span class="n">e</span> <span class="n">PATTERN</span> <span class="o">|</span> <span class="o">-</span><span class="n">f</span> <span class="n">FILE</span><span class="p">]</span> <span class="p">[</span><span class="n">FILE</span><span class="o">...</span><span class="p">]</span>
 </pre></div>
 </div>
@@ -70,43 +58,80 @@ shared library which can be used from C.</p>
 <div class="section" id="options">
 <h2>Options<a class="headerlink" href="#options" title="Permalink to this headline">¶</a></h2>
 <dl class="docutils">
-<dt><code class="docutils literal"><span class="pre">-H</span></code>, <code class="docutils literal"><span class="pre">--with-filename</span></code></dt>
+<dt><code class="docutils literal notranslate"><span class="pre">-H</span></code>, <code class="docutils literal notranslate"><span class="pre">--with-filename</span></code></dt>
 <dd>Print the filename for each match.  This is the default when
 there is more than one file to search.</dd>
-<dt><code class="docutils literal"><span class="pre">-c</span></code>, <code class="docutils literal"><span class="pre">--count</span></code></dt>
+<dt><code class="docutils literal notranslate"><span class="pre">-a=ARG</span></code></dt>
+<dd>Pass a string argument to the running script. A command line argument
+such as <code class="docutils literal notranslate"><span class="pre">-a</span> <span class="pre">X</span></code> is handled like <code class="docutils literal notranslate"><span class="pre">--a</span> <span class="pre">'&quot;X&quot;'</span></code>, except with appropriate
+escaping.</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">-c</span></code>, <code class="docutils literal notranslate"><span class="pre">--count</span></code></dt>
 <dd>Print only a count of query results, not the results
 themselves.</dd>
-<dt><code class="docutils literal"><span class="pre">-e</span></code>, <code class="docutils literal"><span class="pre">--expr=EXPR</span></code></dt>
-<dd><em>EXPR</em> is a query to run.  At most one <code class="docutils literal"><span class="pre">-e</span></code> or <code class="docutils literal"><span class="pre">-f</span></code> option
+<dt><code class="docutils literal notranslate"><span class="pre">-e</span></code>, <code class="docutils literal notranslate"><span class="pre">--expr=EXPR</span></code></dt>
+<dd><em>EXPR</em> is a query to run.  At most one <code class="docutils literal notranslate"><span class="pre">-e</span></code> or <code class="docutils literal notranslate"><span class="pre">-f</span></code> option
 shall be present.  The selected query is run over the input
 file(s).</dd>
-<dt><code class="docutils literal"><span class="pre">-f</span></code>, <code class="docutils literal"><span class="pre">--file=FILE</span></code></dt>
+<dt><code class="docutils literal notranslate"><span class="pre">-f</span></code>, <code class="docutils literal notranslate"><span class="pre">--file=FILE</span></code></dt>
 <dd>Load query from <em>FILE</em>.  A Zwerg script stored in the given
 file is read and run over the input file(s).  At most one
-<code class="docutils literal"><span class="pre">-e</span></code> or <code class="docutils literal"><span class="pre">-f</span></code> option shall be present.</dd>
-<dt><code class="docutils literal"><span class="pre">-h</span></code>, <code class="docutils literal"><span class="pre">--no-filename</span></code></dt>
+<code class="docutils literal notranslate"><span class="pre">-e</span></code> or <code class="docutils literal notranslate"><span class="pre">-f</span></code> option shall be present.</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">-h</span></code>, <code class="docutils literal notranslate"><span class="pre">--no-filename</span></code></dt>
 <dd>Suppress printing filename on output.  This is the default
 when there is less than two files to search.</dd>
-<dt><code class="docutils literal"><span class="pre">-q</span></code>, <code class="docutils literal"><span class="pre">--silent</span></code>, <code class="docutils literal"><span class="pre">--quiet</span></code></dt>
+<dt><code class="docutils literal notranslate"><span class="pre">-q</span></code>, <code class="docutils literal notranslate"><span class="pre">--silent</span></code>, <code class="docutils literal notranslate"><span class="pre">--quiet</span></code></dt>
 <dd>Suppress all normal output.  Exit immediately with zero status
 if any match is found, even if an error was detected.</dd>
-<dt><code class="docutils literal"><span class="pre">-s</span></code>, <code class="docutils literal"><span class="pre">--no-messages</span></code></dt>
+<dt><code class="docutils literal notranslate"><span class="pre">-s</span></code>, <code class="docutils literal notranslate"><span class="pre">--no-messages</span></code></dt>
 <dd><p class="first">Suppress error messages.  All normal output is produced, but
 error messages (if any) are not shown.</p>
 <p class="last">Note that currently libzwerg produces some error messages on
 its own (e.g. division by zero), and those are still
 displayed.</p>
 </dd>
-<dt><code class="docutils literal"><span class="pre">--help</span></code></dt>
+<dt><code class="docutils literal notranslate"><span class="pre">--help</span></code></dt>
 <dd>Show help and exit.</dd>
-<dt><code class="docutils literal"><span class="pre">--version</span></code></dt>
+<dt><code class="docutils literal notranslate"><span class="pre">--version</span></code></dt>
 <dd>Show version in the format MAJOR.MINOR and exit.</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">--a=ARG</span></code></dt>
+<dd><p class="first">Pass an evaluated argument to the running script. The argument is parsed
+as a Zwerg program and interpreted on an empty stack. TOS of each yielded
+stack is taken and pushed to program stack before query is executed.</p>
+<p>Formally, a command line such as this: <code class="docutils literal notranslate"><span class="pre">dwgrep</span> <span class="pre">-e</span> <span class="pre">PROG</span> <span class="pre">--a</span> <span class="pre">X</span> <span class="pre">--a</span> <span class="pre">Y</span> <span class="pre">...</span></code>
+is interpreted like the following Zwerg snippet:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">let</span> <span class="o">.</span><span class="n">X</span> <span class="p">:</span><span class="o">=</span> <span class="o">*</span><span class="n">X</span><span class="o">*</span><span class="p">;</span>
+<span class="n">let</span> <span class="o">.</span><span class="n">Y</span> <span class="p">:</span><span class="o">=</span> <span class="o">*</span><span class="n">Y</span><span class="o">*</span><span class="p">;</span>
+<span class="o">...</span>
+<span class="o">.</span><span class="n">X</span> <span class="o">.</span><span class="n">Y</span> <span class="o">*</span><span class="n">PROG</span><span class="o">*</span>
+</pre></div>
+</div>
+<p>In particular this means that if an argument yields more than once, the
+whole following computation is &quot;forked&quot; and in each branch the
+argument has a different value.</p>
+<p>ELF files mentioned on the command line are passed as the first command
+line argument. I.e. a dwgrep invocation such as this:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">dwgrep</span> <span class="o">-</span><span class="n">e</span> <span class="n">PROG</span> <span class="o">--</span><span class="n">a</span> <span class="n">X</span> <span class="o">--</span><span class="n">a</span> <span class="n">Y</span> <span class="o">...</span> <span class="n">file1</span> <span class="n">file2</span> <span class="o">...</span>
+</pre></div>
+</div>
+<p>Is handled as follows:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">dwgrep</span> <span class="o">-</span><span class="n">e</span> <span class="n">PROG</span> <span class="o">--</span><span class="n">a</span> <span class="s1">&#39;(&quot;file1&quot;, &quot;file2&quot;, ...) dwopen&#39;</span> <span class="o">--</span><span class="n">a</span> <span class="n">X</span> <span class="o">--</span><span class="n">a</span> <span class="n">Y</span> <span class="o">...</span>
+</pre></div>
+</div>
+<p>Thus one can bind the explicitly-mentioned command line arguments to
+named variables and leave the ELF files themselves as implicit argument
+of the expression itself, as is usual when writing argument-less
+queries. Consider:</p>
+<div class="last highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">dwgrep</span> <span class="n">file1</span> <span class="n">file2</span> <span class="o">-</span><span class="n">e</span> <span class="s1">&#39;entry foo bar baz&#39;</span>
+<span class="n">dwgrep</span> <span class="n">file1</span> <span class="n">file2</span> <span class="o">--</span><span class="n">a</span> <span class="n">A</span> <span class="o">--</span><span class="n">a</span> <span class="n">B</span> <span class="o">-</span><span class="n">e</span> <span class="s1">&#39;(|A B| entry foo bar baz)&#39;</span>
+</pre></div>
+</div>
+</dd>
 </dl>
 </div>
 <div class="section" id="examples">
 <h2>Examples<a class="headerlink" href="#examples" title="Permalink to this headline">¶</a></h2>
 <p>Find ELF files:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span>$ dwgrep -sh $(find /usr/lib64/ -type f) -e &#39;name&#39;
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ dwgrep -sh $(find /usr/lib64/ -type f) -e &#39;name&#39;
 /usr/lib64/libogrove.so.0.0.1
 /usr/lib64/libmp3lame.so.0.0.0
 /usr/lib64/libgimpcolor-2.0.so.0.600.12
@@ -116,14 +141,14 @@ displayed.</p>
 </pre></div>
 </div>
 <p>Find ELF files that include Dwarf information:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span>$ dwgrep -sh $(find /usr/lib64/ -type f) -e &#39;?(unit) name&#39;
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ dwgrep -sh $(find /usr/lib64/ -type f) -e &#39;?(unit) name&#39;
 /usr/lib64/python3.2/config-3.2mu/python.o
 /usr/lib64/libxqilla.so.5.0.4
 [... etc ...]
 </pre></div>
 </div>
 <p>Find namespace names defined in one of them:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span>$ dwgrep /usr/lib64/libxqilla.so.5.0.4 -e &#39;
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ dwgrep /usr/lib64/libxqilla.so.5.0.4 -e &#39;
         entry ?TAG_namespace name&#39; | sort -u
 __debug
 __detail
@@ -134,8 +159,8 @@ xercesc_3_0
 XQParser
 </pre></div>
 </div>
-<p>Find names of variables defined in the namespace <code class="docutils literal"><span class="pre">xercesc_3_0</span></code>:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span>$ dwgrep /usr/lib64/libxqilla.so.5.0.4 -e &#39;
+<p>Find names of variables defined in the namespace <code class="docutils literal notranslate"><span class="pre">xercesc_3_0</span></code>:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ dwgrep /usr/lib64/libxqilla.so.5.0.4 -e &#39;
         entry ?TAG_namespace (name == &quot;xercesc_3_0&quot;)
         child ?TAG_variable name&#39; | sort -u
 chAmpersand
@@ -146,8 +171,8 @@ chBang
 [... etc ...]
 </pre></div>
 </div>
-<p>Of those, only list the ones that don&#8217;t start in <code class="docutils literal"><span class="pre">ch</span></code>:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span>$ dwgrep /usr/lib64/libxqilla.so.5.0.4 -e &#39;
+<p>Of those, only list the ones that don't start in <code class="docutils literal notranslate"><span class="pre">ch</span></code>:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ dwgrep /usr/lib64/libxqilla.so.5.0.4 -e &#39;
         entry ?TAG_namespace (name == &quot;xercesc_3_0&quot;)
         child ?TAG_variable name
         (!~ &quot;ch.*&quot;)&#39; | sort -u
@@ -158,7 +183,7 @@ gNameCharMask
 </pre></div>
 </div>
 <p>Look where they are declared:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span>$ dwgrep /usr/lib64/libxqilla.so.5.0.4 -e &#39;
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ dwgrep /usr/lib64/libxqilla.so.5.0.4 -e &#39;
         entry ?TAG_namespace (name == &quot;xercesc_3_0&quot;)
         child ?TAG_variable (name !~ &quot;ch.*&quot;)
         @AT_decl_file&#39; | sort -u
@@ -167,7 +192,7 @@ gNameCharMask
 </pre></div>
 </div>
 <p>Use formatting strings to include line number information in the mix:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span>$ dwgrep /usr/lib64/libxqilla.so.5.0.4 -e &#39;
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ dwgrep /usr/lib64/libxqilla.so.5.0.4 -e &#39;
         entry ?TAG_namespace (name == &quot;xercesc_3_0&quot;)
         child ?TAG_variable (name !~ &quot;ch.*&quot;)
         &quot;%(@AT_decl_file%): %(dup @AT_decl_line%)&quot;&#39; | sort -u
@@ -213,25 +238,27 @@ tutorial.</p>
 
   <h4>Previous topic</h4>
   <p class="topless"><a href="index.html"
-                        title="previous chapter">Welcome to dwgrep&#8217;s documentation!</a></p>
+                        title="previous chapter">Welcome to dwgrep's documentation!</a></p>
   <h4>Next topic</h4>
   <p class="topless"><a href="tutorial.html"
                         title="next chapter">Tutorial</a></p>
   <div role="note" aria-label="source link">
     <h3>This Page</h3>
     <ul class="this-page-menu">
-      <li><a href="_sources/cli.txt"
+      <li><a href="_sources/cli.rst.txt"
             rel="nofollow">Show Source</a></li>
     </ul>
    </div>
 <div id="searchbox" style="display: none" role="search">
   <h3>Quick search</h3>
+    <div class="searchformwrapper">
     <form class="search" action="search.html" method="get">
-      <div><input type="text" name="q" /></div>
-      <div><input type="submit" value="Go" /></div>
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
       <input type="hidden" name="check_keywords" value="yes" />
       <input type="hidden" name="area" value="default" />
     </form>
+    </div>
 </div>
 <script type="text/javascript">$('#searchbox').show(0);</script>
         </div>
@@ -248,14 +275,14 @@ tutorial.</p>
           <a href="tutorial.html" title="Tutorial"
              >next</a> |</li>
         <li class="right" >
-          <a href="index.html" title="Welcome to dwgrep’s documentation!"
+          <a href="index.html" title="Welcome to dwgrep&#39;s documentation!"
              >previous</a> |</li>
-        <li class="nav-item nav-item-0"><a href="index.html">dwgrep 0.3 documentation</a> &#187;</li> 
+        <li class="nav-item nav-item-0"><a href="index.html">dwgrep 0.4 documentation</a> &#187;</li> 
       </ul>
     </div>
     <div class="footer" role="contentinfo">
-        &#169; Copyright 2014, 2015, 2017, Petr Machata.
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.4.8.
+        &#169; Copyright 2014, 2015, 2017, 2018, Petr Machata.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.7.6.
     </div>
   </body>
 </html>
