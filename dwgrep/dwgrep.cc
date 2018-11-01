@@ -283,7 +283,7 @@ dumper::dump_die (std::ostream &os, zw_value const &val, format fmt)
   if (fmt == format::full)
     {
       static std::unique_ptr <zw_query, zw_deleter> query
-	{zw_query_parse (&m_voc, "raw attribute", zw_throw_on_error {})};
+	{zw_query_parse (&m_voc, "raw attribute cooked", zw_throw_on_error {})};
       exec_query_on (val, *query,
 		     [&] (zw_stack const &stk) -> void {
 		       assert (zw_stack_depth (&stk) == 1);
