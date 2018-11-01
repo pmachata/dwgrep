@@ -1,4 +1,5 @@
 /*
+   Copyright (C) 2018 Petr Machata
    Copyright (C) 2014, 2015 Red Hat, Inc.
    This file is part of dwgrep.
 
@@ -37,8 +38,12 @@
 
 // Obtain a value of ATTR at DIE.
 std::unique_ptr <value_producer <value>>
-at_value (std::shared_ptr <dwfl_context> dwctx,
-	  value_die const &die, Dwarf_Attribute attr);
+at_value_cooked (std::shared_ptr <dwfl_context> dwctx,
+		 value_die const &die, Dwarf_Attribute attr);
+
+// Obtain a raw, uninterpreted value of ATTR at DIE.
+std::unique_ptr <value_producer <value>>
+at_value_raw (Dwarf_Attribute attr);
 
 // Obtain DIE's ranges.
 value_aset die_ranges (Dwarf_Die die);

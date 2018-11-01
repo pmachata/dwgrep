@@ -820,8 +820,8 @@ namespace
 }
 
 std::unique_ptr <value_producer <value>>
-at_value (std::shared_ptr <dwfl_context> dwctx,
-	  value_die const &vd, Dwarf_Attribute attr)
+at_value_cooked (std::shared_ptr <dwfl_context> dwctx,
+		 value_die const &vd, Dwarf_Attribute attr)
 {
   int form = dwarf_whatform (&attr);
   switch (form)
@@ -872,6 +872,107 @@ at_value (std::shared_ptr <dwfl_context> dwctx,
 
     case DW_FORM_exprloc:
       return std::make_unique <locexpr_producer> (dwctx, attr);
+
+    case DW_FORM_ref_sig8:
+      std::cerr << "Form unhandled: "
+		<< constant (dwarf_whatform (&attr), &dw_form_dom ())
+		<< std::endl;
+      return pass_single_value
+	(std::make_unique <value_str> ("(form unhandled)", 0));
+
+    case DW_FORM_indirect:
+      assert (! "Unexpected DW_FORM_indirect");
+      abort ();
+    }
+
+  std::stringstream ss;
+  ss << "Unhandled DWARF form ";
+  dw_form_dom ().show (form, ss, brevity::full);
+  throw std::runtime_error (ss.str ());
+}
+
+namespace
+{
+  std::unique_ptr <value_producer <value>>
+  atval_raw_strp (Dwarf_Attribute attr, bool alt)
+  {
+    const char *str = dwarf_formstring (&attr);
+    if (str == nullptr)
+      throw_libdw ();
+
+    Dwarf *dw = dwarf_cu_getdwarf (attr.cu);
+    if (alt)
+      dw = dwarf_getalt (dw);
+    if (dw == nullptr)
+      throw_libdw ();
+
+    size_t len;
+    const char *str0 = dwarf_getstring (dw, 0, &len);
+
+    uint64_t d = str - str0;
+
+    value_cst cst {constant {d, &dw_address_dom ()}, 0};
+    return pass_single_value (std::make_unique <value_cst> (cst));
+  }
+}
+
+std::unique_ptr <value_producer <value>>
+at_value_raw (Dwarf_Attribute attr)
+{
+  int form = dwarf_whatform (&attr);
+  switch (form)
+    {
+    case DW_FORM_string:
+      return atval_string (attr);
+
+    case DW_FORM_strp:
+      return atval_raw_strp (attr, false);
+    case DW_FORM_GNU_strp_alt:
+      return atval_raw_strp (attr, true);
+
+    case DW_FORM_addr:
+      return atval_addr (attr);
+
+    case DW_FORM_ref_addr:
+    case DW_FORM_ref1:
+    case DW_FORM_ref2:
+    case DW_FORM_ref4:
+    case DW_FORM_ref8:
+    case DW_FORM_ref_udata:
+    case DW_FORM_GNU_ref_alt:
+      {
+	Dwarf_Die die;
+	if (dwarf_formref_die (&attr, &die) == nullptr)
+	  throw_libdw ();
+	Dwarf_Off off = dwarf_dieoffset (&die);
+	return pass_single_value
+	  (std::make_unique <value_cst>
+	   (constant {static_cast <unsigned> (off), &dw_address_dom ()}, 0));
+      }
+
+    case DW_FORM_sec_offset:
+      return atval_unsigned_with_domain (attr, dw_address_dom ());
+
+    case DW_FORM_sdata:
+      return atval_signed (attr);
+
+    case DW_FORM_udata:
+    case DW_FORM_data1:
+    case DW_FORM_data2:
+    case DW_FORM_data4:
+    case DW_FORM_data8:
+      return atval_unsigned (attr);
+
+    case DW_FORM_flag:
+    case DW_FORM_flag_present:
+      return atval_flag (attr);
+
+    case DW_FORM_block1:
+    case DW_FORM_block2:
+    case DW_FORM_block4:
+    case DW_FORM_block:
+    case DW_FORM_exprloc:
+      return atval_block (attr);
 
     case DW_FORM_ref_sig8:
       std::cerr << "Form unhandled: "

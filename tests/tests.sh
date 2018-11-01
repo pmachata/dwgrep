@@ -677,14 +677,14 @@ expect_count 1 ./ptrmember_const_value.o -e '
 
 expect_count 4 ./float_const_value.o -e '
 	entry
-	(?((raw @AT_name == "fv")
+	(?((raw attribute ?AT_name cooked value == "fv")
 	   (@AT_const_value == [0, 0, 0xc0, 0x3f]))
-	 || ?((raw @AT_name == "dv")
+	 || ?((raw attribute ?AT_name cooked value == "dv")
 	      (@AT_const_value == [0, 0, 0, 0, 0, 0, 0xf8, 0x3f]))
-	 || ?((raw @AT_name == "ldv")
+	 || ?((raw attribute ?AT_name cooked value == "ldv")
 	      (@AT_const_value == [0, 0, 0, 0, 0, 0, 0, 0xc0,
 				   0xff, 0x3f, 0, 0, 0, 0, 0, 0])
-	 || ?((raw @AT_name == "f128v")
+	 || ?((raw attribute ?AT_name cooked value == "f128v")
 	      (@AT_const_value == [0, 0, 0, 0, 0, 0, 0, 0,
 				   0, 0, 0, 0, 0, 0x80, 0xff, 0x3f]))))'
 

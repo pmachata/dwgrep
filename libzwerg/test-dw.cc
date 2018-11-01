@@ -481,7 +481,7 @@ namespace
     ASSERT_TRUE (dwarf_attr (&die, DW_AT_const_value, &attr) != nullptr);
 
     value_attr at (vd, attr, 0, doneness::cooked);
-    auto prod = at_value (vdw->get_dwctx (), vd, attr);
+    auto prod = at_value_cooked (vdw->get_dwctx (), vd, attr);
     ASSERT_TRUE (prod != nullptr);
 
     auto va = prod->next ();
@@ -623,4 +623,19 @@ TEST_F (DwTest, test_const_value_block)
 	 {constant {21, &dec_constant_dom}, "fff<int&, 21>"},
 	 {constant {7, &dec_constant_dom}, "ggg<int*, 7>"},
 	 {constant {6000000000, &dec_constant_dom}, "ggg<int&, 6000000000>"}});
+}
+
+TEST_F (DwTest, test_raw_attribute_strp)
+{
+  ASSERT_EQ (1, run_dwquery
+	     (*builtins, "enum.o",
+	      "[|Dw| Dw entry attribute ?(form == DW_FORM_strp) raw value] "
+	      " == [0x1f, 0, 0x8]"
+	      ).size ());
+
+  ASSERT_EQ (1, run_dwquery
+	     (*builtins, "a1.out",
+	      "[|Dw| Dw entry attribute ?(form == DW_FORM_GNU_strp_alt) raw value] "
+	      " == [0, 0x27, 0x32, 0x2d]"
+	      ).size ());
 }

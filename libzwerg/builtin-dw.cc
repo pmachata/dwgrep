@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2017 Petr Machata
+   Copyright (C) 2017, 2018 Petr Machata
    Copyright (C) 2014, 2015 Red Hat, Inc.
    This file is part of dwgrep.
 
@@ -734,6 +734,10 @@ that are already present at the original DIE, or those that it makes
 no sense to import (as of this writing, ``DW_AT_sibling``,
 ``DW_AT_declaration``).
 
+Attributes yielded from cooked DIEs are cooked, and attributes from
+raw DIEs are raw. That has impact on how the attribute value is
+decoded. See elaboration at ``value`` for further information.
+
 Example::
 
 	$ dwgrep ./tests/nullptr.o -e 'raw entry (offset == 0x6e) attribute'
@@ -1262,10 +1266,29 @@ the CU DIE of this DIE's context.
 
 // value
 
+namespace
+{
+  std::unique_ptr <value_producer <value>>
+  at_value (doneness_aspect const &d,
+	    std::shared_ptr <dwfl_context> dwctx,
+	    value_die const &die, Dwarf_Attribute attr)
+  {
+    switch (d.get_doneness ())
+      {
+      case doneness::cooked:
+	return at_value_cooked (dwctx, die, attr);
+      case doneness::raw:
+	return at_value_raw (attr);
+      }
+
+    __builtin_unreachable ();
+  }
+}
+
 std::unique_ptr <value_producer <value>>
 op_value_attr::operate (std::unique_ptr <value_attr> a) const
 {
-  return at_value (a->get_dwctx (), a->get_value_die (), a->get_attr ());
+  return ::at_value (*a, a->get_dwctx (), a->get_value_die (), a->get_attr ());
 }
 
 std::string
@@ -1282,6 +1305,33 @@ expressions::
 	$ dwgrep ./tests/aranges.o -e 'entry attribute ?AT_location value'
 	0x10000..0x10010:[0:reg5]
 	0x10010..0x1001a:[0:fbreg<-24>]
+
+When determining value of a cooked attribute, dwgrep attempts to get
+the best semantic representation of that value. Thus reference
+attributes yield actual DIEs, values of attributes such as
+``DW_AT_language`` or ``DW_AT_encoding`` are yielded with the correct
+domain, instead of as a mere number, values of ``DW_AT_const_value``
+take into consideration type at the DIE that contains this attribute,
+etc.::
+
+	$  dwgrep ./tests/const_value_block.o -e '
+		entry (offset == 0x30) attribute ?AT_const_value
+		[|At| At label, At form, At value]'
+	[const_value, block1, false]
+
+In this example, dwgrep decides boolean decoding is appropriate after
+inspecting the ``DW_AT_type`` attribute::
+
+	$ dwgrep ./tests/const_value_block.o -e '
+		entry (offset == 0x30) ?AT_const_value @AT_type @AT_encoding'
+	DW_ATE_boolean
+
+Values of raw attributes, on the other hand, are kept simple::
+
+	$ dwgrep ./tests/const_value_block.o -e '
+		entry (offset == 0x30) raw attribute ?AT_const_value
+		[|At| At label, At form, At value]'
+	[const_value, block1, [0]]
 
 )docstring";
 }
@@ -1770,7 +1820,7 @@ op_atval_die::operate (std::unique_ptr <value_die> a) const
     return nullptr;
   auto dv = r.second != nullptr ? std::move (r.second) : std::move (a);
 
-  return at_value (dv->get_dwctx (), *dv, attr);
+  return at_value_cooked (dv->get_dwctx (), *dv, attr);
 }
 
 std::string
@@ -1786,6 +1836,9 @@ value)``::
 	$ dwgrep ./tests/nullptr.o -e '
 		entry (|A| "%( A @AT_name %): %( A @AT_declaration %)")'
 	foo: true
+
+The yielded value depends on whether the DIE on TOS in cooked or raw.
+See the ``value`` operator for elaboration.
 
 )docstring";
 }
