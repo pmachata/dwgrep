@@ -1818,9 +1818,10 @@ op_atval_die::operate (std::unique_ptr <value_die> a) const
 			   &attr, a->get_dwctx ());
   if (r.first == find_attribute_result::not_found)
     return nullptr;
+  doneness_aspect d = *a;
   auto dv = r.second != nullptr ? std::move (r.second) : std::move (a);
 
-  return at_value_cooked (dv->get_dwctx (), *dv, attr);
+  return ::at_value (d, dv->get_dwctx (), *dv, attr);
 }
 
 std::string
@@ -1830,8 +1831,7 @@ op_atval_die::docstring ()
 R"docstring(
 
 Takes a DIE on TOS and yields value of attribute indicated by the
-word.  Syntactic sugar for ``(attribute ?(label == AT_*) cooked
-value)``::
+word.  Syntactic sugar for ``(attribute ?(label == AT_*) value)``::
 
 	$ dwgrep ./tests/nullptr.o -e '
 		entry (|A| "%( A @AT_name %): %( A @AT_declaration %)")'
