@@ -169,6 +169,39 @@ namespace
       (std::make_unique <value_cst> (constant {addr, &dw_address_dom ()}, 0));
   }
 
+  std::unique_ptr <value_producer <value>>
+  atval_block (Dwarf_Attribute attr)
+  {
+    // XXX even for blocks, we need to look at the @type to
+    // figure out whether there's a better way to represent this
+    // item.  Some of these might be e.g. floats.  NIY.
+    Dwarf_Block block;
+    if (dwarf_formblock (&attr, &block) != 0)
+      throw_libdw ();
+
+    return pass_block (block);
+  }
+
+  std::unique_ptr <value_producer <value>>
+  atval_string (Dwarf_Attribute attr)
+  {
+    const char *str = dwarf_formstring (&attr);
+    if (str == nullptr)
+      throw_libdw ();
+    return pass_single_value (std::make_unique <value_str> (str, 0));
+  }
+
+  std::unique_ptr <value_producer <value>>
+  atval_flag (Dwarf_Attribute attr)
+  {
+    bool flag;
+    if (dwarf_formflag (&attr, &flag) != 0)
+      throw_libdw ();
+    return pass_single_value
+      (std::make_unique <value_cst>
+       (constant {static_cast <unsigned> (flag), &bool_constant_dom}, 0));
+  }
+
   struct locexpr_producer
     : public value_producer <value>
   {
@@ -771,16 +804,7 @@ namespace
       }
 
     if (is_block (attr))
-      {
-	// XXX even for blocks, we need to look at the @type to
-	// figure out whether there's a better way to represent this
-	// item.  Some of these might be e.g. floats.  NIY.
-	Dwarf_Block block;
-	if (dwarf_formblock (&attr, &block) != 0)
-	  throw_libdw ();
-
-	return pass_block (block);
-      }
+      return atval_block (attr);
 
     // There can be stuff out there that we have no chance of keeping up with.
     // Just assume unsigned instead of terminating the evaluation.
@@ -805,12 +829,7 @@ at_value (std::shared_ptr <dwfl_context> dwctx,
     case DW_FORM_string:
     case DW_FORM_strp:
     case DW_FORM_GNU_strp_alt:
-      {
-	const char *str = dwarf_formstring (&attr);
-	if (str == nullptr)
-	  throw_libdw ();
-	return pass_single_value (std::make_unique <value_str> (str, 0));
-      }
+      return atval_string (attr);
 
     case DW_FORM_ref_addr:
     case DW_FORM_ref1:
@@ -838,14 +857,7 @@ at_value (std::shared_ptr <dwfl_context> dwctx,
 
     case DW_FORM_flag:
     case DW_FORM_flag_present:
-      {
-	bool flag;
-	if (dwarf_formflag (&attr, &flag) != 0)
-	  throw_libdw ();
-	return pass_single_value
-	  (std::make_unique <value_cst>
-	   (constant {static_cast <unsigned> (flag), &bool_constant_dom}, 0));
-      }
+      return atval_flag (attr);
 
     case DW_FORM_data1:
     case DW_FORM_data2:
