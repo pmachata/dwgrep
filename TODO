@@ -191,13 +191,6 @@
      implementing these until we get to line tables, so that it's
      better understood how these will need to be used.
 
-** raw attributes
-   - @AT_* should keep its current meaning of
-     : attribute ?AT_* cooked value
-     That seems more useful.
-   - Raw access would have to be requested explicitly:
-     : attribute ?AT_* raw value
-
 ** floats
    - These are currently represented as blocks.  libdw doesn't give us
      any support decoding these, and it seems to be not entirely
