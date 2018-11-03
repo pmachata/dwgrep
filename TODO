@@ -281,45 +281,108 @@
      : [take ... while ...] 0 {@AT_* add} fold	# sum of selected nodes
      : [until ... take ...] {@AT_* max} fold1	# max of selected nodes
 
+   - Foundation: a loop/yield construct:
+
+     The keyword "loop X" introduces a looping construct. The expression X is
+     evaluated, and whatever it yields feeds back to X. loop on its own doesn't
+     yield anything, but a special built-in word "yield" can be used inside a
+     loop construct to yield values out of it.
+
+     xxx is "loop" a good word?
+
+     : [loop (yield child)] # same as [child*]
+     : [loop (child yield)] # same as [child+]
+     : loop (X || yield) # keep applying X, eventually yielding the results to
+     :                   # which X can't be applied anymore
+
+     - s/yield/break/
+       Yield can be modeled as (, break) or break?
+
+   - On top of that, we can have some syntax sugar:
+
      : take B while C
-     : loop:
-     :   B yield
-     :   (C || break)
+     : loop (
+     :   (B) yield
+     :   ?(C)
+     : )
+
+     : [1 take (1 add) while (< 5)] # == [2, 3, 4, 5]
+     : [5 take (1 add) while (< 5)] # == [6]
+     : [1 loop (1 add yield (< 5))]
 
      : do B while C
-     : loop:
-     :   B
-     :   (C || (yield, break))
+     : loop (
+     :   (B)
+     :   (?(C) || (yield !()))
+     : )
+
+     : [1 do (1 add) while (< 5)] # == [5]
+     : [5 do (1 add) while (< 5)] # == [6]
+     : [1 loop (1 add (< 5 || yield !()))]
 
      : while C take B
-     : loop:
-     :   (C || break)
-     :   B yield
+     : loop (
+     :   ?(C)
+     :   (B) yield
+     : )
+
+     : [1 while (< 5) take (1 add)] # == [2, 3, 4, 5]
+     : [5 while (< 5) take (1 add)] # == []
+     : [1 loop ((< 5) 1 add yield)]
 
      : while C do B
-     : loop:
-     :   (C || (yield, break))
-     :   B
+     : loop (
+     :   (?(C) || (yield !()))
+     :   (B)
+     : )
+
+     : [1 while (< 5) do (1 add)] # == [5]
+     : [5 while (< 5) do (1 add)] # == [5]
+
+     : while C take T do B
+     : loop (
+     :   ?(C)
+     :   (, (T) yield !())
+     :   (B)
+     : )
+
+     : [1 while (<5) take () do (1 add)]
+     : [1 loop ((< 5) yield 1 add)] # == [1, 2, 3, 4]
+
+     The syntax is meh though... while - take - do... it's verbose. Especially
+     the usual case of "take ()".
 
      : take B until C
-     : loop:
-     :   B yield
-     :   (C break || )
+     : loop (
+     :   (B) yield
+     :   !(C)
+     : )
+
+     : [1 take (1 add) until (>= 5)] # == [2, 3, 4, 5]
+     : [5 take (1 add) until (>= 5)] # == [6]
 
      : do B until C
-     : loop:
-     :   B
-     :   (C (yield, break) || )
+     : loop (
+     :   (B)
+     :   (!(C) || (yield !()))
+     : )
 
      : until C take B
-     : loop:
-     :   (C break || )
-     :   B yield
+     : loop (
+     :   !(C)
+     :   (B) yield
+     : )
 
      : until C do B
-     : loop:
-     :   (C (yield, break) || )
-     :   B
+     : loop (
+     :   (!(C) || (yield !()))
+     :   (B)
+     : )
+
+     xxx depth first search--currently there's no way to express depth-first
+     search. It's a query language, not a programming language, so no biggie,
+     but if the above syntax could be rich enough to allow for that, that would
+     be cool.
 
 * weird ideas
 ** more general iteration
