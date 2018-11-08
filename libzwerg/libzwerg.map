@@ -126,11 +126,14 @@ LIBZWERG_0.4 {
   global:
 	zw_value_clone;
 	zw_cdom_dw_defaulted;
-	zw_value_is_elf;
-	zw_value_elf_dwarf;
 } LIBZWERG_0.1;
 
 LIBZWERG_0.5 {
   global:
 	zw_vocabulary_elf;
+
+	zw_value_is_elf;
+	zw_value_elf_dwarf;
+
+	zw_value_is_elfscn;
 } LIBZWERG_0.1;

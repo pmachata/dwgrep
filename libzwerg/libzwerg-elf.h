@@ -102,6 +102,13 @@ extern "C" {
 					 zw_error **out_err);
 
 
+  /**
+   * ELF sections.
+   */
+
+  // Return whether VAL is an ELF section value.
+  bool zw_value_is_elfscn (zw_value const *val);
+
 #ifdef __cplusplus
 }
 #endif

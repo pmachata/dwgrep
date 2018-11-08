@@ -43,6 +43,7 @@ dwgrep_vocabulary_elf ()
 
   add_builtin_type_constant <value_symbol> (voc);
   add_builtin_type_constant <value_elf> (voc);
+  add_builtin_type_constant <value_elf_section> (voc);
 
   {
     auto t = std::make_shared <overload_tab> ();

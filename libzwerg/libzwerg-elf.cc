@@ -72,6 +72,12 @@ zw_value_is_elf (zw_value const *val)
   return val->is <value_elf> ();
 }
 
+bool
+zw_value_is_elfscn (zw_value const *val)
+{
+  return val->is <value_elf_section> ();
+}
+
 namespace
 {
   value_symbol const &

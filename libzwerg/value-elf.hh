@@ -36,6 +36,10 @@
 Dwfl_Module *get_sole_module (Dwfl *dwfl);
 std::pair <Elf *, GElf_Addr> get_main_elf (Dwfl *dwfl);
 
+// -------------------------------------------------------------------
+// Elf
+// -------------------------------------------------------------------
+
 class value_elf
   : public value
   , public doneness_aspect
@@ -73,6 +77,35 @@ public:
   {
     return m_dwcache.get_dwarf (m_dwctx, 0, get_doneness (), get_fn ());
   }
+};
+
+// -------------------------------------------------------------------
+// Elf section
+// -------------------------------------------------------------------
+
+class value_elf_section
+  : public value
+{
+  std::shared_ptr <dwfl_context> m_dwctx;
+  Elf_Scn *m_scn;
+
+public:
+  static value_type const vtype;
+
+  value_elf_section (std::shared_ptr <dwfl_context> dwctx, Elf_Scn *scn,
+		     size_t pos);
+  value_elf_section (std::shared_ptr <dwfl_context> dwctx, size_t index,
+		     size_t pos);
+
+  std::shared_ptr <dwfl_context> get_dwctx () const
+  { return m_dwctx; }
+
+  Elf_Scn *get_scn () const
+  { return m_scn; }
+
+  void show (std::ostream &o) const override;
+  cmp_result cmp (value const &that) const override;
+  std::unique_ptr <value> clone () const override;
 };
 
 #endif /* VALUE_ELF_H */

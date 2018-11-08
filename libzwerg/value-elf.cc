@@ -102,3 +102,49 @@ value_elf::clone () const
 {
   return std::make_unique <value_elf> (*this);
 }
+
+value_type const value_elf_section::vtype = value_type::alloc ("T_ELFSCN",
+R"docstring(
+
+xxx document me.
+
+)docstring");
+
+value_elf_section::value_elf_section (std::shared_ptr <dwfl_context> dwctx,
+				      Elf_Scn *scn,
+				      size_t pos)
+  : value {vtype, pos}
+  , m_dwctx {dwctx}
+  , m_scn {scn}
+{}
+
+value_elf_section::value_elf_section (std::shared_ptr <dwfl_context> dwctx,
+				      size_t index, size_t pos)
+  : value {vtype, pos}
+  , m_dwctx {dwctx}
+  , m_scn {elf_getscn (get_main_elf (dwctx->get_dwfl ()).first, index)}
+{
+  if (m_scn == nullptr)
+    throw_libelf ();
+}
+
+void
+value_elf_section::show (std::ostream &o) const
+{
+  o << "<ElfScn xxx>";
+}
+
+cmp_result
+value_elf_section::cmp (value const &that) const
+{
+  if (auto v = value::as <value_elf_section> (&that))
+    return compare (m_scn, v->m_scn);
+  else
+    return cmp_result::fail;
+}
+
+std::unique_ptr <value>
+value_elf_section::clone () const
+{
+  return std::make_unique <value_elf_section> (*this);
+}
