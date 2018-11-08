@@ -29,6 +29,51 @@
 #include <iostream>
 
 #include "value-elf.hh"
+#include "dwpp.hh"
+
+Dwfl_Module *
+get_sole_module (Dwfl *dwfl)
+{
+  struct init_state
+  {
+    Dwfl_Module *mod;
+
+    init_state ()
+      : mod {nullptr}
+    {}
+
+    static int each_module_cb (Dwfl_Module *mod, void **userdata,
+			       char const *fn, Dwarf_Addr addr, void *arg)
+    {
+      auto self = static_cast <init_state *> (arg);
+
+      // For Dwarf contexts that libzwerg currently creates, there ought to be
+      // exactly one module.
+      assert (self->mod == nullptr);
+      self->mod = mod;
+      return DWARF_CB_OK;
+    }
+  };
+
+  init_state ist;
+  if (dwfl_getmodules (dwfl, init_state::each_module_cb, &ist, 0) == -1)
+    throw_libdwfl ();
+
+  assert (ist.mod != nullptr);
+  return ist.mod;
+}
+
+std::pair <Elf *, GElf_Addr>
+get_main_elf (Dwfl *dwfl)
+{
+  Dwfl_Module *mod = get_sole_module (dwfl);
+
+  GElf_Addr bias;
+  Elf *elf = dwfl_module_getelf (mod, &bias);
+  assert (elf != nullptr);
+
+  return {elf, bias};
+}
 
 value_type const value_elf::vtype = value_type::alloc ("T_ELF",
 R"docstring(

@@ -33,6 +33,9 @@
 #include "dwfl_context.hh"
 #include "value-dw.hh"
 
+Dwfl_Module *get_sole_module (Dwfl *dwfl);
+std::pair <Elf *, GElf_Addr> get_main_elf (Dwfl *dwfl);
+
 class value_elf
   : public value
   , public doneness_aspect

@@ -44,38 +44,6 @@ namespace
     return -ENOENT;
   }
 
-  Dwfl_Module *
-  get_sole_module (Dwfl *dwfl)
-  {
-    struct init_state
-    {
-      Dwfl_Module *mod;
-
-      init_state ()
-	: mod {nullptr}
-      {}
-
-      static int each_module_cb (Dwfl_Module *mod, void **userdata,
-				 char const *fn, Dwarf_Addr addr, void *arg)
-      {
-	auto self = static_cast <init_state *> (arg);
-
-	// For Dwarf contexts that libzwerg currently creates, there ought to be
-	// exactly one module.
-	assert (self->mod == nullptr);
-	self->mod = mod;
-	return DWARF_CB_OK;
-      }
-    };
-
-    init_state ist;
-    if (dwfl_getmodules (dwfl, init_state::each_module_cb, &ist, 0) == -1)
-      throw_libdwfl ();
-
-    assert (ist.mod != nullptr);
-    return ist.mod;
-  }
-
   struct elf_producer
     : public value_producer <value_elf>
   {
@@ -122,18 +90,6 @@ namespace
 	return nullptr;
     }
   };
-
-  std::pair <Elf *, GElf_Addr>
-  get_main_elf (Dwfl *dwfl)
-  {
-    Dwfl_Module *mod = get_sole_module (dwfl);
-
-    GElf_Addr bias;
-    Elf *elf = dwfl_module_getelf (mod, &bias);
-    assert (elf != nullptr);
-
-    return {elf, bias};
-  }
 }
 
 std::unique_ptr <value_producer <value_elf>>
