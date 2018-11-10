@@ -76,6 +76,18 @@ get_main_elf (Dwfl *dwfl)
   return {elf, bias};
 }
 
+std::pair <Dwarf *, GElf_Addr>
+get_main_dwarf (Dwfl *dwfl)
+{
+  Dwfl_Module *mod = get_sole_module (dwfl);
+
+  Dwarf_Addr bias;
+  Dwarf *dwarf = dwfl_module_getdwarf (mod, &bias);
+  assert (dwarf != nullptr);
+
+  return {dwarf, bias};
+}
+
 value_type const value_elf::vtype = value_type::alloc ("T_ELF",
 R"docstring(
 

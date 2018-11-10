@@ -315,4 +315,14 @@ struct op_name_elfscn
   static std::string docstring ();
 };
 
+struct op_entry_elfscn
+  : public op_yielding_overload <value, value_elf_section>
+{
+  using op_yielding_overload::op_yielding_overload;
+
+  std::unique_ptr <value_producer <value>>
+  operate (std::unique_ptr <value_elf_section> a) const override;
+  static std::string docstring ();
+};
+
 #endif /* BUILTIN_ELF_H */

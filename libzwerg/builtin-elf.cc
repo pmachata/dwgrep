@@ -571,3 +571,112 @@ xxx
 
 )docstring";
 }
+
+namespace
+{
+  struct strtab_producer
+    : public value_producer <value>
+  {
+    std::shared_ptr <dwfl_context> m_dwctx;
+    Elf *m_elf;
+    Elf_Scn *m_scn;
+    size_t m_offset;
+    unsigned m_pos;
+
+    explicit strtab_producer (std::unique_ptr <value_elf_section> sec)
+      : m_dwctx {sec->get_dwctx ()}
+      , m_elf {get_main_elf (m_dwctx->get_dwfl ()).first}
+      , m_scn {sec->get_scn ()}
+      , m_offset {0}
+      , m_pos {0}
+    {}
+
+    std::unique_ptr <value>
+    next () override
+    {
+      char const *nextstr = elf_strptr (m_elf, elf_ndxscn (m_scn), m_offset);
+      if (nextstr == nullptr)
+	{
+	  if (m_offset == 0)
+	    // If the first access fails, report an error. Otherwise we likely
+	    // overran the section. Unfortunately the logic to determine the
+	    // valid section length is not trivial, and libelf keeps error
+	    // numbers private, so we can't just query that.
+	    throw_libelf ();
+	  return nullptr;
+	}
+
+      std::string str {nextstr};
+      size_t off = m_offset;
+      m_offset += str.length () + 1;
+      return std::make_unique <value_strtab_entry> (std::move (str), off,
+						    m_pos++);
+    }
+  };
+
+  struct debug_str_producer
+    : public value_producer <value>
+  {
+    std::shared_ptr <dwfl_context> m_dwctx;
+    Dwarf *m_dwarf;
+    size_t m_offset;
+    unsigned m_pos;
+
+    explicit debug_str_producer (std::unique_ptr <value_elf_section> sec)
+      : m_dwctx {sec->get_dwctx ()}
+      , m_dwarf {get_main_dwarf (m_dwctx->get_dwfl ()).first}
+      , m_offset {0}
+      , m_pos {0}
+    {}
+
+    std::unique_ptr <value>
+    next () override
+    {
+      size_t len;
+      char const *nextstr = dwarf_getstring (m_dwarf, m_offset, &len);
+      if (nextstr == nullptr)
+	return nullptr;
+
+      size_t off = m_offset;
+      m_offset += len + 1;
+      return std::make_unique <value_strtab_entry> (std::string {nextstr, len},
+						    off, m_pos++);
+    }
+  };
+}
+
+std::unique_ptr <value_producer <value>>
+op_entry_elfscn::operate (std::unique_ptr <value_elf_section> a) const
+{
+  std::shared_ptr <dwfl_context> dwctx = a->get_dwctx ();
+  Elf_Scn *scn = a->get_scn ();
+  GElf_Shdr shdr = ::getshdr (scn);
+
+  switch (shdr.sh_type)
+    {
+    case SHT_STRTAB:
+      return std::make_unique <::strtab_producer> (std::move (a));
+    }
+
+  std::string name = getscnname (*a);
+  if (name == ".debug_str")
+    return std::make_unique <::debug_str_producer> (std::move (a));
+
+  return nullptr;
+}
+
+std::string
+op_entry_elfscn::docstring ()
+{
+  return
+R"docstring(
+
+This word takes the ``T_ELFSCN`` value on TOS, and yields once for each entry of
+that section. What entry that will be depends on the section type. E.g. sections
+with type of SHT_STRTAB and DWARF string sections will yield values of type
+``T_STRTAB_ENTRY``.
+
+xxx
+
+)docstring";
+}

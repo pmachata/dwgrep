@@ -360,5 +360,13 @@ ELF_ALL_KNOWN_EI
     voc.add (std::make_shared <overloaded_op_builtin> ("section", t));
   }
 
+  {
+    auto t = std::make_shared <overload_tab> ();
+
+    t->add_op_overload <op_entry_elfscn> ();
+
+    voc.add (std::make_shared <overloaded_op_builtin> ("entry", t));
+  }
+
   return ret;
 }
