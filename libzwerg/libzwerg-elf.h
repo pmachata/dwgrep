@@ -93,6 +93,7 @@ extern "C" {
   // Return an ELF file handle that ELFSYM, which shall be an ELF
   // symbol value, comes from.
   Elf *zw_value_elfsym_elf (zw_value const *elfsym);
+    // xxx?
 
   // Return a DWARF (ELF) value referencing the file that ELFSYM,
   // which shall be an ELF symbol value, comes from.  Returns NULL on

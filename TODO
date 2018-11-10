@@ -758,21 +758,38 @@ A typical use would be in testing whether a bit is set, as in::
 **  T_PHDR
 **  T_ELFSCN
 *** *name :: T_ELFSCN -> T_STR
-***  string :: T_ELFSCN ->* T_STRTAB_ENTRY
-     Accesses the section as a string table. Yields each string in the section.
-***  symbol :: T_ELFSCN ->* T_ELFSYM
-     This needs to look up string table for symbols within this section, so not
-     every section can be treated like this.
-***  dyn :: T_ELFSCN ->* T_ELFDYN
-***  somerecord :: T_ELFSCN ->* T_THATRECORD
-     Elf sections often hold some sort of records. Allow reinterpreting the data
-     accordingly. I'm thinking e.g. relocations, dyn, versions, whatever.
+***  entry :: T_ELFSCN ->* T_???
+     Yield section entries according to the type of the section. E.g. SHT_STRTAB
+     would yield T_STRTAB_ENTRY, SHT_SYMTAB would yield T_ELFSYM, SHT_DYNAMIC
+     would yield T_ELFDYN, etc.
+*** *entry :: T_ELFSCN(SHT_STRTAB) ->* T_STRTAB_ENTRY
+*** *entry :: T_ELFSCN(.debug_str) ->* T_STRTAB_ENTRY
+***  entry :: T_ELFSCN(SHT_SYMTAB) ->* T_ELFSYM
+***  entry :: T_ELFSCN(SHT_DYNSYM) ->* T_ELFSYM
+***  entry :: T_ELFSCN(SHT_REL) ->* T_ELFREL
+***  entry :: T_ELFSCN(SHT_RELA) ->* T_ELFREL
+***  entry :: T_ELFSCN(SHT_DYNAMIC) ->* T_ELFDYN
+***  entry :: T_ELFSCN(SHT_NOTE) ->* ???
+***  entry :: T_ELFSCN(SHT_GNU_verxxx) ->* ???
 ***  something :: T_ELFSCN ->* T_CONST or T_SEQ
      Accesses the section as a list of bytes. Or maybe ints. Or maybe it's
      configurable.
 ***  read :: T_ELFSCN T_CONST -> T_CONST
      Reads a quantity at a given offset. Unclear how to specify the width of the
      quantity.
+***  SHT_* :: () -> T_CONST
+     All the section type constants.
+***  stype :: T_ELFSCN -> T_CONST
+     section's sh_type
+***  sflags :: T_ELFSCN -> T_CONST
+***  address :: T_ELFSCN -> T_CONST
+***  offset :: T_ELFSCN -> T_CONST
+***  size :: T_ELFSCN -> T_CONST
+***  link :: T_ELFSCN ->? T_ELFSCN
+***  info xxx? (what does sh_info constain?)
+***  alignment :: T_ELFSCN -> T_CONST
+***  entsize :: T_ELFSCN -> T_CONST
+
 **  T_STRTAB_ENTRY
     This is to represent strings in a string table. It's desirable that these
     behave in all ways as strings, but "offset" is applicable as well.
