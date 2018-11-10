@@ -430,3 +430,43 @@ inspecting the identification array explicitly.
 
 template class op_eident_elf <value_elf>;
 template class op_eident_elf <value_dwarf>;
+
+namespace
+{
+  size_t getshdrstrndx (Elf *elf)
+  {
+    size_t ndx;
+    int err = elf_getshdrstrndx (elf, &ndx);
+    if (err != 0)
+      throw_libelf ();
+    return ndx;
+  }
+}
+
+template <class ValueType>
+value_elf_section
+op_shstr_elf <ValueType>::operate (std::unique_ptr <ValueType> a) const
+{
+  std::shared_ptr <dwfl_context> ctx = a->get_dwctx ();
+  Elf *elf = get_main_elf (ctx->get_dwfl ()).first;
+  size_t ndx = ::getshdrstrndx (elf);
+  return value_elf_section {ctx, ndx, 0};
+}
+
+template <class ValueType>
+std::string
+op_shstr_elf <ValueType>::docstring ()
+{
+  return
+R"docstring(
+
+This word takes the ``T_DWARF`` or ``T_ELF`` value on TOS and yields a section
+that contains section header strings.
+
+xxx
+
+)docstring";
+}
+
+template class op_shstr_elf <value_elf>;
+template class op_shstr_elf <value_dwarf>;

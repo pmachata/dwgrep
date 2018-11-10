@@ -750,7 +750,7 @@ A typical use would be in testing whether a bit is set, as in::
      Yield a constant for each set bit. The yielded constants have the same
      domain as the source operand.
      : Dw elf (@flags bit == EF_SPARC_LEDATA)
-***  shstr :: T_ELF -> T_SECTION
+*** *shstr :: T_ELF -> T_SECTION
      Yield section where section header string table is stored.
 
 **  T_PHDR
