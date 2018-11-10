@@ -291,7 +291,7 @@ xxx document me
 
 template <class ValueType>
 value_cst
-op_elf_version <ValueType>::operate (std::unique_ptr <ValueType> a) const
+op_version_elf <ValueType>::operate (std::unique_ptr <ValueType> a) const
 {
   auto ee = ehdr (a->get_dwctx ()->get_dwfl ()).e_ident[EI_VERSION];
   return value_cst {constant {ee, &elf_ev_dom ()}, 0};
@@ -299,7 +299,7 @@ op_elf_version <ValueType>::operate (std::unique_ptr <ValueType> a) const
 
 template <class ValueType>
 std::string
-op_elf_version <ValueType>::docstring ()
+op_version_elf <ValueType>::docstring ()
 {
   return
 R"docstring(
@@ -310,13 +310,13 @@ header version number from the ELF identifier.
 )docstring";
 }
 
-template class op_elf_version <value_elf>;
-template class op_elf_version <value_dwarf>;
+template class op_version_elf <value_elf>;
+template class op_version_elf <value_dwarf>;
 
 
 template <class ValueType>
 value_cst
-op_elf_eversion <ValueType>::operate (std::unique_ptr <ValueType> a) const
+op_eversion_elf <ValueType>::operate (std::unique_ptr <ValueType> a) const
 {
   auto ee = ehdr (a->get_dwctx ()->get_dwfl ()).e_version;
   return value_cst {constant {ee, &elf_ev_dom ()}, 0};
@@ -324,7 +324,7 @@ op_elf_eversion <ValueType>::operate (std::unique_ptr <ValueType> a) const
 
 template <class ValueType>
 std::string
-op_elf_eversion <ValueType>::docstring ()
+op_eversion_elf <ValueType>::docstring ()
 {
   return
 R"docstring(
@@ -335,13 +335,13 @@ file version. This is unlike ``version``, which yields ELF header version.
 )docstring";
 }
 
-template class op_elf_eversion <value_elf>;
-template class op_elf_eversion <value_dwarf>;
+template class op_eversion_elf <value_elf>;
+template class op_eversion_elf <value_dwarf>;
 
 
 template <class ValueType>
 value_cst
-op_elf_eentry <ValueType>::operate (std::unique_ptr <ValueType> a) const
+op_eentry_elf <ValueType>::operate (std::unique_ptr <ValueType> a) const
 {
   auto ee = ehdr (a->get_dwctx ()->get_dwfl ()).e_entry;
   return value_cst {constant {ee, &dw_address_dom ()}, 0};
@@ -349,7 +349,7 @@ op_elf_eentry <ValueType>::operate (std::unique_ptr <ValueType> a) const
 
 template <class ValueType>
 std::string
-op_elf_eentry <ValueType>::docstring ()
+op_eentry_elf <ValueType>::docstring ()
 {
   return
 R"docstring(
@@ -360,13 +360,13 @@ entry point address.
 )docstring";
 }
 
-template class op_elf_eentry <value_elf>;
-template class op_elf_eentry <value_dwarf>;
+template class op_eentry_elf <value_elf>;
+template class op_eentry_elf <value_dwarf>;
 
 
 template <class ValueType>
 value_cst
-op_elf_abiversion <ValueType>::operate (std::unique_ptr <ValueType> a) const
+op_abiversion_elf <ValueType>::operate (std::unique_ptr <ValueType> a) const
 {
   auto ee = ehdr (a->get_dwctx ()->get_dwfl ()).e_ident[EI_ABIVERSION];
   return value_cst {constant {ee, &dec_constant_dom}, 0};
@@ -374,7 +374,7 @@ op_elf_abiversion <ValueType>::operate (std::unique_ptr <ValueType> a) const
 
 template <class ValueType>
 std::string
-op_elf_abiversion <ValueType>::docstring ()
+op_abiversion_elf <ValueType>::docstring ()
 {
   return
 R"docstring(
@@ -385,13 +385,13 @@ version, as stored on index ``EI_ABIVERSION`` of ELF identification bytes.
 )docstring";
 }
 
-template class op_elf_abiversion <value_elf>;
-template class op_elf_abiversion <value_dwarf>;
+template class op_abiversion_elf <value_elf>;
+template class op_abiversion_elf <value_dwarf>;
 
 
 template <class ValueType>
 value_seq
-op_elf_eident <ValueType>::operate (std::unique_ptr <ValueType> a) const
+op_eident_elf <ValueType>::operate (std::unique_ptr <ValueType> a) const
 {
   auto const &eh = ehdr (a->get_dwctx ()->get_dwfl ());
   std::vector <std::unique_ptr <value>> seq;
@@ -409,7 +409,7 @@ op_elf_eident <ValueType>::operate (std::unique_ptr <ValueType> a) const
 
 template <class ValueType>
 std::string
-op_elf_eident <ValueType>::docstring ()
+op_eident_elf <ValueType>::docstring ()
 {
   return
 R"docstring(
@@ -428,5 +428,5 @@ inspecting the identification array explicitly.
 )docstring";
 }
 
-template class op_elf_eident <value_elf>;
-template class op_elf_eident <value_dwarf>;
+template class op_eident_elf <value_elf>;
+template class op_eident_elf <value_dwarf>;

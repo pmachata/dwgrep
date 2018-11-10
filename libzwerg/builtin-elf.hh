@@ -106,7 +106,7 @@ struct elf_eclass_def
 };
 
 template <class ValueType>
-struct op_elf_eclass
+struct op_eclass_elf
   : public op_elf_simple_value <elf_eclass_def, ValueType>
 {
   using op_elf_simple_value <elf_eclass_def, ValueType>
@@ -114,7 +114,7 @@ struct op_elf_eclass
 };
 
 template <class ValueType>
-struct pred_elf_eclass
+struct pred_eclass_elf
   : public pred_elf_simple_value <elf_eclass_def, ValueType>
 {
   using pred_elf_simple_value <elf_eclass_def, ValueType>
@@ -130,7 +130,7 @@ struct elf_edata_def
 };
 
 template <class ValueType>
-struct op_elf_edata
+struct op_edata_elf
   : public op_elf_simple_value <elf_edata_def, ValueType>
 {
   using op_elf_simple_value <elf_edata_def, ValueType>
@@ -138,7 +138,7 @@ struct op_elf_edata
 };
 
 template <class ValueType>
-struct pred_elf_edata
+struct pred_edata_elf
   : public pred_elf_simple_value <elf_edata_def, ValueType>
 {
   using pred_elf_simple_value <elf_edata_def, ValueType>
@@ -154,7 +154,7 @@ struct elf_etype_def
 };
 
 template <class ValueType>
-struct op_elf_etype
+struct op_etype_elf
   : public op_elf_simple_value <elf_etype_def, ValueType>
 {
   using op_elf_simple_value <elf_etype_def, ValueType>
@@ -162,7 +162,7 @@ struct op_elf_etype
 };
 
 template <class ValueType>
-struct pred_elf_etype
+struct pred_etype_elf
   : public pred_elf_simple_value <elf_etype_def, ValueType>
 {
   using pred_elf_simple_value <elf_etype_def, ValueType>
@@ -178,7 +178,7 @@ struct elf_emachine_def
 };
 
 template <class ValueType>
-struct op_elf_emachine
+struct op_emachine_elf
   : public op_elf_simple_value <elf_emachine_def, ValueType>
 {
   using op_elf_simple_value <elf_emachine_def, ValueType>
@@ -186,7 +186,7 @@ struct op_elf_emachine
 };
 
 template <class ValueType>
-struct pred_elf_emachine
+struct pred_emachine_elf
   : public pred_elf_simple_value <elf_emachine_def, ValueType>
 {
   using pred_elf_simple_value <elf_emachine_def, ValueType>
@@ -202,7 +202,7 @@ struct elf_eflags_def
 };
 
 template <class ValueType>
-struct op_elf_eflags
+struct op_eflags_elf
   : public op_elf_simple_value <elf_eflags_def, ValueType>
 {
   using op_elf_simple_value <elf_eflags_def, ValueType>
@@ -218,7 +218,7 @@ struct elf_osabi_def
 };
 
 template <class ValueType>
-struct op_elf_osabi
+struct op_osabi_elf
   : public op_elf_simple_value <elf_osabi_def, ValueType>
 {
   using op_elf_simple_value <elf_osabi_def, ValueType>
@@ -226,7 +226,7 @@ struct op_elf_osabi
 };
 
 template <class ValueType>
-struct pred_elf_osabi
+struct pred_osabi_elf
   : public pred_elf_simple_value <elf_osabi_def, ValueType>
 {
   using pred_elf_simple_value <elf_osabi_def, ValueType>
@@ -235,7 +235,7 @@ struct pred_elf_osabi
 
 
 template <class ValueType>
-struct op_elf_version
+struct op_version_elf
   : public op_once_overload <value_cst, ValueType>
 {
   using op_once_overload <value_cst, ValueType>::op_once_overload;
@@ -245,7 +245,7 @@ struct op_elf_version
 };
 
 template <class ValueType>
-struct op_elf_eversion
+struct op_eversion_elf
   : public op_once_overload <value_cst, ValueType>
 {
   using op_once_overload <value_cst, ValueType>::op_once_overload;
@@ -255,7 +255,7 @@ struct op_elf_eversion
 };
 
 template <class ValueType>
-struct op_elf_eentry
+struct op_eentry_elf
   : public op_once_overload <value_cst, ValueType>
 {
   using op_once_overload <value_cst, ValueType>::op_once_overload;
@@ -265,7 +265,7 @@ struct op_elf_eentry
 };
 
 template <class ValueType>
-struct op_elf_abiversion
+struct op_abiversion_elf
   : public op_once_overload <value_cst, ValueType>
 {
   using op_once_overload <value_cst, ValueType>::op_once_overload;
@@ -275,7 +275,7 @@ struct op_elf_abiversion
 };
 
 template <class ValueType>
-struct op_elf_eident
+struct op_eident_elf
   : public op_once_overload <value_seq, ValueType>
 {
   using op_once_overload <value_seq, ValueType>::op_once_overload;
