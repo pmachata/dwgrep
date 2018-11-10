@@ -351,5 +351,14 @@ ELF_ALL_KNOWN_EI
     voc.add (std::make_shared <overloaded_op_builtin> ("shstr", t));
   }
 
+  {
+    auto t = std::make_shared <overload_tab> ();
+
+    t->add_op_overload <op_section_elf <value_elf>> ();
+    t->add_op_overload <op_section_elf <value_dwarf>> ();
+
+    voc.add (std::make_shared <overloaded_op_builtin> ("section", t));
+  }
+
   return ret;
 }

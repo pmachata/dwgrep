@@ -431,6 +431,7 @@ inspecting the identification array explicitly.
 template class op_eident_elf <value_elf>;
 template class op_eident_elf <value_dwarf>;
 
+
 namespace
 {
   size_t getshdrstrndx (Elf *elf)
@@ -478,6 +479,60 @@ xxx
 
 template class op_shstr_elf <value_elf>;
 template class op_shstr_elf <value_dwarf>;
+
+
+namespace
+{
+  struct section_producer
+    : public value_producer <value_elf_section>
+  {
+    std::shared_ptr <dwfl_context> m_dwctx;
+    Elf *m_elf;
+    unsigned m_pos;
+    Elf_Scn *m_scn;
+
+    template <class ValueType>
+    explicit section_producer (std::unique_ptr <ValueType> elf)
+      : m_dwctx {elf->get_dwctx ()}
+      , m_elf {get_main_elf (m_dwctx->get_dwfl ()).first}
+      , m_pos {0}
+      , m_scn {nullptr}
+    {}
+
+    std::unique_ptr <value_elf_section>
+    next () override
+    {
+      m_scn = elf_nextscn (m_elf, m_scn);
+      if (m_scn == nullptr)
+	return nullptr;
+      return std::make_unique <value_elf_section> (m_dwctx, m_scn, m_pos++);
+    }
+  };
+}
+
+template <class ValueType>
+std::unique_ptr <value_producer <value_elf_section>>
+op_section_elf <ValueType>::operate (std::unique_ptr <ValueType> val) const
+{
+  return std::make_unique <section_producer> (std::move (val));
+}
+
+template <class ValueType>
+std::string
+op_section_elf <ValueType>::docstring ()
+{
+  return
+R"docstring(
+
+This word takes the ``T_ELF`` value on TOS and yields once for each ELF section
+in that file.
+
+)docstring";
+}
+
+template class op_section_elf <value_elf>;
+template class op_section_elf <value_dwarf>;
+
 
 value_str
 op_name_elfscn::operate (std::unique_ptr <value_elf_section> a) const

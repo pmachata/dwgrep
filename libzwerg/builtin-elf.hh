@@ -294,6 +294,18 @@ struct op_shstr_elf
   static std::string docstring ();
 };
 
+template <class ValueType>
+struct op_section_elf
+  : public op_yielding_overload <value_elf_section, ValueType>
+{
+  using op_yielding_overload <value_elf_section,
+			      ValueType>::op_yielding_overload;
+
+  std::unique_ptr <value_producer <value_elf_section>>
+  operate (std::unique_ptr <ValueType> val) const override;
+  static std::string docstring ();
+};
+
 struct op_name_elfscn
   : public op_once_overload <value_str, value_elf_section>
 {
