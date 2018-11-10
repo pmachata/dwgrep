@@ -50,6 +50,7 @@ dwgrep_vocabulary_elf ()
 
     t->add_op_overload <op_name_symbol> ();
     t->add_op_overload <op_name_elf> ();
+    t->add_op_overload <op_name_elfscn> ();
 
     voc.add (std::make_shared <overloaded_op_builtin> ("name", t));
   }

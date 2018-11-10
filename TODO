@@ -755,6 +755,7 @@ A typical use would be in testing whether a bit is set, as in::
 
 **  T_PHDR
 **  T_SECTION
+*** *name :: T_SECTION -> T_STR
 ***  string :: T_SECTION ->* T_STRTAB_ENTRY
      Accesses the section as a string table. Yields each string in the section.
 ***  symbol :: T_SECTION ->* T_ELFSYM
