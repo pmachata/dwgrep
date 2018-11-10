@@ -139,6 +139,7 @@ private:
   void dump_elfsym (std::ostream &os, zw_value const &val, format fmt);
   void dump_elf (std::ostream &os, zw_value const &val, format fmt);
   void dump_elfscn (std::ostream &os, zw_value const &val, format fmt);
+  void dump_strtab_entry (std::ostream &os, zw_value const &val, format fmt);
   void dump_named_constant (std::ostream &os, unsigned cst, zw_cdom const &dom);
 };
 
@@ -473,6 +474,17 @@ dumper::dump_elfscn (std::ostream &os, zw_value const &val, format fmt)
 }
 
 void
+dumper::dump_strtab_entry (std::ostream &os, zw_value const &val, format fmt)
+{
+  {
+    ios_flag_saver ifs {os};
+    os << "[" << std::hex << std::setw (5)
+       << zw_value_strtab_entry_offset (&val) << "]  ";
+  }
+  os << '"' << zw_value_strtab_entry_string (&val) << '"';
+}
+
+void
 dumper::dump_value (std::ostream &os, zw_value const &val, format fmt)
 {
   bool brackets;
@@ -513,6 +525,8 @@ dumper::dump_value (std::ostream &os, zw_value const &val, format fmt)
     dump_elf (os, val, fmt);
   else if (zw_value_is_elfscn (&val))
     dump_elfscn (os, val, fmt);
+  else if (zw_value_is_strtab_entry (&val))
+    dump_strtab_entry (os, val, fmt);
   else
     os << (/* assert (false), */"<unknown value type>");
 

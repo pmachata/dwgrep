@@ -30,6 +30,7 @@
 
 #include "value-elf.hh"
 #include "dwpp.hh"
+#include "flag_saver.hh"
 
 Dwfl_Module *
 get_sole_module (Dwfl *dwfl)
@@ -147,4 +148,40 @@ std::unique_ptr <value>
 value_elf_section::clone () const
 {
   return std::make_unique <value_elf_section> (*this);
+}
+
+value_type const value_strtab_entry::vtype
+    = value_type::alloc ("T_STRTAB_ENTRY",
+R"docstring(
+
+xxx document me.
+
+)docstring");
+
+void
+value_strtab_entry::show (std::ostream &o) const
+{
+  m_strval.show (o);
+  ios_flag_saver s {o};
+  o << "@" << std::hex << std::showbase << m_offset;
+}
+
+cmp_result
+value_strtab_entry::cmp (value const &that) const
+{
+  if (auto v = value::as <value_strtab_entry> (&that))
+    {
+      cmp_result r = compare (m_offset, v->m_offset);
+      if (r != cmp_result::equal)
+	return r;
+      return compare (m_strval.get_string (), v->m_strval.get_string ());
+    }
+  else
+    return cmp_result::fail;
+}
+
+std::unique_ptr <value>
+value_strtab_entry::clone () const
+{
+  return std::make_unique <value_strtab_entry> (*this);
 }

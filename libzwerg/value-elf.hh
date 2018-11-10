@@ -30,6 +30,7 @@
 #define VALUE_ELF_H
 
 #include "value.hh"
+#include "value-str.hh"
 #include "dwfl_context.hh"
 #include "value-dw.hh"
 
@@ -102,6 +103,36 @@ public:
 
   Elf_Scn *get_scn () const
   { return m_scn; }
+
+  void show (std::ostream &o) const override;
+  cmp_result cmp (value const &that) const override;
+  std::unique_ptr <value> clone () const override;
+};
+
+// -------------------------------------------------------------------
+// String table entry
+// -------------------------------------------------------------------
+
+class value_strtab_entry
+  : public value
+{
+  value_str m_strval;
+  size_t m_offset;
+
+public:
+  static value_type const vtype;
+
+  value_strtab_entry (std::string str, size_t offset, size_t pos)
+    : value {vtype, pos}
+    , m_strval {std::move (str), pos}
+    , m_offset {offset}
+  {}
+
+  value_str const &get_strval () const
+  { return m_strval; }
+
+  size_t get_offset () const
+  { return m_offset; }
 
   void show (std::ostream &o) const override;
   cmp_result cmp (value const &that) const override;

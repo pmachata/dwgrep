@@ -78,6 +78,12 @@ zw_value_is_elfscn (zw_value const *val)
   return val->is <value_elf_section> ();
 }
 
+bool
+zw_value_is_strtab_entry (zw_value const *val)
+{
+  return val->is <value_strtab_entry> ();
+}
+
 namespace
 {
   value_symbol const &
@@ -130,4 +136,27 @@ zw_value_elf_dwarf (zw_value const *val, zw_error **out_err)
       // get_dwarf caches things, so we need to cast away the const.
       return &const_cast <value_elf &> (elfval (val)).get_dwarf ();
     }, nullptr, out_err);
+}
+
+namespace
+{
+  value_strtab_entry const &
+  strtab_entry (zw_value const *val)
+  {
+    return value::require_as <value_strtab_entry> (val);
+  }
+}
+
+uint64_t
+zw_value_strtab_entry_offset (zw_value const *val)
+{
+  value_strtab_entry const &se = ::strtab_entry (val);
+  return se.get_offset ();
+}
+
+char const *
+zw_value_strtab_entry_string (zw_value const *val)
+{
+  value_strtab_entry const &se = ::strtab_entry (val);
+  return se.get_strval ().get_string ().c_str ();
 }

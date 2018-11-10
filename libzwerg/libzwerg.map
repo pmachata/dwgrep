@@ -136,4 +136,8 @@ LIBZWERG_0.5 {
 	zw_value_elf_dwarf;
 
 	zw_value_is_elfscn;
+
+	zw_value_is_strtab_entry;
+	zw_value_strtab_entry_string;
+	zw_value_strtab_entry_offset;
 } LIBZWERG_0.1;

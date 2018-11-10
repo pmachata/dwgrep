@@ -109,6 +109,20 @@ extern "C" {
   // Return whether VAL is an ELF section value.
   bool zw_value_is_elfscn (zw_value const *val);
 
+
+  /**
+   * String table entries.
+   */
+
+  // Return whether VAL is a string table entry.
+  bool zw_value_is_strtab_entry (zw_value const *val);
+
+  // Return offset associated with STRTABE, which shall be a string table entry.
+  uint64_t zw_value_strtab_entry_offset (zw_value const *strtabe);
+
+  // Return string associated with STRTABE, which shall be a string table entry.
+  char const *zw_value_strtab_entry_string (zw_value const *strtabe);
+
 #ifdef __cplusplus
 }
 #endif
