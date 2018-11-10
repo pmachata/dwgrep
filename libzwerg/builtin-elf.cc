@@ -534,21 +534,28 @@ template class op_section_elf <value_elf>;
 template class op_section_elf <value_dwarf>;
 
 
+namespace
+{
+  std::string getscnname (value_elf_section &sec)
+  {
+    GElf_Shdr shdr = ::getshdr (sec.get_scn ());
+
+    std::shared_ptr <dwfl_context> ctx = sec.get_dwctx ();
+    Elf *elf = get_main_elf (ctx->get_dwfl ()).first;
+
+    size_t ndx = ::getshdrstrndx (elf);
+    char *name = elf_strptr (elf, ndx, shdr.sh_name);
+    if (name == nullptr)
+      throw_libelf ();
+
+    return {name};
+  }
+}
+
 value_str
 op_name_elfscn::operate (std::unique_ptr <value_elf_section> a) const
 {
-  Elf_Scn *scn = a->get_scn ();
-  GElf_Shdr shdr = ::getshdr (scn);
-
-  std::shared_ptr <dwfl_context> ctx = a->get_dwctx ();
-  Elf *elf = get_main_elf (ctx->get_dwfl ()).first;
-
-  size_t ndx = ::getshdrstrndx (elf);
-  char *name = elf_strptr (elf, ndx, shdr.sh_name);
-  if (name == nullptr)
-    throw_libelf ();
-
-  return value_str {std::string {name}, 0};
+  return value_str {::getscnname (*a), 0};
 }
 
 std::string
