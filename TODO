@@ -737,7 +737,7 @@
 *** *version :: T_ELF -> T_CONST
 *** *eentry :: T_ELF -> T_ASET
 ***  phdr :: T_ELF ->* T_PHDR
-***  section :: T_ELF ->* T_SECTION
+***  section :: T_ELF ->* T_ELFSCN
 *** *eflags :: T_ELF -> T_CONST
      Add the following example to value-cst.cc when "eflags" is done:
 
@@ -750,25 +750,25 @@ A typical use would be in testing whether a bit is set, as in::
      Yield a constant for each set bit. The yielded constants have the same
      domain as the source operand.
      : Dw elf (@flags bit == EF_SPARC_LEDATA)
-*** *shstr :: T_ELF -> T_SECTION
+*** *shstr :: T_ELF -> T_ELFSCN
      Yield section where section header string table is stored.
 
 **  T_PHDR
-**  T_SECTION
-*** *name :: T_SECTION -> T_STR
-***  string :: T_SECTION ->* T_STRTAB_ENTRY
+**  T_ELFSCN
+*** *name :: T_ELFSCN -> T_STR
+***  string :: T_ELFSCN ->* T_STRTAB_ENTRY
      Accesses the section as a string table. Yields each string in the section.
-***  symbol :: T_SECTION ->* T_ELFSYM
+***  symbol :: T_ELFSCN ->* T_ELFSYM
      This needs to look up string table for symbols within this section, so not
      every section can be treated like this.
-***  dyn :: T_SECTION ->* T_ELFDYN
-***  somerecord :: T_SECTION ->* T_THATRECORD
+***  dyn :: T_ELFSCN ->* T_ELFDYN
+***  somerecord :: T_ELFSCN ->* T_THATRECORD
      Elf sections often hold some sort of records. Allow reinterpreting the data
      accordingly. I'm thinking e.g. relocations, dyn, versions, whatever.
-***  something :: T_SECTION ->* T_CONST or T_SEQ
+***  something :: T_ELFSCN ->* T_CONST or T_SEQ
      Accesses the section as a list of bytes. Or maybe ints. Or maybe it's
      configurable.
-***  read :: T_SECTION T_CONST -> T_CONST
+***  read :: T_ELFSCN T_CONST -> T_CONST
      Reads a quantity at a given offset. Unclear how to specify the width of the
      quantity.
 **  T_STRTAB_ENTRY
@@ -788,11 +788,11 @@ A typical use would be in testing whether a bit is set, as in::
 
 **  T_ELFDYN
     In addition to following, we would also have a suite of ?DT_* and !DT_*
-    words applicable to T_ELFDYN, T_SECTION, T_ELF and possibly T_DWARF as well.
+    words applicable to T_ELFDYN, T_ELFSCN, T_ELF and possibly T_DWARF as well.
     The meaning would be:
     : let ?DT_$X<T_DWARF> := ?{ elf dyn label == $X };
     : let ?DT_$X<T_ELF> := ?{ dyn label == $X };
-    : let ?DT_$X<T_SECTION> := ?{ dyn label == $X };
+    : let ?DT_$X<T_ELFSCN> := ?{ dyn label == $X };
     : let ?DT_$X<T_ELFDYN> := ?{ label == $X };
     Likewise there would be a suite of @DT_* like this:
     : let @DT_$X<T_DWARF> := {elf dyn (label == $X) value};
