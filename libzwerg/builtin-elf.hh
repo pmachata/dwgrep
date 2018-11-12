@@ -335,4 +335,13 @@ struct op_link_elfscn
   static std::string docstring ();
 };
 
+struct op_size_elfscn
+  : public op_once_overload <value_cst, value_elf_section>
+{
+  using op_once_overload::op_once_overload;
+
+  value_cst operate (std::unique_ptr <value_elf_section> a) const override;
+  static std::string docstring ();
+};
+
 #endif /* BUILTIN_ELF_H */

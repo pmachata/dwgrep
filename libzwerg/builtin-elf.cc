@@ -771,3 +771,21 @@ xxx
 
 )docstring";
 }
+
+value_cst
+op_size_elfscn::operate (std::unique_ptr <value_elf_section> a) const
+{
+  GElf_Shdr shdr = ::getshdr (a->get_scn ());
+  return value_cst {constant {shdr.sh_size, &dec_constant_dom}, 0};
+}
+
+std::string
+op_size_elfscn::docstring ()
+{
+  return
+R"docstring(
+
+xxx
+
+)docstring";
+}
