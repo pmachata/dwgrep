@@ -460,7 +460,7 @@ op_shstr_elf <ValueType>::operate (std::unique_ptr <ValueType> a) const
   std::shared_ptr <dwfl_context> ctx = a->get_dwctx ();
   Elf *elf = get_main_elf (ctx->get_dwfl ()).first;
   size_t ndx = ::getshdrstrndx (elf);
-  return value_elf_section {ctx, ndx, 0};
+  return value_elf_section {ctx, ndx, 0, a->get_doneness ()};
 }
 
 template <class ValueType>
@@ -491,6 +491,7 @@ namespace
     Elf *m_elf;
     unsigned m_pos;
     Elf_Scn *m_scn;
+    doneness m_d;
 
     template <class ValueType>
     explicit section_producer (std::unique_ptr <ValueType> elf)
@@ -498,6 +499,7 @@ namespace
       , m_elf {get_main_elf (m_dwctx->get_dwfl ()).first}
       , m_pos {0}
       , m_scn {nullptr}
+      , m_d {elf->get_doneness ()}
     {}
 
     std::unique_ptr <value_elf_section>
@@ -506,7 +508,8 @@ namespace
       m_scn = elf_nextscn (m_elf, m_scn);
       if (m_scn == nullptr)
 	return nullptr;
-      return std::make_unique <value_elf_section> (m_dwctx, m_scn, m_pos++);
+      return std::make_unique <value_elf_section> (m_dwctx, m_scn,
+						   m_pos++, m_d);
     }
   };
 }
@@ -656,6 +659,7 @@ namespace
     size_t m_ndx;
     size_t m_count;
     unsigned m_pos;
+    doneness m_d;
 
     static Elf_Data *get_data (Elf_Scn *scn)
     {
@@ -686,6 +690,7 @@ namespace
       , m_ndx {0}
       , m_count {get_count (m_elf, m_data)}
       , m_pos {0}
+      , m_d {sec->get_doneness ()}
     {}
 
     std::unique_ptr <value>
@@ -699,7 +704,7 @@ namespace
 
       char *name = elf_strptr (m_elf, m_strtabndx, sym.st_name);
       auto ret = std::make_unique <value_symbol> (m_dwctx, sym, name, m_ndx,
-						  m_pos++, doneness::cooked); // xxx
+						  m_pos++, m_d);
       m_ndx++;
       return ret;
     }

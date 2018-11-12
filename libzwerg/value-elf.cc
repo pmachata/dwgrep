@@ -124,16 +124,17 @@ xxx document me.
 )docstring");
 
 value_elf_section::value_elf_section (std::shared_ptr <dwfl_context> dwctx,
-				      Elf_Scn *scn,
-				      size_t pos)
+				      Elf_Scn *scn, size_t pos, doneness d)
   : value {vtype, pos}
+  , doneness_aspect {d}
   , m_dwctx {dwctx}
   , m_scn {scn}
 {}
 
 value_elf_section::value_elf_section (std::shared_ptr <dwfl_context> dwctx,
-				      size_t index, size_t pos)
+				      size_t index, size_t pos, doneness d)
   : value {vtype, pos}
+  , doneness_aspect {d}
   , m_dwctx {dwctx}
   , m_scn {elf_getscn (get_main_elf (dwctx->get_dwfl ()).first, index)}
 {

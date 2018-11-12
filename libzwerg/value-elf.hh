@@ -87,6 +87,7 @@ public:
 
 class value_elf_section
   : public value
+  , public doneness_aspect
 {
   std::shared_ptr <dwfl_context> m_dwctx;
   Elf_Scn *m_scn;
@@ -95,9 +96,9 @@ public:
   static value_type const vtype;
 
   value_elf_section (std::shared_ptr <dwfl_context> dwctx, Elf_Scn *scn,
-		     size_t pos);
+		     size_t pos, doneness d);
   value_elf_section (std::shared_ptr <dwfl_context> dwctx, size_t index,
-		     size_t pos);
+		     size_t pos, doneness d);
 
   std::shared_ptr <dwfl_context> get_dwctx () const
   { return m_dwctx; }
