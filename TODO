@@ -717,6 +717,7 @@
      The resulting file should be a view of this single file.
 *** *symbol :: T_ELF ->* T_ELFSYM
      Emits a subset of symbols from the given ELF file.
+***  symbol :: .ar file ->* T_ELFSYM
 *** *name :: T_ELF -> T_STR
 ***  dynsym :: T_ELF ->* T_ELFSYM || T_DWARF ->* T_ELFSYM
      Like symbol, but only yields dynamic symbols
@@ -764,13 +765,18 @@ A typical use would be in testing whether a bit is set, as in::
      would yield T_ELFDYN, etc.
 *** *entry :: T_ELFSCN(SHT_STRTAB) ->* T_STRTAB_ENTRY
 *** *entry :: T_ELFSCN(.debug_str) ->* T_STRTAB_ENTRY
-***  entry :: T_ELFSCN(SHT_SYMTAB) ->* T_ELFSYM
-***  entry :: T_ELFSCN(SHT_DYNSYM) ->* T_ELFSYM
+*** *entry :: T_ELFSCN(SHT_SYMTAB) ->* T_ELFSYM
+*** *entry :: T_ELFSCN(SHT_DYNSYM) ->* T_ELFSYM
 ***  entry :: T_ELFSCN(SHT_REL) ->* T_ELFREL
 ***  entry :: T_ELFSCN(SHT_RELA) ->* T_ELFREL
 ***  entry :: T_ELFSCN(SHT_DYNAMIC) ->* T_ELFDYN
 ***  entry :: T_ELFSCN(SHT_NOTE) ->* ???
 ***  entry :: T_ELFSCN(SHT_GNU_verxxx) ->* ???
+***  entry :: T_ELFSCN(.debug_xxx) ->* T_various ???
+     The idea is to allow dumping a particular section. The code would defer to
+     the routines defined in libzwerg-dw. If value_dwarf is considered part of
+     libzwerg-dw, the dependency of libzwerg-elf on libzwerg-dw is already
+     there, so this is not new.
 ***  something :: T_ELFSCN ->* T_CONST or T_SEQ
      Accesses the section as a list of bytes. Or maybe ints. Or maybe it's
      configurable.
