@@ -749,3 +749,25 @@ xxx
 
 )docstring";
 }
+
+std::unique_ptr <value_elf_section>
+op_link_elfscn::operate (std::unique_ptr <value_elf_section> a) const
+{
+  GElf_Shdr shdr = ::getshdr (a->get_scn ());
+  if (shdr.sh_link == 0)
+    return nullptr;
+
+  return std::make_unique <value_elf_section> (a->get_dwctx (), shdr.sh_link,
+					       0, a->get_doneness ());
+}
+
+std::string
+op_link_elfscn::docstring ()
+{
+  return
+R"docstring(
+
+xxx
+
+)docstring";
+}

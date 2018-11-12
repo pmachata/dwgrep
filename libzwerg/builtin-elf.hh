@@ -325,4 +325,14 @@ struct op_entry_elfscn
   static std::string docstring ();
 };
 
+struct op_link_elfscn
+  : public op_overload <value_elf_section, value_elf_section>
+{
+  using op_overload::op_overload;
+
+  std::unique_ptr <value_elf_section>
+  operate (std::unique_ptr <value_elf_section> a) const override;
+  static std::string docstring ();
+};
+
 #endif /* BUILTIN_ELF_H */
