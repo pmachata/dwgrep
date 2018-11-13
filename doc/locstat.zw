@@ -1,0 +1,52 @@
+let seq := {|B| (1 add (< B))*};
+
+[
+entry
+
+if ?DW_TAG_formal_parameter then (
+  // Of formal parameters we ignore those that are children of
+  // subprograms that are themselves declarations.
+  ?(parent !DW_TAG_subroutine_type !(@DW_AT_declaration == true))
+) else (
+  ?DW_TAG_variable
+)
+
+// Ignore those that are just declarations or artificial.
+!(@DW_AT_declaration == true)
+!(@DW_AT_artificial == true)
+
+// let bool := {|Pred| ?(Pred) true || false};
+// let has_loc := {@DW_AT_location} bool
+let has_loc := (?(@DW_AT_location) true || false);
+
+// Also ignore extern globals -- these have DW_AT_external and no
+// DW_AT_location.
+!((@DW_AT_external == true) (has_loc == true))
+
+let ranges := [(!(address) parent)* address];
+
+let coverage :=
+   if ?DW_AT_const_value then 100
+   else if (has_loc == false) then 0
+   else (
+     let sum := {0 (over elem (pos == 0) add
+     		    swap [|A| A elem (pos != 0)] swap)*
+		 swap (== []) drop};
+
+     let ranges := [(!(address) parent)* address];
+     let loc := [@AT_location ?(elem) address];
+     [let rr := ranges elem;
+      let ll := loc elem ?(rr ?overlaps);
+      let cov_high := rr high ll high swap? ?gt;
+      let cov_low := rr low ll low swap? ?lt;
+      cov_high cov_low sub] sum 100 mul
+     [let e := ranges elem; e high e low sub] sum
+     if (== 0) then 0 else (div dec)
+   );
+
+coverage
+]
+
+# Frequency table.  Shows number of occurences of each coverage
+# percentage.
+[|A| 0 101 seq [A elem (== swap)] length]
