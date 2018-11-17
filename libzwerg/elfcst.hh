@@ -31,6 +31,12 @@
 
 #include "constant.hh"
 
+struct elf_cst_dom
+  : public constant_dom
+{
+  char const *docstring () const override;
+};
+
 zw_cdom const &elf_class_dom ();
 zw_cdom const &elf_data_dom ();
 zw_cdom const &elf_et_dom ();

@@ -32,6 +32,7 @@
 #include "std-memory.hh"
 #include "known-elf.h"
 #include "dwcst.hh"
+#include "elfcst.hh"
 
 value_type const value_symbol::vtype = value_type::alloc ("T_ELFSYM",
 R"docstring(
@@ -116,34 +117,6 @@ namespace
 	show (pfx, buf, o, brv);
       }
   }
-
-  struct elf_cst_dom
-    : public constant_dom
-  {
-    char const *
-    docstring () const override
-    {
-      return
-R"docstring(
-
-These words push to the stack the ELF constants referenced by their
-name.  Individual classes of constants (e.g. ``STT_``, ``STB_``, ...)
-have distinct domains.  Furthermore, constants related to some
-architectures and operating systems may have further subdivided
-constant domains.  Thus, e.g. ``STT_ARM_TFUNC`` and
-``STT_SPARC_REGISTER`` don't compare equal even though they are both
-``STT_`` constants with the same underlying value::
-
-	$ dwgrep -e '[(STT_SPARC_REGISTER, STT_ARM_TFUNC, STB_MIPS_SPLIT_COMMON) value]'
-	[13, 13, 13]
-	$ dwgrep -c -e 'STT_SPARC_REGISTER == STT_ARM_TFUNC'
-	0
-	$ dwgrep -c -e 'STT_SPARC_REGISTER == STB_MIPS_SPLIT_COMMON'
-	0
-
-)docstring";
-    }
-  };
 
 #define ELF_ONE_KNOWN_STT(SHORT, LONG)		\
   case LONG:					\

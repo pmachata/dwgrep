@@ -21,8 +21,33 @@
 
 #include "constant.hh"
 #include "dwcst.hh"
+#include "elfcst.hh"
 #include "known-elf.h"
 #include "known-elf-extra.h"
+
+char const *
+elf_cst_dom::docstring () const
+{
+  return
+    R"docstring(
+
+These words push to the stack the ELF constants referenced by their
+name.  Individual classes of constants (e.g. ``STT_``, ``STB_``, ...)
+have distinct domains.  Furthermore, constants related to some
+architectures and operating systems may have further subdivided
+constant domains.  Thus, e.g. ``STT_ARM_TFUNC`` and
+``STT_SPARC_REGISTER`` don't compare equal even though they are both
+``STT_`` constants with the same underlying value::
+
+	$ dwgrep -e '[(STT_SPARC_REGISTER, STT_ARM_TFUNC, STB_MIPS_SPLIT_COMMON) value]'
+	[13, 13, 13]
+	$ dwgrep -c -e 'STT_SPARC_REGISTER == STT_ARM_TFUNC'
+	0
+	$ dwgrep -c -e 'STT_SPARC_REGISTER == STB_MIPS_SPLIT_COMMON'
+	0
+
+)docstring";
+}
 
 static const char *
 elf_class_string (int cls, brevity brv)
@@ -384,4 +409,10 @@ elf_osabi_dom ()
 {
   static dw_simple_dom dom {"ELFOSABI", elf_osabi_string, 0, 0, true};
   return dom;
+}
+
+zw_cdom const &
+elf_sht_dom (int machine)
+{
+  return dec_constant_dom; // xxx
 }
