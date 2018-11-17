@@ -19,8 +19,8 @@
 
 $1 == "#define" {
   if (match($2, "^(ELFOSABI|ET|EM|SHN|SHT|STB|STT|EF|EI" \
-	        "|STV|PT|DT|AT|ELF_NOTE_OS|R)_([A-Z0-9_]*)$", fields) \
-      && ! match($2, "(_NUM|(LO|HI)(OS|PROC|RESERVE)|RNG(LO|HI))$") \
+	        "|STV|PT|DT|AT|ELF_NOTE_OS|R)_([A-Za-z0-9_]*)$", fields) \
+      && ! match($2, "(_NUM|(LO|HI)(OS|PROC|RESERVE|USER|SUNW)|RNG(LO|HI))$") \
       && ! match($2, "^(DT_ENCODING|DT_(PROC|VAL|ADDR|VERSIONTAG|EXTRA)NUM)$"))
   {
     set = fields[1];
