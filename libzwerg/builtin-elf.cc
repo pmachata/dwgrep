@@ -789,3 +789,23 @@ xxx
 
 )docstring";
 }
+
+value_cst
+op_label_elfscn::operate (std::unique_ptr <value_elf_section> a) const
+{
+  Dwfl *dwfl = a->get_dwctx ()->get_dwfl ();
+  int machine = ::ehdr (dwfl).e_machine;
+  GElf_Shdr shdr = ::getshdr (a->get_scn ());
+  return value_cst {constant {shdr.sh_type, &elf_sht_dom (machine)}, 0};
+}
+
+std::string
+op_label_elfscn::docstring ()
+{
+  return
+R"docstring(
+
+xxx
+
+)docstring";
+}

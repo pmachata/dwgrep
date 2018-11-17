@@ -76,6 +76,7 @@ dwgrep_vocabulary_elf ()
     auto t = std::make_shared <overload_tab> ();
 
     t->add_op_overload <op_label_symbol> ();
+    t->add_op_overload <op_label_elfscn> ();
 
     voc.add (std::make_shared <overloaded_op_builtin> ("label", t));
   }
