@@ -378,5 +378,23 @@ ELF_ALL_KNOWN_EI
     voc.add (std::make_shared <overloaded_op_builtin> ("link", t));
   }
 
+#define ELF_ONE_KNOWN_SHT(NAME, CODE)					\
+  add_builtin_constant (voc, constant (CODE, &elf_sht_dom (machine)), #CODE);
+
+  {
+    constexpr int machine = EM_NONE;
+    ELF_ALL_KNOWN_SHT
+  }
+
+#define ELF_ONE_KNOWN_SHT_ARCH(ARCH)		\
+    {						\
+      constexpr int machine = EM_##ARCH;	\
+      ELF_ALL_KNOWN_SHT_##ARCH			\
+    }
+  ELF_ALL_KNOWN_SHT_ARCHES
+
+#undef ELF_ONE_KNOWN_SHT_ARCH
+#undef ELF_ONE_KNOWN_SHT
+
   return ret;
 }

@@ -14,6 +14,7 @@
    You should have received a copy of the GNU General Public License
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
+#include <climits>
 #include <elf.h>
 #include <iostream>
 #include <map>
@@ -445,8 +446,80 @@ elf_osabi_dom ()
   return dom;
 }
 
+namespace
+{
+#define ELF_ONE_KNOWN_SHT(SHORT, LONG)		\
+  case LONG:					\
+    return show ("SHT", #SHORT, o, brv);
+
+  struct elfsym_sht_dom_t
+    : public elf_cst_dom
+  {
+    void
+    show (mpz_class const &v, std::ostream &o, brevity brv) const override
+    {
+      using ::show;
+      switch (int code = v < 0 || v.uval () > INT_MAX ? -1 : v.uval ())
+	{
+	  ELF_ALL_KNOWN_SHT
+	default:
+	  show_unknown ("SHT", code,
+			SHT_LOOS, SHT_HIOS, SHT_LOPROC, SHT_HIPROC, o, brv);
+	}
+    }
+
+    char const *
+    name () const override
+    {
+      return "SHT_";
+    }
+  };
+
+#define ELF_ONE_KNOWN_SHT_ARCH(ARCH)					\
+  struct elfsym_sht_##ARCH##_dom_t					\
+    : public elfsym_sht_dom_t						\
+  {									\
+    void								\
+    show (mpz_class const &v, std::ostream &o, brevity brv) const override \
+    {									\
+      using ::show;							\
+      switch (v < 0 || v.uval () > INT_MAX ? -1 : v.uval ())		\
+	{								\
+	  ELF_ALL_KNOWN_SHT_##ARCH					\
+	}								\
+      elfsym_sht_dom_t::show (v, o, brv);				\
+    }									\
+									\
+    virtual constant_dom const *					\
+    most_enclosing (mpz_class const &v) const override			\
+    {									\
+      if (v < SHT_LOPROC)						\
+	return &elf_sht_dom (EM_NONE);					\
+      return this;							\
+    }									\
+  };
+
+  ELF_ALL_KNOWN_SHT_ARCHES
+
+#undef ELF_ONE_KNOWN_SHT_ARCH
+#undef ELF_ONE_KNOWN_SHT
+}
+
 zw_cdom const &
 elf_sht_dom (int machine)
 {
-  return dec_constant_dom; // xxx
+  switch (machine)
+    {
+#define ELF_ONE_KNOWN_SHT_ARCH(ARCH)		\
+      case EM_##ARCH:				\
+	{					\
+	  static elfsym_sht_##ARCH##_dom_t dom;	\
+	  return dom;				\
+	}
+      ELF_ALL_KNOWN_SHT_ARCHES
+#undef ELF_ONE_KNOWN_SHT_ARCH
+    }
+
+  static elfsym_sht_dom_t dom;
+  return dom;
 }
