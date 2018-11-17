@@ -37,6 +37,10 @@ struct elf_cst_dom
   char const *docstring () const override;
 };
 
+void show_unknown (char const *pfx, int code,
+		   int loos, int hios, int loproc, int hiproc,
+		   std::ostream &o, brevity brv);
+
 zw_cdom const &elf_class_dom ();
 zw_cdom const &elf_data_dom ();
 zw_cdom const &elf_et_dom ();

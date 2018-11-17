@@ -49,6 +49,40 @@ constant domains.  Thus, e.g. ``STT_ARM_TFUNC`` and
 )docstring";
 }
 
+namespace
+{
+  void
+  show (char const *pfx, char const *str, std::ostream &o, brevity brv)
+  {
+    if (brv == brevity::full)
+      o << pfx << '_';
+    o << str;
+  }
+}
+
+void
+show_unknown (char const *pfx, int code,
+	      int loos, int hios, int loproc, int hiproc,
+	      std::ostream &o, brevity brv)
+{
+  char buf[40];
+  if (code >= loos && code <= hios)
+    {
+      sprintf (buf, "LOOS+%d", code - loos);
+      show (pfx, buf, o, brv);
+    }
+  else if (code >= loproc && code <= hiproc)
+    {
+      sprintf (buf, "LOPROC+%d", code - loproc);
+      show (pfx, buf, o, brv);
+    }
+  else
+    {
+      sprintf (buf, "??? (%#x)", code);
+      show (pfx, buf, o, brv);
+    }
+}
+
 static const char *
 elf_class_string (int cls, brevity brv)
 {

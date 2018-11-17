@@ -95,29 +95,6 @@ namespace
     o << str;
   }
 
-  void
-  show_unknown (char const *pfx, int code,
-		int loos, int hios, int loproc, int hiproc,
-		std::ostream &o, brevity brv)
-  {
-    char buf[40];
-    if (code >= loos && code <= hios)
-      {
-	sprintf (buf, "LOOS+%d", code - loos);
-	show (pfx, buf, o, brv);
-      }
-    else if (code >= loproc && code <= hiproc)
-      {
-	sprintf (buf, "LOPROC+%d", code - loproc);
-	show (pfx, buf, o, brv);
-      }
-    else
-      {
-	sprintf (buf, "??? (%#x)", code);
-	show (pfx, buf, o, brv);
-      }
-  }
-
 #define ELF_ONE_KNOWN_STT(SHORT, LONG)		\
   case LONG:					\
     return show ("STT", #SHORT, o, brv);
