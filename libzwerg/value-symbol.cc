@@ -220,7 +220,7 @@ namespace
     virtual constant_dom const *					\
     most_enclosing (mpz_class const &v) const override			\
     {									\
-      if (v < STT_LOOS)							\
+      if (v < STB_LOOS)							\
 	return &elfsym_stb_dom (EM_NONE);				\
       return this;							\
     }									\
