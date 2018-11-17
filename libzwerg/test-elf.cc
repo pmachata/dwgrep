@@ -361,7 +361,26 @@ TEST_F (ElfTest, test_elf)
 
 	    {1, "a1.out", "[eident elem (pos == (EI_MAG1, EI_MAG2, EI_MAG3))]"
 			  " == [69, 76, 70]"},
+
+	    {1, "a1.out", "shstr name == \".shstrtab\""},
+	    {34, "a1.out", "section"},
+	    {71, "a1.out",
+		"section (label == SHT_SYMTAB) entry (type == T_ELFSYM)"},
+	    {3,  "a1.out",
+		"section (label == SHT_DYNSYM) entry (type == T_ELFSYM)"},
+	    {38, "a1.out",
+		"section (name == \".strtab\") entry (type == T_STRTAB_ENTRY)"},
+	    {1,  "a1.out",
+		"section (name == \".rela.dyn\") link (name == \".dynsym\")"
+		" link (name == \".dynstr\") !(link)"},
+	    {1, "a1.out",
+		"[|Dw| Dw section size] =="
+		" [0x1c, 0x20, 0x24, 0x1c, 0x48, 0x38, 0x6, 0x20, 0x18, 0x18,"
+		"  0x18, 0x20, 0x1c8, 0xe, 0x10, 0x2c, 0xa4, 0x10, 0x10, 0x8,"
+		"  0x190, 0x8, 0x20, 0x4, 0x18, 0x58, 0x30, 0x66, 0x4a, 0x38,"
+		"  0x21, 0x150, 0x6a8, 0x21f]"},
 	})
+
     {
       size_t nresults = std::get <0> (entry);
       auto const &fn = std::get <1> (entry);
