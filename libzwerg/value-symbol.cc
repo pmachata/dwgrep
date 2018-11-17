@@ -117,7 +117,7 @@ namespace
       }
   }
 
-  struct elfsym_dom
+  struct elf_cst_dom
     : public constant_dom
   {
     char const *
@@ -150,7 +150,7 @@ constant domains.  Thus, e.g. ``STT_ARM_TFUNC`` and
     return show ("STT", #SHORT, o, brv);
 
   struct elfsym_stt_dom_t
-    : public elfsym_dom
+    : public elf_cst_dom
   {
     void
     show (mpz_class const &v, std::ostream &o, brevity brv) const override
@@ -207,7 +207,7 @@ constant domains.  Thus, e.g. ``STT_ARM_TFUNC`` and
     return show ("STB", #SHORT, o, brv);
 
   struct elfsym_stb_dom_t
-    : public elfsym_dom
+    : public elf_cst_dom
   {
     void
     show (mpz_class const &v, std::ostream &o, brevity brv) const override
@@ -259,7 +259,7 @@ constant domains.  Thus, e.g. ``STT_ARM_TFUNC`` and
 #undef ELF_ONE_KNOWN_STB
 
   struct elfsym_stv_dom_t
-    : public elfsym_dom
+    : public elf_cst_dom
   {
     void
     show (mpz_class const &v, std::ostream &o, brevity brv) const override
