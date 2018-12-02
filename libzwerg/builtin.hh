@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2017 Petr Machata
+   Copyright (C) 2017, 2018 Petr Machata
    Copyright (C) 2014, 2015 Red Hat, Inc.
    This file is part of dwgrep.
 
@@ -131,6 +131,35 @@ add_builtin_type_constant (vocabulary &voc)
 }
 
 template <class Op>
+struct simple_exec_builtin
+  : public builtin
+{
+  char const *m_name;
+
+  simple_exec_builtin (char const *name)
+    : m_name {name}
+  {}
+
+  std::shared_ptr <op>
+  build_exec (layout &l, std::shared_ptr <op> upstream) const override final
+  {
+    return std::make_shared <Op> (upstream, m_name);
+  }
+
+  char const *
+  name () const override final
+  {
+    return m_name;
+  }
+
+  std::string
+  docstring () const override
+  {
+    return Op::docstring ();
+  }
+};
+
+template <class Op>
 void
 add_simple_exec_builtin (vocabulary &voc, char const *name)
 {
@@ -150,35 +179,7 @@ add_simple_exec_builtin (vocabulary &voc, char const *name)
     }
   };
 
-  struct simple_exec_builtin
-    : public builtin
-  {
-    char const *m_name;
-
-    simple_exec_builtin (char const *name)
-      : m_name {name}
-    {}
-
-    std::shared_ptr <op>
-    build_exec (layout &l, std::shared_ptr <op> upstream) const override final
-    {
-      return std::make_shared <this_op> (upstream, m_name);
-    }
-
-    char const *
-    name () const override final
-    {
-      return m_name;
-    }
-
-    std::string
-    docstring () const override
-    {
-      return Op::docstring ();
-    }
-  };
-
-  voc.add (std::make_shared <simple_exec_builtin> (name));
+  voc.add (std::make_shared <simple_exec_builtin <this_op>> (name));
 }
 
 #endif /* _BUILTIN_H_ */
