@@ -1,4 +1,5 @@
 /*
+   Copyright (C) 2018 Petr Machata
    Copyright (C) 2014 Red Hat, Inc.
    This file is part of dwgrep.
 
@@ -94,15 +95,15 @@ dwgrep_vocabulary_core ()
 
   add_builtin_constant (*voc, constant (0, &bool_constant_dom), "false");
   add_builtin_constant (*voc, constant (1, &bool_constant_dom), "true");
-  add_simple_exec_builtin <op_type> (*voc, "type");
-  add_simple_exec_builtin <op_pos> (*voc, "pos");
+  voc->add (std::make_shared <simple_exec_builtin <op_type>> ("type"));
+  voc->add (std::make_shared <simple_exec_builtin <op_pos>> ("pos"));
 
   // stack shuffling
-  add_simple_exec_builtin <op_drop> (*voc, "drop");
-  add_simple_exec_builtin <op_swap> (*voc, "swap");
-  add_simple_exec_builtin <op_dup> (*voc, "dup");
-  add_simple_exec_builtin <op_over> (*voc, "over");
-  add_simple_exec_builtin <op_rot> (*voc, "rot");
+  voc->add (std::make_shared <simple_exec_builtin <op_drop>> ("drop"));
+  voc->add (std::make_shared <simple_exec_builtin <op_swap>> ("swap"));
+  voc->add (std::make_shared <simple_exec_builtin <op_dup>> ("dup"));
+  voc->add (std::make_shared <simple_exec_builtin <op_over>> ("over"));
+  voc->add (std::make_shared <simple_exec_builtin <op_rot>> ("rot"));
 
   // "add"
   {

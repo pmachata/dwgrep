@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2017 Petr Machata
+   Copyright (C) 2017, 2018 Petr Machata
    Copyright (C) 2014 Red Hat, Inc.
    This file is part of dwgrep.
 
@@ -38,6 +38,7 @@ struct op_drop
   using inner_op::inner_op;
   stack::uptr next (scon &sc) const override;
 
+  std::string name () const override final;
   static std::string docstring ();
 };
 
@@ -47,6 +48,7 @@ struct op_swap
   using inner_op::inner_op;
   stack::uptr next (scon &sc) const override;
 
+  std::string name () const override final;
   static std::string docstring ();
 };
 
@@ -56,6 +58,7 @@ struct op_dup
   using inner_op::inner_op;
   stack::uptr next (scon &sc) const override;
 
+  std::string name () const override final;
   static std::string docstring ();
 };
 
@@ -65,6 +68,7 @@ struct op_over
   using inner_op::inner_op;
   stack::uptr next (scon &sc) const override;
 
+  std::string name () const override final;
   static std::string docstring ();
 };
 
@@ -74,6 +78,7 @@ struct op_rot
   using inner_op::inner_op;
   stack::uptr next (scon &sc) const override;
 
+  std::string name () const override final;
   static std::string docstring ();
 };
 

@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2017 Petr Machata
+   Copyright (C) 2017, 2018 Petr Machata
    Copyright (C) 2014, 2015 Red Hat, Inc.
    This file is part of dwgrep.
 
@@ -244,6 +244,12 @@ op_type::next (scon &sc) const
 }
 
 std::string
+op_type::name () const
+{
+  return "type";
+}
+
+std::string
 op_type::docstring ()
 {
   return
@@ -268,6 +274,12 @@ op_pos::next (scon &sc) const
     }
 
   return nullptr;
+}
+
+std::string
+op_pos::name () const
+{
+  return "pos";
 }
 
 std::string

@@ -143,7 +143,7 @@ struct simple_exec_builtin
   std::shared_ptr <op>
   build_exec (layout &l, std::shared_ptr <op> upstream) const override final
   {
-    return std::make_shared <Op> (upstream, m_name);
+    return std::make_shared <Op> (upstream);
   }
 
   char const *
@@ -158,28 +158,5 @@ struct simple_exec_builtin
     return Op::docstring ();
   }
 };
-
-template <class Op>
-void
-add_simple_exec_builtin (vocabulary &voc, char const *name)
-{
-  struct this_op
-    : public Op
-  {
-    char const *m_name;
-    this_op (std::shared_ptr <op> upstream, char const *name)
-      : Op {upstream}
-      , m_name {name}
-    {}
-
-    std::string
-    name () const override final
-    {
-      return m_name;
-    }
-  };
-
-  voc.add (std::make_shared <simple_exec_builtin <this_op>> (name));
-}
 
 #endif /* _BUILTIN_H_ */

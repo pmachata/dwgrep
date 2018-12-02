@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2017 Petr Machata
+   Copyright (C) 2017, 2018 Petr Machata
    Copyright (C) 2014 Red Hat, Inc.
    This file is part of dwgrep.
 
@@ -71,6 +71,12 @@ op_drop::next (scon &sc) const
 }
 
 std::string
+op_drop::name () const
+{
+  return "drop";
+}
+
+std::string
 op_drop::docstring ()
 {
   return shf_docstring;
@@ -92,6 +98,12 @@ op_swap::next (scon &sc) const
 }
 
 std::string
+op_swap::name () const
+{
+  return "swap";
+}
+
+std::string
 op_swap::docstring ()
 {
   return shf_docstring;
@@ -110,6 +122,12 @@ op_dup::next (scon &sc) const
 }
 
 std::string
+op_dup::name () const
+{
+  return "dup";
+}
+
+std::string
 op_dup::docstring ()
 {
   return shf_docstring;
@@ -125,6 +143,12 @@ op_over::next (scon &sc) const
       return stk;
     }
   return nullptr;
+}
+
+std::string
+op_over::name () const
+{
+  return "over";
 }
 
 std::string
@@ -148,6 +172,12 @@ op_rot::next (scon &sc) const
       return stk;
     }
   return nullptr;
+}
+
+std::string
+op_rot::name () const
+{
+  return "rot";
 }
 
 std::string

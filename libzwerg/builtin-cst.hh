@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2017 Petr Machata
+   Copyright (C) 2017, 2018 Petr Machata
    Copyright (C) 2014 Red Hat, Inc.
    This file is part of dwgrep.
 
@@ -117,6 +117,7 @@ struct op_type
   using inner_op::inner_op;
   stack::uptr next (scon &sc) const override;
 
+  std::string name () const override final;
   static std::string docstring ();
 };
 
@@ -126,6 +127,7 @@ struct op_pos
   using inner_op::inner_op;
   stack::uptr next (scon &sc) const override;
 
+  std::string name () const override final;
   static std::string docstring ();
 };
 
