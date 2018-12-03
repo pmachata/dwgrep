@@ -30,14 +30,16 @@
 #ifndef _BUILTIN_H_
 #define _BUILTIN_H_
 
+#include <map>
 #include <memory>
 #include <string>
-#include <map>
+#include <tuple>
+#include "std-utility.hh"
 #include <vector>
 
 #include "constant.hh"
-#include "value.hh"
 #include "layout.hh"
+#include "value.hh"
 
 struct pred;
 struct op;
@@ -130,20 +132,33 @@ add_builtin_type_constant (vocabulary &voc)
 			T::vtype.name ());
 }
 
-template <class Op>
-struct simple_exec_builtin
+template <class Op, class... Args>
+class simple_exec_builtin
   : public builtin
 {
   char const *m_name;
+  std::tuple <Args...> m_args;
 
-  simple_exec_builtin (char const *name)
+  template <size_t... I>
+  static std::shared_ptr <op>
+  build (std::shared_ptr <op> upstream,
+	 std::index_sequence <I...>,
+	 std::tuple <typename std::remove_reference <Args>::type...>
+	 	const &args)
+  {
+    return std::make_shared <Op> (upstream, std::get <I> (args)...);
+  }
+
+public:
+  simple_exec_builtin (char const *name, Args... args)
     : m_name {name}
+    , m_args {args...}
   {}
 
   std::shared_ptr <op>
   build_exec (layout &l, std::shared_ptr <op> upstream) const override final
   {
-    return std::make_shared <Op> (upstream);
+    return build (upstream, std::index_sequence_for <Args...> {}, m_args);
   }
 
   char const *
