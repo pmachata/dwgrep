@@ -1,6 +1,6 @@
 %code top { // -*-c++-*-
 /*
-   Copyright (C) 2017 Petr Machata
+   Copyright (C) 2017, 2018 Petr Machata
    Copyright (C) 2014, 2015 Red Hat, Inc.
    This file is part of dwgrep.
 
@@ -227,6 +227,16 @@
     }
 
     std::unique_ptr <tree>
+    append_drop_below (std::unique_ptr <tree> t, unsigned drop)
+    {
+      static auto bi = std::make_shared <simple_exec_builtin <op_drop_below,
+							      unsigned>>
+				("drop below", drop);
+      return tree::create_cat <tree_type::CAT>
+		(std::move (t), tree::create_builtin (bi));
+    }
+
+    std::unique_ptr <tree>
     parse_op_tmplet (std::string const &name, std::unique_ptr <tree> t)
     {
       auto one = constant {1, &dec_constant_dom};
@@ -333,6 +343,7 @@
   tree *t;
   strlit s;
   fmtlit *f;
+  unsigned u;
   std::vector <std::string> *ids;
  }
 
@@ -341,6 +352,7 @@
 %type <s> TOK_LIT_INT
 %type <s> TOK_WORD TOK_NUMWORD TOK_OP
 %type <t> TOK_LIT_STR
+%type <u> TOK_LBRACKET
 
 %%
 
@@ -479,13 +491,19 @@ Statement:
 
   | TOK_LBRACKET TOK_RBRACKET
   {
+    unsigned drop = $1;
+
     auto ret = tree::create_nullary <tree_type::EMPTY_LIST> ();
+
+    if (drop > 0)
+      ret = append_drop_below (std::move (ret), drop);
 
     $$ = ret.release ();
   }
 
   | TOK_LBRACKET IdBlockOpt Program TOK_RBRACKET
   {
+    unsigned drop = $1;
     std::unique_ptr <std::vector <std::string>> ids {$2};
     std::unique_ptr <tree> t3 {$3};
 
@@ -495,6 +513,9 @@ Statement:
 
 	tree::create_unary <tree_type::CAPTURE>
 	(tree::create_scope (std::move (t3)))));
+
+    if (drop > 0)
+      ret = append_drop_below (std::move (ret), drop);
 
     $$ = ret.release ();
   }

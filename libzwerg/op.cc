@@ -1046,6 +1046,27 @@ op_ifelse::name () const
   return "ifelse";
 }
 
+stack::uptr
+op_drop_below::next (scon &sc) const
+{
+  if (auto stk = m_upstream->next (sc))
+    {
+      auto tos = stk->pop ();
+      stk->drop (m_drop);
+      stk->push (std::move (tos));
+      return stk;
+    }
+  return nullptr;
+}
+
+std::string
+op_drop_below::name () const
+{
+  std::stringstream ss;
+  ss << "drop_below<" << m_drop << ">";
+  return ss.str ();
+}
+
 
 pred_result
 pred_not::result (scon &sc, stack &stk) const

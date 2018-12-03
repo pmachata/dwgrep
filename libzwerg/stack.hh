@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2017 Petr Machata
+   Copyright (C) 2017, 2018 Petr Machata
    Copyright (C) 2014, 2015 Red Hat, Inc.
    This file is part of dwgrep.
 
@@ -95,6 +95,19 @@ public:
 	m_profile |= ((selector::sel_t) code) << (8 * (selector::W - 1));
       }
     return ret;
+  }
+
+  void
+  drop (unsigned n)
+  {
+    need (n);
+    m_values.erase (m_values.end () - n, m_values.end ());
+    m_profile = 0;
+    for (unsigned d = 0; d < selector::W && d < m_values.size (); ++d)
+      {
+	auto code = get (d).get_type ().code ();
+	m_profile |= code << (d * 8);
+      }
   }
 
   template <class T>

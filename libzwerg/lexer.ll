@@ -1,6 +1,6 @@
 %{ // -*-c++-*-
 /*
-   Copyright (C) 2017 Petr Machata
+   Copyright (C) 2017, 2018 Petr Machata
    Copyright (C) 2014 Red Hat, Inc.
    This file is part of dwgrep.
 
@@ -61,7 +61,10 @@ OCT [0-7]
 "?(" return TOK_QMARK_LPAREN;
 "!(" return TOK_BANG_LPAREN;
 
-"[" return TOK_LBRACKET;
+"`"*"[" {
+  yylval->u = yyget_leng (yyscanner) - 1;
+  return TOK_LBRACKET;
+}
 "]" return TOK_RBRACKET;
 
 "{" return TOK_LBRACE;
@@ -260,7 +263,7 @@ OCT [0-7]
 (#|[/][/])[^\n]* // Skip # or // comment.
 [/][*]([^*]|[*][^/])*[*][/] // Skip /**/ comment.
 
-[?!]?[$%&.-/:<=>@^_`~\\]+ {
+[?!]?[$%&.-/:<=>@^_~\\]+ {
     return pass_string (yyscanner, yylval, TOK_OP);
 }
 

@@ -460,6 +460,18 @@
       : 10 add: 1	# equivalent to (10 1 add)
       : [10 range] sort: {a | if (a mod: 2 == 0) then 0 else 1}
 
+** •stack slices: ``[EXPR₀]
+    - Evaluated as
+         [|X₀ X₁ ...| X₀ X₁ ... EXPR₀]
+      With as many X's as there are backticks.
+    - Another equivalent form:
+         [EXPR₀] (|X₀ X₁ ... K| K)
+      I.e. keep TOS, drop N below.
+    - The point of this is to avoid having to write [|A| A expr], and instead
+      write simply `[expr]. The former is somewhat annoying to write, but it's
+      not clear it's worth it to extend syntax because of it.
+    - Also not clear there's any value in having more than one backtick. Let's
+      see how this fares, it can be always simplified.
 
 * WORDS
 ** ·T_SEQ

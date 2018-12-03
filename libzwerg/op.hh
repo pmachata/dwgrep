@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2017 Petr Machata
+   Copyright (C) 2017, 2018 Petr Machata
    Copyright (C) 2014, 2015 Red Hat, Inc.
    This file is part of dwgrep.
 
@@ -583,6 +583,22 @@ public:
   void state_con (scon &sc) const override;
   void state_des (scon &sc) const override;
   stack::uptr next (scon &sc) const override;
+};
+
+class op_drop_below
+  : public inner_op
+{
+  unsigned m_drop;
+
+public:
+  explicit op_drop_below (std::shared_ptr <op> upstream, unsigned drop)
+    : inner_op {upstream}
+    , m_drop {drop}
+  {}
+
+  std::string name () const override;
+  stack::uptr next (scon &sc) const override;
+  static std::string docstring () { return "internal"; }
 };
 
 
