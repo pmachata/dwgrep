@@ -92,7 +92,7 @@ public:
     if (m_values.size () >= selector::W)
       {
 	auto code = get (selector::W - 1).get_type ().code ();
-	m_profile |= ((selector::sel_t) code) << 24;
+	m_profile |= ((selector::sel_t) code) << (8 * (selector::W - 1));
       }
     return ret;
   }
