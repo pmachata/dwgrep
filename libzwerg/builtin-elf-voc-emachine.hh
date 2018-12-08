@@ -26,27 +26,10 @@
    the GNU Lesser General Public License along with this program.  If
    not, see <http://www.gnu.org/licenses/>.  */
 
-#ifndef BUILTIN_ELF_VOC_H
-#define BUILTIN_ELF_VOC_H
-
-#include <memory>
-
-#define ADD_ELF_CONSTANT(CODE, NAME, DOM, PRED)				\
-    {									\
-      add_builtin_constant (voc, constant (CODE, DOM), NAME);		\
-									\
-      auto t = std::make_shared <overload_tab> ();			\
-									\
-      t->add_pred_overload <PRED <value_dwarf>> (CODE);			\
-      t->add_pred_overload <PRED <value_elf>> (CODE);			\
-									\
-      voc.add (std::make_shared <overloaded_pred_builtin>		\
-	       ("?" NAME, t, true));					\
-      voc.add (std::make_shared <overloaded_pred_builtin>		\
-	       ("!" NAME, t, false));					\
-    }
+#ifndef BUILTIN_ELF_VOC_EMACHINE_H
+#define BUILTIN_ELF_VOC_EMACHINE_H
 
 struct vocabulary;
-std::unique_ptr <vocabulary> dwgrep_vocabulary_elf ();
+void dwgrep_vocabulary_elf_emachine (vocabulary &voc);
 
-#endif /* BUILTIN_ELF_VOC_H */
+#endif /* BUILTIN_ELF_VOC_EMACHINE_H */

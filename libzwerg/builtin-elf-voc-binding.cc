@@ -26,27 +26,36 @@
    the GNU Lesser General Public License along with this program.  If
    not, see <http://www.gnu.org/licenses/>.  */
 
-#ifndef BUILTIN_ELF_VOC_H
-#define BUILTIN_ELF_VOC_H
+#include "builtin-elf-voc-binding.hh"
+#include "builtin-symbol.hh"
+#include "known-elf.h"
 
-#include <memory>
+void
+dwgrep_vocabulary_elf_binding (vocabulary &voc)
+{
+  {
+    auto t = std::make_shared <overload_tab> ();
 
-#define ADD_ELF_CONSTANT(CODE, NAME, DOM, PRED)				\
-    {									\
-      add_builtin_constant (voc, constant (CODE, DOM), NAME);		\
-									\
-      auto t = std::make_shared <overload_tab> ();			\
-									\
-      t->add_pred_overload <PRED <value_dwarf>> (CODE);			\
-      t->add_pred_overload <PRED <value_elf>> (CODE);			\
-									\
-      voc.add (std::make_shared <overloaded_pred_builtin>		\
-	       ("?" NAME, t, true));					\
-      voc.add (std::make_shared <overloaded_pred_builtin>		\
-	       ("!" NAME, t, false));					\
+    t->add_op_overload <op_binding_symbol> ();
+
+    voc.add (std::make_shared <overloaded_op_builtin> ("binding", t));
+  }
+
+#define ELF_ONE_KNOWN_STB(NAME, CODE)					\
+  add_builtin_constant (voc, constant (CODE, &elfsym_stb_dom (machine)), #CODE);
+
+  {
+    constexpr int machine = EM_NONE;
+    ELF_ALL_KNOWN_STB
+  }
+
+#define ELF_ONE_KNOWN_STB_ARCH(ARCH)		\
+    {						\
+      constexpr int machine = EM_##ARCH;	\
+      ELF_ALL_KNOWN_STB_##ARCH			\
     }
+  ELF_ALL_KNOWN_STB_ARCHES
 
-struct vocabulary;
-std::unique_ptr <vocabulary> dwgrep_vocabulary_elf ();
-
-#endif /* BUILTIN_ELF_VOC_H */
+#undef ELF_ONE_KNOWN_STB_ARCH
+#undef ELF_ONE_KNOWN_STB
+}

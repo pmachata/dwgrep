@@ -26,27 +26,28 @@
    the GNU Lesser General Public License along with this program.  If
    not, see <http://www.gnu.org/licenses/>.  */
 
-#ifndef BUILTIN_ELF_VOC_H
-#define BUILTIN_ELF_VOC_H
+#include "builtin-elf-voc-osabi.hh"
+#include "builtin-elf.hh"
+#include "builtin-elf-voc.hh"
+#include "elfcst.hh"
+#include "known-elf.h"
 
-#include <memory>
+void
+dwgrep_vocabulary_elf_osabi (vocabulary &voc)
+{
+  {
+    auto t = std::make_shared <overload_tab> ();
 
-#define ADD_ELF_CONSTANT(CODE, NAME, DOM, PRED)				\
-    {									\
-      add_builtin_constant (voc, constant (CODE, DOM), NAME);		\
-									\
-      auto t = std::make_shared <overload_tab> ();			\
-									\
-      t->add_pred_overload <PRED <value_dwarf>> (CODE);			\
-      t->add_pred_overload <PRED <value_elf>> (CODE);			\
-									\
-      voc.add (std::make_shared <overloaded_pred_builtin>		\
-	       ("?" NAME, t, true));					\
-      voc.add (std::make_shared <overloaded_pred_builtin>		\
-	       ("!" NAME, t, false));					\
-    }
+    t->add_op_overload <op_osabi_elf <value_elf>> ();
+    t->add_op_overload <op_osabi_elf <value_dwarf>> ();
 
-struct vocabulary;
-std::unique_ptr <vocabulary> dwgrep_vocabulary_elf ();
+    voc.add (std::make_shared <overloaded_op_builtin> ("osabi", t));
+  }
 
-#endif /* BUILTIN_ELF_VOC_H */
+#define ELF_ONE_KNOWN_ELFOSABI(NAME, CODE)				\
+  ADD_ELF_CONSTANT(CODE, #CODE, &elf_osabi_dom (), pred_osabi_elf);
+
+ELF_ALL_KNOWN_ELFOSABI
+#undef ELF_ONE_KNOWN_ELFOSABI
+
+}

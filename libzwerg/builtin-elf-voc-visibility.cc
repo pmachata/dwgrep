@@ -26,27 +26,25 @@
    the GNU Lesser General Public License along with this program.  If
    not, see <http://www.gnu.org/licenses/>.  */
 
-#ifndef BUILTIN_ELF_VOC_H
-#define BUILTIN_ELF_VOC_H
+#include "builtin-elf-voc-visibility.hh"
+#include "builtin-symbol.hh"
+#include "known-elf.h"
 
-#include <memory>
+void
+dwgrep_vocabulary_elf_visibility (vocabulary &voc)
+{
+  {
+    auto t = std::make_shared <overload_tab> ();
 
-#define ADD_ELF_CONSTANT(CODE, NAME, DOM, PRED)				\
-    {									\
-      add_builtin_constant (voc, constant (CODE, DOM), NAME);		\
-									\
-      auto t = std::make_shared <overload_tab> ();			\
-									\
-      t->add_pred_overload <PRED <value_dwarf>> (CODE);			\
-      t->add_pred_overload <PRED <value_elf>> (CODE);			\
-									\
-      voc.add (std::make_shared <overloaded_pred_builtin>		\
-	       ("?" NAME, t, true));					\
-      voc.add (std::make_shared <overloaded_pred_builtin>		\
-	       ("!" NAME, t, false));					\
-    }
+    t->add_op_overload <op_visibility_symbol> ();
 
-struct vocabulary;
-std::unique_ptr <vocabulary> dwgrep_vocabulary_elf ();
+    voc.add (std::make_shared <overloaded_op_builtin> ("visibility", t));
+  }
 
-#endif /* BUILTIN_ELF_VOC_H */
+#define ELF_ONE_KNOWN_STV(NAME, CODE)					\
+  add_builtin_constant (voc, constant (CODE, &elfsym_stv_dom ()), #CODE);
+
+    ELF_ALL_KNOWN_STV
+
+#undef ELF_ONE_KNOWN_STV
+}

@@ -95,6 +95,29 @@ ADD_LIBRARY (LibzwergElf OBJECT
   value-elf.cc
   builtin-elf.cc
   builtin-elf-voc.cc
+  builtin-elf-voc-abiversion.cc
+  builtin-elf-voc-address.cc
+  builtin-elf-voc-binding.cc
+  builtin-elf-voc-eclass.cc
+  builtin-elf-voc-edata.cc
+  builtin-elf-voc-eentry.cc
+  builtin-elf-voc-eident.cc
+  builtin-elf-voc-elf.cc
+  builtin-elf-voc-emachine.cc
+  builtin-elf-voc-entry.cc
+  builtin-elf-voc-etype.cc
+  builtin-elf-voc-flags.cc
+  builtin-elf-voc-label.cc
+  builtin-elf-voc-link.cc
+  builtin-elf-voc-name.cc
+  builtin-elf-voc-osabi.cc
+  builtin-elf-voc-section.cc
+  builtin-elf-voc-shstr.cc
+  builtin-elf-voc-size.cc
+  builtin-elf-voc-symbol.cc
+  builtin-elf-voc-value.cc
+  builtin-elf-voc-version.cc
+  builtin-elf-voc-visibility.cc
   libzwerg-elf.cc
 )
 

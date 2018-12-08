@@ -26,27 +26,26 @@
    the GNU Lesser General Public License along with this program.  If
    not, see <http://www.gnu.org/licenses/>.  */
 
-#ifndef BUILTIN_ELF_VOC_H
-#define BUILTIN_ELF_VOC_H
+#include "builtin-elf-voc-eident.hh"
+#include "builtin-elf.hh"
+#include "known-elf.h"
 
-#include <memory>
+void
+dwgrep_vocabulary_elf_eident (vocabulary &voc)
+{
+  {
+    auto t = std::make_shared <overload_tab> ();
 
-#define ADD_ELF_CONSTANT(CODE, NAME, DOM, PRED)				\
-    {									\
-      add_builtin_constant (voc, constant (CODE, DOM), NAME);		\
-									\
-      auto t = std::make_shared <overload_tab> ();			\
-									\
-      t->add_pred_overload <PRED <value_dwarf>> (CODE);			\
-      t->add_pred_overload <PRED <value_elf>> (CODE);			\
-									\
-      voc.add (std::make_shared <overloaded_pred_builtin>		\
-	       ("?" NAME, t, true));					\
-      voc.add (std::make_shared <overloaded_pred_builtin>		\
-	       ("!" NAME, t, false));					\
-    }
+    t->add_op_overload <op_eident_elf <value_elf>> ();
+    t->add_op_overload <op_eident_elf <value_dwarf>> ();
 
-struct vocabulary;
-std::unique_ptr <vocabulary> dwgrep_vocabulary_elf ();
+    voc.add (std::make_shared <overloaded_op_builtin> ("eident", t));
+  }
 
-#endif /* BUILTIN_ELF_VOC_H */
+#define ELF_ONE_KNOWN_EI(NAME, CODE)				\
+  add_builtin_constant (voc, constant (CODE, &dec_constant_dom), #CODE);
+
+ELF_ALL_KNOWN_EI
+#undef ELF_ONE_KNOWN_EI
+
+}

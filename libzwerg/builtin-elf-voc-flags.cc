@@ -26,27 +26,38 @@
    the GNU Lesser General Public License along with this program.  If
    not, see <http://www.gnu.org/licenses/>.  */
 
-#ifndef BUILTIN_ELF_VOC_H
-#define BUILTIN_ELF_VOC_H
+#include "builtin-elf-voc-flags.hh"
+#include "builtin-elf.hh"
+#include "elfcst.hh"
+#include "known-elf.h"
 
-#include <memory>
+void
+dwgrep_vocabulary_elf_flags (vocabulary &voc)
+{
+  {
+    auto t = std::make_shared <overload_tab> ();
 
-#define ADD_ELF_CONSTANT(CODE, NAME, DOM, PRED)				\
-    {									\
-      add_builtin_constant (voc, constant (CODE, DOM), NAME);		\
-									\
-      auto t = std::make_shared <overload_tab> ();			\
-									\
-      t->add_pred_overload <PRED <value_dwarf>> (CODE);			\
-      t->add_pred_overload <PRED <value_elf>> (CODE);			\
-									\
-      voc.add (std::make_shared <overloaded_pred_builtin>		\
-	       ("?" NAME, t, true));					\
-      voc.add (std::make_shared <overloaded_pred_builtin>		\
-	       ("!" NAME, t, false));					\
+    t->add_op_overload <op_eflags_elf <value_elf>> ();
+    t->add_op_overload <op_eflags_elf <value_dwarf>> ();
+    t->add_op_overload <op_flags_elfscn> ();
+
+    voc.add (std::make_shared <overloaded_op_builtin> ("flags", t));
+  }
+
+  // N.B.: There are no ?EF_ and !EF_ words. Flags need to be tested explicitly,
+  // because the field often includes various bitfields and it's not a priori
+  // clear how the flag should be tested.
+#define ELF_ONE_KNOWN_EF(NAME, CODE)					\
+  add_builtin_constant (voc, constant (CODE, &elf_ef_dom (machine)), #CODE);
+
+#define ELF_ONE_KNOWN_EF_ARCH(ARCH)		\
+    {						\
+      constexpr int machine = EM_##ARCH;	\
+      ELF_ALL_KNOWN_EF_##ARCH			\
     }
+  ELF_ALL_KNOWN_EF_ARCHES
 
-struct vocabulary;
-std::unique_ptr <vocabulary> dwgrep_vocabulary_elf ();
+#undef ELF_ONE_KNOWN_EF_ARCH
+#undef ELF_ONE_KNOWN_EF
 
-#endif /* BUILTIN_ELF_VOC_H */
+}
