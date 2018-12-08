@@ -741,18 +741,18 @@
 *** *section :: T_ELF ->* T_ELFSCN
 *** *section :: T_DWARF ->* T_ELFSCN
      let section::T_DWARF = {elf (pos == 0) section};
-*** *eflags :: T_ELF -> T_CONST
-     Add the following example to value-cst.cc when "eflags" is done:
+*** *flags :: T_ELF -> T_CONST
+     Add the following example to value-cst.cc when "flags" is done:
 
 A typical use would be in testing whether a bit is set, as in::
 
-	$ ./dwgrep/dwgrep foo.o -e '(eflags bit == EF_SPARC_LEDATA)'
+	$ ./dwgrep/dwgrep foo.o -e '(flags bit == EF_SPARC_LEDATA)'
 	<Dwarf "foo.o">
 
 *** *bit :: T_CONST ->* T_CONST
      Yield a constant for each set bit. The yielded constants have the same
      domain as the source operand.
-     : Dw elf (@flags bit == EF_SPARC_LEDATA)
+     : Dw elf (flags bit == EF_SPARC_LEDATA)
 *** *shstr :: T_ELF -> T_ELFSCN
      Yield section where section header string table is stored.
 

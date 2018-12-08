@@ -343,8 +343,8 @@ TEST_F (ElfTest, test_elf)
 	    {1, "y.o", "emachine == EM_ARM"},
 	    {1, "a1.out", "emachine == EM_X86_64"},
 
-	    {1, "y.o", "eflags EF_ARM_EABIMASK and == EF_ARM_EABI_VER5"},
-	    {0, "y.o", "eflags EF_ARM_EABIMASK and == EF_ARM_EABI_VER4"},
+	    {1, "y.o", "flags EF_ARM_EABIMASK and == EF_ARM_EABI_VER5"},
+	    {0, "y.o", "flags EF_ARM_EABIMASK and == EF_ARM_EABI_VER4"},
 
 	    {1, "a1.out", "eentry == 0x4003d0"},
 	    {1, "a1.out", "abiversion == 0"},
