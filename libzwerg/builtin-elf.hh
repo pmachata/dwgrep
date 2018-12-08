@@ -335,22 +335,53 @@ struct op_link_elfscn
   static std::string docstring ();
 };
 
-struct op_size_elfscn
+
+template <class Def>
+struct op_elfscn_simple_value
   : public op_once_overload <value_cst, value_elf_section>
+  , protected Def
 {
   using op_once_overload::op_once_overload;
 
-  value_cst operate (std::unique_ptr <value_elf_section> a) const override;
+  value_cst
+  operate (std::unique_ptr <value_elf_section> a) const override
+  {
+    Dwfl *dwfl = a->get_dwctx ()->get_dwfl ();
+    Elf_Scn *scn = a->get_scn ();
+    auto value = Def::value (dwfl, scn);
+    return value_cst {constant {value, &Def::cdom (dwfl)}, 0};
+  }
+
+  using Def::docstring;
+};
+
+
+struct elfscn_size_def
+{
+  static uint64_t value (Dwfl *dwfl, Elf_Scn *scn);
+  static zw_cdom const &cdom (Dwfl *dwfl);
+  static std::string docstring ();
+};
+
+struct op_size_elfscn
+  : public op_elfscn_simple_value <elfscn_size_def>
+{
+  using op_elfscn_simple_value::op_elfscn_simple_value;
+};
+
+
+struct elfscn_label_def
+{
+  static unsigned value (Dwfl *dwfl, Elf_Scn *scn);
+  static zw_cdom const &cdom (Dwfl *dwfl);
   static std::string docstring ();
 };
 
 struct op_label_elfscn
-  : public op_once_overload <value_cst, value_elf_section>
+  : public op_elfscn_simple_value <elfscn_label_def>
 {
-  using op_once_overload::op_once_overload;
-
-  value_cst operate (std::unique_ptr <value_elf_section> a) const override;
-  static std::string docstring ();
+  using op_elfscn_simple_value::op_elfscn_simple_value;
 };
+
 
 #endif /* BUILTIN_ELF_H */

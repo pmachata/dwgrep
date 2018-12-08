@@ -772,15 +772,20 @@ xxx
 )docstring";
 }
 
-value_cst
-op_size_elfscn::operate (std::unique_ptr <value_elf_section> a) const
+uint64_t
+elfscn_size_def::value (Dwfl *dwfl, Elf_Scn *scn)
 {
-  GElf_Shdr shdr = ::getshdr (a->get_scn ());
-  return value_cst {constant {shdr.sh_size, &dec_constant_dom}, 0};
+  return ::getshdr (scn).sh_size;
+}
+
+zw_cdom const &
+elfscn_size_def::cdom (Dwfl *dwfl)
+{
+  return dec_constant_dom;
 }
 
 std::string
-op_size_elfscn::docstring ()
+elfscn_size_def::docstring ()
 {
   return
 R"docstring(
@@ -790,17 +795,21 @@ xxx
 )docstring";
 }
 
-value_cst
-op_label_elfscn::operate (std::unique_ptr <value_elf_section> a) const
+unsigned
+elfscn_label_def::value (Dwfl *dwfl, Elf_Scn *scn)
 {
-  Dwfl *dwfl = a->get_dwctx ()->get_dwfl ();
+  return ::getshdr (scn).sh_type;
+}
+
+zw_cdom const &
+elfscn_label_def::cdom (Dwfl *dwfl)
+{
   int machine = ::ehdr (dwfl).e_machine;
-  GElf_Shdr shdr = ::getshdr (a->get_scn ());
-  return value_cst {constant {shdr.sh_type, &elf_sht_dom (machine)}, 0};
+  return elf_sht_dom (machine);
 }
 
 std::string
-op_label_elfscn::docstring ()
+elfscn_label_def::docstring ()
 {
   return
 R"docstring(
