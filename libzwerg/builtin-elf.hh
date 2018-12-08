@@ -384,4 +384,17 @@ struct op_label_elfscn
 };
 
 
+struct elfscn_flags_def
+{
+  static unsigned value (Dwfl *dwfl, Elf_Scn *scn);
+  static zw_cdom const &cdom (Dwfl *dwfl);
+  static std::string docstring ();
+};
+
+struct op_flags_elfscn
+  : public op_elfscn_simple_value <elfscn_flags_def>
+{
+  using op_elfscn_simple_value::op_elfscn_simple_value;
+};
+
 #endif /* BUILTIN_ELF_H */

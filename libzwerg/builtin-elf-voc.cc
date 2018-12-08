@@ -293,6 +293,7 @@ ELF_ALL_KNOWN_EV
 
     t->add_op_overload <op_eflags_elf <value_elf>> ();
     t->add_op_overload <op_eflags_elf <value_dwarf>> ();
+    t->add_op_overload <op_flags_elfscn> ();
 
     voc.add (std::make_shared <overloaded_op_builtin> ("flags", t));
   }

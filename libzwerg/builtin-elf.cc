@@ -818,3 +818,26 @@ xxx
 
 )docstring";
 }
+
+unsigned
+elfscn_flags_def::value (Dwfl *dwfl, Elf_Scn *scn)
+{
+  return ::getshdr (scn).sh_flags;
+}
+
+zw_cdom const &
+elfscn_flags_def::cdom (Dwfl *dwfl)
+{
+  return hex_constant_dom;
+}
+
+std::string
+elfscn_flags_def::docstring ()
+{
+  return
+R"docstring(
+
+xxx
+
+)docstring";
+}
