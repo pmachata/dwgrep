@@ -60,4 +60,21 @@ dwgrep_vocabulary_elf_flags (vocabulary &voc)
 #undef ELF_ONE_KNOWN_EF_ARCH
 #undef ELF_ONE_KNOWN_EF
 
+#define ELF_ONE_KNOWN_SHF(NAME, CODE)					\
+  add_builtin_constant (voc, constant (CODE, &elf_shf_dom (machine)), #CODE);
+
+    {
+      constexpr int machine = EM_NONE;
+      ELF_ALL_KNOWN_SHF
+    }
+
+#define ELF_ONE_KNOWN_SHF_ARCH(ARCH)		\
+    {						\
+      constexpr int machine = EM_##ARCH;	\
+      ELF_ALL_KNOWN_SHF_##ARCH			\
+    }
+  ELF_ALL_KNOWN_SHF_ARCHES
+
+#undef ELF_ONE_KNOWN_SHF_ARCH
+#undef ELF_ONE_KNOWN_SHF
 }
