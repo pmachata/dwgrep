@@ -18,6 +18,7 @@
 #include <elf.h>
 #include <iostream>
 #include <map>
+#include <string.h>
 #include <vector>
 
 #include "constant.hh"
@@ -522,4 +523,157 @@ elf_sht_dom (int machine)
 
   static elfsym_sht_dom_t dom;
   return dom;
+}
+
+namespace
+{
+  constexpr unsigned shf_loos = __builtin_ffs (SHF_MASKOS);
+  constexpr unsigned shf_hios = SHF_MASKOS;
+  constexpr unsigned shf_loproc = __builtin_ffs (SHF_MASKPROC);
+  constexpr unsigned shf_hiproc = SHF_MASKPROC;
+
+#define ELF_ONE_KNOWN_SHF(SHORT, LONG)		\
+  case LONG:					\
+    return show ("SHF", #SHORT, o, brv);
+
+  struct elfscn_shf_dom_t
+    : public elf_cst_dom
+  {
+    void
+    show (mpz_class const &v, std::ostream &o, brevity brv) const override
+    {
+      using ::show;
+      switch (int code = v < 0 || v.uval () > INT_MAX ? -1 : v.uval ())
+	{
+	  ELF_ALL_KNOWN_SHF
+	default:
+	  show_unknown ("SHF", code,
+			shf_loos, shf_hios, shf_loproc, shf_hiproc, o, brv);
+	}
+    }
+
+    char const *
+    name () const override
+    {
+      return "SHF_";
+    }
+  };
+
+#define ELF_ONE_KNOWN_SHF_ARCH(ARCH)					\
+  struct elfscn_shf_##ARCH##_dom_t					\
+    : public elfscn_shf_dom_t						\
+  {									\
+    void								\
+    show (mpz_class const &v, std::ostream &o, brevity brv) const override \
+    {									\
+      using ::show;							\
+      switch (v < 0 || v.uval () > INT_MAX ? -1 : v.uval ())		\
+	{								\
+	  ELF_ALL_KNOWN_SHF_##ARCH					\
+	}								\
+      elfscn_shf_dom_t::show (v, o, brv);				\
+    }									\
+									\
+    virtual constant_dom const *					\
+    most_enclosing (mpz_class const &v) const override			\
+    {									\
+      if (v < shf_loproc)						\
+	return &elf_shf_dom (EM_NONE);					\
+      return this;							\
+    }									\
+  };
+
+  ELF_ALL_KNOWN_SHF_ARCHES
+
+#undef ELF_ONE_KNOWN_SHF_ARCH
+#undef ELF_ONE_KNOWN_SHF
+
+  struct elfscn_shf_flags_dom_t
+    : public zw_cdom
+  {
+    zw_cdom const *m_bit_cdom;
+
+    elfscn_shf_flags_dom_t (zw_cdom const *bit_cdom)
+      : m_bit_cdom {bit_cdom}
+    {}
+
+    void
+    show (mpz_class const &c, std::ostream &o, brevity brv) const override
+    {
+      if (uint64_t v = c.uval ())
+	{
+	  bool seen = false;
+	  while (unsigned bit = static_cast <unsigned> (ffsll (v)))
+	    {
+	      if (seen)
+		o << '|';
+	      seen = true;
+
+	      auto bitv = uint64_t (1) << (bit - 1);
+	      v &= ~bitv;
+	      m_bit_cdom->show (mpz_class {bitv, signedness::unsign}, o, brv);
+	    }
+	}
+      else
+	o << "0";
+    }
+
+    char const *
+    name () const override
+    {
+      return m_bit_cdom->name ();
+    }
+
+    constant_dom const *
+    bit_cdom () const override
+    {
+      return m_bit_cdom;
+    }
+
+    constant_dom const *
+    most_enclosing (mpz_class const &c) const override
+    {
+      return m_bit_cdom->most_enclosing (c);
+    }
+  };
+
+#define ELF_ONE_KNOWN_SHF_ARCH(ARCH)					\
+  elfscn_shf_##ARCH##_dom_t elfscn_shf_##ARCH##_dom;			\
+  elfscn_shf_flags_dom_t elfscn_shf_##ARCH##_flags_dom			\
+				    {&elfscn_shf_##ARCH##_dom};
+    ELF_ALL_KNOWN_SHF_ARCHES
+#undef ELF_ONE_KNOWN_SHF_ARCH
+
+  elfscn_shf_dom_t elfscn_shf_dom;
+  elfscn_shf_flags_dom_t elfscn_shf_flags_dom {&elfscn_shf_dom};
+}
+
+zw_cdom const &
+elf_shf_dom (int machine)
+{
+  switch (machine)
+    {
+#define ELF_ONE_KNOWN_SHF_ARCH(ARCH)		\
+      case EM_##ARCH:				\
+	return elfscn_shf_##ARCH##_dom;		\
+      ELF_ALL_KNOWN_SHF_ARCHES
+#undef ELF_ONE_KNOWN_SHF_ARCH
+    }
+
+  return elfscn_shf_dom;
+}
+
+zw_cdom const &
+elf_shf_flags_dom (int machine)
+{
+  switch (machine)
+    {
+#define ELF_ONE_KNOWN_SHF_ARCH(ARCH)		\
+      case EM_##ARCH:				\
+	return elfscn_shf_##ARCH##_flags_dom;
+      ELF_ALL_KNOWN_SHF_ARCHES
+#undef ELF_ONE_KNOWN_SHF_ARCH
+    }
+
+  return elfscn_shf_flags_dom;
 }

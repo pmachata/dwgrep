@@ -828,7 +828,8 @@ elfscn_flags_def::value (Dwfl *dwfl, Elf_Scn *scn)
 zw_cdom const &
 elfscn_flags_def::cdom (Dwfl *dwfl)
 {
-  return hex_constant_dom;
+  int machine = ::ehdr (dwfl).e_machine;
+  return elf_shf_flags_dom (machine);
 }
 
 std::string
