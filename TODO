@@ -749,6 +749,9 @@ A typical use would be in testing whether a bit is set, as in::
 	$ ./dwgrep/dwgrep foo.o -e '(flags bit == EF_SPARC_LEDATA)'
 	<Dwarf "foo.o">
 
+***  flags should return "flags" domain
+     Consider whether flags::T_ELF shouldn't yield values with domain
+     flags<EF_>, like flags::T_ELFSCN.
 *** *bit :: T_CONST ->* T_CONST
      Yield a constant for each set bit. The yielded constants have the same
      domain as the source operand.
@@ -777,17 +780,21 @@ A typical use would be in testing whether a bit is set, as in::
      the routines defined in libzwerg-dw. If value_dwarf is considered part of
      libzwerg-dw, the dependency of libzwerg-elf on libzwerg-dw is already
      there, so this is not new.
-***  something :: T_ELFSCN ->* T_CONST or T_SEQ
+***  something :: T_ELFSCN ->* T_CONST or -> T_SEQ
      Accesses the section as a list of bytes. Or maybe ints. Or maybe it's
      configurable.
+     - T_BUF?
+       - read8, read16, read32, read64???
+       - seq8 ... seq64
 ***  read :: T_ELFSCN T_CONST -> T_CONST
      Reads a quantity at a given offset. Unclear how to specify the width of the
      quantity.
-***  SHT_* :: () -> T_CONST
+*** *SHT_* :: () -> T_CONST
      All the section type constants.
 *** *label :: T_ELFSCN -> T_CONST
      section's sh_type
-***  flags :: T_ELFSCN -> T_CONST
+*** *flags :: T_ELFSCN -> T_CONST
+*** *SHF_* :: () -> T_CONST
 ***  address :: T_ELFSCN -> T_CONST
 ***  offset :: T_ELFSCN -> T_CONST
 *** *size :: T_ELFSCN -> T_CONST
