@@ -42,6 +42,12 @@ numeric_constant_dom_t::show (mpz_class const &v,
   o << v;
 }
 
+constant_dom const *
+numeric_constant_dom_t::bit_cdom () const
+{
+  return &hex_constant_dom;
+}
+
 numeric_constant_dom_t dec_constant_dom_obj ("dec");
 constant_dom const &dec_constant_dom = dec_constant_dom_obj;
 

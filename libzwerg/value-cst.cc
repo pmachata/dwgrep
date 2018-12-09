@@ -119,11 +119,13 @@ namespace
     size_t m_pos;
     uint64_t m_value;
     signedness m_sign;
+    constant_dom const *m_bit_cdom;
 
-    bit_producer (uint64_t value, signedness sign)
+    bit_producer (uint64_t value, signedness sign, constant_dom const *bit_cdom)
       : m_pos {0}
       , m_value {value}
       , m_sign {sign}
+      , m_bit_cdom {bit_cdom}
     {}
 
     std::unique_ptr <value_cst>
@@ -136,7 +138,7 @@ namespace
 	  auto m = m_sign == signedness::unsign
 	    ? mpz_class {ret, m_sign}
 	    : mpz_class {-ret, m_sign};
-	  constant cst {m, &hex_constant_dom};
+	  constant cst {m, m_bit_cdom};
 	  return std::make_unique <value_cst> (cst, m_pos++);
 	}
       return nullptr;
@@ -148,16 +150,24 @@ std::unique_ptr <value_producer <value_cst>>
 op_bit_cst::operate (std::unique_ptr <value_cst> a) const
 {
   auto const &cst = a->get_constant ();
-  if (! cst.dom ()->safe_arith ())
-    throw std::runtime_error
-		("`bit' applied to a non-arithmetic constant value");
+
+  constant_dom const *bit_cdom = cst.dom ()->bit_cdom ();
+  if (bit_cdom == nullptr)
+    {
+      if (! cst.dom ()->safe_arith ())
+	throw std::runtime_error
+			("`bit' applied to a non-arithmetic constant value");
+      bit_cdom = &hex_constant_dom;
+    }
 
   if (cst.value () >= 0)
     return std::make_unique <bit_producer> (cst.value ().uval (),
-					    signedness::unsign);
+					    signedness::unsign,
+					    bit_cdom);
   else
     return std::make_unique <bit_producer> (std::abs (cst.value ().sval ()),
-					    signedness::sign);
+					    signedness::sign,
+					    bit_cdom);
 }
 
 std::string

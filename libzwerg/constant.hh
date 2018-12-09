@@ -1,4 +1,5 @@
 /*
+   Copyright (C) 2018 Petr Machata
    Copyright (C) 2014, 2015 Red Hat, Inc.
    This file is part of dwgrep.
 
@@ -56,6 +57,10 @@ public:
   // (E.g. named constants aren't.)
   virtual bool safe_arith () const { return false; }
 
+  // If values of this domain are composed from bits, what's the domain of
+  // the bits themselves?
+  virtual constant_dom const *bit_cdom () const { return nullptr; }
+
   // When doing arithmetic, whether this domain is considered plain
   // and should be given up for the other one.  (E.g. hex domain
   // wouldn't.)
@@ -93,6 +98,7 @@ public:
 
   void show (mpz_class const &v, std::ostream &o, brevity brv) const override;
   bool safe_arith () const override { return true; }
+  constant_dom const *bit_cdom () const override;
   bool plain () const override { return true; }
 
   char const *
