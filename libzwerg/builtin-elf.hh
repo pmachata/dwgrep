@@ -370,6 +370,20 @@ struct op_size_elfscn
 };
 
 
+struct elfscn_entsize_def
+{
+  static uint64_t value (Dwfl *dwfl, Elf_Scn *scn);
+  static zw_cdom const &cdom (Dwfl *dwfl);
+  static std::string docstring ();
+};
+
+struct op_entsize_elfscn
+  : public op_elfscn_simple_value <elfscn_entsize_def>
+{
+  using op_elfscn_simple_value::op_elfscn_simple_value;
+};
+
+
 struct elfscn_label_def
 {
   static unsigned value (Dwfl *dwfl, Elf_Scn *scn);

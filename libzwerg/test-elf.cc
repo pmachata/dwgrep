@@ -392,6 +392,9 @@ TEST_F (ElfTest, test_elf)
 	    {1, "float_const_value.o-armv7hl",
 		"[|Elf| Elf section ?SHF_ALLOC offset]"
 		" == [0x34, 0x34, 0x34, 0x38]"},
+	    {3, "float_const_value.o-armv7hl",
+		"section (( (name == \".symtab\")     16 ||"
+		"          ?(name \".rel.\" ?starts)   8 ) == entsize)"},
 	})
 
     {

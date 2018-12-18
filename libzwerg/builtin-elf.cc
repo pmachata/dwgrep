@@ -795,6 +795,29 @@ xxx
 )docstring";
 }
 
+uint64_t
+elfscn_entsize_def::value (Dwfl *dwfl, Elf_Scn *scn)
+{
+  return ::getshdr (scn).sh_entsize;
+}
+
+zw_cdom const &
+elfscn_entsize_def::cdom (Dwfl *dwfl)
+{
+  return dec_constant_dom;
+}
+
+std::string
+elfscn_entsize_def::docstring ()
+{
+  return
+R"docstring(
+
+xxx
+
+)docstring";
+}
+
 unsigned
 elfscn_label_def::value (Dwfl *dwfl, Elf_Scn *scn)
 {

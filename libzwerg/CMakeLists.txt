@@ -106,6 +106,7 @@ ADD_LIBRARY (LibzwergElf OBJECT
   builtin-elf-voc-elf.cc
   builtin-elf-voc-emachine.cc
   builtin-elf-voc-entry.cc
+  builtin-elf-voc-entsize.cc
   builtin-elf-voc-etype.cc
   builtin-elf-voc-flags.cc
   builtin-elf-voc-label.cc
