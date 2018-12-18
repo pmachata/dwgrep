@@ -31,6 +31,7 @@
 #include "builtin-elf-voc.hh"
 #include "builtin-elf-voc-abiversion.hh"
 #include "builtin-elf-voc-address.hh"
+#include "builtin-elf-voc-alignment.hh"
 #include "builtin-elf-voc-binding.hh"
 #include "builtin-elf-voc-eclass.hh"
 #include "builtin-elf-voc-edata.hh"
@@ -70,6 +71,7 @@ dwgrep_vocabulary_elf ()
 
   dwgrep_vocabulary_elf_abiversion (voc);
   dwgrep_vocabulary_elf_address (voc);
+  dwgrep_vocabulary_elf_alignment (voc);
   dwgrep_vocabulary_elf_binding (voc);
   dwgrep_vocabulary_elf_eclass (voc);
   dwgrep_vocabulary_elf_edata (voc);

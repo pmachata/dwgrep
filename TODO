@@ -800,7 +800,7 @@ A typical use would be in testing whether a bit is set, as in::
 *** *size :: T_ELFSCN -> T_CONST
 *** *link :: T_ELFSCN ->? T_ELFSCN
 ***  info xxx? (what does sh_info constain?)
-***  alignment :: T_ELFSCN -> T_CONST
+*** *alignment :: T_ELFSCN -> T_CONST
 ***  entsize :: T_ELFSCN -> T_CONST
 
 **  T_STRTAB_ENTRY

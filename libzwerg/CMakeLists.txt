@@ -97,6 +97,7 @@ ADD_LIBRARY (LibzwergElf OBJECT
   builtin-elf-voc.cc
   builtin-elf-voc-abiversion.cc
   builtin-elf-voc-address.cc
+  builtin-elf-voc-alignment.cc
   builtin-elf-voc-binding.cc
   builtin-elf-voc-eclass.cc
   builtin-elf-voc-edata.cc

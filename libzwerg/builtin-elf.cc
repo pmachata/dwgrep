@@ -862,3 +862,26 @@ xxx
 
 )docstring";
 }
+
+unsigned
+elfscn_alignment_def::value (Dwfl *dwfl, Elf_Scn *scn)
+{
+  return ::getshdr (scn).sh_addralign;
+}
+
+zw_cdom const &
+elfscn_alignment_def::cdom (Dwfl *dwfl)
+{
+  return hex_constant_dom;
+}
+
+std::string
+elfscn_alignment_def::docstring ()
+{
+  return
+R"docstring(
+
+xxx
+
+)docstring";
+}

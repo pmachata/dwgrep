@@ -411,4 +411,18 @@ struct pred_flags_elfscn
 };
 
 
+struct elfscn_alignment_def
+{
+  static unsigned value (Dwfl *dwfl, Elf_Scn *scn);
+  static zw_cdom const &cdom (Dwfl *dwfl);
+  static std::string docstring ();
+};
+
+struct op_alignment_elfscn
+  : public op_elfscn_simple_value <elfscn_alignment_def>
+{
+  using op_elfscn_simple_value::op_elfscn_simple_value;
+};
+
+
 #endif /* BUILTIN_ELF_H */
