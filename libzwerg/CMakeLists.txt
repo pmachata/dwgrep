@@ -111,6 +111,7 @@ ADD_LIBRARY (LibzwergElf OBJECT
   builtin-elf-voc-label.cc
   builtin-elf-voc-link.cc
   builtin-elf-voc-name.cc
+  builtin-elf-voc-offset.cc
   builtin-elf-voc-osabi.cc
   builtin-elf-voc-section.cc
   builtin-elf-voc-shstr.cc

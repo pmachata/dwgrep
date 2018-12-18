@@ -45,6 +45,7 @@
 #include "builtin-elf-voc-label.hh"
 #include "builtin-elf-voc-link.hh"
 #include "builtin-elf-voc-name.hh"
+#include "builtin-elf-voc-offset.hh"
 #include "builtin-elf-voc-osabi.hh"
 #include "builtin-elf-voc-section.hh"
 #include "builtin-elf-voc-shstr.hh"
@@ -85,6 +86,7 @@ dwgrep_vocabulary_elf ()
   dwgrep_vocabulary_elf_label (voc);
   dwgrep_vocabulary_elf_link (voc);
   dwgrep_vocabulary_elf_name (voc);
+  dwgrep_vocabulary_elf_offset (voc);
   dwgrep_vocabulary_elf_osabi (voc);
   dwgrep_vocabulary_elf_section (voc);
   dwgrep_vocabulary_elf_shstr (voc);

@@ -908,3 +908,26 @@ xxx
 
 )docstring";
 }
+
+unsigned
+elfscn_offset_def::value (Dwfl *dwfl, Elf_Scn *scn)
+{
+  return ::getshdr (scn).sh_offset;
+}
+
+zw_cdom const &
+elfscn_offset_def::cdom (Dwfl *dwfl)
+{
+  return dw_offset_dom ();
+}
+
+std::string
+elfscn_offset_def::docstring ()
+{
+  return
+R"docstring(
+
+xxx
+
+)docstring";
+}
