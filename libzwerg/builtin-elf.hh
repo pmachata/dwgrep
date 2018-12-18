@@ -411,6 +411,20 @@ struct pred_flags_elfscn
 };
 
 
+struct elfscn_address_def
+{
+  static unsigned value (Dwfl *dwfl, Elf_Scn *scn);
+  static zw_cdom const &cdom (Dwfl *dwfl);
+  static std::string docstring ();
+};
+
+struct op_address_elfscn
+  : public op_elfscn_simple_value <elfscn_address_def>
+{
+  using op_elfscn_simple_value::op_elfscn_simple_value;
+};
+
+
 struct elfscn_alignment_def
 {
   static unsigned value (Dwfl *dwfl, Elf_Scn *scn);

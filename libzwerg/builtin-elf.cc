@@ -864,6 +864,29 @@ xxx
 }
 
 unsigned
+elfscn_address_def::value (Dwfl *dwfl, Elf_Scn *scn)
+{
+  return ::getshdr (scn).sh_addr;
+}
+
+zw_cdom const &
+elfscn_address_def::cdom (Dwfl *dwfl)
+{
+  return dw_address_dom ();
+}
+
+std::string
+elfscn_address_def::docstring ()
+{
+  return
+R"docstring(
+
+xxx
+
+)docstring";
+}
+
+unsigned
 elfscn_alignment_def::value (Dwfl *dwfl, Elf_Scn *scn)
 {
   return ::getshdr (scn).sh_addralign;

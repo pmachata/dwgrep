@@ -795,7 +795,7 @@ A typical use would be in testing whether a bit is set, as in::
      section's sh_type
 *** *flags :: T_ELFSCN -> T_CONST
 *** *SHF_* :: () -> T_CONST
-***  address :: T_ELFSCN -> T_CONST
+*** *address :: T_ELFSCN -> T_CONST
 ***  offset :: T_ELFSCN -> T_CONST
 *** *size :: T_ELFSCN -> T_CONST
 *** *link :: T_ELFSCN ->? T_ELFSCN

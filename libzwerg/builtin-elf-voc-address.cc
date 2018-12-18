@@ -27,6 +27,7 @@
    not, see <http://www.gnu.org/licenses/>.  */
 
 #include "builtin-elf-voc-address.hh"
+#include "builtin-elf.hh"
 #include "builtin-symbol.hh"
 
 void
@@ -34,6 +35,7 @@ dwgrep_vocabulary_elf_address (vocabulary &voc)
 {
   auto t = std::make_shared <overload_tab> ();
 
+  t->add_op_overload <op_address_elfscn> ();
   t->add_op_overload <op_address_symbol> ();
 
   voc.add (std::make_shared <overloaded_op_builtin> ("address", t));

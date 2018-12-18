@@ -389,6 +389,8 @@ TEST_F (ElfTest, test_elf)
 		"section ?(flags bit) !SHF_ALLOC"},
 	    {4, "float_const_value.o-armv7hl",
 		"section (alignment > 1)"},
+	    {4, "float_const_value.o-armv7hl",
+		"section (address != 0)"},
 	})
 
     {
