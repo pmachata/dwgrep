@@ -60,8 +60,22 @@ dwgrep_vocabulary_elf_flags (vocabulary &voc)
 #undef ELF_ONE_KNOWN_EF_ARCH
 #undef ELF_ONE_KNOWN_EF
 
+#define CONSTANT(CODE, NAME, DOM, PRED)					\
+    {									\
+      add_builtin_constant (voc, constant (CODE, DOM), NAME);		\
+									\
+      auto t = std::make_shared <overload_tab> ();			\
+									\
+      t->add_pred_overload <PRED> (CODE);				\
+									\
+      voc.add (std::make_shared <overloaded_pred_builtin>		\
+	       ("?" NAME, t, true));					\
+      voc.add (std::make_shared <overloaded_pred_builtin>		\
+	       ("!" NAME, t, false));					\
+    }
+
 #define ELF_ONE_KNOWN_SHF(NAME, CODE)					\
-  add_builtin_constant (voc, constant (CODE, &elf_shf_dom (machine)), #CODE);
+  CONSTANT(CODE, #CODE, &elf_shf_dom (machine), pred_flags_elfscn);
 
     {
       constexpr int machine = EM_NONE;

@@ -381,6 +381,12 @@ TEST_F (ElfTest, test_elf)
 		"  0x21, 0x150, 0x6a8, 0x21f]"},
 	    {4, "float_const_value.o-armv7hl",
 		"section (flags bit == SHF_ALLOC) name"},
+	    {2, "float_const_value.o-armv7hl",
+		"section flags ?(bit) !(bit == SHF_ALLOC)"},
+	    {4, "float_const_value.o-armv7hl",
+		"section ?SHF_ALLOC"},
+	    {2, "float_const_value.o-armv7hl",
+		"section ?(flags bit) !SHF_ALLOC"},
 	})
 
     {

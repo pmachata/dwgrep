@@ -842,3 +842,23 @@ xxx
 
 )docstring";
 }
+
+pred_result
+pred_flags_elfscn::result (value_elf_section &a) const
+{
+  if ((::getshdr (a.get_scn ()).sh_flags & m_flag) == m_flag)
+    return pred_result::yes;
+  else
+    return pred_result::no;
+}
+
+std::string
+pred_flags_elfscn::docstring ()
+{
+  return
+R"docstring(
+
+xxx
+
+)docstring";
+}

@@ -397,4 +397,18 @@ struct op_flags_elfscn
   using op_elfscn_simple_value::op_elfscn_simple_value;
 };
 
+struct pred_flags_elfscn
+  : public pred_overload <value_elf_section>
+{
+  unsigned m_flag;
+
+  pred_flags_elfscn (unsigned flag)
+    : m_flag {flag}
+  {}
+
+  pred_result result (value_elf_section &a) const override;
+  static std::string docstring ();
+};
+
+
 #endif /* BUILTIN_ELF_H */
