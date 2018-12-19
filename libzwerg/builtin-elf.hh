@@ -467,4 +467,13 @@ struct op_offset_elfscn
 };
 
 
+struct op_value_strtab_entry
+  : public op_once_overload <value_str, value_strtab_entry>
+{
+  using op_once_overload::op_once_overload;
+
+  value_str operate (std::unique_ptr <value_strtab_entry> val) const override;
+  static std::string docstring ();
+};
+
 #endif /* BUILTIN_ELF_H */

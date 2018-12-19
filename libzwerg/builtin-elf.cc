@@ -954,3 +954,19 @@ xxx
 
 )docstring";
 }
+
+value_str
+op_value_strtab_entry::operate (std::unique_ptr <value_strtab_entry> val) const
+{
+  return val->get_strval ();
+}
+
+std::string op_value_strtab_entry::docstring ()
+{
+  return
+R"docstring(
+
+xxx
+
+)docstring";
+}

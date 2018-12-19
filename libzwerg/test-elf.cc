@@ -370,6 +370,8 @@ TEST_F (ElfTest, test_elf)
 		"section (label == SHT_DYNSYM) entry (type == T_ELFSYM)"},
 	    {38, "a1.out",
 		"section (name == \".strtab\") entry (type == T_STRTAB_ENTRY)"},
+	    {3, "float_const_value.o-armv7hl",
+		"section (name == \".strtab\") entry ?(value \"_ZN\" ?starts)"},
 	    {1,  "a1.out",
 		"section (name == \".rela.dyn\") link (name == \".dynsym\")"
 		" link (name == \".dynstr\") !(link)"},

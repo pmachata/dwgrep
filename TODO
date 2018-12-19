@@ -815,7 +815,7 @@ A typical use would be in testing whether a bit is set, as in::
     (XXX or we could allow overriding ?eq and use zw_value::cmp as a last
     resort. Then also single-address asets might compare equal to constants.)
 
-***  value :: T_STRTAB_ENTRY -> T_STR
+*** *value :: T_STRTAB_ENTRY -> T_STR
 ***  offset :: T_STRTAB_ENTRY -> T_CONST
 
 **  T_ELFDYN

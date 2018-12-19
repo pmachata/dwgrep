@@ -28,6 +28,7 @@
 
 #include "builtin-elf-voc-value.hh"
 #include "builtin-symbol.hh"
+#include "builtin-elf.hh"
 
 void
 dwgrep_vocabulary_elf_value (vocabulary &voc)
@@ -35,6 +36,7 @@ dwgrep_vocabulary_elf_value (vocabulary &voc)
   auto t = std::make_shared <overload_tab> ();
 
   t->add_op_overload <op_address_symbol> ();
+  t->add_op_overload <op_value_strtab_entry> ();
 
   voc.add (std::make_shared <overloaded_op_builtin> ("value", t));
 }
