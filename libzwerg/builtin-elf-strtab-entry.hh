@@ -26,17 +26,30 @@
    the GNU Lesser General Public License along with this program.  If
    not, see <http://www.gnu.org/licenses/>.  */
 
-#include "builtin-elf-voc-offset.hh"
-#include "builtin-elf-strtab-entry.hh"
-#include "builtin-elfscn.hh"
+#ifndef BUILTIN_ELF_STRTAB_ENTRY_H
+#define BUILTIN_ELF_STRTAB_ENTRY_H
 
-void
-dwgrep_vocabulary_elf_offset (vocabulary &voc)
+#include "overload.hh"
+#include "value-cst.hh"
+#include "value-elf.hh"
+#include "value-str.hh"
+
+struct op_value_strtab_entry
+  : public op_once_overload <value_str, value_strtab_entry>
 {
-  auto t = std::make_shared <overload_tab> ();
+  using op_once_overload::op_once_overload;
 
-  t->add_op_overload <op_offset_elfscn> ();
-  t->add_op_overload <op_offset_strtab_entry> ();
+  value_str operate (std::unique_ptr <value_strtab_entry> val) const override;
+  static std::string docstring ();
+};
 
-  voc.add (std::make_shared <overloaded_op_builtin> ("offset", t));
-}
+struct op_offset_strtab_entry
+  : public op_once_overload <value_cst, value_strtab_entry>
+{
+  using op_once_overload::op_once_overload;
+
+  value_cst operate (std::unique_ptr <value_strtab_entry> val) const override;
+  static std::string docstring ();
+};
+
+#endif /* BUILTIN_ELF_STRTAB_ENTRY_H */

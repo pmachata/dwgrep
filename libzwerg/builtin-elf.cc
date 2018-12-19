@@ -499,38 +499,3 @@ in that file.
 
 template class op_section_elf <value_elf>;
 template class op_section_elf <value_dwarf>;
-
-
-value_str
-op_value_strtab_entry::operate (std::unique_ptr <value_strtab_entry> val) const
-{
-  return val->get_strval ();
-}
-
-std::string op_value_strtab_entry::docstring ()
-{
-  return
-R"docstring(
-
-xxx
-
-)docstring";
-}
-
-value_cst
-op_offset_strtab_entry::operate (std::unique_ptr <value_strtab_entry> val) const
-{
-  size_t value = val->get_offset ();
-  return value_cst {constant {value, &dw_offset_dom ()}, 0};
-}
-
-std::string
-op_offset_strtab_entry::docstring ()
-{
-  return
-R"docstring(
-
-xxx
-
-)docstring";
-}

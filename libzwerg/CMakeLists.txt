@@ -92,9 +92,12 @@ ADD_LIBRARY (LibzwergElf OBJECT
   elfcst.cc
   value-symbol.cc
   builtin-symbol.cc
+
   value-elf.cc
   builtin-elf.cc
   builtin-elfscn.cc
+  builtin-elf-strtab-entry.cc
+
   builtin-elf-voc.cc
   builtin-elf-voc-abiversion.cc
   builtin-elf-voc-address.cc

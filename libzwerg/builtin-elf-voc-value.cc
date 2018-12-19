@@ -28,7 +28,7 @@
 
 #include "builtin-elf-voc-value.hh"
 #include "builtin-symbol.hh"
-#include "builtin-elf.hh"
+#include "builtin-elf-strtab-entry.hh"
 
 void
 dwgrep_vocabulary_elf_value (vocabulary &voc)

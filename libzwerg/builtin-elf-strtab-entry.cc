@@ -26,17 +26,39 @@
    the GNU Lesser General Public License along with this program.  If
    not, see <http://www.gnu.org/licenses/>.  */
 
-#include "builtin-elf-voc-offset.hh"
 #include "builtin-elf-strtab-entry.hh"
-#include "builtin-elfscn.hh"
+#include "dwcst.hh"
 
-void
-dwgrep_vocabulary_elf_offset (vocabulary &voc)
+value_str
+op_value_strtab_entry::operate (std::unique_ptr <value_strtab_entry> val) const
 {
-  auto t = std::make_shared <overload_tab> ();
+  return val->get_strval ();
+}
 
-  t->add_op_overload <op_offset_elfscn> ();
-  t->add_op_overload <op_offset_strtab_entry> ();
+std::string op_value_strtab_entry::docstring ()
+{
+  return
+R"docstring(
 
-  voc.add (std::make_shared <overloaded_op_builtin> ("offset", t));
+xxx
+
+)docstring";
+}
+
+value_cst
+op_offset_strtab_entry::operate (std::unique_ptr <value_strtab_entry> val) const
+{
+  size_t value = val->get_offset ();
+  return value_cst {constant {value, &dw_offset_dom ()}, 0};
+}
+
+std::string
+op_offset_strtab_entry::docstring ()
+{
+  return
+R"docstring(
+
+xxx
+
+)docstring";
 }
