@@ -27,7 +27,7 @@
    not, see <http://www.gnu.org/licenses/>.  */
 
 #include "builtin-elf-voc-alignment.hh"
-#include "builtin-elf.hh"
+#include "builtin-elfscn.hh"
 
 void
 dwgrep_vocabulary_elf_alignment (vocabulary &voc)

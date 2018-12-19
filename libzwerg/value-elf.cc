@@ -88,6 +88,28 @@ get_main_dwarf (Dwfl *dwfl)
   return {dwarf, bias};
 }
 
+size_t
+get_shdrstrndx (Elf *elf)
+{
+  size_t ndx;
+  int err = elf_getshdrstrndx (elf, &ndx);
+  if (err != 0)
+    throw_libelf ();
+  return ndx;
+}
+
+GElf_Ehdr
+get_ehdr (Dwfl *dwfl)
+{
+  Elf *elf = get_main_elf (dwfl).first;
+  // Note: Bias ignored.
+  GElf_Ehdr ehdr;
+  if (gelf_getehdr (elf, &ehdr) == nullptr)
+    throw_libelf ();
+
+  return ehdr;
+}
+
 value_type const value_elf::vtype = value_type::alloc ("T_ELF",
 R"docstring(
 

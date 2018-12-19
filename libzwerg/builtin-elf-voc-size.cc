@@ -27,7 +27,7 @@
    not, see <http://www.gnu.org/licenses/>.  */
 
 #include "builtin-elf-voc-size.hh"
-#include "builtin-elf.hh"
+#include "builtin-elfscn.hh"
 #include "builtin-symbol.hh"
 
 void

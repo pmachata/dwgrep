@@ -28,6 +28,7 @@
 
 #include "builtin-elf-voc-offset.hh"
 #include "builtin-elf.hh"
+#include "builtin-elfscn.hh"
 
 void
 dwgrep_vocabulary_elf_offset (vocabulary &voc)

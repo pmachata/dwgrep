@@ -28,6 +28,7 @@
 
 #include "builtin-elf-voc-name.hh"
 #include "builtin-elf.hh"
+#include "builtin-elfscn.hh"
 #include "builtin-symbol.hh"
 
 void

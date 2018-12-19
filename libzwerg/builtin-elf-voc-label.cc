@@ -27,7 +27,7 @@
    not, see <http://www.gnu.org/licenses/>.  */
 
 #include "builtin-elf-voc-label.hh"
-#include "builtin-elf.hh"
+#include "builtin-elfscn.hh"
 #include "builtin-symbol.hh"
 #include "elfcst.hh"
 #include "known-elf.h"

@@ -28,6 +28,7 @@
 
 #include "builtin-elf-voc-flags.hh"
 #include "builtin-elf.hh"
+#include "builtin-elfscn.hh"
 #include "elfcst.hh"
 #include "known-elf.h"
 

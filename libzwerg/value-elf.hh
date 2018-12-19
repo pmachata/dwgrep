@@ -37,6 +37,8 @@
 Dwfl_Module *get_sole_module (Dwfl *dwfl);
 std::pair <Elf *, GElf_Addr> get_main_elf (Dwfl *dwfl);
 std::pair <Dwarf *, GElf_Addr> get_main_dwarf (Dwfl *dwfl);
+size_t get_shdrstrndx (Elf *elf);
+GElf_Ehdr get_ehdr (Dwfl *dwfl);
 
 // -------------------------------------------------------------------
 // Elf

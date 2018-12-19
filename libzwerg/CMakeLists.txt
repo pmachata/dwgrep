@@ -94,6 +94,7 @@ ADD_LIBRARY (LibzwergElf OBJECT
   builtin-symbol.cc
   value-elf.cc
   builtin-elf.cc
+  builtin-elfscn.cc
   builtin-elf-voc.cc
   builtin-elf-voc-abiversion.cc
   builtin-elf-voc-address.cc
