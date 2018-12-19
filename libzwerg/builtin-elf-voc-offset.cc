@@ -35,6 +35,7 @@ dwgrep_vocabulary_elf_offset (vocabulary &voc)
   auto t = std::make_shared <overload_tab> ();
 
   t->add_op_overload <op_offset_elfscn> ();
+  t->add_op_overload <op_offset_strtab_entry> ();
 
   voc.add (std::make_shared <overloaded_op_builtin> ("offset", t));
 }
