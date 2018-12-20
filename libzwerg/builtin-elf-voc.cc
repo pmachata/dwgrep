@@ -44,6 +44,7 @@
 #include "builtin-elf-voc-entsize.hh"
 #include "builtin-elf-voc-etype.hh"
 #include "builtin-elf-voc-flags.hh"
+#include "builtin-elf-voc-info.hh"
 #include "builtin-elf-voc-label.hh"
 #include "builtin-elf-voc-link.hh"
 #include "builtin-elf-voc-name.hh"
@@ -88,6 +89,7 @@ dwgrep_vocabulary_elf ()
   dwgrep_vocabulary_elf_entsize (voc);
   dwgrep_vocabulary_elf_etype (voc);
   dwgrep_vocabulary_elf_flags (voc);
+  dwgrep_vocabulary_elf_info (voc);
   dwgrep_vocabulary_elf_label (voc);
   dwgrep_vocabulary_elf_link (voc);
   dwgrep_vocabulary_elf_name (voc);

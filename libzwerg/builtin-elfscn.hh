@@ -63,6 +63,16 @@ struct op_link_elfscn
   static std::string docstring ();
 };
 
+struct op_info_elfscn
+  : public op_overload <value, value_elf_section>
+{
+  using op_overload::op_overload;
+
+  std::unique_ptr <value>
+  operate (std::unique_ptr <value_elf_section> a) const override;
+  static std::string docstring ();
+};
+
 
 template <class Def>
 struct op_elfscn_simple_value

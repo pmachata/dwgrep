@@ -27,6 +27,8 @@
    not, see <http://www.gnu.org/licenses/>.  */
 
 #include "builtin-elfscn.hh"
+
+#include <elfutils/elf-knowledge.h>
 #include "dwcst.hh"
 #include "dwpp.hh"
 #include "elfcst.hh"
@@ -266,6 +268,34 @@ op_link_elfscn::operate (std::unique_ptr <value_elf_section> a) const
 
 std::string
 op_link_elfscn::docstring ()
+{
+  return
+R"docstring(
+
+xxx
+
+)docstring";
+}
+
+std::unique_ptr <value>
+op_info_elfscn::operate (std::unique_ptr <value_elf_section> a) const
+{
+  GElf_Shdr shdr = ::getshdr (a->get_scn ());
+  if (a->is_raw () || !SH_INFO_LINK_P (&shdr))
+    {
+      constant c {shdr.sh_info, &dec_constant_dom};
+      return std::make_unique <value_cst> (c, 0);
+    }
+
+  if (shdr.sh_info == 0)
+    return nullptr;
+
+  return std::make_unique <value_elf_section> (a->get_dwctx (), shdr.sh_info,
+					       0, a->get_doneness ());
+}
+
+std::string
+op_info_elfscn::docstring ()
 {
   return
 R"docstring(

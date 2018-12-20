@@ -801,7 +801,7 @@ A typical use would be in testing whether a bit is set, as in::
 *** *offset :: T_ELFSCN -> T_CONST
 *** *size :: T_ELFSCN -> T_CONST
 *** *link :: T_ELFSCN ->? T_ELFSCN
-***  info xxx? (what does sh_info constain?)
+*** *info :: T_ELFSCN ->? T_???
 *** *alignment :: T_ELFSCN -> T_CONST
 *** *entsize :: T_ELFSCN -> T_CONST
 ***  cooked :: T_ELFSCN -> T_ELFSCN

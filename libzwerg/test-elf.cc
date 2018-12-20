@@ -377,6 +377,17 @@ TEST_F (ElfTest, test_elf)
 	    {1,  "a1.out",
 		"section (name == \".rela.dyn\") link (name == \".dynsym\")"
 		" link (name == \".dynstr\") !(link)"},
+	    {1,  "a1.out",
+		// "elf cooked" because cooked::T_DWARF is not in the vocabulary
+		// passed to this test.
+		"elf cooked section (name == \".rela.dyn\") !(info)"},
+	    {1,  "a1.out",
+		// Likewise here for raw.
+		"elf raw section (name == \".rela.dyn\") (info == 0)"},
+	    {1,  "a1.out",
+		"section (name == \".rela.plt\") info (name == \".plt\")"},
+	    {1,  "a1.out",
+		"section (name == \".symtab\") (info == 53)"},
 	    {1, "a1.out",
 		"[|Dw| Dw section size] =="
 		" [0x1c, 0x20, 0x24, 0x1c, 0x48, 0x38, 0x6, 0x20, 0x18, 0x18,"

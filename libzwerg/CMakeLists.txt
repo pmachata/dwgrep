@@ -114,6 +114,7 @@ ADD_LIBRARY (LibzwergElf OBJECT
   builtin-elf-voc-entsize.cc
   builtin-elf-voc-etype.cc
   builtin-elf-voc-flags.cc
+  builtin-elf-voc-info.cc
   builtin-elf-voc-label.cc
   builtin-elf-voc-link.cc
   builtin-elf-voc-name.cc
