@@ -759,6 +759,8 @@ A typical use would be in testing whether a bit is set, as in::
 *** *shstr :: T_ELF -> T_ELFSCN
      Yield section where section header string table is stored.
 
+*** *cooked :: T_ELF -> T_ELF
+*** *raw :: T_ELF -> T_ELF
 **  T_PHDR
 **  T_ELFSCN
 *** *name :: T_ELFSCN -> T_STR
@@ -802,6 +804,8 @@ A typical use would be in testing whether a bit is set, as in::
 ***  info xxx? (what does sh_info constain?)
 *** *alignment :: T_ELFSCN -> T_CONST
 *** *entsize :: T_ELFSCN -> T_CONST
+***  cooked :: T_ELFSCN -> T_ELFSCN
+***  raw :: T_ELFSCN -> T_ELFSCN
 
 **  T_STRTAB_ENTRY
     This is to represent strings in a string table. It's desirable that these

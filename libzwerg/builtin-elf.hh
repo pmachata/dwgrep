@@ -46,6 +46,28 @@ struct op_elf_dwarf
   static std::string docstring ();
 };
 
+struct op_raw_elf
+  : public op_once_overload <value_elf, value_elf>
+{
+  using op_once_overload::op_once_overload;
+
+  value_elf
+  operate (std::unique_ptr <value_elf> val) const override;
+
+  static std::string docstring ();
+};
+
+struct op_cooked_elf
+  : public op_once_overload <value_elf, value_elf>
+{
+  using op_once_overload::op_once_overload;
+
+  value_elf
+  operate (std::unique_ptr <value_elf> val) const override;
+
+  static std::string docstring ();
+};
+
 struct op_name_elf
   : public op_once_overload <value_str, value_elf>
 {

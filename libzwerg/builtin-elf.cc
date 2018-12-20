@@ -109,6 +109,44 @@ xxx document me
 }
 
 
+value_elf
+op_raw_elf::operate (std::unique_ptr <value_elf> val) const
+{
+  val->set_pos (0);
+  val->set_doneness (doneness::raw);
+  return std::move (*val);
+}
+
+std::string
+op_raw_elf::docstring ()
+{
+  return
+R"docstring(
+
+xxx document me
+
+)docstring";
+}
+
+value_elf
+op_cooked_elf::operate (std::unique_ptr <value_elf> val) const
+{
+  val->set_pos (0);
+  val->set_doneness (doneness::cooked);
+  return std::move (*val);
+}
+
+std::string
+op_cooked_elf::docstring ()
+{
+  return
+R"docstring(
+
+xxx document me
+
+)docstring";
+}
+
 value_str
 op_name_elf::operate (std::unique_ptr <value_elf> a) const
 {

@@ -33,6 +33,7 @@
 #include "builtin-elf-voc-address.hh"
 #include "builtin-elf-voc-alignment.hh"
 #include "builtin-elf-voc-binding.hh"
+#include "builtin-elf-voc-cooked.hh"
 #include "builtin-elf-voc-eclass.hh"
 #include "builtin-elf-voc-edata.hh"
 #include "builtin-elf-voc-eentry.hh"
@@ -48,6 +49,7 @@
 #include "builtin-elf-voc-name.hh"
 #include "builtin-elf-voc-offset.hh"
 #include "builtin-elf-voc-osabi.hh"
+#include "builtin-elf-voc-raw.hh"
 #include "builtin-elf-voc-section.hh"
 #include "builtin-elf-voc-shstr.hh"
 #include "builtin-elf-voc-size.hh"
@@ -75,6 +77,7 @@ dwgrep_vocabulary_elf ()
   dwgrep_vocabulary_elf_address (voc);
   dwgrep_vocabulary_elf_alignment (voc);
   dwgrep_vocabulary_elf_binding (voc);
+  dwgrep_vocabulary_elf_cooked (voc);
   dwgrep_vocabulary_elf_eclass (voc);
   dwgrep_vocabulary_elf_edata (voc);
   dwgrep_vocabulary_elf_eentry (voc);
@@ -90,6 +93,7 @@ dwgrep_vocabulary_elf ()
   dwgrep_vocabulary_elf_name (voc);
   dwgrep_vocabulary_elf_offset (voc);
   dwgrep_vocabulary_elf_osabi (voc);
+  dwgrep_vocabulary_elf_raw (voc);
   dwgrep_vocabulary_elf_section (voc);
   dwgrep_vocabulary_elf_shstr (voc);
   dwgrep_vocabulary_elf_size (voc);

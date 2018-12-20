@@ -103,6 +103,7 @@ ADD_LIBRARY (LibzwergElf OBJECT
   builtin-elf-voc-address.cc
   builtin-elf-voc-alignment.cc
   builtin-elf-voc-binding.cc
+  builtin-elf-voc-cooked.cc
   builtin-elf-voc-eclass.cc
   builtin-elf-voc-edata.cc
   builtin-elf-voc-eentry.cc
@@ -118,6 +119,7 @@ ADD_LIBRARY (LibzwergElf OBJECT
   builtin-elf-voc-name.cc
   builtin-elf-voc-offset.cc
   builtin-elf-voc-osabi.cc
+  builtin-elf-voc-raw.cc
   builtin-elf-voc-section.cc
   builtin-elf-voc-shstr.cc
   builtin-elf-voc-size.cc

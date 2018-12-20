@@ -52,6 +52,15 @@ class value_elf
   std::shared_ptr <dwfl_context> m_dwctx;
   dwarf_value_cache m_dwcache;
 
+  // Since raw and cooked operate on a moved-in unique pointer, it is safe for
+  // them to change the doneness aspect, instead of creating a new value.
+  friend class op_raw_elf;
+  friend class op_cooked_elf;
+  void set_doneness (doneness d)
+  {
+    m_doneness = d;
+  }
+
 public:
   static value_type const vtype;
 
