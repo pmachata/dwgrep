@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2017, 2018 Petr Machata
+   Copyright (C) 2017, 2018, 2019 Petr Machata
    Copyright (C) 2014, 2015 Red Hat, Inc.
    This file is part of dwgrep.
 
@@ -29,6 +29,7 @@
 
 #include <vector>
 #include "builtin-symbol.hh"
+#include "builtin-elfscn.hh"
 #include "dwit.hh"
 #include "dwcst.hh"
 
@@ -131,6 +132,102 @@ op_symbol_elf::docstring ()
 R"docstring(
 
 xxx document me
+
+)docstring";
+}
+
+
+namespace
+{
+  struct dynsym_producer
+    : public value_producer <value_symbol>
+  {
+    std::shared_ptr <dwfl_context> m_dwctx;
+    doneness m_d;
+    Elf *m_elf;
+    Elf_Scn *m_scn;
+    std::unique_ptr <symtab_producer> m_stp;
+    size_t m_pos;
+
+    dynsym_producer (std::shared_ptr <dwfl_context> dwctx, doneness d)
+      : m_dwctx {dwctx}
+      , m_d {d}
+      , m_elf {get_main_elf (m_dwctx->get_dwfl ()).first}
+      , m_scn {nullptr}
+      , m_pos {0}
+    {}
+
+    std::unique_ptr <value_symbol>
+    next ()
+    {
+      do
+	{
+	  if (m_stp != nullptr)
+	    {
+	      if (std::unique_ptr <value> val = m_stp->next ())
+		{
+		  auto *sym = &value::require_as <value_symbol> (val.release ());
+		  sym->set_pos (m_pos++);
+		  return std::unique_ptr <value_symbol> (sym);
+		}
+	      m_stp.reset ();
+	    }
+
+	  while ((m_scn = elf_nextscn (m_elf, m_scn)))
+	    {
+	      GElf_Shdr shdr;
+	      if (gelf_getshdr (m_scn, &shdr) == nullptr)
+		throw_libelf ();
+	      if (shdr.sh_type == SHT_DYNSYM)
+		{
+		  m_stp = std::make_unique <symtab_producer> (m_dwctx,
+							      m_scn, m_d);
+		  break;
+		}
+	    }
+	}
+      while (m_scn != nullptr);
+
+      return nullptr;
+    }
+  };
+}
+
+std::unique_ptr <value_producer <value_symbol>>
+op_dynsym_dwarf::operate (std::unique_ptr <value_dwarf> val) const
+{
+  return std::make_unique <dynsym_producer> (val->get_dwctx (),
+					     val->get_doneness ());
+}
+
+std::string
+op_dynsym_dwarf::docstring ()
+{
+  return
+R"docstring(
+
+Takes a Dwarf on TOS and yields all symbols found in any of the
+dynamic symbol tables in the ELF file underlying the given Dwarf.
+
+)docstring";
+}
+
+
+std::unique_ptr <value_producer <value_symbol>>
+op_dynsym_elf::operate (std::unique_ptr <value_elf> val) const
+{
+  return std::make_unique <dynsym_producer> (val->get_dwctx (),
+					     val->get_doneness ());
+}
+
+std::string
+op_dynsym_elf::docstring ()
+{
+  return
+R"docstring(
+
+Takes an Elf on TOS and yields all symbols found in any of the
+dynamic symbol tables in the given file.
 
 )docstring";
 }

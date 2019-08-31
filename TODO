@@ -719,7 +719,7 @@
      Emits a subset of symbols from the given ELF file.
 ***  symbol :: .ar file ->* T_ELFSYM
 *** *name :: T_ELF -> T_STR
-***  dynsym :: T_ELF ->* T_ELFSYM || T_DWARF ->* T_ELFSYM
+*** *dynsym :: T_ELF ->* T_ELFSYM || T_DWARF ->* T_ELFSYM
      Like symbol, but only yields dynamic symbols
 *** *eclass :: T_ELF -> T_CONST
 *** *ELFCLASS32, ELFCLASS64

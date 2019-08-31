@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2018 Petr Machata
+   Copyright (C) 2018, 2019 Petr Machata
    This file is part of dwgrep.
 
    This file is free software; you can redistribute it and/or modify
@@ -202,6 +202,30 @@ struct op_offset_elfscn
   : public op_elfscn_simple_value <elfscn_offset_def>
 {
   using op_elfscn_simple_value::op_elfscn_simple_value;
+};
+
+class symtab_producer
+  : public value_producer <value>
+{
+  std::shared_ptr <dwfl_context> m_dwctx;
+  Elf *m_elf;
+  Elf_Scn *m_scn;
+  Elf_Data *m_data;
+  size_t m_strtabndx;
+  size_t m_ndx;
+  size_t m_count;
+  unsigned m_pos;
+  doneness m_d;
+
+  static Elf_Data *get_data (Elf_Scn *scn);
+  static size_t get_strtabndx (Elf_Scn *symtab);
+  static size_t get_count (Elf *elf, Elf_Data *data);
+
+public:
+  symtab_producer (std::shared_ptr <dwfl_context> dwctx,
+		   Elf_Scn *scn, doneness d);
+  explicit symtab_producer (std::unique_ptr <value_elf_section> sec);
+  std::unique_ptr <value> next () override;
 };
 
 #endif /* BUILTIN_ELFSCN_H */

@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2018 Petr Machata
+   Copyright (C) 2018, 2019 Petr Machata
    This file is part of dwgrep.
 
    This file is free software; you can redistribute it and/or modify
@@ -66,6 +66,31 @@ TEST_F (ElfTest, builtin_symbol_yields_once_per_symbol)
 	      "[symbol name] =="
 	      "[\"\", \"enum.cc\", \"\", \"\", \"\", \"\", \"\", \"\", \"\","
 	      "\"\", \"\", \"\", \"ae\", \"af\"]").size ());
+}
+
+TEST_F (ElfTest, builtin_dynsym)
+{
+  layout l;
+  size_t count = 0;
+  std::vector <std::string> names = {"", "__libc_start_main", "__gmon_start__"};
+  for (auto prod = op_dynsym_dwarf {l, nullptr}.operate (rdw ("a1.out"));
+       auto val = prod->next ();)
+    {
+      ASSERT_LT (count, names.size ());
+      EXPECT_EQ (names[count], val->get_name ());
+      count++;
+    }
+  EXPECT_EQ (names.size (), count);
+
+  ASSERT_EQ (1, run_dwquery
+	     (*builtins, "a1.out",
+	      "[dynsym name] == "
+	      "[\"\", \"__libc_start_main\", \"__gmon_start__\"]").size ());
+
+  ASSERT_EQ (1, run_dwquery
+	     (*builtins, "a1.out",
+	      "elf [dynsym name] == "
+	      "[\"\", \"__libc_start_main\", \"__gmon_start__\"]").size ());
 }
 
 TEST_F (ElfTest, builtin_symbol_label)

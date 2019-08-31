@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2017, 2018 Petr Machata
+   Copyright (C) 2017, 2018, 2019 Petr Machata
    Copyright (C) 2014, 2015 Red Hat, Inc.
    This file is part of dwgrep.
 
@@ -49,6 +49,28 @@ struct op_symbol_dwarf
 };
 
 struct op_symbol_elf
+  : public op_yielding_overload <value_symbol, value_elf>
+{
+  using op_yielding_overload::op_yielding_overload;
+
+  std::unique_ptr <value_producer <value_symbol>>
+  operate (std::unique_ptr <value_elf> val) const override;
+
+  static std::string docstring ();
+};
+
+struct op_dynsym_dwarf
+  : public op_yielding_overload <value_symbol, value_dwarf>
+{
+  using op_yielding_overload::op_yielding_overload;
+
+  std::unique_ptr <value_producer <value_symbol>>
+  operate (std::unique_ptr <value_dwarf> val) const override;
+
+  static std::string docstring ();
+};
+
+struct op_dynsym_elf
   : public op_yielding_overload <value_symbol, value_elf>
 {
   using op_yielding_overload::op_yielding_overload;

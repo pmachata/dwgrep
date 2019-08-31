@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2018 Petr Machata
+   Copyright (C) 2018, 2019 Petr Machata
    This file is part of dwgrep.
 
    This file is free software; you can redistribute it and/or modify
@@ -32,10 +32,21 @@
 void
 dwgrep_vocabulary_elf_symbol (vocabulary &voc)
 {
-  auto t = std::make_shared <overload_tab> ();
+  {
+    auto t = std::make_shared <overload_tab> ();
 
-  t->add_op_overload <op_symbol_dwarf> ();
-  t->add_op_overload <op_symbol_elf> ();
+    t->add_op_overload <op_symbol_dwarf> ();
+    t->add_op_overload <op_symbol_elf> ();
 
-  voc.add (std::make_shared <overloaded_op_builtin> ("symbol", t));
+    voc.add (std::make_shared <overloaded_op_builtin> ("symbol", t));
+  }
+
+  {
+    auto t = std::make_shared <overload_tab> ();
+
+    t->add_op_overload <op_dynsym_dwarf> ();
+    t->add_op_overload <op_dynsym_elf> ();
+
+    voc.add (std::make_shared <overloaded_op_builtin> ("dynsym", t));
+  }
 }
