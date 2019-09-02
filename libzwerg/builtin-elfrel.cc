@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2018, 2019 Petr Machata
+   Copyright (C) 2019 Petr Machata
    This file is part of dwgrep.
 
    This file is free software; you can redistribute it and/or modify
@@ -26,31 +26,42 @@
    the GNU Lesser General Public License along with this program.  If
    not, see <http://www.gnu.org/licenses/>.  */
 
-#ifndef _ELFCST_H_
-#define _ELFCST_H_
+#include "builtin-elfrel.hh"
+#include "elfcst.hh"
 
-#include "constant.hh"
-
-struct elf_cst_dom
-  : public constant_dom
+value_cst
+op_label_elfrel::operate (std::unique_ptr <value_elf_rel> a) const
 {
-  char const *docstring () const override;
-};
+  auto type = GELF_R_TYPE (a->get_rela ().r_info);
+  return value_cst {constant {type, &elf_r_dom (a->get_machine ())}, 0};
+}
 
-void show_unknown (char const *pfx, int code,
-		   int loos, int hios, int loproc, int hiproc,
-		   std::ostream &o, brevity brv);
+std::string
+op_label_elfrel::docstring ()
+{
+  return
+R"docstring(
 
-zw_cdom const &elf_class_dom ();
-zw_cdom const &elf_data_dom ();
-zw_cdom const &elf_et_dom ();
-zw_cdom const &elf_em_dom ();
-zw_cdom const &elf_ev_dom ();
-zw_cdom const &elf_ef_dom (int machine);
-zw_cdom const &elf_osabi_dom ();
-zw_cdom const &elf_sht_dom (int machine);
-zw_cdom const &elf_shf_dom (int machine);
-zw_cdom const &elf_shf_flags_dom (int machine);
-zw_cdom const &elf_r_dom (int machine);
+xxx
 
-#endif /* _ELFCST_H_ */
+)docstring";
+}
+
+pred_result
+pred_label_elfrel::result (value_elf_rel &a) const
+{
+  auto type = GELF_R_TYPE (a.get_rela ().r_info);
+  return pred_result (m_machine == a.get_machine ()
+		      && m_type == type);
+}
+
+std::string
+pred_label_elfrel::docstring ()
+{
+  return
+R"docstring(
+
+xxx
+
+)docstring";
+}

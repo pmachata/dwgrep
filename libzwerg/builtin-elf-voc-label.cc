@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2018 Petr Machata
+   Copyright (C) 2018, 2019 Petr Machata
    This file is part of dwgrep.
 
    This file is free software; you can redistribute it and/or modify
@@ -28,6 +28,7 @@
 
 #include "builtin-elf-voc-label.hh"
 #include "builtin-elfscn.hh"
+#include "builtin-elfrel.hh"
 #include "builtin-symbol.hh"
 #include "elfcst.hh"
 #include "known-elf.h"
@@ -40,6 +41,7 @@ dwgrep_vocabulary_elf_label (vocabulary &voc)
 
     t->add_op_overload <op_label_symbol> ();
     t->add_op_overload <op_label_elfscn> ();
+    t->add_op_overload <op_label_elfrel> ();
 
     voc.add (std::make_shared <overloaded_op_builtin> ("label", t));
   }
@@ -80,4 +82,27 @@ dwgrep_vocabulary_elf_label (vocabulary &voc)
 #undef ELF_ONE_KNOWN_SHT_ARCH
 #undef ELF_ONE_KNOWN_SHT
 
+#define ELF_ONE_KNOWN_R(NAME, CODE)					\
+    {									\
+      add_builtin_constant (voc, constant (CODE, &elf_r_dom (machine)), #CODE); \
+									\
+      auto t = std::make_shared <overload_tab> ();			\
+									\
+      t->add_pred_overload <pred_label_elfrel> (CODE, machine);		\
+									\
+      voc.add (std::make_shared <overloaded_pred_builtin>		\
+	       ("?" #CODE, t, true));					\
+      voc.add (std::make_shared <overloaded_pred_builtin>		\
+	       ("!" #CODE, t, false));					\
+    }
+
+#define ELF_ONE_KNOWN_R_ARCH(ARCH)		\
+    {						\
+      constexpr int machine = EM_##ARCH;	\
+      ELF_ALL_KNOWN_R_##ARCH			\
+    }
+  ELF_ALL_KNOWN_R_ARCHES
+
+#undef ELF_ONE_KNOWN_R_ARCH
+#undef ELF_ONE_KNOWN_R
 }

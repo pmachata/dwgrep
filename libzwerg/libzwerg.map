@@ -140,4 +140,6 @@ LIBZWERG_0.5 {
 	zw_value_is_strtab_entry;
 	zw_value_strtab_entry_string;
 	zw_value_strtab_entry_offset;
+
+	zw_value_is_elfrel;
 } LIBZWERG_0.1;

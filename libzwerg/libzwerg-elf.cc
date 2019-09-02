@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2018 Petr Machata
+  Copyright (C) 2018, 2019 Petr Machata
 
   This file is free software; you can redistribute it and/or modify
   it under the terms of either
@@ -82,6 +82,12 @@ bool
 zw_value_is_strtab_entry (zw_value const *val)
 {
   return val->is <value_strtab_entry> ();
+}
+
+bool
+zw_value_is_elfrel (zw_value const *val)
+{
+  return val->is <value_elf_rel> ();
 }
 
 namespace

@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2018 Petr Machata
+  Copyright (C) 2018, 2019 Petr Machata
 
   This file is free software; you can redistribute it and/or modify
   it under the terms of either
@@ -123,6 +123,14 @@ extern "C" {
 
   // Return string associated with STRTABE, which shall be a string table entry.
   char const *zw_value_strtab_entry_string (zw_value const *strtabe);
+
+
+  /**
+   * Relocations.
+   */
+
+  // Return whether VAL is an ELF relocation.
+  bool zw_value_is_elfrel (zw_value const *val);
 
 #ifdef __cplusplus
 }

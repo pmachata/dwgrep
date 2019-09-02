@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2018 Petr Machata
+   Copyright (C) 2018, 2019 Petr Machata
 
    This file is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -676,4 +676,98 @@ elf_shf_flags_dom (int machine)
     }
 
   return elfscn_shf_flags_dom;
+}
+
+namespace
+{
+#define ELF_ONE_KNOWN_R(SHORT, LONG)					\
+  static_assert (false, "Unexpected non-CPU-specific R_ constant.");
+  ELF_ALL_KNOWN_R
+#undef ELF_ONE_KNOWN_R
+
+#define ELF_ONE_KNOWN_R(NAME, CODE)		\
+  ret[CODE] = #CODE;
+
+#define ELF_ONE_KNOWN_R_ARCH(ARCH)				\
+  struct elf_r_##ARCH##_strings					\
+    : public linear_map						\
+  {								\
+    std::map <unsigned, char const *>				\
+    all () const						\
+    {								\
+      std::map <unsigned, char const *> ret;			\
+      ELF_ALL_KNOWN_R_##ARCH					\
+      return ret;						\
+    }								\
+								\
+    elf_r_##ARCH##_strings ()					\
+      : linear_map {all ()}					\
+    {}								\
+  };								\
+								\
+  static const char *						\
+  elf_r_##ARCH##_string (unsigned em, brevity brv)		\
+  {								\
+    static elf_r_##ARCH##_strings ss;				\
+    return abbreviate (ss.find (em), sizeof "R", brv);		\
+  }
+
+ELF_ALL_KNOWN_R_ARCHES
+
+#undef ELF_ONE_KNOWN_R_ARCH
+#undef ELF_ONE_KNOWN_R
+
+// Domain for each R arch.
+#define ELF_ONE_KNOWN_R_ARCH(ARCH)					\
+  struct elfsym_r_##ARCH##_dom_t					\
+    : public constant_dom						\
+  {									\
+    void								\
+    show (mpz_class const &v, std::ostream &o, brevity brv) const override \
+    {									\
+      if (auto maybe_code = uint_from_mpz (v))				\
+	{								\
+	  if (auto s = elf_r_##ARCH##_string (*maybe_code, brv))	\
+	    o << s;							\
+	  else								\
+	    {								\
+	      char unknown_buf[40];					\
+	      format_unknown (brv, *maybe_code, "R_",			\
+			      unknown_buf, sizeof unknown_buf);		\
+	      o << unknown_buf;						\
+	    }								\
+	}								\
+      else								\
+	o << "<invalid code>";						\
+    }									\
+									\
+    char const *							\
+    name () const override						\
+    {									\
+      return "R_" #ARCH;						\
+    }									\
+  };
+
+ELF_ALL_KNOWN_R_ARCHES
+
+#undef ELF_ONE_KNOWN_R_ARCH
+}
+
+zw_cdom const &
+elf_r_dom (int machine)
+{
+  switch (machine)
+    {
+#define ELF_ONE_KNOWN_R_ARCH(ARCH)		\
+      case EM_##ARCH:				\
+	{					\
+	  static elfsym_r_##ARCH##_dom_t dom;	\
+	  return dom;				\
+	}
+      ELF_ALL_KNOWN_R_ARCHES
+#undef ELF_ONE_KNOWN_R_ARCH
+    }
+
+  static dw_simple_dom dom {"R", fallback_dom_stringer, 0, 0, true};
+  return dom;
 }

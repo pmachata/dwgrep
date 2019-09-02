@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2018 Petr Machata
+   Copyright (C) 2018, 2019 Petr Machata
    This file is part of dwgrep.
 
    This file is free software; you can redistribute it and/or modify
@@ -39,6 +39,7 @@ std::pair <Elf *, GElf_Addr> get_main_elf (Dwfl *dwfl);
 std::pair <Dwarf *, GElf_Addr> get_main_dwarf (Dwfl *dwfl);
 size_t get_shdrstrndx (Elf *elf);
 GElf_Ehdr get_ehdr (Dwfl *dwfl);
+Elf_Data *get_data (Elf_Scn *scn); // Returns non-nullptr or throws.
 
 // -------------------------------------------------------------------
 // Elf
@@ -146,6 +147,36 @@ public:
 
   size_t get_offset () const
   { return m_offset; }
+
+  void show (std::ostream &o) const override;
+  cmp_result cmp (value const &that) const override;
+  std::unique_ptr <value> clone () const override;
+};
+
+// -------------------------------------------------------------------
+// Relocation entry
+// -------------------------------------------------------------------
+
+class value_elf_rel
+  : public value
+{
+  GElf_Rela m_rela;
+  int m_machine;
+
+public:
+  static value_type const vtype;
+
+  value_elf_rel (GElf_Rela rela, int machine, size_t pos)
+    : value {vtype, pos}
+    , m_rela {rela}
+    , m_machine {machine}
+  {}
+
+  int get_machine () const
+  { return m_machine; }
+
+  GElf_Rela get_rela () const
+  { return m_rela; }
 
   void show (std::ostream &o) const override;
   cmp_result cmp (value const &that) const override;

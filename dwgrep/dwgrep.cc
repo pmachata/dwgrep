@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2017, 2018 Petr Machata
+   Copyright (C) 2017, 2018, 2019 Petr Machata
    Copyright (C) 2014, 2015 Red Hat, Inc.
    This file is part of dwgrep.
 
@@ -139,6 +139,7 @@ private:
   void dump_elfsym (std::ostream &os, zw_value const &val, format fmt);
   void dump_elf (std::ostream &os, zw_value const &val, format fmt);
   void dump_elfscn (std::ostream &os, zw_value const &val, format fmt);
+  void dump_elfrel (std::ostream &os, zw_value const &val, format fmt);
   void dump_strtab_entry (std::ostream &os, zw_value const &val, format fmt);
   void dump_named_constant (std::ostream &os, unsigned cst, zw_cdom const &dom);
 };
@@ -474,6 +475,13 @@ dumper::dump_elfscn (std::ostream &os, zw_value const &val, format fmt)
 }
 
 void
+dumper::dump_elfrel (std::ostream &os, zw_value const &val, format fmt)
+{
+  os << "<ElfRel xxx";
+  os << '>';
+}
+
+void
 dumper::dump_strtab_entry (std::ostream &os, zw_value const &val, format fmt)
 {
   {
@@ -525,6 +533,8 @@ dumper::dump_value (std::ostream &os, zw_value const &val, format fmt)
     dump_elf (os, val, fmt);
   else if (zw_value_is_elfscn (&val))
     dump_elfscn (os, val, fmt);
+  else if (zw_value_is_elfrel (&val))
+    dump_elfrel (os, val, fmt);
   else if (zw_value_is_strtab_entry (&val))
     dump_strtab_entry (os, val, fmt);
   else

@@ -772,8 +772,10 @@ A typical use would be in testing whether a bit is set, as in::
 *** *entry :: T_ELFSCN(.debug_str) ->* T_STRTAB_ENTRY
 *** *entry :: T_ELFSCN(SHT_SYMTAB) ->* T_ELFSYM
 *** *entry :: T_ELFSCN(SHT_DYNSYM) ->* T_ELFSYM
+*** *entry :: T_ELFSCN(SHT_RELA) ->* T_ELFREL
 ***  entry :: T_ELFSCN(SHT_REL) ->* T_ELFREL
-***  entry :: T_ELFSCN(SHT_RELA) ->* T_ELFREL
+     In order to present both as one type, the addend will have to be resolved
+     by reading the content at offset indicated in the relocation.
 ***  entry :: T_ELFSCN(SHT_DYNAMIC) ->* T_ELFDYN
 ***  entry :: T_ELFSCN(SHT_NOTE) ->* ???
 ***  entry :: T_ELFSCN(SHT_GNU_verxxx) ->* ???
@@ -793,6 +795,7 @@ A typical use would be in testing whether a bit is set, as in::
      quantity.
 *** *SHT_* :: () -> T_CONST
      All the section type constants.
+***  ?SHT_, !SHT_ :: T_ELFSCN
 *** *label :: T_ELFSCN -> T_CONST
      section's sh_type
 *** *flags :: T_ELFSCN -> T_CONST
@@ -836,6 +839,15 @@ A typical use would be in testing whether a bit is set, as in::
 ***  label :: T_ELFDYN -> T_CONST
 ***  value :: T_ELFDYN -> T_CONST
      The domain would be according to tag type.
+
+**  T_ELFREL
+***  offset :: T_ELFREL -> T_CONST
+*** *label :: T_ELFREL -> T_CONST
+*** *?R_, !R_ :: T_ELFREL
+***  symbol :: T_ELFREL ->? T_ELFSYM
+***  addend :: T_ELFREL -> T_CONST
+***  width :: T_ELFREL -> T_CONST
+     How much will the relocation patch.
 
 * Examples
 ** check_die_line_info:

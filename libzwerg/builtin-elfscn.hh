@@ -217,7 +217,6 @@ class symtab_producer
   unsigned m_pos;
   doneness m_d;
 
-  static Elf_Data *get_data (Elf_Scn *scn);
   static size_t get_strtabndx (Elf_Scn *symtab);
   static size_t get_count (Elf *elf, Elf_Data *data);
 

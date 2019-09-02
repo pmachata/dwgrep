@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2018 Petr Machata
+   Copyright (C) 2018, 2019 Petr Machata
    This file is part of dwgrep.
 
    This file is free software; you can redistribute it and/or modify
@@ -108,6 +108,14 @@ get_ehdr (Dwfl *dwfl)
     throw_libelf ();
 
   return ehdr;
+}
+
+Elf_Data *
+get_data (Elf_Scn *scn)
+{
+  if (Elf_Data *ret = elf_getdata (scn, NULL))
+    return ret;
+  throw_libelf ();
 }
 
 value_type const value_elf::vtype = value_type::alloc ("T_ELF",
@@ -219,4 +227,38 @@ std::unique_ptr <value>
 value_strtab_entry::clone () const
 {
   return std::make_unique <value_strtab_entry> (*this);
+}
+
+
+value_type const value_elf_rel::vtype = value_type::alloc ("T_ELFREL",
+R"docstring(
+
+xxx document me.
+
+)docstring");
+
+void
+value_elf_rel::show (std::ostream &o) const
+{
+  ios_flag_saver s {o};
+  o << std::hex << std::showbase << m_rela.r_offset
+    << " R_xxx symbol" << m_rela.r_addend;
+}
+
+cmp_result
+value_elf_rel::cmp (value const &that) const
+{
+  if (auto v = value::as <value_elf_rel> (&that))
+    return compare (std::make_tuple (m_rela.r_offset, m_rela.r_info,
+				     m_rela.r_addend),
+		    std::make_tuple (v->m_rela.r_offset, v->m_rela.r_info,
+				     v->m_rela.r_addend));
+  else
+    return cmp_result::fail;
+}
+
+std::unique_ptr <value>
+value_elf_rel::clone () const
+{
+  return std::make_unique <value_elf_rel> (*this);
 }

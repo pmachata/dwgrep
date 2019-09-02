@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2018, 2019 Petr Machata
+   Copyright (C) 2019 Petr Machata
    This file is part of dwgrep.
 
    This file is free software; you can redistribute it and/or modify
@@ -26,31 +26,34 @@
    the GNU Lesser General Public License along with this program.  If
    not, see <http://www.gnu.org/licenses/>.  */
 
-#ifndef _ELFCST_H_
-#define _ELFCST_H_
+#ifndef BUILTIN_ELFREL_H
+#define BUILTIN_ELFREL_H
 
-#include "constant.hh"
+#include "overload.hh"
+#include "value-elf.hh"
 
-struct elf_cst_dom
-  : public constant_dom
+struct op_label_elfrel
+  : public op_once_overload <value_cst, value_elf_rel>
 {
-  char const *docstring () const override;
+  using op_once_overload::op_once_overload;
+
+  value_cst operate (std::unique_ptr <value_elf_rel> a) const override;
+  static std::string docstring ();
 };
 
-void show_unknown (char const *pfx, int code,
-		   int loos, int hios, int loproc, int hiproc,
-		   std::ostream &o, brevity brv);
+struct pred_label_elfrel
+  : public pred_overload <value_elf_rel>
+{
+  unsigned m_type;
+  int m_machine;
 
-zw_cdom const &elf_class_dom ();
-zw_cdom const &elf_data_dom ();
-zw_cdom const &elf_et_dom ();
-zw_cdom const &elf_em_dom ();
-zw_cdom const &elf_ev_dom ();
-zw_cdom const &elf_ef_dom (int machine);
-zw_cdom const &elf_osabi_dom ();
-zw_cdom const &elf_sht_dom (int machine);
-zw_cdom const &elf_shf_dom (int machine);
-zw_cdom const &elf_shf_flags_dom (int machine);
-zw_cdom const &elf_r_dom (int machine);
+  pred_label_elfrel (unsigned type, int machine)
+    : m_type {type}
+    , m_machine {machine}
+  {}
 
-#endif /* _ELFCST_H_ */
+  pred_result result (value_elf_rel &a) const override final;
+  static std::string docstring ();
+};
+
+#endif /* BUILTIN_ELFREL_H */
