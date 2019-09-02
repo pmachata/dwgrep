@@ -136,10 +136,6 @@ SET_TARGET_PROPERTIES (LibzwergElf PROPERTIES
   COMPILE_FLAGS "-fPIC"
 )
 
-SET_SOURCE_FILES_PROPERTIES(builtin-elf-voc-label.cc PROPERTIES
-  COMPILE_FLAGS -fno-var-tracking-assignments
-)
-
 SET (LibzwergAll
 
   $<TARGET_OBJECTS:LibzwergCore>

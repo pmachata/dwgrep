@@ -135,6 +135,16 @@ struct op_label_elfscn
   using op_elfscn_simple_value::op_elfscn_simple_value;
 };
 
+struct pred_label_elfscn
+  : public pred_overload <value_elf_section>
+{
+  constant m_value;
+
+  explicit pred_label_elfscn (unsigned value, int machine);
+  pred_result result (value_elf_section &a) const override final;
+  static std::string docstring ();
+};
+
 
 struct elfscn_flags_def
 {

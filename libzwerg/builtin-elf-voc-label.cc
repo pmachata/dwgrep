@@ -33,6 +33,33 @@
 #include "elfcst.hh"
 #include "known-elf.h"
 
+struct constant_descriptor
+{
+  int value;
+  char const *name;
+  char const *qname;
+  char const *bname;
+};
+
+template <class Pred>
+void
+register_constants (vocabulary &voc, zw_cdom const *dom, int machine,
+		    constant_descriptor cds[], size_t ncds)
+{
+  for (size_t i = 0; i < ncds; ++i)
+    {
+      constant_descriptor &cd = cds[i];
+      add_builtin_constant (voc, constant (cd.value, dom), cd.name);
+
+      auto t = std::make_shared <overload_tab> ();
+
+      t->add_pred_overload <Pred> (cd.value, machine);
+
+      voc.add (std::make_shared <overloaded_pred_builtin> (cd.qname, t, true));
+      voc.add (std::make_shared <overloaded_pred_builtin> (cd.bname, t, false));
+    }
+}
+
 void
 dwgrep_vocabulary_elf_label (vocabulary &voc)
 {
@@ -65,42 +92,45 @@ dwgrep_vocabulary_elf_label (vocabulary &voc)
 #undef ELF_ONE_KNOWN_STT
 
 #define ELF_ONE_KNOWN_SHT(NAME, CODE)					\
-  add_builtin_constant (voc, constant (CODE, &elf_sht_dom (machine)), #CODE);
+	{CODE, #CODE, "?" #CODE, "!" #CODE},
 
-  {
-    constexpr int machine = EM_NONE;
-    ELF_ALL_KNOWN_SHT
+#define __ELF_ONE_KNOWN_SHT_ARCH(ARCH, ALL_KNOWN)				\
+  {									\
+    constexpr int machine = EM_##ARCH;					\
+    zw_cdom const &dom = elf_sht_dom (machine);				\
+    constant_descriptor cds[] =						\
+      {									\
+	ALL_KNOWN							\
+      };								\
+    register_constants <pred_label_elfscn> (voc, &dom, machine, cds,	\
+					    sizeof cds / sizeof cds[0]); \
   }
 
-#define ELF_ONE_KNOWN_SHT_ARCH(ARCH)		\
-    {						\
-      constexpr int machine = EM_##ARCH;	\
-      ELF_ALL_KNOWN_SHT_##ARCH			\
-    }
+  __ELF_ONE_KNOWN_SHT_ARCH (NONE, ELF_ALL_KNOWN_SHT)
+
+#define ELF_ONE_KNOWN_SHT_ARCH(ARCH)					\
+  __ELF_ONE_KNOWN_SHT_ARCH (ARCH, ELF_ALL_KNOWN_SHT_##ARCH)
+
   ELF_ALL_KNOWN_SHT_ARCHES
 
 #undef ELF_ONE_KNOWN_SHT_ARCH
 #undef ELF_ONE_KNOWN_SHT
 
 #define ELF_ONE_KNOWN_R(NAME, CODE)					\
+	{CODE, #CODE, "?" #CODE, "!" #CODE},
+
+#define ELF_ONE_KNOWN_R_ARCH(ARCH)					\
     {									\
-      add_builtin_constant (voc, constant (CODE, &elf_r_dom (machine)), #CODE); \
-									\
-      auto t = std::make_shared <overload_tab> ();			\
-									\
-      t->add_pred_overload <pred_label_elfrel> (CODE, machine);		\
-									\
-      voc.add (std::make_shared <overloaded_pred_builtin>		\
-	       ("?" #CODE, t, true));					\
-      voc.add (std::make_shared <overloaded_pred_builtin>		\
-	       ("!" #CODE, t, false));					\
+      constexpr int machine = EM_##ARCH;				\
+      zw_cdom const &dom = elf_r_dom (machine);				\
+      constant_descriptor cds[] =					\
+	{								\
+	  ELF_ALL_KNOWN_R_##ARCH					\
+	};								\
+      register_constants <pred_label_elfrel> (voc, &dom, machine, cds,	\
+					      sizeof cds / sizeof cds[0]); \
     }
 
-#define ELF_ONE_KNOWN_R_ARCH(ARCH)		\
-    {						\
-      constexpr int machine = EM_##ARCH;	\
-      ELF_ALL_KNOWN_R_##ARCH			\
-    }
   ELF_ALL_KNOWN_R_ARCHES
 
 #undef ELF_ONE_KNOWN_R_ARCH

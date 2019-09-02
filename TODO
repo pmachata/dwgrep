@@ -795,7 +795,7 @@ A typical use would be in testing whether a bit is set, as in::
      quantity.
 *** *SHT_* :: () -> T_CONST
      All the section type constants.
-***  ?SHT_, !SHT_ :: T_ELFSCN
+*** *?SHT_, !SHT_ :: T_ELFSCN
 *** *label :: T_ELFSCN -> T_CONST
      section's sh_type
 *** *flags :: T_ELFSCN -> T_CONST

@@ -391,6 +391,34 @@ xxx
 )docstring";
 }
 
+
+pred_label_elfscn::pred_label_elfscn (unsigned value, int machine)
+  : m_value {constant (value, &elf_sht_dom (machine))}
+{}
+
+pred_result
+pred_label_elfscn::result (value_elf_section &a) const
+{
+  Dwfl *dwfl = a.get_dwctx ()->get_dwfl ();
+  zw_cdom const &dom = elf_sht_dom (get_ehdr (dwfl).e_machine);
+
+  unsigned type = ::getshdr (a.get_scn ()).sh_type;
+  constant type_cst {type, &dom};
+
+  return pred_result (type_cst == m_value);
+}
+
+std::string
+pred_label_elfscn::docstring ()
+{
+  return
+R"docstring(
+
+xxx
+
+)docstring";
+}
+
 unsigned
 elfscn_flags_def::value (Dwfl *dwfl, Elf_Scn *scn)
 {
