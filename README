@@ -3,6 +3,6 @@ written in a language called Zwerg, the syntax of which is described
 in doc/syntax.rst.  The engine itself is available as a shared library
 which can be used from C.
 
-Full documantation is availabel in doc/ sub-directory.  In particular,
-check out <doc/index.rst>.  A HTML rendition of full documentation is
+Full documentation is available in the doc/ sub-directory.  In particular,
+check out <doc/index.rst>.  An HTML rendition of the full documentation is
 published at <http://pmachata.github.io/dwgrep/>.
