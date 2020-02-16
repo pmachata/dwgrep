@@ -107,7 +107,7 @@ split_pfx_recursively (std::map <std::string, std::vector <std::string>> d,
   nd.insert (std::make_move_iterator (keep.begin ()),
 	     std::make_move_iterator (keep.end ()));
 
-  return std::move (nd);
+  return nd;
 }
 
 static std::vector <std::string>
@@ -122,7 +122,7 @@ split_pfx (std::vector <std::string> list)
       h += "*";
       ret.push_back (std::move (h));
     }
-  return std::move (ret);
+  return ret;
 }
 
 static std::vector <std::pair <std::vector <std::string>, std::string>>
