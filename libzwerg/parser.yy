@@ -318,8 +318,8 @@
   }
 %}
 
-%pure-parser
-%error-verbose
+%define api.pure
+%define parse.error verbose
 %parse-param { std::unique_ptr <tree> &ret }
 %parse-param { void *yyscanner }
 %lex-param { yyscanner }
