@@ -56,16 +56,10 @@ find_library(ELF_LIBRARY
   PATH_SUFFIXES lib lib64
 )
 
-find_library(EBL_LIBRARY
-  NAMES ebl
-  HINTS ${USER_LIBDW_LIB_PATH}
-  PATH_SUFFIXES lib lib64
-)
-
 if (DWARF_INCLUDE_DIR AND ELF_INCLUDE_DIR
-    AND LIBDW_INCLUDE_DIR AND DWARF_LIBRARY AND ELF_LIBRARY AND EBL_LIBRARY)
+    AND LIBDW_INCLUDE_DIR AND DWARF_LIBRARY AND ELF_LIBRARY)
 	set(DWARF_FOUND TRUE)
-	set(DWARF_LIBRARIES ${DWARF_LIBRARY} ${ELF_LIBRARY} ${EBL_LIBRARY})
+	set(DWARF_LIBRARIES ${DWARF_LIBRARY} ${ELF_LIBRARY})
 
 	set(CMAKE_REQUIRED_LIBRARIES ${DWARF_LIBRARIES})
 	# check if libdw have the dwfl_module_build_id routine,
@@ -76,11 +70,11 @@ if (DWARF_INCLUDE_DIR AND ELF_INCLUDE_DIR
 	# into libelf.
 	check_library_exists(elf dwfl_module_build_id "" HAVE_DWFL_MODULE_BUILD_ID)
 else (DWARF_INCLUDE_DIR AND ELF_INCLUDE_DIR
-      AND LIBDW_INCLUDE_DIR AND DWARF_LIBRARY AND ELF_LIBRARY AND EBL_LIBRARY)
+      AND LIBDW_INCLUDE_DIR AND DWARF_LIBRARY AND ELF_LIBRARY)
 	set(DWARF_FOUND FALSE)
 	set(DWARF_LIBRARIES)
 endif (DWARF_INCLUDE_DIR AND ELF_INCLUDE_DIR
-       AND LIBDW_INCLUDE_DIR AND DWARF_LIBRARY AND ELF_LIBRARY AND EBL_LIBRARY)
+       AND LIBDW_INCLUDE_DIR AND DWARF_LIBRARY AND ELF_LIBRARY)
 
 if (DWARF_FOUND)
 	if (NOT DWARF_FIND_QUIETLY)
@@ -89,7 +83,6 @@ if (DWARF_FOUND)
 		message(STATUS "Found elfutils/libdw.h header: ${LIBDW_INCLUDE_DIR}")
 		message(STATUS "Found libdw library: ${DWARF_LIBRARY}")
 		message(STATUS "Found libelf library: ${ELF_LIBRARY}")
-		message(STATUS "Found libebl library: ${EBL_LIBRARY}")
 	endif (NOT DWARF_FIND_QUIETLY)
 else (DWARF_FOUND)
 	if (DWARF_FIND_REQUIRED)
@@ -100,10 +93,10 @@ else (DWARF_FOUND)
 		find_path(REDHAT redhat-release /etc)
 		if (FEDORA OR REDHAT)
 			if (NOT DWARF_INCLUDE_DIR OR NOT ELF_INCLUDE_DIR
-			    OR NOT LIBDW_INCLUDE_DIR OR NOT EBL_LIBRARY)
+			    OR NOT LIBDW_INCLUDE_DIR)
 				message(STATUS "Please install the elfutils-devel package")
 			endif (NOT DWARF_INCLUDE_DIR OR NOT ELF_INCLUDE_DIR
-			       OR NOT LIBDW_INCLUDE_DIR OR NOT EBL_LIBRARY)
+			       OR NOT LIBDW_INCLUDE_DIR)
 			if (NOT DWARF_LIBRARY)
 				message(STATUS "Please install the elfutils-libs package")
 			endif (NOT DWARF_LIBRARY)
@@ -120,9 +113,6 @@ else (DWARF_FOUND)
 			if (NOT LIBDW_INCLUDE_DIR)
 				message(STATUS "Could NOT find libdw include dir")
 			endif (NOT LIBDW_INCLUDE_DIR)
-			if (NOT EBL_LIBRARY)
-				message(STATUS "Could NOT find libebl library")
-			endif (NOT EBL_LIBRARY)
 			if (NOT DWARF_LIBRARY)
 				message(STATUS "Could NOT find libdw library")
 			endif (NOT DWARF_LIBRARY)
@@ -135,7 +125,7 @@ else (DWARF_FOUND)
 endif (DWARF_FOUND)
 
 mark_as_advanced(DWARF_INCLUDE_DIR ELF_INCLUDE_DIR
-		 LIBDW_INCLUDE_DIR DWARF_LIBRARY ELF_LIBRARY EBL_LIBRARY)
+		 LIBDW_INCLUDE_DIR DWARF_LIBRARY ELF_LIBRARY)
 include_directories(${DWARF_INCLUDE_DIR} ${LIBDW_INCLUDE_DIR} ${ELF_INCLUDE_DIR})
 
 message(STATUS "Checking availability of DWARF and ELF development libraries - done")
