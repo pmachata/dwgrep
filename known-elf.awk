@@ -77,6 +77,9 @@ END {
 	} else if (set "_" elt ~ "^R_NIOS2_") {
 	  found = 1;
 	  arch = "ALTERA_NIOS2";
+	} else if (set "_" elt ~ "^R_CKCORE_") {
+	  found = 1;
+	  arch = "CSKY";
 	# Likewise EF_, where SH arch is split into subvariants.
 	# Lump them all under one overarching SH group.
 	} else if (set "_" elt ~ "^EF_SH") {
