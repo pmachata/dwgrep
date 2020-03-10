@@ -773,9 +773,16 @@ A typical use would be in testing whether a bit is set, as in::
 *** *entry :: T_ELFSCN(SHT_SYMTAB) ->* T_ELFSYM
 *** *entry :: T_ELFSCN(SHT_DYNSYM) ->* T_ELFSYM
 *** *entry :: T_ELFSCN(SHT_RELA) ->* T_ELFREL
-***  entry :: T_ELFSCN(SHT_REL) ->* T_ELFREL
+*** *entry :: T_ELFSCN(SHT_REL) ->* T_ELFREL
      In order to present both as one type, the addend will have to be resolved
      by reading the content at offset indicated in the relocation.
+     - xxx The issue with this is that dwgrep would need to know relocation
+       width in order to read the proper amount. But that's only specified in
+       ABI documentation and doesn't follow any reasonable pattern. dwgrep would
+       need to carry tables of relocation types, running the risk of getting out
+       of date. I think there will have to be a elf data reading function, and
+       this will have to be deferred to the user.
+     - Also, if done, this translation should only take place in cooked mode.
 ***  entry :: T_ELFSCN(SHT_DYNAMIC) ->* T_ELFDYN
 ***  entry :: T_ELFSCN(SHT_NOTE) ->* ???
 ***  entry :: T_ELFSCN(SHT_GNU_verxxx) ->* ???

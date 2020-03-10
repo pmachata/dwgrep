@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2018, 2019 Petr Machata
+   Copyright (C) 2018, 2019, 2020 Petr Machata
    This file is part of dwgrep.
 
    This file is free software; you can redistribute it and/or modify
@@ -203,28 +203,54 @@ symtab_producer::next ()
 
 namespace
 {
-  struct rela_producer
+  struct relocation_producer
     : public value_producer <value>
   {
     std::shared_ptr <dwfl_context> m_dwctx;
-    Elf_Data *m_data;
+    Elf_Data *m_relocs;
     size_t m_offset;
     unsigned m_pos;
 
-    explicit rela_producer (std::unique_ptr <value_elf_section> sec)
+    explicit relocation_producer (std::unique_ptr <value_elf_section> sec)
       : m_dwctx {sec->get_dwctx ()}
-      , m_data {::get_data (sec->get_scn ())}
+      , m_relocs {::get_data (sec->get_scn ())}
       , m_offset {0}
       , m_pos {0}
     {}
+  };
+
+  struct rela_producer
+    : public relocation_producer
+  {
+    using relocation_producer::relocation_producer;
 
     std::unique_ptr <value>
     next () override
     {
       GElf_Rela rela;
-      if (gelf_getrela (m_data, m_pos, &rela))
+      if (gelf_getrela (m_relocs, m_pos, &rela))
 	return std::make_unique <value_elf_rel> (rela, m_dwctx->get_machine (),
 						 m_pos++);
+      return nullptr;
+    }
+  };
+
+  struct rel_producer
+    : public relocation_producer
+  {
+    using relocation_producer::relocation_producer;
+
+    std::unique_ptr <value>
+    next () override
+    {
+      GElf_Rel rel;
+      if (gelf_getrel (m_relocs, m_pos, &rel))
+	{
+	  GElf_Rela rela { rel.r_offset, rel.r_info, 0 };
+	  return std::make_unique <value_elf_rel> (rela,
+						   m_dwctx->get_machine (),
+						   m_pos++);
+	}
       return nullptr;
     }
   };
@@ -246,6 +272,8 @@ op_entry_elfscn::operate (std::unique_ptr <value_elf_section> a) const
       return std::make_unique <::symtab_producer> (std::move (a));
     case SHT_RELA:
       return std::make_unique <::rela_producer> (std::move (a));
+    case SHT_REL:
+      return std::make_unique <::rel_producer> (std::move (a));
     }
 
   std::string name = getscnname (*a);
