@@ -126,6 +126,12 @@ GElf_Shdr get_shdr (Elf_Scn *scn)
   return shdr;
 }
 
+size_t
+get_link (Elf_Scn *scn)
+{
+  return ::get_shdr (scn).sh_link;
+}
+
 value_type const value_elf::vtype = value_type::alloc ("T_ELF",
 R"docstring(
 

@@ -147,12 +147,6 @@ namespace
 }
 
 size_t
-symtab_producer::get_strtabndx (Elf_Scn *symtab)
-{
-  return ::getshdr (symtab).sh_link;
-}
-
-size_t
 symtab_producer::get_count (Elf *elf, Elf_Data *data)
 {
   size_t elem_sz = gelf_fsize (elf, data->d_type, 1,
@@ -166,7 +160,7 @@ symtab_producer::symtab_producer (std::shared_ptr <dwfl_context> dwctx,
   , m_elf {get_main_elf (m_dwctx->get_dwfl ()).first}
   , m_scn {scn}
   , m_data {get_data (m_scn)}
-  , m_strtabndx {get_strtabndx (m_scn)}
+  , m_strtabndx {get_link (m_scn)}
   , m_ndx {0}
   , m_count {get_count (m_elf, m_data)}
   , m_pos {0}
@@ -206,6 +200,7 @@ namespace
     explicit relocation_producer (std::unique_ptr <value_elf_section> sec)
       : m_dwctx {sec->get_dwctx ()}
       , m_relocs {::get_data (sec->get_scn ())}
+      , m_symtabndx {::get_link (sec->get_scn ())}
       , m_offset {0}
       , m_pos {0}
     {}
