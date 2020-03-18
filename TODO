@@ -848,10 +848,15 @@ A typical use would be in testing whether a bit is set, as in::
      The domain would be according to tag type.
 
 **  T_ELFREL
+    Because we get the ELF data through libdwfl, the applied relocations are
+    elided from the relocation sections. So we actually do not see the same data
+    that readelf sees. This is a problem, at least for raw sections, we should
+    be able to get the original stuff.
+
 ***  offset :: T_ELFREL -> T_CONST
 *** *label :: T_ELFREL -> T_CONST
 *** *?R_, !R_ :: T_ELFREL
-***  symbol :: T_ELFREL ->? T_ELFSYM
+*** *symbol :: T_ELFREL ->? T_ELFSYM
 ***  addend :: T_ELFREL -> T_CONST
 ***  width :: T_ELFREL -> T_CONST
      How much will the relocation patch.
