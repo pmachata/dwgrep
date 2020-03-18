@@ -40,6 +40,7 @@ std::pair <Dwarf *, GElf_Addr> get_main_dwarf (Dwfl *dwfl);
 size_t get_shdrstrndx (Elf *elf);
 GElf_Ehdr get_ehdr (Dwfl *dwfl);
 Elf_Data *get_data (Elf_Scn *scn); // Returns non-nullptr or throws.
+GElf_Shdr get_shdr (Elf_Scn *scn);
 
 // -------------------------------------------------------------------
 // Elf

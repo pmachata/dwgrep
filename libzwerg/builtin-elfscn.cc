@@ -37,17 +37,9 @@
 
 namespace
 {
-  GElf_Shdr getshdr (Elf_Scn *scn)
-  {
-    GElf_Shdr shdr;
-    if (gelf_getshdr (scn, &shdr) == nullptr)
-      throw_libelf ();
-    return shdr;
-  }
-
   std::string getscnname (value_elf_section &sec)
   {
-    GElf_Shdr shdr = ::getshdr (sec.get_scn ());
+    GElf_Shdr shdr = ::get_shdr (sec.get_scn ());
 
     std::shared_ptr <dwfl_context> ctx = sec.get_dwctx ();
     Elf *elf = get_main_elf (ctx->get_dwfl ()).first;
@@ -261,7 +253,7 @@ op_entry_elfscn::operate (std::unique_ptr <value_elf_section> a) const
 {
   std::shared_ptr <dwfl_context> dwctx = a->get_dwctx ();
   Elf_Scn *scn = a->get_scn ();
-  GElf_Shdr shdr = ::getshdr (scn);
+  GElf_Shdr shdr = ::get_shdr (scn);
 
   switch (shdr.sh_type)
     {
@@ -302,7 +294,7 @@ xxx
 std::unique_ptr <value_elf_section>
 op_link_elfscn::operate (std::unique_ptr <value_elf_section> a) const
 {
-  GElf_Shdr shdr = ::getshdr (a->get_scn ());
+  GElf_Shdr shdr = ::get_shdr (a->get_scn ());
   if (shdr.sh_link == 0)
     return nullptr;
 
@@ -324,7 +316,7 @@ xxx
 std::unique_ptr <value>
 op_info_elfscn::operate (std::unique_ptr <value_elf_section> a) const
 {
-  GElf_Shdr shdr = ::getshdr (a->get_scn ());
+  GElf_Shdr shdr = ::get_shdr (a->get_scn ());
   if (a->is_raw () || !SH_INFO_LINK_P (&shdr))
     {
       constant c {shdr.sh_info, &dec_constant_dom};
@@ -352,7 +344,7 @@ xxx
 uint64_t
 elfscn_size_def::value (Dwfl *dwfl, Elf_Scn *scn)
 {
-  return ::getshdr (scn).sh_size;
+  return ::get_shdr (scn).sh_size;
 }
 
 zw_cdom const &
@@ -375,7 +367,7 @@ xxx
 uint64_t
 elfscn_entsize_def::value (Dwfl *dwfl, Elf_Scn *scn)
 {
-  return ::getshdr (scn).sh_entsize;
+  return ::get_shdr (scn).sh_entsize;
 }
 
 zw_cdom const &
@@ -398,7 +390,7 @@ xxx
 unsigned
 elfscn_label_def::value (Dwfl *dwfl, Elf_Scn *scn)
 {
-  return ::getshdr (scn).sh_type;
+  return ::get_shdr (scn).sh_type;
 }
 
 zw_cdom const &
@@ -430,7 +422,7 @@ pred_label_elfscn::result (value_elf_section &a) const
   Dwfl *dwfl = a.get_dwctx ()->get_dwfl ();
   zw_cdom const &dom = elf_sht_dom (get_ehdr (dwfl).e_machine);
 
-  unsigned type = ::getshdr (a.get_scn ()).sh_type;
+  unsigned type = ::get_shdr (a.get_scn ()).sh_type;
   constant type_cst {type, &dom};
 
   return pred_result (type_cst == m_value);
@@ -450,7 +442,7 @@ xxx
 unsigned
 elfscn_flags_def::value (Dwfl *dwfl, Elf_Scn *scn)
 {
-  return ::getshdr (scn).sh_flags;
+  return ::get_shdr (scn).sh_flags;
 }
 
 zw_cdom const &
@@ -474,7 +466,7 @@ xxx
 pred_result
 pred_flags_elfscn::result (value_elf_section &a) const
 {
-  if ((::getshdr (a.get_scn ()).sh_flags & m_flag) == m_flag)
+  if ((::get_shdr (a.get_scn ()).sh_flags & m_flag) == m_flag)
     return pred_result::yes;
   else
     return pred_result::no;
@@ -494,7 +486,7 @@ xxx
 unsigned
 elfscn_address_def::value (Dwfl *dwfl, Elf_Scn *scn)
 {
-  return ::getshdr (scn).sh_addr;
+  return ::get_shdr (scn).sh_addr;
 }
 
 zw_cdom const &
@@ -517,7 +509,7 @@ xxx
 unsigned
 elfscn_alignment_def::value (Dwfl *dwfl, Elf_Scn *scn)
 {
-  return ::getshdr (scn).sh_addralign;
+  return ::get_shdr (scn).sh_addralign;
 }
 
 zw_cdom const &
@@ -540,7 +532,7 @@ xxx
 unsigned
 elfscn_offset_def::value (Dwfl *dwfl, Elf_Scn *scn)
 {
-  return ::getshdr (scn).sh_offset;
+  return ::get_shdr (scn).sh_offset;
 }
 
 zw_cdom const &

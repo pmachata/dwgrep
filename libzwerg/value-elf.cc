@@ -118,6 +118,14 @@ get_data (Elf_Scn *scn)
   throw_libelf ();
 }
 
+GElf_Shdr get_shdr (Elf_Scn *scn)
+{
+  GElf_Shdr shdr;
+  if (gelf_getshdr (scn, &shdr) == nullptr)
+    throw_libelf ();
+  return shdr;
+}
+
 value_type const value_elf::vtype = value_type::alloc ("T_ELF",
 R"docstring(
 
