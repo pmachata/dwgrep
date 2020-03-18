@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2018, 2019 Petr Machata
+   Copyright (C) 2018, 2019, 2020 Petr Machata
    This file is part of dwgrep.
 
    This file is free software; you can redistribute it and/or modify
@@ -250,6 +250,17 @@ R"docstring(
 xxx document me.
 
 )docstring");
+
+value_elf_rel::value_elf_rel (std::shared_ptr <dwfl_context> dwctx,
+			      GElf_Rela rela, int machine, size_t symtabndx,
+			      size_t pos, doneness d)
+  : value {vtype, pos}
+  , doneness_aspect {d}
+  , m_dwctx {dwctx}
+  , m_rela {rela}
+  , m_machine {machine}
+  , m_symtabndx {symtabndx}
+{}
 
 void
 value_elf_rel::show (std::ostream &o) const

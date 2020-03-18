@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2018, 2019 Petr Machata
+   Copyright (C) 2018, 2019, 2020 Petr Machata
    This file is part of dwgrep.
 
    This file is free software; you can redistribute it and/or modify
@@ -161,21 +161,28 @@ public:
 
 class value_elf_rel
   : public value
+  , public doneness_aspect
 {
+  std::shared_ptr <dwfl_context> m_dwctx;
   GElf_Rela m_rela;
   int m_machine;
+  size_t m_symtabndx;
 
 public:
   static value_type const vtype;
 
-  value_elf_rel (GElf_Rela rela, int machine, size_t pos)
-    : value {vtype, pos}
-    , m_rela {rela}
-    , m_machine {machine}
-  {}
+  value_elf_rel (std::shared_ptr <dwfl_context> dwctx,
+		 GElf_Rela rela, int machine, size_t symtabndx,
+		 size_t pos, doneness d);
+
+  std::shared_ptr <dwfl_context> get_dwctx () const
+  { return m_dwctx; }
 
   int get_machine () const
   { return m_machine; }
+
+  size_t get_symtabndx () const
+  { return m_symtabndx; }
 
   GElf_Rela get_rela () const
   { return m_rela; }

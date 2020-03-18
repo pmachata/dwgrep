@@ -191,14 +191,17 @@ namespace
 {
   struct relocation_producer
     : public value_producer <value>
+    , public doneness_aspect
   {
     std::shared_ptr <dwfl_context> m_dwctx;
     Elf_Data *m_relocs;
+    size_t m_symtabndx;
     size_t m_offset;
     unsigned m_pos;
 
     explicit relocation_producer (std::unique_ptr <value_elf_section> sec)
-      : m_dwctx {sec->get_dwctx ()}
+      : doneness_aspect {sec->get_doneness ()}
+      , m_dwctx {sec->get_dwctx ()}
       , m_relocs {::get_data (sec->get_scn ())}
       , m_symtabndx {::get_link (sec->get_scn ())}
       , m_offset {0}
@@ -216,8 +219,10 @@ namespace
     {
       GElf_Rela rela;
       if (gelf_getrela (m_relocs, m_pos, &rela))
-	return std::make_unique <value_elf_rel> (rela, m_dwctx->get_machine (),
-						 m_pos++);
+	return std::make_unique <value_elf_rel> (m_dwctx, rela,
+						 m_dwctx->get_machine (),
+						 m_symtabndx,
+						 m_pos++, get_doneness ());
       return nullptr;
     }
   };
@@ -234,9 +239,10 @@ namespace
       if (gelf_getrel (m_relocs, m_pos, &rel))
 	{
 	  GElf_Rela rela { rel.r_offset, rel.r_info, 0 };
-	  return std::make_unique <value_elf_rel> (rela,
+	  return std::make_unique <value_elf_rel> (m_dwctx, rela,
 						   m_dwctx->get_machine (),
-						   m_pos++);
+						   m_symtabndx,
+						   m_pos++, get_doneness ());
 	}
       return nullptr;
     }

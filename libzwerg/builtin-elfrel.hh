@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2019 Petr Machata
+   Copyright (C) 2019, 2020 Petr Machata
    This file is part of dwgrep.
 
    This file is free software; you can redistribute it and/or modify
@@ -31,6 +31,7 @@
 
 #include "overload.hh"
 #include "value-elf.hh"
+#include "value-symbol.hh"
 
 struct op_label_elfrel
   : public op_once_overload <value_cst, value_elf_rel>
@@ -53,6 +54,17 @@ struct pred_label_elfrel
   {}
 
   pred_result result (value_elf_rel &a) const override final;
+  static std::string docstring ();
+};
+
+struct op_symbol_elfrel
+  : public op_overload <value_symbol, value_elf_rel>
+{
+  using op_overload::op_overload;
+
+  std::unique_ptr <value_symbol>
+  operate (std::unique_ptr <value_elf_rel> a) const override;
+
   static std::string docstring ();
 };
 

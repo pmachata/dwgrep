@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2018, 2019 Petr Machata
+   Copyright (C) 2018, 2019, 2020 Petr Machata
    This file is part of dwgrep.
 
    This file is free software; you can redistribute it and/or modify
@@ -28,6 +28,7 @@
 
 #include "builtin-elf-voc-symbol.hh"
 #include "builtin-symbol.hh"
+#include "builtin-elfrel.hh"
 
 void
 dwgrep_vocabulary_elf_symbol (vocabulary &voc)
@@ -37,6 +38,7 @@ dwgrep_vocabulary_elf_symbol (vocabulary &voc)
 
     t->add_op_overload <op_symbol_dwarf> ();
     t->add_op_overload <op_symbol_elf> ();
+    t->add_op_overload <op_symbol_elfrel> ();
 
     voc.add (std::make_shared <overloaded_op_builtin> ("symbol", t));
   }

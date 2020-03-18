@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2018, 2019 Petr Machata
+   Copyright (C) 2018, 2019, 2020 Petr Machata
    This file is part of dwgrep.
 
    This file is free software; you can redistribute it and/or modify
@@ -227,7 +227,6 @@ class symtab_producer
   unsigned m_pos;
   doneness m_d;
 
-  static size_t get_strtabndx (Elf_Scn *symtab);
   static size_t get_count (Elf *elf, Elf_Data *data);
 
 public:

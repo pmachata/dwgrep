@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2017, 2018, 2019 Petr Machata
+   Copyright (C) 2017, 2018, 2019, 2020 Petr Machata
    Copyright (C) 2014, 2015 Red Hat, Inc.
    This file is part of dwgrep.
 
@@ -32,6 +32,7 @@
 #include "builtin-elfscn.hh"
 #include "dwit.hh"
 #include "dwcst.hh"
+#include "dwpp.hh"
 
 namespace
 {
