@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2018 Petr Machata
+   Copyright (C) 2018, 2020 Petr Machata
    This file is part of dwgrep.
 
    This file is free software; you can redistribute it and/or modify
@@ -28,6 +28,7 @@
 
 #include "builtin-elf-voc-offset.hh"
 #include "builtin-elf-strtab-entry.hh"
+#include "builtin-elfrel.hh"
 #include "builtin-elfscn.hh"
 
 void
@@ -35,6 +36,7 @@ dwgrep_vocabulary_elf_offset (vocabulary &voc)
 {
   auto t = std::make_shared <overload_tab> ();
 
+  t->add_op_overload <op_offset_elfrel> ();
   t->add_op_overload <op_offset_elfscn> ();
   t->add_op_overload <op_offset_strtab_entry> ();
 

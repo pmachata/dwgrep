@@ -853,7 +853,7 @@ A typical use would be in testing whether a bit is set, as in::
     that readelf sees. This is a problem, at least for raw sections, we should
     be able to get the original stuff.
 
-***  offset :: T_ELFREL -> T_CONST
+*** *offset :: T_ELFREL -> T_CONST
 *** *label :: T_ELFREL -> T_CONST
 *** *?R_, !R_ :: T_ELFREL
 *** *symbol :: T_ELFREL ->? T_ELFSYM

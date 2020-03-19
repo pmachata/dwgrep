@@ -27,6 +27,7 @@
    not, see <http://www.gnu.org/licenses/>.  */
 
 #include "builtin-elfrel.hh"
+#include "dwcst.hh"
 #include "dwpp.hh"
 #include "elfcst.hh"
 
@@ -103,6 +104,23 @@ op_symbol_elfrel::operate (std::unique_ptr <value_elf_rel> a) const
 
 std::string
 op_symbol_elfrel::docstring ()
+{
+  return
+R"docstring(
+
+xxx
+
+)docstring";
+}
+
+value_cst
+op_offset_elfrel::operate (std::unique_ptr <value_elf_rel> a) const
+{
+  return value_cst {constant {a->get_rela ().r_offset, &dw_offset_dom ()}, 0};
+}
+
+std::string
+op_offset_elfrel::docstring ()
 {
   return
 R"docstring(

@@ -68,4 +68,14 @@ struct op_symbol_elfrel
   static std::string docstring ();
 };
 
+struct op_offset_elfrel
+  : public op_once_overload <value_cst, value_elf_rel>
+{
+  using op_once_overload::op_once_overload;
+
+  value_cst operate (std::unique_ptr <value_elf_rel> a) const override;
+
+  static std::string docstring ();
+};
+
 #endif /* BUILTIN_ELFREL_H */

@@ -426,6 +426,9 @@ TEST_F (ElfTest, test_elf)
 	    {1, "elfrel.o",
 		"`[elf section (name == \".rela.text\") entry symbol name]"
 		" == [\"stderr\", \"fprintf\", \"puts\"]"},
+	    {1, "elfrel.o",
+		"`[elf section (name == \".rela.text\") entry offset]"
+		" == [0x19, 0x2b, 0x3a]"},
 
 	    {1,  "a1.out",
 		"section (name == \".symtab\") (info == 53)"},
