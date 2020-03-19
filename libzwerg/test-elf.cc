@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2018, 2019 Petr Machata
+   Copyright (C) 2018, 2019, 2020 Petr Machata
    This file is part of dwgrep.
 
    This file is free software; you can redistribute it and/or modify
@@ -411,6 +411,22 @@ TEST_F (ElfTest, test_elf)
 		"elf raw section (name == \".rela.dyn\") (info == 0)"},
 	    {1,  "a1.out",
 		"section (name == \".rela.plt\") info (name == \".plt\")"},
+
+
+	      // Note: these relocatable files contain four relocations, not
+	      // three. However libdwfl swallows one of them.
+	    {1, "elfrel-32.o",
+		"`[elf section (name == \".rel.text\") entry label]"
+		" == [R_386_32, R_386_PC32, R_386_PC32]"},
+	    {1, "elfrel.o",
+		"`[elf section (name == \".rela.text\") entry label]"
+		" == [R_X86_64_PC32, R_X86_64_PLT32, R_X86_64_PLT32]"},
+	    {2, "elfrel.o",
+		"elf section (name == \".rela.text\") entry ?R_X86_64_PLT32"},
+	    {1, "elfrel.o",
+		"`[elf section (name == \".rela.text\") entry symbol name]"
+		" == [\"stderr\", \"fprintf\", \"puts\"]"},
+
 	    {1,  "a1.out",
 		"section (name == \".symtab\") (info == 53)"},
 	    {1, "a1.out",
