@@ -40,9 +40,7 @@ namespace
   std::string getscnname (value_elf_section &sec)
   {
     GElf_Shdr shdr = ::get_shdr (sec.get_scn ());
-
-    std::shared_ptr <dwfl_context> ctx = sec.get_dwctx ();
-    Elf *elf = get_main_elf (ctx->get_dwfl ()).first;
+    Elf *elf = get_main_elf (sec.get_dwctx ()->get_dwfl ()).first;
 
     size_t ndx = get_shdrstrndx (elf);
     char *name = elf_strptr (elf, ndx, shdr.sh_name);
