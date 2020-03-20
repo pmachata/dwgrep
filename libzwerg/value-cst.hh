@@ -30,6 +30,7 @@
 #ifndef _VALUE_CST_H_
 #define _VALUE_CST_H_
 
+#include "constant.hh"
 #include "value.hh"
 #include "op.hh"
 #include "overload.hh"
