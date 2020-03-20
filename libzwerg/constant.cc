@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2018 Petr Machata
+   Copyright (C) 2018, 2020 Petr Machata
    Copyright (C) 2014, 2015 Red Hat, Inc.
    This file is part of dwgrep.
 
@@ -260,4 +260,23 @@ check_arith (constant const &cst_a)
   if (! cst_a.dom ()->safe_arith ())
     std::cerr << "Warning: doing arithmetic on " << cst_a
 	      << " is probably not meaningful.\n";
+}
+
+uint64_t
+constant_to_address (constant c)
+{
+  if (! c.dom ()->safe_arith ())
+    std::cerr << "Warning: the constant " << c
+	      << " doesn't seem to be suitable for use as address or offset.\n";
+
+  auto v = c.value ();
+
+  if (v < 0)
+    {
+      std::cerr
+	<< "Warning: Negative value not suitable as address or offset.\n";
+      v = 0;
+    }
+
+  return v.uval ();
 }

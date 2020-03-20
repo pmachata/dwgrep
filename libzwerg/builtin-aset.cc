@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2017 Petr Machata
+   Copyright (C) 2017, 2020 Petr Machata
    Copyright (C) 2015 Red Hat, Inc.
    This file is part of dwgrep.
 
@@ -184,40 +184,17 @@ yield at all if the set is empty.
 )docstring";
 }
 
-
-namespace
-{
-  mpz_class
-  addressify (constant c)
-  {
-    if (! c.dom ()->safe_arith ())
-      std::cerr << "Warning: the constant " << c
-		<< " doesn't seem to be suitable for use in address sets.\n";
-
-    auto v = c.value ();
-
-    if (v < 0)
-      {
-	std::cerr
-	  << "Warning: Negative values are not allowed in address sets.\n";
-	v = 0;
-      }
-
-    return v;
-  }
-}
-
 value_aset
 op_aset_cst_cst::operate (std::unique_ptr <value_cst> a,
 			  std::unique_ptr <value_cst> b) const
 {
-  auto av = addressify (a->get_constant ());
-  auto bv = addressify (b->get_constant ());
+  uint64_t av = constant_to_address (a->get_constant ());
+  uint64_t bv = constant_to_address (b->get_constant ());
   if (av > bv)
     std::swap (av, bv);
 
   coverage cov;
-  cov.add (av.uval (), (bv - av).uval ());
+  cov.add (av, bv - av);
   return value_aset (cov, 0);
 }
 
@@ -239,9 +216,9 @@ value_aset
 op_add_aset_cst::operate (std::unique_ptr <value_aset> a,
 			  std::unique_ptr <value_cst> b) const
 {
-  auto bv = addressify (b->get_constant ());
+  uint64_t bv = constant_to_address (b->get_constant ());
   auto ret = a->get_coverage ();
-  ret.add (bv.uval (), 1);
+  ret.add (bv, 1);
   return value_aset {std::move (ret), 0};
 }
 
@@ -293,9 +270,9 @@ value_aset
 op_sub_aset_cst::operate (std::unique_ptr <value_aset> a,
 			  std::unique_ptr <value_cst> b) const
 {
-  auto bv = addressify (b->get_constant ());
+  uint64_t bv = constant_to_address (b->get_constant ());
   auto ret = a->get_coverage ();
-  ret.remove (bv.uval (), 1);
+  ret.remove (bv, 1);
   return value_aset {std::move (ret), 0};
 }
 
@@ -419,8 +396,8 @@ address set, presented as individual address sets::
 pred_result
 pred_containsp_aset_cst::result (value_aset &a, value_cst &b) const
 {
-  auto av = addressify (b.get_constant ());
-  return pred_result (a.get_coverage ().is_covered (av.uval (), 1));
+  uint64_t av = constant_to_address (b.get_constant ());
+  return pred_result (a.get_coverage ().is_covered (av, 1));
 }
 
 std::string

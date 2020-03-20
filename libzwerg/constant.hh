@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2018 Petr Machata
+   Copyright (C) 2018, 2020 Petr Machata
    Copyright (C) 2014, 2015 Red Hat, Inc.
    This file is part of dwgrep.
 
@@ -165,6 +165,7 @@ std::ostream &operator<< (std::ostream &o, constant cst);
 
 void check_arith (constant const &cst_a, constant const &cst_b);
 void check_arith (constant const &cst_a);
+uint64_t constant_to_address (constant c);
 
 inline const char *
 abbreviate (char const *name, size_t prefix_len, brevity brv)
