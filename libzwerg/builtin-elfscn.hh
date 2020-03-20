@@ -236,4 +236,17 @@ public:
   std::unique_ptr <value> next () override;
 };
 
+template <typename T>
+struct op_read_elfscn
+  : public op_overload <value_cst, value_elf_section, value_cst>
+{
+  using op_overload::op_overload;
+
+  std::unique_ptr <value_cst>
+  operate (std::unique_ptr <value_elf_section> a,
+	   std::unique_ptr <value_cst> offset_cst) const override;
+
+  static std::string docstring ();
+};
+
 #endif /* BUILTIN_ELFSCN_H */

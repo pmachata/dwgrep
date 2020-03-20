@@ -28,6 +28,7 @@
 
 #include "builtin-elfscn.hh"
 
+#include <cstring>
 #include <elfutils/elf-knowledge.h>
 #include "dwcst.hh"
 #include "dwpp.hh"
@@ -550,3 +551,84 @@ xxx
 
 )docstring";
 }
+
+namespace
+{
+  template <unsigned int sz> struct get_unsigned;
+  template <> struct get_unsigned <1> { using type = uint8_t; };
+  template <> struct get_unsigned <2> { using type = uint16_t; };
+  template <> struct get_unsigned <4> { using type = uint32_t; };
+  template <> struct get_unsigned <8> { using type = uint64_t; };
+
+  uint8_t be_to_host (uint8_t c) { return c; }
+  uint8_t le_to_host (uint8_t c) { return c; }
+
+  uint16_t be_to_host (uint16_t c) { return be16toh (c); }
+  uint16_t le_to_host (uint16_t c) { return le16toh (c); }
+
+  uint32_t be_to_host (uint32_t c) { return be32toh (c); }
+  uint32_t le_to_host (uint32_t c) { return le32toh (c); }
+
+  uint64_t be_to_host (uint64_t c) { return be64toh (c); }
+  uint64_t le_to_host (uint64_t c) { return le64toh (c); }
+}
+
+template <typename T>
+std::unique_ptr <value_cst>
+op_read_elfscn <T>::operate (std::unique_ptr <value_elf_section> a,
+			     std::unique_ptr <value_cst> offset_cst) const
+{
+  Elf_Scn *scn = a->get_scn ();
+  Elf_Data *data = get_rawdata (scn);
+  uint64_t offset = constant_to_address (offset_cst->get_constant ());
+  if (data->d_size < sizeof (T) ||
+      static_cast <uint64_t> (data->d_size - sizeof (T)) < offset)
+    return nullptr;
+
+  auto buf = static_cast <unsigned char *> (data->d_buf);
+  typename get_unsigned <sizeof (T)>::type u;
+  std::memcpy (&u, &buf[offset], sizeof u);
+
+  if (a->is_cooked ())
+    {
+      GElf_Ehdr ehdr = get_ehdr (a->get_dwctx ()->get_dwfl ());
+      switch (ehdr.e_ident[EI_DATA])
+	{
+	case ELFDATA2LSB: // Little endian.
+	  u = le_to_host (u);
+	  break;
+
+	case ELFDATA2MSB: // Big endian.
+	  u = be_to_host (u);
+	  break;
+
+	default:
+	  throw std::runtime_error ("Invalid endianness");
+	}
+    }
+
+  T ret = static_cast <T> (u);
+  constant c {ret, &dec_constant_dom};
+  return std::make_unique <value_cst> (c, 0);
+}
+
+template <typename T>
+std::string
+op_read_elfscn <T>::docstring ()
+{
+  return
+R"docstring(
+
+xxx
+
+)docstring";
+}
+
+template class op_read_elfscn <int8_t>;
+template class op_read_elfscn <int16_t>;
+template class op_read_elfscn <int32_t>;
+template class op_read_elfscn <int64_t>;
+template class op_read_elfscn <uint8_t>;
+template class op_read_elfscn <uint16_t>;
+template class op_read_elfscn <uint32_t>;
+template class op_read_elfscn <uint64_t>;

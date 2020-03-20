@@ -724,7 +724,7 @@
 *** *eclass :: T_ELF -> T_CONST
 *** *ELFCLASS32, ELFCLASS64
 *** *?ELFCLASS32, ?ELFCLASS64
-*** *@data :; T_ELF -> T_CONST
+*** *edata :: T_ELF -> T_CONST
 *** *ELFDATA2LSB, ELFDATA2MSB
 *** *?ELFDATA2LSB, ?ELFDATA2MSB
 *** *EV_CURRENT
@@ -791,15 +791,13 @@ A typical use would be in testing whether a bit is set, as in::
      the routines defined in libzwerg-dw. If value_dwarf is considered part of
      libzwerg-dw, the dependency of libzwerg-elf on libzwerg-dw is already
      there, so this is not new.
-***  something :: T_ELFSCN ->* T_CONST or -> T_SEQ
-     Accesses the section as a list of bytes. Or maybe ints. Or maybe it's
-     configurable.
-     - T_BUF?
-       - read8, read16, read32, read64???
-       - seq8 ... seq64
-***  read :: T_ELFSCN T_CONST -> T_CONST
-     Reads a quantity at a given offset. Unclear how to specify the width of the
-     quantity.
+*** *read{i,u}{8,16,32,64} :: T_ELFSCN ->* T_CONST
+     Reads 8-, 16-, 32- or 64-bit signed or unsigned integer from an ELF section
+     at a given offset.
+***  read :: T_ELFSCN T_CONST T_CONST -> T_CONST
+     Reads a quantity from an elf section. The numerical arguments are quantity
+     width (8, 16, 32, 64 for unsigned integers, -8, -16, -32, -64 for signed
+     integers) and offset to read from.
 *** *SHT_* :: () -> T_CONST
      All the section type constants.
 *** *?SHT_, !SHT_ :: T_ELFSCN

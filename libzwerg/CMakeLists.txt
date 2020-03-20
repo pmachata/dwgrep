@@ -122,6 +122,7 @@ ADD_LIBRARY (LibzwergElf OBJECT
   builtin-elf-voc-offset.cc
   builtin-elf-voc-osabi.cc
   builtin-elf-voc-raw.cc
+  builtin-elf-voc-read.cc
   builtin-elf-voc-section.cc
   builtin-elf-voc-shstr.cc
   builtin-elf-voc-size.cc

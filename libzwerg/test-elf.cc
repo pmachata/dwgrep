@@ -315,6 +315,31 @@ TEST_F (ElfTest, symbol_cmp)
     EXPECT_EQ (cmp_result::equal, val->cmp (*val));
 }
 
+TEST_F (ElfTest, endian)
+{
+  char const *program = R"(
+(|Dw1 Dw2|
+
+  let GetScn := {section (name == ".rodata")};
+  let RV1 := Dw1 elf raw GetScn 0 readu32;
+  let CV1 := Dw1 elf cooked GetScn 0 readu32;
+  let RV2 := Dw2 elf raw GetScn 0 readu32;
+  let CV2 := Dw2 elf cooked GetScn 0 readu32;
+
+  // If the file endian matches the host endian, the raw value will be the same
+  // as the cooked value. Since one of the files is big endian and other little
+  // endian, this should happen exactly once.
+  let Same := {|A B| if (A == B) then 1 else 0};
+  RV1 CV1 Same  RV2 CV2 Same  add == 1
+)
+)";
+  auto stk = std::make_unique <stack> ();
+  stk->push (rdw ("float_const_value.o-armv7hl"));
+  stk->push (rdw ("float_const_value.o-ppc64"));
+  auto yielded = run_query (*builtins, std::move (stk), program);
+  ASSERT_EQ (1, yielded.size ());
+}
+
 TEST_F (ElfTest, test_elf)
 {
   typedef std::vector <std::tuple <size_t, std::string, std::string>> vec;

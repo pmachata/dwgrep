@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2018 Petr Machata
+   Copyright (C) 2018, 2020 Petr Machata
    This file is part of dwgrep.
 
    This file is free software; you can redistribute it and/or modify
@@ -51,6 +51,7 @@
 #include "builtin-elf-voc-offset.hh"
 #include "builtin-elf-voc-osabi.hh"
 #include "builtin-elf-voc-raw.hh"
+#include "builtin-elf-voc-read.hh"
 #include "builtin-elf-voc-section.hh"
 #include "builtin-elf-voc-shstr.hh"
 #include "builtin-elf-voc-size.hh"
@@ -96,6 +97,7 @@ dwgrep_vocabulary_elf ()
   dwgrep_vocabulary_elf_offset (voc);
   dwgrep_vocabulary_elf_osabi (voc);
   dwgrep_vocabulary_elf_raw (voc);
+  dwgrep_vocabulary_elf_read (voc);
   dwgrep_vocabulary_elf_section (voc);
   dwgrep_vocabulary_elf_shstr (voc);
   dwgrep_vocabulary_elf_size (voc);
