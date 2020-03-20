@@ -118,6 +118,14 @@ get_data (Elf_Scn *scn)
   throw_libelf ();
 }
 
+Elf_Data *
+get_rawdata (Elf_Scn *scn)
+{
+  if (Elf_Data *ret = elf_rawdata (scn, NULL))
+    return ret;
+  throw_libelf ();
+}
+
 GElf_Shdr get_shdr (Elf_Scn *scn)
 {
   GElf_Shdr shdr;
