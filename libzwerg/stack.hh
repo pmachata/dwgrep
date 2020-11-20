@@ -31,6 +31,7 @@
 #define _STK_H_
 
 #include <memory>
+#include <stdexcept>
 #include <vector>
 
 #include "value.hh"

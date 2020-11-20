@@ -32,6 +32,7 @@
 
 #include <memory>
 #include <cassert>
+#include <string>
 
 #include "stack.hh"
 #include "pred_result.hh"

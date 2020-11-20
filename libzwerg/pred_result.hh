@@ -29,6 +29,8 @@
 #ifndef _PRED_RESULT_H_
 #define _PRED_RESULT_H_
 
+#include <cstdlib>
+
 enum class pred_result
   {
     no = false,
