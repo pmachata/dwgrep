@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2018, 2019 Petr Machata
+   Copyright (C) 2018, 2019, 2020 Petr Machata
 
    This file is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -62,27 +62,29 @@ namespace
   }
 }
 
+bool
+show_unknown (char const *pfx, char const *unknown_pfx,
+	      int code, int lo, int hi,
+	      std::ostream &o, brevity brv)
+{
+  if (code >= lo && code <= hi)
+    {
+      char buf[40];
+      sprintf (buf, "%s+%d", unknown_pfx, code - lo);
+      show (pfx, buf, o, brv);
+      return true;
+    }
+
+  return false;
+}
+
 void
 show_unknown (char const *pfx, int code,
-	      int loos, int hios, int loproc, int hiproc,
 	      std::ostream &o, brevity brv)
 {
   char buf[40];
-  if (code >= loos && code <= hios)
-    {
-      sprintf (buf, "LOOS+%d", code - loos);
-      show (pfx, buf, o, brv);
-    }
-  else if (code >= loproc && code <= hiproc)
-    {
-      sprintf (buf, "LOPROC+%d", code - loproc);
-      show (pfx, buf, o, brv);
-    }
-  else
-    {
-      sprintf (buf, "??? (%#x)", code);
-      show (pfx, buf, o, brv);
-    }
+  sprintf (buf, "??? (%#x)", code);
+  show (pfx, buf, o, brv);
 }
 
 static const char *
@@ -464,8 +466,11 @@ namespace
 	{
 	  ELF_ALL_KNOWN_SHT
 	default:
-	  show_unknown ("SHT", code,
-			SHT_LOOS, SHT_HIOS, SHT_LOPROC, SHT_HIPROC, o, brv);
+	  if (!show_unknown ("SHT", "LOOS",
+			     code, SHT_LOOS, SHT_HIOS, o, brv)
+	      && !show_unknown ("SHT", "LOPROC",
+				code, SHT_LOPROC, SHT_HIPROC, o, brv))
+	    show_unknown ("SHT", code, o, brv);
 	}
     }
 
@@ -547,8 +552,11 @@ namespace
 	{
 	  ELF_ALL_KNOWN_SHF
 	default:
-	  show_unknown ("SHF", code,
-			shf_loos, shf_hios, shf_loproc, shf_hiproc, o, brv);
+	  if (!show_unknown ("SHF", "LOOS",
+			     code, shf_loos, shf_hios, o, brv)
+	      && !show_unknown ("SHF", "LOPROC",
+				code, shf_loproc, shf_hiproc, o, brv))
+	    show_unknown ("SHF", code, o, brv);
 	}
     }
 

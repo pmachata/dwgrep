@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2018, 2019 Petr Machata
+   Copyright (C) 2018, 2019, 2020 Petr Machata
    This file is part of dwgrep.
 
    This file is free software; you can redistribute it and/or modify
@@ -37,8 +37,10 @@ struct elf_cst_dom
   char const *docstring () const override;
 };
 
+bool show_unknown (char const *pfx, char const *unknown_pfx,
+		   int code, int lo, int hi,
+		   std::ostream &o, brevity brv);
 void show_unknown (char const *pfx, int code,
-		   int loos, int hios, int loproc, int hiproc,
 		   std::ostream &o, brevity brv);
 
 zw_cdom const &elf_class_dom ();

@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2014, 2015 Red Hat, Inc.
+   Copyright (C) 2014, 2015, 2020 Red Hat, Inc.
    This file is part of dwgrep.
 
    This file is free software; you can redistribute it and/or modify
@@ -110,8 +110,11 @@ namespace
 	{
 	  ELF_ALL_KNOWN_STT
 	default:
-	  show_unknown ("STT", code,
-			STT_LOOS, STT_HIOS, STT_LOPROC, STT_HIPROC, o, brv);
+	  if (!show_unknown ("STT", "LOOS",
+			     code, STT_LOOS, STT_HIOS, o, brv)
+	      && !show_unknown ("STT", "LOPROC",
+				code, STT_LOPROC, STT_HIPROC, o, brv))
+	    show_unknown ("STT", code, o, brv);
 	}
     }
 
@@ -167,8 +170,11 @@ namespace
 	{
 	  ELF_ALL_KNOWN_STB
 	default:
-	  show_unknown ("STB", code,
-			STB_LOOS, STB_HIOS, STB_LOPROC, STB_HIPROC, o, brv);
+	  if (!show_unknown ("STB", "LOOS",
+			     code, STB_LOOS, STB_HIOS, o, brv)
+	      && !show_unknown ("STB", "LOPROC",
+				code, STB_LOPROC, STB_HIPROC, o, brv))
+	    show_unknown ("STB", code, o, brv);
 	}
     }
 
@@ -222,7 +228,7 @@ namespace
 	case STV_HIDDEN:	return show ("STV", "HIDDEN", o, brv);
 	case STV_PROTECTED:	return show ("STV", "PROTECTED", o, brv);
 	default:
-	  show_unknown ("STV", code, 0, -1, 0, -1, o, brv);
+	  show_unknown ("STV", code, o, brv);
 	}
     }
 

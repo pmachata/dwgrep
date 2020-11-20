@@ -491,3 +491,27 @@ TEST_F (ElfTest, test_elf)
 	<< "In '" << q << "'";
     }
 }
+
+TEST_F (ElfTest, test_no_elf)
+{
+  typedef std::vector <std::tuple <size_t, std::string>> vec;
+  for (auto const &entry: vec {
+	    // STB_LOOS+0 is allocated for STB_GNU_UNIQUE, so we can't use it
+	    // for testing.
+	    {1, "STB_LOCAL 11 add \"%s\" == \"STB_LOOS+1\""},
+	    {1, "STB_LOCAL 12 add \"%s\" == \"STB_LOOS+2\""},
+	    {1, "STB_LOCAL 13 add \"%s\" == \"STB_LOPROC+0\""},
+	    {1, "STB_LOCAL 14 add \"%s\" == \"STB_LOPROC+1\""},
+	    {1, "STB_LOCAL 15 add \"%s\" == \"STB_LOPROC+2\""},
+	    {1, "STB_LOCAL 16 add \"%s\" == \"STB_??? (0x10)\""},
+	})
+
+    {
+      size_t nresults = std::get <0> (entry);
+      auto const &q = std::get <1> (entry);
+
+      auto yielded = run_query (*builtins, std::make_unique <stack> (), q);
+      ASSERT_EQ (nresults, yielded.size ())
+	<< "In '" << q << "'";
+    }
+}
