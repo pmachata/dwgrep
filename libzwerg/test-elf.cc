@@ -504,6 +504,11 @@ TEST_F (ElfTest, test_no_elf)
 	    {1, "STB_LOCAL 14 add \"%s\" == \"STB_LOPROC+1\""},
 	    {1, "STB_LOCAL 15 add \"%s\" == \"STB_LOPROC+2\""},
 	    {1, "STB_LOCAL 16 add \"%s\" == \"STB_??? (0x10)\""},
+
+	    {1, "DT_NULL 0x6000000d add \"%s\" == \"DT_LOOS+0\""},
+	    {1, "DT_NULL 0x6ffffd00 add \"%s\" == \"DT_VALRNGLO+0\""},
+	    {1, "DT_NULL 0x6ffffe00 add \"%s\" == \"DT_ADDRRNGLO+0\""},
+	    {1, "DT_NULL 0x70000000 add \"%s\" == \"DT_LOPROC+0\""},
 	})
 
     {

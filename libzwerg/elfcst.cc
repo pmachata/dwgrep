@@ -779,3 +779,88 @@ elf_r_dom (int machine)
   static dw_simple_dom dom {"R", fallback_dom_stringer, 0, 0, true};
   return dom;
 }
+
+namespace
+{
+#define ELF_ONE_KNOWN_DT(SHORT, LONG)		\
+  case LONG:					\
+    return show ("DT", #SHORT, o, brv);
+
+  struct elfsym_dt_dom_t
+    : public elf_cst_dom
+  {
+    void
+    show (mpz_class const &v, std::ostream &o, brevity brv) const override
+    {
+      using ::show;
+      switch (int code = v < 0 || v.uval () > INT_MAX ? -1 : v.uval ())
+	{
+	  ELF_ALL_KNOWN_DT
+	default:
+	  if (!show_unknown ("DT", "LOOS",
+			     code, DT_LOOS, DT_HIOS, o, brv)
+	      && !show_unknown ("DT", "LOPROC",
+				code, DT_LOPROC, DT_HIPROC, o, brv)
+	      && !show_unknown ("DT", "VALRNGLO",
+				code, DT_VALRNGLO, DT_VALRNGHI, o, brv)
+	      && !show_unknown ("DT", "ADDRRNGLO",
+				code, DT_ADDRRNGLO, DT_ADDRRNGHI, o, brv))
+	    show_unknown ("DT", code, o, brv);
+	}
+    }
+
+    char const *
+    name () const override
+    {
+      return "DT_";
+    }
+  };
+
+#define ELF_ONE_KNOWN_DT_ARCH(ARCH)					\
+  struct elfsym_dt_##ARCH##_dom_t					\
+    : public elfsym_dt_dom_t						\
+  {									\
+    void								\
+    show (mpz_class const &v, std::ostream &o, brevity brv) const override \
+    {									\
+      using ::show;							\
+      switch (v < 0 || v.uval () > INT_MAX ? -1 : v.uval ())		\
+	{								\
+	  ELF_ALL_KNOWN_DT_##ARCH					\
+	}								\
+      elfsym_dt_dom_t::show (v, o, brv);				\
+    }									\
+									\
+    virtual constant_dom const *					\
+    most_enclosing (mpz_class const &v) const override			\
+    {									\
+      if (v < DT_LOPROC)						\
+	return &elf_dt_dom (EM_NONE);					\
+      return this;							\
+    }									\
+  };
+
+  ELF_ALL_KNOWN_DT_ARCHES
+
+#undef ELF_ONE_KNOWN_DT_ARCH
+#undef ELF_ONE_KNOWN_DT
+}
+
+zw_cdom const &
+elf_dt_dom (int machine)
+{
+  switch (machine)
+    {
+#define ELF_ONE_KNOWN_DT_ARCH(ARCH)		\
+      case EM_##ARCH:				\
+	{					\
+	  static elfsym_dt_##ARCH##_dom_t dom;	\
+	  return dom;				\
+	}
+      ELF_ALL_KNOWN_DT_ARCHES
+#undef ELF_ONE_KNOWN_DT_ARCH
+    }
+
+  static elfsym_dt_dom_t dom;
+  return dom;
+}

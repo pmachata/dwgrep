@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2018, 2019, 2020 Petr Machata
+   Copyright (C) 2020 Petr Machata
    This file is part of dwgrep.
 
    This file is free software; you can redistribute it and/or modify
@@ -26,34 +26,31 @@
    the GNU Lesser General Public License along with this program.  If
    not, see <http://www.gnu.org/licenses/>.  */
 
-#ifndef _ELFCST_H_
-#define _ELFCST_H_
+#include <elf.h>
 
-#include "constant.hh"
+#include "builtin-elf-voc-dyn.hh"
+#include "builtin.hh"
+#include "elfcst.hh"
+#include "known-elf.h"
 
-struct elf_cst_dom
-  : public constant_dom
+void
+dwgrep_vocabulary_elf_dyn (vocabulary &voc)
 {
-  char const *docstring () const override;
-};
+#define ELF_ONE_KNOWN_DT(NAME, CODE)					\
+  add_builtin_constant (voc, constant (CODE, &elf_dt_dom (machine)), #CODE);
 
-bool show_unknown (char const *pfx, char const *unknown_pfx,
-		   int code, int lo, int hi,
-		   std::ostream &o, brevity brv);
-void show_unknown (char const *pfx, int code,
-		   std::ostream &o, brevity brv);
+  {
+    constexpr int machine = EM_NONE;
+    ELF_ALL_KNOWN_DT
+  }
 
-zw_cdom const &elf_class_dom ();
-zw_cdom const &elf_data_dom ();
-zw_cdom const &elf_et_dom ();
-zw_cdom const &elf_em_dom ();
-zw_cdom const &elf_ev_dom ();
-zw_cdom const &elf_ef_dom (int machine);
-zw_cdom const &elf_osabi_dom ();
-zw_cdom const &elf_sht_dom (int machine);
-zw_cdom const &elf_shf_dom (int machine);
-zw_cdom const &elf_shf_flags_dom (int machine);
-zw_cdom const &elf_r_dom (int machine);
-zw_cdom const &elf_dt_dom (int machine);
+#define ELF_ONE_KNOWN_DT_ARCH(ARCH)		\
+    {						\
+      constexpr int machine = EM_##ARCH;	\
+      ELF_ALL_KNOWN_DT_##ARCH			\
+    }
+  ELF_ALL_KNOWN_DT_ARCHES
 
-#endif /* _ELFCST_H_ */
+#undef ELF_ONE_KNOWN_DT_ARCH
+#undef ELF_ONE_KNOWN_DT
+}

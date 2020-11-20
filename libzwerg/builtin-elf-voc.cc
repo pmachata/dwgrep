@@ -34,6 +34,7 @@
 #include "builtin-elf-voc-alignment.hh"
 #include "builtin-elf-voc-binding.hh"
 #include "builtin-elf-voc-cooked.hh"
+#include "builtin-elf-voc-dyn.hh"
 #include "builtin-elf-voc-eclass.hh"
 #include "builtin-elf-voc-edata.hh"
 #include "builtin-elf-voc-eentry.hh"
@@ -80,6 +81,7 @@ dwgrep_vocabulary_elf ()
   dwgrep_vocabulary_elf_alignment (voc);
   dwgrep_vocabulary_elf_binding (voc);
   dwgrep_vocabulary_elf_cooked (voc);
+  dwgrep_vocabulary_elf_dyn (voc);
   dwgrep_vocabulary_elf_eclass (voc);
   dwgrep_vocabulary_elf_edata (voc);
   dwgrep_vocabulary_elf_eentry (voc);

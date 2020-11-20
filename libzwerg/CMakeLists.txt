@@ -105,6 +105,7 @@ ADD_LIBRARY (LibzwergElf OBJECT
   builtin-elf-voc-alignment.cc
   builtin-elf-voc-binding.cc
   builtin-elf-voc-cooked.cc
+  builtin-elf-voc-dyn.cc
   builtin-elf-voc-eclass.cc
   builtin-elf-voc-edata.cc
   builtin-elf-voc-eentry.cc
