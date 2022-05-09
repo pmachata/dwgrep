@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2018 Petr Machata
+   Copyright (C) 2018, 2022 Petr Machata
    Copyright (C) 2014, 2015 Red Hat, Inc.
    This file is part of dwgrep.
 
@@ -805,6 +805,13 @@ at_value (std::shared_ptr <dwfl_context> dwctx,
     case DW_FORM_string:
     case DW_FORM_strp:
     case DW_FORM_GNU_strp_alt:
+    case DW_FORM_line_strp:
+    case DW_FORM_strp_sup:
+    case DW_FORM_strx:
+    case DW_FORM_strx1:
+    case DW_FORM_strx2:
+    case DW_FORM_strx3:
+    case DW_FORM_strx4:
       {
 	const char *str = dwarf_formstring (&attr);
 	if (str == nullptr)
@@ -817,6 +824,8 @@ at_value (std::shared_ptr <dwfl_context> dwctx,
     case DW_FORM_ref2:
     case DW_FORM_ref4:
     case DW_FORM_ref8:
+    case DW_FORM_ref_sup4:
+    case DW_FORM_ref_sup8:
     case DW_FORM_ref_udata:
     case DW_FORM_GNU_ref_alt:
       {
@@ -834,6 +843,10 @@ at_value (std::shared_ptr <dwfl_context> dwctx,
       return atval_unsigned (attr);
 
     case DW_FORM_addr:
+    case DW_FORM_addrx1:
+    case DW_FORM_addrx2:
+    case DW_FORM_addrx3:
+    case DW_FORM_addrx4:
       return atval_addr (attr);
 
     case DW_FORM_flag:
@@ -851,14 +864,21 @@ at_value (std::shared_ptr <dwfl_context> dwctx,
     case DW_FORM_data2:
     case DW_FORM_data4:
     case DW_FORM_data8:
+    case DW_FORM_data16:
     case DW_FORM_sec_offset:
     case DW_FORM_block1:
     case DW_FORM_block2:
     case DW_FORM_block4:
     case DW_FORM_block:
+    case DW_FORM_implicit_const:
       return handle_at_dependent_value (attr, vd, dwctx);
 
+    case DW_FORM_rnglistx:
+	return pass_single_value
+		(std::make_unique <value_aset> (die_ranges (vd.get_die ())));
+
     case DW_FORM_exprloc:
+    case DW_FORM_loclistx:
       return std::make_unique <locexpr_producer> (dwctx, attr);
 
     case DW_FORM_ref_sig8:
