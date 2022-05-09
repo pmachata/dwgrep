@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2014 Red Hat, Inc.
+   Copyright (C) 2022 Petr Machata
    This file is part of dwgrep.
 
    This file is free software; you can redistribute it and/or modify
@@ -26,51 +26,21 @@
    the GNU Lesser General Public License along with this program.  If
    not, see <http://www.gnu.org/licenses/>.  */
 
-#ifndef _PRED_RESULT_H_
-#define _PRED_RESULT_H_
+#include <iostream>
 
-#include <cstdlib>
-#include <iosfwd>
+#include "pred_result.hh"
 
-enum class pred_result
-  {
-    no = false,
-    yes = true,
-    fail,
-  };
-std::ostream &operator<< (std::ostream &o, pred_result result);
-
-inline pred_result
-operator! (pred_result other)
+std::ostream &
+operator<< (std::ostream &o, pred_result result)
 {
-  switch (other)
+  switch (result)
     {
-    case pred_result::no:
-      return pred_result::yes;
     case pred_result::yes:
-      return pred_result::no;
+      return o << "yes";
+    case pred_result::no:
+      return o << "no";
     case pred_result::fail:
-      return pred_result::fail;
+      return o << "fail";
     }
-  abort ();
+  return o;
 }
-
-inline pred_result
-operator&& (pred_result a, pred_result b)
-{
-  if (a == pred_result::fail || b == pred_result::fail)
-    return pred_result::fail;
-  else
-    return bool (a) && bool (b) ? pred_result::yes : pred_result::no;
-}
-
-inline pred_result
-operator|| (pred_result a, pred_result b)
-{
-  if (a == pred_result::fail || b == pred_result::fail)
-    return pred_result::fail;
-  else
-    return bool (a) || bool (b) ? pred_result::yes : pred_result::no;
-}
-
-#endif /* _PRED_RESULT_H_ */

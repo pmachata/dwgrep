@@ -41,6 +41,7 @@ enum class cmp_result
     greater,
     fail,
   };
+std::ostream &operator<< (std::ostream &o, cmp_result result);
 
 template <class T>
 cmp_result

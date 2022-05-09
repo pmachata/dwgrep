@@ -34,6 +34,23 @@
 #include "tree.hh"
 #include "value.hh"
 
+std::ostream &
+operator<< (std::ostream &o, cmp_result result)
+{
+  switch (result)
+    {
+    case cmp_result::less:
+      return o << "less";
+    case cmp_result::equal:
+      return o << "equal";
+    case cmp_result::greater:
+      return o << "greater";
+    case cmp_result::fail:
+      return o << "fail";
+    }
+  return o;
+}
+
 value_type
 value_type::alloc (char const *name, char const *docstring)
 {

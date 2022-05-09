@@ -44,6 +44,7 @@ ADD_LIBRARY (LibzwergCore OBJECT
   libzwerg.cc
   op.cc
   overload.cc
+  pred_result.cc
   scon.cc
   selector.cc
   stack.cc
