@@ -324,7 +324,7 @@ main (int argc, char const **argv)
 		else
 		  ss << ", ";
 
-		ss << ":ref:`\\" << a << " <" << handle << " " << a << ">`";
+		ss << ":ref:`\\" << a << " <" << handle << " \\" << a << ">`";
 		seen = true;
 	      }
 
