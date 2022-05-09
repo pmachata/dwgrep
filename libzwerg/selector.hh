@@ -41,11 +41,13 @@ struct selector
 {
   typedef uint32_t sel_t;
   static auto const W = sizeof (sel_t);
-  static_assert (CHAR_BIT == 8, "character has 8 bits");
-  static_assert (sizeof (((value_type *) nullptr)->code ()) == 1,
-		 "sizeof of value_type code is 1");
 
 private:
+  void unused(value_type &v)
+  {
+    static_assert (CHAR_BIT == 8, "character has 8 bits");
+    static_assert (sizeof (v.code ()) == 1, "sizeof of value_type code is 1");
+  }
 
   sel_t m_imprint;
   sel_t m_mask;
