@@ -28,7 +28,6 @@
    not, see <http://www.gnu.org/licenses/>.  */
 
 #include <iostream>
-#include "std-memory.hh"
 
 #include "builtin-closure.hh"
 #include "value-closure.hh"

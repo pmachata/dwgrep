@@ -34,7 +34,6 @@
 #include <memory>
 #include <string>
 #include <tuple>
-#include "std-utility.hh"
 #include <vector>
 
 #include "constant.hh"

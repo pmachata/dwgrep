@@ -29,7 +29,6 @@
 #include <iostream>
 #include <climits>
 #include "value-symbol.hh"
-#include "std-memory.hh"
 #include "known-elf.h"
 #include "dwcst.hh"
 

@@ -32,8 +32,6 @@
 
 #include <vector>
 #include <tuple>
-#include "std-memory.hh"
-#include "std-utility.hh"
 #include <iostream>
 
 #include "op.hh"

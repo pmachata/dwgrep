@@ -32,7 +32,6 @@
 #include "parser.hh"
 #include "scon.hh"
 
-#include "std-memory.hh"
 
 std::unique_ptr <stack>
 stack_with_value (std::unique_ptr <value> v)

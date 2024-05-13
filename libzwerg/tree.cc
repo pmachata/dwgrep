@@ -31,7 +31,6 @@
 #include <cassert>
 #include <climits>
 #include <iostream>
-#include "std-memory.hh"
 #include <set>
 #include <stdexcept>
 

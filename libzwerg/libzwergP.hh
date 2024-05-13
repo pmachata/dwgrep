@@ -30,7 +30,6 @@
 #include "libzwerg-dw.h"
 
 #include <string>
-#include "std-memory.hh"
 #include <iostream>
 
 #include "scon.hh"

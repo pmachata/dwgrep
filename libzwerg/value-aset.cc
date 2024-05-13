@@ -26,7 +26,6 @@
    not, see <http://www.gnu.org/licenses/>.  */
 
 #include "value-aset.hh"
-#include "std-memory.hh"
 
 value_type const value_aset::vtype = value_type::alloc ("T_ASET",
 R"docstring(

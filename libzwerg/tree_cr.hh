@@ -29,7 +29,6 @@
 #ifndef _TREE_CR_H_
 #define _TREE_CR_H_
 
-#include "std-memory.hh"
 #include "tree.hh"
 
 template <tree_type TT>

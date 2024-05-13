@@ -28,7 +28,6 @@
    not, see <http://www.gnu.org/licenses/>.  */
 
 #include <gtest/gtest.h>
-#include "std-memory.hh"
 
 #include "op.hh"
 #include "init.hh"

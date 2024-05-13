@@ -45,7 +45,6 @@
 #include "libzwerg.hh"
 #include "libzwerg-dw.h"
 #include "options.hh"
-#include "libzwerg/std-memory.hh"
 #include "libzwerg/strip.hh"
 #include "version.h"
 #include "libzwerg/flag_saver.hh"

@@ -29,7 +29,6 @@
 
 #include <iostream>
 #include <algorithm>
-#include "std-memory.hh"
 
 #include "value-closure.hh"
 #include "tree.hh"

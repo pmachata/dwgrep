@@ -30,7 +30,6 @@
 #define _VALUE_DW_H_
 
 #include <elfutils/libdwfl.h>
-#include "std-memory.hh"
 #include "value.hh"
 #include "dwfl_context.hh"
 
