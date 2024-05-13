@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2017, 2018 Petr Machata
+   Copyright (C) 2017, 2018, 2024 Petr Machata
    Copyright (C) 2014, 2015 Red Hat, Inc.
    This file is part of dwgrep.
 
@@ -763,11 +763,14 @@ op_subx::next (scon &sc) const
 
   while (true)
     {
-      while (st.m_stk == nullptr)
-	if (st.m_stk = m_upstream->next (sc))
+      if (st.m_stk == nullptr)
+	{
+	  st.m_stk = m_upstream->next (sc);
+	  if (st.m_stk == nullptr)
+	    return nullptr;
+
 	  m_origin->set_next (sc, std::make_unique <stack> (*st.m_stk));
-	else
-	  return nullptr;
+	}
 
       if (auto stk = m_op->next (sc))
 	{
